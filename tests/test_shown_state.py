@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import dataclasses
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
@@ -15,6 +16,8 @@ from homeassistant.exceptions import ServiceValidationError
 from custom_components.adjustable_bed.beds.entity_specs import ControllerSwitchSpec
 from custom_components.adjustable_bed.command_scheduler import (
     CommandOutcome,
+    Delivery,
+    command_frames_counted,
     current_command_context,
 )
 from custom_components.adjustable_bed.light import (
@@ -69,13 +72,17 @@ class SettingsController(AlarmController):
     async def _write(self, name: str) -> None:
         """Send ``name`` through the shared writer, as many times as the bed repeats."""
         await self.bed.before_write(self)  # type: ignore[attr-defined]
-        # The shared writer returns without sending once the command is cancelled.
-        await self._write_gatt_with_retry(
-            "0000fff1-0000-1000-8000-00805f9b34fb",
-            name.encode(),
-            repeat_count=self.bed.frames,  # type: ignore[attr-defined]
-            repeat_delay_ms=0,
-        )
+        stop: asyncio.Event | None = self.bed.local_stop  # type: ignore[attr-defined]
+        # The shared writer returns without sending once the command is cancelled,
+        # or once the controller's own stop (which never cancels the scheduler) is set.
+        with command_frames_counted() if stop is not None else contextlib.nullcontext():
+            await self._write_gatt_with_retry(
+                "0000fff1-0000-1000-8000-00805f9b34fb",
+                name.encode(),
+                repeat_count=self.bed.frames,  # type: ignore[attr-defined]
+                repeat_delay_ms=0,
+                cancel_event=stop,
+            )
         await self.bed.after_write(self)  # type: ignore[attr-defined]
 
     async def set_synchro(self, enabled: bool) -> None:
@@ -117,6 +124,7 @@ async def _cancel_while_writing(controller: SettingsController) -> None:
 def _settings(bed: Bed) -> None:
     bed.sent = []  # type: ignore[attr-defined]
     bed.frames = 1  # type: ignore[attr-defined]
+    bed.local_stop = None  # type: ignore[attr-defined]
     bed.before_write = bed.after_frame = bed.after_write = _nothing  # type: ignore[attr-defined]
     bed.controller_class = SettingsController
     for name in ("_controller", "_offline_controller"):
@@ -683,5 +691,88 @@ async def test_preparing_the_link_in_another_task_never_hides_the_commands_frame
         with scheduler.command_frames_not_counted():
             scheduler.note_frame_written(cancel)  # This task's own preparation.
         assert command.frames_written == 1
+    finally:
+        scheduler._CURRENT_COMMAND_CONTEXT.reset(token)
+
+
+@pytest.mark.parametrize(
+    ("written", "skipped", "expected"),
+    [
+        (1, 1, Delivery.PARTIAL),
+        (0, 1, Delivery.NONE),
+        (1, 0, Delivery.SENT),
+        # The controller chose to send nothing: nothing was held back.
+        (0, 0, Delivery.SENT),
+    ],
+)
+async def test_a_frame_held_back_without_a_cancellation_is_not_sent(
+    written, skipped, expected
+) -> None:
+    from custom_components.adjustable_bed import command_scheduler as scheduler
+
+    cancel = asyncio.Event()
+    command = _running_command(cancel)
+    token = scheduler._CURRENT_COMMAND_CONTEXT.set(command)
+    shown: list[Delivery] = []
+    try:
+        with scheduler.delivered(shown.append):
+            for _ in range(written):
+                scheduler.note_frame_written(cancel)
+            # A deadline or a reply ended the operation: the scheduler's
+            # event stays clear.
+            for _ in range(skipped):
+                scheduler.note_frame_skipped()
+    finally:
+        scheduler._CURRENT_COMMAND_CONTEXT.reset(token)
+    assert not cancel.is_set()
+    assert shown == [expected]
+
+
+async def test_a_controller_that_stops_itself_shows_only_what_reached_the_bed(hass) -> None:
+    async with beds(hass, 1) as made:
+        bed = made.items[0]
+        _settings(bed)
+        bed.frames = 2  # type: ignore[attr-defined]
+
+        async def bed_reports_done(_controller: SettingsController) -> None:
+            # A notification ends the operation after its first frame.
+            bed.local_stop.set()  # type: ignore[attr-defined]
+
+        bed.after_frame = bed_reports_done  # type: ignore[attr-defined]
+        switch = _entity(AdjustableBedSwitch(bed, SYNCHRO))
+        light = _entity(AdjustableBedAssumedLight(bed))
+        bed.controller_state[LIGHT_LEVEL] = 3
+        with virtual_clock():
+            for run in (switch.async_turn_on, light.async_toggle, lambda: _set_level(bed)):
+                bed.local_stop = asyncio.Event()  # type: ignore[attr-defined]
+                await run()
+        # One of each two frames went out, and nothing cancelled the commands.
+        assert bed.sent == ["synchro True", "toggle", "level 5"]  # type: ignore[attr-defined]
+        assert all(
+            record.outcome is CommandOutcome.COMPLETED
+            for record in bed._command_scheduler.recent_records
+        )
+        assert switch.is_on is None
+        # The toggle is its first frame, so the light did change.
+        assert light.is_on is True
+        # The published value is unknown, not the one half sent.
+        assert bed.controller_state.get(LIGHT_LEVEL) is None
+
+
+async def test_a_write_the_link_preparation_hands_to_a_task_is_still_preparation() -> None:
+    from custom_components.adjustable_bed import command_scheduler as scheduler
+
+    cancel = asyncio.Event()
+    command = _running_command(cancel)
+    token = scheduler._CURRENT_COMMAND_CONTEXT.set(command)
+    try:
+
+        async def startup_write() -> None:
+            # GoodVibe and SonicSleep shield each write in a task of its own.
+            scheduler.note_frame_written(cancel)
+
+        with scheduler.command_frames_not_counted():
+            await asyncio.shield(asyncio.create_task(startup_write()))
+        assert command.frames_written == 0
     finally:
         scheduler._CURRENT_COMMAND_CONTEXT.reset(token)

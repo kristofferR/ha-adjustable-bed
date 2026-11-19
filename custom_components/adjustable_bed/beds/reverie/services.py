@@ -206,7 +206,7 @@ async def _reverie_comfort_pair_lanes(
             grouped.setdefault(target.parent, []).append((target.side, target.target))
     async with contextlib.AsyncExitStack() as stack:
         for parent in sorted(grouped, key=id):
-            await stack.enter_async_context(parent._locked_target_sides(grouped[parent]))
+            await stack.enter_async_context(parent.locked_target_sides(grouped[parent]))
         yield
 
 
@@ -254,8 +254,8 @@ async def _execute_prepared_reverie_comfort(
         for coordinator, side in targets:
             admission = admissions[(id(coordinator), side)]
             if isinstance(coordinator, PairedBedCoordinator):
-                invalidated = coordinator._pair_admission_was_cancelled(
-                    coordinator._targets_for(side),
+                invalidated = coordinator.pair_admission_was_cancelled(
+                    coordinator.targets_for(side),
                     admission.resources,
                     admission.expected_pair_generations,
                     admission.expected_stop_epochs,

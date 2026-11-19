@@ -702,11 +702,11 @@ class Delivery(StrEnum):
     """What of a command reached the bed."""
 
     SENT = "sent"
-    """It ran uncancelled, or was cancelled only after its last frame went out."""
+    """Nothing was held back: it ran uncancelled, or was cancelled after its last frame."""
     PARTIAL = "partial"
-    """Cancelled between frames: some went out, a later one did not."""
+    """Some frames went out and a later one was held back (or it failed after one)."""
     NONE = "none"
-    """Cancelled before any frame went out."""
+    """No frame went out, and it was cancelled, failed, or held its frame back."""
 
 
 # The command whose link this task is preparing (connect, startup,
@@ -720,10 +720,11 @@ _PREPARING_LINK: ContextVar[CommandContext | None] = ContextVar(
 def command_frames_not_counted() -> Iterator[None]:
     """Send link preparation (connect, startup, session join, PIN) uncounted.
 
-    Names the running command, so only this task's preparation for it is
-    uncounted: a task started meanwhile that runs another command (a scheduler
-    worker) counts normally, and the command's own frames sent from another
-    task are never suppressed.
+    Names the running command in this task's context, so only its preparation
+    is uncounted: a task started meanwhile that runs another command (a
+    scheduler worker) counts normally, and so do the command's own frames sent
+    from a task started outside the preparation. A task the preparation starts
+    (a shielded startup write) inherits the mark: its writes are preparation too.
     """
     token = _PREPARING_LINK.set(current_command_context())
     try:
@@ -775,7 +776,12 @@ def note_write_not_counted() -> None:
 
 
 def note_frame_skipped() -> None:
-    """Record, inside a command, that a cancellation stopped a frame being sent."""
+    """Record, inside a command, that a frame of it was held back.
+
+    Whatever held it back: STOP, a replacing command, or the controller ending
+    the operation itself (a deadline, a reply). Never for a frame the command
+    did not need to send.
+    """
     context = current_command_context()
     if context is not None and not _preparing_link(context):
         context.frames_skipped += 1
@@ -798,12 +804,15 @@ def _delivery_since(
     if ending == "failed":
         # A failed step reached the bed at most in part, STOP or not.
         return Delivery.PARTIAL if sent else Delivery.NONE
+    if context.frames_skipped > skipped:
+        # A frame was held back: by STOP, a replacing command, or the
+        # controller itself (a deadline, a reply that ended the operation).
+        return Delivery.PARTIAL if sent else Delivery.NONE
     if ending == "returned" and not context.cancel_event.is_set():
+        # Uncancelled and nothing held back, also when it chose to send nothing.
         return Delivery.SENT
-    # Cancelled, by STOP or a replacing command: its frames tell.
-    if not sent:
-        return Delivery.NONE
-    return Delivery.PARTIAL if context.frames_skipped > skipped else Delivery.SENT
+    # Cancelled, by STOP or a replacing command, with nothing held back.
+    return Delivery.SENT if sent else Delivery.NONE
 
 
 @contextlib.contextmanager
@@ -940,6 +949,11 @@ class DeviceCommandScheduler:
     def recent_records(self) -> tuple[CommandRecord, ...]:
         """Return the bounded immutable terminal history."""
         return tuple(self._recent_records)
+
+    @property
+    def active(self) -> CommandHandle | None:
+        """Return the command currently running, if any."""
+        return self._active
 
     @property
     def diagnostics(self) -> dict[str, object]:

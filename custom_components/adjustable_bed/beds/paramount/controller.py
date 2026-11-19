@@ -434,7 +434,8 @@ class ParamountController(ProfileExecution, BedController):
             ),
             ControllerStateSensorSpec(
                 "paramount_height",
-                "paramount_height",
+                # The reading beside the Bed height cover that moves it.
+                "paramount_current_height",
                 HEIGHT,
                 "mdi:arrow-expand-vertical",
                 "cm",

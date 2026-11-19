@@ -125,7 +125,7 @@ async def leased_hold(
                 cancel = coordinator.cancel_command
                 cancel.clear()
                 context = CommandContext(
-                    scheduler_token=coordinator._command_scheduler.token,  # noqa: SLF001
+                    scheduler_token=coordinator.command_scheduler.token,
                     cancel_event=cancel,
                     admitted_stop_epoch=0,
                     intent_id="lease",

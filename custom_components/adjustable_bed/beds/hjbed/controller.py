@@ -18,7 +18,7 @@ from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.richmat import HJBED, RichmatProfile
-from ..base import BedController, ProfileExecution, require_controller
+from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..catalog_buttons import Kind, catalog_button, on_off_switch, unique_buttons
 from ..entity_specs import (
@@ -46,7 +46,7 @@ from .protocol import (
 )
 from .receive import Value
 from .requests import Request
-from .state import GESTURE_RELEASE, NonProgressFrame, State, Stream
+from .state import NonProgressFrame, State, Stream
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -622,6 +622,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
                 "Release held action",
                 released,
                 translation_key="hjbed_release",
+                release_only=True,
                 card=CARD_HIDDEN,
             )
         )
@@ -714,7 +715,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
         await self.stop_all()
 
     async def stop_all(self) -> None:
-        if GESTURE_RELEASE.get():
+        if CONTROLLER_GESTURE_RELEASE.get():
             return
         session = self._current_session()
         if self.command_side == "both":

@@ -11,15 +11,13 @@ from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
 )
-from custom_components.adjustable_bed.beds.okin_uuid.remotes import (
-    OKIN_UUID_VARIANT_LABELS,
-)
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.codec import okin_nframe as okin_codec
 from custom_components.adjustable_bed.const import (
     NORDIC_UART_READ_CHAR_UUID,
     NORDIC_UART_SERVICE_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
+    OKIMAT_VARIANTS,
 )
 from custom_components.adjustable_bed.profiles import n32_motion_bed as n32
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
@@ -457,7 +455,7 @@ def render_okin_nframe_keys() -> str:
 def _okin_remote_words(field: str) -> dict[int, list[str]]:
     words: dict[int, list[str]] = {}
     for code, remote in OKIN_UUID_REMOTES.items():
-        if code not in OKIN_UUID_VARIANT_LABELS:
+        if code not in OKIMAT_VARIANTS:
             continue
         value = getattr(remote, field)
         if isinstance(value, OkinUuidComplexCommand):
@@ -481,7 +479,7 @@ def render_okin_nframe_okimat() -> str:
         ("Child lock", ("child_lock",)),
         ("Zero-gravity", ("zero_gravity",)),
     )
-    codes = [code for code in OKIN_UUID_REMOTES if code in OKIN_UUID_VARIANT_LABELS]
+    codes = [code for code in OKIN_UUID_REMOTES if code in OKIMAT_VARIANTS]
     rows = []
     for label, names in fields:
         words: set[int] = set()

@@ -18,7 +18,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...ble_auth import is_ble_authentication_error
-from ...card import CARD_MASSAGE, CARD_UTILITY
+from ...card import CARD_MASSAGE
 from ...codec import okin_nframe as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
@@ -154,15 +154,6 @@ class ResidentController(Okin64BitController):
                 card=CARD_MASSAGE,
                 translation_key="resident_check_massage",
                 icon="mdi:refresh",
-                diagnostic=True,
-            ),
-            ControllerButtonSpec(
-                "resident_sync_clock",
-                "Sync bed clock",
-                lambda c: _resident(c).sync_clock(),
-                card=CARD_UTILITY,
-                translation_key="resident_sync_clock",
-                icon="mdi:clock-check",
                 diagnostic=True,
             ),
         )

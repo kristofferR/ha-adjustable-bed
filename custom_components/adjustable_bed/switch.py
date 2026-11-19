@@ -26,6 +26,7 @@ from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
 from .errors import invalid
 from .paired_coordinator import PairedSideError, entity_runtimes
+from .runtime_data import entry_runtime
 from .state_keys import (
     AUTOMATIC_LIGHT,
     LINAK_AUTOMATIC_DRIVE,
@@ -121,7 +122,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed switch entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
             entry,

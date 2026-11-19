@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 from uuid import uuid4
@@ -22,6 +22,7 @@ from ...controller_state import AnyStateKey
 from ...profiles import mline as app
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -61,21 +62,6 @@ class Link:
     notify: BleakGATTCharacteristic
     firmware: BleakGATTCharacteristic | None
     protocol: BleakGATTCharacteristic | None
-
-
-async def settled[T](operation: Coroutine[object, object, T]) -> T:
-    """Drain an in-flight write/release before giving its wire lane to STOP."""
-    task = asyncio.create_task(operation)
-    cancelled = False
-    while not task.done():
-        try:
-            await asyncio.shield(task)
-        except asyncio.CancelledError:
-            cancelled = True
-    result = task.result()
-    if cancelled:
-        raise asyncio.CancelledError
-    return result
 
 
 # Shared wake actions and the app's own mode names, default first.

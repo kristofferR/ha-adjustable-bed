@@ -16,6 +16,8 @@ from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CB
 from custom_components.adjustable_bed.profiles.vibradorm import VMAT_QUERY_STAGES as QUERY_STAGES
 from tests.test_vibradorm_vmat import VECTORS, frames, make_vmat
 
+pytestmark = pytest.mark.usefixtures("instant_vmat_settle")
+
 
 @pytest.mark.parametrize("original", ["cancel", "task_cancel", "write", "timeout", "success"])
 @pytest.mark.parametrize("cleanup", ["error", "timeout", "cancel"])

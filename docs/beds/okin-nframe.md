@@ -2320,7 +2320,8 @@ During connection setup, after notifications start and before any command runs,
 HA writes the local clock and repeats the alarm page's queries at 0, 300 and
 600 ms, so even a quick-disconnect session gets them. If that clock write fails,
 `set_alarm` writes the clock first, because the alarm fires on the bed's
-clock. **Sync Clock** and **Refresh Alarms** buttons repeat these.
+clock. The **Set bed clock** action (`adjustable_bed.sync_clock`) and the
+**Refresh Alarms** button repeat these.
 
 ###### Alarm frames
 
@@ -5532,8 +5533,8 @@ clock replies do not publish state.
 
 Standard movement and preset actions, `hold_control` for every named profile
 key except STOP, and `move_simultaneously` for back/legs in one direction.
-The **Refresh massage timer** button repeats the query. **Sync bed clock** and
-`sync_clock` set the bed's binary local calendar fields using Home Assistant's
+The **Refresh massage timer** button repeats the query. The
+`adjustable_bed.sync_clock` action sets the bed's binary local calendar fields using Home Assistant's
 time zone, then query the clock. Clock setting is unrelated to motor calibration.
 
 #### Evidence
@@ -5696,7 +5697,7 @@ other fields; it needs a current report (press **Refresh alarm** first) and
 sends nothing when that alarm is already off. Every target is validated before
 mutation. **Refresh massage** and **Refresh alarm** are
 diagnostic buttons, disabled by default, and use the same scheduler as the
-**Sync bed clock** button and all other controls. The card's hidden **Release
+`adjustable_bed.sync_clock` action and all other controls. The card's hidden **Release
 held control** button ends a held control without an extra STOP. Bed alarms already written can run while
 HA is disconnected.
 

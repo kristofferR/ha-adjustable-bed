@@ -164,6 +164,12 @@ def _shorten_unanswered_probe_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0.01)
 
 
+@pytest.fixture
+def instant_vmat_settle(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Skip the VMAT settle wait; mocked beds need none before notifications."""
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.vibradorm.vmat_setup.VMAT_SETTLE_S", 0)
+
+
 @pytest.fixture(autouse=True)
 def _pair_starting_mode_from_test_data(
     request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
@@ -898,6 +904,10 @@ def mock_bluetooth_api() -> Generator[None]:
             "homeassistant.components.bluetooth_adapters.async_setup",
             new=AsyncMock(return_value=True),
         ),
+        # Bluetooth depends on usb, whose real setup starts a USB watcher and
+        # registers a process-wide serial URI scheme: a setup cut short by a
+        # test's shutdown would leak both into every later test on the worker.
+        patch("homeassistant.components.usb.async_setup", new=AsyncMock(return_value=True)),
     ]
 
     for p in patches:
