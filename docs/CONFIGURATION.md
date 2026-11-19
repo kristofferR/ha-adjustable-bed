@@ -141,8 +141,8 @@ to that family's other routes.
    review.
 
 A failed check shows **Nothing was changed** with **Try again** and **Keep
-current setup**. A failed check, a closed window, the keep answer, **Keep
-current setup** or a concurrent edit leaves the saved setup unchanged and
+the current setup**. A failed check, a closed window, the keep answer, **Keep
+the current setup** or a concurrent edit leaves the saved setup unchanged and
 working. Choosing a label that resolves to
 the saved setup changes nothing. A passed check does not prove the bed's
 physical layout or presets, so test the controls after applying a change.
@@ -344,7 +344,7 @@ Assistant holds blocks the physical Bluetooth remote and the bed's app.
   the bed's own default when you have not changed it.
 
 Connection attempts use one timing for every bed: a 25-second connect timeout
-and three attempts with 3 and 6 second backoff. Multiple usable Bluetooth paths
+(shorter on a few beds whose app uses one) and three attempts with 3 and 6 second backoff. Multiple usable Bluetooth paths
 receive a larger bounded retry budget; see
 [connection routing](CONNECTION_GUIDE.md#multiple-adapters-and-proxies).
 

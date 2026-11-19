@@ -40,21 +40,23 @@ Changes between betas are in each beta's
    update under **Settings > Updates**. To pick one beta instead, choose
    **Install another version** in the same menu and select the `v5.0.0bN`
    version.
-5. Restart Home Assistant and reload the dashboard page.
+5. Install the update, then restart Home Assistant and reload the dashboard
+   page.
 
 To stop receiving betas, choose **Exclude pre-releases** in the same menu. An
 installed beta stays until a newer stable version is out.
 
-**Installed through HACS?** HACS still lists this integration and installs v5
-like any other version: open **Adjustable Bed** in HACS, choose **Redownload**
-and pick the version. Use either HACS or the Marketplace for this integration,
-not both.
+**Installed through HACS?** Home Assistant 2026.11 replaces HACS with the
+Marketplace and moves what HACS installed into it, so follow the steps above
+once Home Assistant runs 2026.11.
 
 ## After you upgrade, check these
 
-1. **Repairs.** Open **Settings > System > Repairs**. A bed whose entities
-   changed type gets a repair that lists every automation and script still
-   using an old entity ID. Some beds get one question about the app they use.
+1. **Repairs.** Open **Settings > System > Repairs**. When an entity changed
+   type and an automation or script still names its old entity ID, the bed
+   gets a repair that lists them. Templates and dashboards are not checked,
+   so look through those yourself. Some beds get one question about the app
+   they use.
 2. **Alarm automations.** The per-bed alarm actions are one action,
    [`adjustable_bed.set_alarm`](SERVICES.md#set_alarm), with new field names.
    See [Actions and automations](#actions-and-automations).
@@ -88,7 +90,7 @@ the migration changed, under `profile_migration`.
 | 4.x setting | v5 |
 |-------------|----|
 | **Position update mode** (`position_mode`) | Removed. When a command asks for a position read afterwards, it happens as with the default "Speed": in the background while the link stays open, and before the link is released with **Release right after each command**. No read is made when **Read bed position** is off or another command is waiting |
-| **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: a 25 s connect timeout, 3 and 6 s backoff and a 1 s pause after connecting |
+| **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: by default a 25 s connect timeout (shorter on a few beds whose app uses one), 3 and 6 s backoff and a 1 s pause after connecting |
 | **Disconnect after each command** and **Idle disconnect timeout** (including its `0`, "keep connected") | One **Bluetooth connection** setting: **Release right after each command** (was Disconnect after each command on), **Stay connected for a while** with **Seconds to stay connected** (was off, with its timeout), or **Always stay connected** (was a timeout of `0` with Disconnect after each command off). Hidden for beds that always keep their link. What changed in how a dropped link is handled is under [Connection](#connection) |
 | LP Comfort Connect (Leggett & Platt Gen2, and Leggett & Platt on Automatic) kept its link permanently | Follows **Bluetooth connection** and stays connected for a while by default. If a reconnect stalls, it keeps the link until you disconnect it or Home Assistant restarts. Choose **Always stay connected** for the old behavior |
 | **Disable angle sensing** | **Read bed position**, on by default and shown only for beds that report a position. A saved choice equal to the bed's default is dropped, so the bed's default applies |
@@ -133,8 +135,8 @@ Every other saved setting, bed type and ID loads unchanged.
   unchanged.
 - **One wording.** Setup, Configure and Repairs use the same plain labels for
   the same field. The protocol variant is **Bed model or remote**, every
-  automatic choice reads **Automatic (recommended)**, every keep choice reads
-  **Keep the current setup**, and the Diagnostic row is **Unsupported bed
+  automatic choice reads **Automatic (recommended)**, the keep choice in
+  reviews and repairs reads **Keep the current setup**, and the Diagnostic row is **Unsupported bed
   (diagnostics only)**. The Sleeptracker foundation size is no longer asked;
   it never changed a command. Saved values are unchanged.
 - **Brand list.** The Okin receiver rows are one **Okin (other receivers)**
@@ -160,10 +162,11 @@ Every other saved setting, bed type and ID loads unchanged.
   that use the same commands. **Separate into two beds** keeps the Bluetooth
   adapter and **Bluetooth connection** used while combined, and restores the
   bed type, app and side settings from before.
-- **Discovery.** A bed is offered automatically only when its Bluetooth name
-  is spelled the way beds of its app advertise it. A bed with an unusual
-  spelling of an app's name, for example lowercase `a0rm1234`, is no longer
-  offered; add it manually or pick the app in Reconfigure.
+- **Discovery.** A name rule offers a bed automatically only when its
+  Bluetooth name is spelled the way beds of its app advertise it. A bed that
+  advertises an unusual spelling of an app-only name, for example lowercase
+  `a0rm1234`, may no longer be offered; add it manually or pick the app in
+  Reconfigure.
 
 ## Entities
 
@@ -178,10 +181,10 @@ Every other saved setting, bed type and ID loads unchanged.
   binary sensor, a select that became a switch or number), the new entity
   takes the old object ID where it is free (`switch.bed_under_bed_lights`
   becomes `light.bed_under_bed_lights`) and the name, icon, area, labels,
-  categories, aliases and disabled or hidden state you gave the old one. A
-  repair lists each automation and script that still names the old entity ID.
-  It is checked again after every restart and goes away once nothing names the
-  old entity. A per-bed massage or light timer select that became the shared
+  categories, aliases and disabled or hidden state you gave the old one. When
+  an automation or script still names the old entity ID, a repair lists it; it
+  is checked again after every restart and goes away once none does.
+  Templates and dashboards are not checked. A per-bed massage or light timer select that became the shared
   one keeps its entity ID and only changes its options; its line is listed once
   and stays until you dismiss the repair.
 - **Raw state sensors are disabled by default** on new installs, and so are
@@ -297,13 +300,18 @@ it there; the [`set_alarm` table](SERVICES.md#set_alarm) lists them.
 actions:
 
 - `weekdays` takes `monday` to `sunday` everywhere: no numbers,
-  abbreviations or bitmasks. "Once" or "daily" is an empty or full list.
+  abbreviations or bitmasks. Where a bed offers them, "once" is an empty list
+  and "daily" a full one.
 - `wake_mode`, `preset`, `memory`, `mode` and `position` become `wake_action`,
   with shared names such as `zero_g`, `memory_1` and `none`.
 - `head_level` and `foot_level` become `head_massage_level` and
   `foot_massage_level`; `intensity` becomes `massage_intensity`; `kind`
   becomes `massage_zone`; `alarm_id` becomes `slot`; `waist_side` becomes
-  `mattress_side`.
+  `mattress_side`; RMControl's `action` becomes `wake_action`; SIMMONS's
+  `confirm_custom_mode` becomes `confirm_custom_position`.
+- Which of once, weekly and daily a bed accepts depends on the bed: RMControl
+  repeating products need at least one weekday. The
+  [`set_alarm` table](SERVICES.md#set_alarm) lists each bed's options.
 - Countdown alarms (Leggett & Platt, Linak, Richmat app, RMControl single
   alarms) take a clock `time`, and Home Assistant counts down to it.
   `minutes` and `seconds` are gone.
@@ -416,18 +424,22 @@ release notes list them.
   the [merged stream](COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors).
 - **Stop is immediate.** A cover's Stop no longer waits behind a move on
   another motor of the same bed or side; that move ends first, then the Stop
-  goes out. On Jiecang, Comfort Motion and Jensen LinOn beds, a Stop during a
+  goes out. Where motors run together in one stream, a cover's Stop ends only
+  its own motor. On Jiecang, Comfort Motion and Jensen LinOn beds, a Stop during a
   move reaches the bed at once instead of at the next repeat.
 - **Stop wins while an action is still checking.** A Stop on any selected bed
   while `set_alarm`, `set_position` or `set_positions` is still connecting to
   or checking its beds ends the action: nothing is written or moved. In 4.x the
   first beds could still be written or moved afterwards.
-- **Actions write only what they checked.** When a bed reconnects, is replaced
-  or is paired differently after the check, `set_alarm`, `set_position` and
-  `set_positions` stop with "The bed changed while the action was being
-  checked. Try again." and write nothing. Preset, rename, clock and hold
-  actions check the bed again when it connects and show its own reason if it
-  no longer accepts the request.
+- **Actions write only what they checked.** Right before each write,
+  `set_alarm` checks that the selection still resolves to the same beds,
+  pairing and connections it checked; `set_position` and `set_positions` plan
+  each motor again on the connected bed and need the same motor and range. If
+  that fails, the action stops with "The bed changed while the action was
+  being checked. Try again." and writes nothing more; beds already written
+  stay written. Preset, rename, clock and hold actions check the bed again
+  when it connects and show its own reason if it no longer accepts the
+  request.
 - **Combined beds** connect and check both sides before an alarm is written to
   either. A failed alarm check no longer stops the other side.
 - **Customatic covers** queue a second motor's move behind the first, as on
@@ -442,6 +454,9 @@ release notes list them.
   time, so a bed that drops idle links stayed connected and blocked its remote
   and app. Now a dropped link is reconnected at most once, and only before the
   time the last command opened runs out; it is released when that time ends.
+  A few beds that must keep their link (such as LP Comfort Connect while its
+  link is held, and the GM Control sleep modules) still reconnect on their
+  own.
   If the reconnected link drops too, or after that time, the next command
   reconnects. Choose **Always stay connected** if a bed must stay connected.
   **Always stay connected** and **Release right after each command** reconnect
@@ -508,6 +523,7 @@ described under [One shape per control](#one-shape-per-control).
 | eShine OKIN | Alarm refresh and "Sync bed clock" buttons | Clock: the **Set bed clock** action |
 | FSM Relax | 11 count, acknowledgement, calibration, information and raw motor sensors | |
 | FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
+| Richmat sleep receiver (RUF Betten and others) | | Left and right occupancy and movement text sensors: **Left/Right in bed** and **Left/Right body movement** binary sensors, with the same object ID. Left and right intervention selects: **Left snore intervention** and **Right snore intervention** switches |
 | GM Control sleep module | Time and Query part buttons (the clock is set on every connection; the `gmmotor` action still queries the part) | Start and stop live data buttons: **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
 | Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save: the **Save …** button. Massage 10, 20 and 30 minute buttons and the "Massage timer" select: **Massage: Timer** select (with Off where the app has a countdown off; the select keeps its entity ID). "Light duration (seconds)" select: **Light Timer** select (same entity ID). Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both |
 | Good Vibe, Casper and Hush sleep sensors | | In-bed, snoring and movement text sensors: **In bed**, **Snoring** and **Body movement** binary sensors, with the same object ID; heart and breathing rate sensors take the shared names and keep their IDs |

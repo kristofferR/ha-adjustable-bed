@@ -196,12 +196,11 @@ Upgrading from 4.x to v5? Read the [v5 breaking changes](docs/V5_BREAKING_CHANGE
 first. v5 migrates your config entries, and **a Home Assistant backup taken
 before the upgrade is the only way back to 4.x**.
 
-### HACS
+### Installed through HACS?
 
-Installed through HACS? HACS still lists this integration and installs v5 like
-any other version: open **Adjustable Bed** in HACS, choose **Redownload** and
-pick the version. Use either HACS or the Marketplace for this integration, not
-both.
+Home Assistant 2026.11 replaces HACS with the Marketplace and moves what HACS
+installed into it, so Adjustable Bed keeps working and gets its updates from
+**Settings > Marketplace**.
 
 ### Manual
 

@@ -3956,7 +3956,7 @@ Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Serenit
 | Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save TV) |
 | Presets | ✅ Flat, Zero Gravity, TV, Leisure (exposed through Lounge), Anti-Snore |
 | Massage | ✅ (head/foot/mode/timer cycles, toggle, off, Wave 1-3) |
-| Lights | ✅ (native toggle, assumed-state on/off switch; no RGB or brightness) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under Bed Lights** light; no RGB or brightness) |
 | Alarms | ❌ (alarm replies are parsed as diagnostic state only) |
 | Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
 
@@ -4032,8 +4032,8 @@ every release zeros the whole command.
 | Light toggle | `light_toggle` | `0x20000` | 0 |
 | Light on, off | `light_on`, `light_off` | 0 | `0x40`, `0x80` |
 
-Light on/off is exposed as a switch that starts unknown and marks commanded
-values as assumed. The separate **Toggle Light** button preserves the app's
+Light on/off is the **Under Bed Lights** light, which starts unknown and marks
+commanded values as assumed. The separate **Toggle Light** button preserves the app's
 native toggle/cycle. Neither control has physical state feedback, RGB
 selection, or brightness selection.
 
@@ -4225,7 +4225,7 @@ Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Tranqui
 | Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save Lounge) |
 | Presets | ✅ Flat, Zero Gravity, Lounge, Anti-Snore (voice only); no TV |
 | Massage | ✅ (head/foot/mode/timer cycles, toggle; voice-only off and Wave 1-3) |
-| Lights | ✅ (native toggle, assumed-state on/off switch; no RGB or brightness) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under Bed Lights** light; no RGB or brightness) |
 | Alarms | ❌ (no alarm page; alarm replies are parsed as diagnostic state only) |
 | Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
 
@@ -4287,7 +4287,7 @@ Lounge** buttons cover the other chords.
 | Light toggle (`light_toggle`) | `0x20000` | 0 | Massage page and voice |
 | Light on, off (`light_on`, `light_off`) | 0 | `0x40`, `0x80` | Voice only |
 
-Light on/off is an assumed-state switch; **Toggle Light** sends the native
+Light on/off is the assumed-state **Under Bed Lights** light; **Toggle Light** sends the native
 toggle. There is no RGB or brightness command, although the app help mentions
 color cycling.
 

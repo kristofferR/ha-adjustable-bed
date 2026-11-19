@@ -30,10 +30,12 @@ notification requirements, or preset semantics of other beds.
   a dropped link reconnects on demand.
 - With **Stay connected for a while**, a link the bed or adapter drops is
   recovered at most once per command-opened link, and only inside the window
-  the last command opened. The recovered link keeps that window's end; reads
-  and queries do not extend it. While a command needs the link, recovery is
-  unlimited, as before. Bed occupancy polls read only over an open, ready link
-  and never connect or extend the window.
+  the last command opened. A recovered link keeps that window's end, and
+  reads on it do not extend it. While a command needs the link, recovery is
+  unlimited, as before. Controllers that request their own recovery (Good
+  Vibe, Hush sleep sensors) and the persistent special cases keep it. Bed
+  occupancy polls read only over an open, ready link and never connect or
+  extend the window.
   Sequential pairs still explicitly disconnect before switching sides; a group
   hold never overrides explicit disconnect.
 - The scheduler continues to serialize opaque controller operations. Same-resource
@@ -90,10 +92,13 @@ before reservations can cancel newer work, and before committing movement.
 `set_alarm`, `set_position` and `set_positions` capture each selected bed's STOP
 state before their checks. A STOP on any selected bed or side while the action
 still connects or checks ends it with nothing written or moved; a STOP after
-the first write skips the remaining targets. Right before each write, the
-selection must still resolve to the same beds, pairing and connections it was
-checked on; otherwise the action fails with the translated "bed changed" error
-and writes nothing. `goto_preset`, `save_preset`, `rename`, `sync_clock` and
+the first write skips the remaining targets. Right before each `set_alarm`
+write, the selection must still resolve to the same beds and pairing, and every
+other prepared side must still be on the connection it was checked on (a
+sequential pair's planned handover is accepted). A position seek plans each
+axis again on the live controller and needs the same axis and range. A failed
+check raises the translated `bed_changed` error and stops further writes;
+earlier targets stay written. `goto_preset`, `save_preset`, `rename`, `sync_clock` and
 `hold_control` run their check again on the controller that writes, when it is
 not the one preflight checked.
 

@@ -122,7 +122,7 @@ custom_components/adjustable_bed/
 
 **AdjustableBedCoordinator** (`coordinator.py`): Central BLE connection manager
 - Handles device discovery via HA's Bluetooth integration
-- One connection timing for every bed; multiple usable paths receive a bounded extra retry budget
+- One connection timing for every bed (a bed trait may shorten the connect timeout); multiple usable paths receive a bounded extra retry budget
 - `connection_mode`: release (one-second handoff), idle (`idle_disconnect_seconds`, default 40, one bounded recovery of a dropped link) or always; persistent-connection controllers always hold the link
 - Registers conservative BLE connection parameters (30-50ms intervals)
 - Supports preferred adapter selection for multi-proxy setups
@@ -401,7 +401,7 @@ side routing; support capture requires one physical target.
 
 2. **Command serialization** - All entities must use `coordinator.async_execute_controller_command()` instead of calling controller methods directly. This ensures proper locking and prevents concurrent BLE writes.
 
-3. **Cancel event handling** - `write_command()` checks `coordinator._cancel_command` by default. When stop is requested, the cancel event is set, the running command exits early, then STOP is sent.
+3. **Cancel event handling** - `write_command()` checks `coordinator.cancel_command` by default, which is the running command's own cancel event. When stop is requested, the cancel event is set, the running command exits early, then STOP is sent.
 
 4. **Disconnect timer and intentional disconnect** - The timer is cancelled when a command starts (inside the lock) and reset when it ends, so long operations are never cut off. `_intentional_disconnect` is set before `client.disconnect()`, checked in `_on_disconnect` to skip auto-reconnect, and cleared in a finally block since the callback may not fire on clean disconnects.
 

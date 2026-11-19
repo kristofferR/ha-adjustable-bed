@@ -868,9 +868,9 @@ Group `0000` for basic, `1000` for nonbasic.
   until the pending value is positive. Choosing 1–60 minutes then exposes the
   effective pending duration. These fields never prove that the peripheral is on
   or off.
-- Home Assistant exposes floor lighting through the under-bed switch and a
-  positive brightness number, separate from the bounded mood controls. The switch
-  starts unknown with assumed state.
+- Home Assistant exposes floor lighting through the **Under Bed Lights** light
+  and a positive brightness number, separate from the bounded mood controls. The
+  light starts unknown with assumed state.
 - OFF remembers a positive level before sending zero; ON restores the current
   positive or remembered level. Repeating an explicit ON/OFF action resends that
   requested branch while preserving source caller toggle consumption.

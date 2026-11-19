@@ -639,7 +639,7 @@ Device name hints:
   - **Legacy RGB** (other WiLinke remotes with the lights feature flag): power-on,
     color and timer. Timer range: 1-5 minutes or "Always On". Off is the toggle.
   - RGB-capable beds expose a **Light** entity with a color wheel instead of a
-    simple on/off switch. See [Lights](#lights) for the frames.
+    simple on/off light. See [Lights](#lights) for the frames.
 - **Controller Sync** sends `BC` (on) or `BD` (off).
 
 **Controller Sync** sends the selected controller's

@@ -126,10 +126,11 @@ def test_docs_use_no_retired_setting_keys_or_words() -> None:
 
 
 def test_docs_name_no_entity_that_changed_domain() -> None:
-    """An entity v5 moved to another domain is named only by its new domain.
+    """Docs name no `<old domain>.…<old key>` ID of an entity v5 moved to another domain.
 
-    Guides of the bed types that keep the old entity (Octo's light switch) may
-    still name it.
+    The check reads backticked IDs ending in a retyped key, such as
+    `switch.<bed>_under_bed_lights`. Guides of the bed types that keep the old
+    entity (Octo's light switch) may still name it.
     """
     stale = []
     for retype in RETYPES:
