@@ -195,6 +195,7 @@ from .position_seek import (
     SeekMotion,
 )
 from .profile_id import entry_profile_id, profile_route, resolve_profile_id
+from .runtime_data import loaded_runtime
 from .state_keys import (
     LIGHT_LEVEL,
     LIGHT_TIMER_MINUTES,
@@ -707,7 +708,7 @@ class AdjustableBedCoordinator(
     async def _async_reload_after_capability_change(self) -> None:
         """Wait for commands to release the link, then reconcile entity platforms."""
         try:
-            loaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+            loaded = loaded_runtime(self.hass, self.entry.entry_id)
             reload_guard = (
                 getattr(loaded, "async_capability_reload_guard", None)
                 if isinstance(self.entry, ChildEntryView)
@@ -752,7 +753,7 @@ class AdjustableBedCoordinator(
             return
         if self._client is not None and self._client.is_connected:
             return
-        loaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+        loaded = loaded_runtime(self.hass, self.entry.entry_id)
         owns_loaded_child = False
         if isinstance(self.entry, ChildEntryView) and loaded is not None:
             child_for_side = getattr(loaded, "child_for_side", None)
@@ -777,7 +778,7 @@ class AdjustableBedCoordinator(
         await async_import_modules(self.hass, "beds.starcode.abm5_4")
         from .beds.starcode.abm5_4 import StarcodeAbm5_4Controller
 
-        reloaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+        reloaded = loaded_runtime(self.hass, self.entry.entry_id)
         for child in self._starcode_reload_coordinators(reloaded):
             retained = retained_states.get((child.entry.entry_id, child.address))
             fresh = child.starcode_app_retained_state
@@ -1445,7 +1446,7 @@ class AdjustableBedCoordinator(
         bond value, would then be mistaken for this write and silently skip the
         reload it needs.
         """
-        loaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+        loaded = loaded_runtime(self.hass, self.entry.entry_id)
         owns_loaded_child = False
         if isinstance(self.entry, ChildEntryView) and loaded is not None:
             child_for_side = getattr(loaded, "child_for_side", None)

@@ -22,15 +22,13 @@ from .bed_traits import bed_traits
 from .beds.entity_specs import ControllerMotorHoldSpec
 from .beds.octo.runtime import octo_controller
 from .card import motor_card
-from .const import (
-    DOMAIN,
-)
 from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
 from .position_estimate import track_motor_command
+from .runtime_data import entry_runtime
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -197,7 +195,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed cover entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
             entry,

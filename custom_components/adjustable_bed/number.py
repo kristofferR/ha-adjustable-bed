@@ -33,7 +33,6 @@ from .const import (
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_PROTOCOL_VARIANT,
-    DOMAIN,
     SIDE_BOTH,
 )
 from .controller_state import ControllerState, StateKey, sided
@@ -48,6 +47,7 @@ from .paired_coordinator import (
     entity_runtimes,
 )
 from .position_estimate_entities import async_setup_estimate_numbers
+from .runtime_data import entry_runtime
 from .state_keys import (
     FAN_LEVEL,
     LIGHT_LEVEL,
@@ -333,7 +333,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed number entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     # Opt-in travel-time estimates and saved positions (#601).
     async_setup_estimate_numbers(hass, entry, async_add_entities)
     for runtime in entity_runtimes(coordinator):

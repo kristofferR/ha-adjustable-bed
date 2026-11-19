@@ -39,6 +39,7 @@ from ...const import (
 from ...coordinator import AdjustableBedCoordinator
 from ...errors import invalid
 from ...pairing import is_paired
+from ...runtime_data import loaded_runtime
 from ..base import BedController, controller_as
 from ..family_actions import StarcodeGroupMember
 from .m5x5_protocol import PROFILES
@@ -166,7 +167,7 @@ def lift_choices(
 
 
 def _resolve(hass: HomeAssistant, entry_id: str) -> AdjustableBedCoordinator:
-    value = hass.data.get(DOMAIN, {}).get(entry_id)
+    value = loaded_runtime(hass, entry_id)
     if not isinstance(value, AdjustableBedCoordinator):
         raise invalid("bed_not_loaded")
     if value.bed_type not in STARCODE_GROUP_BED_TYPES:
@@ -284,7 +285,7 @@ async def prepare_individual_command(
     if (
         epochs != tuple(_stop_epochs(hass).get(entry_id, 0) for entry_id in ids)
         or other_ids != _conflicting_entry_ids(source)
-        or hass.data.get(DOMAIN, {}).get(source_id) is not source
+        or loaded_runtime(hass, source_id) is not source
     ):
         raise asyncio.CancelledError("The AdjustableM5X5 individual admission was cancelled")
     return True
@@ -400,7 +401,7 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             main.entry.data,
             main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
             main_entry_id=main.entry.entry_id,
-        ) or any(hass.data.get(DOMAIN, {}).get(t.entry.entry_id) is not t for t in targets):
+        ) or any(loaded_runtime(hass, t.entry.entry_id) is not t for t in targets):
             raise asyncio.CancelledError("The AdjustableM5X5 selection changed before admission")
 
     def owned(command: Callable[[BedController], Awaitable[None]]):
@@ -453,7 +454,7 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
                 main_entry_id=main.entry.entry_id,
             )
             if current != ids or any(
-                hass.data.get(DOMAIN, {}).get(target.entry.entry_id) is not target
+                loaded_runtime(hass, target.entry.entry_id) is not target
                 for target in targets
             ):
                 raise asyncio.CancelledError("The AdjustableM5X5 selection changed")

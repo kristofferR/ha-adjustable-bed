@@ -26,7 +26,6 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
-    DOMAIN,
 )
 from .controller_state import ControllerState, StateKey
 from .entity import AdjustableBedEntity
@@ -35,6 +34,7 @@ from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
 from .position_estimate_entities import async_setup_estimate_sensors
+from .runtime_data import entry_runtime
 from .state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 
 if TYPE_CHECKING:
@@ -139,7 +139,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed sensor entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     # Opt-in travel-time estimates and saved positions (#601).
     async_setup_estimate_sensors(hass, entry, async_add_entities)
     for runtime in entity_runtimes(coordinator):

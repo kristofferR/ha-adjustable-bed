@@ -127,6 +127,7 @@ from .repairs import (
     async_setup_combine_beds_issue,
     async_track_combine_beds_issue,
 )
+from .runtime_data import domain_registry, loaded_runtime
 from .services import (
     ATTR_ACTION,
     ATTR_ACTIONS,
@@ -1114,7 +1115,7 @@ async def _async_release_absorbed_singles(
             original = hass.config_entries.async_get_entry(absorbed_id)
             if original is None or is_paired(original.data):
                 continue
-            original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
+            original_coordinator = loaded_runtime(hass, absorbed_id)
             if not isinstance(original_coordinator, AdjustableBedCoordinator):
                 continue
             try:
@@ -1251,7 +1252,8 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                     else:
                         transferring = await _async_release_absorbed_singles(hass, entry)
                     for _side, child, source, adapter, owner in pairlink_local_roles:
-                        if hass.data[DOMAIN][PAIRLINK_LOCAL_PROFILE_LEASES_KEY].get(adapter) != owner:
+                        leases = domain_registry(hass, PAIRLINK_LOCAL_PROFILE_LEASES_KEY, dict)
+                        if leases.get(adapter) != owner:
                             raise not_ready("setup_retry")
                         await async_start_paired_pairlink_local_child(
                             hass,
@@ -1431,7 +1433,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     except BaseException:
         # Source removal commits registry ownership even if setup is cancelled.
         # Stop the failed pair without reclaiming committed or restored singles.
-        if hass.data[DOMAIN].get(entry.entry_id) is coordinator:
+        if loaded_runtime(hass, entry.entry_id) is coordinator:
             hass.data[DOMAIN].pop(entry.entry_id)
         cleanup_task = hass.async_create_task(
             _shutdown_failed_pair(), "adjustable_bed.failed_pair_shutdown"
@@ -1614,9 +1616,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         # A failed setup must not leave a reconnect timer or bond task behind:
         # Home Assistant's retry builds a new coordinator for the same bed,
         # which accepts one connection.
-        domain_data = hass.data.get(DOMAIN, {})
-        if domain_data.get(entry.entry_id) is coordinator:
-            domain_data.pop(entry.entry_id)
+        if loaded_runtime(hass, entry.entry_id) is coordinator:
+            hass.data[DOMAIN].pop(entry.entry_id)
 
         async def _bounded_shutdown() -> None:
             # A stalled disconnect must not block the setup retry.
@@ -1798,7 +1799,7 @@ def _entry_addresses(entry: ConfigEntry) -> list[str]:
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options updates."""
-    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    coordinator = loaded_runtime(hass, entry.entry_id)
     if coordinator is not None and coordinator.consume_internal_entry_update(entry):
         # The coordinator recorded its own BLE bond marker. Reloading for that
         # would disconnect the bed, which is fatal for a bed that only grants

@@ -38,6 +38,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, SIDE_BOTH
 from .errors import failed, invalid
+from .runtime_data import DomainKey, domain_registry, domain_value, loaded_runtime
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -47,9 +48,11 @@ type MotorCommand = Callable[[BedController], Coroutine[Any, Any, None]]
 _LOGGER = logging.getLogger(__name__)
 
 STORAGE_VERSION: Final = 1
-_REGISTRY_KEY: Final = "position_estimates"
+_REGISTRY_KEY: Final[DomainKey[dict[str, PositionEstimates]]] = DomainKey("position_estimates")
 # Confirmations survive an entry reload (options change) but never a restart.
-_SESSION_KEY: Final = "position_estimate_session"
+_SESSION_KEY: Final[DomainKey[dict[str, dict[tuple[str, str], float]]]] = DomainKey(
+    "position_estimate_session"
+)
 STANDALONE_KEY: Final = "bed"
 
 MIN_TRAVEL_S: Final = 1.0
@@ -419,7 +422,7 @@ class PositionEstimates:
     async def async_load(self) -> None:
         stored = await self._store.async_load() or {}
         stored_beds = stored.get("beds")
-        session = self.hass.data.get(DOMAIN, {}).get(_SESSION_KEY, {}).pop(self.entry_id, {})
+        session = (domain_value(self.hass, _SESSION_KEY) or {}).pop(self.entry_id, {})
         if isinstance(stored_beds, dict):
             for address, motors in stored_beds.items():
                 bed = self.bed_for_address(address) if isinstance(address, str) else None
@@ -467,9 +470,7 @@ class PositionEstimates:
 
     async def async_unload(self) -> None:
         """Flush, and keep confirmations for a reload in this Home Assistant run."""
-        session: dict[str, dict[tuple[str, str], float]] = self.hass.data.setdefault(
-            DOMAIN, {}
-        ).setdefault(_SESSION_KEY, {})
+        session = domain_registry(self.hass, _SESSION_KEY, dict)
         session[self.entry_id] = {
             (bed.address, motor): estimate.percent
             for bed in self.beds.values()
@@ -558,10 +559,7 @@ def _require_tracking(bed: BedEstimate, motors: Iterable[str]) -> None:
 
 # ----------------------------------------------------------------- registry
 def _registry(hass: HomeAssistant) -> dict[str, PositionEstimates]:
-    registry: dict[str, PositionEstimates] = hass.data.setdefault(DOMAIN, {}).setdefault(
-        _REGISTRY_KEY, {}
-    )
-    return registry
+    return domain_registry(hass, _REGISTRY_KEY, dict)
 
 
 def position_estimates(hass: HomeAssistant, entry_id: str) -> PositionEstimates | None:
@@ -585,7 +583,7 @@ async def async_unload_position_estimates(hass: HomeAssistant, entry_id: str) ->
 
 
 async def async_remove_position_estimates(hass: HomeAssistant, entry_id: str) -> None:
-    hass.data.get(DOMAIN, {}).get(_SESSION_KEY, {}).pop(entry_id, None)
+    (domain_value(hass, _SESSION_KEY) or {}).pop(entry_id, None)
     await Store(hass, STORAGE_VERSION, storage_key(entry_id)).async_remove()
 
 
@@ -797,7 +795,7 @@ def invalidate_on_command(
 
 # ------------------------------------------------------------------ movement
 def _parent(hass: HomeAssistant, manager: PositionEstimates) -> Any:
-    parent = hass.data.get(DOMAIN, {}).get(manager.entry_id)
+    parent = loaded_runtime(hass, manager.entry_id)
     if parent is None:
         raise failed("bed_not_loaded")
     return parent

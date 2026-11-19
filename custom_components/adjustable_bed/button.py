@@ -59,6 +59,7 @@ from .position_estimate import (
     track_motor_command,
 )
 from .position_estimate_entities import async_setup_estimate_buttons
+from .runtime_data import entry_runtime
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -774,7 +775,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed button entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     # Opt-in travel-time estimates and saved positions (#601).
     async_setup_estimate_buttons(hass, entry, async_add_entities)
 

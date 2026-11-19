@@ -107,6 +107,7 @@ from .position_estimate import (
     track_motor_command,
     track_stream_member,
 )
+from .runtime_data import loaded_runtime
 from .support_logs import async_setup_support_logs
 
 if TYPE_CHECKING:
@@ -277,7 +278,7 @@ def _resolve_sided_target(
     device, entry = async_get_device_and_config_entry(hass, DOMAIN, validation_id)
     if isinstance(selected, dr.ChildDeviceEntry):
         device = selected
-    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    coordinator = loaded_runtime(hass, entry.entry_id)
     if coordinator is None:
         return None
     inferred_side: str | None = None
@@ -407,7 +408,7 @@ def _get_support_bundle_target_from_device(
         return None
 
     coordinator: BedChild | None = None
-    stored = hass.data.get(DOMAIN, {}).get(entry_id)
+    stored = loaded_runtime(hass, entry_id)
     if isinstance(stored, PairedBedCoordinator):
         # Reuse the matching live child coordinator so the bundle pauses
         # and reuses its connection instead of opening a second BLE link
