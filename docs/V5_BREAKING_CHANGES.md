@@ -377,9 +377,9 @@ accepted.
 | `recall_position`, `set_position_reference` | `estimate_recall_position`, `estimate_set_reference` |
 | `confirm_position_unchanged`, `mark_position_unknown` | `estimate_confirm_unchanged`, `estimate_mark_unknown` |
 
-The Richmat sleep receiver (RUF Betten, W.Silver Products, AMERICANSTAR,
-Bailey's Bed Control and TX), added in beta 6, shows
-in bed and body movement as binary sensors with the same object ID, and its
+The Richmat sleep receiver (W.Silver Products, AMERICANSTAR, Bailey's Bed
+Control and TX), added in beta 6, shows in bed and body movement as binary
+sensors with the same object ID where it is free, and its
 intervention selects are the **Left snore intervention** and **Right snore
 intervention** switches.
 
@@ -438,10 +438,13 @@ release notes list them.
   or checking its beds ends the action: nothing is written or moved. In 4.x the
   first beds could still be written or moved afterwards. Customatic Z-Series,
   Symphony and Ultramatic alarms use their own checks instead.
-- **Actions write only what they checked.** Right before each write,
-  `set_alarm` checks that the selection still resolves to the same beds,
-  pairing and connections it checked (again except Customatic Z-Series,
-  Symphony and Ultramatic). `set_position` and `set_positions` plan each motor again on the
+- **Actions write only what they checked.** Right before each bed is written,
+  `set_alarm` checks that the selection still resolves to the same beds and
+  pairing, that a link it prepared for that bed is still the same one, and
+  that the other prepared sides still waiting for their write are on the
+  connections it checked; a combined bed's planned switch from one side to
+  the other is allowed (again except Customatic Z-Series, Symphony and
+  Ultramatic). `set_position` and `set_positions` plan each motor again on the
   connected bed; a plan that no longer matches the check stops with "The bed
   changed while the action was being checked. Try again.", and a motor or
   target the bed no longer accepts shows the bed's own reason. Either way
@@ -465,10 +468,12 @@ release notes list them.
   If the reconnected link drops too, or after that time, the next command
   reconnects. Choose **Always stay connected** if a bed must stay connected.
   With **Always stay connected** and **Release right after each command**, a
-  dropped link reconnects on the next command by default, as before. Beds that
-  hold their link or monitor continuously reconnect on their own: OKIN RF eco
-  BT, FurniMove, GM Control sleep modules, LP Comfort Connect while its link
-  is held, Good Vibe sleep monitoring and Hush sleep sensors with live data.
+  dropped link reconnects on the next command by default, as before. Some
+  beds reconnect on their own instead: OKIN RF eco BT, FurniMove, GM Control
+  sleep modules and LP Comfort Connect while Home Assistant holds their link
+  (FurniMove only after a stalled reconnect on an RF eco BT receiver made it
+  hold the link), and Good Vibe and Hush sleep sensors while monitoring or
+  live data is on.
 - **Bed occupancy sensors** (Sleep Number) update only while the bed is
   connected. In 4.x their 30-second poll connected the bed and kept it
   connected; it no longer connects or extends **Seconds to stay connected**.
