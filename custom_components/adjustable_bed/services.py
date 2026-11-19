@@ -2779,11 +2779,12 @@ async def handle_sync_clock(call: ServiceCall) -> None:
     synced: set[int] = set()
 
     async def sync(controller: BedController) -> None:
-        # Both sides of a one-receiver bed share its controller, and its clock.
-        if id(controller) in synced:
+        # Both sides of a one-receiver bed share its coordinator, and its clock.
+        receiver = id(controller._coordinator)
+        if receiver in synced:
             return
         await controller.sync_clock()
-        synced.add(id(controller))
+        synced.add(receiver)
 
     if _profile_route(targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SYNC_CLOCK):
         await async_import_modules(call.hass, "beds.serenity.services")

@@ -413,6 +413,7 @@ def test_controls_are_named_as_their_buttons_show_them() -> None:
     assert controller.control_named("save m1") != controller.control_named("Memory 1")
     back_up, back_down = (controller.control_named(f"Back {way}") for way in ("up", "down"))
     assert {back_up, back_down} == {36, 37}
+    assert {controller.control_named(f"Pillow {way}") for way in ("up", "down")} == {63, 64}
     for name in ("Back", "Nonexistent"):
         with pytest.raises(ValueError, match="name of its button"):
             controller.control_named(name)

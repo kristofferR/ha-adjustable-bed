@@ -432,10 +432,13 @@ class RichmatMHAppController(RufRichmatController):
         wanted = " ".join(name.split()).casefold()
         codes = set()
         for control in self._controls():
-            label = command_label(control.label, save=control.kind == "save")
             # A motor's two directions share its label: "Back up", "Back down".
-            names = {label, f"{label} {control.kind}"} if control.kind in ("up", "down") else {label}
-            if wanted in {item.casefold() for item in names}:
+            label = (
+                f"{control.label} {control.kind}"
+                if control.kind in ("up", "down")
+                else command_label(control.label, save=control.kind == "save")
+            )
+            if label.casefold() == wanted:
                 codes.add(control.code)
         if len(codes) != 1:
             raise ValueError("Choose a control by the name of its button")

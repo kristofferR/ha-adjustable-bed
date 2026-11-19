@@ -41,9 +41,10 @@ async def targets(hass):
 
 async def test_nisco_only_catalog_lock_rejects_mixed_call_before_either_dispatch(hass, targets) -> None:
     coordinators, controllers = targets
-    with pytest.raises(ServiceValidationError, match="declared"):
+    # Lock (0x84) is on Nisco's cfrm page only.
+    with pytest.raises(ServiceValidationError, match="name of its button"):
         await hass.services.async_call(DOMAIN, actions.SERVICE, {
-            "device_id": ["left", "right"], "action": "press", "opcode": 0x84,
+            "device_id": ["left", "right"], "action": "press", "control": "Lock",
         }, blocking=True)
     for coordinator, controller in zip(coordinators, controllers, strict=True):
         coordinator.async_execute_controller_command.assert_not_awaited()
@@ -136,7 +137,7 @@ async def test_app_mode_action_sets_local_pickers_without_the_scheduler(hass, ta
         coordinator.async_execute_controller_command.assert_not_awaited()
     with pytest.raises(ServiceValidationError, match="app_mode"):
         await hass.services.async_call(DOMAIN, actions.SERVICE, {
-            "device_id": ["left"], "action": "press", "opcode": 1, "transmit_mode": "mode_1",
+            "device_id": ["left"], "action": "press", "control": "Flat", "transmit_mode": "mode_1",
         }, blocking=True)
     # cfrm declares no motor groups, so a group is refused before any target changes.
     with pytest.raises(ServiceValidationError, match="motor group"):

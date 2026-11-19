@@ -250,6 +250,17 @@ async def test_sync_clock_sets_each_surface_with_its_own_app_frame(
     assert [frame.hex().upper() for frame in write.frames] == [_BUILDER_EXPECTED[vector_id]]
 
 
+@pytest.mark.parametrize(("active", "context"), ((None, "home"), ("motor", "home"), ("thermal", "thermal")))
+def test_hub_sync_clock_keeps_its_active_module(
+    hass: HomeAssistant, active: str | None, context: str
+) -> None:
+    """A hub with motor and thermal modules sets one clock, without switching module."""
+    controller = make_target(hass, "TL-Q").controller
+    controller._module_present = lambda module: module in ("motor", "thermal")
+    controller._active_module = active
+    assert [write.context for write in controller._clock_writes()] == [context]
+
+
 def test_air_module_has_no_clock(hass: HomeAssistant) -> None:
     assert not make_target(hass, "TL-A").controller.supports_clock_sync
 

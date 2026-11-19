@@ -1074,7 +1074,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         await self.async_execute_motion_bed_write(self._alarm_write(alarm))
 
     def _clock_writes(self) -> tuple[MotionBedWrite, ...]:
-        """Set every clock this bed keeps: the motor clock and the thermal module's."""
+        """The clock of this bed's surface; on a hub, the active module's where it has one."""
         now = dt_util.now()
         writes: list[MotionBedWrite] = []
         for write in (
@@ -1086,6 +1086,10 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             except ValueError:
                 continue
             writes.append(write)
+        if len(writes) > 1:
+            # A hub reaches one module at a time, as the app's clock page does.
+            active = "thermal" if self._active_module == "thermal" else "home"
+            writes = [write for write in writes if write.context == active]
         return tuple(writes)
 
     @property

@@ -74,6 +74,7 @@ def target(
     coordinator.controller_side = None
     coordinator.capability_controller = controller
     coordinator.stop_epoch = 0
+    controller._coordinator = coordinator
 
     async def execute(command, **kwargs):
         await command(controller)
