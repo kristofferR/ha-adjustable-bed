@@ -2351,6 +2351,11 @@ class BedController(GattWriter):
         del zone
         return 0
 
+    def massage_intensity_available(self, zone: str) -> bool:
+        """Return whether ``zone``'s level can be set right now."""
+        del zone
+        return True
+
     @property
     def supports_massage_timer(self) -> bool:
         """Return True if bed supports setting massage timer directly."""
@@ -2495,6 +2500,11 @@ class BedController(GattWriter):
     def supports_light_timer(self) -> bool:
         """Return True if bed supports setting light auto-off timer."""
         return False
+
+    @property
+    def light_timer_available_fn(self) -> Callable[[BedController], bool] | None:
+        """Return the gate on whether the light timer can be set right now, if any."""
+        return None
 
     @property
     def light_timer_pending(self) -> bool:

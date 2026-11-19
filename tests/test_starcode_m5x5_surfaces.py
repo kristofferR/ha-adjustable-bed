@@ -151,10 +151,14 @@ async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
     keys = {
         getattr(getattr(b, "entity_description", None), "key", b.translation_key) for b in buttons
     }
+    # The saves keep their unique IDs in the shared preset save shape.
+    saves = [b.unique_id for b in buttons if b.translation_key == "catalog_save"]
+    assert sorted(uid.rsplit("starcode_", 1)[-1] for uid in saves) == [
+        "save_lounge",
+        "save_tv",
+        "save_zero_g",
+    ]
     assert {
-        "starcode_save_tv",
-        "starcode_save_zero_g",
-        "starcode_save_lounge",
         "starcode_reset",
         "starcode_light_mode",
         "starcode_light_cycle",

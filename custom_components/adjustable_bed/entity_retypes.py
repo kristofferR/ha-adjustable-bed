@@ -97,8 +97,11 @@ RETYPES: Final[tuple[Retype, ...]] = (
             "ore_comfort_massage_timer",
             "comfortfurniture_massage_timer",
             "sleepys_app_massage_timer_code",
+            "goodvibe_massage_timer",
         )
     ),
+    # Bed-specific light durations that became the shared light timer.
+    Retype("select", "controller_select_goodvibe_light_duration", "select", "light_timer"),
 )
 
 # Readings v5 enables by default that earlier versions created disabled.

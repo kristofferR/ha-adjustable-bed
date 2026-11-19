@@ -424,8 +424,11 @@ def test_immutable_profile_control_catalog(profile, buttons, numbers, selects):
     assert len(controller.controller_select_specs) == selects
     assert len(controller.controller_state_sensor_specs) == 7
     assert controller.controller_state_binary_sensor_specs == ()
+    # All motors up and down are the shared all-motors row.
     assert all(
-        spec.translation_key.startswith("vmatbasic_") for spec in controller.controller_button_specs
+        spec.translation_key.startswith("vmatbasic_")
+        or spec.translation_key in ("all_motors_up", "all_motors_down")
+        for spec in controller.controller_button_specs
     )
 
 

@@ -41,7 +41,10 @@ from custom_components.adjustable_bed.paired_coordinator import (
 from custom_components.adjustable_bed.paired_devices import async_register_children
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
 from custom_components.adjustable_bed.profiles.bobpowerbase import CATALOG
-from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+from custom_components.adjustable_bed.select import (
+    LIGHT_TIMER_DESCRIPTION,
+    AdjustableBedControllerStateSelect,
+)
 from tests.test_bobpowerbase import fake_time as fake_time
 from tests.test_bobpowerbase import runtime as base_runtime
 from tests.test_entity_sweep import async_setup_platforms_and_sweep
@@ -64,6 +67,16 @@ def runtime(hass, **kwargs):
 
     client.disconnect = AsyncMock(side_effect=disconnect)
     return coordinator
+
+
+def light_timer(view):
+    """The shared light timer select, built as the select platform builds it."""
+    controller = view.capability_controller
+    return AdjustableBedControllerStateSelect(
+        view,
+        replace(LIGHT_TIMER_DESCRIPTION, available_fn=controller.light_timer_available_fn),
+        controller.light_timer_options,
+    )
 
 
 def register(hass, coordinator):
@@ -296,7 +309,7 @@ async def test_real_registry_keeps_custom_light_identity_across_unknown_sessions
     registry = er.async_get(hass)
     rows = []
     for index, view in enumerate(entity_runtimes(owner)):
-        for domain, key in (("button", "goodvibe_light_off"), ("select", "controller_select_goodvibe_light_duration")):
+        for domain, key in (("button", "goodvibe_light_off"), ("select", "light_timer")):
             row = registry.async_get_or_create(domain, DOMAIN, view.entity_unique_id(key), config_entry=owner.entry)
             row = registry.async_update_entity(row.entity_id, name=f"Custom Bob {domain} {index}", new_entity_id=f"{domain}.custom_bob_{index}")
             row = registry.async_update_entity_options(row.entity_id, "conversation", {"should_expose": False})
@@ -334,14 +347,14 @@ async def test_mlily_late_light_reply_keeps_existing_specs_and_default_select_be
     assert not controller.has_dynamic_controller_entities and not controller.has_dynamic_buttons
     assert not controller.menu_available("light")
     button = next(spec for spec in controller.controller_button_specs if spec.key == "goodvibe_light_off")
-    spec = next(spec for spec in controller.controller_select_specs if spec.key == "goodvibe_light_duration")
-    assert spec.is_available is None
-    entity = AdjustableBedControllerSelect(coordinator, spec)
+    assert controller.supports_light_timer and controller.light_timer_available_fn is None
+    options = controller.light_timer_options
+    entity = light_timer(coordinator)
     assert entity.available
     controller._normal.feed(LIGHT_REPLY)
     assert controller.menu_available("light")
     assert button.key in {s.key for s in controller.controller_button_specs}
-    assert spec.options == next(s for s in controller.controller_select_specs if s.key == spec.key).options
+    assert options == controller.light_timer_options
     coordinator._controller = coordinator._offline_controller = None
     assert entity.available  # Prior specs retain their default, including absent controller.
     await coordinator.async_shutdown()
@@ -353,8 +366,7 @@ async def test_bob_select_availability_reacts_to_capability_state_in_correct_nat
     register(hass, pair)
     controller = physical[0].controller
     controller._normal.feed(LIGHT_REPLY)
-    spec = next(s for s in controller.controller_select_specs if s.key == "goodvibe_light_duration")
-    entities = [AdjustableBedControllerSelect(view, spec) for view in entity_runtimes(pair)]
+    entities = [light_timer(view) for view in entity_runtimes(pair)]
     light_spec = next(s for s in controller.controller_button_specs if s.key == "goodvibe_light_off")
     buttons = [ControllerActionButton(view, light_spec) for view in entity_runtimes(pair)]
     sides = []

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -313,7 +314,11 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
         snore_config,
     )
     from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
-    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+    from custom_components.adjustable_bed.select import (
+        LIGHT_TIMER_DESCRIPTION,
+        AdjustableBedControllerSelect,
+        AdjustableBedControllerStateSelect,
+    )
     from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 
     key = next(
@@ -337,8 +342,10 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
     paired._client.is_connected = False
     await paired.async_shutdown()
     c._client.write_gatt_char.assert_not_awaited()
-    duration = AdjustableBedControllerSelect(
-        c, next(s for s in obj.controller_select_specs if s.key == "goodvibe_light_duration")
+    duration = AdjustableBedControllerStateSelect(
+        c,
+        replace(LIGHT_TIMER_DESCRIPTION, available_fn=obj.light_timer_available_fn),
+        obj.light_timer_options,
     )
     count = AdjustableBedControllerNumber(
         c, next(s for s in obj.controller_number_specs if s.key == "goodvibe_snore_count")
@@ -349,7 +356,7 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
         patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
         patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(c, "both")], [])),
     ):
-        await duration.async_select_option("300")
+        await duration.async_select_option("5 min")
         await count.async_set_native_value(17)
         await hass.services.async_call(
             DOMAIN,
@@ -364,7 +371,7 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
     ]
     obj._event("deviceAntiSnoreConfigCountEvent", 18)
     assert count.native_value == 18
-    assert duration.current_option == "300"
+    assert duration.current_option == "5 min"
     assert status.native_value == "deviceAntiSnoreConfigCountEvent"
     assert status.extra_state_attributes["goodvibe_events"]["deviceAntiSnoreConfigCountEvent"] == 18
     c._client.is_connected = False

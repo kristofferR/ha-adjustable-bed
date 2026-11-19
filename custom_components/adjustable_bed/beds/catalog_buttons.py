@@ -16,7 +16,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from enum import StrEnum
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from ..card import (
     CARD_CLIMATE,
@@ -32,7 +32,10 @@ from ..card import (
     motor_card,
 )
 from ..labels import display_label
-from .entity_specs import ControllerButtonSpec, MotorCommandCallable
+from .entity_specs import ControllerButtonSpec, ControllerSwitchSpec, MotorCommandCallable
+
+if TYPE_CHECKING:
+    from .base import BedController
 
 
 class Kind(StrEnum):
@@ -168,6 +171,8 @@ _COMBO: Final = re.compile(
     r"(?:head|foot) (?:up|down)(?: and)? (?:head|foot) (?:up|down|stop)", re.IGNORECASE
 )
 _LIGHT_WORDS: Final = re.compile(r"\b(?:light|lights|lamp|night light)\b", re.IGNORECASE)
+# An app's fixed-duration massage timer action, by the minutes it sets.
+_MASSAGE_TIMER_ACTION: Final = re.compile(r"(?:deviceFunctionItem)?Massage(?P<minutes>\d+)MinuteTimer")
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,6 +220,33 @@ def _massage_key(name: str) -> str | None:
         return None
     zone = {"feet": "foot", "leg": "foot", None: "all"}.get(match["zone"], match["zone"])
     return f"massage_{zone}_{'up' if op in ('up', '+', 'add', 'increase', 'strengthen') else 'down'}"
+
+
+def massage_timer_minutes(action: str) -> int | None:
+    """The minutes an app's fixed-duration massage timer action sets, if it is one.
+
+    Such actions are the bed's massage timer select, not buttons of their own.
+    """
+    match = _MASSAGE_TIMER_ACTION.fullmatch(action)
+    return int(match["minutes"]) if match else None
+
+
+def on_off_switch(
+    key: str,
+    translation_key: str,
+    on: MotorCommandCallable,
+    off: MotorCommandCallable,
+    **kwargs: Any,
+) -> ControllerSwitchSpec:
+    """One switch for a feature's separate on and off controls.
+
+    The bed reports neither, so the switch shows what it last sent.
+    """
+
+    async def set_fn(controller: BedController, enabled: bool) -> None:
+        await (on if enabled else off)(controller)
+
+    return ControllerSwitchSpec(key, translation_key, set_fn, **kwargs)
 
 
 def is_placeholder(label: str) -> bool:
@@ -427,6 +459,36 @@ def kind_of(spec: ControllerButtonSpec) -> Kind | None:
         CardSection.LIGHTING: Kind.LIGHT,
         CardSection.MOTORS: Kind.MOTOR,
     }.get(card.section)
+
+
+# Preset keys whose plain name is not the key with spaces.
+_PRESET_NAMES: Final = {
+    "zero_g": "zero gravity",
+    "zero_gravity": "zero gravity",
+    "zg": "zero gravity",
+    "anti_snore": "anti-snore",
+    "anti_snore_preset": "anti-snore",
+    "anti": "anti-snore",
+    "snore": "anti-snore",
+    "tv": "TV",
+    "tv_pc": "TV position",
+}
+
+
+def save_name(preset: str) -> str:
+    """The save button name for a bed's preset key: "Save zero gravity"."""
+    key = preset.lower()
+    return "Save " + _PRESET_NAMES.get(key, key.replace("_", " "))
+
+
+def as_save(spec: ControllerButtonSpec) -> ControllerButtonSpec:
+    """A bed's own save button (named "Save ..."), in the shared save shape.
+
+    Only the shape changes: a save the bed takes as a held press keeps its hold.
+    """
+    reshaped = relabel(spec, spec.name, kind=Kind.SAVE)
+    assert reshaped is not None
+    return reshaped
 
 
 def relabel(

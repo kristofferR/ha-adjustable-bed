@@ -14,7 +14,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_MASSAGE_TIMER, CARD_PRESET_SAVE
+from ...card import CARD_MASSAGE_TIMER
 from ...codec import keeson as codec
 from ...const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_BASE_WRITE_CHAR_UUID
 from ...profiles import comfortbase as app
@@ -24,6 +24,7 @@ from ...profiles.keeson import Preset
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import save_button, save_name
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -281,13 +282,8 @@ class ComfortBaseController(KeesonController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
-            ControllerButtonSpec(
-                key=f"comfortbase_save_{preset}", name=f"Save {preset.replace('_', ' ')}",
-                press_fn=_save_button(preset), translation_key=f"comfortbase_save_{preset}",
-                icon="mdi:content-save", card=CARD_PRESET_SAVE,
-                # Saving overwrites the stored preset, so the card asks first.
-                requires_confirmation=True,
-            ) for preset in app.PRESETS
+            save_button(f"comfortbase_save_{preset}", save_name(preset), _save_button(preset))
+            for preset in app.PRESETS
         )
 
 

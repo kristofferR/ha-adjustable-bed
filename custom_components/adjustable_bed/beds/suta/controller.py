@@ -6,7 +6,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import partial
 from time import monotonic
 from typing import TYPE_CHECKING, Final
@@ -15,11 +15,17 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_HIDDEN
+from ...card import CARD_HIDDEN, CARD_MASSAGE
 from ...codec import suta as codec
-from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
+from ...command_scheduler import (
+    Delivery,
+    current_command_context,
+    delivered,
+    note_frame_skipped,
+    note_frame_written,
+)
 from ...const import CONF_BLE_DEVICE_NAME
-from ...controller_state import StateKey
+from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
 from ...profiles.suta import (
     BINARY,
@@ -31,6 +37,7 @@ from ...profiles.suta import (
     profile_for_name,
     service_for_name,
 )
+from ...state_keys import massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
@@ -61,6 +68,12 @@ AUTOMATIC_ADJUSTMENT: Final = {
     side: StateKey[bool | None](f"suta_side_{side}_automatic_adjustment") for side in (1, 2)
 }
 _SIDE_NAMES: Final = {1: "Left", 2: "Right"}
+# Each step command sets its zone's level (00 is off), so they are massage numbers.
+_MASSAGE_STEPS: Final = {"head": "mass_head_dt", "foot": "mass_foot_dt", "all": "mass_head_lv"}
+# MOON's per-side massage strength, 1-3; the bed reports it in its full state.
+MASSAGE_STRENGTH: Final = {
+    side: StateKey[int | None](f"suta_side_{side}_massage_strength") for side in (1, 2)
+}
 # Entity labels from the app's own button text. Keys absent here and from the
 # standard buttons are reachable only through the SUTA action.
 _TEXT_LABELS: Final = {
@@ -97,9 +110,6 @@ _TEXT_LABELS: Final = {
 }
 # Cycled steps: DT and fan 00 stops the zone, other values are app steps 1-3.
 _STEP_ZONES: Final = {
-    "mass_head_dt": "Head massage",
-    "mass_foot_dt": "Foot massage",
-    "mass_head_lv": "Massage level",
     "mode_fans_top_dt": "Top fan",
     "mode_fans_middle_dt": "Middle fan",
     "mode_fans_bottom_dt": "Bottom fan",
@@ -154,6 +164,7 @@ class SutaController(BedController):
         self._cycles: dict[str, str] = {}
         self._gesture_released = False
         self._cleanup_context = None
+        self._clear_massage_levels()
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -280,9 +291,7 @@ class SutaController(BedController):
         if key in _STEP_ZONES:
             steps = self.profile.commands.get(key, SHARED.get(key))
             index = steps.suffixes.index(suffix) if steps is not None else 0
-            return f"{_STEP_ZONES[key]} {index}" if key == "mass_head_lv" else (
-                f"{_STEP_ZONES[key]} off" if index == 0 else f"{_STEP_ZONES[key]} {index}"
-            )
+            return f"{_STEP_ZONES[key]} off" if index == 0 else f"{_STEP_ZONES[key]} {index}"
         if key in ("ctrl_two_up", "ctrl_two_down"):
             # TWO drives back and foot together; alone it is the panel's only motion.
             direction = "up" if key.endswith("_up") else "down"
@@ -297,8 +306,6 @@ class SutaController(BedController):
             return f"{side} {_BINARY_LABELS[key]}"
         if key.startswith("massage_timer_"):
             return f"{side} massage timer {key.removeprefix('massage_timer_')} min"
-        if key.startswith("massage_strength_"):
-            return f"{side} massage strength {key.removeprefix('massage_strength_')}"
         if key.startswith("adaptive_"):
             _, mode, stiffness = key.split("_")
             return f"{side} adaptive mode {_ADAPTIVE_MODES.index(int(mode)) + 1}: {stiffness}"
@@ -314,13 +321,13 @@ class SutaController(BedController):
         standard.update(control for spec in self.motor_control_specs if spec.hold is not None for control in (spec.hold.up_control, spec.hold.down_control))
         commands = self.commands
         for key, command in commands.items():
-            if key in standard:
+            if key in standard or key in _MASSAGE_STEPS.values():
                 continue
             for suffix in command.suffixes or ("",):
                 label = self._text_label(key, suffix)
                 if label is None:
                     continue
-                result.append(catalog_button(
+                spec = catalog_button(
                     "suta_" + key + suffix, label, partial(_action, key=key, suffix=suffix),
                     kind=Kind.SAVE if command.text.startswith("AT+SETMODE")
                     else Kind.PRESET if command.text.startswith("AT+MODE")
@@ -329,9 +336,17 @@ class SutaController(BedController):
                     hold=ControllerHoldSpec(key, release_button_key="suta_release") if command.kind == "motion" else None,
                     requires_confirmation=command.kind == "save" or key == "reset_on",
                     invalidates_position=command.kind in ("motion", "save") or command.text.startswith("AT+MODE"),
-                ))
+                )
+                if spec is not None and key == "beep_enable":
+                    # The app has no command that turns the beep off again.
+                    spec = replace(spec, diagnostic=True)
+                result.append(spec)
         for action in BINARY.values():
-            if self.family not in action.controllers or action.key in _BINARY_WITHOUT_BUTTON:
+            if (
+                self.family not in action.controllers
+                or action.key in _BINARY_WITHOUT_BUTTON
+                or action.key.startswith("massage_strength_")
+            ):
                 continue
             for prefix in action.prefixes:
                 label = self._binary_label(action.key, prefix[6:])
@@ -370,8 +385,6 @@ class SutaController(BedController):
         return ()
 
     def controller_button_available(self, key: str) -> bool:
-        if key.startswith("suta_mass_head_lv"):
-            return any(self._cycles.get(zone, "00") != "00" for zone in ("mass_head_dt", "mass_foot_dt"))
         for action in BINARY.values():
             prefix = "suta_" + action.key + "_"
             if key.startswith(prefix) and action.key.startswith("adaptive_") and not action.key.endswith("_soft"):
@@ -380,9 +393,63 @@ class SutaController(BedController):
         return True
 
     @property
+    def massage_intensity_zones(self) -> list[str]:
+        return [zone for zone, key in _MASSAGE_STEPS.items() if key in self.commands]
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        return bool(self.massage_intensity_zones)
+
+    @property
+    def massage_intensity_max(self) -> int:
+        return 3
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows its massage levels.
+        return super().auto_enable_massage or bool(
+            self.massage_intensity_zones or self._strength_sides
+        )
+
+    def massage_intensity_available(self, zone: str) -> bool:
+        # A level is sent to the zones running, so it needs one running.
+        return zone != "all" or any(
+            self._cycles.get(step, "00") != "00" for step in ("mass_head_dt", "mass_foot_dt")
+        )
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        key = _MASSAGE_STEPS.get(zone)
+        command = self.commands.get(key) if key is not None else None
+        if key is None or command is None or not 0 <= level < len(command.suffixes):
+            raise ValueError("This SUTA layout has no such massage level")
+        # The command shows the level it sent.
+        await self.action(key, command.suffixes[level])
+
+    @property
+    def _strength_sides(self) -> tuple[int, ...]:
+        """The sides whose massage strength the layout sets, 1-3 with no off."""
+        sides: set[int] = set()
+        for action in BINARY.values():
+            if self.family in action.controllers and action.key.startswith("massage_strength_"):
+                sides.update(prefix[6] for prefix in action.prefixes)
+        return tuple(sorted(sides))
+
+    @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         if self.family != "TEMP":
-            return ()
+            return tuple(
+                ControllerNumberSpec(
+                    f"suta_{_SIDE_NAMES[side].lower()}_massage_strength",
+                    f"massage_{_SIDE_NAMES[side].lower()}_intensity",
+                    MASSAGE_STRENGTH[side],
+                    1,
+                    3,
+                    1,
+                    partial(_massage_strength, side=side),
+                    card=CARD_MASSAGE,
+                )
+                for side in self._strength_sides
+            )
         return tuple(
             ControllerNumberSpec(f"suta_{side}_setpoint", f"suta_{side}_setpoint", state_key,
                                  22, 40, 1, partial(_setpoint, side=side), "°C")
@@ -503,6 +570,13 @@ class SutaController(BedController):
         self._cycles.clear()
         self._gesture_released = False
         self._publish()
+        self._clear_massage_levels()
+
+    def _clear_massage_levels(self) -> None:
+        """The bed reports no massage level: unknown until one is sent."""
+        self.forward_controller_state_updates(
+            *(massage_intensity(zone)(None) for zone in self.massage_intensity_zones)
+        )
 
     async def stop_notify(self) -> None:
         link = self._link
@@ -521,6 +595,11 @@ class SutaController(BedController):
             HEATING_ON(power == 1 if power in (0, 1) else None),
             HEATING_LIGHT_ON(light == 1 if light in (0, 1) else None),
             *(AUTOMATIC_ADJUSTMENT[side](value if isinstance(value, bool) else None) for side, value in automatic.items()),
+            *(
+                MASSAGE_STRENGTH[side](value if value in (1, 2, 3) else None)
+                for side in (1, 2)
+                for value in (self.observations.get(f"side_{side}_strength"),)
+            ),
         )
 
     async def _send(self, link: Link, packet: bytes, cancel: asyncio.Event, *, deadline: float | None = None) -> float | None:
@@ -706,7 +785,21 @@ class SutaController(BedController):
         self.validate_request(request)
         link, cancel = self._live(), self._coordinator.cancel_command
         if request.action in BINARY and self.family in BINARY[request.action].controllers:
-            sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
+            side = request.logical_side
+            strength = request.action.startswith("massage_strength_") and side in (1, 2)
+
+            def show(delivery: Delivery) -> None:
+                # A strength shows as far as its write reached this link's bed, also when
+                # cancelled after it, until the bed's next full-state report replaces it.
+                if not strength or self._link is not link or delivery is Delivery.NONE:
+                    return
+                self.observations[f"side_{side}_strength"] = (
+                    request.value if delivery is Delivery.SENT else None
+                )
+                self._publish()
+
+            with delivered(show):
+                sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
             if sent is not None and request.action == "automatic_adjustment_switch" and self._link is link:
                 # The bed does not echo this write; like the app's checkbox, show the sent value
                 # until the next full-state report replaces it.
@@ -725,20 +818,24 @@ class SutaController(BedController):
             for offset, key, suffix in ((0.1, "both_stop", ""), (0.4, "mass_head_dt", "00"), (0.7, "mass_foot_dt", "00")):
                 if await pause(max(0, started + offset - monotonic()), cancel):
                     return
-                await self._send(link, codec.text(self.commands[key].text + suffix), cancel)
-                if suffix:
-                    self._cycles[key] = suffix
-                    self._publish()
+                # The zone's level shows as off, as far as the stop reached the bed.
+                with self.sent_state(*self._massage_step(key, suffix)):
+                    await self._send(link, codec.text(self.commands[key].text + suffix), cancel)
+                    if suffix:
+                        self._cycles[key] = suffix
             return
         command = self.commands[request.action]
         if command.kind == "lv":
             zones = [key for key in ("mass_head_dt", "mass_foot_dt") if self._cycles.get(key, "00") != "00"]
             started = monotonic()
-            for index, zone in enumerate(zones):
-                if await pause(max(0, started + (0.1 if index == 0 else 0.3) - monotonic()), cancel):
-                    return
-                level = self.commands[zone.replace("_dt", "_lv")]
-                await self._send(link, codec.text(level.text + request.suffix), cancel)
+            with self.sent_state(*self._massage_step(request.action, request.suffix)):
+                for index, zone in enumerate(zones):
+                    if await pause(max(0, started + (0.1 if index == 0 else 0.3) - monotonic()), cancel):
+                        # The zones not reached keep their old level: only partly sent.
+                        note_frame_skipped()
+                        return
+                    level = self.commands[zone.replace("_dt", "_lv")]
+                    await self._send(link, codec.text(level.text + request.suffix), cancel)
             return
         if command.kind == "motion":
             await self.hold_control(request.action, self._coordinator.motor_pulse_count * self.profile.refresh_ms)
@@ -746,10 +843,22 @@ class SutaController(BedController):
             await self._run_control(request.action, None)
         else:
             suffix = (request.suffix or dt_util.now().strftime("%y%m%d%H%M")) if command.kind == "clock" else request.suffix
-            await self._schedule(link, command, suffix, cancel)
-            if command.kind in ("dt", "lv", "fan") and not cancel.is_set():
-                self._cycles[request.action] = suffix
+            # A massage step shows as its zone's level, as far as it reached the bed.
+            step = self._massage_step(request.action, suffix)
+            with self.sent_state(*step):
+                await self._schedule(link, command, suffix, cancel)
+                stepped = command.kind in ("dt", "lv", "fan") and not cancel.is_set()
+                if stepped:
+                    self._cycles[request.action] = suffix
+            if stepped and not step:
                 self._publish()
+
+    def _massage_step(self, key: str, suffix: str) -> tuple[StateUpdate, ...]:
+        """A massage step command's level, as its zone's massage level."""
+        zone = next((zone for zone, step in _MASSAGE_STEPS.items() if step == key), None)
+        if zone is None:
+            return ()
+        return (massage_intensity(zone)(self.commands[key].suffixes.index(suffix)),)
 
     @property
     def supports_clock_sync(self) -> bool:
@@ -873,6 +982,15 @@ async def _binary_action(controller: BedController, action: str, payload: bytes)
     if not isinstance(controller, SutaController):
         raise ValueError("SUTA controller required")
     await controller.execute_request(Request(action, logical_side=payload[0] if len(payload) == 2 else None, value=payload[-1]))
+
+
+async def _massage_strength(controller: BedController, value: float, *, side: int) -> None:
+    if not isinstance(controller, SutaController):
+        raise ValueError("SUTA controller required")
+    level = int(value)
+    await controller.execute_request(
+        Request(f"massage_strength_{level}", logical_side=side, value=level)
+    )
 
 
 async def _binary_switch(controller: BedController, enabled: bool, *, action: str, side: int | None = None) -> None:

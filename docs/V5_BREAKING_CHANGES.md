@@ -320,6 +320,17 @@ The same control now looks the same on every bed:
   number, the up and down step buttons for the same zone are gone; beds that
   can only step keep the buttons. Sensors that only mirrored a control start
   disabled or are gone.
+- **Fixed levels are numbers too.** Where a bed has one button per massage
+  level (SUTA's head, foot and overall levels, and the left and right massage
+  strength on SUTA MOON), the buttons became one massage intensity number per
+  zone, offering only the levels the bed has a command for.
+- **One shape for the rest.** "All up" and "All down" sit in the card's
+  **All motors** row on CheersSleep, V-MAT, Vibradorm app, iSleep and Rize.
+  Bed-specific preset saves (StarCode, eShine, ComfortBase, Rize Home, Smart
+  Sleep, OnlySnore, Ultramatic, Sleeptracker, Sleepy's Elite app, Adjustable
+  Lumbar, ORE comfort-bed apps, L2 Motion, Malouf) use the shared **Save …**
+  name and save rule; their entity IDs stay. Demonstrations, intervention
+  tests, resets and chords that do no one everyday thing start disabled.
 
 [Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists the
 removed and replaced entities by bed.
@@ -477,6 +488,11 @@ Beds that 4.x supported. Renamed entities are not listed: they keep their IDs.
 | Motion Bed app | Massage timer, light timer and brightness 0-10 buttons, massage timer and brightness sensors, five mirror binary sensors | Shared timer selects, **Light brightness** number; night light, smart sleep, module light, module massage, climate timer and adaptive air toggles or on/off pairs became switches |
 | DoubleSleep (SleepEase) | Massage and sonic running sensors | Massage and sonic on/off buttons became the **Massage** and **Sonic massage** switches |
 | Reverie, Reverie Nightstand, Pairlink, Jiecang app | Head and foot massage up/down buttons where an intensity number exists | |
+| Good Vibe Sleep (also Galaxy, MLILY app, Power Bob Base) | Massage 10, 20 and 30 minute buttons; "Massage timer" and "Light duration (seconds)" selects; Sync on and Sync off buttons | Shared **Massage timer** select (with Off where the app has a countdown off) and **Light timer** select; **Synchronization** switch, disabled by default |
+| Casper Base, Hush Base, Luuna, MLILY Remote | Massage 10, 20 and 30 minute buttons | Shared **Massage timer** select (durations only); PowerCool keeps its fan timer buttons |
+| HJBed | Sync on and Sync off buttons | **Synchronization** switch, disabled by default |
+| Sleepy's Elite app (BOX25) | Massage on and Massage off buttons | **Massage** switch |
+| SUTA Smart Home | Head and foot massage off, 1, 2 and 3 buttons, Massage level 0 to 3 buttons; MOON left and right massage strength 1, 2 and 3 buttons | **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Intensity** numbers (0-3); **Left massage intensity** and **Right massage intensity** numbers (1-3) |
 
 **SUTA Smart Home** now offers the controls the SUTA app shows for your model,
 which it reads from the bed's Bluetooth name (for example `SUTA-B202B`). 4.x

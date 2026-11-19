@@ -43,6 +43,7 @@ from ..profiles.okin_nframe import (
 )
 from .base import BedController, ProfileExecution
 from .builder import BuildContext
+from .catalog_buttons import as_save
 from .entity_specs import ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
@@ -319,7 +320,7 @@ class AdjustableLumbarController(
             "massage_on": "Massage on",
             "check_massage": "Refresh massage",
         }
-        return tuple(
+        specs = (
             ControllerButtonSpec(
                 f"adjustable_lumbar_{key}",
                 label,
@@ -336,6 +337,10 @@ class AdjustableLumbarController(
                 else CARD_UTILITY,
             )
             for key, label in labels.items()
+        )
+        return tuple(
+            as_save(spec) if spec.key.removeprefix("adjustable_lumbar_") in _SAVE_LABELS else spec
+            for spec in specs
         )
 
     # --------------------------------------------------------------- transport

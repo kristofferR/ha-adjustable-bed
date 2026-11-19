@@ -2439,7 +2439,9 @@ See [Catalog app timing](#catalog-app-timing).
 
 Use `adjustable_bed.goodvibe` for these settings and queries. The action
 validates every target before writing. The dashboard card includes app
-controls, local side selection, light durations, snore numbers and sleep state.
+controls, local side selection, the **Light timer** and **Massage timer**
+selects, the **Synchronization** switch (where a product has Sync on and off),
+snore numbers and sleep state.
 
 ##### Alarms and snore settings
 
@@ -3442,8 +3444,8 @@ writer supports it, otherwise writes use a response.
 
 Every product has Flat, Anti-Snore, Zero-G and Memory 1. Preset save buttons send
 their separate program opcode once. Rise Pro adds Memory 2; Rise Pro Light does
-not. Massage controls are one-shot actions, including intensity steps, mode,
-off and the three timer buttons. The ordinary strip page requires both the
+not. Massage controls are one-shot actions, including intensity steps, mode
+and off; the three timer actions are the **Massage timer** select. The ordinary strip page requires both the
 Rise Pro Light flag and its exact light capability announcement.
 
 #### Timing
@@ -3553,8 +3555,8 @@ Only MS600 has alarm-mode choices. No shared receive parser expands these gates.
 | Model (diagnostic, disabled by default) | all |
 
 PowerCool sends the massage codes to its fans, with 2/3/5-hour timers; the
-same codes on MS300, MS300-SH and MS600 are massage controls with
-10/20/30-minute timers. Discrete actions send once. Preset recall and Save
+same codes on MS300, MS300-SH and MS600 are massage controls, with the
+10/20/30-minute timers as the **Massage timer** select. Discrete actions send once. Preset recall and Save
 buttons use distinct codes; Save waits the app's three-second programming
 threshold and asks for confirmation.
 
