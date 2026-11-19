@@ -31,6 +31,7 @@ from .const import (
     POSITION_STALL_THRESHOLD,
     POSITION_TOLERANCE,
 )
+from .errors import keyed
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -120,6 +121,10 @@ class SeekTimeoutError(TimeoutError):
 
 class PositionFeedbackError(HomeAssistantError):
     """A seek cannot continue without trustworthy position feedback."""
+
+    def __init__(self, key: str, **placeholders: object) -> None:
+        message, keywords = keyed(key, **placeholders)
+        super().__init__(message, **keywords)
 
 
 class PositionSeekPolicy:

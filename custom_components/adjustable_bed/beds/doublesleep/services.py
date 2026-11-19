@@ -9,11 +9,11 @@ from typing import Literal
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...const import DOMAIN
+from ...errors import rejected
 from ...import_executor import async_import_modules
 from .protocol import ALARM_PRESETS, PRESETS, SAVE, alarm_days
 
@@ -130,7 +130,7 @@ async def handle_doublesleep(call: ServiceCall) -> None:
     try:
         request = build_request(call.data)
     except (ValueError, KeyError) as err:
-        raise ServiceValidationError(str(err)) from err
+        raise rejected(err) from err
     await _preflight_and_execute(
         _call_targets(call),
         DoubleSleepController,

@@ -128,6 +128,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_recommendations import _watches
 from tests.coordinator_patches import patch_coordinator_global
+from tests.error_helpers import raises_key
 from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 LEFT_ADDR = "AA:BB:CC:DD:EE:01"
@@ -1114,7 +1115,7 @@ class TestPairedSetup:
             )
             if (DOMAIN, PAIR_ID) in device.identifiers
         )
-        with pytest.raises(ServiceValidationError, match="Angle sensing is disabled"):
+        with raises_key("angle_sensing_disabled", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 "set_position",
@@ -2708,7 +2709,7 @@ class TestPairBedsConversion:
         )
         pair.add_to_hass(hass)
 
-        with pytest.raises(ConfigEntryNotReady, match="pairing-only connection"):
+        with raises_key("pair_side_busy", ConfigEntryNotReady):
             await _async_release_absorbed_singles(hass, pair)
 
         assert coord.is_connected
@@ -2749,7 +2750,7 @@ class TestPairBedsConversion:
         )
         pair.add_to_hass(hass)
 
-        with pytest.raises(ConfigEntryNotReady, match="Could not release"):
+        with raises_key("pair_side_busy", ConfigEntryNotReady):
             await _async_release_absorbed_singles(hass, pair)
 
         coord.finish_pairing_transfer.assert_called_once_with()
@@ -2799,7 +2800,7 @@ class TestPairBedsConversion:
         coord._controller = SimpleNamespace(manual_disconnect_strands_connection=True)
         coord._lock.release()
 
-        with pytest.raises(ConfigEntryNotReady, match="pairing-only connection"):
+        with raises_key("pair_side_busy", ConfigEntryNotReady):
             await release_task
         assert coord.is_connected
 
@@ -2822,7 +2823,7 @@ class TestPairBedsConversion:
                 side_effect=stalled_release,
             ),
             patch("custom_components.adjustable_bed.SETUP_TIMEOUT", 0.01),
-            pytest.raises(ConfigEntryNotReady, match="timed out connecting"),
+            raises_key("setup_timed_out", ConfigEntryNotReady),
         ):
             await _async_setup_paired_entry(hass, entry)
 
@@ -3288,7 +3289,7 @@ class TestSideServiceRouting:
         # This fixture disables angle sensing, so set_position still rejects the
         # request for its normal capability reason, not because the target is a
         # paired parent.
-        with pytest.raises(ServiceValidationError, match="Angle sensing is disabled"):
+        with raises_key("angle_sensing_disabled", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 "set_position",
@@ -3378,7 +3379,7 @@ class TestSideServiceRouting:
         )
         assert parent is not None
 
-        with pytest.raises(ServiceValidationError, match="Motor 'back' is not valid"):
+        with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 "timed_move",

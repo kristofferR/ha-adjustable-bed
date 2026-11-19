@@ -30,6 +30,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.entity_discovery import async_setup_dynamic_entities
 from custom_components.adjustable_bed.entity_sweep import EntityLedger, PlatformEntities
 from custom_components.adjustable_bed.setup_questions import setup_profile
+from tests.error_helpers import raises_key
 
 
 def _runtime() -> MagicMock:
@@ -503,7 +504,7 @@ async def test_alarm_validates_every_product_before_writing(hass, operation, pai
         patch("custom_components.adjustable_bed.services._command_targets", side_effect=physical),
         patch("custom_components.adjustable_bed.services._execute_sided",
               new_callable=AsyncMock) as execute,
-        pytest.raises(ServiceValidationError, match="cannot wake with 'tv'"),
+        raises_key("alarm_wake_action_not_supported", ServiceValidationError),
     ):
         await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     execute.assert_not_awaited()

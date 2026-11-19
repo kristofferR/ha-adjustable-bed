@@ -32,6 +32,7 @@ from custom_components.adjustable_bed.services import (
     _get_support_bundle_target_from_device,
     _resolve_sided_targets,
 )
+from tests.error_helpers import raises_key
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_paired_receiver_questions import child, pair_entry, receiver_form
 from tests.test_paired_receiver_questions import fields as receiver_fields
@@ -144,7 +145,7 @@ async def test_actual_two_address_pair_has_native_side_safe_devices(hass) -> Non
         assert _resolve_sided_targets(hass, [left.id], None)[0] == [(paired, "left")]
         assert _resolve_sided_targets(hass, [right.id], None)[0] == [(paired, "right")]
         assert _resolve_sided_targets(hass, [left.parent_device_id], None)[0] == [(paired, "both")]
-        with pytest.raises(ServiceValidationError, match="conflicts"):
+        with raises_key("side_selection_conflict", ServiceValidationError):
             _resolve_sided_targets(hass, [left.id], "right")
         with pytest.raises(ServiceValidationError):
             _get_support_bundle_target_from_device(hass, left.parent_device_id)

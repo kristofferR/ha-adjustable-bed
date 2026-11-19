@@ -7,9 +7,9 @@ import re
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...const import DOMAIN, SIDE_BOTH
+from ...errors import rejected
 from ...import_executor import async_import_modules
 from ...paired_coordinator import PairedBedCoordinator
 from ...services import (
@@ -90,7 +90,7 @@ async def handle_app_command(call: ServiceCall) -> None:
 
             await _execute_sided(coordinator, selected, scoped, admission=admission)
     except (ValueError, NotImplementedError, TypeError) as err:
-        raise ServiceValidationError(str(err)) from err
+        raise rejected(err) from err
     finally:
         await _release_preflighted(preflighted)
 

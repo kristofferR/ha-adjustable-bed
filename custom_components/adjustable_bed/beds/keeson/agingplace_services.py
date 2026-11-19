@@ -5,10 +5,10 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...command_scheduler import ALL_COMMAND_RESOURCES, PreparedCommandInvalidated
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...paired_coordinator import SingleAddressPairedCoordinator
 from ...profiles import agingplace as app
@@ -33,9 +33,7 @@ def _admit(call: ServiceCall, resource: str | None):
     """Freeze physical owners and STOP epochs before any import/connect await."""
     targets = _call_targets(call)
     if any(isinstance(parent, SingleAddressPairedCoordinator) for parent, _side in targets):
-        raise ServiceValidationError(
-            translation_domain=DOMAIN, translation_key="single_address_pair_unsupported"
-        )
+        raise invalid("single_address_pair_unsupported")
     resources = (resource,) if resource else ALL_COMMAND_RESOURCES
     admissions = [_capture_command_admission(parent, side, resources) for parent, side in targets]
     owners = [
@@ -90,11 +88,7 @@ async def handle_setting(call: ServiceCall) -> None:
     try:
         app.setting(name, value, None)
     except ValueError as err:
-        raise ServiceValidationError(
-            translation_domain=DOMAIN,
-            translation_key="agingplace_setting_out_of_range",
-            translation_placeholders={"setting": name},
-        ) from err
+        raise invalid("agingplace_setting_out_of_range", setting=name) from err
     await async_import_modules(call.hass, "beds.keeson.agingplace")
     from .agingplace import AgingPlaceController
 

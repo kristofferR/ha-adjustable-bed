@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...const import BED_TYPE_SVANE, DOMAIN
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild, PairedBedCoordinator
 from ...services import (
@@ -56,12 +56,12 @@ async def _preflight_live_svane(
             or controller.session is not admission.session
         ):
             raise _invalid(
-                "bed_changed", "The bed reconnected while the action was being checked; try again"
+                "bed_changed"
             )
         try:
             controller.validate_svane_hold_control(control, duration_ms)
         except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise rejected(err) from err
         validated = True
 
     if isinstance(parent, PairedBedCoordinator):
@@ -75,7 +75,7 @@ async def _preflight_live_svane(
     else:
         await inspect(target)
     if not validated:
-        raise ServiceValidationError("Svane live preflight was interrupted")
+        raise invalid("action_stopped")
 
 
 async def _svane_live_targets(
@@ -93,12 +93,12 @@ async def _svane_live_targets(
         for target in _command_targets(parent, side):
             controller = controller_as(target.capability_controller, SvaneController)
             if controller is None:
-                raise ServiceValidationError("Select a Svane Remote app profile")
+                raise invalid("action_for_other_beds", beds="Svane Remote beds")
             _require_held_control(target, controller, control)
             try:
                 controller.validate_svane_hold_constraints(control, duration_ms)
             except ValueError as err:
-                raise ServiceValidationError(str(err)) from err
+                raise rejected(err) from err
             admissions[id(controller.session)] = controller.prepare_svane_hold_admission()
     preflighted: PreflightedSides = []
     try:
@@ -112,7 +112,6 @@ async def _svane_live_targets(
                 ):
                     raise _invalid(
                         "bed_changed",
-                        "The bed reconnected while the action was being checked; try again",
                     )
                 await _preflight_live_svane(
                     parent,
@@ -148,7 +147,7 @@ async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None
     except (Exception, asyncio.CancelledError) as error:
         await _release_preflighted(preflighted)
         if isinstance(error, ValueError):
-            raise ServiceValidationError(str(error)) from error
+            raise rejected(error) from error
         raise
 
 
@@ -162,13 +161,13 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
     for parent, side in targets:
         for target in _command_targets(parent, side):
             if target.bed_type != BED_TYPE_SVANE:
-                raise ServiceValidationError("Select an active Svane Remote app profile")
+                raise invalid("action_for_other_beds", beds="Svane Remote beds")
             controller = target.controller or target.capability_controller
             if controller is None:
                 continue
             svane = controller_as(controller, SvaneController)
             if svane is None or not svane.supports_held_control:
-                raise ServiceValidationError("Select an active Svane Remote app profile")
+                raise invalid("action_for_other_beds", beds="Svane Remote beds")
             controllers.append(svane)
     for controller in controllers:
         controller.request_svane_axis_release(call.data[ATTR_MOTOR])

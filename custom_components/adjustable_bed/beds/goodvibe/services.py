@@ -9,13 +9,13 @@ from typing import TYPE_CHECKING
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
 from ...const import CONF_PRODUCT_TYPE, CONF_PROFILE_ID, CONF_PROTOCOL_VARIANT, DOMAIN
 from ...entity_runtime import controller_side_scope
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...paired_coordinator import PairedBedCoordinator, SingleAddressSideCoordinator
 from ...services import (
@@ -428,9 +428,9 @@ async def handle_goodvibe(call: ServiceCall) -> None:
 
     def validate(target: GoodVibeController) -> None:
         if target.profile.key != call.service:
-            raise ServiceValidationError("Choose the configuration action for the selected app")
+            raise invalid("wrong_action_for_bed")
         if target.catalog.key != call.service:
-            raise ServiceValidationError("Choose the action for the target's app")
+            raise invalid("wrong_action_for_bed")
         plans[(target._address.upper(), target.product_key)] = request.plan(target)
 
     if call.service == "bobpowerbase":
@@ -439,18 +439,18 @@ async def handle_goodvibe(call: ServiceCall) -> None:
                    for (parent, side), admission in zip(targets, admissions, strict=True)) or physical != [
                        child for parent, side in targets for child in _command_targets(parent, side)
                    ]:
-                raise ServiceValidationError("The command was interrupted before Power Bob Base dispatch")
+                raise invalid("action_stopped")
             for owner, (controller, client, generation, command_generation, route) in sessions.items():
                 current_route = (owner.address, owner.bed_type, *(owner.entry.options.get(key, owner.entry.data.get(key))
                     for key in (CONF_PROTOCOL_VARIANT, CONF_PRODUCT_TYPE, CONF_PROFILE_ID)))
                 if owner._cancel_counter != command_generation or current_route != route:
-                    raise ServiceValidationError("The Power Bob Base command or product changed after admission")
+                    raise invalid("bed_changed")
                 # Reconnect may replace the controller and link. Replacement
                 # within the same still-live physical generation is stale work.
                 if client is not None and client.is_connected and owner._position_connection_generation == generation and (
                     owner.controller is not controller or owner.client is not client
                 ):
-                    raise ServiceValidationError("The Power Bob Base session changed without reconnecting")
+                    raise invalid("bed_changed")
             if reported:
                 for child in physical:
                     controller = child.controller
@@ -458,10 +458,10 @@ async def handle_goodvibe(call: ServiceCall) -> None:
                     # its own dispatch must obtain and validate a fresh reply.
                     if controller is not None and controller.client is not None and controller.client.is_connected:
                         if not isinstance(controller, GoodVibeController) or controller.catalog.key != "bobpowerbase":
-                            raise ServiceValidationError("The Power Bob Base controller changed after admission")
+                            raise invalid("bed_changed")
                         owner = child._single_inner if isinstance(child, SingleAddressSideCoordinator) else child
                         if controller.product_key != sessions[owner][4][2]:
-                            raise ServiceValidationError("The Power Bob Base product changed after admission")
+                            raise invalid("bed_changed")
                         with controller_side_scope(child):
                             controller._current_link()
                             request.validate(controller)
@@ -470,10 +470,10 @@ async def handle_goodvibe(call: ServiceCall) -> None:
         def live_plan(controller: BedController) -> Request:
             check_admission()
             if not isinstance(controller, GoodVibeController) or controller.catalog.key != "bobpowerbase":
-                raise ServiceValidationError("Choose Power Bob Base for every target")
+                raise invalid("action_for_other_beds", beds="Power Bob Base beds")
             route = sessions.get(controller._coordinator)
             if route is None or controller.product_key != route[4][2]:
-                raise ServiceValidationError("The Power Bob Base product changed after admission")
+                raise invalid("bed_changed")
             controller._current_link()
             return request.plan(controller)
 
@@ -482,15 +482,15 @@ async def handle_goodvibe(call: ServiceCall) -> None:
         for child in physical:
             controller = child.capability_controller
             if not isinstance(controller, GoodVibeController) or controller.catalog.key != "bobpowerbase":
-                raise ServiceValidationError("Choose Power Bob Base for every target")
+                raise invalid("action_for_other_beds", beds="Power Bob Base beds")
             owner = child._single_inner if isinstance(child, SingleAddressSideCoordinator) else child
             if controller.product_key != sessions[owner][4][2]:
-                raise ServiceValidationError("The Power Bob Base product changed after admission")
+                raise invalid("bed_changed")
             try:
                 with controller_side_scope(child):
                     request.validate(controller, reported=False)
             except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
+                raise rejected(error) from error
 
         # Query through each topology's ordinary connection lane. A sequential
         # pair may release the first link before validating the second.
@@ -503,12 +503,12 @@ async def handle_goodvibe(call: ServiceCall) -> None:
                             await controller.async_prepare_goodvibe_request(request, admitted=check_admission)
                         live_plan(controller)
                     except ValueError as error:
-                        raise ServiceValidationError(str(error)) from error
+                        raise rejected(error) from error
                     return True
 
                 async def query(target=child) -> None:
                     if not await target.async_execute_controller_query(inspect, cancel_running=False, run_if=check_admission):
-                        raise ServiceValidationError("Power Bob Base live preflight was interrupted")
+                        raise invalid("action_stopped")
 
                 check_admission()
                 if isinstance(parent, PairedBedCoordinator):
@@ -532,7 +532,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
             def dispatch() -> None:
                 check_admission(reported=True)
                 if owner.controller is not target or owner._position_connection_generation != generation or target._current_link() is not link:
-                    raise ServiceValidationError("The Power Bob Base session changed before dispatch")
+                    raise invalid("bed_changed")
                 plan.validate(target)
 
             await target.async_execute_goodvibe_request(plan, dispatch=dispatch)
@@ -546,7 +546,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
     async def execute(target: GoodVibeController) -> None:
         plan = plans.get((target._address.upper(), target.product_key))
         if plan is None:
-            raise ServiceValidationError("The Good Vibe Sleep target changed after validation")
+            raise invalid("bed_changed")
         await target.async_execute_goodvibe_request(plan)
 
     await _preflight_and_execute(

@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.profiles.sonicsleep import ROUTES
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.test_richmat_family_flow import setup_flow
 from tests.test_sonicsleep import GATT, notify
 from tests.test_sonicsleep import clock as clock
@@ -165,7 +166,7 @@ async def test_all_target_local_rejection_before_first_connect(hass, runtime):
     target, client, resolve = runtime
     other, _ = fake_target(name="wrong app")
     resolve.return_value = ([(target, "both"), (other, "both")], [])
-    with pytest.raises(ServiceValidationError, match="Select SonicSleep"):
+    with raises_key("action_for_other_beds", ServiceValidationError):
         await settings(hass, "toggle", alarm_id=3, enabled=False)
     client.write_gatt_char.assert_not_awaited()
     assert not target.is_connected

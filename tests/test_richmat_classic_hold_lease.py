@@ -38,6 +38,7 @@ from custom_components.adjustable_bed.command_scheduler import CommandKind, Comm
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import intervals, leased_hold, virtual_clock
 from tests.test_richmat_classic import controller
 
@@ -322,7 +323,7 @@ async def test_an_armed_action_refuses_a_lease_as_an_undeclared_bed_does(
     hass, coordinator, writes = bed
     ctrl = coordinator._controller
     ctrl._select("program", "armed")
-    with pytest.raises(ServiceValidationError, match="does not support renewable holds"):
+    with raises_key("hold_renewal_not_supported", ServiceValidationError):
         await _hold_control(hass, "richmat_classic_4", 1)
     assert writes == []
     assert ctrl._selection.armed

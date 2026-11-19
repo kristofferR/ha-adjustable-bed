@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-from homeassistant.exceptions import ServiceValidationError
-
+from ...errors import invalid, rejected
 from ...services import BedTarget, _command_targets, _preflight_and_execute
 
 
-def _single_receiver(targets: list[tuple[BedTarget, str]], message: str) -> None:
+def _single_receiver(targets: list[tuple[BedTarget, str]]) -> None:
     """Reject a selection that is not exactly one physical receiver."""
     physical = [
         target for coordinator, side in targets for target in _command_targets(coordinator, side)
     ]
     if len(physical) != 1:
-        raise ServiceValidationError(message)
+        raise invalid("one_bed_only")
 
 
 async def _hold_vmatbasic_floor(
@@ -22,11 +21,11 @@ async def _hold_vmatbasic_floor(
     """Refresh the XT floor light; it belongs to one physical receiver, never mirrored."""
     from .controller import VMatBasicController
 
-    _single_receiver(targets, "Target one physical V-MAT Basic receiver for floor refresh")
+    _single_receiver(targets)
 
     def validate(controller: VMatBasicController) -> None:
         if control not in controller.held_control_options:
-            raise ServiceValidationError("XT floor refresh requires the XT-Box profile")
+            raise invalid("not_supported_by_bed", feature="the floor light refresh")
 
     await _preflight_and_execute(
         targets,
@@ -51,12 +50,11 @@ async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> 
         if len(packet) > 20:
             raise ValueError("Encoded name exceeds the safe twenty-byte write payload")
     except (ValueError, UnicodeError) as error:
-        raise ServiceValidationError(str(error)) from error
-    message = "Rename one physical V-MAT Basic receiver at a time"
-    _single_receiver(targets, message)
+        raise rejected(error) from error
+    _single_receiver(targets)
     receiver = _command_targets(*targets[0])[0]
     if not isinstance(receiver, AdjustableBedCoordinator):
-        raise ServiceValidationError(message)
+        raise invalid("one_bed_only")
     name = packet.decode("utf-8")
 
     async def rename_and_remember(controller: VMatBasicController) -> None:

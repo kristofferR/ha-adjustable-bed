@@ -21,7 +21,7 @@ from homeassistant.components.light.const import ColorMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF, STATE_ON, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .beds.octo.runtime import octo_controller
@@ -33,6 +33,7 @@ from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
     LIGHT_INTENSITY,
@@ -934,12 +935,12 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 await ctrl.lights_toggle()
             elif ctrl.supports_discrete_light_control:
                 if not isinstance(self.is_on, bool):
-                    raise ServiceValidationError("Light state is unknown; use turn_on or turn_off")
+                    raise invalid("light_toggle_state_unknown")
                 if self.is_on:
                     await ctrl.lights_off()
                 else:
                     await ctrl.lights_on()
             else:
-                raise ServiceValidationError("No supported light toggle action")
+                raise invalid("not_supported_by_bed", feature="toggling the light")
 
         await self._coordinator.async_execute_controller_command(toggle, cancel_running=False)

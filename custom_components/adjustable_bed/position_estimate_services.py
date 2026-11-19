@@ -7,10 +7,10 @@ from collections.abc import Awaitable, Callable
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN, SIDE_BOTH
+from .errors import invalid
 from .paired_coordinator import PairedBedCoordinator
 from .position_estimate import (
     MAX_POSITION_NAME_LENGTH,
@@ -81,11 +81,7 @@ def _selection(
     coordinator, side = targets[0]
     manager = position_estimates(call.hass, coordinator.entry.entry_id)
     if manager is None or (estimated and not manager.active):
-        raise ServiceValidationError(
-            "Estimated positions are not enabled for this bed",
-            translation_domain=DOMAIN,
-            translation_key="position_estimate_not_enabled",
-        )
+        raise invalid("position_estimate_not_enabled")
     if isinstance(coordinator, PairedBedCoordinator) and side != SIDE_BOTH:
         beds = [bed for bed in manager.beds.values() if bed.side == side]
     else:
@@ -94,11 +90,7 @@ def _selection(
         return manager, beds
     beds = [bed for bed in beds if bed.motors]
     if not beds:
-        raise ServiceValidationError(
-            "Estimated positions are not enabled for this side",
-            translation_domain=DOMAIN,
-            translation_key="position_estimate_not_enabled",
-        )
+        raise invalid("position_estimate_not_enabled")
     return manager, beds
 
 
@@ -107,12 +99,7 @@ def _selected_position(call: ServiceCall) -> tuple[PositionEstimates, SavedPosit
     manager, beds = _selection(call, estimated=False)
     position = manager.position(call.data[ATTR_POSITION])
     if not set(position.targets) <= {bed.key for bed in beds}:
-        raise ServiceValidationError(
-            f"{position.name} also covers the other side; select the whole bed",
-            translation_domain=DOMAIN,
-            translation_key="saved_position_other_side",
-            translation_placeholders={"position": position.name},
-        )
+        raise invalid("saved_position_other_side", position=position.name)
     return manager, position
 
 

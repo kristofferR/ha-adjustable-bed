@@ -10,6 +10,7 @@ from homeassistant.exceptions import ServiceValidationError
 from custom_components.adjustable_bed.beds.richmat_mh import app_services as actions
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.test_richmat_mh import sleeps as sleeps
 from tests.test_richmat_nisco_supreme import frames, make
 
@@ -135,7 +136,7 @@ async def test_app_mode_action_sets_local_pickers_without_the_scheduler(hass, ta
     for coordinator, controller in zip(coordinators, controllers, strict=True):
         assert controller._transmit_mode == 2 and not frames(controller)
         coordinator.async_execute_controller_command.assert_not_awaited()
-    with pytest.raises(ServiceValidationError, match="app_mode"):
+    with raises_key("field_not_used", ServiceValidationError):
         await hass.services.async_call(DOMAIN, actions.SERVICE, {
             "device_id": ["left"], "action": "press", "control": "Flat", "transmit_mode": "mode_1",
         }, blocking=True)

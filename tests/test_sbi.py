@@ -40,6 +40,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import SERVICE_SET_POSITION
+from tests.error_helpers import raises_key
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -508,7 +509,7 @@ class TestSBIPositionFeedback:
 
     @pytest.mark.parametrize(
         ("motor", "position", "message"),
-        [("head", 10, "Valid motors: back, legs"), ("back", 61, "Valid range: 0-60"), ("legs", 33, "Valid range: 0-32")],
+        [("head", 10, "invalid_motor_for_bed_type"), ("back", 61, "invalid_position_range"), ("legs", 33, "invalid_position_range")],
     )
     async def test_set_position_rejects_axes_and_angles_it_cannot_report(
         self,
@@ -532,7 +533,7 @@ class TestSBIPositionFeedback:
         await hass.async_block_till_done()
         (device,) = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
 
-        with pytest.raises(ServiceValidationError, match=message):
+        with raises_key(message, ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,

@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.pairing import build_single_address_pair_e
 from custom_components.adjustable_bed.profiles import ultramatic as app
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_ultramatic_runtime import (
     ALARM_REPORT,
@@ -172,7 +173,7 @@ async def test_native_parent_both_disable_rejects_unequal_reports_before_preflig
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(parent, "both")], []),
         ),
-        pytest.raises((ServiceValidationError, ValueError), match="Refresh alarms"),
+        raises_key("alarm_refresh_needed", (ServiceValidationError, ValueError)),
     ):
         await alarm(hass, "disable")
     assert writes(client) == []

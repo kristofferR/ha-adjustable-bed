@@ -5,10 +5,10 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
@@ -19,7 +19,7 @@ async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:
     """Send exactly one positively confirmed calibration write."""
     targets = _call_targets(call)
     if call.data.get("confirmed") is not True:
-        raise ServiceValidationError("Calibration requires explicit confirmation")
+        raise invalid("confirmation_required", action="calibrate the bed")
     await async_import_modules(call.hass, "beds.fsm_relax.controller")
     from .controller import FsmRelaxController
 
