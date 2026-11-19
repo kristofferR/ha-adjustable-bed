@@ -331,6 +331,10 @@ def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
         assert controller.supports_massage_timer is (selector in _VOICE_SELECTORS)
         assert not controller.massage_timer_can_turn_off
         assert "sleepys_app_massage_timer" not in button_keys
+        # Massage on and Massage off are one switch.
+        switch_keys = {spec.key for spec in controller.controller_switch_specs}
+        assert not {"sleepys_app_massage_on", "sleepys_app_massage_off"} & button_keys
+        assert ("sleepys_app_massage" in switch_keys) is (selector in _VOICE_SELECTORS)
 
         if selector in (*_POSITION_SLIDER_SELECTORS, *_VOICE_SELECTORS):
             assert {f"sleepys_app_target_axis_{axis}" for axis in range(3)} <= number_keys
@@ -834,3 +838,17 @@ async def test_motion_sensor_reports_a_setting_it_never_wrote() -> None:
     controller._run_refresh_window = AsyncMock(return_value=False)
     with pytest.raises(ConnectionError, match="not sent"):
         await controller.set_motion_sensor(enabled=True)
+
+
+@pytest.mark.parametrize("selector", _VOICE_SELECTORS)
+async def test_massage_switch_presses_the_app_massage_buttons(selector: str) -> None:
+    controller = _controller(selector)
+    switch = next(s for s in controller.controller_switch_specs if s.key == "sleepys_app_massage")
+    assert switch.state_key is None and switch.translation_key == "massage"
+    with patch.object(controller, "_press_app_action", AsyncMock()) as press:
+        await switch.set_fn(controller, True)
+        await switch.set_fn(controller, False)
+    assert [c.args for c in press.await_args_list] == [
+        ("sleepys_app_massage_on", "massageOn"),
+        ("sleepys_app_massage_off", "massageOff"),
+    ]

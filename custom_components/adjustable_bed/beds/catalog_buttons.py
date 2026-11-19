@@ -16,7 +16,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from enum import StrEnum
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from ..card import (
     CARD_CLIMATE,
@@ -32,7 +32,10 @@ from ..card import (
     motor_card,
 )
 from ..labels import display_label
-from .entity_specs import ControllerButtonSpec, MotorCommandCallable
+from .entity_specs import ControllerButtonSpec, ControllerSwitchSpec, MotorCommandCallable
+
+if TYPE_CHECKING:
+    from .base import BedController
 
 
 class Kind(StrEnum):
@@ -226,6 +229,24 @@ def massage_timer_minutes(action: str) -> int | None:
     """
     match = _MASSAGE_TIMER_ACTION.fullmatch(action)
     return int(match["minutes"]) if match else None
+
+
+def on_off_switch(
+    key: str,
+    translation_key: str,
+    on: MotorCommandCallable,
+    off: MotorCommandCallable,
+    **kwargs: Any,
+) -> ControllerSwitchSpec:
+    """One switch for a feature's separate on and off controls.
+
+    The bed reports neither, so the switch shows what it last sent.
+    """
+
+    async def set_fn(controller: BedController, enabled: bool) -> None:
+        await (on if enabled else off)(controller)
+
+    return ControllerSwitchSpec(key, translation_key, set_fn, **kwargs)
 
 
 def is_placeholder(label: str) -> bool:

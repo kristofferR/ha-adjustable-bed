@@ -40,6 +40,7 @@ from ..catalog_buttons import (
     classify,
     is_placeholder,
     massage_timer_minutes,
+    on_off_switch,
     unique_buttons,
 )
 from ..entity_specs import (
@@ -49,6 +50,7 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     SleepFlag,
     SleepRate,
     sleep_flag_binary_sensor_spec,
@@ -1089,10 +1091,11 @@ class GoodVibeController(BedController):
                     kind=Kind.LIGHT,
                 )
             )
-        timers = set(self._massage_timer_details.values())
+        # Timers and a Sync on/off pair are a select and a switch.
+        shaped = {*self._massage_timer_details.values(), *(self._sync_details or ())}
         for detail in self.control_actions:
             action = self.actions[detail]
-            if action.local or action.hidden or not action.interactive or detail in timers:
+            if action.local or action.hidden or not action.interactive or detail in shaped:
                 continue
             key = "goodvibe_" + detail
             power_bob = self.catalog.bed is not None
@@ -1401,6 +1404,38 @@ class GoodVibeController(BedController):
                     release.result()
                     if cancelled:
                         raise asyncio.CancelledError
+
+    @property
+    def _sync_details(self) -> tuple[str, str] | None:
+        """The product's Sync on and Sync off controls, when it has both."""
+        found: dict[str, str] = {}
+        for detail in self.control_actions:
+            action = self.actions[detail]
+            if (
+                action.label in ("deviceFunctionItemSyncOn", "deviceFunctionItemSyncOff")
+                and action.gesture != "longPress"
+                and not (action.local or action.hidden or action.force_long)
+                and action.interactive
+            ):
+                found.setdefault(action.label, detail)
+        on = found.get("deviceFunctionItemSyncOn")
+        off = found.get("deviceFunctionItemSyncOff")
+        return (on, off) if on is not None and off is not None else None
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if (sync := self._sync_details) is None:
+            return ()
+        on, off = sync
+        return (
+            on_off_switch(
+                "goodvibe_sync",
+                "synchronization",
+                partial(_press, detail=on),
+                partial(_press, detail=off),
+                entity_registry_enabled_default=False,
+            ),
+        )
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:

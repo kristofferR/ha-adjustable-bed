@@ -2498,12 +2498,6 @@
       "sleepys_app_massage_toggle": {
         "name": "Cycle massage mode"
       },
-      "sleepys_app_massage_off": {
-        "name": "Massage off"
-      },
-      "sleepys_app_massage_on": {
-        "name": "Massage on"
-      },
       "eshine_save_zero_g": {
         "name": "Save zero gravity"
       },
@@ -5407,6 +5401,12 @@
       },
       "doublesleep_sonic": {
         "name": "Sonic massage"
+      },
+      "synchronization": {
+        "name": "Synchronization"
+      },
+      "massage": {
+        "name": "Massage"
       }
     },
     "binary_sensor": {

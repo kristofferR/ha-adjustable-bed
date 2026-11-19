@@ -45,6 +45,7 @@ from ...execution import ExecutionCapabilities
 from ...state_keys import LIGHT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import on_off_switch
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -1066,8 +1067,6 @@ class SleepysEliteAppController(BedController):
                         "mdi:chevron-up",
                     ),
                     "sleepys_app_massage_toggle": ("massageMode", "Massage mode", "mdi:vibrate"),
-                    "sleepys_app_massage_off": ("massageOff", "Massage off", "mdi:vibrate-off"),
-                    "sleepys_app_massage_on": ("massageOn", "Massage on", "mdi:vibrate"),
                 }
             )
 
@@ -1109,9 +1108,29 @@ class SleepysEliteAppController(BedController):
 
     @property
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        specs: list[ControllerSwitchSpec] = []
+        if self.selector in _BOX25_SELECTORS and all(
+            (builder, self.selector) in ROUTES for builder in ("massageOn", "massageOff")
+        ):
+            # The app's Massage on and Massage off buttons; the bed reports neither.
+            specs.append(
+                on_off_switch(
+                    "sleepys_app_massage",
+                    "massage",
+                    lambda ctrl: cast(SleepysEliteAppController, ctrl)._press_app_action(
+                        "sleepys_app_massage_on", "massageOn"
+                    ),
+                    lambda ctrl: cast(SleepysEliteAppController, ctrl)._press_app_action(
+                        "sleepys_app_massage_off", "massageOff"
+                    ),
+                    icon="mdi:vibrate",
+                    card=CARD_MASSAGE,
+                )
+            )
         if ("motionSensorOn", self.selector) not in ROUTES:
-            return ()
+            return tuple(specs)
         return (
+            *specs,
             ControllerSwitchSpec(
                 key="sleepys_app_motion_sensor",
                 translation_key="sleepys_app_motion_sensor",

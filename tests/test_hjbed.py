@@ -1040,3 +1040,23 @@ async def test_local_layout_select_uses_replacement_controller(coordinator, inst
     with pytest.raises(ServiceValidationError, match="local option"):
         await entity.async_select_option("Normal")
     assert live._motion
+
+
+async def test_sync_on_and_off_are_one_switch(coordinator, instant):
+    c = controller(coordinator, "hj_bede3rm")
+    on, off = c._sync_details
+    assert not {"hjbed_sync_on", "hjbed_sync_off"} & {s.key for s in c.controller_button_specs}
+    assert not any(s.name in ("Sync on", "Sync off") for s in c.controller_button_specs)
+    (switch,) = c.controller_switch_specs
+    assert switch.key == "hjbed_sync" and switch.state_key is None
+    assert not switch.entity_registry_enabled_default
+    for enabled, detail in ((True, on), (False, off)):
+        coordinator.client.write_gatt_char.reset_mock()
+        await bed._action(c, detail=detail)
+        by_button = written(coordinator)
+        coordinator.client.write_gatt_char.reset_mock()
+        await switch.set_fn(c, enabled)
+        assert written(coordinator) == by_button != []
+    # A product with only Sync on keeps its button.
+    single = controller(coordinator, "flexxafeg300sh")
+    assert single._sync_details is None and single.controller_switch_specs == ()

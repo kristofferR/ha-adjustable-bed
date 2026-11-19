@@ -694,3 +694,28 @@ async def test_massage_timer_controls_are_one_select_sending_the_same_frames(coo
             assert sent[0] == sent[1] != []
         with pytest.raises(ValueError):
             await obj.set_massage_timer(15)
+
+
+async def test_sync_on_and_off_are_one_switch_sending_the_same_frames(coordinator, monkeypatch):
+    keys = [k for k in PRODUCTS if controller(coordinator, k)._sync_details]
+    assert keys
+    for key in keys:
+        obj = controller(coordinator, key)
+        on, off = obj._sync_details
+        assert not {"goodvibe_" + on, "goodvibe_" + off} & {
+            s.key for s in obj.controller_button_specs
+        }
+        (switch,) = obj.controller_switch_specs
+        assert switch.key == "goodvibe_sync" and not switch.entity_registry_enabled_default
+        for enabled, detail in ((True, on), (False, off)):
+            sent = []
+            for run in (
+                lambda o, d=detail: bed._press(o, detail=d),
+                lambda o, e=enabled, s=switch: s.set_fn(o, e),
+            ):
+                coordinator.client.write_gatt_char.reset_mock()
+                fresh = controller(coordinator, key)
+                monkeypatch.setattr(fresh, "_delay", AsyncMock(return_value=True))
+                await run(fresh)
+                sent.append(writes(coordinator))
+            assert sent[0] == sent[1] != []
