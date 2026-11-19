@@ -193,7 +193,7 @@ def _reported_moves(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, s
     except ValueError:
         return []
     return [
-        {key: str(move[key]) for key in ("line", "domain", "unique_id")}
+        {key: str(move[key]) for key in ("line", "domain", "unique_id", "kept") if key in move}
         for move in moves
         if isinstance(move, dict) and {"line", "domain", "unique_id"} <= move.keys()
     ]
@@ -310,13 +310,16 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Raise one repair per bed naming the automations and scripts to update.
 
     Built from the rows that still record an old entity. A row whose old entity
-    nothing names any more forgets it, so its line and the repair go away.
+    nothing names any more forgets it, so its line and the repair go away. A
+    row that kept its entity ID and only changed its options is still named by
+    automations the user already fixed, so its line is raised once and kept.
     """
     from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
     from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
 
     registry = er.async_get(hass)
-    moves: list[dict[str, str]] = []
+    reported = _reported_moves(hass, entry)
+    moves = [move for move in reported if move.get("kept")]
     for row in er.async_entries_for_config_entry(registry, entry.entry_id):
         options = row.options.get(DOMAIN, {})
         old_entity_id = options.get(RETYPED_FROM)
@@ -332,7 +335,9 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 *scripts_with_entity(hass, reference),
             )
         }
-        if not users:
+        options_changed = bool(options.get(RETYPED_OPTIONS))
+        if not users or options_changed:
+            # Reported once (an options change), or nothing names the old entity.
             registry.async_update_entity_options(
                 row.entity_id,
                 DOMAIN,
@@ -342,18 +347,22 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     if key not in (RETYPED_FROM, RETYPED_FROM_ID, RETYPED_OPTIONS)
                 },
             )
-            continue
+            if not users:
+                continue
         change = (
             f"{old_entity_id} (its options changed)"
-            if options.get(RETYPED_OPTIONS)
+            if options_changed
             else f"{old_entity_id} → {row.entity_id}"
         )
-        moves.append(
-            {
-                "line": f"- {change}: {', '.join(sorted(users))}",
-                "domain": row.domain,
-                "unique_id": row.unique_id,
-            }
-        )
-    if moves != _reported_moves(hass, entry):
+        line = f"- {change}: {', '.join(sorted(users))}"
+        if all(move["line"] != line for move in moves):
+            moves.append(
+                {
+                    "line": line,
+                    "domain": row.domain,
+                    "unique_id": row.unique_id,
+                    **({"kept": "1"} if options_changed else {}),
+                }
+            )
+    if moves != reported:
         _async_update_issue(hass, entry, moves)

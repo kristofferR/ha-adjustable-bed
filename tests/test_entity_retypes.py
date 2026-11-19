@@ -398,3 +398,41 @@ async def test_the_repair_goes_once_nothing_names_the_old_entity(hass: HomeAssis
     assert issues.async_get_issue(DOMAIN, issue_id) is None
     light = registry.async_get("light.bed_under_bed_lights")
     assert light is not None and "retyped_from" not in light.options.get(DOMAIN, {})
+
+
+async def test_an_options_change_is_reported_once_and_kept(hass: HomeAssistant) -> None:
+    """The timer keeps its entity ID: a fixed automation still names it, so it is not rechecked."""
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    timer = _row(
+        registry, entry, "select", "controller_select_ore_comfort_massage_timer", "bed_timer"
+    )
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "alias": "Timer",
+                "trigger": {"platform": "event", "event_type": "test"},
+                "action": {
+                    "action": "select.select_option",
+                    "target": {"entity_id": timer.entity_id},
+                    "data": {"option": "20 min"},
+                },
+            }
+        },
+    )
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    await hass.async_block_till_done()
+    issues = ir.async_get(hass)
+    issue_id = ISSUE_PREFIX + entry.entry_id
+    line = "select.bed_timer (its options changed): automation.timer"
+    assert line in issues.async_get_issue(DOMAIN, issue_id).translation_placeholders["entities"]
+    row = registry.async_get("select.bed_timer")
+    assert row is not None and "retyped_from" not in row.options.get(DOMAIN, {})
+
+    # A later startup neither drops the line nor raises it again.
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    await hass.async_block_till_done()
+    entities = issues.async_get_issue(DOMAIN, issue_id).translation_placeholders["entities"]
+    assert entities.count(line) == 1

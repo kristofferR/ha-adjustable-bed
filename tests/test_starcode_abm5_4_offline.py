@@ -213,6 +213,13 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
         for entity_id in controls:
             state = hass.states.get(entity_id)
             assert state is not None and state.state in ("unknown", "unavailable")
+        # The reset survives the reload as a row, disabled by the integration, without state.
+        reset_id = next(
+            entity_id for key, entity_id in second.items() if key.endswith("_starcode_abm5_4_reset")
+        )
+        reset = er.async_get(hass).async_get(reset_id)
+        assert reset is not None and reset.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+        assert hass.states.get(reset_id) is None
         save_id = next(
             entity_id
             for key, entity_id in first.items()

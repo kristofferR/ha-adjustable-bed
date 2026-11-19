@@ -1000,6 +1000,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                             ),
                             card=CARD_MASSAGE,
                             # The waist mode is the dashboard control; per-side settings are there to enable.
+                            entity_category=EntityCategory.CONFIG,
                             entity_registry_enabled_default=False,
                         )
                     )

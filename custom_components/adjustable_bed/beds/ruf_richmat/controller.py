@@ -6,6 +6,8 @@ import asyncio
 import re
 from typing import TYPE_CHECKING, Final
 
+from homeassistant.const import EntityCategory
+
 from ...alarm import AlarmCapability, AlarmError
 from ...alarm import AlarmRequest as SharedAlarm
 from ...card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
@@ -747,6 +749,7 @@ class RufRichmatController(RichmatMhController):
                             # Each side's settings drive one mattress pad; its mode is
                             # the dashboard control, the other settings are there to enable.
                             card=CARD_MASSAGE,
+                            entity_category=None if setting == "mode" else EntityCategory.CONFIG,
                             entity_registry_enabled_default=setting == "mode",
                         )
                     )
