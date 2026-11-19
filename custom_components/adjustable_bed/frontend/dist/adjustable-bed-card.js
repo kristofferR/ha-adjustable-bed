@@ -639,7 +639,12 @@ var Ti=Object.defineProperty;var Ci=Object.getOwnPropertyDescriptor;var C=(s,o,e
           ${i?c:this._motorDirection(e,"down",t,n,r)}
         </div>
       </div>
-    `}_motorDirection(e,t,i,n,r){let l=e.cover??e[t],a=!!e.cover||!!i,p=!l||this._config?.layout==="compact"&&(!a||!this._available(l));if(this._config?.tap_to_move===!0&&Tt(e,t)){let u=this._hold.tapDirection(e)===t;return d`
+    `}_motorDirection(e,t,i,n,r){let l=e.cover??e[t],a=!!e.cover||!!i,p=!l||this._config?.layout==="compact"&&(!a||!this._available(l));if(!e.cover&&l&&this.hass?.states[l]?.attributes.requires_confirmation===!0)return d`
+        <button class="cg-btn"
+          aria-label=${f(this.hass,`action.motor_${t}`,{motor:this._motorName(e)})}
+          @click=${()=>this._press(l)}
+          ?disabled=${p}
+        ><ha-icon icon=${`mdi:chevron-${t}`}></ha-icon></button>`;if(this._config?.tap_to_move===!0&&Tt(e,t)){let u=this._hold.tapDirection(e)===t;return d`
         <button class="cg-btn tap ${u?"moving":""}"
           aria-label=${f(this.hass,`action.motor_${t}`,{motor:this._motorName(e)})}
           aria-pressed=${u?"true":"false"}

@@ -120,6 +120,32 @@ test("a held button that asks first opens its dialog on pointer and keyboard, ne
   });
 });
 
+test("a confirming button on a motor arrow is one click through the dialog", () => {
+  const f = fixture();
+  f.hass.entities["button.lumbar_up"] = {
+    entity_id: "button.lumbar_up", platform: "adjustable_bed", device_id: "right-child", translation_key: "lumbar_up",
+  };
+  f.hass.states["button.lumbar_up"] = { entity_id: "button.lumbar_up", state: "unknown", attributes: {
+    card_section: "motors", card_role: "up", card_motor: "lumbar", requires_confirmation: true,
+    held_control: "lumbar_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0, bed_side: "right",
+  } } as unknown as HomeAssistant["states"][string];
+  const card = f.card as unknown as CardUnderTest & {
+    _estimateDialog?: unknown;
+    _motorDirection(motor: import("./types").MotorEntity, dir: "up" | "down", stop?: string): TemplateResult;
+  };
+  for (const tapToMove of [false, true]) {
+    (card as unknown as { _config: object })._config = { type: "custom:adjustable-bed-card", tap_to_move: tapToMove };
+    const lumbar = bedEntitiesForDevice(f.hass, "right-child").motors.find((m) => m.key === "lumbar")!;
+    const arrow = card._motorDirection(lumbar, "up", "button.right_stop");
+    for (const event of ["pointerdown", "keydown"]) {
+      expect(arrow.strings.some((s) => s.endsWith(`@${event}=`))).toBe(false);
+    }
+    handler(arrow, "click")(new Event("click"));
+    expect(f.calls).toEqual([]);
+    expect(card._estimateDialog).toEqual({ kind: "confirm", entityId: "button.lumbar_up" });
+  }
+});
+
 test("real card page abandonment cancels a pending utility hold on its owning side", async () => {
   await withKeyboard(async () => {
     const f = fixture();

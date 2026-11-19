@@ -1379,6 +1379,16 @@ export class AdjustableBedCard extends LitElement {
     const canStop = !!m.cover || !!stopId;
     const disabled = !entityId ||
       (this._config?.layout === "compact" && (!canStop || !this._available(entityId)));
+    if (!m.cover && entityId &&
+        this.hass?.states[entityId]?.attributes.requires_confirmation === true) {
+      // A button that asks first is one confirmed press: no hold, pulse or tap move.
+      return html`
+        <button class="cg-btn"
+          aria-label=${localize(this.hass, `action.motor_${direction}`, { motor: this._motorName(m) })}
+          @click=${() => this._press(entityId)}
+          ?disabled=${disabled}
+        ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
+    }
     if (this._config?.tap_to_move === true && canTapMove(m, direction)) {
       // A click, not pointerdown, so a scroll that starts on the arrow never
       // starts the bed. Keyboard and assistive activation click too.
