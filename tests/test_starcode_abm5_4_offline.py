@@ -206,8 +206,8 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
             for key, entity_id in first.items()
             if "starcode_abm5_4" in key
             and not entity_id.startswith("sensor.")
-            # The diagnostic query is disabled by default, so it has no state.
-            and not key.endswith("_starcode_abm5_4_refresh")
+            # The diagnostic query and the reset are disabled by default, so they have no state.
+            and not key.endswith(("_starcode_abm5_4_refresh", "_starcode_abm5_4_reset"))
         ]
         assert controls
         for entity_id in controls:
