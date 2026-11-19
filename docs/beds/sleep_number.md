@@ -137,12 +137,10 @@ pair a connection whose bond is still usable.
   response for subsequent frames. It does not derive the client identity from
   the bed's Bluetooth address or continue after a missing bind response.
 - Basic BLE control works without OS-level pairing.
-- MCR keeps its BLE connection open after startup. Idle disconnect,
-  disconnect-after-command and timer-based auto-reconnect are disabled for this
-  transport to avoid reconnect churn during its session handshake: older
-  BAM/MCR firmware is sensitive to reconnect churn between the notify
-  subscribe, init handshake, and follow-up reads. A dropped link reconnects on
-  the next command.
+- MCR keeps its Bluetooth connection open after startup. **Bluetooth
+  connection** does not change this behavior. A dropped link reconnects on the
+  next command, avoiding repeated connections between notification subscription,
+  session binding and follow-up reads on older BAM/MCR beds.
 
 ## Protocol Details
 
@@ -168,7 +166,7 @@ pair a connection whose bond is still usable.
   parsing.
 - Command acknowledgements and query responses depend on the
   notification/readback path, so the integration keeps the BamKey notification
-  channel subscribed even when angle sensing is disabled.
+  channel subscribed even when **Read bed position** is off.
 - `head` is mapped to the integration's `back` actuator and `foot` is mapped to
   `legs`.
 
@@ -201,8 +199,7 @@ FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases** row. When Home Assistant has
 seen the advertisement, setup confirms the transport from its service without
 asking; otherwise it asks which base the bed is, and a detected transport stays
 one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks no
-side, since it exposes both. Either then asks whether to read the bed's
-positions. A model name alone never chooses the
+side, since it exposes both. Either then asks **Read bed position**. A model name alone never chooses the
 transport, and existing entries are not moved to the other one. **Reconfigure**
 lists both transports under their own names.
 

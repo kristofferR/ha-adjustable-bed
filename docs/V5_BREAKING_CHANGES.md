@@ -345,8 +345,6 @@ Other action changes:
   `right` and `day` or `month` instead of 1 and 2.
 - `goodvibe` no longer offers `operation: sync`; use `sync_clock`.
 - `furnimove_action` no longer takes `consumer`.
-- `sleep_number_command` no longer accepts service, firmware and diagnostic
-  commands such as `reboot_system` and `software_versions`.
 - `timed_move` and `hold_control` gain optional `hold_owner` and
   `hold_generation` fields for renewable holds. Calls without them work as
   before. See [Renewable holds](SERVICES.md#renewable-holds).
@@ -363,6 +361,12 @@ Other action changes:
   enable estimated positions.
 
 ### If you ran a v5 beta
+
+- SleepIQ: `sleep_number_command` no longer offers `get_system_status`
+  (network and update status). Use the confirmed maintenance buttons for
+  homing and restarting, and **Set bed clock** for clock synchronization.
+  The `kid_outlet` command accepts only `device: 0`. Existing entities retain
+  their IDs. See the [Sleep Number command guide](beds/sleep-number-services.md).
 
 These actions existed only in v5 betas and are gone. Older field names are not
 accepted.

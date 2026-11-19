@@ -1919,6 +1919,11 @@ preliminary memory-slot write. See the [Rize guide](beds/kaidi.md#rize-beds).
 | `command` | Command | Only commands supported by the selected bed can run. |
 | `parameters` | Parameters | Command-specific fields. Unknown fields and values are rejected. Parameter side cannot override the selected physical side. |
 
+See the [Sleep Number command guide](beds/sleep-number-services.md) for the
+supported commands and parameter values. Use **Set bed clock**
+([`sync_clock`](#sync_clock)) for the clock, and the confirmed maintenance
+buttons for homing and restarting.
+
 ## SleepEvolution and W.Silver Products 3.x
 
 <a id="richmat_legacy"></a>

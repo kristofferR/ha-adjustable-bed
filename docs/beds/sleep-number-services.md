@@ -37,12 +37,12 @@ physical side cannot be overridden by a conflicting `side` or program `side`.
 The service returns a dictionary with the listed response fields. JSON schedule,
 paired-device metadata and diagnostic results are decoded into native objects.
 Commands missing from the connected bed's SYCG capability flags are rejected.
-`set_system_time.date_time` uses UTC `YYYY-MM-DDTHH:mm:ss`, from the app's Hh/a.d formatter.
+Set the clock with **Set bed clock** (`adjustable_bed.sync_clock`).
 
 Integer actuator/preset positions are 0-100. Firmness is 5-100 in steps of 5.
 Footwarming timers are 0-360 minutes, underbed lighting 0-180, and core/cooling
-timers 0-600. Articulation preset timers retain the nonnegative Java integer
-range of their artifact builder; no thermal limit is borrowed for articulation.
+timers 0-600. Articulation preset timers accept nonnegative integers up to
+2,147,483,647; their range differs from thermal timers.
 Off commands use a zero timer. Enum request values are strings (including `0`/`1`
 for Responsive Air). Readback enum strings retain their wire values.
 
@@ -220,9 +220,8 @@ data:
     position: 35
 ```
 
-Protocol behavior comes from the SleepIQ 5.4.11 APK. Physical validation on each
-bed model remains pending; successful static tests do not establish hardware
-compatibility.
+The additional SleepIQ 5.4.11 controls need physical testing on each bed model.
+Successful static tests do not establish hardware compatibility.
 
 ### MCR position services
 
