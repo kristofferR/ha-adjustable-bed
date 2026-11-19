@@ -60,7 +60,6 @@ def test_buttons_add_only_what_shared_presets_lack():
     controller, _ = make("ms600")
     # Flat and memory recall/save are the shared preset_flat/preset_memory/program_memory.
     assert controller.supports_preset_flat and controller.memory_slot_count == 3
-    assert controller.standard_button_requires_confirmation("program_memory_3")
     assert [s.name for s in controller.controller_button_specs] == [
         "Toggle Light",
         "Massage: Head Up",

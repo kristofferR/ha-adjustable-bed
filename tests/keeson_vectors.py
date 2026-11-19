@@ -1999,7 +1999,7 @@ ERGOMOTION_4_P1_SIDE_VECTORS: dict[str | None, tuple[int, str]] = {
     "right": (1, "e6fe16010000000103"),
 }
 
-# Unit132, com.ore.jalon.neworebeding 2.0.2 (9): literal commands only.
+# com.ore.jalon.neworebeding 2.0.2 (9): literal commands only.
 _JALON_VECTORS = json.loads(
     (Path(__file__).parent / "fixtures/jalon/vectors.json").read_text()
 )
@@ -2016,7 +2016,7 @@ FROZEN_FRAMES["comfortbase"] = frozenset(
     )["builders"]
 )
 
-# row135, exact frozen Java outputs (393-case fixture also covers parser boundaries).
+# Jalon app, exact frozen Java outputs (393-case fixture also covers parser boundaries).
 FROZEN_FRAMES["jalon_bed"] = frozenset(
     [
         "e6fe16000000000005",

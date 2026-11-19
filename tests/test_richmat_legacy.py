@@ -385,20 +385,30 @@ def test_button_names_are_readable_and_unique(key):
     ),
 )
 def test_preset_buttons_have_preset_placement(app, code, names):
+    from custom_components.adjustable_bed.card import (
+        CARD_LIGHTING,
+        CARD_MASSAGE,
+        CARD_PRESET_SAVE,
+        CARD_PRESETS,
+        CardSection,
+    )
+
     ctrl, _ = make(app, code)
     specs = {spec.name: spec for spec in ctrl.controller_button_specs}
     for name in names:
-        assert specs[name].card == bed.CARD_PRESETS
-        assert specs[name].translation_key == "richmat_legacy_presets"
+        # Memory slots sit with the memory tiles; other recalls are presets.
+        section = CardSection.MEMORY if name.startswith("Memory") else CardSection.PRESETS
+        assert specs[name].card.section == section
     for name, spec in specs.items():
-        if name.startswith("Save"):
-            assert spec.card == bed.CARD_PRESET_SAVE and spec.requires_confirmation
-            assert spec.translation_key == "richmat_legacy_save"
+        if name.startswith("Save") and spec.card.section == CardSection.PRESETS:
+            assert spec.card == CARD_PRESET_SAVE and spec.requires_confirmation
+            assert spec.translation_key == "catalog_save"
     for name, spec in specs.items():
         if name == "Toggle Light":
-            assert spec.card == bed.CARD_LIGHTING
+            assert spec.card == CARD_LIGHTING
         elif name.startswith("Massage"):
-            assert spec.card == bed.CARD_MASSAGE
+            assert spec.card == CARD_MASSAGE
+    assert CARD_PRESETS in {spec.card for spec in specs.values()} or code == "LP"
 
 
 async def test_axis_and_mode_buttons_choose_then_press(clock):

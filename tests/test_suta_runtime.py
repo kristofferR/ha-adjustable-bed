@@ -72,7 +72,8 @@ async def test_actual_factory_cover_timed_hold_and_saved_entity(hass, runtime):
     assert isinstance(ctrl, bed.SutaController)
     assert ctrl.profile.key == "MattressControllerB803Fragment"
     save = next(entity for entity in _button_entities_for(hass, target) if entity.unique_id.endswith("program_memory_3"))
-    assert save.extra_state_attributes["requires_confirmation"] is True
+    # The card offers a memory save only in Set mode; it needs no second prompt.
+    assert "requires_confirmation" not in save.extra_state_attributes
     cover = AdjustableBedCover(target, _build_cover_description(ctrl.motor_control_specs[0]))
     cover.async_write_ha_state = MagicMock()
     await cover.async_open_cover()

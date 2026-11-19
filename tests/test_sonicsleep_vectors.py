@@ -1,4 +1,4 @@
-"""All 158 accepted row179 command literals, not an artifact re-audit."""
+"""All 158 SonicSleep command literals, not an artifact re-audit."""
 
 import pytest
 

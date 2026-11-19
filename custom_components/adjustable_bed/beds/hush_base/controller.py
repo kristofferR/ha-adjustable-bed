@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Mapping
 from contextvars import ContextVar
-from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
@@ -16,7 +15,6 @@ from ...profiles.hush import ACTIONS, PROFILES
 from ..builder import BuildContext
 from ..casper_base.controller import CASPER_BASE_ERROR, CasperBaseController
 from ..casper_base.protocol import RGB_TIMERS, Request, alarm_countdown
-from ..entity_specs import ControllerButtonSpec
 from .protocol import HushMainReceive, decode
 
 if TYPE_CHECKING:
@@ -90,13 +88,6 @@ class HushBaseController(CasperBaseController):
             raise ValueError("Invalid saved light color")
         self._light_seconds = seconds
         self._light_color = (rgb[0], rgb[1], rgb[2])
-
-    @property
-    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return tuple(
-            replace(spec, translation_key="hush_base_action")
-            for spec in super().controller_button_specs
-        )
 
     async def _send(self, packet: bytes, *, cleanup: bool = False) -> None:
         client, characteristic, generation = self.client, self._write_char, self._generation

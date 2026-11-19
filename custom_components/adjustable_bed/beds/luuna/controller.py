@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_MASSAGE, CARD_PRESETS
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.luuna import (
@@ -169,12 +168,7 @@ class LuunaController(CasperBaseController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
-            replace(
-                spec,
-                key=spec.key.replace("casper_", "luuna_", 1),
-                translation_key="luuna_massage" if "massage" in spec.key else "luuna_preset",
-                card=CARD_MASSAGE if "massage" in spec.key else CARD_PRESETS,
-            )
+            replace(spec, key=spec.key.replace("casper_", "luuna_", 1))
             for spec in super().controller_button_specs
         )
 

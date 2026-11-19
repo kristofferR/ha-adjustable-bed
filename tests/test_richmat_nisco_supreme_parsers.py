@@ -10,9 +10,9 @@ import pytest
 
 from custom_components.adjustable_bed.beds.richmat_mh import protocol
 from custom_components.adjustable_bed.beds.richmat_mh.app_controller import RichmatMHAppClassifier
-from tests.test_richmat_cluster022 import FIXTURES, make
-from tests.test_richmat_cluster022_sleep import receiver
 from tests.test_richmat_mh import sleeps as sleeps
+from tests.test_richmat_nisco_supreme import FIXTURES, make
+from tests.test_richmat_nisco_supreme_sleep import receiver
 
 PARSERS = [row for row in json.loads((FIXTURES / "mlily_supreme_vectors.json").read_text())
            if row["builder"].startswith("parse_")]

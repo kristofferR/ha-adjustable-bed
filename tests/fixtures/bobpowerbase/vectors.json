@@ -10,10 +10,6 @@
       "nordic": true
     },
     "expected_bytes": "2f",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:61 Obj!RMDeviceFunctionItemDetialsType@ac5b91"
-    ],
     "scope": "BED"
   },
   {
@@ -27,10 +23,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002f9e",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:61 Obj!RMDeviceFunctionItemDetialsType@ac5b91"
-    ],
     "scope": "BED"
   },
   {
@@ -44,10 +36,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012f9f",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:61 Obj!RMDeviceFunctionItemDetialsType@ac5b91"
-    ],
     "scope": "BED"
   },
   {
@@ -61,10 +49,6 @@
       "nordic": true
     },
     "expected_bytes": "2c",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:61 Obj!RMDeviceFunctionItemDetialsType@ac5b91"
-    ],
     "scope": "BED"
   },
   {
@@ -78,10 +62,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002c9b",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:61 Obj!RMDeviceFunctionItemDetialsType@ac5b91"
-    ],
     "scope": "BED"
   },
   {
@@ -95,10 +75,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012c9c",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:61 Obj!RMDeviceFunctionItemDetialsType@ac5b91"
-    ],
     "scope": "BED"
   },
   {
@@ -112,10 +88,6 @@
       "nordic": true
     },
     "expected_bytes": "2e",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:99 Obj!RMDeviceFunctionItemDetialsType@ac5c11"
-    ],
     "scope": "BED"
   },
   {
@@ -129,10 +101,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002e9d",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:99 Obj!RMDeviceFunctionItemDetialsType@ac5c11"
-    ],
     "scope": "BED"
   },
   {
@@ -146,10 +114,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012e9e",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:99 Obj!RMDeviceFunctionItemDetialsType@ac5c11"
-    ],
     "scope": "BED"
   },
   {
@@ -163,10 +127,6 @@
       "nordic": true
     },
     "expected_bytes": "2b",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:99 Obj!RMDeviceFunctionItemDetialsType@ac5c11"
-    ],
     "scope": "BED"
   },
   {
@@ -180,10 +140,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002b9a",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:99 Obj!RMDeviceFunctionItemDetialsType@ac5c11"
-    ],
     "scope": "BED"
   },
   {
@@ -197,10 +153,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012b9b",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:99 Obj!RMDeviceFunctionItemDetialsType@ac5c11"
-    ],
     "scope": "BED"
   },
   {
@@ -214,10 +166,6 @@
       "nordic": true
     },
     "expected_bytes": "58",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:137 Obj!RMDeviceFunctionItemDetialsType@ac5c91"
-    ],
     "scope": "BED"
   },
   {
@@ -231,10 +179,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010058c7",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:137 Obj!RMDeviceFunctionItemDetialsType@ac5c91"
-    ],
     "scope": "BED"
   },
   {
@@ -248,10 +192,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010158c8",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:137 Obj!RMDeviceFunctionItemDetialsType@ac5c91"
-    ],
     "scope": "BED"
   },
   {
@@ -265,10 +205,6 @@
       "nordic": true
     },
     "expected_bytes": "64",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:137 Obj!RMDeviceFunctionItemDetialsType@ac5c91"
-    ],
     "scope": "BED"
   },
   {
@@ -282,10 +218,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010064d3",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:137 Obj!RMDeviceFunctionItemDetialsType@ac5c91"
-    ],
     "scope": "BED"
   },
   {
@@ -299,10 +231,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010164d4",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:137 Obj!RMDeviceFunctionItemDetialsType@ac5c91"
-    ],
     "scope": "BED"
   },
   {
@@ -316,10 +244,6 @@
       "nordic": true
     },
     "expected_bytes": "45",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:175 Obj!RMDeviceFunctionItemDetialsType@ac5d11"
-    ],
     "scope": "BED"
   },
   {
@@ -333,10 +257,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010045b4",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:175 Obj!RMDeviceFunctionItemDetialsType@ac5d11"
-    ],
     "scope": "BED"
   },
   {
@@ -350,10 +270,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010145b5",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:175 Obj!RMDeviceFunctionItemDetialsType@ac5d11"
-    ],
     "scope": "BED"
   },
   {
@@ -367,10 +283,6 @@
       "nordic": true
     },
     "expected_bytes": "66",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:175 Obj!RMDeviceFunctionItemDetialsType@ac5d11"
-    ],
     "scope": "BED"
   },
   {
@@ -384,10 +296,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010066d5",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:175 Obj!RMDeviceFunctionItemDetialsType@ac5d11"
-    ],
     "scope": "BED"
   },
   {
@@ -401,10 +309,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010166d6",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:175 Obj!RMDeviceFunctionItemDetialsType@ac5d11"
-    ],
     "scope": "BED"
   },
   {
@@ -418,10 +322,6 @@
       "nordic": true
     },
     "expected_bytes": "46",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:213 Obj!RMDeviceFunctionItemDetialsType@ac5d91"
-    ],
     "scope": "BED"
   },
   {
@@ -435,10 +335,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010046b5",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:213 Obj!RMDeviceFunctionItemDetialsType@ac5d91"
-    ],
     "scope": "BED"
   },
   {
@@ -452,10 +348,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010146b6",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:213 Obj!RMDeviceFunctionItemDetialsType@ac5d91"
-    ],
     "scope": "BED"
   },
   {
@@ -469,10 +361,6 @@
       "nordic": true
     },
     "expected_bytes": "69",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:213 Obj!RMDeviceFunctionItemDetialsType@ac5d91"
-    ],
     "scope": "BED"
   },
   {
@@ -486,10 +374,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010069d8",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:213 Obj!RMDeviceFunctionItemDetialsType@ac5d91"
-    ],
     "scope": "BED"
   },
   {
@@ -503,10 +387,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010169d9",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:213 Obj!RMDeviceFunctionItemDetialsType@ac5d91"
-    ],
     "scope": "BED"
   },
   {
@@ -520,10 +400,6 @@
       "nordic": true
     },
     "expected_bytes": "61",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:290 Obj!RMDeviceFunctionItemDetialsType@ac5e91"
-    ],
     "scope": "BED"
   },
   {
@@ -537,10 +413,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010061d0",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:290 Obj!RMDeviceFunctionItemDetialsType@ac5e91"
-    ],
     "scope": "BED"
   },
   {
@@ -554,10 +426,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010161d1",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:290 Obj!RMDeviceFunctionItemDetialsType@ac5e91"
-    ],
     "scope": "BED"
   },
   {
@@ -571,10 +439,6 @@
       "nordic": true
     },
     "expected_bytes": "63",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:327 Obj!RMDeviceFunctionItemDetialsType@ac5f11"
-    ],
     "scope": "BED"
   },
   {
@@ -588,10 +452,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010063d2",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:327 Obj!RMDeviceFunctionItemDetialsType@ac5f11"
-    ],
     "scope": "BED"
   },
   {
@@ -605,10 +465,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010163d3",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:327 Obj!RMDeviceFunctionItemDetialsType@ac5f11"
-    ],
     "scope": "BED"
   },
   {
@@ -622,10 +478,6 @@
       "nordic": true
     },
     "expected_bytes": "5f",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:364 Obj!RMDeviceFunctionItemDetialsType@ac5f91"
-    ],
     "scope": "BED"
   },
   {
@@ -639,10 +491,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01005fce",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:364 Obj!RMDeviceFunctionItemDetialsType@ac5f91"
-    ],
     "scope": "BED"
   },
   {
@@ -656,10 +504,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01015fcf",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:364 Obj!RMDeviceFunctionItemDetialsType@ac5f91"
-    ],
     "scope": "BED"
   },
   {
@@ -673,10 +517,6 @@
       "nordic": true
     },
     "expected_bytes": "5e",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:401 Obj!RMDeviceFunctionItemDetialsType@ac6011"
-    ],
     "scope": "BED"
   },
   {
@@ -690,10 +530,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01005ecd",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:401 Obj!RMDeviceFunctionItemDetialsType@ac6011"
-    ],
     "scope": "BED"
   },
   {
@@ -707,10 +543,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01015ece",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:401 Obj!RMDeviceFunctionItemDetialsType@ac6011"
-    ],
     "scope": "BED"
   },
   {
@@ -724,10 +556,6 @@
       "nordic": true
     },
     "expected_bytes": "48",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:438 Obj!RMDeviceFunctionItemDetialsType@ac6091"
-    ],
     "scope": "BED"
   },
   {
@@ -741,10 +569,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010048b7",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:438 Obj!RMDeviceFunctionItemDetialsType@ac6091"
-    ],
     "scope": "BED"
   },
   {
@@ -758,10 +582,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010148b8",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:438 Obj!RMDeviceFunctionItemDetialsType@ac6091"
-    ],
     "scope": "BED"
   },
   {
@@ -775,10 +595,6 @@
       "nordic": true
     },
     "expected_bytes": "4e",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:475 Obj!RMDeviceFunctionItemDetialsType@ac6111"
-    ],
     "scope": "BED"
   },
   {
@@ -792,10 +608,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01004ebd",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:475 Obj!RMDeviceFunctionItemDetialsType@ac6111"
-    ],
     "scope": "BED"
   },
   {
@@ -809,10 +621,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01014ebe",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:475 Obj!RMDeviceFunctionItemDetialsType@ac6111"
-    ],
     "scope": "BED"
   },
   {
@@ -826,10 +634,6 @@
       "nordic": true
     },
     "expected_bytes": "4c",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:512 Obj!RMDeviceFunctionItemDetialsType@ac6191"
-    ],
     "scope": "BED"
   },
   {
@@ -843,10 +647,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01004cbb",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:512 Obj!RMDeviceFunctionItemDetialsType@ac6191"
-    ],
     "scope": "BED"
   },
   {
@@ -860,10 +660,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01014cbc",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:512 Obj!RMDeviceFunctionItemDetialsType@ac6191"
-    ],
     "scope": "BED"
   },
   {
@@ -877,10 +673,6 @@
       "nordic": true
     },
     "expected_bytes": "31",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:549 Obj!RMDeviceFunctionItemDetialsType@ac6211"
-    ],
     "scope": "BED"
   },
   {
@@ -894,10 +686,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010031a0",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:549 Obj!RMDeviceFunctionItemDetialsType@ac6211"
-    ],
     "scope": "BED"
   },
   {
@@ -911,10 +699,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010131a1",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:549 Obj!RMDeviceFunctionItemDetialsType@ac6211"
-    ],
     "scope": "BED"
   },
   {
@@ -928,10 +712,6 @@
       "nordic": true
     },
     "expected_bytes": "2a",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:586 Obj!RMDeviceFunctionItemDetialsType@ac6291"
-    ],
     "scope": "BED"
   },
   {
@@ -945,10 +725,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002a99",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:586 Obj!RMDeviceFunctionItemDetialsType@ac6291"
-    ],
     "scope": "BED"
   },
   {
@@ -962,10 +738,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012a9a",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:586 Obj!RMDeviceFunctionItemDetialsType@ac6291"
-    ],
     "scope": "BED"
   },
   {
@@ -979,10 +751,6 @@
       "nordic": true
     },
     "expected_bytes": "29",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:623 Obj!RMDeviceFunctionItemDetialsType@ac6311"
-    ],
     "scope": "BED"
   },
   {
@@ -996,10 +764,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002998",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:623 Obj!RMDeviceFunctionItemDetialsType@ac6311"
-    ],
     "scope": "BED"
   },
   {
@@ -1013,10 +777,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012999",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:623 Obj!RMDeviceFunctionItemDetialsType@ac6311"
-    ],
     "scope": "BED"
   },
   {
@@ -1030,10 +790,6 @@
       "nordic": true
     },
     "expected_bytes": "27",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:660 Obj!RMDeviceFunctionItemDetialsType@ac6391"
-    ],
     "scope": "BED"
   },
   {
@@ -1047,10 +803,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002796",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:660 Obj!RMDeviceFunctionItemDetialsType@ac6391"
-    ],
     "scope": "BED"
   },
   {
@@ -1064,10 +816,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012797",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:660 Obj!RMDeviceFunctionItemDetialsType@ac6391"
-    ],
     "scope": "BED"
   },
   {
@@ -1081,10 +829,6 @@
       "nordic": true
     },
     "expected_bytes": "26",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:697 Obj!RMDeviceFunctionItemDetialsType@ac6411"
-    ],
     "scope": "BED"
   },
   {
@@ -1098,10 +842,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002695",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:697 Obj!RMDeviceFunctionItemDetialsType@ac6411"
-    ],
     "scope": "BED"
   },
   {
@@ -1115,10 +855,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012696",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:697 Obj!RMDeviceFunctionItemDetialsType@ac6411"
-    ],
     "scope": "BED"
   },
   {
@@ -1132,10 +868,6 @@
       "nordic": true
     },
     "expected_bytes": "25",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:734 Obj!RMDeviceFunctionItemDetialsType@ac6491"
-    ],
     "scope": "BED"
   },
   {
@@ -1149,10 +881,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002594",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:734 Obj!RMDeviceFunctionItemDetialsType@ac6491"
-    ],
     "scope": "BED"
   },
   {
@@ -1166,10 +894,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012595",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:734 Obj!RMDeviceFunctionItemDetialsType@ac6491"
-    ],
     "scope": "BED"
   },
   {
@@ -1183,10 +907,6 @@
       "nordic": true
     },
     "expected_bytes": "24",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:771 Obj!RMDeviceFunctionItemDetialsType@ac6511"
-    ],
     "scope": "BED"
   },
   {
@@ -1200,10 +920,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002493",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:771 Obj!RMDeviceFunctionItemDetialsType@ac6511"
-    ],
     "scope": "BED"
   },
   {
@@ -1217,10 +933,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01012494",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:771 Obj!RMDeviceFunctionItemDetialsType@ac6511"
-    ],
     "scope": "BED"
   },
   {
@@ -1234,10 +946,6 @@
       "nordic": true
     },
     "expected_bytes": "d8",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:808 Obj!RMDeviceFunctionItemDetialsType@ac6591"
-    ],
     "scope": "EXCLUDED audio"
   },
   {
@@ -1251,10 +959,6 @@
       "nordic": false
     },
     "expected_bytes": "6e0100d847",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:808 Obj!RMDeviceFunctionItemDetialsType@ac6591"
-    ],
     "scope": "EXCLUDED audio"
   },
   {
@@ -1268,10 +972,6 @@
       "nordic": false
     },
     "expected_bytes": "6e0101d848",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:808 Obj!RMDeviceFunctionItemDetialsType@ac6591"
-    ],
     "scope": "EXCLUDED audio"
   },
   {
@@ -1285,10 +985,6 @@
       "nordic": true
     },
     "expected_bytes": "42",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:845 Obj!RMDeviceFunctionItemDetialsType@ac6611"
-    ],
     "scope": "BED"
   },
   {
@@ -1302,10 +998,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010042b1",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:845 Obj!RMDeviceFunctionItemDetialsType@ac6611"
-    ],
     "scope": "BED"
   },
   {
@@ -1319,10 +1011,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010142b2",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:845 Obj!RMDeviceFunctionItemDetialsType@ac6611"
-    ],
     "scope": "BED"
   },
   {
@@ -1336,10 +1024,6 @@
       "nordic": true
     },
     "expected_bytes": "41",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:882 Obj!RMDeviceFunctionItemDetialsType@ac6691"
-    ],
     "scope": "BED"
   },
   {
@@ -1353,10 +1037,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010041b0",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:882 Obj!RMDeviceFunctionItemDetialsType@ac6691"
-    ],
     "scope": "BED"
   },
   {
@@ -1370,10 +1050,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010141b1",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:882 Obj!RMDeviceFunctionItemDetialsType@ac6691"
-    ],
     "scope": "BED"
   },
   {
@@ -1387,10 +1063,6 @@
       "nordic": true
     },
     "expected_bytes": "40",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:919 Obj!RMDeviceFunctionItemDetialsType@ac6711"
-    ],
     "scope": "BED"
   },
   {
@@ -1404,10 +1076,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010040af",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:919 Obj!RMDeviceFunctionItemDetialsType@ac6711"
-    ],
     "scope": "BED"
   },
   {
@@ -1421,10 +1089,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010140b0",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:919 Obj!RMDeviceFunctionItemDetialsType@ac6711"
-    ],
     "scope": "BED"
   },
   {
@@ -1438,10 +1102,6 @@
       "nordic": true
     },
     "expected_bytes": "3f",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:956 Obj!RMDeviceFunctionItemDetialsType@ac6791"
-    ],
     "scope": "BED"
   },
   {
@@ -1455,10 +1115,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01003fae",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:956 Obj!RMDeviceFunctionItemDetialsType@ac6791"
-    ],
     "scope": "BED"
   },
   {
@@ -1472,10 +1128,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01013faf",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:956 Obj!RMDeviceFunctionItemDetialsType@ac6791"
-    ],
     "scope": "BED"
   },
   {
@@ -1489,10 +1141,6 @@
       "nordic": true
     },
     "expected_bytes": "3c",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:993 Obj!RMDeviceFunctionItemDetialsType@ac6811"
-    ],
     "scope": "BED"
   },
   {
@@ -1506,10 +1154,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01003cab",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:993 Obj!RMDeviceFunctionItemDetialsType@ac6811"
-    ],
     "scope": "BED"
   },
   {
@@ -1523,10 +1167,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01013cac",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:993 Obj!RMDeviceFunctionItemDetialsType@ac6811"
-    ],
     "scope": "BED"
   },
   {
@@ -1540,10 +1180,6 @@
       "nordic": true
     },
     "expected_bytes": "6e",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2186 Obj!RMDeviceFunctionItemDetialsType@ac7811"
-    ],
     "scope": "BED"
   },
   {
@@ -1557,10 +1193,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01006edd",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2186 Obj!RMDeviceFunctionItemDetialsType@ac7811"
-    ],
     "scope": "BED"
   },
   {
@@ -1574,10 +1206,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01016ede",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2186 Obj!RMDeviceFunctionItemDetialsType@ac7811"
-    ],
     "scope": "BED"
   },
   {
@@ -1591,10 +1219,6 @@
       "nordic": true
     },
     "expected_bytes": "00",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2223 Obj!RMDeviceFunctionItemDetialsType@ac7891"
-    ],
     "scope": "BED"
   },
   {
@@ -1611,10 +1235,6 @@
       ]
     },
     "expected_bytes": "6e02010071",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2223 Obj!RMDeviceFunctionItemDetialsType@ac7891"
-    ],
     "scope": "BED"
   },
   {
@@ -1628,10 +1248,6 @@
       "nordic": true
     },
     "expected_bytes": "01",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2260 Obj!RMDeviceFunctionItemDetialsType@ac7911"
-    ],
     "scope": "EXCLUDED audio"
   },
   {
@@ -1648,10 +1264,6 @@
       ]
     },
     "expected_bytes": "6e15010185",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2260 Obj!RMDeviceFunctionItemDetialsType@ac7911"
-    ],
     "scope": "EXCLUDED audio"
   },
   {
@@ -1665,10 +1277,6 @@
       "nordic": true
     },
     "expected_bytes": "01",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2297 Obj!RMDeviceFunctionItemDetialsType@ac7991"
-    ],
     "scope": "BED"
   },
   {
@@ -1685,10 +1293,6 @@
       ]
     },
     "expected_bytes": "6e0a000179",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2297 Obj!RMDeviceFunctionItemDetialsType@ac7991"
-    ],
     "scope": "BED"
   },
   {
@@ -1702,10 +1306,6 @@
       "nordic": true
     },
     "expected_bytes": "01",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2334 Obj!RMDeviceFunctionItemDetialsType@ac7a11"
-    ],
     "scope": "BED"
   },
   {
@@ -1722,10 +1322,6 @@
       ]
     },
     "expected_bytes": "6e08010178",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2334 Obj!RMDeviceFunctionItemDetialsType@ac7a11"
-    ],
     "scope": "BED"
   },
   {
@@ -1739,10 +1335,6 @@
       "nordic": true
     },
     "expected_bytes": "75",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2408 Obj!RMDeviceFunctionItemDetialsType@ac7b11"
-    ],
     "scope": "BED"
   },
   {
@@ -1756,10 +1348,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010075e4",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2408 Obj!RMDeviceFunctionItemDetialsType@ac7b11"
-    ],
     "scope": "BED"
   },
   {
@@ -1773,10 +1361,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010175e5",
-    "evidence": [
-      "E-BUILDER",
-      "work/blutter/objs.txt:2408 Obj!RMDeviceFunctionItemDetialsType@ac7b11"
-    ],
     "scope": "BED"
   },
   {
@@ -1788,9 +1372,6 @@
       "seconds": 0
     },
     "expected_bytes": "6e0bffff77",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1802,9 +1383,6 @@
       "seconds": 300
     },
     "expected_bytes": "6e0b012ca6",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1816,9 +1394,6 @@
       "seconds": 65536
     },
     "expected_bytes": "6e0b100089",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1832,9 +1407,6 @@
       "blue": 0
     },
     "expected_bytes": "6e0cffff786e0d00007b",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1848,9 +1420,6 @@
       "blue": 48
     },
     "expected_bytes": "6e0cff10896e0d2030cb",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1867,9 +1436,6 @@
       ]
     },
     "expected_bytes": "6e2008050100009c",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1886,9 +1452,6 @@
       ]
     },
     "expected_bytes": "6e2008050201009e",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1905,9 +1468,6 @@
       ]
     },
     "expected_bytes": "6e200805020103a1",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1929,9 +1489,6 @@
       ]
     },
     "expected_bytes": "6e200d0501010100071e027f49",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1953,9 +1510,6 @@
       ]
     },
     "expected_bytes": "6e200d0501010300173b0100f8",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -1977,9 +1531,6 @@
       ]
     },
     "expected_bytes": "6e200d080301380b111000000b",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -2001,9 +1552,6 @@
       ]
     },
     "expected_bytes": "6e200d080301370c1f173b3b96",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "BED"
   },
   {
@@ -2016,9 +1564,6 @@
       "mode": 0
     },
     "expected_bytes": "6e05000073 / 6e06000074",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "DEAD/UNUSED"
   },
   {
@@ -2031,9 +1576,6 @@
       "mode": 2
     },
     "expected_bytes": "6e052c009f / 6e06010277",
-    "evidence": [
-      "E-HELPERS"
-    ],
     "scope": "DEAD/UNUSED"
   },
   {
@@ -2045,10 +1587,6 @@
       "hex": "6e09010078"
     },
     "expected_bytes": "edac",
-    "evidence": [
-      "E-RX",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1073-1209"
-    ],
     "scope": "EXCLUDED OTA"
   },
   {
@@ -2060,10 +1598,6 @@
       "hex": "6e0e00037f"
     },
     "expected_bytes": "ae05",
-    "evidence": [
-      "E-RX",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1073-1209"
-    ],
     "scope": "EXCLUDED OTA"
   },
   {
@@ -2075,9 +1609,6 @@
       "hex": "6e200a01030301002dcd"
     },
     "expected_bytes": "6e200a01030301002dcd",
-    "evidence": [
-      "E-RX-BED"
-    ],
     "scope": "BED",
     "expected_state": {
       "position": 1,
@@ -2093,9 +1624,6 @@
       "hex": "6e200a01030302001ebf"
     },
     "expected_bytes": "6e200a01030302001ebf",
-    "evidence": [
-      "E-RX-BED"
-    ],
     "scope": "BED",
     "expected_state": {
       "position": 2,
@@ -2111,9 +1639,6 @@
       "hex": "6e200b02010301040202a8"
     },
     "expected_bytes": "6e200b02010301040202a8",
-    "evidence": [
-      "E-RX-BED"
-    ],
     "scope": "BED",
     "expected_state": {
       "intensities": {
@@ -2131,9 +1656,6 @@
       "hex": "6e200b02010301000205a7"
     },
     "expected_bytes": "6e200b02010301000205a7",
-    "evidence": [
-      "E-RX-BED"
-    ],
     "scope": "BED",
     "expected_state": {
       "intensities": {
@@ -2151,9 +1673,6 @@
       "hex": "6e90352d60"
     },
     "expected_bytes": "6e90352d60",
-    "evidence": [
-      "E-RX"
-    ],
     "scope": "BED",
     "expected_state": {
       "no": 1,
@@ -2170,9 +1689,6 @@
       "hex": "6e903a1e56"
     },
     "expected_bytes": "6e903a1e56",
-    "evidence": [
-      "E-RX"
-    ],
     "scope": "BED",
     "expected_state": {
       "no": 2,
@@ -2192,11 +1708,7 @@
       "enabled": true
     },
     "expected_bytes": "81",
-    "scope": "BED",
-    "evidence": [
-      "E-HELPERS",
-      "work/blutter/asm/casperbase/data/model/repeat_alarm_details_model.dart:178-550 @0x84265c"
-    ]
+    "scope": "BED"
   },
   {
     "id": "repeat-monday-disabled",
@@ -2210,11 +1722,7 @@
       "enabled": false
     },
     "expected_bytes": "80",
-    "scope": "BED",
-    "evidence": [
-      "E-HELPERS",
-      "work/blutter/asm/casperbase/data/model/repeat_alarm_details_model.dart:178-550 @0x84265c"
-    ]
+    "scope": "BED"
   },
   {
     "id": "repeat-sunday",
@@ -2228,11 +1736,7 @@
       "enabled": true
     },
     "expected_bytes": "03",
-    "scope": "BED",
-    "evidence": [
-      "E-HELPERS",
-      "work/blutter/asm/casperbase/data/model/repeat_alarm_details_model.dart:178-550 @0x84265c"
-    ]
+    "scope": "BED"
   },
   {
     "id": "repeat-once-overrides",
@@ -2247,11 +1751,7 @@
       "enabled": true
     },
     "expected_bytes": "01",
-    "scope": "BED",
-    "evidence": [
-      "E-HELPERS",
-      "work/blutter/asm/casperbase/data/model/repeat_alarm_details_model.dart:178-550 @0x84265c"
-    ]
+    "scope": "BED"
   },
   {
     "id": "repeat-all-days",
@@ -2271,11 +1771,7 @@
       "enabled": true
     },
     "expected_bytes": "ff",
-    "scope": "BED",
-    "evidence": [
-      "E-HELPERS",
-      "work/blutter/asm/casperbase/data/model/repeat_alarm_details_model.dart:178-550 @0x84265c"
-    ]
+    "scope": "BED"
   },
   {
     "id": "rx-rgb-color",
@@ -2293,11 +1789,7 @@
         86
       ]
     },
-    "scope": "BED",
-    "evidence": [
-      "E-RX-BED",
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:14429-14996;15243-15743"
-    ]
+    "scope": "BED"
   },
   {
     "id": "rx-rgb-timer",
@@ -2311,11 +1803,7 @@
     "expected_state": {
       "rgb_seconds": 90
     },
-    "scope": "BED",
-    "evidence": [
-      "E-RX-BED",
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:14429-14996;15243-15743"
-    ]
+    "scope": "BED"
   },
   {
     "id": "rx-rgb-groove",
@@ -2329,11 +1817,7 @@
     "expected_state": {
       "rgb_groove": true
     },
-    "scope": "BED",
-    "evidence": [
-      "E-RX-BED",
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:14429-14996;15243-15743"
-    ]
+    "scope": "BED"
   },
   {
     "id": "rx-rgb-power",
@@ -2347,11 +1831,7 @@
     "expected_state": {
       "rgb_power": false
     },
-    "scope": "BED",
-    "evidence": [
-      "E-RX-BED",
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:14429-14996;15243-15743"
-    ]
+    "scope": "BED"
   },
   {
     "id": "rx-snore-enable",
@@ -2365,11 +1845,7 @@
     "expected_state": {
       "snore_detection": true
     },
-    "scope": "BED",
-    "evidence": [
-      "E-RX-BED",
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:14429-14996;15243-15743"
-    ]
+    "scope": "BED"
   },
   {
     "id": "rx-off-bed-disable",
@@ -2383,11 +1859,7 @@
     "expected_state": {
       "off_bed_detection": false
     },
-    "scope": "BED",
-    "evidence": [
-      "E-RX-BED",
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:14429-14996;15243-15743"
-    ]
+    "scope": "BED"
   },
   {
     "id": "rx-snore-stop",
@@ -2401,10 +1873,6 @@
     "expected_state": {
       "snore_stop_event": true
     },
-    "scope": "EXCLUDED audio event; shared physical fields only",
-    "evidence": [
-      "E-RX-BED",
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:14429-14996;15243-15743"
-    ]
+    "scope": "EXCLUDED audio event; shared physical fields only"
   }
 ]

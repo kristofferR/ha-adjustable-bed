@@ -103,7 +103,7 @@ def test_model_gates(route, model):
     assert not ctrl.has_lumbar_support
     assert not ctrl.supports_single_address_pairing
     assert ctrl.alarm_capability is None
-    labels = [spec.translation_placeholders["action"] for spec in ctrl.controller_button_specs]
+    labels = [spec.name for spec in ctrl.controller_button_specs]
     assert len(labels) == len(set(labels))
     assert all("Decrease" not in label for label in labels) if route != "malouf" else True
 

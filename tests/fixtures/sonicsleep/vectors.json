@@ -8,12 +8,7 @@
         "route": "Nordic",
         "action": "head_up"
       },
-      "expected_bytes": "24",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "24"
     },
     {
       "id": "Nordic-head_down",
@@ -22,12 +17,7 @@
         "route": "Nordic",
         "action": "head_down"
       },
-      "expected_bytes": "25",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "25"
     },
     {
       "id": "Nordic-foot_up",
@@ -36,12 +26,7 @@
         "route": "Nordic",
         "action": "foot_up"
       },
-      "expected_bytes": "26",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "26"
     },
     {
       "id": "Nordic-foot_down",
@@ -50,12 +35,7 @@
         "route": "Nordic",
         "action": "foot_down"
       },
-      "expected_bytes": "27",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "27"
     },
     {
       "id": "Nordic-both_up",
@@ -64,12 +44,7 @@
         "route": "Nordic",
         "action": "both_up"
       },
-      "expected_bytes": "29",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "29"
     },
     {
       "id": "Nordic-both_down",
@@ -78,12 +53,7 @@
         "route": "Nordic",
         "action": "both_down"
       },
-      "expected_bytes": "2a",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "2a"
     },
     {
       "id": "Nordic-flat",
@@ -92,12 +62,7 @@
         "route": "Nordic",
         "action": "flat"
       },
-      "expected_bytes": "31",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "31"
     },
     {
       "id": "Nordic-zero_gravity",
@@ -106,12 +71,7 @@
         "route": "Nordic",
         "action": "zero_gravity"
       },
-      "expected_bytes": "45",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "45"
     },
     {
       "id": "Nordic-lounge",
@@ -120,12 +80,7 @@
         "route": "Nordic",
         "action": "lounge"
       },
-      "expected_bytes": "59",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "59"
     },
     {
       "id": "Nordic-tv",
@@ -134,12 +89,7 @@
         "route": "Nordic",
         "action": "tv"
       },
-      "expected_bytes": "58",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "58"
     },
     {
       "id": "Nordic-anti_snore",
@@ -148,12 +98,7 @@
         "route": "Nordic",
         "action": "anti_snore"
       },
-      "expected_bytes": "46",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "46"
     },
     {
       "id": "Nordic-memory_1",
@@ -162,12 +107,7 @@
         "route": "Nordic",
         "action": "memory_1"
       },
-      "expected_bytes": "2e",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "2e"
     },
     {
       "id": "Nordic-memory_2",
@@ -176,12 +116,7 @@
         "route": "Nordic",
         "action": "memory_2"
       },
-      "expected_bytes": "2f",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "2f"
     },
     {
       "id": "Nordic-save_zero_gravity",
@@ -190,12 +125,7 @@
         "route": "Nordic",
         "action": "save_zero_gravity"
       },
-      "expected_bytes": "66",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "66"
     },
     {
       "id": "Nordic-save_lounge",
@@ -204,12 +134,7 @@
         "route": "Nordic",
         "action": "save_lounge"
       },
-      "expected_bytes": "65",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "65"
     },
     {
       "id": "Nordic-save_tv",
@@ -218,12 +143,7 @@
         "route": "Nordic",
         "action": "save_tv"
       },
-      "expected_bytes": "64",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "64"
     },
     {
       "id": "Nordic-save_anti_snore",
@@ -232,12 +152,7 @@
         "route": "Nordic",
         "action": "save_anti_snore"
       },
-      "expected_bytes": "69",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "69"
     },
     {
       "id": "Nordic-save_memory_1",
@@ -246,12 +161,7 @@
         "route": "Nordic",
         "action": "save_memory_1"
       },
-      "expected_bytes": "2b",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "2b"
     },
     {
       "id": "Nordic-save_memory_2",
@@ -260,12 +170,7 @@
         "route": "Nordic",
         "action": "save_memory_2"
       },
-      "expected_bytes": "2c",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "2c"
     },
     {
       "id": "Nordic-exit_limit",
@@ -274,12 +179,7 @@
         "route": "Nordic",
         "action": "exit_limit"
       },
-      "expected_bytes": "00",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "00"
     },
     {
       "id": "Nordic-query_clock",
@@ -288,12 +188,7 @@
         "route": "Nordic",
         "action": "query_clock"
       },
-      "expected_bytes": "01",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "01"
     },
     {
       "id": "W1-head_up",
@@ -302,12 +197,7 @@
         "route": "W1",
         "action": "head_up"
       },
-      "expected_bytes": "6e01002493",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002493"
     },
     {
       "id": "W1-head_down",
@@ -316,12 +206,7 @@
         "route": "W1",
         "action": "head_down"
       },
-      "expected_bytes": "6e01002594",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002594"
     },
     {
       "id": "W1-foot_up",
@@ -330,12 +215,7 @@
         "route": "W1",
         "action": "foot_up"
       },
-      "expected_bytes": "6e01002695",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002695"
     },
     {
       "id": "W1-foot_down",
@@ -344,12 +224,7 @@
         "route": "W1",
         "action": "foot_down"
       },
-      "expected_bytes": "6e01002796",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002796"
     },
     {
       "id": "W1-both_up",
@@ -358,12 +233,7 @@
         "route": "W1",
         "action": "both_up"
       },
-      "expected_bytes": "6e01002998",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002998"
     },
     {
       "id": "W1-both_down",
@@ -372,12 +242,7 @@
         "route": "W1",
         "action": "both_down"
       },
-      "expected_bytes": "6e01002a99",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002a99"
     },
     {
       "id": "W1-flat",
@@ -386,12 +251,7 @@
         "route": "W1",
         "action": "flat"
       },
-      "expected_bytes": "6e010031a0",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e010031a0"
     },
     {
       "id": "W1-zero_gravity",
@@ -400,12 +260,7 @@
         "route": "W1",
         "action": "zero_gravity"
       },
-      "expected_bytes": "6e010045b4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010045b4"
     },
     {
       "id": "W1-lounge",
@@ -414,12 +269,7 @@
         "route": "W1",
         "action": "lounge"
       },
-      "expected_bytes": "6e010059c8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010059c8"
     },
     {
       "id": "W1-tv",
@@ -428,12 +278,7 @@
         "route": "W1",
         "action": "tv"
       },
-      "expected_bytes": "6e010058c7",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010058c7"
     },
     {
       "id": "W1-anti_snore",
@@ -442,12 +287,7 @@
         "route": "W1",
         "action": "anti_snore"
       },
-      "expected_bytes": "6e010046b5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010046b5"
     },
     {
       "id": "W1-memory_1",
@@ -456,12 +296,7 @@
         "route": "W1",
         "action": "memory_1"
       },
-      "expected_bytes": "6e01002e9d",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002e9d"
     },
     {
       "id": "W1-memory_2",
@@ -470,12 +305,7 @@
         "route": "W1",
         "action": "memory_2"
       },
-      "expected_bytes": "6e01002f9e",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002f9e"
     },
     {
       "id": "W1-save_zero_gravity",
@@ -484,12 +314,7 @@
         "route": "W1",
         "action": "save_zero_gravity"
       },
-      "expected_bytes": "6e010066d5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010066d5"
     },
     {
       "id": "W1-save_lounge",
@@ -498,12 +323,7 @@
         "route": "W1",
         "action": "save_lounge"
       },
-      "expected_bytes": "6e010065d4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010065d4"
     },
     {
       "id": "W1-save_tv",
@@ -512,12 +332,7 @@
         "route": "W1",
         "action": "save_tv"
       },
-      "expected_bytes": "6e010064d3",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010064d3"
     },
     {
       "id": "W1-save_anti_snore",
@@ -526,12 +341,7 @@
         "route": "W1",
         "action": "save_anti_snore"
       },
-      "expected_bytes": "6e010069d8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010069d8"
     },
     {
       "id": "W1-save_memory_1",
@@ -540,12 +350,7 @@
         "route": "W1",
         "action": "save_memory_1"
       },
-      "expected_bytes": "6e01002b9a",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002b9a"
     },
     {
       "id": "W1-save_memory_2",
@@ -554,12 +359,7 @@
         "route": "W1",
         "action": "save_memory_2"
       },
-      "expected_bytes": "6e01002c9b",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002c9b"
     },
     {
       "id": "W1-exit_limit",
@@ -568,12 +368,7 @@
         "route": "W1",
         "action": "exit_limit"
       },
-      "expected_bytes": "6e02010071",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e02010071"
     },
     {
       "id": "W1-query_clock",
@@ -582,12 +377,7 @@
         "route": "W1",
         "action": "query_clock"
       },
-      "expected_bytes": "6e08010178",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e08010178"
     },
     {
       "id": "W2-head_up",
@@ -596,12 +386,7 @@
         "route": "W2",
         "action": "head_up"
       },
-      "expected_bytes": "6e01002493",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002493"
     },
     {
       "id": "W2-head_down",
@@ -610,12 +395,7 @@
         "route": "W2",
         "action": "head_down"
       },
-      "expected_bytes": "6e01002594",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002594"
     },
     {
       "id": "W2-foot_up",
@@ -624,12 +404,7 @@
         "route": "W2",
         "action": "foot_up"
       },
-      "expected_bytes": "6e01002695",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002695"
     },
     {
       "id": "W2-foot_down",
@@ -638,12 +413,7 @@
         "route": "W2",
         "action": "foot_down"
       },
-      "expected_bytes": "6e01002796",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002796"
     },
     {
       "id": "W2-both_up",
@@ -652,12 +422,7 @@
         "route": "W2",
         "action": "both_up"
       },
-      "expected_bytes": "6e01002998",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002998"
     },
     {
       "id": "W2-both_down",
@@ -666,12 +431,7 @@
         "route": "W2",
         "action": "both_down"
       },
-      "expected_bytes": "6e01002a99",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002a99"
     },
     {
       "id": "W2-flat",
@@ -680,12 +440,7 @@
         "route": "W2",
         "action": "flat"
       },
-      "expected_bytes": "6e010031a0",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e010031a0"
     },
     {
       "id": "W2-zero_gravity",
@@ -694,12 +449,7 @@
         "route": "W2",
         "action": "zero_gravity"
       },
-      "expected_bytes": "6e010045b4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010045b4"
     },
     {
       "id": "W2-lounge",
@@ -708,12 +458,7 @@
         "route": "W2",
         "action": "lounge"
       },
-      "expected_bytes": "6e010059c8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010059c8"
     },
     {
       "id": "W2-tv",
@@ -722,12 +467,7 @@
         "route": "W2",
         "action": "tv"
       },
-      "expected_bytes": "6e010058c7",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010058c7"
     },
     {
       "id": "W2-anti_snore",
@@ -736,12 +476,7 @@
         "route": "W2",
         "action": "anti_snore"
       },
-      "expected_bytes": "6e010046b5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010046b5"
     },
     {
       "id": "W2-memory_1",
@@ -750,12 +485,7 @@
         "route": "W2",
         "action": "memory_1"
       },
-      "expected_bytes": "6e01002e9d",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002e9d"
     },
     {
       "id": "W2-memory_2",
@@ -764,12 +494,7 @@
         "route": "W2",
         "action": "memory_2"
       },
-      "expected_bytes": "6e01002f9e",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002f9e"
     },
     {
       "id": "W2-save_zero_gravity",
@@ -778,12 +503,7 @@
         "route": "W2",
         "action": "save_zero_gravity"
       },
-      "expected_bytes": "6e010066d5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010066d5"
     },
     {
       "id": "W2-save_lounge",
@@ -792,12 +512,7 @@
         "route": "W2",
         "action": "save_lounge"
       },
-      "expected_bytes": "6e010065d4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010065d4"
     },
     {
       "id": "W2-save_tv",
@@ -806,12 +521,7 @@
         "route": "W2",
         "action": "save_tv"
       },
-      "expected_bytes": "6e010064d3",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010064d3"
     },
     {
       "id": "W2-save_anti_snore",
@@ -820,12 +530,7 @@
         "route": "W2",
         "action": "save_anti_snore"
       },
-      "expected_bytes": "6e010069d8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010069d8"
     },
     {
       "id": "W2-save_memory_1",
@@ -834,12 +539,7 @@
         "route": "W2",
         "action": "save_memory_1"
       },
-      "expected_bytes": "6e01002b9a",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002b9a"
     },
     {
       "id": "W2-save_memory_2",
@@ -848,12 +548,7 @@
         "route": "W2",
         "action": "save_memory_2"
       },
-      "expected_bytes": "6e01002c9b",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002c9b"
     },
     {
       "id": "W2-exit_limit",
@@ -862,12 +557,7 @@
         "route": "W2",
         "action": "exit_limit"
       },
-      "expected_bytes": "6e02010071",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e02010071"
     },
     {
       "id": "W2-query_clock",
@@ -876,12 +566,7 @@
         "route": "W2",
         "action": "query_clock"
       },
-      "expected_bytes": "6e08010178",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e08010178"
     },
     {
       "id": "W3-head_up",
@@ -890,12 +575,7 @@
         "route": "W3",
         "action": "head_up"
       },
-      "expected_bytes": "6e01002493",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002493"
     },
     {
       "id": "W3-head_down",
@@ -904,12 +584,7 @@
         "route": "W3",
         "action": "head_down"
       },
-      "expected_bytes": "6e01002594",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002594"
     },
     {
       "id": "W3-foot_up",
@@ -918,12 +593,7 @@
         "route": "W3",
         "action": "foot_up"
       },
-      "expected_bytes": "6e01002695",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002695"
     },
     {
       "id": "W3-foot_down",
@@ -932,12 +602,7 @@
         "route": "W3",
         "action": "foot_down"
       },
-      "expected_bytes": "6e01002796",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002796"
     },
     {
       "id": "W3-both_up",
@@ -946,12 +611,7 @@
         "route": "W3",
         "action": "both_up"
       },
-      "expected_bytes": "6e01002998",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002998"
     },
     {
       "id": "W3-both_down",
@@ -960,12 +620,7 @@
         "route": "W3",
         "action": "both_down"
       },
-      "expected_bytes": "6e01002a99",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002a99"
     },
     {
       "id": "W3-flat",
@@ -974,12 +629,7 @@
         "route": "W3",
         "action": "flat"
       },
-      "expected_bytes": "6e010031a0",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e010031a0"
     },
     {
       "id": "W3-zero_gravity",
@@ -988,12 +638,7 @@
         "route": "W3",
         "action": "zero_gravity"
       },
-      "expected_bytes": "6e010045b4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010045b4"
     },
     {
       "id": "W3-lounge",
@@ -1002,12 +647,7 @@
         "route": "W3",
         "action": "lounge"
       },
-      "expected_bytes": "6e010059c8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010059c8"
     },
     {
       "id": "W3-tv",
@@ -1016,12 +656,7 @@
         "route": "W3",
         "action": "tv"
       },
-      "expected_bytes": "6e010058c7",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010058c7"
     },
     {
       "id": "W3-anti_snore",
@@ -1030,12 +665,7 @@
         "route": "W3",
         "action": "anti_snore"
       },
-      "expected_bytes": "6e010046b5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010046b5"
     },
     {
       "id": "W3-memory_1",
@@ -1044,12 +674,7 @@
         "route": "W3",
         "action": "memory_1"
       },
-      "expected_bytes": "6e01002e9d",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002e9d"
     },
     {
       "id": "W3-memory_2",
@@ -1058,12 +683,7 @@
         "route": "W3",
         "action": "memory_2"
       },
-      "expected_bytes": "6e01002f9e",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002f9e"
     },
     {
       "id": "W3-save_zero_gravity",
@@ -1072,12 +692,7 @@
         "route": "W3",
         "action": "save_zero_gravity"
       },
-      "expected_bytes": "6e010066d5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010066d5"
     },
     {
       "id": "W3-save_lounge",
@@ -1086,12 +701,7 @@
         "route": "W3",
         "action": "save_lounge"
       },
-      "expected_bytes": "6e010065d4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010065d4"
     },
     {
       "id": "W3-save_tv",
@@ -1100,12 +710,7 @@
         "route": "W3",
         "action": "save_tv"
       },
-      "expected_bytes": "6e010064d3",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010064d3"
     },
     {
       "id": "W3-save_anti_snore",
@@ -1114,12 +719,7 @@
         "route": "W3",
         "action": "save_anti_snore"
       },
-      "expected_bytes": "6e010069d8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010069d8"
     },
     {
       "id": "W3-save_memory_1",
@@ -1128,12 +728,7 @@
         "route": "W3",
         "action": "save_memory_1"
       },
-      "expected_bytes": "6e01002b9a",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002b9a"
     },
     {
       "id": "W3-save_memory_2",
@@ -1142,12 +737,7 @@
         "route": "W3",
         "action": "save_memory_2"
       },
-      "expected_bytes": "6e01002c9b",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002c9b"
     },
     {
       "id": "W3-exit_limit",
@@ -1156,12 +746,7 @@
         "route": "W3",
         "action": "exit_limit"
       },
-      "expected_bytes": "6e02010071",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e02010071"
     },
     {
       "id": "W3-query_clock",
@@ -1170,12 +755,7 @@
         "route": "W3",
         "action": "query_clock"
       },
-      "expected_bytes": "6e08010178",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e08010178"
     },
     {
       "id": "W4-head_up",
@@ -1184,12 +764,7 @@
         "route": "W4",
         "action": "head_up"
       },
-      "expected_bytes": "6e01002493",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002493"
     },
     {
       "id": "W4-head_down",
@@ -1198,12 +773,7 @@
         "route": "W4",
         "action": "head_down"
       },
-      "expected_bytes": "6e01002594",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002594"
     },
     {
       "id": "W4-foot_up",
@@ -1212,12 +782,7 @@
         "route": "W4",
         "action": "foot_up"
       },
-      "expected_bytes": "6e01002695",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002695"
     },
     {
       "id": "W4-foot_down",
@@ -1226,12 +791,7 @@
         "route": "W4",
         "action": "foot_down"
       },
-      "expected_bytes": "6e01002796",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002796"
     },
     {
       "id": "W4-both_up",
@@ -1240,12 +800,7 @@
         "route": "W4",
         "action": "both_up"
       },
-      "expected_bytes": "6e01002998",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002998"
     },
     {
       "id": "W4-both_down",
@@ -1254,12 +809,7 @@
         "route": "W4",
         "action": "both_down"
       },
-      "expected_bytes": "6e01002a99",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002a99"
     },
     {
       "id": "W4-flat",
@@ -1268,12 +818,7 @@
         "route": "W4",
         "action": "flat"
       },
-      "expected_bytes": "6e010031a0",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e010031a0"
     },
     {
       "id": "W4-zero_gravity",
@@ -1282,12 +827,7 @@
         "route": "W4",
         "action": "zero_gravity"
       },
-      "expected_bytes": "6e010045b4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010045b4"
     },
     {
       "id": "W4-lounge",
@@ -1296,12 +836,7 @@
         "route": "W4",
         "action": "lounge"
       },
-      "expected_bytes": "6e010059c8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010059c8"
     },
     {
       "id": "W4-tv",
@@ -1310,12 +845,7 @@
         "route": "W4",
         "action": "tv"
       },
-      "expected_bytes": "6e010058c7",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010058c7"
     },
     {
       "id": "W4-anti_snore",
@@ -1324,12 +854,7 @@
         "route": "W4",
         "action": "anti_snore"
       },
-      "expected_bytes": "6e010046b5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010046b5"
     },
     {
       "id": "W4-memory_1",
@@ -1338,12 +863,7 @@
         "route": "W4",
         "action": "memory_1"
       },
-      "expected_bytes": "6e01002e9d",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002e9d"
     },
     {
       "id": "W4-memory_2",
@@ -1352,12 +872,7 @@
         "route": "W4",
         "action": "memory_2"
       },
-      "expected_bytes": "6e01002f9e",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002f9e"
     },
     {
       "id": "W4-save_zero_gravity",
@@ -1366,12 +881,7 @@
         "route": "W4",
         "action": "save_zero_gravity"
       },
-      "expected_bytes": "6e010066d5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010066d5"
     },
     {
       "id": "W4-save_lounge",
@@ -1380,12 +890,7 @@
         "route": "W4",
         "action": "save_lounge"
       },
-      "expected_bytes": "6e010065d4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010065d4"
     },
     {
       "id": "W4-save_tv",
@@ -1394,12 +899,7 @@
         "route": "W4",
         "action": "save_tv"
       },
-      "expected_bytes": "6e010064d3",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010064d3"
     },
     {
       "id": "W4-save_anti_snore",
@@ -1408,12 +908,7 @@
         "route": "W4",
         "action": "save_anti_snore"
       },
-      "expected_bytes": "6e010069d8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010069d8"
     },
     {
       "id": "W4-save_memory_1",
@@ -1422,12 +917,7 @@
         "route": "W4",
         "action": "save_memory_1"
       },
-      "expected_bytes": "6e01002b9a",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002b9a"
     },
     {
       "id": "W4-save_memory_2",
@@ -1436,12 +926,7 @@
         "route": "W4",
         "action": "save_memory_2"
       },
-      "expected_bytes": "6e01002c9b",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002c9b"
     },
     {
       "id": "W4-exit_limit",
@@ -1450,12 +935,7 @@
         "route": "W4",
         "action": "exit_limit"
       },
-      "expected_bytes": "6e02010071",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e02010071"
     },
     {
       "id": "W4-query_clock",
@@ -1464,12 +944,7 @@
         "route": "W4",
         "action": "query_clock"
       },
-      "expected_bytes": "6e08010178",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e08010178"
     },
     {
       "id": "W5-head_up",
@@ -1478,12 +953,7 @@
         "route": "W5",
         "action": "head_up"
       },
-      "expected_bytes": "6e01002493",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002493"
     },
     {
       "id": "W5-head_down",
@@ -1492,12 +962,7 @@
         "route": "W5",
         "action": "head_down"
       },
-      "expected_bytes": "6e01002594",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002594"
     },
     {
       "id": "W5-foot_up",
@@ -1506,12 +971,7 @@
         "route": "W5",
         "action": "foot_up"
       },
-      "expected_bytes": "6e01002695",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002695"
     },
     {
       "id": "W5-foot_down",
@@ -1520,12 +980,7 @@
         "route": "W5",
         "action": "foot_down"
       },
-      "expected_bytes": "6e01002796",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002796"
     },
     {
       "id": "W5-both_up",
@@ -1534,12 +989,7 @@
         "route": "W5",
         "action": "both_up"
       },
-      "expected_bytes": "6e01002998",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002998"
     },
     {
       "id": "W5-both_down",
@@ -1548,12 +998,7 @@
         "route": "W5",
         "action": "both_down"
       },
-      "expected_bytes": "6e01002a99",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e01002a99"
     },
     {
       "id": "W5-flat",
@@ -1562,12 +1007,7 @@
         "route": "W5",
         "action": "flat"
       },
-      "expected_bytes": "6e010031a0",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-MOTOR"
-      ]
+      "expected_bytes": "6e010031a0"
     },
     {
       "id": "W5-zero_gravity",
@@ -1576,12 +1016,7 @@
         "route": "W5",
         "action": "zero_gravity"
       },
-      "expected_bytes": "6e010045b4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010045b4"
     },
     {
       "id": "W5-lounge",
@@ -1590,12 +1025,7 @@
         "route": "W5",
         "action": "lounge"
       },
-      "expected_bytes": "6e010059c8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010059c8"
     },
     {
       "id": "W5-tv",
@@ -1604,12 +1034,7 @@
         "route": "W5",
         "action": "tv"
       },
-      "expected_bytes": "6e010058c7",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010058c7"
     },
     {
       "id": "W5-anti_snore",
@@ -1618,12 +1043,7 @@
         "route": "W5",
         "action": "anti_snore"
       },
-      "expected_bytes": "6e010046b5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010046b5"
     },
     {
       "id": "W5-memory_1",
@@ -1632,12 +1052,7 @@
         "route": "W5",
         "action": "memory_1"
       },
-      "expected_bytes": "6e01002e9d",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002e9d"
     },
     {
       "id": "W5-memory_2",
@@ -1646,12 +1061,7 @@
         "route": "W5",
         "action": "memory_2"
       },
-      "expected_bytes": "6e01002f9e",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002f9e"
     },
     {
       "id": "W5-save_zero_gravity",
@@ -1660,12 +1070,7 @@
         "route": "W5",
         "action": "save_zero_gravity"
       },
-      "expected_bytes": "6e010066d5",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010066d5"
     },
     {
       "id": "W5-save_lounge",
@@ -1674,12 +1079,7 @@
         "route": "W5",
         "action": "save_lounge"
       },
-      "expected_bytes": "6e010065d4",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010065d4"
     },
     {
       "id": "W5-save_tv",
@@ -1688,12 +1088,7 @@
         "route": "W5",
         "action": "save_tv"
       },
-      "expected_bytes": "6e010064d3",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010064d3"
     },
     {
       "id": "W5-save_anti_snore",
@@ -1702,12 +1097,7 @@
         "route": "W5",
         "action": "save_anti_snore"
       },
-      "expected_bytes": "6e010069d8",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e010069d8"
     },
     {
       "id": "W5-save_memory_1",
@@ -1716,12 +1106,7 @@
         "route": "W5",
         "action": "save_memory_1"
       },
-      "expected_bytes": "6e01002b9a",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002b9a"
     },
     {
       "id": "W5-save_memory_2",
@@ -1730,12 +1115,7 @@
         "route": "W5",
         "action": "save_memory_2"
       },
-      "expected_bytes": "6e01002c9b",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-PRESET"
-      ]
+      "expected_bytes": "6e01002c9b"
     },
     {
       "id": "W5-exit_limit",
@@ -1744,12 +1124,7 @@
         "route": "W5",
         "action": "exit_limit"
       },
-      "expected_bytes": "6e02010071",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e02010071"
     },
     {
       "id": "W5-query_clock",
@@ -1758,12 +1133,7 @@
         "route": "W5",
         "action": "query_clock"
       },
-      "expected_bytes": "6e08010178",
-      "evidence": [
-        "E-CATALOG",
-        "E-BUILD",
-        "E-SESSION"
-      ]
+      "expected_bytes": "6e08010178"
     },
     {
       "id": "alarm-list",
@@ -1771,10 +1141,7 @@
       "inputs": {
         "action": "list_alarms"
       },
-      "expected_bytes": "6e0820050100009c",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0820050100009c"
     },
     {
       "id": "alarm-delete7",
@@ -1783,10 +1150,7 @@
         "action": "delete_alarm",
         "id": 7
       },
-      "expected_bytes": "6e082005020107a5",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e082005020107a5"
     },
     {
       "id": "bed-link-name",
@@ -1794,10 +1158,7 @@
       "inputs": {
         "action": "query_link_name"
       },
-      "expected_bytes": "6e0820060300009f",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0820060300009f"
     },
     {
       "id": "alarm-once-disabled",
@@ -1811,10 +1172,7 @@
         "weekdays": [],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e45000e",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45000e"
     },
     {
       "id": "alarm-once-enabled",
@@ -1828,10 +1186,7 @@
         "weekdays": [],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e45010f",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45010f"
     },
     {
       "id": "alarm-monday-disabled",
@@ -1847,10 +1202,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e45808e",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45808e"
     },
     {
       "id": "alarm-monday-enabled",
@@ -1866,10 +1218,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e45818f",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45818f"
     },
     {
       "id": "alarm-tuesday-disabled",
@@ -1885,10 +1234,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e45404e",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45404e"
     },
     {
       "id": "alarm-tuesday-enabled",
@@ -1904,10 +1250,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e45414f",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45414f"
     },
     {
       "id": "alarm-wednesday-disabled",
@@ -1923,10 +1266,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e45202e",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45202e"
     },
     {
       "id": "alarm-wednesday-enabled",
@@ -1942,10 +1282,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e45212f",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45212f"
     },
     {
       "id": "alarm-thursday-disabled",
@@ -1961,10 +1298,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e45101e",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45101e"
     },
     {
       "id": "alarm-thursday-enabled",
@@ -1980,10 +1314,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e45111f",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45111f"
     },
     {
       "id": "alarm-friday-disabled",
@@ -1999,10 +1330,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e450816",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e450816"
     },
     {
       "id": "alarm-friday-enabled",
@@ -2018,10 +1346,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e450917",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e450917"
     },
     {
       "id": "alarm-saturday-disabled",
@@ -2037,10 +1362,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e450412",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e450412"
     },
     {
       "id": "alarm-saturday-enabled",
@@ -2056,10 +1378,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e450513",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e450513"
     },
     {
       "id": "alarm-sunday-disabled",
@@ -2075,10 +1394,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e450210",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e450210"
     },
     {
       "id": "alarm-sunday-enabled",
@@ -2094,10 +1410,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e450311",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e450311"
     },
     {
       "id": "alarm-everyday-disabled",
@@ -2119,10 +1432,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e45fe0c",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45fe0c"
     },
     {
       "id": "alarm-everyday-enabled",
@@ -2144,10 +1454,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e45ff0d",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e45ff0d"
     },
     {
       "id": "alarm-monday-sunday-disabled",
@@ -2164,10 +1471,7 @@
         ],
         "enabled": false
       },
-      "expected_bytes": "6e0d200501010300061e458290",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e458290"
     },
     {
       "id": "alarm-monday-sunday-enabled",
@@ -2184,10 +1488,7 @@
         ],
         "enabled": true
       },
-      "expected_bytes": "6e0d200501010300061e458391",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d200501010300061e458391"
     },
     {
       "id": "epoch-positive-fractional-zone",
@@ -2197,10 +1498,7 @@
         "epoch_seconds": 1794441600,
         "zone_minutes": 330
       },
-      "expected_bytes": "6e0c200802016af50180058a",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0c200802016af50180058a"
     },
     {
       "id": "epoch-negative-fractional-zone",
@@ -2210,10 +1508,7 @@
         "epoch_seconds": 1794441600,
         "zone_minutes": -210
       },
-      "expected_bytes": "6e0c200802016af50180fd82",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0c200802016af50180fd82"
     },
     {
       "id": "calendar-1970-origin",
@@ -2227,10 +1522,7 @@
         "minute": 30,
         "second": 0
       },
-      "expected_bytes": "6e0d20080301380b0c051e0019",
-      "evidence": [
-        "E-EXTENDED"
-      ]
+      "expected_bytes": "6e0d20080301380b0c051e0019"
     }
   ],
   "notifications": [
@@ -2240,9 +1532,6 @@
       "expected": {
         "clock_capability": true
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2251,9 +1540,6 @@
       "expected": {
         "alarm_add_success": true
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2266,9 +1552,6 @@
           "angle": 77
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2281,9 +1564,6 @@
           "angle": 77
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2292,9 +1572,6 @@
       "expected": {
         "bed_mode": 3
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2308,9 +1585,6 @@
           "zone3": 1
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2323,9 +1597,6 @@
           "status": "normal"
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2338,9 +1609,6 @@
           "status": "notPluggedIn"
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2349,9 +1617,6 @@
       "expected": {
         "detection_check": "repeat"
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2365,9 +1630,6 @@
           "ble": false
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2376,9 +1638,6 @@
       "expected": {
         "follow_shake_gear": 5
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2391,9 +1650,6 @@
           "angle": 60
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2406,18 +1662,12 @@
           "angle": -1
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
       "id": "wrong-motor-function",
       "bytes": "6e200c0104030001f4023cd5",
       "expected": {},
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2429,9 +1679,6 @@
           "foot": 7
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2440,9 +1687,6 @@
       "expected": {
         "massage_mode": 1
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2451,9 +1695,6 @@
       "expected": {
         "massage_frequency": 1
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2462,9 +1703,6 @@
       "expected": {
         "follow_shake_gear": 1
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2473,9 +1711,6 @@
       "expected": {
         "massage_power": true
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2484,9 +1719,6 @@
       "expected": {
         "white_led": true
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2499,9 +1731,6 @@
           0.0
         ]
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2510,9 +1739,6 @@
       "expected": {
         "rgb_timer": 150
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2521,9 +1747,6 @@
       "expected": {
         "rgb_motion": true
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2532,9 +1755,6 @@
       "expected": {
         "rgb_power": false
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2551,9 +1771,6 @@
           "repeat": 131
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2570,9 +1787,6 @@
           "repeat": 131
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2581,9 +1795,6 @@
       "expected": {
         "anti_snore_enabled": true
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2592,9 +1803,6 @@
       "expected": {
         "off_bed": false
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2603,9 +1811,6 @@
       "expected": {
         "link_name": "RM-A\u0000"
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2614,9 +1819,6 @@
       "expected": {
         "press_mode": 3
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2625,9 +1827,6 @@
       "expected": {
         "standard_split": true
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2636,9 +1835,6 @@
       "expected": {
         "same_split": 1
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
@@ -2650,18 +1846,12 @@
           "frame": "6e20080a010000a1"
         }
       },
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     },
     {
       "id": "bad-extended-checksum",
       "bytes": "6e200c0102030001f4023c00",
       "expected": {},
-      "evidence": [
-        "E-NOTIFY"
-      ],
       "origin": "constructed from artifact parser"
     }
   ],
@@ -2739,9 +1929,6 @@
         "repeat": 131
       },
       "expected_bytes": "6e0d200501010307061e458297",
-      "evidence": [
-        "E-ALARM-CALLERS"
-      ],
       "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
     },
     {
@@ -2759,9 +1946,6 @@
         "repeat": 130
       },
       "expected_bytes": "6e0d200501010307061e458398",
-      "evidence": [
-        "E-ALARM-CALLERS"
-      ],
       "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
     },
     {
@@ -2779,9 +1963,6 @@
         "repeat": 85
       },
       "expected_bytes": "6e0d200501010988fafba75423",
-      "evidence": [
-        "E-ALARM-CALLERS"
-      ],
       "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
     },
     {
@@ -2801,9 +1982,6 @@
         "enabled": false
       },
       "expected_bytes": "6e0d200501010300061e458290",
-      "evidence": [
-        "E-ALARM-CALLERS"
-      ],
       "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
     },
     {
@@ -2823,9 +2001,6 @@
         "enabled": false
       },
       "expected_bytes": "6e0d200501010900061e458296",
-      "evidence": [
-        "E-ALARM-CALLERS"
-      ],
       "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
     },
     {
@@ -2836,9 +2011,6 @@
         "id": 9
       },
       "expected_bytes": "6e082005020109a7",
-      "evidence": [
-        "E-ALARM-CALLERS"
-      ],
       "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
     }
   ]

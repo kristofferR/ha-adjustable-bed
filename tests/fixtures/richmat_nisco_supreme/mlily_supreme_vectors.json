@@ -11,12 +11,7 @@
       ]
     },
     "expected": "6e01002190",
-    "expected_bytes": "6e01002190",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002190"
   },
   {
     "id": "p1-head_up_foot_down-m1",
@@ -30,12 +25,7 @@
       ]
     },
     "expected": "6e01012191",
-    "expected_bytes": "6e01012191",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012191"
   },
   {
     "id": "p1-head_up_foot_down-m2",
@@ -49,12 +39,7 @@
       ]
     },
     "expected": "6e01022192",
-    "expected_bytes": "6e01022192",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022192"
   },
   {
     "id": "p1-head_down_foot_up-m0",
@@ -68,12 +53,7 @@
       ]
     },
     "expected": "6e01002291",
-    "expected_bytes": "6e01002291",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002291"
   },
   {
     "id": "p1-head_down_foot_up-m1",
@@ -87,12 +67,7 @@
       ]
     },
     "expected": "6e01012292",
-    "expected_bytes": "6e01012292",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012292"
   },
   {
     "id": "p1-head_down_foot_up-m2",
@@ -106,12 +81,7 @@
       ]
     },
     "expected": "6e01022293",
-    "expected_bytes": "6e01022293",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022293"
   },
   {
     "id": "p1-head_up_foot_up-m0",
@@ -125,12 +95,7 @@
       ]
     },
     "expected": "6e01002392",
-    "expected_bytes": "6e01002392",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002392"
   },
   {
     "id": "p1-head_up_foot_up-m1",
@@ -144,12 +109,7 @@
       ]
     },
     "expected": "6e01012393",
-    "expected_bytes": "6e01012393",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012393"
   },
   {
     "id": "p1-head_up_foot_up-m2",
@@ -163,12 +123,7 @@
       ]
     },
     "expected": "6e01022394",
-    "expected_bytes": "6e01022394",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022394"
   },
   {
     "id": "p1-head_up-m0",
@@ -182,12 +137,7 @@
       ]
     },
     "expected": "6e01002493",
-    "expected_bytes": "6e01002493",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002493"
   },
   {
     "id": "p1-head_up-m1",
@@ -201,12 +151,7 @@
       ]
     },
     "expected": "6e01012494",
-    "expected_bytes": "6e01012494",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012494"
   },
   {
     "id": "p1-head_up-m2",
@@ -220,12 +165,7 @@
       ]
     },
     "expected": "6e01022495",
-    "expected_bytes": "6e01022495",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022495"
   },
   {
     "id": "p1-head_down-m0",
@@ -239,12 +179,7 @@
       ]
     },
     "expected": "6e01002594",
-    "expected_bytes": "6e01002594",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002594"
   },
   {
     "id": "p1-head_down-m1",
@@ -258,12 +193,7 @@
       ]
     },
     "expected": "6e01012595",
-    "expected_bytes": "6e01012595",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012595"
   },
   {
     "id": "p1-head_down-m2",
@@ -277,12 +207,7 @@
       ]
     },
     "expected": "6e01022596",
-    "expected_bytes": "6e01022596",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022596"
   },
   {
     "id": "p1-foot_up-m0",
@@ -296,12 +221,7 @@
       ]
     },
     "expected": "6e01002695",
-    "expected_bytes": "6e01002695",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002695"
   },
   {
     "id": "p1-foot_up-m1",
@@ -315,12 +235,7 @@
       ]
     },
     "expected": "6e01012696",
-    "expected_bytes": "6e01012696",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012696"
   },
   {
     "id": "p1-foot_up-m2",
@@ -334,12 +249,7 @@
       ]
     },
     "expected": "6e01022697",
-    "expected_bytes": "6e01022697",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022697"
   },
   {
     "id": "p1-foot_down-m0",
@@ -353,12 +263,7 @@
       ]
     },
     "expected": "6e01002796",
-    "expected_bytes": "6e01002796",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002796"
   },
   {
     "id": "p1-foot_down-m1",
@@ -372,12 +277,7 @@
       ]
     },
     "expected": "6e01012797",
-    "expected_bytes": "6e01012797",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012797"
   },
   {
     "id": "p1-foot_down-m2",
@@ -391,12 +291,7 @@
       ]
     },
     "expected": "6e01022798",
-    "expected_bytes": "6e01022798",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022798"
   },
   {
     "id": "p1-head_foot_both_up-m0",
@@ -410,12 +305,7 @@
       ]
     },
     "expected": "6e01002998",
-    "expected_bytes": "6e01002998",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002998"
   },
   {
     "id": "p1-head_foot_both_up-m1",
@@ -429,12 +319,7 @@
       ]
     },
     "expected": "6e01012999",
-    "expected_bytes": "6e01012999",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012999"
   },
   {
     "id": "p1-head_foot_both_up-m2",
@@ -448,12 +333,7 @@
       ]
     },
     "expected": "6e0102299a",
-    "expected_bytes": "6e0102299a",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102299a"
   },
   {
     "id": "p1-head_foot_both_down-m0",
@@ -467,12 +347,7 @@
       ]
     },
     "expected": "6e01002a99",
-    "expected_bytes": "6e01002a99",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002a99"
   },
   {
     "id": "p1-head_foot_both_down-m1",
@@ -486,12 +361,7 @@
       ]
     },
     "expected": "6e01012a9a",
-    "expected_bytes": "6e01012a9a",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012a9a"
   },
   {
     "id": "p1-head_foot_both_down-m2",
@@ -505,12 +375,7 @@
       ]
     },
     "expected": "6e01022a9b",
-    "expected_bytes": "6e01022a9b",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022a9b"
   },
   {
     "id": "p1-m1_set-m0",
@@ -524,12 +389,7 @@
       ]
     },
     "expected": "6e01002b9a",
-    "expected_bytes": "6e01002b9a",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002b9a"
   },
   {
     "id": "p1-m1_set-m1",
@@ -543,12 +403,7 @@
       ]
     },
     "expected": "6e01012b9b",
-    "expected_bytes": "6e01012b9b",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012b9b"
   },
   {
     "id": "p1-m1_set-m2",
@@ -562,12 +417,7 @@
       ]
     },
     "expected": "6e01022b9c",
-    "expected_bytes": "6e01022b9c",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022b9c"
   },
   {
     "id": "p1-m2_set-m0",
@@ -581,12 +431,7 @@
       ]
     },
     "expected": "6e01002c9b",
-    "expected_bytes": "6e01002c9b",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002c9b"
   },
   {
     "id": "p1-m2_set-m1",
@@ -600,12 +445,7 @@
       ]
     },
     "expected": "6e01012c9c",
-    "expected_bytes": "6e01012c9c",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012c9c"
   },
   {
     "id": "p1-m2_set-m2",
@@ -619,12 +459,7 @@
       ]
     },
     "expected": "6e01022c9d",
-    "expected_bytes": "6e01022c9d",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022c9d"
   },
   {
     "id": "p1-m3_set-m0",
@@ -638,12 +473,7 @@
       ]
     },
     "expected": "6e01002d9c",
-    "expected_bytes": "6e01002d9c",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002d9c"
   },
   {
     "id": "p1-m3_set-m1",
@@ -657,12 +487,7 @@
       ]
     },
     "expected": "6e01012d9d",
-    "expected_bytes": "6e01012d9d",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012d9d"
   },
   {
     "id": "p1-m3_set-m2",
@@ -676,12 +501,7 @@
       ]
     },
     "expected": "6e01022d9e",
-    "expected_bytes": "6e01022d9e",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022d9e"
   },
   {
     "id": "p1-m1_back-m0",
@@ -695,12 +515,7 @@
       ]
     },
     "expected": "6e01002e9d",
-    "expected_bytes": "6e01002e9d",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002e9d"
   },
   {
     "id": "p1-m1_back-m1",
@@ -714,12 +529,7 @@
       ]
     },
     "expected": "6e01012e9e",
-    "expected_bytes": "6e01012e9e",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012e9e"
   },
   {
     "id": "p1-m1_back-m2",
@@ -733,12 +543,7 @@
       ]
     },
     "expected": "6e01022e9f",
-    "expected_bytes": "6e01022e9f",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022e9f"
   },
   {
     "id": "p1-m2_back-m0",
@@ -752,12 +557,7 @@
       ]
     },
     "expected": "6e01002f9e",
-    "expected_bytes": "6e01002f9e",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01002f9e"
   },
   {
     "id": "p1-m2_back-m1",
@@ -771,12 +571,7 @@
       ]
     },
     "expected": "6e01012f9f",
-    "expected_bytes": "6e01012f9f",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01012f9f"
   },
   {
     "id": "p1-m2_back-m2",
@@ -790,12 +585,7 @@
       ]
     },
     "expected": "6e01022fa0",
-    "expected_bytes": "6e01022fa0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01022fa0"
   },
   {
     "id": "p1-m3_back-m0",
@@ -809,12 +599,7 @@
       ]
     },
     "expected": "6e0100309f",
-    "expected_bytes": "6e0100309f",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100309f"
   },
   {
     "id": "p1-m3_back-m1",
@@ -828,12 +613,7 @@
       ]
     },
     "expected": "6e010130a0",
-    "expected_bytes": "6e010130a0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010130a0"
   },
   {
     "id": "p1-m3_back-m2",
@@ -847,12 +627,7 @@
       ]
     },
     "expected": "6e010230a1",
-    "expected_bytes": "6e010230a1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010230a1"
   },
   {
     "id": "p1-flat-m0",
@@ -866,12 +641,7 @@
       ]
     },
     "expected": "6e010031a0",
-    "expected_bytes": "6e010031a0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010031a0"
   },
   {
     "id": "p1-flat-m1",
@@ -885,12 +655,7 @@
       ]
     },
     "expected": "6e010131a1",
-    "expected_bytes": "6e010131a1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010131a1"
   },
   {
     "id": "p1-flat-m2",
@@ -904,12 +669,7 @@
       ]
     },
     "expected": "6e010231a2",
-    "expected_bytes": "6e010231a2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010231a2"
   },
   {
     "id": "p1-msg_head_on_off-m0",
@@ -923,12 +683,7 @@
       ]
     },
     "expected": "6e010032a1",
-    "expected_bytes": "6e010032a1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010032a1"
   },
   {
     "id": "p1-msg_head_on_off-m1",
@@ -942,12 +697,7 @@
       ]
     },
     "expected": "6e010132a2",
-    "expected_bytes": "6e010132a2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010132a2"
   },
   {
     "id": "p1-msg_head_on_off-m2",
@@ -961,12 +711,7 @@
       ]
     },
     "expected": "6e010232a3",
-    "expected_bytes": "6e010232a3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010232a3"
   },
   {
     "id": "p1-msg_foot_on_off-m0",
@@ -980,12 +725,7 @@
       ]
     },
     "expected": "6e010033a2",
-    "expected_bytes": "6e010033a2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010033a2"
   },
   {
     "id": "p1-msg_foot_on_off-m1",
@@ -999,12 +739,7 @@
       ]
     },
     "expected": "6e010133a3",
-    "expected_bytes": "6e010133a3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010133a3"
   },
   {
     "id": "p1-msg_foot_on_off-m2",
@@ -1018,12 +753,7 @@
       ]
     },
     "expected": "6e010233a4",
-    "expected_bytes": "6e010233a4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010233a4"
   },
   {
     "id": "p1-msg_head_foot_intensity_inc-m0",
@@ -1037,12 +767,7 @@
       ]
     },
     "expected": "6e010034a3",
-    "expected_bytes": "6e010034a3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010034a3"
   },
   {
     "id": "p1-msg_head_foot_intensity_inc-m1",
@@ -1056,12 +781,7 @@
       ]
     },
     "expected": "6e010134a4",
-    "expected_bytes": "6e010134a4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010134a4"
   },
   {
     "id": "p1-msg_head_foot_intensity_inc-m2",
@@ -1075,12 +795,7 @@
       ]
     },
     "expected": "6e010234a5",
-    "expected_bytes": "6e010234a5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010234a5"
   },
   {
     "id": "p1-msg_head_foot_intensity_dec-m0",
@@ -1094,12 +809,7 @@
       ]
     },
     "expected": "6e010035a4",
-    "expected_bytes": "6e010035a4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010035a4"
   },
   {
     "id": "p1-msg_head_foot_intensity_dec-m1",
@@ -1113,12 +823,7 @@
       ]
     },
     "expected": "6e010135a5",
-    "expected_bytes": "6e010135a5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010135a5"
   },
   {
     "id": "p1-msg_head_foot_intensity_dec-m2",
@@ -1132,12 +837,7 @@
       ]
     },
     "expected": "6e010235a6",
-    "expected_bytes": "6e010235a6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010235a6"
   },
   {
     "id": "p1-msg_head_foot_speed_inc-m0",
@@ -1151,12 +851,7 @@
       ]
     },
     "expected": "6e010036a5",
-    "expected_bytes": "6e010036a5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010036a5"
   },
   {
     "id": "p1-msg_head_foot_speed_inc-m1",
@@ -1170,12 +865,7 @@
       ]
     },
     "expected": "6e010136a6",
-    "expected_bytes": "6e010136a6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010136a6"
   },
   {
     "id": "p1-msg_head_foot_speed_inc-m2",
@@ -1189,12 +879,7 @@
       ]
     },
     "expected": "6e010236a7",
-    "expected_bytes": "6e010236a7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010236a7"
   },
   {
     "id": "p1-msg_head_foot_speed_dec-m0",
@@ -1208,12 +893,7 @@
       ]
     },
     "expected": "6e010037a6",
-    "expected_bytes": "6e010037a6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010037a6"
   },
   {
     "id": "p1-msg_head_foot_speed_dec-m1",
@@ -1227,12 +907,7 @@
       ]
     },
     "expected": "6e010137a7",
-    "expected_bytes": "6e010137a7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010137a7"
   },
   {
     "id": "p1-msg_head_foot_speed_dec-m2",
@@ -1246,12 +921,7 @@
       ]
     },
     "expected": "6e010237a8",
-    "expected_bytes": "6e010237a8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010237a8"
   },
   {
     "id": "p1-msg_pulse-m0",
@@ -1265,12 +935,7 @@
       ]
     },
     "expected": "6e010038a7",
-    "expected_bytes": "6e010038a7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010038a7"
   },
   {
     "id": "p1-msg_pulse-m1",
@@ -1284,12 +949,7 @@
       ]
     },
     "expected": "6e010138a8",
-    "expected_bytes": "6e010138a8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010138a8"
   },
   {
     "id": "p1-msg_pulse-m2",
@@ -1303,12 +963,7 @@
       ]
     },
     "expected": "6e010238a9",
-    "expected_bytes": "6e010238a9",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010238a9"
   },
   {
     "id": "p1-msg_wave-m0",
@@ -1322,12 +977,7 @@
       ]
     },
     "expected": "6e010039a8",
-    "expected_bytes": "6e010039a8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010039a8"
   },
   {
     "id": "p1-msg_wave-m1",
@@ -1341,12 +991,7 @@
       ]
     },
     "expected": "6e010139a9",
-    "expected_bytes": "6e010139a9",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010139a9"
   },
   {
     "id": "p1-msg_wave-m2",
@@ -1360,12 +1005,7 @@
       ]
     },
     "expected": "6e010239aa",
-    "expected_bytes": "6e010239aa",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010239aa"
   },
   {
     "id": "p1-msg_constant-m0",
@@ -1379,12 +1019,7 @@
       ]
     },
     "expected": "6e01003aa9",
-    "expected_bytes": "6e01003aa9",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01003aa9"
   },
   {
     "id": "p1-msg_constant-m1",
@@ -1398,12 +1033,7 @@
       ]
     },
     "expected": "6e01013aaa",
-    "expected_bytes": "6e01013aaa",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01013aaa"
   },
   {
     "id": "p1-msg_constant-m2",
@@ -1417,12 +1047,7 @@
       ]
     },
     "expected": "6e01023aab",
-    "expected_bytes": "6e01023aab",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01023aab"
   },
   {
     "id": "p1-ubl_on_off-m0",
@@ -1436,12 +1061,7 @@
       ]
     },
     "expected": "6e01003cab",
-    "expected_bytes": "6e01003cab",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01003cab"
   },
   {
     "id": "p1-ubl_on_off-m1",
@@ -1455,12 +1075,7 @@
       ]
     },
     "expected": "6e01013cac",
-    "expected_bytes": "6e01013cac",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01013cac"
   },
   {
     "id": "p1-ubl_on_off-m2",
@@ -1474,12 +1089,7 @@
       ]
     },
     "expected": "6e01023cad",
-    "expected_bytes": "6e01023cad",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01023cad"
   },
   {
     "id": "p1-head_up_only-m0",
@@ -1493,12 +1103,7 @@
       ]
     },
     "expected": "6e01003dac",
-    "expected_bytes": "6e01003dac",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01003dac"
   },
   {
     "id": "p1-head_up_only-m1",
@@ -1512,12 +1117,7 @@
       ]
     },
     "expected": "6e01013dad",
-    "expected_bytes": "6e01013dad",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01013dad"
   },
   {
     "id": "p1-head_up_only-m2",
@@ -1531,12 +1131,7 @@
       ]
     },
     "expected": "6e01023dae",
-    "expected_bytes": "6e01023dae",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01023dae"
   },
   {
     "id": "p1-foot_up_only-m0",
@@ -1550,12 +1145,7 @@
       ]
     },
     "expected": "6e01003ead",
-    "expected_bytes": "6e01003ead",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01003ead"
   },
   {
     "id": "p1-foot_up_only-m1",
@@ -1569,12 +1159,7 @@
       ]
     },
     "expected": "6e01013eae",
-    "expected_bytes": "6e01013eae",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01013eae"
   },
   {
     "id": "p1-foot_up_only-m2",
@@ -1588,12 +1173,7 @@
       ]
     },
     "expected": "6e01023eaf",
-    "expected_bytes": "6e01023eaf",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01023eaf"
   },
   {
     "id": "p1-pillow_up-m0",
@@ -1607,12 +1187,7 @@
       ]
     },
     "expected": "6e01003fae",
-    "expected_bytes": "6e01003fae",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01003fae"
   },
   {
     "id": "p1-pillow_up-m1",
@@ -1626,12 +1201,7 @@
       ]
     },
     "expected": "6e01013faf",
-    "expected_bytes": "6e01013faf",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01013faf"
   },
   {
     "id": "p1-pillow_up-m2",
@@ -1645,12 +1215,7 @@
       ]
     },
     "expected": "6e01023fb0",
-    "expected_bytes": "6e01023fb0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01023fb0"
   },
   {
     "id": "p1-pillow_down-m0",
@@ -1664,12 +1229,7 @@
       ]
     },
     "expected": "6e010040af",
-    "expected_bytes": "6e010040af",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010040af"
   },
   {
     "id": "p1-pillow_down-m1",
@@ -1683,12 +1243,7 @@
       ]
     },
     "expected": "6e010140b0",
-    "expected_bytes": "6e010140b0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010140b0"
   },
   {
     "id": "p1-pillow_down-m2",
@@ -1702,12 +1257,7 @@
       ]
     },
     "expected": "6e010240b1",
-    "expected_bytes": "6e010240b1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010240b1"
   },
   {
     "id": "p1-lumbar_up-m0",
@@ -1721,12 +1271,7 @@
       ]
     },
     "expected": "6e010041b0",
-    "expected_bytes": "6e010041b0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010041b0"
   },
   {
     "id": "p1-lumbar_up-m1",
@@ -1740,12 +1285,7 @@
       ]
     },
     "expected": "6e010141b1",
-    "expected_bytes": "6e010141b1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010141b1"
   },
   {
     "id": "p1-lumbar_up-m2",
@@ -1759,12 +1299,7 @@
       ]
     },
     "expected": "6e010241b2",
-    "expected_bytes": "6e010241b2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010241b2"
   },
   {
     "id": "p1-lumbar_down-m0",
@@ -1778,12 +1313,7 @@
       ]
     },
     "expected": "6e010042b1",
-    "expected_bytes": "6e010042b1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010042b1"
   },
   {
     "id": "p1-lumbar_down-m1",
@@ -1797,12 +1327,7 @@
       ]
     },
     "expected": "6e010142b2",
-    "expected_bytes": "6e010142b2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010142b2"
   },
   {
     "id": "p1-lumbar_down-m2",
@@ -1816,12 +1341,7 @@
       ]
     },
     "expected": "6e010242b3",
-    "expected_bytes": "6e010242b3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010242b3"
   },
   {
     "id": "p1-pillow_lumbar_both_up-m0",
@@ -1835,12 +1355,7 @@
       ]
     },
     "expected": "6e010043b2",
-    "expected_bytes": "6e010043b2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010043b2"
   },
   {
     "id": "p1-pillow_lumbar_both_up-m1",
@@ -1854,12 +1369,7 @@
       ]
     },
     "expected": "6e010143b3",
-    "expected_bytes": "6e010143b3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010143b3"
   },
   {
     "id": "p1-pillow_lumbar_both_up-m2",
@@ -1873,12 +1383,7 @@
       ]
     },
     "expected": "6e010243b4",
-    "expected_bytes": "6e010243b4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010243b4"
   },
   {
     "id": "p1-pillow_lumbar_both_down-m0",
@@ -1892,12 +1397,7 @@
       ]
     },
     "expected": "6e010044b3",
-    "expected_bytes": "6e010044b3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010044b3"
   },
   {
     "id": "p1-pillow_lumbar_both_down-m1",
@@ -1911,12 +1411,7 @@
       ]
     },
     "expected": "6e010144b4",
-    "expected_bytes": "6e010144b4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010144b4"
   },
   {
     "id": "p1-pillow_lumbar_both_down-m2",
@@ -1930,12 +1425,7 @@
       ]
     },
     "expected": "6e010244b5",
-    "expected_bytes": "6e010244b5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010244b5"
   },
   {
     "id": "p1-zg_back-m0",
@@ -1949,12 +1439,7 @@
       ]
     },
     "expected": "6e010045b4",
-    "expected_bytes": "6e010045b4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010045b4"
   },
   {
     "id": "p1-zg_back-m1",
@@ -1968,12 +1453,7 @@
       ]
     },
     "expected": "6e010145b5",
-    "expected_bytes": "6e010145b5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010145b5"
   },
   {
     "id": "p1-zg_back-m2",
@@ -1987,12 +1467,7 @@
       ]
     },
     "expected": "6e010245b6",
-    "expected_bytes": "6e010245b6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010245b6"
   },
   {
     "id": "p1-snore_back-m0",
@@ -2006,12 +1481,7 @@
       ]
     },
     "expected": "6e010046b5",
-    "expected_bytes": "6e010046b5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010046b5"
   },
   {
     "id": "p1-snore_back-m1",
@@ -2025,12 +1495,7 @@
       ]
     },
     "expected": "6e010146b6",
-    "expected_bytes": "6e010146b6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010146b6"
   },
   {
     "id": "p1-snore_back-m2",
@@ -2044,12 +1509,7 @@
       ]
     },
     "expected": "6e010246b7",
-    "expected_bytes": "6e010246b7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010246b7"
   },
   {
     "id": "p1-msg_off-m0",
@@ -2063,12 +1523,7 @@
       ]
     },
     "expected": "6e010047b6",
-    "expected_bytes": "6e010047b6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010047b6"
   },
   {
     "id": "p1-msg_off-m1",
@@ -2082,12 +1537,7 @@
       ]
     },
     "expected": "6e010147b7",
-    "expected_bytes": "6e010147b7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010147b7"
   },
   {
     "id": "p1-msg_off-m2",
@@ -2101,12 +1551,7 @@
       ]
     },
     "expected": "6e010247b8",
-    "expected_bytes": "6e010247b8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010247b8"
   },
   {
     "id": "p1-msg_mode-m0",
@@ -2120,12 +1565,7 @@
       ]
     },
     "expected": "6e010048b7",
-    "expected_bytes": "6e010048b7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010048b7"
   },
   {
     "id": "p1-msg_mode-m1",
@@ -2139,12 +1579,7 @@
       ]
     },
     "expected": "6e010148b8",
-    "expected_bytes": "6e010148b8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010148b8"
   },
   {
     "id": "p1-msg_mode-m2",
@@ -2158,12 +1593,7 @@
       ]
     },
     "expected": "6e010248b9",
-    "expected_bytes": "6e010248b9",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010248b9"
   },
   {
     "id": "p1-msg_head_intensity_inc-m0",
@@ -2177,12 +1607,7 @@
       ]
     },
     "expected": "6e01004cbb",
-    "expected_bytes": "6e01004cbb",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01004cbb"
   },
   {
     "id": "p1-msg_head_intensity_inc-m1",
@@ -2196,12 +1621,7 @@
       ]
     },
     "expected": "6e01014cbc",
-    "expected_bytes": "6e01014cbc",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01014cbc"
   },
   {
     "id": "p1-msg_head_intensity_inc-m2",
@@ -2215,12 +1635,7 @@
       ]
     },
     "expected": "6e01024cbd",
-    "expected_bytes": "6e01024cbd",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01024cbd"
   },
   {
     "id": "p1-msg_head_intensity_dec-m0",
@@ -2234,12 +1649,7 @@
       ]
     },
     "expected": "6e01004dbc",
-    "expected_bytes": "6e01004dbc",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01004dbc"
   },
   {
     "id": "p1-msg_head_intensity_dec-m1",
@@ -2253,12 +1663,7 @@
       ]
     },
     "expected": "6e01014dbd",
-    "expected_bytes": "6e01014dbd",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01014dbd"
   },
   {
     "id": "p1-msg_head_intensity_dec-m2",
@@ -2272,12 +1677,7 @@
       ]
     },
     "expected": "6e01024dbe",
-    "expected_bytes": "6e01024dbe",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01024dbe"
   },
   {
     "id": "p1-msg_foot_intensity_inc-m0",
@@ -2291,12 +1691,7 @@
       ]
     },
     "expected": "6e01004ebd",
-    "expected_bytes": "6e01004ebd",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01004ebd"
   },
   {
     "id": "p1-msg_foot_intensity_inc-m1",
@@ -2310,12 +1705,7 @@
       ]
     },
     "expected": "6e01014ebe",
-    "expected_bytes": "6e01014ebe",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01014ebe"
   },
   {
     "id": "p1-msg_foot_intensity_inc-m2",
@@ -2329,12 +1719,7 @@
       ]
     },
     "expected": "6e01024ebf",
-    "expected_bytes": "6e01024ebf",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01024ebf"
   },
   {
     "id": "p1-msg_foot_intensity_dec-m0",
@@ -2348,12 +1733,7 @@
       ]
     },
     "expected": "6e01004fbe",
-    "expected_bytes": "6e01004fbe",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01004fbe"
   },
   {
     "id": "p1-msg_foot_intensity_dec-m1",
@@ -2367,12 +1747,7 @@
       ]
     },
     "expected": "6e01014fbf",
-    "expected_bytes": "6e01014fbf",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01014fbf"
   },
   {
     "id": "p1-msg_foot_intensity_dec-m2",
@@ -2386,12 +1761,7 @@
       ]
     },
     "expected": "6e01024fc0",
-    "expected_bytes": "6e01024fc0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01024fc0"
   },
   {
     "id": "p1-tv_back-m0",
@@ -2405,12 +1775,7 @@
       ]
     },
     "expected": "6e010058c7",
-    "expected_bytes": "6e010058c7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010058c7"
   },
   {
     "id": "p1-tv_back-m1",
@@ -2424,12 +1789,7 @@
       ]
     },
     "expected": "6e010158c8",
-    "expected_bytes": "6e010158c8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010158c8"
   },
   {
     "id": "p1-tv_back-m2",
@@ -2443,12 +1803,7 @@
       ]
     },
     "expected": "6e010258c9",
-    "expected_bytes": "6e010258c9",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010258c9"
   },
   {
     "id": "p1-lounge_back-m0",
@@ -2462,12 +1817,7 @@
       ]
     },
     "expected": "6e010059c8",
-    "expected_bytes": "6e010059c8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010059c8"
   },
   {
     "id": "p1-lounge_back-m1",
@@ -2481,12 +1831,7 @@
       ]
     },
     "expected": "6e010159c9",
-    "expected_bytes": "6e010159c9",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010159c9"
   },
   {
     "id": "p1-lounge_back-m2",
@@ -2500,12 +1845,7 @@
       ]
     },
     "expected": "6e010259ca",
-    "expected_bytes": "6e010259ca",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010259ca"
   },
   {
     "id": "p1-pillow_lumbar_both_tilt_up-m0",
@@ -2519,12 +1859,7 @@
       ]
     },
     "expected": "6e01005bca",
-    "expected_bytes": "6e01005bca",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01005bca"
   },
   {
     "id": "p1-pillow_lumbar_both_tilt_up-m1",
@@ -2538,12 +1873,7 @@
       ]
     },
     "expected": "6e01015bcb",
-    "expected_bytes": "6e01015bcb",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01015bcb"
   },
   {
     "id": "p1-pillow_lumbar_both_tilt_up-m2",
@@ -2557,12 +1887,7 @@
       ]
     },
     "expected": "6e01025bcc",
-    "expected_bytes": "6e01025bcc",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01025bcc"
   },
   {
     "id": "p1-pillow_lumbar_both_tilt_down-m0",
@@ -2576,12 +1901,7 @@
       ]
     },
     "expected": "6e01005ccb",
-    "expected_bytes": "6e01005ccb",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01005ccb"
   },
   {
     "id": "p1-pillow_lumbar_both_tilt_down-m1",
@@ -2595,12 +1915,7 @@
       ]
     },
     "expected": "6e01015ccc",
-    "expected_bytes": "6e01015ccc",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01015ccc"
   },
   {
     "id": "p1-pillow_lumbar_both_tilt_down-m2",
@@ -2614,12 +1929,7 @@
       ]
     },
     "expected": "6e01025ccd",
-    "expected_bytes": "6e01025ccd",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01025ccd"
   },
   {
     "id": "p1-msg_head_foot_both_on-m0",
@@ -2633,12 +1943,7 @@
       ]
     },
     "expected": "6e01005dcc",
-    "expected_bytes": "6e01005dcc",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01005dcc"
   },
   {
     "id": "p1-msg_head_foot_both_on-m1",
@@ -2652,12 +1957,7 @@
       ]
     },
     "expected": "6e01015dcd",
-    "expected_bytes": "6e01015dcd",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01015dcd"
   },
   {
     "id": "p1-msg_head_foot_both_on-m2",
@@ -2671,12 +1971,7 @@
       ]
     },
     "expected": "6e01025dce",
-    "expected_bytes": "6e01025dce",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01025dce"
   },
   {
     "id": "p1-msg_head_foot_both_off-m0",
@@ -2690,12 +1985,7 @@
       ]
     },
     "expected": "6e01005ecd",
-    "expected_bytes": "6e01005ecd",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01005ecd"
   },
   {
     "id": "p1-msg_head_foot_both_off-m1",
@@ -2709,12 +1999,7 @@
       ]
     },
     "expected": "6e01015ece",
-    "expected_bytes": "6e01015ece",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01015ece"
   },
   {
     "id": "p1-msg_head_foot_both_off-m2",
@@ -2728,12 +2013,7 @@
       ]
     },
     "expected": "6e01025ecf",
-    "expected_bytes": "6e01025ecf",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01025ecf"
   },
   {
     "id": "p1-msg_10min-m0",
@@ -2747,12 +2027,7 @@
       ]
     },
     "expected": "6e01005fce",
-    "expected_bytes": "6e01005fce",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01005fce"
   },
   {
     "id": "p1-msg_10min-m1",
@@ -2766,12 +2041,7 @@
       ]
     },
     "expected": "6e01015fcf",
-    "expected_bytes": "6e01015fcf",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01015fcf"
   },
   {
     "id": "p1-msg_10min-m2",
@@ -2785,12 +2055,7 @@
       ]
     },
     "expected": "6e01025fd0",
-    "expected_bytes": "6e01025fd0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01025fd0"
   },
   {
     "id": "p1-msg_30min-m0",
@@ -2804,12 +2069,7 @@
       ]
     },
     "expected": "6e010061d0",
-    "expected_bytes": "6e010061d0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010061d0"
   },
   {
     "id": "p1-msg_30min-m1",
@@ -2823,12 +2083,7 @@
       ]
     },
     "expected": "6e010161d1",
-    "expected_bytes": "6e010161d1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010161d1"
   },
   {
     "id": "p1-msg_30min-m2",
@@ -2842,12 +2097,7 @@
       ]
     },
     "expected": "6e010261d2",
-    "expected_bytes": "6e010261d2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010261d2"
   },
   {
     "id": "p1-factory_reset-m0",
@@ -2861,12 +2111,7 @@
       ]
     },
     "expected": "6e010062d1",
-    "expected_bytes": "6e010062d1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010062d1"
   },
   {
     "id": "p1-factory_reset-m1",
@@ -2880,12 +2125,7 @@
       ]
     },
     "expected": "6e010162d2",
-    "expected_bytes": "6e010162d2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010162d2"
   },
   {
     "id": "p1-factory_reset-m2",
@@ -2899,12 +2139,7 @@
       ]
     },
     "expected": "6e010262d3",
-    "expected_bytes": "6e010262d3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010262d3"
   },
   {
     "id": "p1-msg_20min-m0",
@@ -2918,12 +2153,7 @@
       ]
     },
     "expected": "6e010063d2",
-    "expected_bytes": "6e010063d2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010063d2"
   },
   {
     "id": "p1-msg_20min-m1",
@@ -2937,12 +2167,7 @@
       ]
     },
     "expected": "6e010163d3",
-    "expected_bytes": "6e010163d3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010163d3"
   },
   {
     "id": "p1-msg_20min-m2",
@@ -2956,12 +2181,7 @@
       ]
     },
     "expected": "6e010263d4",
-    "expected_bytes": "6e010263d4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010263d4"
   },
   {
     "id": "p1-tv_set-m0",
@@ -2975,12 +2195,7 @@
       ]
     },
     "expected": "6e010064d3",
-    "expected_bytes": "6e010064d3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010064d3"
   },
   {
     "id": "p1-tv_set-m1",
@@ -2994,12 +2209,7 @@
       ]
     },
     "expected": "6e010164d4",
-    "expected_bytes": "6e010164d4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010164d4"
   },
   {
     "id": "p1-tv_set-m2",
@@ -3013,12 +2223,7 @@
       ]
     },
     "expected": "6e010264d5",
-    "expected_bytes": "6e010264d5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010264d5"
   },
   {
     "id": "p1-lounge_set-m0",
@@ -3032,12 +2237,7 @@
       ]
     },
     "expected": "6e010065d4",
-    "expected_bytes": "6e010065d4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010065d4"
   },
   {
     "id": "p1-lounge_set-m1",
@@ -3051,12 +2251,7 @@
       ]
     },
     "expected": "6e010165d5",
-    "expected_bytes": "6e010165d5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010165d5"
   },
   {
     "id": "p1-lounge_set-m2",
@@ -3070,12 +2265,7 @@
       ]
     },
     "expected": "6e010265d6",
-    "expected_bytes": "6e010265d6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010265d6"
   },
   {
     "id": "p1-zg_set-m0",
@@ -3089,12 +2279,7 @@
       ]
     },
     "expected": "6e010066d5",
-    "expected_bytes": "6e010066d5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010066d5"
   },
   {
     "id": "p1-zg_set-m1",
@@ -3108,12 +2293,7 @@
       ]
     },
     "expected": "6e010166d6",
-    "expected_bytes": "6e010166d6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010166d6"
   },
   {
     "id": "p1-zg_set-m2",
@@ -3127,12 +2307,7 @@
       ]
     },
     "expected": "6e010266d7",
-    "expected_bytes": "6e010266d7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010266d7"
   },
   {
     "id": "p1-msg_intensity1-m0",
@@ -3146,12 +2321,7 @@
       ]
     },
     "expected": "6e010067d6",
-    "expected_bytes": "6e010067d6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010067d6"
   },
   {
     "id": "p1-msg_intensity1-m1",
@@ -3165,12 +2335,7 @@
       ]
     },
     "expected": "6e010167d7",
-    "expected_bytes": "6e010167d7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010167d7"
   },
   {
     "id": "p1-msg_intensity1-m2",
@@ -3184,12 +2349,7 @@
       ]
     },
     "expected": "6e010267d8",
-    "expected_bytes": "6e010267d8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010267d8"
   },
   {
     "id": "p1-msg_intensity3-m0",
@@ -3203,12 +2363,7 @@
       ]
     },
     "expected": "6e010068d7",
-    "expected_bytes": "6e010068d7",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010068d7"
   },
   {
     "id": "p1-msg_intensity3-m1",
@@ -3222,12 +2377,7 @@
       ]
     },
     "expected": "6e010168d8",
-    "expected_bytes": "6e010168d8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010168d8"
   },
   {
     "id": "p1-msg_intensity3-m2",
@@ -3241,12 +2391,7 @@
       ]
     },
     "expected": "6e010268d9",
-    "expected_bytes": "6e010268d9",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010268d9"
   },
   {
     "id": "p1-snore_set-m0",
@@ -3260,12 +2405,7 @@
       ]
     },
     "expected": "6e010069d8",
-    "expected_bytes": "6e010069d8",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010069d8"
   },
   {
     "id": "p1-snore_set-m1",
@@ -3279,12 +2419,7 @@
       ]
     },
     "expected": "6e010169d9",
-    "expected_bytes": "6e010169d9",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010169d9"
   },
   {
     "id": "p1-snore_set-m2",
@@ -3298,12 +2433,7 @@
       ]
     },
     "expected": "6e010269da",
-    "expected_bytes": "6e010269da",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010269da"
   },
   {
     "id": "p1-flat2-m0",
@@ -3317,12 +2447,7 @@
       ]
     },
     "expected": "6e01006cdb",
-    "expected_bytes": "6e01006cdb",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01006cdb"
   },
   {
     "id": "p1-flat2-m1",
@@ -3336,12 +2461,7 @@
       ]
     },
     "expected": "6e01016cdc",
-    "expected_bytes": "6e01016cdc",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01016cdc"
   },
   {
     "id": "p1-flat2-m2",
@@ -3355,12 +2475,7 @@
       ]
     },
     "expected": "6e01026cdd",
-    "expected_bytes": "6e01026cdd",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01026cdd"
   },
   {
     "id": "p1-head_foot_on_off-m0",
@@ -3374,12 +2489,7 @@
       ]
     },
     "expected": "6e01006fde",
-    "expected_bytes": "6e01006fde",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01006fde"
   },
   {
     "id": "p1-head_foot_on_off-m1",
@@ -3393,12 +2503,7 @@
       ]
     },
     "expected": "6e01016fdf",
-    "expected_bytes": "6e01016fdf",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01016fdf"
   },
   {
     "id": "p1-head_foot_on_off-m2",
@@ -3412,12 +2517,7 @@
       ]
     },
     "expected": "6e01026fe0",
-    "expected_bytes": "6e01026fe0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01026fe0"
   },
   {
     "id": "p1-relax-m0",
@@ -3431,12 +2531,7 @@
       ]
     },
     "expected": "6e010070df",
-    "expected_bytes": "6e010070df",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010070df"
   },
   {
     "id": "p1-relax-m1",
@@ -3450,12 +2545,7 @@
       ]
     },
     "expected": "6e010170e0",
-    "expected_bytes": "6e010170e0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010170e0"
   },
   {
     "id": "p1-relax-m2",
@@ -3469,12 +2559,7 @@
       ]
     },
     "expected": "6e010270e1",
-    "expected_bytes": "6e010270e1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010270e1"
   },
   {
     "id": "p1-motor5_up-m0",
@@ -3488,12 +2573,7 @@
       ]
     },
     "expected": "6e010071e0",
-    "expected_bytes": "6e010071e0",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010071e0"
   },
   {
     "id": "p1-motor5_up-m1",
@@ -3507,12 +2587,7 @@
       ]
     },
     "expected": "6e010171e1",
-    "expected_bytes": "6e010171e1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010171e1"
   },
   {
     "id": "p1-motor5_up-m2",
@@ -3526,12 +2601,7 @@
       ]
     },
     "expected": "6e010271e2",
-    "expected_bytes": "6e010271e2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010271e2"
   },
   {
     "id": "p1-motor5_down-m0",
@@ -3545,12 +2615,7 @@
       ]
     },
     "expected": "6e010072e1",
-    "expected_bytes": "6e010072e1",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010072e1"
   },
   {
     "id": "p1-motor5_down-m1",
@@ -3564,12 +2629,7 @@
       ]
     },
     "expected": "6e010172e2",
-    "expected_bytes": "6e010172e2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010172e2"
   },
   {
     "id": "p1-motor5_down-m2",
@@ -3583,12 +2643,7 @@
       ]
     },
     "expected": "6e010272e3",
-    "expected_bytes": "6e010272e3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010272e3"
   },
   {
     "id": "p1-motor6_up-m0",
@@ -3602,12 +2657,7 @@
       ]
     },
     "expected": "6e010073e2",
-    "expected_bytes": "6e010073e2",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010073e2"
   },
   {
     "id": "p1-motor6_up-m1",
@@ -3621,12 +2671,7 @@
       ]
     },
     "expected": "6e010173e3",
-    "expected_bytes": "6e010173e3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010173e3"
   },
   {
     "id": "p1-motor6_up-m2",
@@ -3640,12 +2685,7 @@
       ]
     },
     "expected": "6e010273e4",
-    "expected_bytes": "6e010273e4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010273e4"
   },
   {
     "id": "p1-motor6_down-m0",
@@ -3659,12 +2699,7 @@
       ]
     },
     "expected": "6e010074e3",
-    "expected_bytes": "6e010074e3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010074e3"
   },
   {
     "id": "p1-motor6_down-m1",
@@ -3678,12 +2713,7 @@
       ]
     },
     "expected": "6e010174e4",
-    "expected_bytes": "6e010174e4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010174e4"
   },
   {
     "id": "p1-motor6_down-m2",
@@ -3697,12 +2727,7 @@
       ]
     },
     "expected": "6e010274e5",
-    "expected_bytes": "6e010274e5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010274e5"
   },
   {
     "id": "p1-ubl_off-m0",
@@ -3716,12 +2741,7 @@
       ]
     },
     "expected": "6e010075e4",
-    "expected_bytes": "6e010075e4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010075e4"
   },
   {
     "id": "p1-ubl_off-m1",
@@ -3735,12 +2755,7 @@
       ]
     },
     "expected": "6e010175e5",
-    "expected_bytes": "6e010175e5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010175e5"
   },
   {
     "id": "p1-ubl_off-m2",
@@ -3754,12 +2769,7 @@
       ]
     },
     "expected": "6e010275e6",
-    "expected_bytes": "6e010275e6",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010275e6"
   },
   {
     "id": "p1-alarm-payload-TV_ALL_ON",
@@ -3776,10 +2786,7 @@
       "6e052c009f",
       "6e060177ec"
     ],
-    "expected_bytes": "6e052c009f | 6e060177ec",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e060177ec"
   },
   {
     "id": "p1-alarm-payload-TV_HEAD_ON",
@@ -3796,10 +2803,7 @@
       "6e052c009f",
       "6e06017aef"
     ],
-    "expected_bytes": "6e052c009f | 6e06017aef",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e06017aef"
   },
   {
     "id": "p1-alarm-payload-TV_FOOT_ON",
@@ -3816,10 +2820,7 @@
       "6e052c009f",
       "6e06017df2"
     ],
-    "expected_bytes": "6e052c009f | 6e06017df2",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e06017df2"
   },
   {
     "id": "p1-alarm-payload-SNORE_ALL_ON",
@@ -3836,10 +2837,7 @@
       "6e052c009f",
       "6e060178ed"
     ],
-    "expected_bytes": "6e052c009f | 6e060178ed",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e060178ed"
   },
   {
     "id": "p1-alarm-payload-SNORE_HEAD_ON",
@@ -3856,10 +2854,7 @@
       "6e052c009f",
       "6e06017bf0"
     ],
-    "expected_bytes": "6e052c009f | 6e06017bf0",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e06017bf0"
   },
   {
     "id": "p1-alarm-payload-SNORE_FOOT_ON",
@@ -3876,10 +2871,7 @@
       "6e052c009f",
       "6e06017ef3"
     ],
-    "expected_bytes": "6e052c009f | 6e06017ef3",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e06017ef3"
   },
   {
     "id": "p1-alarm-payload-ZG_ALL_ON",
@@ -3896,10 +2888,7 @@
       "6e052c009f",
       "6e060179ee"
     ],
-    "expected_bytes": "6e052c009f | 6e060179ee",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e060179ee"
   },
   {
     "id": "p1-alarm-payload-ZG_HEAD_ON",
@@ -3916,10 +2905,7 @@
       "6e052c009f",
       "6e06017cf1"
     ],
-    "expected_bytes": "6e052c009f | 6e06017cf1",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e06017cf1"
   },
   {
     "id": "p1-alarm-payload-ZG_FOOT_ON",
@@ -3936,10 +2922,7 @@
       "6e052c009f",
       "6e06017ff4"
     ],
-    "expected_bytes": "6e052c009f | 6e06017ff4",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e06017ff4"
   },
   {
     "id": "p1-alarm-payload-M1_ALL_ON",
@@ -3956,10 +2939,7 @@
       "6e052c009f",
       "6e060181f6"
     ],
-    "expected_bytes": "6e052c009f | 6e060181f6",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e060181f6"
   },
   {
     "id": "p1-alarm-payload-M1_HEAD_ON",
@@ -3976,10 +2956,7 @@
       "6e052c009f",
       "6e060182f7"
     ],
-    "expected_bytes": "6e052c009f | 6e060182f7",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e060182f7"
   },
   {
     "id": "p1-alarm-payload-M1_FOOT_ON",
@@ -3996,10 +2973,7 @@
       "6e052c009f",
       "6e060183f8"
     ],
-    "expected_bytes": "6e052c009f | 6e060183f8",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e060183f8"
   },
   {
     "id": "p1-lock-m0",
@@ -4013,12 +2987,7 @@
       ]
     },
     "expected": "6e010084f3",
-    "expected_bytes": "6e010084f3",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010084f3"
   },
   {
     "id": "p1-lock-m1",
@@ -4032,12 +3001,7 @@
       ]
     },
     "expected": "6e010184f4",
-    "expected_bytes": "6e010184f4",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010184f4"
   },
   {
     "id": "p1-lock-m2",
@@ -4051,12 +3015,7 @@
       ]
     },
     "expected": "6e010284f5",
-    "expected_bytes": "6e010284f5",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e010284f5"
   },
   {
     "id": "p1-msg_head_intensity_inc2-m0",
@@ -4070,12 +3029,7 @@
       ]
     },
     "expected": "6e0100a413",
-    "expected_bytes": "6e0100a413",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100a413"
   },
   {
     "id": "p1-msg_head_intensity_inc2-m1",
@@ -4089,12 +3043,7 @@
       ]
     },
     "expected": "6e0101a414",
-    "expected_bytes": "6e0101a414",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101a414"
   },
   {
     "id": "p1-msg_head_intensity_inc2-m2",
@@ -4108,12 +3057,7 @@
       ]
     },
     "expected": "6e0102a415",
-    "expected_bytes": "6e0102a415",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102a415"
   },
   {
     "id": "p1-msg_foot_intensity_inc2-m0",
@@ -4127,12 +3071,7 @@
       ]
     },
     "expected": "6e0100a514",
-    "expected_bytes": "6e0100a514",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100a514"
   },
   {
     "id": "p1-msg_foot_intensity_inc2-m1",
@@ -4146,12 +3085,7 @@
       ]
     },
     "expected": "6e0101a515",
-    "expected_bytes": "6e0101a515",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101a515"
   },
   {
     "id": "p1-msg_foot_intensity_inc2-m2",
@@ -4165,12 +3099,7 @@
       ]
     },
     "expected": "6e0102a516",
-    "expected_bytes": "6e0102a516",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102a516"
   },
   {
     "id": "p1-alarm-payload-M2_ALL_ON",
@@ -4187,10 +3116,7 @@
       "6e052c009f",
       "6e0601a61b"
     ],
-    "expected_bytes": "6e052c009f | 6e0601a61b",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601a61b"
   },
   {
     "id": "p1-alarm-payload-M2_HEAD_ON",
@@ -4207,10 +3133,7 @@
       "6e052c009f",
       "6e0601a71c"
     ],
-    "expected_bytes": "6e052c009f | 6e0601a71c",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601a71c"
   },
   {
     "id": "p1-alarm-payload-M2_FOOT_ON",
@@ -4227,10 +3150,7 @@
       "6e052c009f",
       "6e0601a81d"
     ],
-    "expected_bytes": "6e052c009f | 6e0601a81d",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601a81d"
   },
   {
     "id": "p1-alarm-payload-M3_ALL_ON",
@@ -4247,10 +3167,7 @@
       "6e052c009f",
       "6e0601a91e"
     ],
-    "expected_bytes": "6e052c009f | 6e0601a91e",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601a91e"
   },
   {
     "id": "p1-alarm-payload-M3_HEAD_ON",
@@ -4267,10 +3184,7 @@
       "6e052c009f",
       "6e0601aa1f"
     ],
-    "expected_bytes": "6e052c009f | 6e0601aa1f",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601aa1f"
   },
   {
     "id": "p1-alarm-payload-M3_FOOT_ON",
@@ -4287,10 +3201,7 @@
       "6e052c009f",
       "6e0601ab20"
     ],
-    "expected_bytes": "6e052c009f | 6e0601ab20",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601ab20"
   },
   {
     "id": "p1-alarm-payload-LOUNGE_ALL_ON",
@@ -4307,10 +3218,7 @@
       "6e052c009f",
       "6e0601ac21"
     ],
-    "expected_bytes": "6e052c009f | 6e0601ac21",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601ac21"
   },
   {
     "id": "p1-alarm-payload-LOUNGE_HEAD_ON",
@@ -4327,10 +3235,7 @@
       "6e052c009f",
       "6e0601ad22"
     ],
-    "expected_bytes": "6e052c009f | 6e0601ad22",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601ad22"
   },
   {
     "id": "p1-alarm-payload-LOUNGE_FOOT_ON",
@@ -4347,10 +3252,7 @@
       "6e052c009f",
       "6e0601ae23"
     ],
-    "expected_bytes": "6e052c009f | 6e0601ae23",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601ae23"
   },
   {
     "id": "p1-msg_intensity2-m0",
@@ -4364,12 +3266,7 @@
       ]
     },
     "expected": "6e0100af1e",
-    "expected_bytes": "6e0100af1e",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100af1e"
   },
   {
     "id": "p1-msg_intensity2-m1",
@@ -4383,12 +3280,7 @@
       ]
     },
     "expected": "6e0101af1f",
-    "expected_bytes": "6e0101af1f",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101af1f"
   },
   {
     "id": "p1-msg_intensity2-m2",
@@ -4402,12 +3294,7 @@
       ]
     },
     "expected": "6e0102af20",
-    "expected_bytes": "6e0102af20",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102af20"
   },
   {
     "id": "p1-alarm-payload-ALARM_MODE1",
@@ -4424,10 +3311,7 @@
       "6e052c009f",
       "6e0601b025"
     ],
-    "expected_bytes": "6e052c009f | 6e0601b025",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601b025"
   },
   {
     "id": "p1-alarm-payload-ALARM_MODE2",
@@ -4444,10 +3328,7 @@
       "6e052c009f",
       "6e0601b126"
     ],
-    "expected_bytes": "6e052c009f | 6e0601b126",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e052c009f | 6e0601b126"
   },
   {
     "id": "p1-m4_back-m0",
@@ -4461,12 +3342,7 @@
       ]
     },
     "expected": "6e0100b221",
-    "expected_bytes": "6e0100b221",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100b221"
   },
   {
     "id": "p1-m4_back-m1",
@@ -4480,12 +3356,7 @@
       ]
     },
     "expected": "6e0101b222",
-    "expected_bytes": "6e0101b222",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101b222"
   },
   {
     "id": "p1-m4_back-m2",
@@ -4499,12 +3370,7 @@
       ]
     },
     "expected": "6e0102b223",
-    "expected_bytes": "6e0102b223",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102b223"
   },
   {
     "id": "p1-m4_set-m0",
@@ -4518,12 +3384,7 @@
       ]
     },
     "expected": "6e0100b322",
-    "expected_bytes": "6e0100b322",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100b322"
   },
   {
     "id": "p1-m4_set-m1",
@@ -4537,12 +3398,7 @@
       ]
     },
     "expected": "6e0101b323",
-    "expected_bytes": "6e0101b323",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101b323"
   },
   {
     "id": "p1-m4_set-m2",
@@ -4556,12 +3412,7 @@
       ]
     },
     "expected": "6e0102b324",
-    "expected_bytes": "6e0102b324",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102b324"
   },
   {
     "id": "p1-lumbar_back-m0",
@@ -4575,12 +3426,7 @@
       ]
     },
     "expected": "6e01009100",
-    "expected_bytes": "6e01009100",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01009100"
   },
   {
     "id": "p1-lumbar_back-m1",
@@ -4594,12 +3440,7 @@
       ]
     },
     "expected": "6e01019101",
-    "expected_bytes": "6e01019101",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01019101"
   },
   {
     "id": "p1-lumbar_back-m2",
@@ -4613,12 +3454,7 @@
       ]
     },
     "expected": "6e01029102",
-    "expected_bytes": "6e01029102",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01029102"
   },
   {
     "id": "p1-lumbar_set-m0",
@@ -4632,12 +3468,7 @@
       ]
     },
     "expected": "6e01009201",
-    "expected_bytes": "6e01009201",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01009201"
   },
   {
     "id": "p1-lumbar_set-m1",
@@ -4651,12 +3482,7 @@
       ]
     },
     "expected": "6e01019202",
-    "expected_bytes": "6e01019202",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01019202"
   },
   {
     "id": "p1-lumbar_set-m2",
@@ -4670,12 +3496,7 @@
       ]
     },
     "expected": "6e01029203",
-    "expected_bytes": "6e01029203",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01029203"
   },
   {
     "id": "p1-yoga_back-m0",
@@ -4689,12 +3510,7 @@
       ]
     },
     "expected": "6e0100f05f",
-    "expected_bytes": "6e0100f05f",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100f05f"
   },
   {
     "id": "p1-yoga_back-m1",
@@ -4708,12 +3524,7 @@
       ]
     },
     "expected": "6e0101f060",
-    "expected_bytes": "6e0101f060",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101f060"
   },
   {
     "id": "p1-yoga_back-m2",
@@ -4727,12 +3538,7 @@
       ]
     },
     "expected": "6e0102f061",
-    "expected_bytes": "6e0102f061",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102f061"
   },
   {
     "id": "p1-yoga_set-m0",
@@ -4746,12 +3552,7 @@
       ]
     },
     "expected": "6e0100f160",
-    "expected_bytes": "6e0100f160",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100f160"
   },
   {
     "id": "p1-yoga_set-m1",
@@ -4765,12 +3566,7 @@
       ]
     },
     "expected": "6e0101f161",
-    "expected_bytes": "6e0101f161",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101f161"
   },
   {
     "id": "p1-yoga_set-m2",
@@ -4784,12 +3580,7 @@
       ]
     },
     "expected": "6e0102f162",
-    "expected_bytes": "6e0102f162",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102f162"
   },
   {
     "id": "p1-read_back-m0",
@@ -4803,12 +3594,7 @@
       ]
     },
     "expected": "6e0100f261",
-    "expected_bytes": "6e0100f261",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100f261"
   },
   {
     "id": "p1-read_back-m1",
@@ -4822,12 +3608,7 @@
       ]
     },
     "expected": "6e0101f262",
-    "expected_bytes": "6e0101f262",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101f262"
   },
   {
     "id": "p1-read_back-m2",
@@ -4841,12 +3622,7 @@
       ]
     },
     "expected": "6e0102f263",
-    "expected_bytes": "6e0102f263",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102f263"
   },
   {
     "id": "p1-read_set-m0",
@@ -4860,12 +3636,7 @@
       ]
     },
     "expected": "6e0100f362",
-    "expected_bytes": "6e0100f362",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100f362"
   },
   {
     "id": "p1-read_set-m1",
@@ -4879,12 +3650,7 @@
       ]
     },
     "expected": "6e0101f363",
-    "expected_bytes": "6e0101f363",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101f363"
   },
   {
     "id": "p1-read_set-m2",
@@ -4898,12 +3664,7 @@
       ]
     },
     "expected": "6e0102f364",
-    "expected_bytes": "6e0102f364",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102f364"
   },
   {
     "id": "p1-m5_back-m0",
@@ -4917,12 +3678,7 @@
       ]
     },
     "expected": "6e0100f463",
-    "expected_bytes": "6e0100f463",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100f463"
   },
   {
     "id": "p1-m5_back-m1",
@@ -4936,12 +3692,7 @@
       ]
     },
     "expected": "6e0101f464",
-    "expected_bytes": "6e0101f464",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101f464"
   },
   {
     "id": "p1-m5_back-m2",
@@ -4955,12 +3706,7 @@
       ]
     },
     "expected": "6e0102f465",
-    "expected_bytes": "6e0102f465",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102f465"
   },
   {
     "id": "p1-m5_set-m0",
@@ -4974,12 +3720,7 @@
       ]
     },
     "expected": "6e0100f564",
-    "expected_bytes": "6e0100f564",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100f564"
   },
   {
     "id": "p1-m5_set-m1",
@@ -4993,12 +3734,7 @@
       ]
     },
     "expected": "6e0101f565",
-    "expected_bytes": "6e0101f565",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101f565"
   },
   {
     "id": "p1-m5_set-m2",
@@ -5012,12 +3748,7 @@
       ]
     },
     "expected": "6e0102f566",
-    "expected_bytes": "6e0102f566",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102f566"
   },
   {
     "id": "p1-flat_sleep_back-m0",
@@ -5031,12 +3762,7 @@
       ]
     },
     "expected": "6e0100f665",
-    "expected_bytes": "6e0100f665",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100f665"
   },
   {
     "id": "p1-flat_sleep_back-m1",
@@ -5050,12 +3776,7 @@
       ]
     },
     "expected": "6e0101f666",
-    "expected_bytes": "6e0101f666",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101f666"
   },
   {
     "id": "p1-flat_sleep_back-m2",
@@ -5069,12 +3790,7 @@
       ]
     },
     "expected": "6e0102f667",
-    "expected_bytes": "6e0102f667",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102f667"
   },
   {
     "id": "p1-flat_sleep_save-m0",
@@ -5088,12 +3804,7 @@
       ]
     },
     "expected": "6e0100f766",
-    "expected_bytes": "6e0100f766",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100f766"
   },
   {
     "id": "p1-flat_sleep_save-m1",
@@ -5107,12 +3818,7 @@
       ]
     },
     "expected": "6e0101f767",
-    "expected_bytes": "6e0101f767",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0101f767"
   },
   {
     "id": "p1-flat_sleep_save-m2",
@@ -5126,12 +3832,7 @@
       ]
     },
     "expected": "6e0102f768",
-    "expected_bytes": "6e0102f768",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0102f768"
   },
   {
     "id": "p1-smart_light_lock-m0",
@@ -5145,12 +3846,7 @@
       ]
     },
     "expected": "6e0100c02f",
-    "expected_bytes": "6e0100c02f",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e0100c02f"
   },
   {
     "id": "p1-end-m0",
@@ -5164,12 +3860,7 @@
       ]
     },
     "expected": "6e01006edd",
-    "expected_bytes": "6e01006edd",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01006edd"
   },
   {
     "id": "p1-end-m1",
@@ -5183,12 +3874,7 @@
       ]
     },
     "expected": "6e01016ede",
-    "expected_bytes": "6e01016ede",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01016ede"
   },
   {
     "id": "p1-end-m2",
@@ -5202,12 +3888,7 @@
       ]
     },
     "expected": "6e01026edf",
-    "expected_bytes": "6e01026edf",
-    "evidence": [
-      "E05",
-      "E06",
-      "E07"
-    ]
+    "expected_bytes": "6e01026edf"
   },
   {
     "id": "p1-tx_version",
@@ -5225,11 +3906,7 @@
       ]
     },
     "expected": "6e9a000008",
-    "expected_bytes": "6e9a000008",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9a000008"
   },
   {
     "id": "p1-tx_exit_one_min",
@@ -5247,11 +3924,7 @@
       ]
     },
     "expected": "6e02010071",
-    "expected_bytes": "6e02010071",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e02010071"
   },
   {
     "id": "p1-tx_alarm",
@@ -5269,11 +3942,7 @@
       ]
     },
     "expected": "6e08010178",
-    "expected_bytes": "6e08010178",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e08010178"
   },
   {
     "id": "p1-tx_led",
@@ -5291,11 +3960,7 @@
       ]
     },
     "expected": "6e0a000179",
-    "expected_bytes": "6e0a000179",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e0a000179"
   },
   {
     "id": "p1-tx_mattress",
@@ -5313,11 +3978,7 @@
       ]
     },
     "expected": "5e1a000179",
-    "expected_bytes": "5e1a000179",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "5e1a000179"
   },
   {
     "id": "p1-tx_waist_mattress",
@@ -5335,11 +3996,7 @@
       ]
     },
     "expected": "5e1b00017a",
-    "expected_bytes": "5e1b00017a",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "5e1b00017a"
   },
   {
     "id": "p1-tx_snore",
@@ -5357,11 +4014,7 @@
       ]
     },
     "expected": "6e2100008f",
-    "expected_bytes": "6e2100008f",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e2100008f"
   },
   {
     "id": "p1-tx_speech",
@@ -5379,11 +4032,7 @@
       ]
     },
     "expected": "6e22000090",
-    "expected_bytes": "6e22000090",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e22000090"
   },
   {
     "id": "p1-tx_detection",
@@ -5401,11 +4050,7 @@
       ]
     },
     "expected": "6e9ac000c8",
-    "expected_bytes": "6e9ac000c8",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9ac000c8"
   },
   {
     "id": "p1-tx_motor_mode",
@@ -5423,11 +4068,7 @@
       ]
     },
     "expected": "6e9a100018",
-    "expected_bytes": "6e9a100018",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9a100018"
   },
   {
     "id": "p1-tx_motor1_angle",
@@ -5445,11 +4086,7 @@
       ]
     },
     "expected": "6e9a300139",
-    "expected_bytes": "6e9a300139",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9a300139"
   },
   {
     "id": "p1-tx_motor2_angle",
@@ -5467,11 +4104,7 @@
       ]
     },
     "expected": "6e9a30023a",
-    "expected_bytes": "6e9a30023a",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9a30023a"
   },
   {
     "id": "p1-tx_motor3_angle",
@@ -5489,11 +4122,7 @@
       ]
     },
     "expected": "6e9a30033b",
-    "expected_bytes": "6e9a30033b",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9a30033b"
   },
   {
     "id": "p1-tx_motor4_angle",
@@ -5511,11 +4140,7 @@
       ]
     },
     "expected": "6e9a30043c",
-    "expected_bytes": "6e9a30043c",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9a30043c"
   },
   {
     "id": "p1-tx_query_massage",
@@ -5533,11 +4158,7 @@
       ]
     },
     "expected": "6e9aa000a8",
-    "expected_bytes": "6e9aa000a8",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9aa000a8"
   },
   {
     "id": "p1-tx_query_ubl_lock",
@@ -5555,11 +4176,7 @@
       ]
     },
     "expected": "6e9ab000b8",
-    "expected_bytes": "6e9ab000b8",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e9ab000b8"
   },
   {
     "id": "p1-tx_start_detection",
@@ -5577,11 +4194,7 @@
       ]
     },
     "expected": "6e88c210c8",
-    "expected_bytes": "6e88c210c8",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e88c210c8"
   },
   {
     "id": "p1-tx_stop_detection",
@@ -5599,11 +4212,7 @@
       ]
     },
     "expected": "6e88c220d8",
-    "expected_bytes": "6e88c220d8",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e88c220d8"
   },
   {
     "id": "p1-tx_alarm_cancle1",
@@ -5621,11 +4230,7 @@
       ]
     },
     "expected": "6e05000073",
-    "expected_bytes": "6e05000073",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e05000073"
   },
   {
     "id": "p1-tx_alarm_cancle2",
@@ -5643,11 +4248,7 @@
       ]
     },
     "expected": "6e06000074",
-    "expected_bytes": "6e06000074",
-    "evidence": [
-      "E05",
-      "E08"
-    ]
+    "expected_bytes": "6e06000074"
   },
   {
     "id": "p1-angle-0-0",
@@ -5661,10 +4262,7 @@
       ]
     },
     "expected": "6e88300026",
-    "expected_bytes": "6e88300026",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88300026"
   },
   {
     "id": "p1-angle-0-12",
@@ -5678,10 +4276,7 @@
       ]
     },
     "expected": "6e88300c32",
-    "expected_bytes": "6e88300c32",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88300c32"
   },
   {
     "id": "p1-angle-0-42",
@@ -5695,10 +4290,7 @@
       ]
     },
     "expected": "6e88302a50",
-    "expected_bytes": "6e88302a50",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88302a50"
   },
   {
     "id": "p1-angle-0--12",
@@ -5712,10 +4304,7 @@
       ]
     },
     "expected": "6e88300c32",
-    "expected_bytes": "6e88300c32",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88300c32"
   },
   {
     "id": "p1-angle-1-0",
@@ -5729,10 +4318,7 @@
       ]
     },
     "expected": "6e8834002a",
-    "expected_bytes": "6e8834002a",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e8834002a"
   },
   {
     "id": "p1-angle-1-12",
@@ -5746,10 +4332,7 @@
       ]
     },
     "expected": "6e88340c36",
-    "expected_bytes": "6e88340c36",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88340c36"
   },
   {
     "id": "p1-angle-1-42",
@@ -5763,10 +4346,7 @@
       ]
     },
     "expected": "6e88342a54",
-    "expected_bytes": "6e88342a54",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88342a54"
   },
   {
     "id": "p1-angle-1--12",
@@ -5780,10 +4360,7 @@
       ]
     },
     "expected": "6e88340c36",
-    "expected_bytes": "6e88340c36",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88340c36"
   },
   {
     "id": "p1-angle-2-0",
@@ -5797,10 +4374,7 @@
       ]
     },
     "expected": "6e8838002e",
-    "expected_bytes": "6e8838002e",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e8838002e"
   },
   {
     "id": "p1-angle-2-12",
@@ -5814,10 +4388,7 @@
       ]
     },
     "expected": "6e88380c3a",
-    "expected_bytes": "6e88380c3a",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88380c3a"
   },
   {
     "id": "p1-angle-2-42",
@@ -5831,10 +4402,7 @@
       ]
     },
     "expected": "6e88382a58",
-    "expected_bytes": "6e88382a58",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88382a58"
   },
   {
     "id": "p1-angle-2--12",
@@ -5848,10 +4416,7 @@
       ]
     },
     "expected": "6e88380c3a",
-    "expected_bytes": "6e88380c3a",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88380c3a"
   },
   {
     "id": "p1-angle-3-0",
@@ -5865,10 +4430,7 @@
       ]
     },
     "expected": "6e883c0032",
-    "expected_bytes": "6e883c0032",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e883c0032"
   },
   {
     "id": "p1-angle-3-12",
@@ -5882,10 +4444,7 @@
       ]
     },
     "expected": "6e883c0c3e",
-    "expected_bytes": "6e883c0c3e",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e883c0c3e"
   },
   {
     "id": "p1-angle-3-42",
@@ -5899,10 +4458,7 @@
       ]
     },
     "expected": "6e883c2a5c",
-    "expected_bytes": "6e883c2a5c",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e883c2a5c"
   },
   {
     "id": "p1-angle-3--12",
@@ -5916,10 +4472,7 @@
       ]
     },
     "expected": "6e883c0c3e",
-    "expected_bytes": "6e883c0c3e",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e883c0c3e"
   },
   {
     "id": "p1-mode-0",
@@ -5932,10 +4485,7 @@
       ]
     },
     "expected": "6e88100006",
-    "expected_bytes": "6e88100006",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88100006"
   },
   {
     "id": "p1-mode-1",
@@ -5948,10 +4498,7 @@
       ]
     },
     "expected": "6e8814000a",
-    "expected_bytes": "6e8814000a",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e8814000a"
   },
   {
     "id": "p1-mode-2",
@@ -5964,10 +4511,7 @@
       ]
     },
     "expected": "6e8818000e",
-    "expected_bytes": "6e8818000e",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e8818000e"
   },
   {
     "id": "p1-mode-3",
@@ -5980,10 +4524,7 @@
       ]
     },
     "expected": "6e881c0012",
-    "expected_bytes": "6e881c0012",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e881c0012"
   },
   {
     "id": "p1-massage-0-0",
@@ -5997,10 +4538,7 @@
       ]
     },
     "expected": "6e88a00096",
-    "expected_bytes": "6e88a00096",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88a00096"
   },
   {
     "id": "p1-massage-1-2",
@@ -6014,10 +4552,7 @@
       ]
     },
     "expected": "6e88a011a7",
-    "expected_bytes": "6e88a011a7",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88a011a7"
   },
   {
     "id": "p1-massage-7-7",
@@ -6031,10 +4566,7 @@
       ]
     },
     "expected": "6e88a03fd5",
-    "expected_bytes": "6e88a03fd5",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88a03fd5"
   },
   {
     "id": "p1-massage-3-6",
@@ -6048,10 +4580,7 @@
       ]
     },
     "expected": "6e88a033c9",
-    "expected_bytes": "6e88a033c9",
-    "evidence": [
-      "E09"
-    ]
+    "expected_bytes": "6e88a033c9"
   },
   {
     "id": "p1-rgb-(0, 0, 0)",
@@ -6066,10 +4595,7 @@
       ]
     },
     "expected": "6e0cff00796e0d00007b",
-    "expected_bytes": "6e0cff00796e0d00007b",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0cff00796e0d00007b"
   },
   {
     "id": "p1-rgb-(255, 128, 64)",
@@ -6084,10 +4610,7 @@
       ]
     },
     "expected": "6e0cffff786e0d80403b",
-    "expected_bytes": "6e0cffff786e0d80403b",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0cffff786e0d80403b"
   },
   {
     "id": "p1-led-0-m0",
@@ -6101,10 +4624,7 @@
       ]
     },
     "expected": "6e0b00ff78",
-    "expected_bytes": "6e0b00ff78",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b00ff78"
   },
   {
     "id": "p1-led-0-m1",
@@ -6118,10 +4638,7 @@
       ]
     },
     "expected": "6e0b01ff79",
-    "expected_bytes": "6e0b01ff79",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b01ff79"
   },
   {
     "id": "p1-led-0-m2",
@@ -6135,10 +4652,7 @@
       ]
     },
     "expected": "6e0b02ff7a",
-    "expected_bytes": "6e0b02ff7a",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b02ff7a"
   },
   {
     "id": "p1-led-1-m0",
@@ -6152,10 +4666,7 @@
       ]
     },
     "expected": "6e0b00017a",
-    "expected_bytes": "6e0b00017a",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b00017a"
   },
   {
     "id": "p1-led-1-m1",
@@ -6169,10 +4680,7 @@
       ]
     },
     "expected": "6e0b01017b",
-    "expected_bytes": "6e0b01017b",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b01017b"
   },
   {
     "id": "p1-led-1-m2",
@@ -6186,10 +4694,7 @@
       ]
     },
     "expected": "6e0b02017c",
-    "expected_bytes": "6e0b02017c",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b02017c"
   },
   {
     "id": "p1-led-300-m0",
@@ -6203,10 +4708,7 @@
       ]
     },
     "expected": "6e0b002ca5",
-    "expected_bytes": "6e0b002ca5",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b002ca5"
   },
   {
     "id": "p1-led-300-m1",
@@ -6220,10 +4722,7 @@
       ]
     },
     "expected": "6e0b012ca6",
-    "expected_bytes": "6e0b012ca6",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b012ca6"
   },
   {
     "id": "p1-led-300-m2",
@@ -6237,10 +4736,7 @@
       ]
     },
     "expected": "6e0b022ca7",
-    "expected_bytes": "6e0b022ca7",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e0b022ca7"
   },
   {
     "id": "p1-alarm-1",
@@ -6257,10 +4753,7 @@
       "6e05010074",
       "6e06002ea2"
     ],
-    "expected_bytes": "6e05010074 | 6e06002ea2",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e05010074 | 6e06002ea2"
   },
   {
     "id": "p1-alarm-1440",
@@ -6277,10 +4770,7 @@
       "6e05a00013",
       "6e06057ff8"
     ],
-    "expected_bytes": "6e05a00013 | 6e06057ff8",
-    "evidence": [
-      "E10"
-    ]
+    "expected_bytes": "6e05a00013 | 6e06057ff8"
   },
   {
     "id": "p3-normal-1-1",
@@ -6295,11 +4785,7 @@
       ]
     },
     "expected": "5e01010161",
-    "expected_bytes": "5e01010161",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e01010161"
   },
   {
     "id": "p3-normal-1-2",
@@ -6314,11 +4800,7 @@
       ]
     },
     "expected": "5e02010364",
-    "expected_bytes": "5e02010364",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e02010364"
   },
   {
     "id": "p3-normal-2-1",
@@ -6333,11 +4815,7 @@
       ]
     },
     "expected": "5e01020162",
-    "expected_bytes": "5e01020162",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e01020162"
   },
   {
     "id": "p3-normal-2-2",
@@ -6352,11 +4830,7 @@
       ]
     },
     "expected": "5e02020365",
-    "expected_bytes": "5e02020365",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e02020365"
   },
   {
     "id": "p3-normal-3-1",
@@ -6371,11 +4845,7 @@
       ]
     },
     "expected": "5e01030163",
-    "expected_bytes": "5e01030163",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e01030163"
   },
   {
     "id": "p3-normal-3-2",
@@ -6390,11 +4860,7 @@
       ]
     },
     "expected": "5e02030366",
-    "expected_bytes": "5e02030366",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e02030366"
   },
   {
     "id": "p3-normal-4-1",
@@ -6409,11 +4875,7 @@
       ]
     },
     "expected": "5e01040164",
-    "expected_bytes": "5e01040164",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e01040164"
   },
   {
     "id": "p3-normal-4-2",
@@ -6428,11 +4890,7 @@
       ]
     },
     "expected": "5e02040367",
-    "expected_bytes": "5e02040367",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e02040367"
   },
   {
     "id": "p3-normal-5-1",
@@ -6447,11 +4905,7 @@
       ]
     },
     "expected": "5e01050165",
-    "expected_bytes": "5e01050165",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e01050165"
   },
   {
     "id": "p3-normal-5-2",
@@ -6466,11 +4920,7 @@
       ]
     },
     "expected": "5e02050368",
-    "expected_bytes": "5e02050368",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e02050368"
   },
   {
     "id": "p3-normal-6-1",
@@ -6485,11 +4935,7 @@
       ]
     },
     "expected": "5e01060166",
-    "expected_bytes": "5e01060166",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e01060166"
   },
   {
     "id": "p3-normal-6-2",
@@ -6504,11 +4950,7 @@
       ]
     },
     "expected": "5e02060369",
-    "expected_bytes": "5e02060369",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e02060369"
   },
   {
     "id": "p3-normal-7-1",
@@ -6523,11 +4965,7 @@
       ]
     },
     "expected": "5e01070167",
-    "expected_bytes": "5e01070167",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e01070167"
   },
   {
     "id": "p3-normal-7-2",
@@ -6542,11 +4980,7 @@
       ]
     },
     "expected": "5e0207036a",
-    "expected_bytes": "5e0207036a",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e0207036a"
   },
   {
     "id": "p3-normal-9-1",
@@ -6561,11 +4995,7 @@
       ]
     },
     "expected": "5e01090169",
-    "expected_bytes": "5e01090169",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e01090169"
   },
   {
     "id": "p3-normal-9-2",
@@ -6580,11 +5010,7 @@
       ]
     },
     "expected": "5e0209036c",
-    "expected_bytes": "5e0209036c",
-    "evidence": [
-      "E11",
-      "E05"
-    ]
+    "expected_bytes": "5e0209036c"
   },
   {
     "id": "p3-waist-2-0",
@@ -6599,10 +5025,7 @@
       ]
     },
     "expected": "5e03020063",
-    "expected_bytes": "5e03020063",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03020063"
   },
   {
     "id": "p3-waist-2-3",
@@ -6617,10 +5040,7 @@
       ]
     },
     "expected": "5e03020366",
-    "expected_bytes": "5e03020366",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03020366"
   },
   {
     "id": "p3-waist-3-0",
@@ -6635,10 +5055,7 @@
       ]
     },
     "expected": "5e03030064",
-    "expected_bytes": "5e03030064",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03030064"
   },
   {
     "id": "p3-waist-3-3",
@@ -6653,10 +5070,7 @@
       ]
     },
     "expected": "5e03030367",
-    "expected_bytes": "5e03030367",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03030367"
   },
   {
     "id": "p3-waist-4-0",
@@ -6671,10 +5085,7 @@
       ]
     },
     "expected": "5e03040065",
-    "expected_bytes": "5e03040065",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03040065"
   },
   {
     "id": "p3-waist-4-3",
@@ -6689,10 +5100,7 @@
       ]
     },
     "expected": "5e03040368",
-    "expected_bytes": "5e03040368",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03040368"
   },
   {
     "id": "p3-waist-5-0",
@@ -6707,10 +5115,7 @@
       ]
     },
     "expected": "5e03050066",
-    "expected_bytes": "5e03050066",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03050066"
   },
   {
     "id": "p3-waist-5-3",
@@ -6725,10 +5130,7 @@
       ]
     },
     "expected": "5e03050369",
-    "expected_bytes": "5e03050369",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03050369"
   },
   {
     "id": "p3-waist-6-0",
@@ -6743,10 +5145,7 @@
       ]
     },
     "expected": "5e03060067",
-    "expected_bytes": "5e03060067",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03060067"
   },
   {
     "id": "p3-waist-6-3",
@@ -6761,10 +5160,7 @@
       ]
     },
     "expected": "5e0306036a",
-    "expected_bytes": "5e0306036a",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e0306036a"
   },
   {
     "id": "p3-waist-7-0",
@@ -6779,10 +5175,7 @@
       ]
     },
     "expected": "5e03070068",
-    "expected_bytes": "5e03070068",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03070068"
   },
   {
     "id": "p3-waist-7-3",
@@ -6797,10 +5190,7 @@
       ]
     },
     "expected": "5e0307036b",
-    "expected_bytes": "5e0307036b",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e0307036b"
   },
   {
     "id": "p3-waist-8-0",
@@ -6815,10 +5205,7 @@
       ]
     },
     "expected": "5e03080069",
-    "expected_bytes": "5e03080069",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e03080069"
   },
   {
     "id": "p3-waist-8-3",
@@ -6833,10 +5220,7 @@
       ]
     },
     "expected": "5e0308036c",
-    "expected_bytes": "5e0308036c",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e0308036c"
   },
   {
     "id": "p3-waist-9-0",
@@ -6851,10 +5235,7 @@
       ]
     },
     "expected": "5e0309006a",
-    "expected_bytes": "5e0309006a",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e0309006a"
   },
   {
     "id": "p3-waist-9-3",
@@ -6869,10 +5250,7 @@
       ]
     },
     "expected": "5e0309036d",
-    "expected_bytes": "5e0309036d",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e0309036d"
   },
   {
     "id": "p3-waist-10-0",
@@ -6887,10 +5265,7 @@
       ]
     },
     "expected": "5e030a006b",
-    "expected_bytes": "5e030a006b",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e030a006b"
   },
   {
     "id": "p3-waist-10-3",
@@ -6905,10 +5280,7 @@
       ]
     },
     "expected": "5e030a036e",
-    "expected_bytes": "5e030a036e",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "5e030a036e"
   },
   {
     "id": "p3-waist-cancel-1",
@@ -6923,10 +5295,7 @@
       ]
     },
     "expected": "5e030b107c",
-    "expected_bytes": "5e030b107c",
-    "evidence": [
-      "E12"
-    ]
+    "expected_bytes": "5e030b107c"
   },
   {
     "id": "p3-waist-cancel-2",
@@ -6941,10 +5310,7 @@
       ]
     },
     "expected": "5e030b117d",
-    "expected_bytes": "5e030b117d",
-    "evidence": [
-      "E12"
-    ]
+    "expected_bytes": "5e030b117d"
   },
   {
     "id": "p3-waist-cancel-3",
@@ -6959,10 +5325,7 @@
       ]
     },
     "expected": "5e030b127e",
-    "expected_bytes": "5e030b127e",
-    "evidence": [
-      "E12"
-    ]
+    "expected_bytes": "5e030b127e"
   },
   {
     "id": "p3-alarm-1",
@@ -6981,10 +5344,7 @@
       ]
     },
     "expected": "5e010b0102071e060098",
-    "expected_bytes": "5e010b0102071e060098",
-    "evidence": [
-      "E12"
-    ]
+    "expected_bytes": "5e010b0102071e060098"
   },
   {
     "id": "p3-alarm-2",
@@ -7003,10 +5363,7 @@
       ]
     },
     "expected": "5e020b0102071e060099",
-    "expected_bytes": "5e020b0102071e060099",
-    "evidence": [
-      "E12"
-    ]
+    "expected_bytes": "5e020b0102071e060099"
   },
   {
     "id": "p3-waist-alarm",
@@ -7025,10 +5382,7 @@
       ]
     },
     "expected": "5e030b020303071e06009f",
-    "expected_bytes": "5e030b020303071e06009f",
-    "evidence": [
-      "E12"
-    ]
+    "expected_bytes": "5e030b020303071e06009f"
   },
   {
     "id": "p2-heartbeat",
@@ -7042,11 +5396,7 @@
       ]
     },
     "expected": "fa025e01",
-    "expected_bytes": "fa025e01",
-    "evidence": [
-      "E13",
-      "E14"
-    ]
+    "expected_bytes": "fa025e01"
   },
   {
     "id": "p2-left-intervention-off",
@@ -7064,11 +5414,7 @@
       ]
     },
     "expected": "fa055914010100",
-    "expected_bytes": "fa055914010100",
-    "evidence": [
-      "E13",
-      "E14"
-    ]
+    "expected_bytes": "fa055914010100"
   },
   {
     "id": "p2-left-intervention-on",
@@ -7086,11 +5432,7 @@
       ]
     },
     "expected": "fa050714010101",
-    "expected_bytes": "fa050714010101",
-    "evidence": [
-      "E13",
-      "E14"
-    ]
+    "expected_bytes": "fa050714010101"
   },
   {
     "id": "p2-right-intervention-off",
@@ -7108,11 +5450,7 @@
       ]
     },
     "expected": "fa050c14010200",
-    "expected_bytes": "fa050c14010200",
-    "evidence": [
-      "E13",
-      "E14"
-    ]
+    "expected_bytes": "fa050c14010200"
   },
   {
     "id": "p2-right-intervention-on",
@@ -7130,11 +5468,7 @@
       ]
     },
     "expected": "fa055214010201",
-    "expected_bytes": "fa055214010201",
-    "evidence": [
-      "E13",
-      "E14"
-    ]
+    "expected_bytes": "fa055214010201"
   },
   {
     "id": "p2-single-user",
@@ -7152,11 +5486,7 @@
       ]
     },
     "expected": "fa059614010301",
-    "expected_bytes": "fa059614010301",
-    "evidence": [
-      "E13",
-      "E14"
-    ]
+    "expected_bytes": "fa059614010301"
   },
   {
     "id": "p2-double-user",
@@ -7174,11 +5504,7 @@
       ]
     },
     "expected": "fa057414010302",
-    "expected_bytes": "fa057414010302",
-    "evidence": [
-      "E13",
-      "E14"
-    ]
+    "expected_bytes": "fa057414010302"
   },
   {
     "id": "p2-ack-device-attributes",
@@ -7194,11 +5520,7 @@
       ]
     },
     "expected": "fa0330a512",
-    "expected_bytes": "fa0330a512",
-    "evidence": [
-      "E13",
-      "E14"
-    ]
+    "expected_bytes": "fa0330a512"
   },
   {
     "id": "p2-time",
@@ -7211,10 +5533,7 @@
       ]
     },
     "expected": "fa068c0500f15365",
-    "expected_bytes": "fa068c0500f15365",
-    "evidence": [
-      "E13"
-    ]
+    "expected_bytes": "fa068c0500f15365"
   },
   {
     "id": "parse-angle-6e90300a38",
@@ -7236,10 +5555,7 @@
       "axis_bits": "00",
       "value_string": "10"
     },
-    "expected_bytes": "{\"axis_bits\": \"00\", \"value_string\": \"10\"}",
-    "evidence": [
-      "E08"
-    ]
+    "expected_bytes": "{\"axis_bits\": \"00\", \"value_string\": \"10\"}"
   },
   {
     "id": "parse-angle-6e90350a3d",
@@ -7261,10 +5577,7 @@
       "axis_bits": "01",
       "value_string": "-10"
     },
-    "expected_bytes": "{\"axis_bits\": \"01\", \"value_string\": \"-10\"}",
-    "evidence": [
-      "E08"
-    ]
+    "expected_bytes": "{\"axis_bits\": \"01\", \"value_string\": \"-10\"}"
   },
   {
     "id": "parse-angle-6e903cff39",
@@ -7286,10 +5599,7 @@
       "axis_bits": "11",
       "value_string": "-1"
     },
-    "expected_bytes": "{\"axis_bits\": \"11\", \"value_string\": \"-1\"}",
-    "evidence": [
-      "E08"
-    ]
+    "expected_bytes": "{\"axis_bits\": \"11\", \"value_string\": \"-1\"}"
   },
   {
     "id": "parse-p2-fa025e01",
@@ -7310,10 +5620,7 @@
       "type": 1,
       "payload_hex": ""
     },
-    "expected_bytes": "{\"payload_hex\": \"\", \"type\": 1}",
-    "evidence": [
-      "E13"
-    ]
+    "expected_bytes": "{\"payload_hex\": \"\", \"type\": 1}"
   },
   {
     "id": "parse-p2-fa050714010101",
@@ -7337,10 +5644,7 @@
       "type": 20,
       "payload_hex": "010101"
     },
-    "expected_bytes": "{\"payload_hex\": \"010101\", \"type\": 20}",
-    "evidence": [
-      "E13"
-    ]
+    "expected_bytes": "{\"payload_hex\": \"010101\", \"type\": 20}"
   },
   {
     "id": "parse-p2-fa025f01",
@@ -7358,10 +5662,7 @@
       ]
     },
     "expected": null,
-    "expected_bytes": "null",
-    "evidence": [
-      "E13"
-    ]
+    "expected_bytes": "null"
   },
   {
     "id": "p1-snore-0-0",
@@ -7375,11 +5676,7 @@
       ]
     },
     "expected": "6e13000081",
-    "expected_bytes": "6e13000081",
-    "evidence": [
-      "E08",
-      "E05"
-    ]
+    "expected_bytes": "6e13000081"
   },
   {
     "id": "p1-snore-0-69",
@@ -7393,11 +5690,7 @@
       ]
     },
     "expected": "6e130045c6",
-    "expected_bytes": "6e130045c6",
-    "evidence": [
-      "E08",
-      "E05"
-    ]
+    "expected_bytes": "6e130045c6"
   },
   {
     "id": "p1-snore-1-0",
@@ -7411,11 +5704,7 @@
       ]
     },
     "expected": "6e13010082",
-    "expected_bytes": "6e13010082",
-    "evidence": [
-      "E08",
-      "E05"
-    ]
+    "expected_bytes": "6e13010082"
   },
   {
     "id": "p1-snore-1-69",
@@ -7429,11 +5718,7 @@
       ]
     },
     "expected": "6e130145c7",
-    "expected_bytes": "6e130145c7",
-    "evidence": [
-      "E08",
-      "E05"
-    ]
+    "expected_bytes": "6e130145c7"
   },
   {
     "id": "p3-parse-init-1",
@@ -7491,10 +5776,7 @@
       "alarm_key": 11,
       "alarm_value_hex": "0102071e"
     },
-    "expected_bytes": "{\"alarm_key\": 11, \"alarm_value_hex\": \"0102071e\", \"pairs\": {\"0\": 1, \"1\": 2, \"2\": 1, \"3\": 2, \"4\": 1, \"5\": 0, \"6\": 0, \"7\": 1, \"8\": 1, \"9\": 2}, \"side\": 1}",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "{\"alarm_key\": 11, \"alarm_value_hex\": \"0102071e\", \"pairs\": {\"0\": 1, \"1\": 2, \"2\": 1, \"3\": 2, \"4\": 1, \"5\": 0, \"6\": 0, \"7\": 1, \"8\": 1, \"9\": 2}, \"side\": 1}"
   },
   {
     "id": "p3-parse-init-2",
@@ -7552,10 +5834,7 @@
       "alarm_key": 11,
       "alarm_value_hex": "0102071e"
     },
-    "expected_bytes": "{\"alarm_key\": 11, \"alarm_value_hex\": \"0102071e\", \"pairs\": {\"0\": 1, \"1\": 2, \"2\": 1, \"3\": 2, \"4\": 1, \"5\": 0, \"6\": 0, \"7\": 1, \"8\": 2, \"9\": 2}, \"side\": 2}",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "{\"alarm_key\": 11, \"alarm_value_hex\": \"0102071e\", \"pairs\": {\"0\": 1, \"1\": 2, \"2\": 1, \"3\": 2, \"4\": 1, \"5\": 0, \"6\": 0, \"7\": 1, \"8\": 2, \"9\": 2}, \"side\": 2}"
   },
   {
     "id": "p3-parse-update-1-1",
@@ -7578,10 +5857,7 @@
       "key": 1,
       "value_hex": "03"
     },
-    "expected_bytes": "{\"key\": 1, \"side\": 1, \"value_hex\": \"03\"}",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "{\"key\": 1, \"side\": 1, \"value_hex\": \"03\"}"
   },
   {
     "id": "p3-parse-update-2-8",
@@ -7605,10 +5881,7 @@
       "value_hex": "02",
       "selected_side": 1
     },
-    "expected_bytes": "{\"key\": 8, \"selected_side\": 1, \"side\": 2, \"value_hex\": \"02\"}",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "{\"key\": 8, \"selected_side\": 1, \"side\": 2, \"value_hex\": \"02\"}"
   },
   {
     "id": "p3-parse-bad-checksum",
@@ -7627,10 +5900,7 @@
       ]
     },
     "expected": null,
-    "expected_bytes": "null",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "null"
   },
   {
     "id": "p3-parse-waist-init",
@@ -7720,10 +5990,7 @@
       ],
       "alarm_tail_hex": "0b010302071e"
     },
-    "expected_bytes": "{\"alarm_tail_hex\": \"0b010302071e\", \"duration_pairs\": [[8, 1], [9, 2], [10, 3]], \"mode\": 2, \"pressure_pairs\": [[5, 1], [6, 2], [7, 3]], \"warm_pairs\": [[2, 1], [3, 2], [4, 3]]}",
-    "evidence": [
-      "E11"
-    ]
+    "expected_bytes": "{\"alarm_tail_hex\": \"0b010302071e\", \"duration_pairs\": [[8, 1], [9, 2], [10, 3]], \"mode\": 2, \"pressure_pairs\": [[5, 1], [6, 2], [7, 3]], \"warm_pairs\": [[2, 1], [3, 2], [4, 3]]}"
   },
   {
     "id": "p1-parse-mode-1",
@@ -7742,10 +6009,7 @@
       ]
     },
     "expected": 1,
-    "expected_bytes": "1",
-    "evidence": [
-      "E08"
-    ]
+    "expected_bytes": "1"
   },
   {
     "id": "p1-parse-mode-3",
@@ -7764,10 +6028,7 @@
       ]
     },
     "expected": 3,
-    "expected_bytes": "3",
-    "evidence": [
-      "E08"
-    ]
+    "expected_bytes": "3"
   },
   {
     "id": "p1-parse-massage-0",
@@ -7786,10 +6047,7 @@
       ]
     },
     "expected": "000000000000",
-    "expected_bytes": "000000000000",
-    "evidence": [
-      "E08"
-    ]
+    "expected_bytes": "000000000000"
   },
   {
     "id": "p1-parse-massage-4095",
@@ -7808,9 +6066,6 @@
       ]
     },
     "expected": "111111111111",
-    "expected_bytes": "111111111111",
-    "evidence": [
-      "E08"
-    ]
+    "expected_bytes": "111111111111"
   }
 ]

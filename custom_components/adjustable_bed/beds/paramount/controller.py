@@ -20,6 +20,7 @@ from ...position_seek import PositionSeekPolicy
 from ...profiles.paramount import PARAMOUNT
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import EXTRA_KEY
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -310,6 +311,8 @@ class ParamountController(ProfileExecution, BedController):
                     "paramount_concurrent_push",
                     "Concurrent push",
                     concurrent,
+                    translation_key=EXTRA_KEY,
+                    translation_placeholders={"action": "Concurrent push"},
                     hold=ControllerHoldSpec("concurrent_push"),
                 )
             )

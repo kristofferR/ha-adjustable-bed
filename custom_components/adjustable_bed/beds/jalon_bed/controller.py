@@ -11,7 +11,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER
 from ...codec import keeson as codec
 from ...const import CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
@@ -19,6 +19,7 @@ from ...profiles import jalon_bed as app
 from ...profiles.keeson import KeesonProfile, encode
 from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController, ProfileExecution
+from ..catalog_buttons import EXTRA_KEY
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -295,24 +296,23 @@ class JalonBedController(ProfileExecution[KeesonProfile], BedController):
                 raise
             # The eight-second app gesture ends by ceasing refresh, without STOP.
 
+    def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
+        # The shared preset and memory buttons recall these held app gestures.
+        name = key.removeprefix("preset_")
+        return ControllerHoldSpec(name) if key.startswith("preset_") and name in app.PRESETS else None
+
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        def preset_button(name: str) -> ControllerButtonSpec:
-            return ControllerButtonSpec(
-                f"jalon_{name}",
-                f"{name.replace('_', ' ').title()} (app gesture)",
-                lambda ctrl: cast(JalonBedController, ctrl).preset(name),
-                hold=ControllerHoldSpec(name),
-                card=CARD_UTILITY,
-            )
-
         return (
-            *(preset_button(name) for name in app.PRESETS),
             ControllerButtonSpec(
                 "jalon_flat_zero_g",
-                "Flat + Zero G held gesture",
+                "Flat and zero G together",
                 lambda ctrl: ctrl.hold_control("flat_zero_g", app.HOLD_LIMIT_MS),
                 hold=ControllerHoldSpec("flat_zero_g"),
+                translation_key=EXTRA_KEY,
+                translation_placeholders={"action": "Flat and zero G together"},
+                # Its physical effect is unverified.
+                entity_registry_enabled_default=False,
             ),
             *(
                 ControllerButtonSpec(

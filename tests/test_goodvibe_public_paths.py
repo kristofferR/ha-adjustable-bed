@@ -1,4 +1,4 @@
-"""Public-path regressions from the independent Good Vibe Sleep review."""
+"""Good Vibe Sleep public paths: services, entities and live consumers."""
 
 from __future__ import annotations
 

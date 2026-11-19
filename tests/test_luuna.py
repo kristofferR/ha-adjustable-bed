@@ -1,4 +1,4 @@
-"""Accepted unit146 literals, profile gates and safe BLE lifecycle behavior."""
+"""Luuna + 2.0.1 literals, profile gates and safe BLE lifecycle behavior."""
 
 from __future__ import annotations
 

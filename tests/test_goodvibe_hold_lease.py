@@ -1,4 +1,4 @@
-"""Renewable holds (#483) on Good Vibe Sleep's sustained-press controls (row116).
+"""Renewable holds (#483) on Good Vibe Sleep's sustained-press controls.
 
 The accepted report: a sustained press first sends after 100 ms, repeats every
 100 ms with no fixed count and, once a tick fired, releases with the generic
@@ -78,7 +78,8 @@ def _packet(control: str, side: int = 0, legacy: bool = False) -> bytes:
 def test_every_product_scopes_its_hold_to_its_sustained_controls() -> None:
     for profile in PRODUCTS:
         controller = _controller(profile)
-        sustained = _held(profile, "sustainPress")
+        # Empty slots and repeated descriptors are not controls.
+        sustained = _held(profile, "sustainPress") & set(controller.held_control_options)
         execution = controller.execution
         if not sustained:
             assert execution == NO_EXECUTION_CAPABILITIES, profile

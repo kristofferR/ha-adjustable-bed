@@ -1,4 +1,4 @@
-"""Unit162 frozen literals, adapted to the production Richmat codec."""
+"""MLILY Remote frozen literals, adapted to the production Richmat codec."""
 
 import json
 from datetime import datetime

@@ -25,6 +25,7 @@ from ...controller_state import StateKey
 from ...profiles.richmat import LP_LEGACY, RichmatProfile
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import catalog_button
 from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorCommandCallable
 from .lp_legacy_profiles import LpLegacyAction, LpLegacyControl, get_lp_legacy_profile
 
@@ -116,7 +117,7 @@ class LeggettLpLegacyController(ProfileExecution[RichmatProfile], BedController)
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         labels = Counter(control.label for control in self._layout.controls)
-        specs = []
+        specs: list[ControllerButtonSpec | None] = []
         for control in self._layout.controls:
             label = control.label
             if labels[label] > 1:
@@ -124,13 +125,13 @@ class LeggettLpLegacyController(ProfileExecution[RichmatProfile], BedController)
             for gesture in self._gestures(control):
                 suffix = " (long press)" if gesture == "long_press" else ""
                 specs.append(
-                    ControllerButtonSpec(
-                        key=f"lp_legacy_{self._layout.code.lower()}_{self._mode}_{control.key}_{gesture}",
-                        name=f"{label}{suffix}",
-                        press_fn=_button_callback(control.key, gesture),
+                    catalog_button(
+                        f"lp_legacy_{self._layout.code.lower()}_{self._mode}_{control.key}_{gesture}",
+                        f"{label}{suffix}",
+                        _button_callback(control.key, gesture),
                     )
                 )
-        return tuple(specs)
+        return tuple(spec for spec in specs if spec is not None)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

@@ -64,8 +64,10 @@ async def test_every_profile_builds_and_owns_only_its_side_configuration(hass, c
         assert obj.product == PRODUCTS[resolve_product(key)]
         assert obj.catalog.key == "galaxy"
         assert obj.choices.release == RUNTIMES[obj.product_key].initial_release
+        # Every control holds, except where a held press would reach a save unasked.
         assert all(
-            s.hold is not None
+            (s.hold is None)
+            is obj._long_press_saves(CATALOG.actions[s.key.removeprefix("goodvibe_")])
             for s in obj.controller_button_specs
             if s.key.removeprefix("goodvibe_") in CATALOG.actions
             and not CATALOG.actions[s.key.removeprefix("goodvibe_")].local
@@ -569,6 +571,26 @@ async def test_public_bulk_preflight_rejects_missing_live_capability_before_writ
             await target.async_shutdown()
 
 
+async def test_long_press_only_memory_saves_send_their_save_operands(coordinator):
+    """H6RM's memory buttons act only on a long press: the published buttons hold long enough."""
+    obj = controller(coordinator, "H6RM")
+    obj._delay = AsyncMock(return_value=True)
+    specs = {
+        spec.name: spec
+        for spec in obj.controller_button_specs
+        if spec.key in ("goodvibe_7cc5950ed801_long", "goodvibe_6c2a1bedb707_long")
+    }
+    assert set(specs) == {"Save Memory position 1", "Save Memory position 2"}
+    assert "goodvibe_7cc5950ed801" not in {spec.key for spec in obj.controller_button_specs}
+    operands = {}
+    for name, spec in specs.items():
+        assert spec.requires_confirmation is False  # a memory save: the card's Set mode guards it
+        coordinator.client.write_gatt_char.reset_mock()
+        await spec.press_fn(obj)
+        operands[name] = writes(coordinator)[0].hex()
+    assert operands == {"Save Memory position 1": "6e01002b9a", "Save Memory position 2": "6e01002c9b"}
+
+
 async def test_forced_long_buttons_distinguish_their_names_and_operands(coordinator):
     obj = controller(coordinator, "BRRM")
     obj.choices.release = False
@@ -579,14 +601,15 @@ async def test_forced_long_buttons_distinguish_their_names_and_operands(coordina
         if spec.key.removeprefix("goodvibe_") in obj.actions
         and obj.actions[spec.key.removeprefix("goodvibe_")].label == "deviceFunctionItemZeroGravity"
     ]
-    assert {spec.name for spec in specs} == {"Zero gravity", "Zero gravity (long press)"}
+    # The forced long press sends Zero gravity's save operand, so it is the save.
+    assert {spec.name for spec in specs} == {"Zero gravity", "Save Zero gravity"}
+    assert next(s for s in specs if s.name.startswith("Save")).requires_confirmation
     operands = {}
     for spec in specs:
-        assert spec.translation_placeholders["action"] == spec.name
         coordinator.client.write_gatt_char.reset_mock()
         await obj.press(spec.key.removeprefix("goodvibe_"), 0)
         operands[spec.name] = writes(coordinator)[0].hex()
-    assert operands == {"Zero gravity": "6e010045b4", "Zero gravity (long press)": "6e010066d5"}
+    assert operands == {"Zero gravity": "6e010045b4", "Save Zero gravity": "6e010066d5"}
 
 
 def test_galaxy_hints_preserve_exclusions_and_confident_receiver_detection():

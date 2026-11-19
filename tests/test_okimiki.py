@@ -512,9 +512,9 @@ def test_source_numeric_conversion_and_clock_first_digits():
 def test_save_labels_and_no_raw_status_entity(coordinator, code):
     obj = bed.OkimikiController(coordinator, code)
     labels = {
-        spec.key: spec.translation_placeholders["action"]
+        spec.key: spec.name
         for spec in obj.controller_button_specs
-        if spec.translation_placeholders
+        if spec.translation_key == "catalog_save"
     }
     saves = {
         "okimiki_save_lounge": "Save lounge position",

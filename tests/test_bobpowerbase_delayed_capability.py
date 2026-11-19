@@ -14,10 +14,10 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.profiles.bobpowerbase import CATALOG
 from scripts.wire_snapshot import FakeClock, virtual_time
 from tests.test_bobpowerbase import REAL_SLEEP
-from tests.test_bobpowerbase_review import LIGHT_REPLY, pair_for, register, runtime
-from tests.test_bobpowerbase_review import disconnected_service as disconnected_service
-from tests.test_bobpowerbase_review import domain_bootstrap as domain_bootstrap
-from tests.test_bobpowerbase_review import fake_time as fake_time
+from tests.test_bobpowerbase_services import LIGHT_REPLY, pair_for, register, runtime
+from tests.test_bobpowerbase_services import disconnected_service as disconnected_service
+from tests.test_bobpowerbase_services import domain_bootstrap as domain_bootstrap
+from tests.test_bobpowerbase_services import fake_time as fake_time
 
 
 @pytest.mark.parametrize("outcome", ("delayed_reply", "timeout", "stop", "stale_reply", "caller_cancel", "second_target_missing"))
