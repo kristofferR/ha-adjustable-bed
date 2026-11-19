@@ -106,6 +106,7 @@ from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
+from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -155,6 +156,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
     BED_TYPE_MLILY: MLILY_PROFILES,
+    "majestichome": MAJESTICHOME_PROFILES,
     BED_TYPE_OKIMIKI: OKIMIKI_PROFILES,
     "bobpowerbase": BOB_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,

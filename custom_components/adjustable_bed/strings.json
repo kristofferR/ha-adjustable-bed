@@ -3754,6 +3754,30 @@
       },
       "l2motion_save_snore": {
         "name": "Save anti-snore position"
+      },
+      "majestichome_preset_action": {
+        "name": "{action}"
+      },
+      "majestichome_massage_action": {
+        "name": "{action}"
+      },
+      "majestichome_light_action": {
+        "name": "{action}"
+      },
+      "majestichome_memory_1": {
+        "name": "{action}"
+      },
+      "majestichome_memory_1_save": {
+        "name": "{action}"
+      },
+      "majestichome_memory_2": {
+        "name": "{action}"
+      },
+      "majestichome_memory_2_save": {
+        "name": "{action}"
+      },
+      "majestichome_save_action": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5259,6 +5283,9 @@
       },
       "breathing_rate_right": {
         "name": "Right breathing rate"
+      },
+      "majestichome": {
+        "name": "Model"
       }
     },
     "light": {
@@ -9512,6 +9539,42 @@
           "description": "Required for synchronization mode changes."
         }
       }
+    },
+    "majestichome": {
+      "name": "Majestic Home: settings",
+      "description": "Read, create, edit, enable, disable or delete bed alarms, or set the bed clock.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a combined bed."
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "alarm_id": {
+          "name": "Alarm ID",
+          "description": "Required for new, set, toggle and delete. Choose an explicit ID from 1 through 7 for new alarms, or a received ID for an existing alarm. Partial replies cannot identify a free slot."
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "preset": {
+          "name": "Preset"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday is 0 and Sunday is 6. Empty means once."
+        },
+        "enabled": {
+          "name": "Enabled"
+        }
+      }
     }
   },
   "exceptions": {
@@ -10488,7 +10551,8 @@
         "nisco": "Nisco app",
         "mlily_supreme": "MLILY Supreme app",
         "okimiki": "Okimiki app",
-        "luniosmart": "Lunio Smart+ app"
+        "luniosmart": "Lunio Smart+ app",
+        "majestichome": "Majestic Home app"
       }
     },
     "setup_start": {
@@ -11806,6 +11870,24 @@
         "okin_handle": "DewertOkin or A H Beard bed",
         "okin_nordic": "Mattress Firm 900 or iFlex bed",
         "okin_ore": "Older ORE remote"
+      }
+    },
+    "majestichome_operation": {
+      "options": {
+        "list": "Read alarms",
+        "new": "New alarm",
+        "set": "Set alarm",
+        "toggle": "Turn alarm on or off",
+        "delete": "Delete alarm",
+        "sync_clock": "Set bed clock"
+      }
+    },
+    "majestichome_preset": {
+      "options": {
+        "zero_gravity": "Zero Gravity",
+        "anti_snore": "Anti-Snore",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2"
       }
     }
   }
