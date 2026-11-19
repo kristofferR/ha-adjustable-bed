@@ -12995,7 +12995,7 @@
 "number:goodvibe_snore_count=30": {"status":"ok","writes":[[100,"d44bc439",false,"6e0a2006050101001ec3",1,0]]},
 "number:goodvibe_snore_time=5": {"status":"ok","writes":[[100,"d44bc439",false,"6e0a20060501020005ab",1,0]]},
 "number:goodvibe_snore_time=30": {"status":"ok","writes":[[100,"d44bc439",false,"6e0a2006050102001ec4",1,0]]},
-"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735ca0064",1,0],[207,"d44bc439",false,"6e0d2008030138010203042a13",1,0]]}
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735c80062",1,0],[207,"d44bc439",false,"6e0d2008030138010203042811",1,0]]}
 }},
 "galaxy:RNRN/splitHead": {
 "info": {"bed_type": "galaxy", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13150,7 +13150,7 @@
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b0348c4",1,0]]},
 "select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]},
-"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735d70071",1,0],[207,"d44bc439",false,"6e0d2008030138010203043720",1,0]]}
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735d2006c",1,0],[207,"d44bc439",false,"6e0d200803013801020304321b",1,0]]}
 }},
 "glideaway_motion": {
 "info": {"bed_type": "glideaway_motion", "controller": "GlideawayMotionController", "module": "glideaway_motion.controller", "pulse": [10, 100]},
@@ -13407,7 +13407,7 @@
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b0348c4",1,0]]},
 "select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]},
-"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735bc0056",1,0],[7,"d44bc439",false,"6e200d08030138010203041c05",1,0]]}
+"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735b60050",1,0],[7,"d44bc439",false,"6e200d080301380102030416ff",1,0]]}
 }},
 "goodvibe:selector-0004:goodvibe_nordic": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13452,7 +13452,7 @@
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[0,"6e400002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[0,"6e400002",false,"6e0b0348c4",1,0]]},
 "select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"6e400002",false,"6e0b038400",1,0]]},
-"sync_clock": {"status":"ok","writes":[[0,"6e400002",false,"6e200c080201695735bc0056",1,0],[7,"6e400002",false,"6e200d08030138010203041c05",1,0]]}
+"sync_clock": {"status":"ok","writes":[[0,"6e400002",false,"6e200c080201695735b60050",1,0],[7,"6e400002",false,"6e200d080301380102030416ff",1,0]]}
 }},
 "goodvibe:selector-0026": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13495,7 +13495,7 @@
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b0348c4",1,0]]},
 "select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]},
-"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735b5004f",1,0],[7,"d44bc439",false,"6e200d080301380102030415fe",1,0]]}
+"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735b2004c",1,0],[7,"d44bc439",false,"6e200d080301380102030412fb",1,0]]}
 }},
 "goodvibe:selector-0095": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13539,7 +13539,7 @@
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b0348c4",1,0]]},
 "select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]},
-"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735b5004f",1,0],[7,"d44bc439",false,"6e200d080301380102030415fe",1,0]]}
+"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735b2004c",1,0],[7,"d44bc439",false,"6e200d080301380102030412fb",1,0]]}
 }},
 "goodvibe:sleep_hj:goodvibe_sleep": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
