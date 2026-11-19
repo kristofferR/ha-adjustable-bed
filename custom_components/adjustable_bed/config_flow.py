@@ -908,6 +908,7 @@ def _bed_type_selector(
             "luuna",
             "luniosmart",
             "sonicsleep",
+            "majestichome",
             "suta",
             "sleep_evolution",
             "wsilver_legacy",

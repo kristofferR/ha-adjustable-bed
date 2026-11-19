@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.beds.richmat_mh import controller as mh_be
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh
 from custom_components.adjustable_bed.beds.ruf_richmat import controller as ruf_richmat
 from custom_components.adjustable_bed.codec import richmat as codec
+from custom_components.adjustable_bed.profiles import majestichome
 from custom_components.adjustable_bed.profiles import richmat as profiles
 from custom_components.adjustable_bed.profiles.bobpowerbase import WIRE as BOB_WIRE
 from custom_components.adjustable_bed.profiles.okimiki import CATALOG as OKIMIKI_CATALOG
@@ -44,6 +45,7 @@ PROFILES = {
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
     "mlily": profiles.MLILY,
+    "majestichome": majestichome.catalog("FARM").wire,
     "bobpowerbase": BOB_WIRE,
     "galaxy": profiles.GALAXY,
     "okimiki": OKIMIKI_WIRE,
@@ -259,6 +261,23 @@ def _lp_legacy_census() -> set[str]:
 
 
 def _census(key: str) -> set[str]:
+    if key == "majestichome":
+        # Every reachable layout operand, save and STOP on both actual framings.
+        # Parameterized alarms/time retain their dedicated accepted-vector proof.
+        codes = {majestichome.STOP}
+        for layout in majestichome.LAYOUTS.values():
+            for control in layout.controls:
+                codes.add(control.code)
+                if control.save is not None:
+                    codes.add(control.save)
+        return {
+            codec.function(code, single=single).hex()
+            for code in codes for single in (False, True)
+        } | {
+            codec.function(code, action=action, single=single).hex()
+            for action, code in majestichome.catalog("FARM").startup
+            for single in (False, True)
+        } | {codec.record(5, 1, 0, (0,)).hex()}
     if key == "okimiki":
         # Actual four-product controls, STOP/light-off and startup builders.
         # Parameterized alarms, RGB, time and duration retain their 71 literals.

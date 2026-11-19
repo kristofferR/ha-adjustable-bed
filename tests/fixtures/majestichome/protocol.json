@@ -1,0 +1,1385 @@
+[
+  {
+    "id": "control-00-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemAntiSnoring",
+    "inputs": {
+      "code": 70,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "46"
+  },
+  {
+    "id": "save-00-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemAntiSnoring save",
+    "inputs": {
+      "code": 70,
+      "save_code": 105,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": true
+    },
+    "expected_bytes": "69"
+  },
+  {
+    "id": "control-00-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring",
+    "inputs": {
+      "code": 70,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e010046b5"
+  },
+  {
+    "id": "save-00-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring save",
+    "inputs": {
+      "code": 70,
+      "save_code": 105,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": true
+    },
+    "expected_bytes": "6e010069d8"
+  },
+  {
+    "id": "control-01-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemBedLight",
+    "inputs": {
+      "code": 60,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "3c"
+  },
+  {
+    "id": "control-01-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemBedLight",
+    "inputs": {
+      "code": 60,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01003cab"
+  },
+  {
+    "id": "control-02-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemCheckClock",
+    "inputs": {
+      "code": 1,
+      "prefix": [
+        110,
+        8,
+        1
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "01"
+  },
+  {
+    "id": "control-02-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckClock",
+    "inputs": {
+      "code": 1,
+      "prefix": [
+        110,
+        8,
+        1
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e08010178"
+  },
+  {
+    "id": "control-03-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemExitLimit",
+    "inputs": {
+      "code": 0,
+      "prefix": [
+        110,
+        2,
+        1
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "00"
+  },
+  {
+    "id": "control-03-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemExitLimit",
+    "inputs": {
+      "code": 0,
+      "prefix": [
+        110,
+        2,
+        1
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e02010071"
+  },
+  {
+    "id": "control-04-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "code": 39,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "27"
+  },
+  {
+    "id": "control-04-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "code": 39,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002796"
+  },
+  {
+    "id": "control-05-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "code": 42,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "2a"
+  },
+  {
+    "id": "control-05-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "code": 42,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002a99"
+  },
+  {
+    "id": "control-06-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "code": 38,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "26"
+  },
+  {
+    "id": "control-06-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "code": 38,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002695"
+  },
+  {
+    "id": "control-07-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "code": 41,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "29"
+  },
+  {
+    "id": "control-07-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "code": 41,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002998"
+  },
+  {
+    "id": "control-08-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadAndFootDown",
+    "inputs": {
+      "code": 42,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "2a"
+  },
+  {
+    "id": "control-08-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadAndFootDown",
+    "inputs": {
+      "code": 42,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002a99"
+  },
+  {
+    "id": "control-09-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadAndFootUp",
+    "inputs": {
+      "code": 41,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "29"
+  },
+  {
+    "id": "control-09-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadAndFootUp",
+    "inputs": {
+      "code": 41,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002998"
+  },
+  {
+    "id": "control-10-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadDown",
+    "inputs": {
+      "code": 37,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "25"
+  },
+  {
+    "id": "control-10-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadDown",
+    "inputs": {
+      "code": 37,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002594"
+  },
+  {
+    "id": "control-11-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadUp",
+    "inputs": {
+      "code": 36,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "24"
+  },
+  {
+    "id": "control-11-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadUp",
+    "inputs": {
+      "code": 36,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002493"
+  },
+  {
+    "id": "control-12-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLumberDown",
+    "inputs": {
+      "code": 64,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "40"
+  },
+  {
+    "id": "control-12-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberDown",
+    "inputs": {
+      "code": 64,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e010040af"
+  },
+  {
+    "id": "control-13-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLumberUp",
+    "inputs": {
+      "code": 63,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "3f"
+  },
+  {
+    "id": "control-13-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberUp",
+    "inputs": {
+      "code": 63,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01003fae"
+  },
+  {
+    "id": "control-14-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage10MinuteTimer",
+    "inputs": {
+      "code": 95,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "5f"
+  },
+  {
+    "id": "control-14-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage10MinuteTimer",
+    "inputs": {
+      "code": 95,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01005fce"
+  },
+  {
+    "id": "control-15-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage20MinuteTimer",
+    "inputs": {
+      "code": 99,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "63"
+  },
+  {
+    "id": "control-15-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage20MinuteTimer",
+    "inputs": {
+      "code": 99,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e010063d2"
+  },
+  {
+    "id": "control-16-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage30MinuteTimer",
+    "inputs": {
+      "code": 97,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "61"
+  },
+  {
+    "id": "control-16-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage30MinuteTimer",
+    "inputs": {
+      "code": 97,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e010061d0"
+  },
+  {
+    "id": "control-17-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageFootInstensFirstMode",
+    "inputs": {
+      "code": 157,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "9d"
+  },
+  {
+    "id": "control-17-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageFootInstensFirstMode",
+    "inputs": {
+      "code": 157,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01009d0c"
+  },
+  {
+    "id": "control-18-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageFootInstensSecondMode",
+    "inputs": {
+      "code": 158,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "9e"
+  },
+  {
+    "id": "control-18-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageFootInstensSecondMode",
+    "inputs": {
+      "code": 158,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01009e0d"
+  },
+  {
+    "id": "control-19-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageFootInstensThirdMode",
+    "inputs": {
+      "code": 159,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "9f"
+  },
+  {
+    "id": "control-19-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageFootInstensThirdMode",
+    "inputs": {
+      "code": 159,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01009f0e"
+  },
+  {
+    "id": "control-20-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageFootOff",
+    "inputs": {
+      "code": 156,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "9c"
+  },
+  {
+    "id": "control-20-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageFootOff",
+    "inputs": {
+      "code": 156,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01009c0b"
+  },
+  {
+    "id": "control-21-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageHeadInstensFirstMode",
+    "inputs": {
+      "code": 153,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "99"
+  },
+  {
+    "id": "control-21-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageHeadInstensFirstMode",
+    "inputs": {
+      "code": 153,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01009908"
+  },
+  {
+    "id": "control-22-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageHeadInstensSecondMode",
+    "inputs": {
+      "code": 154,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "9a"
+  },
+  {
+    "id": "control-22-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageHeadInstensSecondMode",
+    "inputs": {
+      "code": 154,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01009a09"
+  },
+  {
+    "id": "control-23-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageHeadInstensThirdMode",
+    "inputs": {
+      "code": 155,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "9b"
+  },
+  {
+    "id": "control-23-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageHeadInstensThirdMode",
+    "inputs": {
+      "code": 155,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01009b0a"
+  },
+  {
+    "id": "control-24-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageHeadOff",
+    "inputs": {
+      "code": 152,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "98"
+  },
+  {
+    "id": "control-24-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageHeadOff",
+    "inputs": {
+      "code": 152,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01009807"
+  },
+  {
+    "id": "control-25-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeAllOff",
+    "inputs": {
+      "code": 94,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "5e"
+  },
+  {
+    "id": "control-25-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeAllOff",
+    "inputs": {
+      "code": 94,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01005ecd"
+  },
+  {
+    "id": "control-26-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeConstant",
+    "inputs": {
+      "code": 58,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "3a"
+  },
+  {
+    "id": "control-26-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeConstant",
+    "inputs": {
+      "code": 58,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01003aa9"
+  },
+  {
+    "id": "control-27-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModePulse",
+    "inputs": {
+      "code": 56,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "38"
+  },
+  {
+    "id": "control-27-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModePulse",
+    "inputs": {
+      "code": 56,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e010038a7"
+  },
+  {
+    "id": "control-28-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeWave",
+    "inputs": {
+      "code": 57,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "39"
+  },
+  {
+    "id": "control-28-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeWave",
+    "inputs": {
+      "code": 57,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e010039a8"
+  },
+  {
+    "id": "control-29-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition1",
+    "inputs": {
+      "code": 46,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "2e"
+  },
+  {
+    "id": "save-29-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition1 save",
+    "inputs": {
+      "code": 46,
+      "save_code": 43,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": true
+    },
+    "expected_bytes": "2b"
+  },
+  {
+    "id": "control-29-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1",
+    "inputs": {
+      "code": 46,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002e9d"
+  },
+  {
+    "id": "save-29-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1 save",
+    "inputs": {
+      "code": 46,
+      "save_code": 43,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": true
+    },
+    "expected_bytes": "6e01002b9a"
+  },
+  {
+    "id": "control-30-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition2",
+    "inputs": {
+      "code": 47,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "2f"
+  },
+  {
+    "id": "save-30-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition2 save",
+    "inputs": {
+      "code": 47,
+      "save_code": 44,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": true
+    },
+    "expected_bytes": "2c"
+  },
+  {
+    "id": "control-30-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2",
+    "inputs": {
+      "code": 47,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01002f9e"
+  },
+  {
+    "id": "save-30-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2 save",
+    "inputs": {
+      "code": 47,
+      "save_code": 44,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": true
+    },
+    "expected_bytes": "6e01002c9b"
+  },
+  {
+    "id": "control-31-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMotorReset",
+    "inputs": {
+      "code": 49,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "31"
+  },
+  {
+    "id": "control-31-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMotorReset",
+    "inputs": {
+      "code": 49,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e010031a0"
+  },
+  {
+    "id": "control-32-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemStop",
+    "inputs": {
+      "code": 110,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e"
+  },
+  {
+    "id": "control-32-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemStop",
+    "inputs": {
+      "code": 110,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e01006edd"
+  },
+  {
+    "id": "control-33-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemZeroGravity",
+    "inputs": {
+      "code": 69,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "45"
+  },
+  {
+    "id": "save-33-P1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemZeroGravity save",
+    "inputs": {
+      "code": 69,
+      "save_code": 102,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": true
+    },
+    "expected_bytes": "66"
+  },
+  {
+    "id": "control-33-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity",
+    "inputs": {
+      "code": 69,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": false
+    },
+    "expected_bytes": "6e010045b4"
+  },
+  {
+    "id": "save-33-P2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity save",
+    "inputs": {
+      "code": 69,
+      "save_code": 102,
+      "prefix": [
+        110,
+        1,
+        0
+      ],
+      "long_press": true
+    },
+    "expected_bytes": "6e010066d5"
+  },
+  {
+    "id": "repeat-alarm-list",
+    "protocol": "P_EXT",
+    "action": "repeat-alarm-list",
+    "inputs": {
+      "builder": "alarm_list"
+    },
+    "expected_bytes": "6e0820050100009c"
+  },
+  {
+    "id": "delete-alarm-1",
+    "protocol": "P_EXT",
+    "action": "delete-alarm-1",
+    "inputs": {
+      "builder": "alarm_delete",
+      "number": 1
+    },
+    "expected_bytes": "6e0820050201019f"
+  },
+  {
+    "id": "delete-alarm-7",
+    "protocol": "P_EXT",
+    "action": "delete-alarm-7",
+    "inputs": {
+      "builder": "alarm_delete",
+      "number": 7
+    },
+    "expected_bytes": "6e082005020107a5"
+  },
+  {
+    "id": "add-alarm-weekdays",
+    "protocol": "P_EXT",
+    "action": "add-alarm-weekdays",
+    "inputs": {
+      "builder": "alarm_add",
+      "number": 1,
+      "reserved": 0,
+      "hour": 7,
+      "minute": 30,
+      "preset": 46,
+      "repeat": 249
+    },
+    "expected_bytes": "6e0d200501010100071e2ef9ef"
+  },
+  {
+    "id": "add-alarm-once-off",
+    "protocol": "P_EXT",
+    "action": "add-alarm-once-off",
+    "inputs": {
+      "builder": "alarm_add",
+      "number": 7,
+      "reserved": 0,
+      "hour": 22,
+      "minute": 45,
+      "preset": 69,
+      "repeat": 0
+    },
+    "expected_bytes": "6e0d200501010700162d450031"
+  },
+  {
+    "id": "sync-epoch-positive-zone",
+    "protocol": "P_EXT",
+    "action": "sync-epoch-positive-zone",
+    "inputs": {
+      "builder": "sync_epoch",
+      "epoch_seconds": 1700000000,
+      "offset_hours": 1
+    },
+    "expected_bytes": "6e0c200802016553f100014f"
+  },
+  {
+    "id": "sync-epoch-negative-zone",
+    "protocol": "P_EXT",
+    "action": "sync-epoch-negative-zone",
+    "inputs": {
+      "builder": "sync_epoch",
+      "epoch_seconds": 1700000000,
+      "offset_hours": -5
+    },
+    "expected_bytes": "6e0c200802016553f100fb49"
+  },
+  {
+    "id": "sync-calendar",
+    "protocol": "P_EXT",
+    "action": "sync-calendar",
+    "inputs": {
+      "builder": "sync_calendar",
+      "year": 2024,
+      "month": 1,
+      "day": 2,
+      "hour": 3,
+      "minute": 4,
+      "second": 5
+    },
+    "expected_bytes": "6e0d20080301360102030405ec"
+  },
+  {
+    "id": "literal-notify-00",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有闹钟功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e09010078"
+    },
+    "expected_bytes": "6e09010078",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-01",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有灯光功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e0e00037f"
+    },
+    "expected_bytes": "6e0e00037f",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-02",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有香薰功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e1a000189"
+    },
+    "expected_bytes": "6e1a000189",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-03",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 添加闹钟成功",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e07010177"
+    },
+    "expected_bytes": "6e07010177",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-04",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 取消闹钟成功",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e07010278"
+    },
+    "expected_bytes": "6e07010278",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-05",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有音乐振子功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e16010186"
+    },
+    "expected_bytes": "6e16010186",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-06",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有异常检测功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e90c101c0"
+    },
+    "expected_bytes": "6e90c101c0",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-07",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有打鼾干预功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e2100008f"
+    },
+    "expected_bytes": "6e2100008f",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-08",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有控制盒锁定功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e23018416"
+    },
+    "expected_bytes": "6e23018416",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-09",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有控制盒锁定解除功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e23008415"
+    },
+    "expected_bytes": "6e23008415",
+    "stream_reachable": true
+  },
+  {
+    "id": "literal-notify-10",
+    "protocol": "P_RX",
+    "action": "RMBlueToothUtil 有打鼾干预页面，收到回传停止播放音乐功能",
+    "inputs": {
+      "parser": "exact_literal",
+      "frame": "6e23a06e9f"
+    },
+    "expected_bytes": "6e23a06e9f",
+    "stream_reachable": false
+  },
+  {
+    "id": "crc-function-6e09010078",
+    "protocol": "ALGORITHM_ONLY",
+    "action": "CRC16 function on app literal, no claim of CRC on this bed frame",
+    "inputs": {
+      "crc_input_hex": "6e09010078"
+    },
+    "expected_bytes": "edac"
+  },
+  {
+    "id": "crc-function-6e0e00037f",
+    "protocol": "ALGORITHM_ONLY",
+    "action": "CRC16 function on app literal, no claim of CRC on this bed frame",
+    "inputs": {
+      "crc_input_hex": "6e0e00037f"
+    },
+    "expected_bytes": "ae05"
+  }
+]

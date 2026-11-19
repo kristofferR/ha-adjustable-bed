@@ -823,7 +823,12 @@ class GoodVibeController(BedController):
                 menu_started = asyncio.get_running_loop().time()
                 if self.catalog.notification_menus:
                     if time_sync:
-                        for frame in p.sync_time(dt_util.now(), dt_util.now(), build=self.record):
+                        for frame in p.sync_time(
+                            dt_util.now(),
+                            dt_util.now(),
+                            build=self.record,
+                            first_hex=self.profile.epoch_first_hex,
+                        ):
                             await self._send(frame, link=link)
                     if sleep_query:
                         await self._send(self.queries["sleep_name"], link=link)
@@ -833,7 +838,12 @@ class GoodVibeController(BedController):
                         await asyncio.sleep(max(0, due - asyncio.get_running_loop().time()))
                     elif step == 1 and self.catalog.reply_gated_menus:
                         if time_sync:
-                            for frame in p.sync_time(dt_util.now(), dt_util.now(), build=self.record):
+                            for frame in p.sync_time(
+                                dt_util.now(),
+                                dt_util.now(),
+                                build=self.record,
+                                first_hex=self.profile.epoch_first_hex,
+                            ):
                                 await self._send(frame, link=link)
                         await asyncio.sleep(MENU_PROBE_S)
                     elif step:
@@ -865,7 +875,12 @@ class GoodVibeController(BedController):
                         pass  # Request validation still rejects unadvertised capabilities.
                 if not self.catalog.notification_menus:
                     if time_sync and not self.catalog.reply_gated_menus:
-                        for frame in p.sync_time(dt_util.now(), dt_util.now(), build=self.record):
+                        for frame in p.sync_time(
+                            dt_util.now(),
+                            dt_util.now(),
+                            build=self.record,
+                            first_hex=self.profile.epoch_first_hex,
+                        ):
                             await self._send(frame, link=link)
                     if sleep_query:
                         await self._send(self.queries["sleep_name"], link=link)

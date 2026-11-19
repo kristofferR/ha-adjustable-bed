@@ -8,9 +8,11 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import InvalidData
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -22,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
+    BED_TYPE_MAJESTICHOME,
     BED_TYPE_OCTO,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_RICHMAT,
@@ -239,6 +242,93 @@ async def test_keep_for_another_route_never_asks(hass: HomeAssistant) -> None:
 
     assert CONF_PROFILE_REVIEW_PENDING not in entry.data
     assert _issue(hass, entry) is None
+
+
+@pytest.mark.parametrize("variant", [None, "auto"])
+async def test_richmat_review_offers_majestic_without_inference(
+    hass: HomeAssistant, variant: str | None
+) -> None:
+    entry = _entry(hass, BED_TYPE_RICHMAT, variant=variant)
+    before = dict(entry.data)
+    with patch(_HISTORY, return_value=_advertisement("Unknown bed", NORDIC_UART_SERVICE_UUID)):
+        async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    assert BED_TYPE_MAJESTICHOME in _offered(form)
+    assert _offered(form)[-1] == "keep"
+    assert dict(entry.data) == before
+
+    await flow.async_step_init({"choice": "keep"})
+
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+    assert entry.data.get(CONF_PROTOCOL_VARIANT) == variant
+    assert entry.data[CONF_ADDRESS] == ADDRESS
+
+
+async def test_majestic_review_requires_explicit_product_before_applying(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    entry = _entry(hass, BED_TYPE_RICHMAT)
+    entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
+    async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    assert BED_TYPE_MAJESTICHOME in _offered(form)
+    handoff = await flow.async_step_init({"choice": BED_TYPE_MAJESTICHOME})
+    assert handoff["reason"] == "migration_setup_started"
+    kind, flow_id = handoff["next_flow"]
+    assert kind == "config_flow"
+    manager = hass.config_entries.flow
+    result = await manager.async_configure(flow_id)
+    assert result["step_id"] == "reconfigure_bed_type"
+    chose_product = False
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
+        while result["type"] == "form" and result["step_id"] != "migration_confirm":
+            schema = result["data_schema"]
+            assert schema is not None
+            answer = {}
+            if result["step_id"] == "profile_questions":
+                assert CONF_PROTOCOL_VARIANT in schema.schema
+                with pytest.raises(vol.Invalid):
+                    schema({})
+                with pytest.raises(InvalidData):
+                    await manager.async_configure(flow_id, {})
+                answer[CONF_PROTOCOL_VARIANT] = "JLRM"
+                chose_product = True
+            result = await manager.async_configure(flow_id, schema(answer))
+            assert not result.get("errors")
+        assert chose_product
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+        assert entry.data[CONF_PROTOCOL_VARIANT] == "auto"
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+    assert result["reason"] == "migration_applied"
+    reload.assert_called_once_with(entry.entry_id)
+    assert (entry.data[CONF_BED_TYPE], entry.data[CONF_PROTOCOL_VARIANT]) == (
+        BED_TYPE_MAJESTICHOME, "JLRM"
+    )
+    assert entry.data[CONF_ADDRESS] == ADDRESS
+
+
+async def test_richmat_pair_majestic_offer_preserves_both_side_settings(
+    hass: HomeAssistant,
+) -> None:
+    entry = _paired(hass, PAIR_MODE_SEPARATE_ADDRESS)
+    data = {
+        **entry.data,
+        CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_PAIR_CHILDREN: [
+            {**child, CONF_BED_TYPE: BED_TYPE_RICHMAT, CONF_MOTOR_COUNT: 3 + index}
+            for index, child in enumerate(entry.data[CONF_PAIR_CHILDREN])
+        ],
+    }
+    data[CONF_PROFILE_REVIEW_PENDING] = profile_review_mark(data)
+    hass.config_entries.async_update_entry(entry, data=data)
+    before = dict(entry.data)
+    async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    assert form["step_id"] == "unpair"
+    assert "- Majestic Home app" in form["description_placeholders"]["apps"]
+    result = await flow.async_step_unpair({"choice": "split"})
+    assert result["reason"] == "profile_review_open"
+    assert dict(entry.data) == before
 
 
 async def test_switch_applies_the_app_through_reconfigure(
