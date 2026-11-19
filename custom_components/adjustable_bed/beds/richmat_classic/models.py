@@ -3,6 +3,9 @@
 Generated outside this repository with ``beds/richmat_classic/data``; no generator is checked in, so edits are by hand.
 """
 
+from ...profiles.jerome2 import ALIASES as JEROME_ALIASES
+from ...profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED
+from ...profiles.jerome2 import LAYOUTS as JEROME_LAYOUTS
 from ...profiles.lp2 import ALIASES as LP2_ALIASES
 from ...profiles.lp2 import LAYOUTS as LP2_LAYOUTS
 from ...profiles.richmat_resource_apps import ALIASES, APPS, LAYOUTS
@@ -396,3 +399,7 @@ for _app in APPS:
 MODEL_CHOICES["lp2"] = LP2_LAYOUTS
 MANUAL_ALIASES["lp2"] = {key: value for key, value in LP2_ALIASES.items() if len(key) == 4}
 LAYOUT_PICKER_CHOICES["lp2"] = {"ZRS3:APRM": "APRM", "ZRS3:AQRM": "AQRM"}
+
+# Jerome's power base has its own complete, frozen resource domain.
+MODEL_CHOICES['jerome2'] = JEROME_LAYOUTS
+MANUAL_ALIASES['jerome2'] = {key: value for key, value in JEROME_ALIASES.items() if not key.startswith("L&P") and value not in JEROME_EXCLUDED}

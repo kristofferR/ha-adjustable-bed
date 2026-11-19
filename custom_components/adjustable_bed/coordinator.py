@@ -2791,7 +2791,8 @@ class AdjustableBedCoordinator(
         )
         controller = self.capability_controller
         shared_timer = controller is not None and controller.commands_share_timer is True
-        cancel_running = cancel_running or shared_timer
+        inspection = kind is CommandKind.INSPECTION
+        cancel_running = False if inspection else cancel_running or shared_timer
         if cancel_running and (
             expected_stop_epoch is None
             or self._command_scheduler.stop_epoch == expected_stop_epoch
@@ -2809,7 +2810,9 @@ class AdjustableBedCoordinator(
             scheduled,
             resources=self._protocol_command_resources(command_scope),
             kind=CommandKind.HOLD if lease is not None else kind,
-            replacement_key="*" if shared_timer else (resource or "*") if resources is None else None,
+            replacement_key=(
+                None if inspection else "*" if shared_timer else (resource or "*") if resources is None else None
+            ),
             cancel_running=cancel_running,
             group_id=group_id,
             pulse_count=pulse_count,

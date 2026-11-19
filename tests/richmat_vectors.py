@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 from tests.bedtech_vectors import FROZEN_FRAMES as BEDTECH_APP_FRAMES
+from tests.jerome_vectors import FROZEN_FRAMES as JEROME_FROZEN_FRAMES
 from tests.richmat_rise_vectors import FROZEN_FRAMES as RISE_FROZEN_FRAMES
 
 
@@ -2140,6 +2141,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_classic_fortywinks": _RICHMAT_CLASSIC,
     "richmat_classic_milemont": _RICHMAT_CLASSIC,
     "richmat_classic_superior": _RICHMAT_CLASSIC,
+    "richmat_classic_jerome2": JEROME_FROZEN_FRAMES,
     "galaxy": _galaxy(),
     **RISE_FROZEN_FRAMES,
     "goodvibe": _goodvibe(),

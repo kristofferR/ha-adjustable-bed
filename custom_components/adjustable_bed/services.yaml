@@ -3920,3 +3920,60 @@ lp2:
         select:
           options: [both, left, right]
           translation_key: side
+
+jerome_bed:
+  target:
+    device:
+      integration: adjustable_bed
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      example: head_up
+      selector:
+        text:
+    side:
+      selector:
+        select:
+          translation_key: side
+          options: [both, left, right]
+    rgb_color:
+      selector:
+        color_rgb:
+    aroma_times:
+      example: [1, 1, 2]
+      selector:
+        object:
+    keep:
+      default: false
+      selector:
+        boolean:
+    mode:
+      selector:
+        number:
+          min: 0
+          max: 2
+          step: 1
+          mode: box
+    long_press:
+      default: false
+      selector:
+        boolean:
+    confirm:
+      default: false
+      selector:
+        boolean:
+    duration_ms:
+      default: 1000
+      selector:
+        number:
+          min: 1
+          max: 60000
+          step: 1
+          unit_of_measurement: ms
+          mode: box

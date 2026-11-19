@@ -39,6 +39,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`estimate_confirm_unchanged`](#estimated-positions) | Confirm estimated position | Trust the estimate restored after a restart because the bed has not moved since. |
 | [`estimate_mark_unknown`](#estimated-positions) | Forget estimated position | Report a movement the integration could not see, such as the remote or the bed's app. |
 | [`generate_support_bundle`](#support-bundle) | Create support bundle | Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. The file lists up to 30 nearby Bluetooth devices with their names and addresses. |
+| [`jerome_bed`](#jerome_bed) | Jerome’s power base: control bed | Run a named layout action, set a light color or configure aroma settings. |
 | [`agingplace_action`](#agingplace_action) | Aging in Place: run control | Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control. |
 | [`agingplace_set_setting`](#agingplace_set_setting) | Aging in Place: settings | Set light brightness, massage duration or motion light duration. |
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Press one of the selected BedTech model's buttons, on the sleeper side the app uses for it. Movement repeats for the configured number of pulses. |
@@ -2278,3 +2279,24 @@ concurrent connections and an explicit `left` or `right` side. The selected
 base receives the preset; the other lowers its feet for 30 seconds and releases.
 Every participant is checked before the first write. STOP, replacement or a
 lost physical session cancels delayed work and drains the captured release.
+
+
+## jerome_bed
+
+Run a named [Jerome's power base](beds/richmat.md#jeromes-power-base) layout action,
+such as `head_up`, `zero_gravity` or `save_m1`. The generated guide table lists
+each layout's actions. Set `confirm: true` for saves and long-only controls.
+`long_press: true` selects a layout's explicit long gesture when the same save
+is also available as a tap. Saves never accept `keep: true`.
+
+`keep: true` requests a supported continuous action for `duration_ms`
+(1 to 60000). Native held controls also support renewable holds. `mode` is
+available only on layouts with Mode 1, Mode 2 and Mode 3, and requires a framed
+connection for nonzero values. Use the shared `side` field for Left and Right
+combined-bed targets. All targets are checked before any command starts.
+
+Use `action: light_color` with `rgb_color: [255, 68, 68]` after the bed reports
+light support, or `action: aroma_settings` with `aroma_times: [1, 1, 2]` after
+aroma support. Aroma values are the mode 2 and mode 3 times in minutes (1 to 60),
+then the mode 3 pause in hours (1 to 12). The settings have immediate number entities too.
+Alarms use [`set_alarm`](#set_alarm), with choices owned by the selected layout.
