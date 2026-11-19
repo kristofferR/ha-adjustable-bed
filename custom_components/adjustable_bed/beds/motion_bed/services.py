@@ -165,12 +165,6 @@ async def handle_motion_bed_configuration(call: ServiceCall) -> None:
     await _execute(call, request)
 
 
-def _reject_boolean(value: object) -> object:
-    if isinstance(value, bool):
-        raise vol.Invalid("Expected a number, not Boolean")
-    return value
-
-
 def async_register_motion_bed_services(hass: HomeAssistant) -> None:
     from ...services import CONF_DEVICE_ID, SIDE_FIELD
     common = {vol.Required(CONF_DEVICE_ID): cv.ensure_list, **SIDE_FIELD,

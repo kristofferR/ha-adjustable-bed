@@ -644,12 +644,6 @@ class SleepNumberController(BedController, SleepNumberActions):
         return self._heidi_states[self._side].present
 
     @property
-    def thermal_supports_boost(self) -> bool:
-        """Return True when the active backend exposes the SPECIAL_HIGH_COOLING boost mode."""
-        # Only Heidi has SPECIAL_HIGH_COOLING in its mode enum.
-        return self._heidi_states[self._side].present
-
-    @property
     def footwarming_timer_options(self) -> list[str]:
         """Return available footwarming timer options (30m – 6h)."""
         if not self.supports_footwarming_climate:
@@ -762,10 +756,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             "level": state.level,
         }
 
-    def get_footwarming_state(self) -> dict[str, Any]:
-        """Return the last known footwarming state."""
-        return self.get_footwarming_state_for_side(self._side)
-
     def get_frosty_state_for_side(self, side: str) -> dict[str, Any]:
         """Return the cached Frosty state for a specific side."""
         normalized_side = self._require_side(side)
@@ -779,10 +769,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             "remaining_time_minutes": state.remaining_minutes,
             "mode": state.mode,
         }
-
-    def get_frosty_state(self) -> dict[str, Any]:
-        """Return the last known Frosty (cooling module) state."""
-        return self.get_frosty_state_for_side(self._side)
 
     def get_heidi_state_for_side(self, side: str) -> dict[str, Any]:
         """Return the cached Heidi state for a specific side."""
@@ -798,10 +784,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             "remaining_time_minutes": state.remaining_minutes,
             "mode": state.mode,
         }
-
-    def get_heidi_state(self) -> dict[str, Any]:
-        """Return the last known Heidi (core temperature module) state."""
-        return self.get_heidi_state_for_side(self._side)
 
     def get_thermal_state_for_side(self, side: str) -> dict[str, Any]:
         """Return the cached unified thermal state for a specific side."""
@@ -828,15 +810,6 @@ class SleepNumberController(BedController, SleepNumberActions):
         state["backend"] = backend
         state["supports_heating"] = backend == _THERMAL_BACKEND_HEIDI
         return state
-
-    def get_thermal_state(self) -> dict[str, Any]:
-        """Return the last known unified thermal climate state (heidi-preferred)."""
-        return self.get_thermal_state_for_side(self._side)
-
-    @property
-    def _thermal_backend(self) -> str | None:
-        """Return which thermal module backs the unified climate entity."""
-        return self._thermal_backend_for_side(self._side)
 
     def _thermal_backend_for_side(self, side: str) -> str | None:
         """Return which thermal module backs the unified climate entity for a side."""
@@ -1082,10 +1055,6 @@ class SleepNumberController(BedController, SleepNumberActions):
                 with contextlib.suppress(ValueError):
                     await self.read_heidi_state_for_side(side)
 
-    async def read_sleep_number_setting(self) -> int:
-        """Read the configured side's Sleep Number setting."""
-        return await self.read_sleep_number_setting_for_side(self._side)
-
     async def read_sleep_number_setting_for_side(self, side: str) -> int:
         """Read a specific side's Sleep Number setting."""
         normalized_side = self._require_side(side)
@@ -1122,20 +1091,15 @@ class SleepNumberController(BedController, SleepNumberActions):
         )
         self._store_sleep_number_setting_for_side(normalized_side, normalized)
 
-    async def read_footwarming_state(self) -> dict[str, Any]:
-        """Read and publish current footwarming settings.
+    async def read_footwarming_state_for_side(self, side: str) -> dict[str, Any]:
+        """Read and publish current footwarming settings for one side.
 
         ``FWTG`` returns ``<level> <remaining> <total>`` where ``total`` is
-        the user-selected duration the current run was started with. We use
-        that to seed the cached timer selection on reconnect so the select
-        entity reflects the real runtime choice rather than the default,
-        and so ``turn_footwarming_on`` / preset writes resume the correct
-        duration afterwards.
+        the user-selected duration the current run was started with. It seeds
+        the cached timer selection on reconnect, so the select entity reflects
+        the real runtime choice rather than the default, and later
+        ``turn_footwarming_on`` / preset writes resume the correct duration.
         """
-        return await self.read_footwarming_state_for_side(self._side)
-
-    async def read_footwarming_state_for_side(self, side: str) -> dict[str, Any]:
-        """Read and publish current footwarming settings for one side."""
         normalized_side = self._require_side(side)
         response = await self._send_bamkey_command(
             SleepNumberCommands.GET_FOOTWARMING_SETTINGS,
@@ -1154,22 +1118,15 @@ class SleepNumberController(BedController, SleepNumberActions):
         )
         return self.get_footwarming_state_for_side(normalized_side)
 
-    async def _send_footwarming_settings(self, level: str, *, timer_minutes: int) -> None:
-        """Send FWTS with a validated level and explicit timer.
-
-        This is the single write path for footwarming state. It commits the
-        cached selection only after the BLE write succeeds, so a failed
-        write cannot leave ``_footwarming_timer_minutes`` /
-        ``_footwarming_last_active_level`` ahead of the bed.
-        """
-        await self._send_footwarming_settings_for_side(
-            self._side, level, timer_minutes=timer_minutes
-        )
-
     async def _send_footwarming_settings_for_side(
         self, side: str, level: str, *, timer_minutes: int
     ) -> None:
-        """Send FWTS with a validated level and explicit timer for one side."""
+        """Send FWTS with a validated level and explicit timer for one side.
+
+        This is the single write path for footwarming state. It commits the
+        cached selection only after the BLE write succeeds, so a failed write
+        cannot leave the cached timer or last active level ahead of the bed.
+        """
         normalized_side = self._require_side(side)
         normalized = self._normalize_footwarming_level(level)
         await self._send_bamkey_command(
@@ -1252,10 +1209,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             timer_minutes=timer_minutes,
         )
 
-    async def read_frosty_state(self) -> dict[str, Any]:
-        """Read and publish current Frosty (cooling module) settings."""
-        return await self.read_frosty_state_for_side(self._side)
-
     async def read_frosty_state_for_side(self, side: str) -> dict[str, Any]:
         """Read and publish current Frosty settings for one side."""
         normalized_side = self._require_side(side)
@@ -1295,10 +1248,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             selected_timer_minutes=timer_minutes if normalized != "off" else None,
         )
 
-    async def read_heidi_state(self) -> dict[str, Any]:
-        """Read and publish current Heidi (core temperature module) settings."""
-        return await self.read_heidi_state_for_side(self._side)
-
     async def read_heidi_state_for_side(self, side: str) -> dict[str, Any]:
         """Read and publish current Heidi settings for one side."""
         normalized_side = self._require_side(side)
@@ -1336,10 +1285,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             selected_timer_minutes=timer_minutes if normalized != "off" else None,
         )
 
-    async def read_thermal_state(self) -> dict[str, Any]:
-        """Read state from the active thermal backend (heidi preferred)."""
-        return await self.read_thermal_state_for_side(self._side)
-
     async def read_thermal_state_for_side(self, side: str) -> dict[str, Any]:
         """Read state from the active thermal backend for one side."""
         normalized_side = self._require_side(side)
@@ -1350,18 +1295,13 @@ class SleepNumberController(BedController, SleepNumberActions):
             await self.read_frosty_state_for_side(normalized_side)
         return self.get_thermal_state_for_side(normalized_side)
 
-    def get_thermal_resume_preset(self, hvac_mode: str) -> str:
-        """Return the preset to resume when moving from OFF into ``hvac_mode``.
-
-        Heidi tracks heating and cooling presets independently so
-        ``OFF → HEAT`` restores the last heating choice and ``OFF → COOL``
-        restores the last cooling choice. Frosty only has a cooling
-        cache.
-        """
-        return self.get_thermal_resume_preset_for_side(self._side, hvac_mode)
-
     def get_thermal_resume_preset_for_side(self, side: str, hvac_mode: str) -> str:
-        """Return the preset to resume when moving from OFF for one side."""
+        """Return the preset to resume when moving from OFF for one side.
+
+        Heidi tracks heating and cooling presets independently, so
+        ``OFF -> HEAT`` restores the last heating choice and ``OFF -> COOL``
+        the last cooling choice. Frosty only has a cooling cache.
+        """
         normalized_side = self._require_side(side)
         normalized = hvac_mode.strip().lower()
         backend = self._thermal_backend_for_side(normalized_side)
@@ -1765,10 +1705,6 @@ class SleepNumberController(BedController, SleepNumberActions):
         )
         return normalized_states
 
-    def _store_sleep_number_setting(self, value: int) -> None:
-        """Persist and publish the configured side's Sleep Number setting."""
-        self._store_sleep_number_setting_for_side(self._side, value)
-
     def _store_sleep_number_setting_for_side(self, side: str, value: int) -> None:
         """Persist and publish a side-specific Sleep Number setting."""
         normalized_side = self._require_side(side)
@@ -1778,10 +1714,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             self._sleep_number_setting = value
             updates += [SLEEP_NUMBER(value), SLEEP_NUMBER_SIDE(self._side)]
         self.forward_controller_state_updates(*updates)
-
-    def _store_footwarming_present(self, present: bool) -> None:
-        """Persist and publish footwarming presence."""
-        self._store_footwarming_present_for_side(self._side, present)
 
     def _store_footwarming_present_for_side(self, side: str, present: bool) -> None:
         """Persist and publish footwarming presence for one side."""
@@ -1793,30 +1725,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             updates.append(FOOTWARMING_PRESENT(present))
         self.forward_controller_state_updates(*updates)
 
-    def _store_footwarming_state(
-        self,
-        level: str,
-        remaining_minutes: int,
-        total_remaining_minutes: int,
-        *,
-        selected_timer_minutes: int | None = None,
-    ) -> None:
-        """Persist and publish footwarming state.
-
-        Mirrors ``_store_frosty_state`` / ``_store_heidi_state``: only the
-        explicit ``selected_timer_minutes`` updates the cached user
-        selection. The countdown lives in
-        ``_footwarming_remaining_time_minutes`` /
-        ``_footwarming_total_remaining_time_minutes``.
-        """
-        self._store_footwarming_state_for_side(
-            self._side,
-            level,
-            remaining_minutes,
-            total_remaining_minutes,
-            selected_timer_minutes=selected_timer_minutes,
-        )
-
     def _store_footwarming_state_for_side(
         self,
         side: str,
@@ -1826,7 +1734,13 @@ class SleepNumberController(BedController, SleepNumberActions):
         *,
         selected_timer_minutes: int | None = None,
     ) -> None:
-        """Persist and publish footwarming state for one side."""
+        """Persist and publish footwarming state for one side.
+
+        Mirrors the Frosty and Heidi stores: only an explicit
+        ``selected_timer_minutes`` updates the cached user selection. The
+        countdown is kept separately in ``remaining_minutes`` and
+        ``total_remaining_minutes``.
+        """
         normalized_side = self._require_side(side)
         state = self._footwarming_states[normalized_side]
         state.level = level
@@ -1837,10 +1751,6 @@ class SleepNumberController(BedController, SleepNumberActions):
         if level != "off":
             state.last_active_level = level
         self._publish_footwarming_state_for_side(normalized_side)
-
-    def _publish_footwarming_state(self) -> None:
-        """Publish the cached footwarming state."""
-        self._publish_footwarming_state_for_side(self._side)
 
     def _publish_footwarming_state_for_side(self, side: str) -> None:
         """Publish the cached footwarming state for one side."""
@@ -1884,10 +1794,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             self._footwarming_timer_minutes = state.timer_minutes
             self._footwarming_last_active_level = state.last_active_level
         self.forward_controller_state_updates(*updates)
-
-    def _store_frosty_present(self, present: bool) -> None:
-        """Persist and publish Frosty (cooling module) presence."""
-        self._store_frosty_present_for_side(self._side, present)
 
     def _store_frosty_present_for_side(self, side: str, present: bool) -> None:
         """Persist and publish Frosty presence for one side."""
@@ -1943,10 +1849,6 @@ class SleepNumberController(BedController, SleepNumberActions):
         self._publish_frosty_state_for_side(normalized_side)
         self._publish_thermal_state_for_side(normalized_side)
 
-    def _publish_frosty_state(self) -> None:
-        """Publish the cached Frosty state under the legacy keys."""
-        self._publish_frosty_state_for_side(self._side)
-
     def _publish_frosty_state_for_side(self, side: str) -> None:
         """Publish the cached Frosty state under the legacy keys for one side."""
         normalized_side = self._require_side(side)
@@ -1967,10 +1869,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             FROSTY.remaining_time_minutes(state.remaining_minutes),
             FROSTY.timer_option(self._format_thermal_timer_option(state.timer_minutes)),
         )
-
-    def _store_heidi_present(self, present: bool) -> None:
-        """Persist and publish Heidi (core temperature module) presence."""
-        self._store_heidi_present_for_side(self._side, present)
 
     def _store_heidi_present_for_side(self, side: str, present: bool) -> None:
         """Persist and publish Heidi presence for one side."""
@@ -2029,10 +1927,6 @@ class SleepNumberController(BedController, SleepNumberActions):
         self._publish_heidi_state_for_side(normalized_side)
         self._publish_thermal_state_for_side(normalized_side)
 
-    def _publish_heidi_state(self) -> None:
-        """Publish the cached Heidi state under the legacy keys."""
-        self._publish_heidi_state_for_side(self._side)
-
     def _publish_heidi_state_for_side(self, side: str) -> None:
         """Publish the cached Heidi state under the legacy keys for one side."""
         normalized_side = self._require_side(side)
@@ -2055,10 +1949,6 @@ class SleepNumberController(BedController, SleepNumberActions):
             HEIDI.remaining_time_minutes(state.remaining_minutes),
             HEIDI.timer_option(self._format_thermal_timer_option(state.timer_minutes)),
         )
-
-    def _publish_thermal_state(self) -> None:
-        """Publish unified thermal climate state from the active backend."""
-        self._publish_thermal_state_for_side(self._side)
 
     def _publish_thermal_state_for_side(self, side: str) -> None:
         """Publish unified thermal climate state for one side."""
@@ -2416,11 +2306,6 @@ class SleepNumberController(BedController, SleepNumberActions):
         if normalized == "off" or normalized in _SLEEP_NUMBER_FOOTWARMING_LEVELS:
             return normalized
         raise ValueError(f"Unsupported Sleep Number footwarming level: {value}")
-
-    @staticmethod
-    def _normalize_footwarming_preset(value: str) -> str:
-        """Normalize a requested footwarming preset or raw level."""
-        return SleepNumberController._normalize_footwarming_level(value)
 
     @staticmethod
     def _normalize_frosty_mode(value: str) -> str:

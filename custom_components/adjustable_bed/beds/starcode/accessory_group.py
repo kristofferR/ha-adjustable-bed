@@ -30,7 +30,6 @@ from ...const import (
     CONF_BED_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_STARCODE_LIFT_ENTRIES,
-    CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
     DOMAIN,
     STAR_ELEVATE_VARIANT_M1X12,
@@ -49,19 +48,6 @@ _LOGGER = logging.getLogger(__name__)
 _OPERATIONS = f"{DOMAIN}_starcode_group_operations"
 _GROUP_DISPATCH: ContextVar[bool] = ContextVar("starcode_group_dispatch", default=False)
 type GroupTasks = dict[str, set[asyncio.Task[object]]]
-
-
-def is_group_member(data: Mapping[str, object]) -> bool:
-    """Return whether an entry is one of the app's bed classes or an ELEVATE."""
-    if data.get(CONF_BED_TYPE) == BED_TYPE_STAR_ELEVATE:
-        return True
-    return (
-        data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M5X5
-        and data.get(CONF_STARCODE_M5X5_PROFILE) in PROFILES
-    ) or (
-        data.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M1X12
-        and data.get(CONF_STARCODE_M1X12_PROFILE) in {"cb25", "f23", "kneading"}
-    )
 
 
 def _is_m5x5_group_member(data: Mapping[str, object]) -> bool:

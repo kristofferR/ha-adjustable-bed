@@ -15,7 +15,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
-from homeassistant.loader import async_get_integration
 
 from .adapter import find_service_info_by_address
 from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
@@ -36,13 +35,10 @@ from .const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
-    SUPPORTED_BED_TYPES,
     connection_gated_by_bond,
     requires_pairing,
 )
-from .diagnostics_utils import get_gatt_summary
-from .profile_decisions import async_profile_decision_history
-from .redaction import redact_data, redact_pins_only
+from .redaction import redact_pins_only
 from .support_logs import DATA_SUPPORT_LOGS
 
 if TYPE_CHECKING:
@@ -70,45 +66,6 @@ _LOG_LINE_RE = re.compile(
 
 # Logger-name fragments worth keeping for bed debugging.
 _RELEVANT_LOG_NAMES = (DOMAIN, "bluetooth", "bleak", "habluetooth")
-
-
-async def generate_support_report(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    coordinator: BedChild,
-    *,
-    include_logs: bool = True,
-) -> dict[str, Any]:
-    """Generate a comprehensive support report."""
-    timestamp = datetime.now(UTC)
-
-    # Get integration version from manifest
-    integration = await async_get_integration(hass, DOMAIN)
-    integration_version = str(integration.version) if integration.version is not None else "unknown"
-
-    report: dict[str, Any] = {
-        "report_version": "1.2",
-        "generated_at": timestamp.isoformat(),
-        "system": _get_system_info(hass, integration_version),
-        "integration": _get_integration_info(entry),
-        "profile_recommendations": await async_profile_decision_history(hass, coordinator.address),
-        "connection": _get_connection_info(coordinator),
-        "connection_history": coordinator.connection_history,
-        "pairing": _get_pairing_info(entry, coordinator),
-        "adapter": coordinator.adapter_details,
-        "command_timing": coordinator.command_timing,
-        "bluetooth": await _get_bluetooth_info(hass, coordinator),
-        "gatt_summary": get_gatt_summary(coordinator),
-        "controller": _get_controller_info(coordinator),
-        "position_data": dict(coordinator.position_data),
-        "supported_bed_types": list(SUPPORTED_BED_TYPES),
-    }
-
-    if include_logs:
-        report["recent_logs"] = await _get_recent_logs(hass)
-
-    # Redact sensitive data (partial MAC redaction - keeps OUI for debugging)
-    return redact_data(report)  # type: ignore[no-any-return]
 
 
 def _get_system_info(hass: HomeAssistant, integration_version: str) -> dict[str, Any]:

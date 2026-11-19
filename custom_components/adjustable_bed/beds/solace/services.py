@@ -21,15 +21,6 @@ from ...services import (
 
 SERVICE_SOLACE_AUDIO = "solace_audio"
 SOLACE_AUDIO_ACTIONS = ("select", "preview", "query", "set_volume")
-SOLACE_ALARM_SOUNDS = (
-    "none",
-    "alarm",
-    "music_1",
-    "music_2",
-    "music_3",
-    "music_4",
-    "music_5",
-)
 
 
 async def handle_solace_audio(call: ServiceCall) -> None:
