@@ -397,8 +397,8 @@ another controller.
 
 `codec/sleepiq.py` implements the two independent formats. The controllers keep
 Auth/binding, capability hydration, movement checks and cancellation cleanup.
-The six frozen builder literals are synthetic examples from the app, not
-captured or physically verified bed traffic. `tests/test_sleepiq_vectors.py`
+The example frames below are built from the app's encoders, not captured from
+a bed. `tests/test_sleepiq_vectors.py`
 checks framing, corruption rejection, address fields and notification splits.
 
 <!-- generated:sleepiq-frames -->
@@ -446,11 +446,12 @@ head-tilt switch for a HEADTILT chamber and local outlet/automatic night-light
 switches when their nodes are present. Extra local light/outlet and timer
 parameters remain on the structured action, which sends immediately.
 
-Fuzion has a **Read** preset, a confirmed **Reset saved positions** action and
-confirmed **Calibrate bed position** maintenance button. Clock synchronization
+Fuzion has a **Read** preset and diagnostic **Reset saved positions**,
+**Calibrate bed position** and **Restart bed** buttons, which ask for
+confirmation. Clock synchronization
 uses the shared `sync_clock` action. Local hardware diagnostics and their results
 use the structured action. Requests cannot enable cloud uploads or network tests.
-No local bed-alarm encoder was found; phone alarms are outside this integration.
+The beds have no bed alarm here; phone alarms are outside this integration.
 
 #### Notifications and state
 

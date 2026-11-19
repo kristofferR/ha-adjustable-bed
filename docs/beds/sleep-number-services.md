@@ -196,7 +196,7 @@ Parameter values:
 - `head`, `foot`, `mode`, `level`: 0–3.
 - `duration`, `timer`: 0–32767. Massage and outlet timers use seconds.
   Foot-warming durations use minutes. Preset timers accept the raw protocol value,
-  with zero cancelling the timer; the APK evidence does not establish a time unit.
+  with zero cancelling the timer; the time unit is unknown.
   Massage timer 255 preserves the existing timer.
 - `outlet`: 1–4 (right/left nightstand 1/2, right/left nightlight 3/4; outlet 3 is the under-bed light on models with that feature); `device`: 0 (the app's single local outlet/light).
 - `intensity`: 1, 30, 45, 75 or 100.

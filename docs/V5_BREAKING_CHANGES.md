@@ -253,7 +253,12 @@ The same control now looks the same on every bed:
 - **New controls.** Keeson, Serta, Ergomotion and OKIN FFE beds have a **Stop
   All** button, sending the release key the remote sends when a button is let
   go (Adjustable Lite and the KSBT remotes have no such key and still have
-  none). Logicdata beds show their two memory slots, recall and save.
+  none). Logicdata beds show their two memory slots, recall and save. Sleep
+  Number beds get switches for privacy, responsive air per side and the
+  automatic under-bed light, and on BAM/MCR beds head tilt, the power outlet
+  and the automatic night light, where the bed has them. Fuzion beds get
+  diagnostic **Restart bed**, **Calibrate bed position** and **Reset saved
+  positions** buttons, which ask for confirmation.
 
 [Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists the
 removed and replaced entities by bed.
@@ -345,11 +350,21 @@ Other action changes:
   `right` and `day` or `month` instead of 1 and 2.
 - `goodvibe` no longer offers `operation: sync`; use `sync_clock`.
 - `furnimove_action` no longer takes `consumer`.
+- `sleep_number_command`: `reboot_system` and `starts_actuator_homing` are the
+  **Restart bed** and **Calibrate bed position** buttons, which ask for
+  confirmation; `set_system_time` is `sync_clock`; the cooling and
+  core-temperature module commands (`get_frosty_mode`, `set_frosty_mode`,
+  `get_heidi_mode`, `set_heidi_mode` and their presence reads) are handled by
+  the **Climate** entities; `get_system_status` (network and update status) is
+  gone; `kid_outlet` and `kid_outlet_status` accept only `device: 0`. New
+  commands: `reset_articulation_presets`, `run_diagnostics`, `bind_foundation`
+  and `underbed_intensity`. See the
+  [Sleep Number command guide](beds/sleep-number-services.md).
 - `timed_move` and `hold_control` gain optional `hold_owner` and
   `hold_generation` fields for renewable holds. Calls without them work as
   before. See [Renewable holds](SERVICES.md#renewable-holds).
 - `sync_clock` also sets the clock of SUTA Smart Home, OKIN SleepEase, Motion
-  Bed, GM Control and Good Vibe Sleep beds, whose own actions or buttons no
+  Bed, GM Control, Good Vibe Sleep and Sleep Number (Fuzion) beds, whose own actions or buttons no
   longer do. On a bed whose two sides share one receiver, it
   sets the clock once.
 - Bed actions are named "Brand: what they do" in the action list, with
@@ -361,12 +376,6 @@ Other action changes:
   enable estimated positions.
 
 ### If you ran a v5 beta
-
-- SleepIQ: `sleep_number_command` no longer offers `get_system_status`
-  (network and update status). Use the confirmed maintenance buttons for
-  homing and restarting, and **Set bed clock** for clock synchronization.
-  The `kid_outlet` command accepts only `device: 0`. Existing entities retain
-  their IDs. See the [Sleep Number command guide](beds/sleep-number-services.md).
 
 These actions existed only in v5 betas and are gone. Older field names are not
 accepted.
