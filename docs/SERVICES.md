@@ -1952,9 +1952,8 @@ preliminary memory-slot write. See the [Rize guide](beds/kaidi.md#rize-beds).
 
 See the [Sleep Number command guide](beds/sleep-number-services.md) for the
 supported commands and parameter values. Use **Set bed clock**
-([`sync_clock`](#sync_clock)) for the clock, and the **Calibrate bed position**
-and **Restart bed** buttons, which ask for confirmation, for homing and
-restarting.
+([`sync_clock`](#sync_clock)) for the clock, and the diagnostic **Calibrate bed
+position** and **Restart bed** buttons for homing and restarting.
 
 ## SleepEvolution and W.Silver Products 3.x
 

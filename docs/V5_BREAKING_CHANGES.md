@@ -254,11 +254,14 @@ The same control now looks the same on every bed:
   All** button, sending the release key the remote sends when a button is let
   go (Adjustable Lite and the KSBT remotes have no such key and still have
   none). Logicdata beds show their two memory slots, recall and save. Sleep
-  Number beds get switches for privacy, responsive air per side and the
-  automatic under-bed light, and on BAM/MCR beds head tilt, the power outlet
-  and the automatic night light, where the bed has them. Fuzion beds get
-  diagnostic **Restart bed**, **Calibrate bed position** and **Reset saved
-  positions** buttons, which ask for confirmation.
+  Number beds get **responsive air** switches per side and an **Automatic
+  under-bed light** switch where the model has them, a **Privacy** switch on
+  Fuzion beds, and **Head tilt**, **Power outlet** and **Automatic night
+  light** switches on BAM/MCR beds that have them. Once a Fuzion bed's
+  configuration has been read, it also gets diagnostic **Restart bed**,
+  **Calibrate bed position** and **Reset saved positions** buttons (the last
+  two only on beds that move), disabled by default; the dashboard card asks
+  for confirmation before it presses them.
 
 [Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists the
 removed and replaced entities by bed.
@@ -350,13 +353,18 @@ Other action changes:
   `right` and `day` or `month` instead of 1 and 2.
 - `goodvibe` no longer offers `operation: sync`; use `sync_clock`.
 - `furnimove_action` no longer takes `consumer`.
-- `sleep_number_command`: `reboot_system` and `starts_actuator_homing` are the
-  **Restart bed** and **Calibrate bed position** buttons, which ask for
-  confirmation; `set_system_time` is `sync_clock`; the cooling and
-  core-temperature module commands (`get_frosty_mode`, `set_frosty_mode`,
-  `get_heidi_mode`, `set_heidi_mode` and their presence reads) are handled by
-  the **Climate** entities; `get_system_status` (network and update status) is
-  gone; `kid_outlet` and `kid_outlet_status` accept only `device: 0`. New
+- `sleep_number_command` no longer offers `reboot_system`,
+  `starts_actuator_homing`, `set_system_time`, the cooling and core-temperature
+  module commands (`get_frosty_mode`, `set_frosty_mode`, `get_frosty_presence`,
+  `get_heidi_mode`, `set_heidi_mode`, `get_heidi_presence`) or
+  `get_system_status` (network and update status). Restarting and homing are
+  buttons now (see **New controls** under [Entities](#entities)); **Restart
+  bed** always restarts both components, so one component can no longer be
+  restarted alone. Set the clock with `sync_clock`, which writes Home
+  Assistant's current time and takes no `date_time`. Cooling and heating modes
+  are the **Climate** entities and their duration the **Climate Timer**
+  selects; module presence is detected automatically. `kid_outlet` and
+  `kid_outlet_status` accept only `device: 0`. New
   commands: `reset_articulation_presets`, `run_diagnostics`, `bind_foundation`
   and `underbed_intensity`. See the
   [Sleep Number command guide](beds/sleep-number-services.md).

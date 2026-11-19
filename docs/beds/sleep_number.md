@@ -309,8 +309,8 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 - `heating_push_low`, `heating_push_med`, `heating_push_high` (Heidi only)
 
 - Thermal and footwarming entities are created from the system configuration
-  (`SYCG`) flags; the presence bamkeys remain available through
-  `adjustable_bed.sleep_number_command`.
+  (`SYCG`) flags and each side's presence query, which the integration reads
+  itself.
 - Turning Frosty or Heidi off sends `timer=0` to match the SleepIQ app's
   behaviour. Footwarming keeps the current remaining timer when turned off, also
   matching the app.
@@ -446,9 +446,11 @@ head-tilt switch for a HEADTILT chamber and local outlet/automatic night-light
 switches when their nodes are present. Extra local light/outlet and timer
 parameters remain on the structured action, which sends immediately.
 
-Fuzion has a **Read** preset and diagnostic **Reset saved positions**,
-**Calibrate bed position** and **Restart bed** buttons, which ask for
-confirmation. Clock synchronization
+Fuzion has a **Reading** preset where the bed reports it. Once the bed's
+configuration has been read, it also has diagnostic **Restart bed**,
+**Calibrate bed position** and **Reset saved positions** buttons (the last two
+only with articulation), disabled by default; the dashboard card asks for
+confirmation before pressing them. **Restart bed** restarts both components. Clock synchronization
 uses the shared `sync_clock` action. Local hardware diagnostics and their results
 use the structured action. Requests cannot enable cloud uploads or network tests.
 The beds have no bed alarm here; phone alarms are outside this integration.
