@@ -1442,7 +1442,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             press_fn, cancel_running=self._spec.cancel_movement
         )
 
-    def _current_hold_spec(self) -> ControllerHoldSpec | None:
+    def _current_spec(self) -> ControllerButtonSpec:
         """Follow local gesture selectors and replacement controllers in place."""
         controller = self._coordinator.capability_controller
         if controller is not None:
@@ -1452,19 +1452,26 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                     None,
                 )
             if spec is not None:
-                return spec.hold
-        return self._spec.hold
+                return spec
+        return self._spec
+
+    def _current_hold_spec(self) -> ControllerHoldSpec | None:
+        return self._current_spec().hold
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the current held control to the bounded card/service path."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
-        if self._spec.requires_confirmation:
+        spec = self._current_spec()
+        confirm = self._spec.requires_confirmation or spec.requires_confirmation
+        if confirm:
             attributes["requires_confirmation"] = True
         if self._spec.card.role in (CardRole.UP, CardRole.DOWN):
             # An app's motor action is pressed, never replaced by a timed motor move.
             attributes["timed_move"] = False
-        hold = self._current_hold_spec()
+        # A button that asks first never offers a held gesture: holding it
+        # would send the command without the card's confirmation.
+        hold = None if confirm else spec.hold
         if hold is not None:
             attributes.update(
                 held_control=hold.control,
