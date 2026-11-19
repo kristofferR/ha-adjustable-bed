@@ -19,6 +19,7 @@ from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as richmat_codec
 from ...codec import sleep_envelope
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ..base import BedController
 from ..builder import BuildContext
@@ -486,10 +487,12 @@ class SleepController(BedController):
                 if self._owner is not client or self._coordinator.cancel_command.is_set():
                     self.receiver.clear()
                     self._finish_report(report)
+                    note_frame_skipped()
                     return
                 await client.write_gatt_char(
                     tx, data[offset : offset + stride], response=not self.mm
                 )
+                note_frame_written(self._coordinator.cancel_command)
             self._last_write = asyncio.get_running_loop().time()
 
     def validate_request(self, r: Request) -> None:

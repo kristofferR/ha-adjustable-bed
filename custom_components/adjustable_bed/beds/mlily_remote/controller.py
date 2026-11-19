@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.mlily_remote import ACTIONS, PROFILES, SAVE_MS, STARTUP, TICK_S
 from ..base import BedController, require_controller
@@ -171,6 +172,7 @@ class MlilyRemoteController(CasperBaseController):
             if self._current() is not link:
                 raise ConnectionError("MLILY Remote link was replaced while queued")
             if not cleanup and cancel.is_set():
+                note_frame_skipped()
                 return False
             if deadline is not None and loop.time() > deadline + 1e-9:
                 return False
@@ -190,6 +192,7 @@ class MlilyRemoteController(CasperBaseController):
                 submitted()
             # A non-idempotent command is never replayed after a write failure.
             await link.client.write_gatt_char(link.tx, packet, response=response)
+            note_frame_written(cancel)
         return True
 
     async def _send(self, packet: bytes, *, cleanup: bool = False) -> None:

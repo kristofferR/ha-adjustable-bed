@@ -31,6 +31,7 @@ from bleak.exc import BleakError
 
 from ...codec import okin_5a as star
 from ...codec import okin_nframe as codec
+from ...command_scheduler import command_frames_written, frames_sent_since, note_frame_skipped
 from ...const import (
     NORDIC_UART_WRITE_CHAR_UUID,
     SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
@@ -361,6 +362,7 @@ class SleepysBox25Controller(BedController):
             Box25Commands.WAKE,
             cancel_event=cancel_event,
             response=True,
+            track_command_write=False,
         )
         if self._is_cancelled(cancel_event):
             return
@@ -391,9 +393,11 @@ class SleepysBox25Controller(BedController):
     ) -> None:
         """Write a BOX25_STAR command using the OEM app's BLE write mode."""
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         await self._ensure_initialized(cancel_event)
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
@@ -665,15 +669,20 @@ class SleepysBox25Controller(BedController):
         is ignored on others (#702), so the light entity sends ON first and
         reapplies the selected colour and level afterwards.
         """
+        before = command_frames_written()
         await self._write_massage_light_command(Box25Commands.LIGHT_ON_WHITE)
+        if not frames_sent_since(before):
+            return
         self.forward_controller_state_updates(
             UNDER_BED_LIGHTS_ON(True),
             UNDER_BED_LIGHTS_RGB(_DEFAULT_LIGHT_RGB),
         )
 
     async def lights_off(self) -> None:
+        before = command_frames_written()
         await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
-        self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, False)
+        if frames_sent_since(before):
+            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, False)
 
     async def lights_toggle(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_TOGGLE)
@@ -681,7 +690,10 @@ class SleepysBox25Controller(BedController):
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         """Show an RGB colour on lit LEDs; not every base turns on from it."""
         red, green, blue = (max(0, min(255, int(channel))) for channel in rgb_color)
+        before = command_frames_written()
         await self._write_massage_light_command(star.extended(0x02, red, green, blue))
+        if not frames_sent_since(before):
+            return
         self.forward_controller_state_updates(
             UNDER_BED_LIGHTS_ON(True),
             UNDER_BED_LIGHTS_RGB((red, green, blue)),
@@ -690,7 +702,10 @@ class SleepysBox25Controller(BedController):
     async def set_light_level(self, level: int) -> None:
         """Set the exact OEM 0-6 under-bed light brightness value."""
         normalized = max(0, min(self.light_level_max, int(level)))
+        before = command_frames_written()
         await self._write_massage_light_command(star.extended(0x00, normalized))
+        if not frames_sent_since(before):
+            return
         self._light_level = normalized
         self.forward_controller_state_updates(
             LIGHT_LEVEL(normalized),
@@ -824,12 +839,15 @@ class SleepysBox25LegacyController(SleepysBox25Controller):
     ) -> None:
         """Translate inherited actions and write the legacy frame without response."""
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         translated = _translate_star_to_legacy(command)
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         await self._ensure_initialized(cancel_event)
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
@@ -865,6 +883,7 @@ class SleepysBox25LegacyController(SleepysBox25Controller):
             Box25Commands.WAKE,
             cancel_event=cancel_event,
             response=True,
+            track_command_write=False,
         )
         if not self._is_cancelled(cancel_event):
             self._initialized = True

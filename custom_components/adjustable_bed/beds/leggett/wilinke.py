@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import LEGGETT_RICHMAT_CHAR_UUID
 from ...profiles.richmat import LEGGETT_WILINKE, Button
 from ...state_keys import MASSAGE_TIMER_MINUTES
@@ -61,10 +62,12 @@ class LeggettWilinkeController(RichmatProfileController):
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
+                note_frame_skipped()
                 return
             try:
                 async with self._ble_lock:
                     await self.client.write_gatt_char(self._char_uuid, command, response=True)
+                    note_frame_written(effective_cancel)
             except BleakError as err:
                 _LOGGER.exception("Failed to write command")
                 if "not found" in str(err).lower() or "invalid" in str(err).lower():
