@@ -17,7 +17,13 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_HIDDEN, CARD_MASSAGE
 from ...codec import suta as codec
-from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
+from ...command_scheduler import (
+    Delivery,
+    current_command_context,
+    delivered,
+    note_frame_skipped,
+    note_frame_written,
+)
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
@@ -779,22 +785,26 @@ class SutaController(BedController):
         self.validate_request(request)
         link, cancel = self._live(), self._coordinator.cancel_command
         if request.action in BINARY and self.family in BINARY[request.action].controllers:
-            strength = (
-                (MASSAGE_STRENGTH[request.logical_side](request.value),)
-                if request.action.startswith("massage_strength_") and request.logical_side in (1, 2)
-                else ()
-            )
-            # A strength shows as far as its write reached the bed, also when cancelled after it.
-            with self.sent_state(*strength):
+            side = request.logical_side
+            strength = request.action.startswith("massage_strength_") and side in (1, 2)
+
+            def show(delivery: Delivery) -> None:
+                # A strength shows as far as its write reached this link's bed, also when
+                # cancelled after it, until the bed's next full-state report replaces it.
+                if not strength or self._link is not link or delivery is Delivery.NONE:
+                    return
+                self.observations[f"side_{side}_strength"] = (
+                    request.value if delivery is Delivery.SENT else None
+                )
+                self._publish()
+
+            with delivered(show):
                 sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
             if sent is not None and request.action == "automatic_adjustment_switch" and self._link is link:
                 # The bed does not echo this write; like the app's checkbox, show the sent value
                 # until the next full-state report replaces it.
                 self.observations[f"side_{request.logical_side}_automatic_checked"] = request.value == 1
                 self._publish()
-            elif sent is not None and strength and self._link is link:
-                # Kept as sent until the bed's next full-state report replaces it.
-                self.observations[f"side_{request.logical_side}_strength"] = request.value
             return
         if request.action == "snore_cycle":
             # Direct BLE consequence of the excluded phone detector. This

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 from datetime import UTC
 from pathlib import Path
@@ -505,7 +506,7 @@ async def test_moon_massage_strength_shows_the_sent_level_until_the_bed_reports(
     c.handle_controller_state_updates.reset_mock()
     await left.set_fn(moon_, 3)
     states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
-    assert states == {bed.MASSAGE_STRENGTH[1]: 3}
+    assert states[bed.MASSAGE_STRENGTH[1]] == 3 and states[bed.MASSAGE_STRENGTH[2]] is None
     # Other state published before the next report keeps the sent level.
     moon_._publish()
     states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
@@ -556,3 +557,24 @@ async def test_overall_level_cut_off_between_zones_is_unknown(clock):
         u.key: u.value for call in c.handle_controller_state_updates.call_args_list for u in call.args
     }
     assert states[massage_intensity("all")] is None
+
+
+async def test_moon_strength_from_a_replaced_link_is_not_shown(clock):
+    moon_, c = make("SUTA-MOON")
+    await moon_.start_notify()
+    left = next(s for s in moon_.controller_number_specs if s.key == "suta_left_massage_strength")
+
+    async def write(*_args, **_kwargs):
+        moon_.on_disconnect()  # The link drops while the write settles.
+
+    c.client.write_gatt_char.side_effect = write
+    c.handle_controller_state_updates.reset_mock()
+    with contextlib.suppress(ConnectionError, ValueError):
+        await left.set_fn(moon_, 3)
+    published = [
+        u.value
+        for call in c.handle_controller_state_updates.call_args_list
+        for u in call.args
+        if u.key == bed.MASSAGE_STRENGTH[1]
+    ]
+    assert 3 not in published
