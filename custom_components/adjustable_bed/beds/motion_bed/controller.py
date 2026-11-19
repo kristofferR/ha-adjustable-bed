@@ -15,6 +15,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
+from ...command_scheduler import note_frame_skipped, note_frame_written, note_write_not_counted
 from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_MOTION_BED_MOVEMENT,
@@ -645,6 +646,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         async with self._ble_lock:
             client, characteristic = self._current_session()
             if cancel.is_set():
+                note_frame_skipped()
                 return
             response = "write" in characteristic.properties
             self._coordinator.record_command_trace(
@@ -654,6 +656,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 command_origin="motion_bed_current_target", controller_class=type(self).__name__,
             )
             await client.write_gatt_char(characteristic, command, response=response)
+            note_frame_written(cancel)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self._notifying:
@@ -720,6 +723,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 command_origin="motion_bed_original_hold_release", controller_class=type(self).__name__,
             )
             await session.client.write_gatt_char(session.characteristic, STOP, response=response)
+            note_write_not_counted()
 
     async def stop_notify(self) -> None:
         self._remember_module_capabilities()

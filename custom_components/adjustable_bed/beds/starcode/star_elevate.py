@@ -127,6 +127,8 @@ class StarElevateController(ProfileExecution[Okin5AProfile], BedController, Star
                 frame,
                 cancel_event=effective_cancel,
                 response=self.profile.wake_with_response,
+                # The keep-connected frame only prepares the link.
+                track_command_write=False,
             )
         if effective_cancel is None or not effective_cancel.is_set():
             self._initialized = True

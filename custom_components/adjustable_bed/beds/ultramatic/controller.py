@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability, AlarmError
 from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec.okin_nframe import SideRecordParser
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_CB24_BED_SELECTION, SIDE_BOTH, SIDE_LEFT, SIDE_RIGHT
 from ...profiles import ultramatic as app
 from ...profiles.okin_nframe import OkinNFrameProfile
@@ -324,6 +325,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
         async with self._ble_lock:
             self._live(link)
             if cancel.is_set():
+                note_frame_skipped()
                 return
             if generation is not None and self._operation_generation != generation:
                 raise ConnectionError("Ultramatic alarm or query was superseded")
@@ -335,6 +337,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                 link.write.uuid, command, response=False, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, command, response=False)
+            note_frame_written(cancel)
             self._live(link)
 
     async def write_command(
@@ -349,6 +352,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         for index in range(repeat_count):
             if index and await _pause(cancel, repeat_delay_ms / 1000):
+                note_frame_skipped()
                 return
             await self._write(link, command, cancel)
 

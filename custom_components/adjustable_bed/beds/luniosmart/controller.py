@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...profiles.luniosmart import DIRECTIONS, PRESETS, PROFILE, RELEASE, LunioSmartProfile
 from ..base import BedController, ProfileExecution, require_controller
 from ..entity_specs import (
@@ -199,6 +200,7 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
     ) -> None:
         cancel = asyncio.Event() if release else self._coordinator.cancel_command
         if await _pause(self.profile.tick_s if delay is None else delay, cancel):
+            note_frame_skipped()
             return
         self._live(session)
         if deadline is not None and monotonic() >= deadline:
@@ -208,6 +210,7 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
             async with self._ble_lock:
                 self._live(session)
                 if cancel.is_set() or deadline is not None and monotonic() >= deadline:
+                    note_frame_skipped()
                     return
                 link = session.link
                 response = "write-without-response" not in link.tx.properties
@@ -216,6 +219,7 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
                 )
                 async with asyncio.timeout(WRITE_TIMEOUT_S):
                     await link.client.write_gatt_char(link.tx, packet, response=response)
+                    note_frame_written(cancel)
 
         await _settle(asyncio.create_task(write()))
 

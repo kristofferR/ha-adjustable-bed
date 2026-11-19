@@ -241,6 +241,10 @@ phone app's internals.
 - **On/off button pairs became switches**, with a new entity ID
   (`switch.<bed>_<name>`). A switch whose bed never reports the setting shows
   separate on and off controls.
+- **Switches and lights show only what was sent.** When Stop or a newer
+  command cancels a switch or light command, the entity keeps its previous
+  state instead of showing the requested one. A switch whose bed cannot run
+  the command shows an error instead of doing nothing.
 - **Raw state sensors are disabled by default** on new installs. Existing ones
   keep their enabled state.
 - **Refresh, query and clock-sync buttons are diagnostic** and disabled by

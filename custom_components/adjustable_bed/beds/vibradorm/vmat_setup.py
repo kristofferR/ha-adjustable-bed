@@ -12,6 +12,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ...codec import vibradorm as codec
+from ...command_scheduler import note_write_not_counted
 from ...profiles.vibradorm import VMAT_CLOSE, VMAT_QUERY_STAGES
 from .app import (
     VibradormAppMetadata,
@@ -125,6 +126,7 @@ async def async_prepare_vmat_pairing(
                         vmat_characteristic(client, codec.CBI_CHAR_UUID, "write-without-response"),
                         packet, response=False,
                     ), cancel_event)
+                    note_write_not_counted()
 
                     async def receive(pending: asyncio.Future[str] = reply) -> str:
                         return await pending
@@ -167,3 +169,4 @@ async def async_close_vmat_setup(client: BleakClient) -> None:
             vmat_characteristic(client, codec.CBI_CHAR_UUID, "write-without-response"),
             VMAT_CLOSE, response=False,
         )
+        note_write_not_counted()
