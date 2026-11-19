@@ -449,6 +449,43 @@ async def test_readable_switches_hydrate_and_clear_unavailable_values() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "chambers,bound_side,expected_sides",
+    [
+        ("dual", None, ("left", "right")),
+        ("dual", "left", ("left",)),
+        ("dual", "right", ("right",)),
+        ("single", None, ("right",)),
+        ("single", "left", ()),
+        ("single", "right", ("right",)),
+    ],
+)
+async def test_responsive_air_switches_follow_the_bound_side(
+    chambers: str, bound_side: str | None, expected_sides: tuple[str, ...]
+) -> None:
+    controller, _client = controller_with_client()
+    controller._system_config = {
+        "chamber_type": chambers,
+        "pressure_control_enabled_flag": "yes",
+        "underbed_light_enable_flag": "no",
+        "thermal_control_enabled_flag": "none",
+    }
+    controller._send_bamkey_command = AsyncMock(return_value=[])
+
+    with controller.side_scope(bound_side):
+        switches = [
+            spec
+            for spec in controller.controller_switch_specs
+            if spec.key.startswith("sleepiq_responsive_air_")
+        ]
+        assert [spec.key for spec in switches] == [
+            f"sleepiq_responsive_air_{side}" for side in expected_sides
+        ]
+        for spec, side in zip(switches, expected_sides, strict=True):
+            await spec.set_fn(controller, True)
+            controller._send_bamkey_command.assert_awaited_with("LRAS", side, "1", expected_args=0)
+
+
 async def test_stale_notification_cleanup_leaves_the_new_owner_alone() -> None:
     from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
 

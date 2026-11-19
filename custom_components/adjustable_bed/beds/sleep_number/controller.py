@@ -599,6 +599,8 @@ class SleepNumberController(BedController, SleepNumberActions):
         ]
         if self.supports_sleep_number_setting:
             for side in self._feature_sides:
+                if self.command_side is not None and side != self.command_side:
+                    continue
                 specs.append(
                     ControllerSwitchSpec(
                         f"sleepiq_responsive_air_{side}",
