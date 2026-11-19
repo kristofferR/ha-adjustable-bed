@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -449,10 +450,48 @@ async def test_a_repair_raised_before_the_rows_kept_a_record_stays(hass: HomeAss
     issues = ir.async_get(hass)
     issue_id = ISSUE_PREFIX + entry.entry_id
     before = issues.async_get_issue(DOMAIN, issue_id).translation_placeholders["entities"]
-    # As the earlier version left it: the repair, but no record on the light's row.
+    # As the earlier version left it: the repair (lines without a tracked marker),
+    # but no record on the light's row.
+    issue = issues.async_get_issue(DOMAIN, issue_id)
+    legacy = [
+        {key: value for key, value in move.items() if key != "tracked"}
+        for move in json.loads(issue.data["moves"])
+    ]
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=False,
+        severity=issue.severity,
+        translation_key=issue.translation_key,
+        translation_placeholders=issue.translation_placeholders,
+        data={"moves": json.dumps(legacy)},
+    )
     light = registry.async_get("light.bed_under_bed_lights")
     assert light is not None
     registry.async_update_entity_options(light.entity_id, DOMAIN, {})
     async_carry_over_retyped_entities(hass, entry, _runtime())
     await hass.async_block_till_done()
     assert issues.async_get_issue(DOMAIN, issue_id).translation_placeholders["entities"] == before
+
+
+async def test_a_resolved_line_goes_even_if_the_issue_was_not_saved(hass: HomeAssistant) -> None:
+    """The cleared record reached disk but the issue update did not: the line still goes."""
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
+    assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    await hass.async_block_till_done()
+    issues = ir.async_get(hass)
+    issue_id = ISSUE_PREFIX + entry.entry_id
+    assert issues.async_get_issue(DOMAIN, issue_id) is not None
+    light = registry.async_get("light.bed_under_bed_lights")
+    assert light is not None
+    registry.async_update_entity_options(light.entity_id, DOMAIN, {})
+    with patch(
+        "homeassistant.components.automation.automations_with_entity", return_value=[]
+    ):
+        async_carry_over_retyped_entities(hass, entry, _runtime())
+        await hass.async_block_till_done()
+    assert issues.async_get_issue(DOMAIN, issue_id) is None

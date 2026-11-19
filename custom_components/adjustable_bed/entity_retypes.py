@@ -193,7 +193,11 @@ def _reported_moves(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, s
     except ValueError:
         return []
     return [
-        {key: str(move[key]) for key in ("line", "domain", "unique_id", "kept") if key in move}
+        {
+            key: str(move[key])
+            for key in ("line", "domain", "unique_id", "kept", "tracked")
+            if key in move
+        }
         for move in moves
         if isinstance(move, dict) and {"line", "domain", "unique_id"} <= move.keys()
     ]
@@ -325,11 +329,15 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
         for row in rows
         if isinstance(row.options.get(DOMAIN, {}).get(RETYPED_FROM), str)
     }
-    # Lines without a row record (kept ones, and those an earlier version raised) stay.
+    # Kept lines stay, and so do lines an earlier version raised without a row
+    # record. A tracked line whose record is gone was resolved: it goes, even if
+    # a crash saved the cleared record before the issue.
     moves = [
         move
         for move in reported
-        if move.get("kept") or (move["domain"], move["unique_id"]) not in recorded
+        if move.get("kept")
+        or not move.get("tracked")
+        and (move["domain"], move["unique_id"]) not in recorded
     ]
     for row in rows:
         options = row.options.get(DOMAIN, {})
@@ -372,7 +380,7 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     "line": line,
                     "domain": row.domain,
                     "unique_id": row.unique_id,
-                    **({"kept": "1"} if options_changed else {}),
+                    **({"kept": "1"} if options_changed else {"tracked": "1"}),
                 }
             )
     if moves != reported:
