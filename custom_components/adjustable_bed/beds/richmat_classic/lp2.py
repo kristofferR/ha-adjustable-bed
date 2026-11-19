@@ -24,6 +24,7 @@ from ...execution import ExecutionCapabilities
 from ...profiles.lp2 import ALARM_COMBINATIONS, DIAGNOSTIC_CYCLE
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
+from ..cancellation import settled
 from ..catalog_buttons import Kind, catalog_button, classify, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -267,16 +268,7 @@ class Lp2Controller(RichmatClassicController):
             ):
                 await self._send(release(session.wire, self._mode if mode is None else mode))
 
-        task = asyncio.create_task(cleanup())
-        cancelled = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                cancelled = True
-        task.result()
-        if cancelled:
-            raise asyncio.CancelledError
+        await settled(cleanup())
 
     async def execute_action(
         self,

@@ -585,7 +585,7 @@ async def test_paired_movement_accepts_its_own_native_generation(hass, side):
             await fn(selected)
 
         child.async_execute_controller_command = AsyncMock(side_effect=execute)
-    before = parent._pair_cancel_generation("left", frozenset({"movement"}))
+    before = parent.pair_cancel_generation("left", frozenset({"movement"}))
     with patch(
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=([(parent, side)], []),
@@ -596,7 +596,80 @@ async def test_paired_movement_accepts_its_own_native_generation(hass, side):
             {"device_id": "pair", "side": side, "operation": "control", "control": 1},
             blocking=True,
         )
-    assert parent._pair_cancel_generation("left", frozenset({"movement"})) != before
+    assert parent.pair_cancel_generation("left", frozenset({"movement"})) != before
     assert parent.stop_count("left") == parent.stop_count("right") == 0
     controllers[0].execute_action.assert_awaited_once()
     assert controllers[1].execute_action.await_count == (1 if side == "both" else 0)
+
+
+@pytest.mark.parametrize("first_written", [False, True])
+async def test_local_interruption_counts_required_frames_without_cancelling_scheduler(
+    clock, monkeypatch, first_written
+):
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+        Delivery,
+        delivered,
+        note_frame_skipped,
+    )
+
+    c, co = controller()
+    context = CommandContext(
+        object(),
+        co.cancel_command,
+        0,
+        "setting",
+        CommandKind.COMMAND,
+        None,
+        frozenset({"configuration"}),
+    )
+    outcomes = []
+    if first_written:
+
+        async def local_stop(_milliseconds, _cancel):
+            return False
+
+        monkeypatch.setattr(c, "_wait", local_stop)
+    else:
+
+        async def hold_back(_packet):
+            note_frame_skipped()
+
+        monkeypatch.setattr(c, "write_command", hold_back)
+        c._receive.light_capable = True
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        with delivered(outcomes.append):
+            if first_written:
+                await c.settings(fan="head", duration=3, level=60)
+            else:
+                await c.settings(color=(12, 34, 56))
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+    assert not co.cancel_command.is_set()
+    assert outcomes == [Delivery.PARTIAL if first_written else Delivery.NONE]
+    assert packets(co) == (["6e01d30042"] if first_written else [])
+    assert context.frames_skipped == 1
+
+
+async def test_settled_release_finishes_on_owned_link_before_cancel_returns():
+    c, co = controller("6BRM", "RAW")
+    writing, finish = asyncio.Event(), asyncio.Event()
+
+    async def release_write(_characteristic, _packet, **_kwargs):
+        writing.set()
+        await finish.wait()
+
+    co.client.write_gatt_char.side_effect = release_write
+    release = asyncio.create_task(c._release())
+    await writing.wait()
+    release.cancel()
+    await asyncio.sleep(0)
+    assert not release.done()
+    finish.set()
+    with pytest.raises(asyncio.CancelledError):
+        await release
+    assert packets(co) == ["6e"]
+    assert not co.cancel_command.is_set()
