@@ -8,7 +8,9 @@ with response, frame, repeats, interval ms]``.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -312,3 +314,30 @@ async def test_okimiki_without_an_alarm_has_no_clock() -> None:
         assert not controller.supports_clock_sync
 
     assert await capture("okimiki:IPRM:nordic", check) == []
+
+
+@pytest.mark.parametrize(
+    ("protocol", "characteristic", "expected"),
+    [
+        ("p1", "0000ffe9-0000-1000-8000-00805f9b34fb", "e2fe162d1e0c02b0"),
+        ("p2", "0000ffe9-0000-1000-8000-00805f9b34fb", "e780017e060e0c1e2dae"),
+        ("p3", "6e400002-b5a3-f393-e0a9-e50e24dcca9e", "07041a070e020c1e2d"),
+    ],
+)
+async def test_betterliving2_shared_clock_uses_accepted_app_literal(
+    protocol, characteristic, expected
+):
+    """P1-time/P2-time/P3-time in the frozen BetterLiving2 vectors, at their own time."""
+
+    async def sync(controller):
+        assert controller.supports_clock_sync
+        controller.validate_clock_sync()
+        with patch(
+            "custom_components.adjustable_bed.beds.keeson.betterliving2.dt_util.now",
+            return_value=datetime(2026, 7, 14, 12, 30, 45),
+        ):
+            await controller.sync_clock()
+
+    assert await capture(f"betterliving2:{protocol}:2", sync) == [
+        [0, characteristic, True, expected, 1, 0]
+    ]

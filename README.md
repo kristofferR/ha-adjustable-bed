@@ -101,6 +101,7 @@ bed has been tested on real hardware.
 | [Bedgear](docs/beds/motomotion.md#bedgear) | [Bedgear](docs/beds/motomotion.md#bedgear) | Bedgear |
 | [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | [BedJet PowerLayer adjustable frame](docs/beds/bedjet-powerlayer.md) | BedJet (the frame, not the BedJet climate unit) |
 | [BedTech](docs/beds/richmat.md#bedtech) | [BedTech app](docs/beds/richmat.md#bedtech), [Legacy BedTech controls](docs/beds/richmat.md#bedtech) | BedTech |
+| [BetterLiving2](docs/beds/keeson.md#betterliving2) | [BetterLiving app, P1/P2/P3 and two/three-motor screens](docs/beds/keeson.md#betterliving2) | Explicit app profile, hardware unverified |
 | [Casper Base](docs/beds/casper-base.md) | [Casper Base app](docs/beds/casper-base.md), [Casper Base sleep sensor, MM or SXB](docs/beds/casper-base.md#separate-sleep-sensors-and-remote-finder), [Casper Base remote finder (RCRM handset)](docs/beds/casper-base.md#remote-finder) | Casper |
 | [CheersSleep](docs/beds/cheerssleep.md) | CheersSleep | CheersSleep |
 | [Customatic](docs/beds/okin-nframe.md#customatic-family) | [Clarity](docs/beds/okin-nframe.md#customatic-clarity), [Jerome's C](docs/beds/okin-nframe.md#customatic-jeromes), [Remedy](docs/beds/okin-nframe.md#customatic-remedy), [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) | Customatic, Rize (Clarity, Remedy), Jerome's |
