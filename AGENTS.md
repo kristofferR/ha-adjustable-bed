@@ -122,7 +122,7 @@ custom_components/adjustable_bed/
 
 **AdjustableBedCoordinator** (`coordinator.py`): Central BLE connection manager
 - Handles device discovery via HA's Bluetooth integration
-- One connection timing for every bed (a bed trait may shorten the connect timeout); multiple usable paths receive a bounded extra retry budget
+- One connection timing for every bed (some beds and app profiles use a shorter connect timeout); multiple usable paths receive a bounded extra retry budget
 - `connection_mode`: release (one-second handoff), idle (`idle_disconnect_seconds`, default 40, one bounded recovery of a dropped link) or always; persistent-connection controllers always hold the link
 - Registers conservative BLE connection parameters (30-50ms intervals)
 - Supports preferred adapter selection for multi-proxy setups

@@ -89,16 +89,17 @@ before reservations can cancel newer work, and before committing movement.
 
 ## Checked actions and STOP
 
-`set_alarm`, `set_position` and `set_positions` capture each selected bed's STOP
-state before their checks. A STOP on any selected bed or side while the action
+`set_alarm` (except the Customatic Z-Series and Symphony alarm paths, which run
+their own checks), `set_position` and `set_positions` capture each selected
+bed's STOP state before their checks. A STOP on any selected bed or side while the action
 still connects or checks ends it with nothing written or moved; a STOP after
 the first write skips the remaining targets. Right before each `set_alarm`
 write, the selection must still resolve to the same beds and pairing, and every
 other prepared side must still be on the connection it was checked on (a
 sequential pair's planned handover is accepted). A position seek plans each
-axis again on the live controller and needs the same axis and range. A failed
-check raises the translated `bed_changed` error and stops further writes;
-earlier targets stay written. `goto_preset`, `save_preset`, `rename`, `sync_clock` and
+axis again on the live controller: a different plan raises `bed_changed`, and a
+motor or target the controller rejects raises its own validation error. A
+failed check stops further writes; earlier targets stay written. `goto_preset`, `save_preset`, `rename`, `sync_clock` and
 `hold_control` run their check again on the controller that writes, when it is
 not the one preflight checked.
 

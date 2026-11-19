@@ -53,7 +53,7 @@ once Home Assistant runs 2026.11.
 ## After you upgrade, check these
 
 1. **Repairs.** Open **Settings > System > Repairs**. When an entity changed
-   type and an automation or script still names its old entity ID, the bed
+   type and an automation or script still references the old entity, the bed
    gets a repair that lists them. Templates and dashboards are not checked,
    so look through those yourself. Some beds get one question about the app
    they use.
@@ -182,10 +182,10 @@ Every other saved setting, bed type and ID loads unchanged.
   takes the old object ID where it is free (`switch.bed_under_bed_lights`
   becomes `light.bed_under_bed_lights`) and the name, icon, area, labels,
   categories, aliases and disabled or hidden state you gave the old one. When
-  an automation or script still names the old entity ID, a repair lists it; it
-  is checked again after every restart and goes away once none does.
-  Templates and dashboards are not checked. A per-bed massage or light timer select that became the shared
-  one keeps its entity ID and only changes its options; its line is listed once
+  an automation or script still references the old entity, a repair lists it;
+  it is checked again after every restart and goes away once none does.
+  Templates and dashboards are not checked. A per-bed massage or light timer
+  select that became the shared one keeps its entity ID and only changes its options; its line is listed once
   and stays until you dismiss the repair.
 - **Raw state sensors are disabled by default** on new installs, and so are
   app extras: music, fan, heating, aromatherapy, Bluetooth, reset,
@@ -377,6 +377,11 @@ accepted.
 | `recall_position`, `set_position_reference` | `estimate_recall_position`, `estimate_set_reference` |
 | `confirm_position_unchanged`, `mark_position_unknown` | `estimate_confirm_unchanged`, `estimate_mark_unknown` |
 
+The Richmat sleep receiver (RUF Betten and others), added in beta 6, shows
+in bed and body movement as binary sensors with the same object ID, and its
+intervention selects are the **Left snore intervention** and **Right snore
+intervention** switches.
+
 Galaxy and MLILY (`operation: sync`) and SonicSleep (`operation: sync_clock`)
 set their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
 the betas changed their entities too (clock buttons, timer selects, switches
@@ -430,14 +435,16 @@ release notes list them.
 - **Stop wins while an action is still checking.** A Stop on any selected bed
   while `set_alarm`, `set_position` or `set_positions` is still connecting to
   or checking its beds ends the action: nothing is written or moved. In 4.x the
-  first beds could still be written or moved afterwards.
+  first beds could still be written or moved afterwards. Customatic Z-Series
+  and Symphony alarms use their own checks instead.
 - **Actions write only what they checked.** Right before each write,
   `set_alarm` checks that the selection still resolves to the same beds,
-  pairing and connections it checked; `set_position` and `set_positions` plan
-  each motor again on the connected bed and need the same motor and range. If
-  that fails, the action stops with "The bed changed while the action was
-  being checked. Try again." and writes nothing more; beds already written
-  stay written. Preset, rename, clock and hold actions check the bed again
+  pairing and connections it checked (again except Customatic Z-Series and
+  Symphony). `set_position` and `set_positions` plan each motor again on the
+  connected bed; a plan that no longer matches the check stops with "The bed
+  changed while the action was being checked. Try again.", and a motor or
+  target the bed no longer accepts shows the bed's own reason. Either way
+  nothing more is written; beds already written stay written. Preset, rename, clock and hold actions check the bed again
   when it connects and show its own reason if it no longer accepts the
   request.
 - **Combined beds** connect and check both sides before an alarm is written to
@@ -459,8 +466,10 @@ release notes list them.
   own.
   If the reconnected link drops too, or after that time, the next command
   reconnects. Choose **Always stay connected** if a bed must stay connected.
-  **Always stay connected** and **Release right after each command** reconnect
-  on the next command, as before.
+  With **Always stay connected** and **Release right after each command**, a
+  dropped link reconnects on the next command, as before, except on beds that
+  reconnect on their own while they monitor (Good Vibe sleep monitoring, Hush
+  sleep sensors with live data).
 - **Bed occupancy sensors** (Sleep Number) update only while the bed is
   connected. In 4.x their 30-second poll connected the bed and kept it
   connected; it no longer connects or extends **Seconds to stay connected**.
@@ -523,7 +532,6 @@ described under [One shape per control](#one-shape-per-control).
 | eShine OKIN | Alarm refresh and "Sync bed clock" buttons | Clock: the **Set bed clock** action |
 | FSM Relax | 11 count, acknowledgement, calibration, information and raw motor sensors | |
 | FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
-| Richmat sleep receiver (RUF Betten and others) | | Left and right occupancy and movement text sensors: **Left/Right in bed** and **Left/Right body movement** binary sensors, with the same object ID. Left and right intervention selects: **Left snore intervention** and **Right snore intervention** switches |
 | GM Control sleep module | Time and Query part buttons (the clock is set on every connection; the `gmmotor` action still queries the part) | Start and stop live data buttons: **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
 | Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save: the **Save …** button. Massage 10, 20 and 30 minute buttons and the "Massage timer" select: **Massage: Timer** select (with Off where the app has a countdown off; the select keeps its entity ID). "Light duration (seconds)" select: **Light Timer** select (same entity ID). Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both |
 | Good Vibe, Casper and Hush sleep sensors | | In-bed, snoring and movement text sensors: **In bed**, **Snoring** and **Body movement** binary sensors, with the same object ID; heart and breathing rate sensors take the shared names and keep their IDs |
