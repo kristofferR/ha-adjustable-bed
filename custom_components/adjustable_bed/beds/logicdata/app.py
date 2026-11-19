@@ -284,7 +284,8 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
         return (
             ControllerStateBinarySensorSpec(
                 key="under_bed_lights",
-                translation_key="under_bed_lights",
+                # The light the bed reports, beside the opt-in assumed light entity.
+                translation_key="under_bed_light_state",
                 state_key=UNDER_BED_LIGHTS_ON,
                 icon="mdi:lightbulb",
                 entity_registry_enabled_default=True,

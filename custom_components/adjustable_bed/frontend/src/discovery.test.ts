@@ -485,7 +485,7 @@ test("Nectar Move Reading and save-response state are discoverable in their own 
 
 test("read-only light state is visible independently of light controls", () => {
   const hass = hassWith([
-    entry("binary_sensor.bed_light", "under_bed_lights"),
+    entry("binary_sensor.bed_light", "under_bed_light_state"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.lights.state).toBe("binary_sensor.bed_light");

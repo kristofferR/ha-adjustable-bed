@@ -1248,7 +1248,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             specs.append(
                 ControllerStateSensorSpec(
                     f"doublesleep_{side}_report",
-                    "doublesleep_report",
+                    f"doublesleep_{side}_report",
                     _field_key(f"{side}_report_status"),
                     "mdi:chart-line",
                     attribute_keys=tuple(
