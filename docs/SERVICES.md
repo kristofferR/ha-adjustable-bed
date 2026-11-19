@@ -448,7 +448,7 @@ data:
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
-| L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed) |
+| L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
@@ -1054,16 +1054,16 @@ write. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).
 | `aroma_times` | Aromatherapy times | Three whole numbers: 1 to 60, 1 to 60 and 1 to 12. |
 | `fan` | Fan | `head` or `foot`. |
 | `intensity` | Intensity (%) | 0 to 100 in steps of 20. |
-| `duration` | Fan duration | Duration choice 0 through 6. The foot fan sends only intensity; it does not send a duration. |
-| `schedule` | Movement program | For `motor_program`: 12 `records`, `rest`, `count`, `radio` (`rf` or `ble`), `code` (`new` or `old`), `identifier` 1 to 9 and four `motors` (1 to 4). |
+| `duration` | Fan duration | Duration choice 0 through 6, required for either fan. Only the head fan uses it; the foot fan sends only intensity. |
+| `schedule` | Movement program | For `motor_program`: 12 `records`, each `[order, run, pause]` with `order` 1 to 12; `rest` and `count`; `radio` (`rf` or `ble`), `code` (`new` or `old`), `identifier` 1 to 9 and four `motors` (1 to 4). `run`, `pause`, `rest` and `count` are 0 to 65535. |
 | `confirm` | Confirm programming or saving | Required for `motor_program` (RMCS layout), `movement_test` (TEST layout), and a control's long press or save. |
 | `control` | Control | The layout's control number, for `control`. |
 | `mode` | Control mode | The layout's control mode, 0 to 2 (default 0). |
 | `long` | Long press | Send the control's long press. |
-| `held` | Continuous movement | Hold the control instead of pressing it once. |
+| `held` | Continuous movement | Hold the control. Controls that repeat by design, such as motor movement, also run for `duration_ms` without it. |
 | `head` | Head selection | The app's head selection for `control` (default on). |
 | `motor` | Motor | The app's motor selector for `control`, 3 to 5 (default 3). |
-| `duration_ms` | Movement duration (milliseconds) | A held control's duration, 1 to 60000 (default 1000). |
+| `duration_ms` | Movement duration (milliseconds) | How long a held or repeating movement control runs, 1 to 60000 (default 1000). |
 
 The [L&P Adjustable Base guide](beds/richmat.md#lp-adjustable-base) lists what
 each layout accepts. Set wake-up alarms with [`set_alarm`](#set_alarm).
