@@ -531,3 +531,37 @@ async def test_svane_release_stop_is_not_the_commands_frame() -> None:
         cancel.clear()
         await controller._write(HEAD, UP, b"\x01\x00")
         assert command.frames_written == 1
+
+
+@pytest.mark.parametrize("cancelled", [True, False])
+async def test_sent_state_helper_after_a_reconnect_publishes_only_the_commands_frame(
+    hass, cancelled
+) -> None:
+    from custom_components.adjustable_bed.state_keys import LIGHT_LEVEL
+
+    async with beds(hass, 1, connected=False) as made:
+        bed = made.items[0]
+        _settings(bed)
+        del bed.async_ensure_connected
+
+        async def connect_link(reset_timer: bool = True) -> bool:
+            await bed.fake_connect()
+            await bed.controller._write_gatt_with_retry(  # type: ignore[union-attr]
+                "0000fff1-0000-1000-8000-00805f9b34fb", b"startup", repeat_delay_ms=0
+            )
+            return True
+
+        bed._async_connect_link_locked = connect_link  # type: ignore[method-assign]
+        if cancelled:
+            bed.before_write = _cancel_while_writing  # type: ignore[attr-defined]
+
+        async def set_level(controller: SettingsController) -> None:
+            # A select or number that publishes the value it commanded.
+            await controller._write("level 5")
+            controller.forward_sent_state_updates(LIGHT_LEVEL(5))
+
+        bed.controller_state[LIGHT_LEVEL] = 3
+        with virtual_clock():
+            await bed.async_execute_controller_command(set_level, cancel_running=False)
+        # Nothing of the command reached the bed: the previous value stays.
+        assert bed.controller_state.get(LIGHT_LEVEL) == (3 if cancelled else 5)
