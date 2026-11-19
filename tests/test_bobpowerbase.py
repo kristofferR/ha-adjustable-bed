@@ -213,6 +213,8 @@ async def test_massage_timer_controls_are_one_select_that_sends_no_release(hass,
         c, MASSAGE_TIMER_DESCRIPTION, obj.massage_timer_options, has_off=False
     )
     assert timer.options == ["10 min", "20 min", "30 min"]
+    # Nothing sent yet: unknown.
+    assert timer.current_option is None
     with patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)), patch.object(c, "_async_refresh_controller_auth", AsyncMock()):
         await timer.async_select_option("10 min")
     assert [call.args[1] for call in c.client.write_gatt_char.await_args_list] == [codec.function(0x5F)]

@@ -104,9 +104,6 @@ _TEXT_LABELS: Final = {
 }
 # Cycled steps: DT and fan 00 stops the zone, other values are app steps 1-3.
 _STEP_ZONES: Final = {
-    "mass_head_dt": "Head massage",
-    "mass_foot_dt": "Foot massage",
-    "mass_head_lv": "Massage level",
     "mode_fans_top_dt": "Top fan",
     "mode_fans_middle_dt": "Middle fan",
     "mode_fans_bottom_dt": "Bottom fan",
@@ -288,9 +285,7 @@ class SutaController(BedController):
         if key in _STEP_ZONES:
             steps = self.profile.commands.get(key, SHARED.get(key))
             index = steps.suffixes.index(suffix) if steps is not None else 0
-            return f"{_STEP_ZONES[key]} {index}" if key == "mass_head_lv" else (
-                f"{_STEP_ZONES[key]} off" if index == 0 else f"{_STEP_ZONES[key]} {index}"
-            )
+            return f"{_STEP_ZONES[key]} off" if index == 0 else f"{_STEP_ZONES[key]} {index}"
         if key in ("ctrl_two_up", "ctrl_two_down"):
             # TWO drives back and foot together; alone it is the panel's only motion.
             direction = "up" if key.endswith("_up") else "down"
@@ -305,8 +300,6 @@ class SutaController(BedController):
             return f"{side} {_BINARY_LABELS[key]}"
         if key.startswith("massage_timer_"):
             return f"{side} massage timer {key.removeprefix('massage_timer_')} min"
-        if key.startswith("massage_strength_"):
-            return f"{side} massage strength {key.removeprefix('massage_strength_')}"
         if key.startswith("adaptive_"):
             _, mode, stiffness = key.split("_")
             return f"{side} adaptive mode {_ADAPTIVE_MODES.index(int(mode)) + 1}: {stiffness}"
@@ -386,8 +379,6 @@ class SutaController(BedController):
         return ()
 
     def controller_button_available(self, key: str) -> bool:
-        if key.startswith("suta_mass_head_lv"):
-            return any(self._cycles.get(zone, "00") != "00" for zone in ("mass_head_dt", "mass_foot_dt"))
         for action in BINARY.values():
             prefix = "suta_" + action.key + "_"
             if key.startswith(prefix) and action.key.startswith("adaptive_") and not action.key.endswith("_soft"):
@@ -788,16 +779,22 @@ class SutaController(BedController):
         self.validate_request(request)
         link, cancel = self._live(), self._coordinator.cancel_command
         if request.action in BINARY and self.family in BINARY[request.action].controllers:
-            sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
+            strength = (
+                (MASSAGE_STRENGTH[request.logical_side](request.value),)
+                if request.action.startswith("massage_strength_") and request.logical_side in (1, 2)
+                else ()
+            )
+            # A strength shows as far as its write reached the bed, also when cancelled after it.
+            with self.sent_state(*strength):
+                sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
             if sent is not None and request.action == "automatic_adjustment_switch" and self._link is link:
                 # The bed does not echo this write; like the app's checkbox, show the sent value
                 # until the next full-state report replaces it.
                 self.observations[f"side_{request.logical_side}_automatic_checked"] = request.value == 1
                 self._publish()
-            elif sent is not None and request.action.startswith("massage_strength_") and self._link is link:
-                # Shown as sent until the bed's next full-state report replaces it.
+            elif sent is not None and strength and self._link is link:
+                # Kept as sent until the bed's next full-state report replaces it.
                 self.observations[f"side_{request.logical_side}_strength"] = request.value
-                self._publish()
             return
         if request.action == "snore_cycle":
             # Direct BLE consequence of the excluded phone detector. This
@@ -824,6 +821,8 @@ class SutaController(BedController):
             with self.sent_state(*self._massage_step(request.action, request.suffix)):
                 for index, zone in enumerate(zones):
                     if await pause(max(0, started + (0.1 if index == 0 else 0.3) - monotonic()), cancel):
+                        # The zones not reached keep their old level: only partly sent.
+                        note_frame_skipped()
                         return
                     level = self.commands[zone.replace("_dt", "_lv")]
                     await self._send(link, codec.text(level.text + request.suffix), cancel)

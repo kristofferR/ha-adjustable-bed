@@ -502,11 +502,57 @@ async def test_moon_massage_strength_shows_the_sent_level_until_the_bed_reports(
     moon_, c = make("SUTA-MOON")
     await moon_.start_notify()
     left = next(s for s in moon_.controller_number_specs if s.key == "suta_left_massage_strength")
+    c.handle_controller_state_updates.reset_mock()
     await left.set_fn(moon_, 3)
     states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
+    assert states == {bed.MASSAGE_STRENGTH[1]: 3}
+    # Other state published before the next report keeps the sent level.
+    moon_._publish()
+    states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
     assert states[bed.MASSAGE_STRENGTH[1]] == 3 and states[bed.MASSAGE_STRENGTH[2]] is None
-    sender, callback = c.client.start_notify.call_args.args
     # The bed's full-state report replaces it: both sides at strength 2.
+    sender, callback = c.client.start_notify.call_args.args
     callback(sender, bytearray.fromhex("5359970d000800020a0000020a01") + bytes((0, 0, 0)))
     states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
     assert states[bed.MASSAGE_STRENGTH[1]] == 2 and states[bed.MASSAGE_STRENGTH[2]] == 2
+
+
+async def test_overall_level_cut_off_between_zones_is_unknown(clock):
+    """Stop between the head and foot writes leaves the overall level unknown."""
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+    )
+
+    controller, c = make()
+    await controller.start_notify()
+    await controller.set_massage_intensity("head", 1)
+    await controller.set_massage_intensity("foot", 1)
+    c.handle_controller_state_updates.reset_mock()
+    cancel = c.cancel_command
+
+    async def write(*_args, **_kwargs):
+        cancel.set()  # STOP arrives after the head zone's level went out.
+
+    c.client.write_gatt_char.side_effect = write
+    context = CommandContext(
+        scheduler_token=object(),
+        cancel_event=cancel,
+        admitted_stop_epoch=0,
+        intent_id="overall-level",
+        kind=CommandKind.COMMAND,
+        group_id=None,
+        resources=frozenset({"*"}),
+    )
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        await controller.set_massage_intensity("all", 2)
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+    assert context.frames_written == 1
+    assert len(written(c)) >= 1
+    states = {
+        u.key: u.value for call in c.handle_controller_state_updates.call_args_list for u in call.args
+    }
+    assert states[massage_intensity("all")] is None

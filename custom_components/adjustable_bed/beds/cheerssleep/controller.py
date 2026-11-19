@@ -671,9 +671,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                     "Refresh bed state",
                     lambda ctrl: require_controller(ctrl, CheersSleepController).refresh_state(),
                     translation_key="cheerssleep_refresh",
-                    # Connect queries one side; a split bed's other side gets
-                    # light feedback from this button, enabled where needed.
-                    diagnostic=True,
+                    # Connect queries one side, so a split bed's other side
+                    # only gets light feedback from this button.
+                    diagnostic=not (self.model.split and not self.model.rgb),
                 )
             )
         if self.model.combined and "all" not in self.model.axes:

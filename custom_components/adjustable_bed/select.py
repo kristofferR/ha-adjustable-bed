@@ -452,13 +452,16 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        """Return the last published timer, else "Off" (or unknown without an Off choice)."""
-        minutes = self._coordinator.controller_state.get(
-            sided(
-                MASSAGE_TIMER_MINUTES,
-                massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
-            )
+        """Return the last published timer, unknown until the controller publishes one."""
+        key = sided(
+            MASSAGE_TIMER_MINUTES,
+            massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
         )
+        state = self._coordinator.controller_state
+        if key not in state:
+            # Nothing sent or reported yet.
+            return None
+        minutes = state[key]
         formatted = f"{minutes} min"
         if minutes and formatted in self._attr_options:
             return formatted
