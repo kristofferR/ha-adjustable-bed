@@ -142,7 +142,7 @@ async def test_actual_feedback_light_catalog_and_toggle(
         writes = controller.write_command
         writes.reset_mock()
         assert hass.states.get(light_id).state == "unknown"
-        with raises_key("light_state_unknown", ServiceValidationError):
+        with raises_key("light_toggle_state_unknown", ServiceValidationError):
             await hass.services.async_call(
                 "light", "toggle", {"entity_id": light_id}, blocking=True
             )
@@ -179,7 +179,7 @@ async def test_actual_feedback_light_catalog_and_toggle(
         coordinator._notify_connection_state_change(False)
         assert hass.states.get(light_id).state == "unknown"
         writes.reset_mock()
-        with raises_key("light_state_unknown", ServiceValidationError):
+        with raises_key("light_toggle_state_unknown", ServiceValidationError):
             await hass.services.async_call(
                 "light", "toggle", {"entity_id": light_id}, blocking=True
             )

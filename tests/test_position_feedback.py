@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.position_seek import PositionFeedbackError, PositionSeekPolicy
 from tests.coordinator_patches import patch_coordinator_global
+from tests.error_helpers import raises_key
 
 from .conftest import make_controller_mock
 
@@ -52,7 +53,7 @@ async def test_feedback_loss_stops_before_reporting_failure(coordinator, failure
 
     coordinator.controller.read_positions = AsyncMock(side_effect=read)
     up, down, stop = AsyncMock(), AsyncMock(), AsyncMock()
-    with pytest.raises(PositionFeedbackError, match="Lost fresh position feedback"):
+    with raises_key("position_feedback_lost", PositionFeedbackError):
         await coordinator.async_seek_position("back", 40, up, down, stop)
 
     up.assert_awaited_once()
@@ -70,7 +71,7 @@ async def test_stale_initial_feedback_cannot_choose_direction_or_skip(coordinato
     coordinator.controller.read_positions = AsyncMock(side_effect=TimeoutError)
     up, down, stop = AsyncMock(), AsyncMock(), AsyncMock()
 
-    with pytest.raises(PositionFeedbackError, match="no fresh position feedback"):
+    with raises_key("position_feedback_missing", PositionFeedbackError):
         await coordinator.async_seek_position("back", 40, up, down, stop)
 
     up.assert_not_awaited()
@@ -235,7 +236,7 @@ async def test_ergomotion_seek_uses_notifications_and_stops_if_they_expire(
     up, down, stop = AsyncMock(side_effect=move), AsyncMock(), AsyncMock()
     with patch("custom_components.adjustable_bed.position_seek.asyncio.sleep", new=AsyncMock()):
         if lose_feedback:
-            with pytest.raises(PositionFeedbackError, match="Lost fresh position feedback"):
+            with raises_key("position_feedback_lost", PositionFeedbackError):
                 await coordinator.async_seek_position("back", 40, up, down, stop)
         else:
             await coordinator.async_seek_position("back", 40, up, down, stop)

@@ -19,8 +19,11 @@ EXCEPTIONS = json.loads((PACKAGE / "strings.json").read_text())["exceptions"]
 SHOWN = frozenset(
     {"ServiceValidationError", "HomeAssistantError", "ConfigEntryNotReady", "ConfigEntryError"}
 )
-# The shared builders in errors.py, whose first argument is the key.
-BUILDERS = frozenset({"invalid", "_invalid", "failed", "not_ready", "setup_stopped"})
+# The shared builders in errors.py and the error classes built on keyed(): the
+# first argument is the key.
+BUILDERS = frozenset(
+    {"invalid", "_invalid", "failed", "not_ready", "setup_stopped", "keyed", "PositionFeedbackError"}
+)
 
 
 def _calls() -> list[tuple[str, ast.Call, str]]:

@@ -9840,7 +9840,7 @@
       "message": "Choose a name that no other bed uses."
     },
     "needs_both_connected": {
-      "message": "This action needs both sides of the combined bed connected at the same time, but the Bluetooth adapter has room for only one of them. Free a Bluetooth connection or connect one side through another adapter or proxy, then reload the integration and try again."
+      "message": "This action needs every selected bed and side connected at the same time, but the Bluetooth adapter has room for only one at a time. Free a Bluetooth connection or connect one of them through another adapter or proxy, then reload the integration and try again."
     },
     "long_action_needs_connection": {
       "message": "This action keeps running on the bed after it starts, so the combined bed must stay connected, but the Bluetooth adapter has room for only one side at a time. Free a Bluetooth connection or connect one side through another adapter or proxy, then reload the integration and try again."

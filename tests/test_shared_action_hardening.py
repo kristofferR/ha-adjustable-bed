@@ -23,7 +23,10 @@ from custom_components.adjustable_bed import services
 from custom_components.adjustable_bed.alarm import AlarmCapability, AlarmRequest
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+from custom_components.adjustable_bed.paired_coordinator import (
+    PairedBedCoordinator,
+    PairedSideError,
+)
 from custom_components.adjustable_bed.paired_devices import async_register_children
 from tests.hold_lease_wire import virtual_clock
 from tests.test_controller_contract import _ContractController
@@ -308,7 +311,7 @@ async def test_failed_read_on_a_concurrent_pair_stops_no_side(hass) -> None:
         assert left.writes == right.writes == []
 
 
-async def test_write_error_on_a_combined_bed_keeps_its_translation(hass) -> None:
+async def test_two_write_errors_on_a_combined_bed_name_both(hass) -> None:
     async with beds(hass, capability=AlarmCapability(), topology="concurrent") as made:
         left, right = made.items
 
@@ -320,9 +323,12 @@ async def test_write_error_on_a_combined_bed_keeps_its_translation(hass) -> None
 
         left._controller.configure_alarm = plain  # type: ignore[union-attr,method-assign]
         right._controller.configure_alarm = refuse  # type: ignore[union-attr,method-assign]
-        with virtual_clock(), pytest.raises(ServiceValidationError) as raised:
+        with virtual_clock(), pytest.raises(PairedSideError) as raised:
             await set_alarm(hass, [(made.pair, "both")])
-        assert raised.value.translation_key == "alarm_refresh_needed"
+        # Two failures keep the combined error, which names each side's reason.
+        assert raised.value.translation_key == "pair_side_failed"
+        assert raised.value.side_errors["right"].translation_key == "alarm_refresh_needed"
+        assert "left link failed" in str(raised.value)
 
 
 async def test_checking_bed_that_interrupts_movement_still_writes_a_paired_side(hass) -> None:
