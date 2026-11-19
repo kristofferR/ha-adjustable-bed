@@ -25,9 +25,10 @@ from ...profiles.casper import (
     ProductRow,
     light_duration,
 )
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button, unique_buttons
+from ..catalog_buttons import Kind, catalog_button, massage_timer_minutes, unique_buttons
 from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
 from ..richmat.labels import function_label
 from .protocol import (
@@ -174,6 +175,42 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
             for i in group
         }
 
+    @property
+    def massage_timer_actions(self) -> dict[int, str]:
+        """The product's fixed-duration massage timer actions, by their minutes."""
+        return {
+            minutes: name
+            for name in self.actions
+            if (minutes := massage_timer_minutes(name)) is not None
+        }
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows a product's massage timers.
+        return super().auto_enable_massage or bool(self.massage_timer_actions)
+
+    # Each timer action sets its duration, so they are one timer select.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self.massage_timer_actions)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self.massage_timer_actions)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No timer action turns the timer off.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        action = self.massage_timer_actions.get(minutes)
+        if action is None:
+            raise ValueError("Choose a massage timer this product offers")
+        # The bed reports no timer.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.async_perform_casper_base_action(action)
+
     def _sides(self) -> tuple[int, ...]:
         side = self.command_side
         if side is None:
@@ -274,8 +311,8 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
         for name, (_short, long) in self.actions.items():
             if name.endswith(("Up", "Down")) and not name.startswith("Music"):
                 continue
-            # The shared Flat and memory buttons already send these.
-            if name == "MotorReset" or name in _GENERIC_MEMORY:
+            # The shared Flat, memory and timer controls already send these.
+            if name == "MotorReset" or name in _GENERIC_MEMORY or name in self.massage_timer_actions.values():
                 continue
             for save in (False, True) if long is not None else (False,):
                 key = name.lower() + ("_save" if save else "")

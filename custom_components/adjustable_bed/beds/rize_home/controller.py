@@ -15,11 +15,12 @@ from typing import TYPE_CHECKING, Final
 from bleak import BleakClient
 from bleak.exc import BleakError
 
-from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles import rize_home as p
 from ..base import BedController, ProfileExecution
+from ..catalog_buttons import EXTRA_KEY, save_button, save_name
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -257,23 +258,22 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                 "rize_home_reset_memories",
                 "Reset saved presets",
                 lambda c: _rize(c).action("reset_memories"),
-                translation_key="rize_home_reset_memories",
+                translation_key=EXTRA_KEY,
+                translation_placeholders={"action": "Reset saved presets"},
                 scheduler_resource="*",
                 requires_confirmation=True,
                 card=CARD_UTILITY,
+                # Maintenance: there to enable, not on every dashboard.
+                entity_registry_enabled_default=False,
             ),
         ]
         for preset in self.profile.programmable:
             specs.append(
-                ControllerButtonSpec(
+                save_button(
                     f"rize_home_save_{preset}",
-                    f"Save {preset}",
+                    save_name(preset),
                     lambda c, a=preset: _rize(c).program_preset(a),
-                    translation_key=f"rize_home_save_{preset}",
                     scheduler_resource="*",
-                    # Saving overwrites the stored preset, so the card asks first.
-                    requires_confirmation=True,
-                    card=CARD_PRESET_SAVE,
                 )
             )
         # The common voice dispatcher reaches controls absent from a product's

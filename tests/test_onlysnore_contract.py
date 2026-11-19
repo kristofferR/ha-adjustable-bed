@@ -58,7 +58,8 @@ def test_actual_app_entities_match_appended_card_entries():
     fixture = json.loads((ROOT / "tests/fixtures/card_placements.json").read_text())
     actual = placements(controller_entities(controllers()))
     app = {key: value for key, value in actual.items() if ":onlysnore_" in key}
-    # The three alarm-enabled binary sensors are attributes of the alarm times.
-    assert len(app) == 21
+    # The three alarm-enabled binary sensors are attributes of the alarm times;
+    # saves, test levels and the intervention stop use the shared button shapes.
+    assert len(app) == 13
     assert {key: value for key, value in fixture.items() if ":onlysnore_" in key} == app
     assert all(fixture[key] == value for key, value in actual.items())

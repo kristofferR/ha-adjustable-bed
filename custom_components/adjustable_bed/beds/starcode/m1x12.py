@@ -35,6 +35,7 @@ from ...execution import ExecutionCapabilities
 from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import as_save
 from ..entity_specs import (
     POSITION_UNIT_PERCENT,
     ControllerButtonSpec,
@@ -414,9 +415,9 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
         # MemoryType 8 has no app caller. The bed reports its state itself, so
         # the status query is a diagnostic fallback.
         buttons = (
-            ("save_tv", "Save TV"),
-            ("save_zero_g", "Save zero gravity"),
-            ("save_lounge", "Save reading/lounge"),
+            ("save_tv", "Save TV position"),
+            ("save_zero_g", "Save zero gravity position"),
+            ("save_lounge", "Save reading or lounge position"),
             ("reset", "Reset saved positions"),
             ("light_mode_0", "Light mode 0"),
             ("light_mode_1", "Light mode 1"),
@@ -434,6 +435,10 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 diagnostic=key == "query",
             )
             for key, name in buttons
+        )
+        one_shot = tuple(
+            as_save(spec) if spec.key.startswith("starcode_m1x12_save_") else spec
+            for spec in one_shot
         )
         held = (
             ("massage_wave_up", "Increase massage wave"),

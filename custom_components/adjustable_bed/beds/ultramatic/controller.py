@@ -21,6 +21,7 @@ from ...profiles import ultramatic as app
 from ...profiles.okin_nframe import OkinNFrameProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import save_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -644,14 +645,11 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
             ),
             # M1/M2 saves are the generic "Save to Memory" buttons (program_memory).
             *(
-                ControllerButtonSpec(
+                save_button(
                     f"ultramatic_save_{preset.lower()}",
                     label,
                     lambda c, p=preset: require_controller(c, UltramaticController).save_preset(p),
-                    translation_key=f"ultramatic_save_{preset.lower()}",
                     scheduler_resource="*",
-                    requires_confirmation=True,
-                    card=CARD_PRESET_SAVE,
                 )
                 for preset, label in (
                     ("ZG", "Save zero gravity position"),

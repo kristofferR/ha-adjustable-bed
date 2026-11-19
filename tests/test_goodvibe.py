@@ -408,9 +408,11 @@ async def test_light_menu_ranges_are_exact_profile_choices(coordinator, model):
     )
     obj = controller(coordinator, profile)
     expected = (0, 1800, 3600, 14400, 28800) if model == "RNRN" else (0, 300, 600, 900)
-    assert next(
-        s for s in obj.controller_select_specs if s.key == "goodvibe_light_duration"
-    ).options == tuple(map(str, expected))
+    assert obj.light_timer_options == (
+        ["Always On", "30 min", "1 hour", "4 hours", "8 hours"]
+        if model == "RNRN"
+        else ["Always On", "5 min", "10 min", "15 min"]
+    )
     for seconds in expected:
         obj.validate_goodvibe_request(Request("light_duration", seconds=seconds))
     with pytest.raises(ValueError):
@@ -557,10 +559,10 @@ async def test_type_two_time_response_chain_is_link_owned(coordinator):
 async def test_inline_countdown_and_light_close_have_public_controller_paths(coordinator, legacy):
     key = next(k for k, v in PRODUCTS.items() if v.massage_timer and v.light)
     obj = controller(coordinator, key, legacy)
-    spec = next(s for s in obj.controller_select_specs if s.key == "goodvibe_massage_timer")
-    assert spec.options == ("0", "10", "20", "30")
+    assert obj.supports_massage_timer and obj.massage_timer_can_turn_off
+    assert obj.massage_timer_options == [10, 20, 30]
     for value, code in ((0, 94), (10, 95), (20, 99), (30, 97)):
-        await spec.select_fn(obj, str(value))
+        await obj.set_massage_timer(value)
         assert writes(coordinator)[-1] == (
             bytes([code]) if legacy else bytes([110, 1, 0, code, (111 + code) & 255])
         )
@@ -659,3 +661,62 @@ async def test_non_json_numeric_constants_cannot_replace_sleep_state(coordinator
     obj._notification(obj._link, obj._link.rx, header + raw)
     assert obj.choices.realtime["L"].heart == "60"
     assert obj._rejection is not None
+
+
+async def test_massage_timer_controls_are_one_select_sending_the_same_frames(coordinator, monkeypatch):
+    """Fixed-duration timer controls become the shared timer select; each press is unchanged."""
+    keys = [
+        k
+        for k in PRODUCTS
+        if not PRODUCTS[k].massage_timer and controller(coordinator, k)._massage_timer_details
+    ]
+    assert keys
+    for key in keys:
+        obj = controller(coordinator, key)
+        details = obj._massage_timer_details
+        assert obj.supports_massage_timer and obj.auto_enable_massage
+        assert obj.massage_timer_options == sorted(details)
+        assert not obj.massage_timer_can_turn_off
+        assert not {"goodvibe_" + d for d in details.values()} & {
+            s.key for s in obj.controller_button_specs
+        }
+        for minutes, detail in details.items():
+            sent = []
+            for run in (
+                lambda o, d=detail: bed._press(o, detail=d),
+                lambda o, m=minutes: o.set_massage_timer(m),
+            ):
+                coordinator.client.write_gatt_char.reset_mock()
+                fresh = controller(coordinator, key)
+                monkeypatch.setattr(fresh, "_delay", AsyncMock(return_value=True))
+                await run(fresh)
+                sent.append(writes(coordinator))
+            assert sent[0] == sent[1] != []
+        with pytest.raises(ValueError):
+            await obj.set_massage_timer(15)
+
+
+async def test_sync_on_and_off_are_one_switch_sending_the_same_frames(coordinator, monkeypatch):
+    keys = [k for k in PRODUCTS if controller(coordinator, k)._sync_details]
+    assert keys
+    for key in keys:
+        obj = controller(coordinator, key)
+        assert obj._sync_details is not None
+        on, off = obj._sync_details
+        assert not {"goodvibe_" + on, "goodvibe_" + off} & {
+            s.key for s in obj.controller_button_specs
+        }
+        (switch,) = obj.controller_switch_specs
+        assert switch.key == "goodvibe_sync" and not switch.entity_registry_enabled_default
+        for enabled, detail in ((True, on), (False, off)):
+            sent = []
+            for run in (
+                lambda o, d=detail: bed._press(o, detail=d),
+                lambda o, e=enabled, s=switch: s.set_fn(o, e),
+            ):
+                coordinator.client.write_gatt_char.reset_mock()
+                fresh = controller(coordinator, key)
+                monkeypatch.setattr(fresh, "_delay", AsyncMock(return_value=True))
+                await run(fresh)
+                sent.append(writes(coordinator))
+            assert sent[0] == sent[1] != []

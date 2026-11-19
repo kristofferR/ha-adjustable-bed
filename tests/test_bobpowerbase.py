@@ -190,7 +190,7 @@ def test_scan_candidates_require_explicit_app_product(name):
     assert "bobpowerbase" in {found.bed_type, *(found.ambiguous_types or ())}
 
 
-@pytest.mark.parametrize(("key", "code"), (("reset", 0x31), ("massage_head", 0x4C), ("massage_10", 0x5F)))
+@pytest.mark.parametrize(("key", "code"), (("reset", 0x31), ("massage_head", 0x4C)))
 async def test_actual_one_shot_entities_do_not_send_release(hass, fake_time, key, code):
     c = runtime(hass)
     spec = next(s for s in c.controller.controller_button_specs if s.key == "goodvibe_" + key)
@@ -198,6 +198,28 @@ async def test_actual_one_shot_entities_do_not_send_release(hass, fake_time, key
     with patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)), patch.object(c, "_async_refresh_controller_auth", AsyncMock()):
         await button.async_press()
     assert [call.args[1] for call in c.client.write_gatt_char.await_args_list] == [codec.function(code)]
+
+
+async def test_massage_timer_controls_are_one_select_that_sends_no_release(hass, fake_time):
+    from custom_components.adjustable_bed.select import (
+        MASSAGE_TIMER_DESCRIPTION,
+        AdjustableBedMassageTimerSelect,
+    )
+
+    c = runtime(hass)
+    obj = c.controller
+    assert not any("timer" in s.key for s in obj.controller_button_specs)
+    assert obj.massage_timer_options == [10, 20, 30] and not obj.massage_timer_can_turn_off
+    timer = AdjustableBedMassageTimerSelect(
+        c, MASSAGE_TIMER_DESCRIPTION, obj.massage_timer_options, has_off=False
+    )
+    assert timer.options == ["10 min", "20 min", "30 min"]
+    # Nothing sent yet: unknown.
+    assert timer.current_option is None
+    with patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)), patch.object(c, "_async_refresh_controller_auth", AsyncMock()):
+        await timer.async_select_option("10 min")
+    assert [call.args[1] for call in c.client.write_gatt_char.await_args_list] == [codec.function(0x5F)]
+    assert timer.current_option == "10 min"
 
 
 async def test_finite_hold_elapsed_deadline_does_not_backfill_latency(hass, fake_time):
@@ -307,7 +329,7 @@ async def test_light_capability_range_color_and_connection_scoped_state(hass, fa
         Request("light_duration", seconds=0).validate(obj)
     obj._normal.feed(bytes.fromhex("6e0e00037f"))
     assert obj.menu_available("light")
-    assert next(s for s in obj.controller_select_specs if s.key == "goodvibe_light_duration").options == tuple(map(str, range(0, 901, 60)))
+    assert obj.light_timer_options == ["Always On", *(f"{minute} min" for minute in range(1, 16))]
     with pytest.raises(ValueError, match="durations"):
         Request("light_duration", seconds=960).validate(obj)
     await obj.async_execute_goodvibe_request(Request("light_duration", seconds=0))

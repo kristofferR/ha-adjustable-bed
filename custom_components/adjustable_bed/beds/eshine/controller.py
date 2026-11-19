@@ -12,6 +12,7 @@ from ...controller_state import StateKey
 from ...profiles.richmat import ESHINE, Button, RichmatProfile
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution
+from ..catalog_buttons import as_save
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -215,7 +216,7 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return tuple(
+        specs = (
             ControllerButtonSpec(
                 f"eshine_{key}",
                 label,
@@ -232,6 +233,7 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
             )
             for key, (label, button) in EXTRA_BUTTONS.items()
         )
+        return tuple(as_save(spec) if spec.key.startswith("eshine_save_") else spec for spec in specs)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

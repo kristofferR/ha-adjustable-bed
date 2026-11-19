@@ -20,13 +20,14 @@ from ...controller_state import StateKey
 from ...profiles.richmat import HJBED, RichmatProfile
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button, unique_buttons
+from ..catalog_buttons import Kind, catalog_button, on_off_switch, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
 )
 from ..richmat.labels import function_label
@@ -576,6 +577,8 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             )
         ):
             action = ACTIONS[detail]
+            if detail in (self._sync_details or ()):
+                continue  # The synchronization switch sends these.
             if action.kind == "motor":
                 partner = (
                     action.enum.removesuffix("Up") + "Down"
@@ -777,6 +780,29 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             raise ValueError("Choose Normal or Motion")
         self._motion = option == "Motion"
         self._publish()
+
+    @property
+    def _sync_details(self) -> tuple[str, str] | None:
+        """The product's Sync on and Sync off controls, when it has both."""
+        enums = {ACTIONS[d].enum: d for d in self.product.motor}
+        on = enums.get("deviceFunctionItemSyncOn")
+        off = enums.get("deviceFunctionItemSyncOff")
+        return (on, off) if on is not None and off is not None else None
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if (sync := self._sync_details) is None:
+            return ()
+        on, off = sync
+        return (
+            on_off_switch(
+                "hjbed_sync",
+                "synchronization",
+                partial(_action, detail=on),
+                partial(_action, detail=off),
+                entity_registry_enabled_default=False,
+            ),
+        )
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:

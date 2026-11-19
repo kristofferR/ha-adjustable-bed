@@ -30,6 +30,7 @@ from ...profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, MaloufAppProfile
 from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import SAVE_KEY
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -527,11 +528,13 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
             return (ControllerButtonSpec("malouf_read", "Read", _app_callback("read")),)
         if self._has_oz_memory_editor:
             return (
+                # The memory editor's save, not a memory slot of the shared memory row.
                 ControllerButtonSpec(
                     "malouf_oz_save_memory_2",
                     "Save Memory 2",
                     _app_callback("save_oz_memory_2"),
-                    translation_key="malouf_oz_save_memory_2",
+                    translation_key=SAVE_KEY,
+                    translation_placeholders={"preset": "Memory 2"},
                     requires_confirmation=True,
                     card=CARD_PRESET_SAVE,
                 ),

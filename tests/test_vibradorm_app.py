@@ -507,7 +507,10 @@ async def test_write_mode_host_property_policy_and_no_basic_notification():
 async def test_immutable_specs_callbacks_dispatch_side_bound_live_controller():
     c = make_controller(2, features=True)
     for spec in c.controller_button_specs:
-        assert spec.translation_key == spec.key
+        # All motors up and down are the shared all-motors row.
+        assert spec.translation_key == (
+            spec.key.replace("vibradorm_app_all", "all_motors") if "_all_" in spec.key else spec.key
+        )
     select = next(s for s in c.controller_select_specs if s.key.endswith("mood_effect"))
     number = next(s for s in c.controller_number_specs if s.key.endswith("floor_timer_minutes"))
     observed = []

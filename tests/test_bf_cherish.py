@@ -537,7 +537,8 @@ async def test_actual_cherish_timer_select_retains_commanded_selection_when_disc
     runtime.controller_state = {}
     owner.handle_controller_state_updates.side_effect = state_writer(runtime.controller_state)
     select = AdjustableBedMassageTimerSelect(runtime, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30])
-    assert select.current_option == "Off"
+    # No timer published yet: unknown, not "Off".
+    assert select.current_option is None
     await ctrl.set_massage_timer(20)
     assert select.current_option == "20 min"
     runtime.controller = None

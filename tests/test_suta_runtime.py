@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlo
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
+from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.profiles.suta import service_for_name
 from tests.error_helpers import raises_key
 from tests.form_helpers import finish_new_bed
@@ -277,9 +278,9 @@ async def test_countdown_cannot_be_renewed_into_programming(hass, runtime):
 async def test_massage_level_entity_refreshes_on_each_local_zone_change(hass, runtime):
     target, client, _ = runtime
     assert await target.async_connect()
-    level = next(entity for entity in _button_entities_for(hass, target) if entity.unique_id.endswith("suta_mass_head_lv10"))
+    level = next(entity for entity in _number_entities_for(hass, target) if entity.unique_id.endswith("massage_intensity"))
     level.hass = hass
-    level.entity_id = "button.suta_level"
+    level.entity_id = "number.suta_level"
     level.async_write_ha_state = MagicMock()
     await level.async_added_to_hass()
     try:

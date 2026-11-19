@@ -40,6 +40,7 @@ from ...profiles.okin_nframe import (
 from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import as_save
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -421,10 +422,15 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         )
         if self._native_light_power_buttons:
             actions += ("light_on", "light_off")
-        return tuple(
+        saves = {
+            "save_tv": "Save TV position",
+            "save_lounge": "Save lounge position",
+            "save_zero_g": "Save zero gravity position",
+        }
+        specs = (
             ControllerButtonSpec(
                 "starcode_abm5_4_" + action,
-                action.replace("_", " ").title(),
+                saves.get(action, action.replace("_", " ").title()),
                 _button(action),
                 translation_key="starcode_abm5_4_" + action,
                 cancel_movement=action not in ("light_plus", "light_minus", "light_on", "light_off"),
@@ -441,6 +447,10 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 diagnostic=action == "refresh",
             )
             for action in actions
+        )
+        return tuple(
+            as_save(spec) if spec.key.removeprefix("starcode_abm5_4_") in saves else spec
+            for spec in specs
         )
 
     @property

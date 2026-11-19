@@ -68,7 +68,7 @@ test("Ultramatic SmartBed publishes five neutral motors and its app controls", (
     entry("button.light", "ultramatic_light"),
     entry("button.massage", "massage_all_toggle"),
     entry("button.timer", "ultramatic_timerswitch"),
-    entry("button.save", "ultramatic_save_zg"),
+    entry("button.save", "catalog_save"),
     entry("button.reset", "ultramatic_reset_memory"),
     entry("button.clock", "ultramatic_clock"),
     entry("button.query", "ultramatic_query_alarm"),
@@ -98,7 +98,7 @@ test("Ultramatic SmartBed publishes five neutral motors and its app controls", (
   expect(bed.lights.buttons).toEqual(["button.light"]);
   expect(bed.presets).toEqual([]);
   // Saves are never quick presets; they sit in the save role.
-  expect(bed.presetSaves).toEqual(["button.reset", "button.save"]);
+  expect(bed.presetSaves).toEqual(["button.save", "button.reset"]);
   expect(bed.utility).toEqual(["button.clock", "button.query"]);
   expect(bed.utilityStates).toEqual(["sensor.alarm"]);
   expect(bed.massage.buttons).toEqual(["button.massage", "button.timer"]);
@@ -142,7 +142,7 @@ test("Snore Monitor keeps presets, massage cycles and bed settings reachable", (
   const hass = hassWith([
     entry("cover.snore_back", "smart_sleep_head"),
     entry("button.snore_reading", "preset_reading"),
-    entry("button.snore_save", "onlysnore_save_reading"),
+    entry("button.snore_save", "catalog_save"),
     entry("button.snore_wave", "massage_mode_step"),
     entry("button.snore_timer", "onlysnore_massage_timer_next"),
     entry("select.snore_intervention", "onlysnore_intervention"),
@@ -346,7 +346,7 @@ test("M1X12 held massage actions and setup controls land in their card sections"
   const bed = bedEntitiesForDevice(hassWith([
     entry("button.wave_up", "starcode_m1x12_hold_massage_wave_up", "m1x12"),
     entry("button.head_down", "starcode_m1x12_hold_massage_head_down", "m1x12"),
-    entry("button.save_tv", "starcode_m1x12_save_tv", "m1x12"),
+    entry("button.save_tv", "catalog_save", "m1x12"),
     entry("button.query", "starcode_m1x12_query", "m1x12"),
   ]), "m1x12");
   expect(bed.massage.buttons).toEqual(["button.wave_up", "button.head_down"]);
@@ -583,8 +583,8 @@ test("exact app controls separate floor, bounded mood and massage surfaces", () 
     entry("number.massage_speed", "vibradorm_app_massage_speed"),
     entry("number.head_intensity", "massage_head_intensity"),
     entry("button.refresh", "vibradorm_app_refresh_info"),
-    entry("button.all_up", "vibradorm_app_all_up"),
-    entry("button.all_down", "vibradorm_app_all_down"),
+    entry("button.all_up", "all_motors_up"),
+    entry("button.all_down", "all_motors_down"),
     entry("button.sync", "vibradorm_app_sync"),
   ]);
   publish(hass, "button.sync", { card_section: "utility" });
@@ -603,8 +603,9 @@ test("exact app controls separate floor, bounded mood and massage surfaces", () 
   expect(bed.massage.selects).toEqual(["select.wave"]);
   expect(bed.massage.numbers).toEqual(["number.massage_speed", "number.head_intensity"]);
   expect(bed.massage.timer).toBeUndefined();
-  expect(bed.utility).toEqual(["button.refresh", "button.all_up", "button.all_down", "button.sync"]);
-  expect(bed.motors).toEqual([]);
+  expect(bed.utility).toEqual(["button.refresh", "button.sync"]);
+  // All motors together is the shared all-motors row.
+  expect(bed.motors).toEqual([{ key: "all_motors", up: "button.all_up", down: "button.all_down" }]);
 });
 
 test("bounded mood or massage selectors alone are renderable controls", () => {
@@ -637,8 +638,8 @@ test("V-MAT Basic keeps immediate floor settings, mood and literal massage actio
     ...["back", "legs", "off", "program_1", "program_2", "program_3"].map((action) =>
       entry(`button.${action}`, `vmatbasic_massage_${action}`)),
     entry("button.refresh", "vmatbasic_refresh_info"),
-    entry("button.all_up", "vmatbasic_all_up"),
-    entry("button.all_down", "vmatbasic_all_down"),
+    entry("button.all_up", "all_motors_up"),
+    entry("button.all_down", "all_motors_down"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.lights.level).toBe("number.floor");
@@ -652,8 +653,8 @@ test("V-MAT Basic keeps immediate floor settings, mood and literal massage actio
     buttons: ["button.nightlight"],
   });
   expect(bed.massage.buttons).toHaveLength(6);
-  expect(bed.utility).toEqual(["button.refresh", "button.all_up", "button.all_down"]);
-  expect(bed.motors).toEqual([]);
+  expect(bed.utility).toEqual(["button.refresh"]);
+  expect(bed.motors).toEqual([{ key: "all_motors", up: "button.all_up", down: "button.all_down" }]);
   expect(bed.memory).toEqual([]);
 });
 
@@ -1087,7 +1088,7 @@ test("AdjustableM5X4 exact bounded controls remain on their physical child", () 
     entry(`button.${side}_minus`, "starcode_abm5_4_light_minus", side),
     entry(`button.${side}_union`, "starcode_abm5_4_union_up", side),
     entry(`button.${side}_adopt`, "starcode_abm5_4_use_detected_profile", side),
-    entry(`button.${side}_save_tv`, "starcode_abm5_4_save_tv", side),
+    entry(`button.${side}_save_tv`, "catalog_save", side),
   ]);
   const hass = hassWith(entries);
   hass.devices = {
@@ -1177,9 +1178,9 @@ test("AdjustableM5X5 exposes palette, brightness, distinct cycle/mode and named 
     entry("select.palette", "starcode_color"),
     entry("button.cycle", "starcode_light_cycle"),
     entry("button.mode", "starcode_light_mode"),
-    entry("button.save_tv", "starcode_save_tv"),
-    entry("button.save_zg", "starcode_save_zero_g"),
-    entry("button.save_lounge", "starcode_save_lounge"),
+    entry("button.save_tv", "catalog_save"),
+    entry("button.save_zg", "catalog_save"),
+    entry("button.save_lounge", "catalog_save"),
     entry("button.reset", "starcode_reset"),
     entry("button.query", "starcode_query"),
   ]);
@@ -1219,8 +1220,8 @@ test("MaxCoil Una / Dynasty Bases controls land in motor, massage and utility se
     entry("number.wave", "massage_wave_intensity"),
     entry("select.timer", "massage_timer"),
     entry("button.start", "ore_comfort_massage_start"),
-    entry("button.save_flat", "ore_comfort_program_flat"),
-    entry("button.save_zg", "ore_comfort_program_zero_g"),
+    entry("button.save_flat", "catalog_save"),
+    entry("button.save_zg", "catalog_save"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.motors.map((m) => m.key)).toEqual(["back", "feet", "lumbar", "waist"]);
@@ -1294,7 +1295,7 @@ test("Adjustable Lumbar waves join massage; preset saves join presets, the query
   const hass = hassWith([
     entry("button.l_wave", "adjustable_lumbar_wave_1"),
     entry("button.l_on", "adjustable_lumbar_massage_on"),
-    entry("button.l_save", "adjustable_lumbar_save_zero_g"),
+    entry("button.l_save", "catalog_save"),
     entry("button.l_check", "adjustable_lumbar_check_massage"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
@@ -1480,7 +1481,7 @@ test("Comfort Enhancements keeps Quiet sleep in presets and app massage clicks i
 
 test("Eshine named saves and literal massage controls join their card sections", () => {
   const bed = bedEntitiesForDevice(hassWith([
-    entry("button.save", "eshine_save_zero_g"),
+    entry("button.save", "catalog_save"),
     entry("button.strength", "eshine_massage_head_strength"),
     entry("select.timer", "massage_timer"),
     entry("button.mode", "massage_mode_step"),
@@ -1509,13 +1510,15 @@ test("Glideaway exposes its reported massage timer and alarm refresh", () => {
 
 test("ISleep controls retain each pattern and keep enrollment outside the everyday card", () => {
   const bed = bedEntitiesForDevice(hassWith([
-    entry("button.all_up", "isleep_all_up"),
-    entry("button.all_down", "isleep_all_down"),
+    entry("button.all_up", "all_motors_up"),
+    entry("button.all_down", "all_motors_down"),
     entry("button.pattern_1", "isleep_pattern"),
     entry("button.pattern_cancel", "isleep_pattern"),
     entry("button.enroll", "isleep_enroll"),
   ]), "dev1");
-  expect(bed.utility).toEqual(["button.all_up", "button.all_down"]);
+  expect(bed.utility).toEqual([]);
+  expect(bed.motors.find((m) => m.key === "all_motors"))
+    .toMatchObject({ up: "button.all_up", down: "button.all_down" });
   expect(bed.massage.buttons).toEqual(["button.pattern_1", "button.pattern_cancel"]);
 });
 
@@ -1683,8 +1686,8 @@ test("Good Vibe Sleep exposes app controls, side selection and independent sleep
     entry("button.app_action", "catalog_action"),
     entry("button.monitor", "catalog_action"),
     entry("select.side", "goodvibe_side"),
-    entry("select.light_duration", "goodvibe_light_duration"),
-    entry("select.countdown", "goodvibe_massage_timer"),
+    entry("select.light_duration", "light_timer"),
+    entry("select.countdown", "massage_timer"),
     entry("number.snore", "goodvibe_snore_count"),
     entry("sensor.status", "goodvibe_status"),
     entry("sensor.live", "heart_rate_left"),
@@ -1694,7 +1697,10 @@ test("Good Vibe Sleep exposes app controls, side selection and independent sleep
   // The status sensor is hidden diagnostics.
   expect(bed.utilityStates).toEqual(["sensor.live"]);
   expect(bed.controlSide).toBe("select.side");
-  expect(bed.utilitySelects).toEqual(["select.light_duration", "select.countdown"]);
+  // The shared light and massage timers sit with the light and the massage.
+  expect(bed.utilitySelects).toBeUndefined();
+  expect(bed.lights.timer).toBe("select.light_duration");
+  expect(bed.massage.timer).toBe("select.countdown");
   expect(bed.utilityNumbers).toEqual(["number.snore"]);
   expect(bedIsEmpty(bed)).toBe(false);
 });
@@ -1738,7 +1744,7 @@ test("RUF and Richmat app mattress, alarm and sleep receiver entities reach the 
 
 test("eShine product actions and feedback appear on the card and retain side routing", () => {
   const hass = hassWith([
-    entry("button.chord", "eshine_okin_flat_zero_g", "left"),
+    entry("button.chord", "catalog_action", "left"),
     entry("button.strength", "eshine_okin_massage_head_strength", "left"),
     entry("sensor.massage", "eshine_okin_massage", "left"),
     entry("sensor.alarm", "eshine_okin_alarm", "left"),

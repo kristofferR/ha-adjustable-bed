@@ -46,6 +46,7 @@ from ..profiles import keeson as profiles
 from ..profiles.keeson import KeesonProfile
 from ..state_keys import MASSAGE_TIMER_MINUTES
 from .base import BedController, ProfileExecution
+from .catalog_buttons import as_save
 from .entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -479,7 +480,7 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
         def spec(
             key: str, name: str, icon: str, press: Callable[[OreComfortBedController], Any]
         ) -> ControllerButtonSpec:
-            return ControllerButtonSpec(
+            button = ControllerButtonSpec(
                 key,
                 name,
                 lambda ctrl: press(cast(OreComfortBedController, ctrl)),
@@ -493,6 +494,7 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
                 if key.startswith("ore_comfort_program_")
                 else CARD_UTILITY,
             )
+            return as_save(button) if key.startswith("ore_comfort_program_") else button
 
         return (
             spec(

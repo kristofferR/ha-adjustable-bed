@@ -30,6 +30,7 @@ from ...execution import ExecutionCapabilities
 from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import as_save
 from ..entity_specs import (
     POSITION_UNIT_PERCENT,
     ControllerButtonSpec,
@@ -367,7 +368,7 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return tuple(
+        specs = (
             ControllerButtonSpec(
                 f"starcode_{key}",
                 label,
@@ -384,15 +385,16 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 diagnostic=key == "query",
             )
             for key, label in (
-                ("save_tv", "Save Ascent"),
-                ("save_zero_g", "Save Zero Gravity"),
-                ("save_lounge", "Save Lounge"),
+                ("save_tv", "Save TV position"),
+                ("save_zero_g", "Save zero gravity position"),
+                ("save_lounge", "Save lounge position"),
                 ("reset", "Reset saved positions"),
                 ("light_mode", "Light mode 1"),
                 ("light_cycle", "Cycle light color"),
                 ("query", "Refresh massage and RGB"),
             )
         )
+        return tuple(as_save(spec) if spec.key.startswith("starcode_save_") else spec for spec in specs)
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:

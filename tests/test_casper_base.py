@@ -434,3 +434,35 @@ async def test_side_bound_button_and_cover_callbacks_keep_their_side():
         back = next(s for s in ctrl.motor_control_specs if s.key == "back")
         await back.open_fn(ctrl)
     assert frames(c) == ["6e01012494"] * 3 + ["6e01016ede"]
+
+
+async def assert_timer_select_sends_the_timer_actions(build) -> None:
+    """The massage timer select sends exactly what each timer action's button sent."""
+    ctrl, _ = build()
+    timers = ctrl.massage_timer_actions
+    assert ctrl.supports_massage_timer is bool(timers)
+    assert ctrl.massage_timer_options == sorted(timers)
+    assert not ctrl.massage_timer_can_turn_off
+    assert not {
+        spec.key for spec in ctrl.controller_button_specs if "minutetimer" in spec.key
+    }
+
+
+    async def sent(run) -> list[str]:
+        connected, c = build()
+        await connected.start_notify()
+        c.client.write_gatt_char.reset_mock()
+        await run(connected)
+        return frames(c)
+
+    for minutes, action in timers.items():
+        by_button = await sent(lambda b, a=action: b.async_perform_casper_base_action(a))
+        by_select = await sent(lambda b, m=minutes: b.set_massage_timer(m))
+        assert by_select == by_button != []
+    with pytest.raises(ValueError):
+        await ctrl.set_massage_timer(15)
+
+
+@pytest.mark.parametrize("model", PRODUCTS)
+async def test_massage_timer_actions_are_one_select(model):
+    await assert_timer_select_sends_the_timer_actions(lambda: make(model))

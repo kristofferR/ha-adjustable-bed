@@ -18,6 +18,7 @@ from ...profiles.okin_nframe import ESHINE_PROFILES, ESHINE_REFRESH_MS
 from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import EXTRA_KEY
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -236,9 +237,12 @@ class EshineOkinController(BedController):
                 f"eshine_okin_{key}",
                 name,
                 _action(key),
-                translation_key=f"eshine_okin_{key}",
+                # The remote's Flat and Zero G chord does no proven one thing: an extra.
+                translation_key=EXTRA_KEY if key == "flat_zero_g" else f"eshine_okin_{key}",
+                translation_placeholders={"action": name} if key == "flat_zero_g" else None,
                 hold=ControllerHoldSpec(key) if key in HELD else None,
                 diagnostic=key in ("query_state", "sync_clock"),
+                entity_registry_enabled_default=key != "flat_zero_g",
                 card=CARD_MASSAGE if key.startswith("massage_") else CARD_UTILITY,
             )
             for key, name in labels.items()

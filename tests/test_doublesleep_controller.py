@@ -522,3 +522,19 @@ async def test_invalid_report_scalar_never_publishes_success(channel, data):
     with pytest.raises(ValueError, match="must be an integer"):
         bed.bed._report(Report(channel, 0, 0, data))
     assert bed.states == before
+
+
+@pytest.mark.parametrize("driver", ["p1", "p2"])
+def test_disable_anti_snore_is_an_extra_and_sonic_sources_sit_together(driver):
+    bed = Bed(driver)
+    specs = {s.key: s for s in bed.bed.controller_button_specs}
+    stop_snore = specs["doublesleep_63"]
+    # Ending an intervention is no preset, and there is no enable to pair it with.
+    assert stop_snore.translation_key == "catalog_action"
+    assert stop_snore.card.section == "utility" and not stop_snore.entity_registry_enabled_default
+    sources = [specs.get(f"doublesleep_{i}") for i in (87, 88)]
+    if driver == "p2":
+        assert all(s is not None and s.card.section == "massage" for s in sources)
+        assert not any(s.entity_registry_enabled_default for s in sources if s is not None)
+    else:
+        assert sources == [None, None]

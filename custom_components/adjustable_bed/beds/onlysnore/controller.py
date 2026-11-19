@@ -15,13 +15,14 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmError
-from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESET_SAVE
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER
 from ...codec import onlysnore as codec
 from ...command_scheduler import current_command_context
 from ...const import CONF_PRODUCT_TYPE
 from ...profiles import onlysnore as app
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import EXTRA_KEY, save_button, save_name
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -472,13 +473,10 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
         # Recall buttons are the standard presets; wave cycling is the standard
         # massage mode step; start/stop is the Massage switch.
         saves = tuple(
-            ControllerButtonSpec(
+            save_button(
                 f"onlysnore_save_{name}",
-                f"Save {name.replace('_', ' ')}",
+                save_name(name),
                 lambda ctrl, name=name: require_controller(ctrl, OnlySnoreController).save(name),
-                translation_key=f"onlysnore_save_{name}",
-                requires_confirmation=True,
-                card=CARD_PRESET_SAVE,
             )
             for name in app.PRESETS
             if not name.startswith("memory_")
@@ -508,6 +506,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 cancel_movement=False,
                 diagnostic=True,
             ),
+            # Trying an intervention level is there to enable, not for the dashboard.
             *(
                 ControllerButtonSpec(
                     f"onlysnore_demo_{level}",
@@ -515,7 +514,9 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                     lambda ctrl, level=level: require_controller(ctrl, OnlySnoreController).demo(
                         level=level
                     ),
-                    translation_key=f"onlysnore_demo_{level}",
+                    translation_key=EXTRA_KEY,
+                    translation_placeholders={"action": f"Test anti-snore level {level}"},
+                    entity_registry_enabled_default=False,
                 )
                 for level in app.INTERVENTION_LEVELS
             ),
@@ -523,7 +524,9 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 "onlysnore_stop_intervention",
                 "Stop anti-snore intervention",
                 lambda ctrl: ctrl.write_command(codec.INTERVENTION_STOP),
-                translation_key="onlysnore_stop_intervention",
+                translation_key=EXTRA_KEY,
+                translation_placeholders={"action": "Stop anti-snore intervention"},
+                entity_registry_enabled_default=False,
             ),
         )
 
