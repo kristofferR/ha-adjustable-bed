@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final, Literal
 
-from ..codec import suta as codec
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 Kind = Literal["tap", "motion", "save", "dt", "lv", "fan", "stop", "clock"]
@@ -112,10 +111,3 @@ def route_for_name(name: str) -> str:
 def profile_for_name(name: str) -> SutaProfile | None:
     key = ROUTES[route_for_name(name)]
     return PROFILES[key] if key else None
-
-
-def binary_frames(family: str) -> dict[str, bytes]:
-    return {
-        action.key + "_" + p[6:].hex(): codec.from_prefix(p)
-        for action in BINARY.values() if family in action.controllers for p in action.prefixes
-    }

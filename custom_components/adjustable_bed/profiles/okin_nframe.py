@@ -903,9 +903,6 @@ class CstRemoteCommands:
     SAVE_MEMORY_M = FLAT | MEMORY_M
 
 
-CstControlCommands = CstRemoteCommands
-
-
 @dataclass(frozen=True)
 class CstFields:
     """The two independently routed 32-bit fields in a CST frame."""
