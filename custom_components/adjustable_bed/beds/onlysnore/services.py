@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
     from ...command_scheduler import CommandHandle, CommandRecord
     from ...coordinator import AdjustableBedCoordinator
-    from ...paired_topology import _SequentialCycle
+    from ...paired_topology import SequentialCycle
     from ..base import BedController
 
 
@@ -62,7 +62,7 @@ class _Session:
         return cls(
             receiver.client,
             receiver.controller,
-            receiver._position_connection_generation,
+            receiver.connection_generation,
             getattr(receiver.controller, "_generation", None),
             receiver.client is not None and receiver.client.is_connected,
         )
@@ -92,21 +92,21 @@ class _Owner:
 
     @classmethod
     def capture(cls, receiver: AdjustableBedCoordinator) -> _Owner:
-        scheduler = receiver._command_scheduler
+        scheduler = receiver.command_scheduler
         return cls(
             receiver,
             _route(receiver),
             scheduler.token,
             receiver.stop_epoch,
             scheduler.recent_records,
-            scheduler._active,
+            scheduler.active,
             _Session.capture(receiver),
         )
 
     def check_route(self) -> None:
         if (
             _route(self.receiver) != self.route
-            or self.receiver._command_scheduler.token is not self.token
+            or self.receiver.command_scheduler.token is not self.token
             or self.receiver.stop_epoch != self.stop_epoch
         ):
             raise invalid("bed_changed")
@@ -134,7 +134,7 @@ class _Owner:
             and getattr(expected.controller, "_generation", 0) > expected.notifications
             and self.receiver.client is None
             and self.receiver.controller is None
-            and self.receiver._position_connection_generation == expected.generation
+            and self.receiver.connection_generation == expected.generation
             and self.receiver.last_disconnect_reason == "sequential_switch"
         ):
             # Only the native one-link cycle may retire this captured session.
@@ -148,7 +148,7 @@ class _Owner:
             and context is not None
             and context.scheduler_token is self.token
             and switch_task is not None
-            and self.receiver._connection_creator_task is switch_task
+            and self.receiver.connection_creator_task is switch_task
         )
         # An admitted offline receiver can construct its first live session.
         # Once bound, later reconnects/replacements are not the admitted owner.
@@ -158,7 +158,7 @@ class _Owner:
             and self.receiver.controller is not None
             and self.receiver.client is not None
             and self.receiver.client.is_connected
-            and self.receiver._position_connection_generation == baseline.generation + 1
+            and self.receiver.connection_generation == baseline.generation + 1
         ):
             self.connected = _Session.capture(self.receiver)
             return
@@ -230,8 +230,8 @@ def register_services(hass: HomeAssistant) -> None:
             owner.check_route()
             if (
                 not owner.initial.matches(owner.receiver)
-                or owner.receiver._command_scheduler.recent_records != owner.records
-                or owner.receiver._command_scheduler._active is not owner.active
+                or owner.receiver.command_scheduler.recent_records != owner.records
+                or owner.receiver.command_scheduler.active is not owner.active
             ):
                 raise invalid("bed_changed")
         if any(
@@ -255,14 +255,14 @@ def register_services(hass: HomeAssistant) -> None:
         prepared: set[AdjustableBedCoordinator] = set()
         mutation_started = False
 
-        def cycle_for(owner: _Owner) -> _SequentialCycle | None:
+        def cycle_for(owner: _Owner) -> SequentialCycle | None:
             parent = sequential.get(owner.receiver)
             if parent is None:
                 return None
-            cycle = parent._sequential._cycle
+            cycle = parent.sequential_cycle
             if cycle is None or cycle.task is not call_task:
                 return None
-            if not cycle.matches(parent._admission):
+            if not parent.cycle_is_current(cycle):
                 raise invalid("bed_changed")
             return cycle
 
@@ -275,7 +275,7 @@ def register_services(hass: HomeAssistant) -> None:
             owner.check_session(
                 planned_switch=cycle is not None
                 and parent is not None
-                and owner.receiver in parent._admission.active_children,
+                and parent.is_admitted_child(owner.receiver),
                 bind_switch=bind_switch,
                 switch_task=cycle.task if cycle is not None else None,
             )

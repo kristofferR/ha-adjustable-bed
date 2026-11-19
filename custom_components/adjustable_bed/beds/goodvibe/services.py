@@ -397,12 +397,12 @@ async def handle_goodvibe(call: ServiceCall) -> None:
     physical = [child for parent, side in targets for child in _command_targets(parent, side)]
     sessions = {
         owner: (
-            owner.controller, owner.client, owner._position_connection_generation, owner._cancel_counter,
+            owner.controller, owner.client, owner.connection_generation, owner.cancel_counter,
             (owner.address, owner.bed_type, *(owner.entry.options.get(key, owner.entry.data.get(key))
               for key in (CONF_PROTOCOL_VARIANT, CONF_PRODUCT_TYPE, CONF_PROFILE_ID))),
         )
         for child in physical
-        for owner in (child._single_inner if isinstance(child, SingleAddressSideCoordinator) else child,)
+        for owner in (child.inner if isinstance(child, SingleAddressSideCoordinator) else child,)
     } if call.service == "bobpowerbase" else {}
     await async_import_modules(call.hass, "beds.goodvibe.controller")
     from .controller import GoodVibeController
@@ -443,11 +443,11 @@ async def handle_goodvibe(call: ServiceCall) -> None:
             for owner, (controller, client, generation, command_generation, route) in sessions.items():
                 current_route = (owner.address, owner.bed_type, *(owner.entry.options.get(key, owner.entry.data.get(key))
                     for key in (CONF_PROTOCOL_VARIANT, CONF_PRODUCT_TYPE, CONF_PROFILE_ID)))
-                if owner._cancel_counter != command_generation or current_route != route:
+                if owner.cancel_counter != command_generation or current_route != route:
                     raise invalid("bed_changed")
                 # Reconnect may replace the controller and link. Replacement
                 # within the same still-live physical generation is stale work.
-                if client is not None and client.is_connected and owner._position_connection_generation == generation and (
+                if client is not None and client.is_connected and owner.connection_generation == generation and (
                     owner.controller is not controller or owner.client is not client
                 ):
                     raise invalid("bed_changed")
@@ -459,7 +459,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
                     if controller is not None and controller.client is not None and controller.client.is_connected:
                         if not isinstance(controller, GoodVibeController) or controller.catalog.key != "bobpowerbase":
                             raise invalid("bed_changed")
-                        owner = child._single_inner if isinstance(child, SingleAddressSideCoordinator) else child
+                        owner = child.inner if isinstance(child, SingleAddressSideCoordinator) else child
                         if controller.product_key != sessions[owner][4][2]:
                             raise invalid("bed_changed")
                         with controller_side_scope(child):
@@ -483,7 +483,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
             controller = child.capability_controller
             if not isinstance(controller, GoodVibeController) or controller.catalog.key != "bobpowerbase":
                 raise invalid("action_for_other_beds", beds="Power Bob Base beds")
-            owner = child._single_inner if isinstance(child, SingleAddressSideCoordinator) else child
+            owner = child.inner if isinstance(child, SingleAddressSideCoordinator) else child
             if controller.product_key != sessions[owner][4][2]:
                 raise invalid("bed_changed")
             try:
@@ -527,11 +527,11 @@ async def handle_goodvibe(call: ServiceCall) -> None:
             await target.async_prepare_goodvibe_request(request, admitted=check_admission)
             plan = live_plan(target)
             owner, link = target._coordinator, target._current_link()
-            generation = owner._position_connection_generation
+            generation = owner.connection_generation
 
             def dispatch() -> None:
                 check_admission(reported=True)
-                if owner.controller is not target or owner._position_connection_generation != generation or target._current_link() is not link:
+                if owner.controller is not target or owner.connection_generation != generation or target._current_link() is not link:
                     raise invalid("bed_changed")
                 plan.validate(target)
 

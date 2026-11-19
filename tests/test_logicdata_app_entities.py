@@ -267,7 +267,7 @@ async def test_new_dynamic_entities_have_localized_names(
     registry = er.async_get(hass)
     for domain, key, name in (
         ("cover", "both", "Back and legs"),
-        ("binary_sensor", "under_bed_lights", "Under Bed Lights"),
+        ("binary_sensor", "under_bed_lights", "Under-bed light state"),
         ("sensor", "logicdata_app_family_match", "Command family matches"),
         ("sensor", "logicdata_app_alarm", "Alarm"),
     ):

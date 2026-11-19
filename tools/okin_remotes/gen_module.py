@@ -1,6 +1,3 @@
-# /// script
-# dependencies = []
-# ///
 """Emit the generated remote-code artifacts from master.json.
 
 Outputs (single source for all so labels always agree):
@@ -14,7 +11,6 @@ here, but their keycodes come only from that catalog: ``beds/okin_uuid/controlle
 derives them at import, so they are left out of ``OKIN_UUID_REMOTE_DATA``.
 """
 import hashlib
-import importlib.util
 import json
 import re
 import sys
@@ -23,15 +19,10 @@ from pathlib import Path
 MASTER_BYTES = Path("master.json").read_bytes()
 master = json.loads(MASTER_BYTES)
 
-_spec = importlib.util.spec_from_file_location(
-    "furnimove_profiles",
-    Path(__file__).resolve().parents[2] / "custom_components/adjustable_bed/beds/furnimove/profiles.py",
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from custom_components.adjustable_bed.beds.furnimove.profiles import (  # noqa: E402
+    FURNIMOVE_PRODUCTION_IDS as FURNIMOVE_CODES,
 )
-assert _spec is not None and _spec.loader is not None
-_furnimove = importlib.util.module_from_spec(_spec)
-sys.modules[_spec.name] = _furnimove  # dataclasses resolve annotations through it
-_spec.loader.exec_module(_furnimove)
-FURNIMOVE_CODES = _furnimove.FURNIMOVE_PRODUCTION_IDS
 
 
 def h(v):
@@ -82,7 +73,9 @@ def features_of(r):
 
 def label_of(c):
     r = master[c]
-    return f"{c} - {model_of(r.get('desc', ''))} ({features_of(r)})".replace('"', "'")
+    label = f"{c} - {model_of(r.get('desc', ''))} ({features_of(r)})".replace('"', "'")
+    # Some backend descriptions carry escaped line breaks; labels are one line.
+    return " ".join(label.replace("\\n", " ").split())
 
 
 def timed(r, key, dur_key, freq_key):
@@ -166,7 +159,7 @@ and does not consult the backend UBL duration/frequency metadata.
 Entries with ``"dot": True`` are "DOT PROTOCOL" handsets (RF1058/RF34/RF6707).
 Their boxes expose Nordic UART instead of the Okin 62741523 service and take
 CB24-style 7-byte frames ``[0x05, 0x02, <4-byte big-endian>, 0x00]`` — they are
-driven by ``OkinDotController`` and listed in ``OKIN_DOT_VARIANT_LABELS``, not
+driven by ``OkinDotController`` and listed in ``const.OKIN_DOT_VARIANTS``, not
 in the Okimat dropdown. Their motor keycodes are renumbered per handset
 (whichever channels exist start at 0x1/0x2) but keep their section meaning —
 the table maps them to the standard section fields (RF1058 = head+feet,
@@ -190,20 +183,10 @@ DEFAULT_OKIN_UUID_REMOTE = "82417"
 # across all DOT codes, only motor sections and memory/massage extras differ).
 DEFAULT_OKIN_DOT_REMOTE = "97450"
 
-# code -> dropdown label
-OKIN_UUID_VARIANT_LABELS: dict[str, str] = {
 '''
 
 hdr = hdr.replace("@MASTER_SHA256@", hashlib.sha256(MASTER_BYTES).hexdigest())
-lines = [hdr.rstrip("\n")]
-for c in std_codes:
-    lines.append(f'    "{c}": "{label_of(c)}",')
-lines.append("}\n")
-lines.append("# DOT-protocol code -> dropdown label (okin_dot bed type)")
-lines.append("OKIN_DOT_VARIANT_LABELS: dict[str, str] = {")
-for c in dot_codes:
-    lines.append(f'    "{c}": "{label_of(c)}",')
-lines.append("}\n")
+lines = [hdr.rstrip("\n") + "\n"]
 lines.append("# code -> OkinUuidRemoteConfig kwargs (FurniMove catalog codes excluded)")
 lines.append("OKIN_UUID_REMOTE_DATA: dict[str, dict] = {")
 for c in (c for c in codes if c not in FURNIMOVE_CODES):
@@ -212,13 +195,13 @@ lines.append("}")
 open("remotes.py", "w").write("\n".join(lines) + "\n")
 
 # ---- const.py OKIMAT_VARIANTS + OKIN_DOT_VARIANTS bodies ----
-out = ["OKIMAT_VARIANTS: Final = {", '    VARIANT_AUTO: "Auto-detect (try 82417 first)",']
+out = ["OKIMAT_VARIANTS: Final = {", '    VARIANT_AUTO: AUTOMATIC_LABEL,']
 for c in std_codes:
     out.append(f'    "{c}": "{label_of(c)}",')
 out.append("}")
 out.append("")
 out.append("OKIN_DOT_VARIANTS: Final = {")
-out.append('    VARIANT_AUTO: "Auto (RF34 layout, try 97450 first)",')
+out.append('    VARIANT_AUTO: AUTOMATIC_LABEL,')
 for c in dot_codes:
     out.append(f'    "{c}": "{label_of(c)}",')
 out.append("}")

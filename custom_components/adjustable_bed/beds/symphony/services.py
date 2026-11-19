@@ -68,15 +68,15 @@ async def _dispatch(
     def admit_all(*, check_pair: bool = True) -> bool:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
             if isinstance(coordinator, PairedBedCoordinator):
-                invalidated = check_pair and coordinator._pair_admission_was_cancelled(
-                    coordinator._targets_for(side),
+                invalidated = check_pair and coordinator.pair_admission_was_cancelled(
+                    coordinator.targets_for(side),
                     admission.resources,
                     admission.expected_pair_generations,
                     admission.expected_stop_epochs,
                 )
                 invalidated = invalidated or any(
                     child.stop_epoch != admission.expected_stop_epochs[target_side]
-                    for target_side, child in coordinator._targets_for(side)
+                    for target_side, child in coordinator.targets_for(side)
                 )
             else:
                 invalidated = (

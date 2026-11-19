@@ -811,7 +811,7 @@ def _stop_epoch(parent: Any, bed: BedEstimate) -> int | None:
         if isinstance(parent, PairedBedCoordinator) and bed.side is not None
         else parent
     )
-    scheduler = getattr(owner, "_command_scheduler", None)
+    scheduler = getattr(owner, "command_scheduler", None)
     epoch = getattr(scheduler, "stop_epoch", None)
     return epoch if isinstance(epoch, int) else None
 

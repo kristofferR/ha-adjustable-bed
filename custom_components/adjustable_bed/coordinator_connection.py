@@ -171,7 +171,7 @@ class _ConnectSession:
             client is not None
             and self._coordinator._client is client
             and client.is_connected
-            and self._coordinator._position_connection_generation == self._generation
+            and self._coordinator.connection_generation == self._generation
         )
 
     async def async_start_notify(self) -> None:

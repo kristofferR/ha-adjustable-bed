@@ -319,7 +319,7 @@ async def test_native_both_claims_once_on_the_executing_side_view() -> None:
     both = MagicMock()
     both.claim_hold_lease.return_value = HoldClaim.START
     paired = MagicMock(spec=PairedBedCoordinator)
-    paired._targets_for.return_value = [("left", both), ("right", both)]
+    paired.targets_for.return_value = [("left", both), ("right", both)]
     started = []
 
     async def start() -> None:
