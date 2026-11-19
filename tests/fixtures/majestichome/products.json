@@ -1,0 +1,423 @@
+[
+  {
+    "id": "productNone",
+    "identifier": "",
+    "index": 0,
+    "groups": {
+      "motor": [],
+      "massage": [],
+      "preset": [],
+      "alarm_preset": []
+    }
+  },
+  {
+    "id": "productJHRN",
+    "identifier": "JHRN",
+    "index": 4,
+    "groups": {
+      "motor": [
+        {
+          "action": "deviceFunctionItemFootUp",
+          "code": 41,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootDown",
+          "code": 42,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMotorReset",
+          "code": 49,
+          "save_code": null
+        }
+      ],
+      "massage": [],
+      "preset": [],
+      "alarm_preset": []
+    }
+  },
+  {
+    "id": "productJGRN",
+    "identifier": "JGRN",
+    "index": 3,
+    "groups": {
+      "motor": [
+        {
+          "action": "deviceFunctionItemHeadUp",
+          "code": 36,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadDown",
+          "code": 37,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootUp",
+          "code": 38,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootDown",
+          "code": 39,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadAndFootUp",
+          "code": 41,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadAndFootDown",
+          "code": 42,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMotorReset",
+          "code": 49,
+          "save_code": null
+        }
+      ],
+      "massage": [],
+      "preset": [
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "code": 46,
+          "save_code": 43
+        }
+      ],
+      "alarm_preset": []
+    }
+  },
+  {
+    "id": "productJLRM",
+    "identifier": "JLRM",
+    "index": 2,
+    "groups": {
+      "motor": [
+        {
+          "action": "deviceFunctionItemHeadUp",
+          "code": 36,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadDown",
+          "code": 37,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootUp",
+          "code": 38,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootDown",
+          "code": 39,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemLumberUp",
+          "code": 63,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemLumberDown",
+          "code": 64,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMotorReset",
+          "code": 49,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemBedLight",
+          "code": 60,
+          "save_code": null
+        }
+      ],
+      "massage": [
+        {
+          "action": "deviceFunctionItemMassageHeadInstensFirstMode",
+          "code": 153,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensSecondMode",
+          "code": 154,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensThirdMode",
+          "code": 155,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensFirstMode",
+          "code": 157,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensSecondMode",
+          "code": 158,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensThirdMode",
+          "code": 159,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeConstant",
+          "code": 58,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModePulse",
+          "code": 56,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeWave",
+          "code": 57,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeAllOff",
+          "code": 94,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage10MinuteTimer",
+          "code": 95,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage20MinuteTimer",
+          "code": 99,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage30MinuteTimer",
+          "code": 97,
+          "save_code": null
+        }
+      ],
+      "preset": [
+        {
+          "action": "deviceFunctionItemZeroGravity",
+          "code": 69,
+          "save_code": 102
+        },
+        {
+          "action": "deviceFunctionItemAntiSnoring",
+          "code": 70,
+          "save_code": 105
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "code": 46,
+          "save_code": 43
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition2",
+          "code": 47,
+          "save_code": 44
+        }
+      ],
+      "alarm_preset": [
+        {
+          "action": "deviceFunctionItemZeroGravity",
+          "code": 69,
+          "save_code": 102
+        },
+        {
+          "action": "deviceFunctionItemAntiSnoring",
+          "code": 70,
+          "save_code": 105
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "code": 46,
+          "save_code": 43
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition2",
+          "code": 47,
+          "save_code": 44
+        }
+      ]
+    }
+  },
+  {
+    "id": "productFARM",
+    "identifier": "FARM",
+    "index": 1,
+    "groups": {
+      "motor": [
+        {
+          "action": "deviceFunctionItemHeadUp",
+          "code": 36,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadDown",
+          "code": 37,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootUp",
+          "code": 38,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootDown",
+          "code": 39,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadAndFootUp",
+          "code": 41,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadAndFootDown",
+          "code": 42,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMotorReset",
+          "code": 49,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemBedLight",
+          "code": 60,
+          "save_code": null
+        }
+      ],
+      "massage": [
+        {
+          "action": "deviceFunctionItemMassageHeadOff",
+          "code": 152,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootOff",
+          "code": 156,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensFirstMode",
+          "code": 153,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensSecondMode",
+          "code": 154,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensThirdMode",
+          "code": 155,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensFirstMode",
+          "code": 157,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensSecondMode",
+          "code": 158,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensThirdMode",
+          "code": 159,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeConstant",
+          "code": 58,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModePulse",
+          "code": 56,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeWave",
+          "code": 57,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeAllOff",
+          "code": 94,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage10MinuteTimer",
+          "code": 95,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage20MinuteTimer",
+          "code": 99,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage30MinuteTimer",
+          "code": 97,
+          "save_code": null
+        }
+      ],
+      "preset": [
+        {
+          "action": "deviceFunctionItemZeroGravity",
+          "code": 69,
+          "save_code": 102
+        },
+        {
+          "action": "deviceFunctionItemAntiSnoring",
+          "code": 70,
+          "save_code": 105
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "code": 46,
+          "save_code": 43
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition2",
+          "code": 47,
+          "save_code": 44
+        }
+      ],
+      "alarm_preset": [
+        {
+          "action": "deviceFunctionItemZeroGravity",
+          "code": 69,
+          "save_code": 102
+        },
+        {
+          "action": "deviceFunctionItemAntiSnoring",
+          "code": 70,
+          "save_code": 105
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "code": 46,
+          "save_code": 43
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition2",
+          "code": 47,
+          "save_code": 44
+        }
+      ]
+    }
+  }
+]

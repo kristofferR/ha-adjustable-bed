@@ -159,19 +159,24 @@ Record = Callable[[int, int, int, Iterable[int]], bytes]
 
 
 def time_sync(
-    now: datetime, zone: datetime | None = None, *, build: Record = record
+    now: datetime,
+    zone: datetime | None = None,
+    *,
+    build: Record = record,
+    first_hex: bool = False,
 ) -> tuple[bytes, bytes]:
     """Unix seconds and whole-hour zone, then the local calendar, as ``build`` records.
 
     The zone comes from ``zone`` when the app samples the clock twice.
+    Majestic Home slices the first eight padded hexadecimal epoch digits.
     """
     offset = (zone or now).utcoffset()
     if now.utcoffset() is None or offset is None:
         raise ValueError("Time synchronization requires aware datetimes")
+    epoch = int(now.timestamp())
+    seconds = bytes.fromhex(f"{epoch:08x}"[:8]) if first_hex else epoch.to_bytes(4, "big")
     return (
-        build(
-            8, 2, 1, (*int(now.timestamp()).to_bytes(4, "big"), int(offset.total_seconds() / 3600))
-        ),
+        build(8, 2, 1, (*seconds, int(offset.total_seconds() / 3600))),
         calendar(now, build=build),
     )
 

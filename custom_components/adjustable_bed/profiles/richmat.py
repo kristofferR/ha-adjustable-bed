@@ -91,6 +91,8 @@ class RichmatProfile:
     recall: Recall = Recall()
     quiet_release: bool = True
     """Movement cleanup logs a failed STOP instead of raising it."""
+    epoch_first_hex: bool = False
+    """Keep the app's first-eight-hex-digit epoch serialization."""
 
     def frame(self, code: int) -> bytes:
         return codec.encode(self.framing, code)

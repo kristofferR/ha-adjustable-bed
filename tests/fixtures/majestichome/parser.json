@@ -1,0 +1,255 @@
+[
+  {
+    "id": "v1-version",
+    "frame": "6e90000200",
+    "expected": {
+      "version": 2
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "v1-bed-mode",
+    "frame": "6e90130011",
+    "expected": {
+      "bed_mode": 3
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "v1-angle",
+    "frame": "6e90352d60",
+    "expected": {
+      "motor_no": 1,
+      "status": 1,
+      "angle": 45
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "v1-massage",
+    "frame": "6e90a453f5",
+    "expected": {
+      "mode": 2,
+      "massage1": 1,
+      "massage2": 2,
+      "massage3": 3
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-alarm-list",
+    "frame": "6e200d0501020100071e2ef9f0",
+    "expected": {
+      "alarm_number": 1,
+      "reserved": 0,
+      "hour": 7,
+      "minute": 30,
+      "preset": 46,
+      "repeat": 249,
+      "event": "list"
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-alarm-report",
+    "frame": "6e200d0501030700162d450134",
+    "expected": {
+      "alarm_number": 7,
+      "reserved": 0,
+      "hour": 22,
+      "minute": 45,
+      "preset": 69,
+      "repeat": 1,
+      "event": "report"
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-motor",
+    "frame": "6e200e01020300012c022d025858",
+    "expected": {
+      "height": 30.0,
+      "type": 2,
+      "angle": 45,
+      "monitorHeight": 60.0
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-white",
+    "frame": "6e200903010200019e",
+    "expected": {
+      "white_light": true
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-rgb",
+    "frame": "6e200b0401020011223306",
+    "expected": {
+      "rgb": [
+        17,
+        34,
+        51
+      ]
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-rgb-timer",
+    "frame": "6e200a04020300020fb2",
+    "expected": {
+      "rgb_timer_seconds": 135
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-massage-pairs",
+    "frame": "6e200b02010301020203a7",
+    "expected": {
+      "head_intensity": 2,
+      "foot_intensity": 3
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-massage-mode",
+    "frame": "6e200902020200029f",
+    "expected": {
+      "massage_mode": 2
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-lock",
+    "frame": "6e20090702030001a4",
+    "expected": {
+      "box_locked": true
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-snore",
+    "frame": "6e20090601020001a1",
+    "expected": {
+      "snore_detection": true
+    },
+    "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
+  },
+  {
+    "id": "rx-press-mode",
+    "frame": "6e20090b01030003a9",
+    "expected": {
+      "press_mode": 3
+    },
+    "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
+  },
+  {
+    "id": "rx-coupled",
+    "frame": "6e20090b02030002a9",
+    "expected": {
+      "coupled": true
+    },
+    "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
+  },
+  {
+    "id": "rx-sync",
+    "frame": "6e20090b04030001aa",
+    "expected": {
+      "sync_movement": 1
+    },
+    "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
+  },
+  {
+    "id": "rx-check-motor",
+    "frame": "6e20090a01030004a9",
+    "expected": {
+      "check_type": 1,
+      "data": [
+        110,
+        32,
+        9,
+        10,
+        1,
+        3,
+        0,
+        4,
+        169
+      ]
+    },
+    "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
+  },
+  {
+    "id": "rx-check-light",
+    "frame": "6e20090a03030001a8",
+    "expected": {
+      "check_type": 3,
+      "data": [
+        110,
+        32,
+        9,
+        10,
+        3,
+        3,
+        0,
+        1,
+        168
+      ]
+    },
+    "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
+  },
+  {
+    "id": "rx-snore-param-count",
+    "frame": "6e200a060503000107ae",
+    "expected": {
+      "snore_count": 7
+    },
+    "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
+  },
+  {
+    "id": "rx-snore-param-time",
+    "frame": "6e200a06050300020ab2",
+    "expected": {
+      "snore_time": 10
+    },
+    "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
+  },
+  {
+    "id": "rx-bed-detection-effect",
+    "frame": "6e200a060403000101a7",
+    "expected": {
+      "stop_music_bed_effect": true
+    },
+    "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
+  },
+  {
+    "id": "v1-check-status",
+    "frame": "6e90c230f0",
+    "expected": {
+      "detection_check_status": "pause"
+    },
+    "note": "App diagnostics/logging and emitted empty detail object; not an exposed actuator/health entity."
+  },
+  {
+    "id": "v1-motor-diagnostic",
+    "frame": "6e90c311d2",
+    "expected": {
+      "diagnostic_component": "motor",
+      "no": 1,
+      "status": "normal",
+      "app_event_payload": "empty RMDeviceDetectionDataDetails"
+    },
+    "note": "App diagnostics/logging and emitted empty detail object; not an exposed actuator/health entity."
+  },
+  {
+    "id": "v1-light-diagnostic",
+    "frame": "6e90c52ff2",
+    "expected": {
+      "diagnostic_component": "under_bed_light",
+      "no": 2,
+      "status": "notPluggedIn",
+      "app_event_payload": "empty RMDeviceDetectionDataDetails"
+    },
+    "note": "App diagnostics/logging and emitted empty detail object; not an exposed actuator/health entity."
+  }
+]

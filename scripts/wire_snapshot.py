@@ -1254,6 +1254,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
         const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
         const.BED_TYPE_GALAXY: "6BRM",
+        const.BED_TYPE_MAJESTICHOME: "FARM",
         const.BED_TYPE_OKIMIKI: "HCRN",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_COMFORTBASE: "accord",
@@ -1548,6 +1549,7 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed.profiles.comfort_enhancement3 import (
         PROFILES as APEX_PROFILES,
     )
+
     for profile in APEX_PROFILES:
         scenarios.append(dataclasses.replace(
             default_scenario("comfort_enhancement3"), id=f"comfort_enhancement3:{profile}",
@@ -1732,6 +1734,20 @@ def route_scenarios() -> list[Scenario]:
                     layout_id=layout,
                 )
             )
+    # Majestic Home's product selection is independent of its six GATT routes.
+    if const.BED_TYPE_MAJESTICHOME in const.SUPPORTED_BED_TYPES:
+        for product in ("FARM", "JLRM", "JGRN", "JHRN", "none"):
+            for transport in ("n1", "w1", "w2", "w3", "w4", "w5"):
+                scenarios.append(
+                    Scenario(
+                        id=f"majestichome:{product}:{transport}",
+                        bed_type=const.BED_TYPE_MAJESTICHOME,
+                        protocol_variant=product,
+                        layout_id="majestichome"
+                        if transport == "w1"
+                        else f"majestichome:{transport}",
+                    )
+                )
     if const.BED_TYPE_MLILY in const.SUPPORTED_BED_TYPES:
         for profile, layout in (("6brm", "mlily_nordic"), ("brrm", "mlily"),
                                 ("e3rm", "mlily"), ("l3rm", "mlily"), ("mdrn", "mlily"),

@@ -44,7 +44,6 @@ def _galaxy() -> frozenset[str]:
     return frozenset(frames)
 
 
-
 def _goodvibe() -> frozenset[str]:
     """Good Vibe Sleep 2.0.1: the accepted report's vectors in ``fixtures/goodvibe``.
 
@@ -2226,6 +2225,14 @@ def _resource_app_frames() -> dict[str, frozenset[str]]:
 
 
 FROZEN_FRAMES.update(_resource_app_frames())
+
+# Majestic Home 1.0.4 literals, frozen before the production codec was selected.
+_MAJESTICHOME = json.loads(
+    (Path(__file__).parent / "fixtures/majestichome/protocol.json").read_text()
+)
+FROZEN_FRAMES["majestichome"] = frozenset(
+    row["expected_bytes"] for row in _MAJESTICHOME if row["protocol"] in ("P1", "P2", "P_EXT")
+)
 
 
 def _okimiki() -> frozenset[str]:

@@ -1778,9 +1778,8 @@ async def _async_timed_move(
                 )
             admission = command_admissions[(id(coordinator), side)]
             actual_resources = {
-                plans[_plan_key(target)][3]
-                for target in _command_targets(coordinator, side)
-            }
+                    plans[_plan_key(target)][3] for target in _command_targets(coordinator, side)
+                }
             if actual_resources != set(admission.resources):
                 raise _invalid(
                     "bed_changed", "The bed's motors changed while checking the move; try again"
@@ -3138,6 +3137,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.linak.services import async_register_linak_services
     from .beds.linx.services import register_services as register_linx_services
     from .beds.logicdata.app_services import async_register_logicdata_app_services
+    from .beds.majestichome.services import async_register_majestichome_services
     from .beds.mlily_remote.services import register_services as register_mlily_remote_services
     from .beds.mline.services import register_services as register_mline_services
     from .beds.motion_bed.services import async_register_motion_bed_services
@@ -3205,6 +3205,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_linak_services,
         async_register_solace_services,
         async_register_sonicsleep_services,
+        async_register_majestichome_services,
         register_suta_services,
         async_register_leggett_okin_services,
         async_register_floyd_services,
