@@ -28,6 +28,7 @@ from .entity_retypes import async_retyped_entities_built
 from .entity_runtime import controller_side_scope
 from .paired_coordinator import PairedBedCoordinator, entity_runtimes
 from .pairing import iter_children
+from .runtime_data import entry_runtime
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -144,7 +145,7 @@ class EntityLedger:
 
 def _entity_ledger(hass: HomeAssistant, entry: ConfigEntry) -> EntityLedger:
     """Return the ledger of the entry's current setup, starting one if needed."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     ledgers = hass.data.setdefault(_LEDGERS, {})
     ledger = ledgers.get(entry.entry_id)
     # Each setup attempt has its own coordinator, so a retried setup starts afresh.
