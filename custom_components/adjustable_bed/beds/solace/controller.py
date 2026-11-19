@@ -798,7 +798,7 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
     async def lights_off(self) -> None:
         """Turn lights off."""
         await self.write_command(SolaceCommands.LIGHT_LEVELS[0])
-        self.forward_controller_state_update(LIGHT_LEVEL, 0)
+        self.forward_sent_state_updates(LIGHT_LEVEL(0))
 
     @property
     def supports_light_level_control(self) -> bool:
@@ -814,7 +814,8 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
         """Set light level (0-10)."""
         if 0 <= level <= 10:
             await self.write_command(SolaceCommands.LIGHT_LEVELS[level])
-            self.forward_controller_state_update(LIGHT_LEVEL, level)
+            # The bed reports no level: show it only as far as it was sent.
+            self.forward_sent_state_updates(LIGHT_LEVEL(level))
         else:
             _LOGGER.warning("Invalid light level: %d (valid: 0-10)", level)
 

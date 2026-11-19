@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Awaitable, Callable, Coroutine, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
+
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.sensor import SensorStateClass
+from homeassistant.const import EntityCategory
 
 from ..card import CARD_HIDDEN, CARD_UTILITY, CardPlacement
 from ..controller_state import AnyStateKey, StateKey
@@ -56,6 +61,8 @@ class ControllerSelectSpec:
     local_select_fn: Callable[[str], None] | None = field(default=None, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
     is_available: Callable[[BedController], bool] | None = field(default=None, kw_only=True)
+    entity_category: EntityCategory | None = field(default=None, kw_only=True)
+    entity_registry_enabled_default: bool = field(default=True, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +78,8 @@ class ControllerNumberSpec:
     set_fn: Callable[[BedController, float], Awaitable[None]]
     native_unit_of_measurement: str | None = None
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
+    entity_category: EntityCategory | None = field(default=None, kw_only=True)
+    entity_registry_enabled_default: bool = field(default=True, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,8 +102,11 @@ class ControllerSwitchSpec:
     assumed_state: bool = field(default=False, kw_only=True)
     # A setting the integration keeps itself sends no frame: applied without connecting.
     local_set_fn: Callable[[bool], None] | None = field(default=None, kw_only=True)
+    # Turning off sends no frame (only turning on does): applied without connecting.
+    local_off_fn: Callable[[], None] | None = field(default=None, kw_only=True)
     available_fn: Callable[[BedController], bool] | None = field(default=None, kw_only=True)
     entity_registry_enabled_default: bool = field(default=True, kw_only=True)
+    entity_category: EntityCategory | None = field(default=None, kw_only=True)
     # Fills a translated name template, e.g. ``{side}``.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
@@ -222,7 +234,10 @@ class PositionNumberSpec:
 
 @dataclass(frozen=True, slots=True)
 class ControllerStateSensorSpec:
-    """Describe a diagnostic sensor backed by coordinator controller state."""
+    """Describe a sensor backed by coordinator controller state.
+
+    Diagnostic unless the spec says otherwise; a unit implies a measurement.
+    """
 
     key: str
     translation_key: str
@@ -235,20 +250,121 @@ class ControllerStateSensorSpec:
     suggested_display_precision: int | None = None
     # Controller state is diagnostic; the card shows only what a spec places.
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
+    state_class: SensorStateClass | None = field(default=None, kw_only=True)
+    entity_category: EntityCategory | None = field(default=EntityCategory.DIAGNOSTIC, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
 class ControllerStateBinarySensorSpec:
-    """Describe a binary diagnostic backed by coordinator controller state."""
+    """Describe a binary sensor backed by coordinator controller state."""
 
     key: str
     translation_key: str
     state_key: AnyStateKey
-    icon: str
+    icon: str | None
     attribute_keys: tuple[AnyStateKey, ...] = ()
     # Hidden unless the controller opts a user-facing value in explicitly.
     entity_registry_enabled_default: bool = False
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
+    device_class: BinarySensorDeviceClass | None = field(default=None, kw_only=True)
+    entity_category: EntityCategory | None = field(default=EntityCategory.DIAGNOSTIC, kw_only=True)
+
+
+# Sleep-monitor readings: one shape and one name on every bed. ``side`` names a
+# per-side reading ("Left heart rate"); a sensor for one sleeper has none.
+type SleepSide = Literal["left", "right"] | None
+type SleepRate = Literal["heart_rate", "breathing_rate"]
+type SleepFlag = Literal["bed_presence", "snoring", "body_movement"]
+
+_SLEEP_RATES: Final[dict[str, tuple[str, str]]] = {
+    "heart_rate": ("mdi:heart-pulse", "bpm"),
+    "breathing_rate": ("mdi:lungs", "breaths/min"),
+}
+_SLEEP_FLAGS: Final[dict[str, BinarySensorDeviceClass]] = {
+    "bed_presence": BinarySensorDeviceClass.OCCUPANCY,
+    "snoring": BinarySensorDeviceClass.SOUND,
+    "body_movement": BinarySensorDeviceClass.MOTION,
+}
+
+
+def sleep_rate_value(value: object) -> int | None:
+    """A rate the app displays as text ("72", "72.0", "0x48") in whole per-minute units.
+
+    The apps show whole beats and breaths per minute, so a fraction rounds. The
+    app's "--", an empty or unparsable text, a negative or non-finite value is
+    unknown.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        try:
+            number = (
+                float(int(text, 0)) if text.lower().lstrip("+-").startswith("0x") else float(text)
+            )
+        except ValueError:
+            return None
+    elif isinstance(value, (int, float)):
+        number = float(value)
+    else:
+        return None
+    if not math.isfinite(number) or number < 0:
+        return None
+    return round(number)
+
+
+def _sleep_translation_key(kind: str, side: SleepSide) -> str:
+    return kind if side is None else f"{kind}_{side}"
+
+
+def sleep_rate_sensor_spec(
+    kind: SleepRate,
+    key: str,
+    state_key: StateKey[int | None],
+    side: SleepSide = None,
+    *,
+    has_unit: bool = True,
+    attribute_keys: tuple[AnyStateKey, ...] = (),
+) -> ControllerStateSensorSpec:
+    """A dashboard heart or breathing rate; unknown (``None``) while nobody is in bed.
+
+    ``has_unit`` is False where the bed's unit is unproven.
+    """
+    icon, unit = _SLEEP_RATES[kind]
+    return ControllerStateSensorSpec(
+        key,
+        _sleep_translation_key(kind, side),
+        state_key,
+        icon,
+        native_unit_of_measurement=unit if has_unit else None,
+        attribute_keys=attribute_keys,
+        entity_registry_enabled_default=True,
+        card=CARD_UTILITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=None,
+    )
+
+
+def sleep_flag_binary_sensor_spec(
+    kind: SleepFlag,
+    key: str,
+    state_key: StateKey[bool | None],
+    side: SleepSide = None,
+    *,
+    attribute_keys: tuple[AnyStateKey, ...] = (),
+) -> ControllerStateBinarySensorSpec:
+    """A dashboard in-bed, snoring or body-movement reading."""
+    return ControllerStateBinarySensorSpec(
+        key,
+        _sleep_translation_key(kind, side),
+        state_key,
+        None,
+        attribute_keys=attribute_keys,
+        entity_registry_enabled_default=True,
+        card=CARD_UTILITY,
+        device_class=_SLEEP_FLAGS[kind],
+        entity_category=None,
+    )
 
 
 # Movement commands for the four standard position axes, so controllers can

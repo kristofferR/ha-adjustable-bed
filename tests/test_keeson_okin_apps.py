@@ -521,7 +521,7 @@ async def test_capabilities_are_gated_per_app(coordinator):
         assert not controller.supports_head_massage_intensity_step_control
         assert not controller.supports_massage_timer
         assert controller.controller_number_specs == ()
-        assert controller.controller_select_specs == ()
+        assert controller.controller_switch_specs == ()
         assert [spec.key for spec in controller.controller_button_specs] == ["okin_app_home"]
     assert simon.memory_slot_count == 2 and simon.supports_memory_programming
     assert seating.memory_slot_count == 0 and not seating.supports_memory_presets
@@ -538,7 +538,7 @@ async def test_capabilities_are_gated_per_app(coordinator):
         ("okin_app_massage_foot", 0, 3),
         ("okin_app_massage_wave", 1, 4),
     ]
-    assert [s.key for s in heal.controller_select_specs] == [
+    assert [s.key for s in heal.controller_switch_specs] == [
         "okin_app_installation",
         "okin_app_actuator_1",
         "okin_app_actuator_2",
@@ -713,23 +713,23 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     for key in ("okin_app_massage_head", "okin_app_massage_foot", "okin_app_massage_wave"):
         assert exists("number", f"controller_number_{key}"), key
     for key in ("okin_app_installation", "okin_app_actuator_1", "okin_app_actuator_2"):
-        assert exists("select", f"controller_select_{key}"), key
+        assert exists("switch", f"controller_switch_{key}"), key
     assert exists("select", "massage_timer")
-    assert exists("switch", "under_bed_lights")
-    # No state feedback: the light switch starts unknown and reports assumed state.
+    assert exists("light", "under_bed_lights")
+    # No state feedback: the light starts unknown and reports assumed state.
     light = hass.states.get(
-        registry.async_get_entity_id("switch", DOMAIN, f"{address}_under_bed_lights")
+        registry.async_get_entity_id("light", DOMAIN, f"{address}_under_bed_lights")
     )
     assert light.state == "unknown"
     assert light.attributes.get("assumed_state") is True
 
     # Settings are local: no frame, persisted as app state, and remap the keys.
     state_id = registry.async_get_entity_id(
-        "select", DOMAIN, f"{address}_controller_select_okin_app_installation"
+        "switch", DOMAIN, f"{address}_controller_switch_okin_app_installation"
     )
-    assert hass.states.get(state_id).state == "standard"
+    assert hass.states.get(state_id).state == "off"
     await hass.services.async_call(
-        "select", "select_option", {"entity_id": state_id, "option": "swapped"}, blocking=True
+        "switch", "turn_on", {"entity_id": state_id}, blocking=True
     )
     await hass.async_block_till_done()
     mock_bleak_client.write_gatt_char.assert_not_awaited()  # A local setting sends nothing.
@@ -738,7 +738,7 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
         "actuator_1": False,
         "actuator_2": False,
     }
-    assert hass.states.get(state_id).state == "swapped"
+    assert hass.states.get(state_id).state == "on"
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SIMON_LI})
     for key in ("back", "feet", "lumbar"):
@@ -749,10 +749,10 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
         assert exists("button", key), key
     for key in ("preset_flat", "preset_zero_g", "massage_all_off", "massage_wave_next"):
         assert not exists("button", key), key
-    assert not exists("select", "controller_select_okin_app_installation")
+    assert not exists("switch", "controller_switch_okin_app_installation")
     assert not exists("number", "controller_number_okin_app_massage_wave")
     assert not exists("select", "massage_timer")
-    assert not exists("switch", "under_bed_lights")
+    assert not exists("light", "under_bed_lights")
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_OKIN_SEATING})
     assert not exists("cover", "lumbar")

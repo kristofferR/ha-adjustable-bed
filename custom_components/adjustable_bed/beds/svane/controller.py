@@ -179,6 +179,11 @@ class SvaneController(BedController):
         )
 
     @property
+    def light_state_is_assumed(self) -> bool:
+        # The app sends light on/off but reads no light state back.
+        return True
+
+    @property
     def control_characteristic_uuid(self) -> str:
         return OLD_CHAR if self.profile == "jmc" else UP
 

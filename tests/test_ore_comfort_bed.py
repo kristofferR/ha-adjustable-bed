@@ -328,7 +328,7 @@ async def test_massage_levels_timer_and_stop_publish_app_state(
     await controller.set_massage_level("head", 3)
     await controller.set_massage_timer_option("20")
     assert state[STATE_LEVEL["head"]] == 3
-    assert state[STATE_TIMER] == "20"
+    assert state[STATE_TIMER] == 20
     # Stop zeroes head and foot on the bed only; the sliders keep their levels.
     await controller.massage_off()
     assert state[STATE_TIMER] is None
@@ -571,8 +571,8 @@ async def test_setup_exposes_the_app_surface(
         assert not exists("button", key), key
     for zone in ("head", "foot", "wave"):
         assert exists("number", f"controller_number_ore_comfort_massage_{zone}"), zone
-    assert exists("select", f"controller_select_{STATE_TIMER}")
-    assert exists("switch", "under_bed_lights")
+    assert exists("select", "massage_timer")
+    assert exists("light", "under_bed_lights")
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
@@ -614,7 +614,7 @@ async def test_switching_profiles_retires_the_other_profiles_entities(
         ("button", "ore_comfort_massage_start"),
         ("button", "ore_comfort_program_flat"),
         ("number", "controller_number_ore_comfort_massage_head"),
-        ("select", f"controller_select_{STATE_TIMER}"),
+        ("select", "massage_timer"),
     ):
         assert not exists(platform, key), key
     assert await hass.config_entries.async_unload(entry.entry_id)
@@ -633,7 +633,7 @@ def test_two_address_pairs_refuse_a_shared_profile_change() -> None:
 
 
 @pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
-async def test_light_switch_reports_assumed_state(
+async def test_light_reports_assumed_state(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, enable_custom_integrations,
 ) -> None:
@@ -646,7 +646,7 @@ async def test_light_switch_reports_assumed_state(
     entry = _entry(hass, variant, 2)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    entity_id = er.async_get(hass).async_get_entity_id("switch", DOMAIN, f"{ADDRESS}_under_bed_lights")
+    entity_id = er.async_get(hass).async_get_entity_id("light", DOMAIN, f"{ADDRESS}_under_bed_lights")
     assert entity_id is not None
 
     # No light state is ever reported, so a restart cannot claim a confirmed off.
@@ -655,7 +655,7 @@ async def test_light_switch_reports_assumed_state(
     assert state.attributes[ATTR_ASSUMED_STATE] is True
 
     mock_bleak_client.write_gatt_char.reset_mock()
-    await hass.services.async_call("switch", "turn_on", {ATTR_ENTITY_ID: entity_id}, blocking=True)
+    await hass.services.async_call("light", "turn_on", {ATTR_ENTITY_ID: entity_id}, blocking=True)
     assert "e5fe1631000001d4" in _written(mock_bleak_client)
     state = hass.states.get(entity_id)
     assert state.state == STATE_ON

@@ -15,18 +15,22 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
+from ...card import (
+    CARD_MASSAGE,
+    CARD_PRESETS,
+    CARD_UTILITY,
+)
 from ...codec.keeson import comfortfurniture_cancels_hold
 from ...const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_VARIANT_COMFORTFURNITURE
 from ...controller_state import StateKey
 from ...profiles.comfortfurniture import PROFILE
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..catalog_buttons import save_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
-    ControllerSelectSpec,
     ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
@@ -38,7 +42,8 @@ if TYPE_CHECKING:
 
 # The app's sliders send three bins (progress 0-9, 10-19, 20-29); entities show bins 1-3.
 LEVEL: Final = {s: StateKey[int | None](f"comfortfurniture_{s}_level") for s in PROFILE.slider_bases}
-TIMER: Final = StateKey[str | None]("comfortfurniture_massage_timer")
+# The shared massage timer select reads this; the bed reports no timer.
+TIMER: Final = MASSAGE_TIMER_MINUTES
 SAVE_LABELS: Final = {
     "zero_g": "Save zero-gravity position",
     "flat": "Save flat position",
@@ -347,8 +352,14 @@ class ComfortFurnitureController(OreComfortBedController):
         self.forward_controller_state_updates(TIMER(None))
 
     async def set_massage_timer_option(self, option: str) -> None:
+        if option not in PROFILE.timers:
+            raise ValueError(f"Invalid massage timer {option}")
         await self._send_single(PROFILE.timers[option])
-        self.forward_controller_state_updates(TIMER(option))
+        self.forward_controller_state_updates(TIMER(int(option)))
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [int(option) for option in PROFILE.timers]
 
     @property
     def persisted_app_state(self) -> Mapping[str, Any] | None:
@@ -401,23 +412,8 @@ class ComfortFurnitureController(OreComfortBedController):
         )
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        return (
-            ControllerSelectSpec(
-                key="comfortfurniture_massage_timer",
-                translation_key="ore_comfort_massage_timer",
-                state_key=TIMER,
-                options=tuple(PROFILE.timers),
-                select_fn=lambda ctrl, option: cast(
-                    ComfortFurnitureController, ctrl
-                ).set_massage_timer_option(option),
-                card=CARD_MASSAGE_TIMER,
-            ),
-        )
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        # The timer select replaces the app's timer-cycle key. Stop preset stays:
+        # The massage timer select replaces the app's timer-cycle key. Stop preset stays:
         # Stop only sends preset stop for a preset this BLE session started.
         return (
             *(

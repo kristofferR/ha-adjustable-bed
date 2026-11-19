@@ -67,7 +67,7 @@ async def test_real_two_address_entity_views_keep_feedback_and_setters_on_their_
         side: next(
             entity
             for entity in _select_entities_for(hass, view)
-            if entity.translation_key == "starcode_abm5_4_massage_timer"
+            if entity.translation_key == "massage_timer"
         )
         for side, view in views.items()
     }
@@ -88,7 +88,7 @@ async def test_real_two_address_entity_views_keep_feedback_and_setters_on_their_
     left_controller._notification(
         left_controller.client, 0, left_controller.client.services[0].characteristics[1], packet
     )
-    assert timers["left"].current_option == "10"
+    assert timers["left"].current_option == "10 min"
     assert timers["right"].current_option is None
     assert levels["left"].native_value == 4
     right_packet = bytearray(packet)
@@ -100,15 +100,15 @@ async def test_real_two_address_entity_views_keep_feedback_and_setters_on_their_
         right_controller.client.services[0].characteristics[1],
         right_packet,
     )
-    assert timers["right"].current_option == "20"
+    assert timers["right"].current_option == "20 min"
     assert levels["right"].native_value == 2
-    assert timers["left"].current_option == "10"
+    assert timers["left"].current_option == "10 min"
     assert levels["left"].native_value == 4
     with patch(
         "custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep",
         new_callable=AsyncMock,
     ):
-        await timers["right"].async_select_option("10")
+        await timers["right"].async_select_option("10 min")
         await levels["left"].async_set_native_value(6)
     assert [
         call.args[1].hex() for call in right_controller.client.write_gatt_char.await_args_list
@@ -146,8 +146,9 @@ async def test_actual_entity_catalog_ranges_names_and_locked_dispatch(hass):
     ) == (1, 6, 1)
     assert not any(n.translation_key.endswith("_position") for n in numbers)
     selects = _select_entities_for(hass, runtime)
-    timer = next(s for s in selects if s.translation_key == "starcode_abm5_4_massage_timer")
-    assert timer.options == ["10", "20", "30"]
+    timer = next(s for s in selects if s.translation_key == "massage_timer")
+    # The app's timer has no Off frame, so the shared select offers durations only.
+    assert timer.options == ["10 min", "20 min", "30 min"]
     c.set_app_timer = AsyncMock()
     c.set_app_brightness = AsyncMock()
 
@@ -155,7 +156,7 @@ async def test_actual_entity_catalog_ranges_names_and_locked_dispatch(hass):
         await action(c)
 
     runtime.async_execute_controller_command = AsyncMock(side_effect=execute)
-    await timer.async_select_option("20")
+    await timer.async_select_option("20 min")
     await app_numbers[0].async_set_native_value(4)
     c.set_app_timer.assert_awaited_once_with("20")
     c.set_app_brightness.assert_awaited_once_with(4)

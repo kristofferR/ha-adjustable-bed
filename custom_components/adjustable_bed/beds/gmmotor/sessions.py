@@ -1,10 +1,15 @@
 """GM app intentions that outlive one HA Bluetooth controller instance."""
 
 from dataclasses import dataclass
+from typing import Final
 
 from homeassistant.core import HomeAssistant
 
 from ...app_session import app_session
+from ...controller_state import StateKey
+
+# Whether live sleep data is requested; the switch shows it.
+LIVE_ENABLED: Final = StateKey[bool | None]("gmmotor_sleep_live_enabled")
 
 
 def product_ui_states(hass: HomeAssistant, address: str, profile: str) -> dict[int, int]:

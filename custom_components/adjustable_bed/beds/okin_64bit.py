@@ -222,6 +222,24 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
     def supports_stop_all(self) -> bool:
         return True
 
+    # The toggles and steps below exist only where the profile defines their key;
+    # an inherited method alone would offer a button that has nothing to send.
+    @property
+    def supports_light_toggle_control(self) -> bool:
+        return "light_toggle" in self.profile.keys
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return "massage_switch" in self.profile.keys
+
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        return {"strength_up", "strength_down"} <= self.profile.keys.keys()
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        return "wave_mode" in self.profile.keys
+
     @property
     def profile(self) -> OkinNFrameProfile:
         """The variant's profile: its words and write mode."""

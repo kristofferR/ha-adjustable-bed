@@ -34,7 +34,7 @@ from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
 from ..bed_traits import BedTraits
-from ..command_scheduler import current_command_context
+from ..command_scheduler import Delivery, command_delivery, current_command_context
 from ..controller_state import (
     StateKey,
     StateUpdate,
@@ -188,6 +188,20 @@ class BedController(GattWriter):
     def forward_controller_state_updates(self, *updates: StateUpdate) -> None:
         """Forward several ``KEY(value)`` updates at once."""
         self._coordinator.handle_controller_state_updates(*updates)
+
+    def forward_sent_state_updates(self, *updates: StateUpdate) -> None:
+        """Publish values the running command set but the bed does not report.
+
+        Only as far as the command reached the bed: nothing sent publishes
+        nothing, a command cut off between frames makes the values unknown.
+        """
+        delivery = command_delivery()
+        if delivery is Delivery.SENT:
+            self.forward_controller_state_updates(*updates)
+        elif delivery is Delivery.PARTIAL:
+            self.forward_controller_state_updates(
+                *(StateUpdate(update.key, None) for update in updates)
+            )
 
     @property
     def client(self) -> BleakClient | None:
@@ -866,7 +880,7 @@ class BedController(GattWriter):
     def light_state_is_assumed(self) -> bool:
         """Return True when discrete light commands have no state readback.
 
-        The light switch then starts unknown and reports the commanded value
+        The on/off light then starts unknown and reports the commanded value
         as assumed state, so a restart or the physical remote is not shown as
         a confirmed state.
         """
@@ -1030,18 +1044,13 @@ class BedController(GattWriter):
         return False
 
     @property
-    def exposes_discrete_light_as_light(self) -> bool:
-        """Whether discrete light on/off is a light entity rather than a switch."""
-        return False
-
-    @property
     def light_state_starts_off(self) -> bool:
         """Whether an on/off light assumes off until the bed reports otherwise."""
         return False
 
     @property
     def light_switch_follows_level_intent(self) -> bool:
-        """Whether the light switch shows the app's intended level, not readback."""
+        """Whether the on/off light shows the app's intended level, not readback."""
         return False
 
     @property
@@ -2330,6 +2339,11 @@ class BedController(GattWriter):
         """
         return 10
 
+    def massage_intensity_min(self, zone: str) -> int:
+        """Return the lowest level ``zone`` accepts; 0 is off where the zone can turn off."""
+        del zone
+        return 0
+
     @property
     def supports_massage_timer(self) -> bool:
         """Return True if bed supports setting massage timer directly."""
@@ -2343,6 +2357,15 @@ class BedController(GattWriter):
         Override in subclasses that support timer selection.
         """
         return []
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        """Return True when ``set_massage_timer(0)`` sends a real stop or off frame.
+
+        Beds whose timer has only durations override this to False, so the
+        timer select offers no "Off" choice.
+        """
+        return True
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         """Set massage intensity for a specific zone.

@@ -18,7 +18,13 @@ from tests.state_helpers import state_writer
 
 
 def _runtime(state: ControllerState) -> MagicMock:
-    controller = MagicMock(supports_light_state_feedback=True, light_state_starts_off=False)
+    controller = MagicMock(
+        supports_light_state_feedback=True,
+        light_state_starts_off=False,
+        light_switch_follows_level_intent=False,
+        light_state_is_assumed=False,
+        light_auto_off_seconds=None,
+    )
     runtime = MagicMock(capability_controller=controller, controller=None, controller_state=state)
     runtime.entity_unique_id.side_effect = lambda key: f"bed_{key}"
     return runtime

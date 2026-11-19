@@ -19,6 +19,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 from homeassistant.helpers.storage import Store
 
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
@@ -513,6 +514,15 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         return ["head", "foot"] if self._has_supported_model else []
 
     @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        # The head and foot intensity numbers set any level, so no step buttons.
+        return False
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        return False
+
+    @property
     def massage_intensity_max(self) -> int:
         return 10
 
@@ -579,6 +589,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         if not self._has_supported_model:
             return ()
         return (
+            # The app's raw timer byte: no proven minute conversion, so no unit.
             ControllerNumberSpec(
                 key="reverie_pairlink_massage_timer",
                 translation_key="reverie_pairlink_massage_timer",
@@ -588,6 +599,8 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 native_step=1,
                 set_fn=lambda _controller, value: self.set_massage_timer_byte(int(value)),
                 card=CARD_MASSAGE_TIMER,
+                entity_category=EntityCategory.DIAGNOSTIC,
+                entity_registry_enabled_default=False,
             ),
         )
 

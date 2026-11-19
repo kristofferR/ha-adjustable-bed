@@ -1805,9 +1805,9 @@ buttons in its existing sections.
 | Cycle foot massage strength | `4E` | `6E 01 00 4E BD` | once |
 | Massage mode step | `48` | `6E 01 00 48 B7` | once |
 | Massage off | `5E` | `6E 01 00 5E CD` | once |
-| Massage 10 minutes | `5F` | `6E 01 00 5F CE` | once |
-| Massage 20 minutes | `63` | `6E 01 00 63 D2` | once |
-| Massage 30 minutes | `61` | `6E 01 00 61 D0` | once |
+| Massage timer 10 min | `5F` | `6E 01 00 5F CE` | once |
+| Massage timer 20 min | `63` | `6E 01 00 63 D2` | once |
+| Massage timer 30 min | `61` | `6E 01 00 61 D0` | once |
 | STOP | `6E` | `6E 01 00 6E DD` | once |
 | ExitLimit (setup) | `00` | `6E 02 01 00 71` | once after subscribing |
 <!-- /generated -->
@@ -6675,6 +6675,9 @@ title is not an action. Flat is the reachable MotorReset control.
 
 Native motor entities expose each product's held directions. Presets and their
 separate save buttons, light toggle and every massage action are product-gated.
+The massage timer keys are one **Massage timer** select (Off sends All Off), and
+each zone's level keys are one head or foot massage number (0 sends that zone's
+off key where the product has one).
 Saving uses the source long operand with a single short action, not a timed long
 press. There are no inferred brightness/RGB setters, calibration, position seeking,
 extra memory slots, single-address split controls or factory reset.

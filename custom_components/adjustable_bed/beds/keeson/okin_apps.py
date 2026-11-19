@@ -31,6 +31,7 @@ from typing import Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...app_session import app_session
 from ...card import CARD_MASSAGE, CARD_PRESETS
@@ -49,7 +50,7 @@ from ..base import BedController
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
-    ControllerSelectSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -1025,21 +1026,27 @@ class OkinAppKeesonController(KeesonController):
         self.forward_controller_state_update(_setting_key(setting), option)
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
         if not self._is_heal:
             return ()
 
-        def select(setting: str) -> ControllerSelectSpec:
-            async def apply(ctrl: BedController, option: str) -> None:
-                ctrl.select_heal_setting(setting, option)  # type: ignore[attr-defined]
+        def switch(setting: str) -> ControllerSwitchSpec:
+            off, on = HEAL_SETTING_OPTIONS[setting]
 
-            return ControllerSelectSpec(
-                key=f"{ACTION_NAMESPACE}{setting}",
-                translation_key=f"{ACTION_NAMESPACE}{setting}",
-                state_key=_setting_key(setting),
-                options=HEAL_SETTING_OPTIONS[setting],
-                select_fn=apply,
-                local_select_fn=lambda option: self.select_heal_setting(setting, option),
+            async def apply(ctrl: BedController, enabled: bool) -> None:
+                ctrl.select_heal_setting(setting, on if enabled else off)  # type: ignore[attr-defined]
+
+            return ControllerSwitchSpec(
+                f"{ACTION_NAMESPACE}{setting}",
+                f"{ACTION_NAMESPACE}{setting}",
+                apply,
+                _setting_key(setting),
+                on,
+                "mdi:swap-vertical",
+                local_set_fn=lambda enabled: self.select_heal_setting(
+                    setting, on if enabled else off
+                ),
+                entity_category=EntityCategory.CONFIG,
             )
 
-        return tuple(select(setting) for setting in HEAL_SETTING_OPTIONS)
+        return tuple(switch(setting) for setting in HEAL_SETTING_OPTIONS)

@@ -27,7 +27,6 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerSelectSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
@@ -805,14 +804,20 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        # Repeat days, action and soft wake are attributes of each alarm's time.
+        # Whether it is on, repeat days, action and soft wake are attributes of
+        # each alarm's time.
         alarms = tuple(
             ControllerStateSensorSpec(
                 str(keys.ALARM_TIME[i]),
                 str(keys.ALARM_TIME[i]),
                 keys.ALARM_TIME[i],
                 "mdi:alarm",
-                attribute_keys=(keys.ALARM_WEEK[i], keys.ALARM_ACTION[i], keys.ALARM_SOFT[i]),
+                attribute_keys=(
+                    keys.ALARM_OPEN[i],
+                    keys.ALARM_WEEK[i],
+                    keys.ALARM_ACTION[i],
+                    keys.ALARM_SOFT[i],
+                ),
                 entity_registry_enabled_default=True,
             )
             for i in range(self._alarm_count)
@@ -831,14 +836,6 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
             ),
         )
 
-    @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return tuple(
-            ControllerStateBinarySensorSpec(
-                str(key), str(key), key, "mdi:alarm", entity_registry_enabled_default=True
-            )
-            for key in keys.ALARM_OPEN[: self._alarm_count]
-        )
 
 
 async def build_controller(ctx: BuildContext) -> OnlySnoreController:

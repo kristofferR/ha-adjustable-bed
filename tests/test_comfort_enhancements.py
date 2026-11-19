@@ -341,11 +341,11 @@ async def test_all_preset_light_and_massage_sequences(
         ]
     ]
     mock_bleak_client.write_gatt_char.reset_mock()
-    await c._timer_click()
-    await c._timer_click()
-    await c._timer_click()
+    # The timer select's durations, then Off while massaging: the app timer key's frames.
+    for minutes in (10, 20, 30):
+        await c.set_massage_timer(minutes)
     await c.massage_head_toggle()
-    await c._timer_click()
+    await c.set_massage_timer(0)
     assert written(mock_bleak_client) == [
         VECTORS[w] for w in [0x10000030, 0x10000031, 0x10000032, 0x10000013, 0x10000010, 0x11000010]
     ]
@@ -392,7 +392,7 @@ async def test_ha_entities_and_alarm_service(
     assert exists("button", "program_memory_1")
     assert exists("button", "program_memory_2") == (layout in ("mc2", "mc3"))
     assert exists("button", "comfort_enhancements_head_cycle") == (layout != "mc3")
-    assert exists("switch", "under_bed_lights") == (layout != "mc3")
+    assert exists("light", "under_bed_lights") == (layout != "mc3")
     assert exists("select", "massage_timer") == (layout != "mc3")
     dev = next(x.device_id for x in registry.entities.values() if x.config_entry_id == e.entry_id)
     monkeypatch.setattr(
@@ -528,7 +528,11 @@ async def test_new_entries_keep_connection_state_and_layout_change_retires_actio
             )
             assert await hass.config_entries.async_reload(e.entry_id)
             await hass.async_block_till_done()
-        for key in ["head_cycle", "foot_cycle", "timer_cycle"]:
+        # The massage timer select replaces the timer-cycle button.
+        assert not registry.async_get_entity_id(
+            "button", DOMAIN, f"{ADDRESS}_comfort_enhancements_timer_cycle"
+        )
+        for key in ["head_cycle", "foot_cycle"]:
             assert bool(
                 registry.async_get_entity_id(
                     "button", DOMAIN, f"{ADDRESS}_comfort_enhancements_{key}"
