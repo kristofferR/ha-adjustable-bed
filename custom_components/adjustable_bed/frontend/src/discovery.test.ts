@@ -70,7 +70,6 @@ test("Ultramatic SmartBed publishes five neutral motors and its app controls", (
     entry("button.timer", "ultramatic_timerswitch"),
     entry("button.save", "catalog_save"),
     entry("button.reset", "ultramatic_reset_memory"),
-    entry("button.clock", "ultramatic_clock"),
     entry("button.query", "ultramatic_query_alarm"),
     // Release plumbing is hidden by default; held controls still find it.
     { ...entry("button.release", "ultramatic_release"), hidden: true },
@@ -99,7 +98,7 @@ test("Ultramatic SmartBed publishes five neutral motors and its app controls", (
   expect(bed.presets).toEqual([]);
   // Saves are never quick presets; they sit in the save role.
   expect(bed.presetSaves).toEqual(["button.save", "button.reset"]);
-  expect(bed.utility).toEqual(["button.clock", "button.query"]);
+  expect(bed.utility).toEqual(["button.query"]);
   expect(bed.utilityStates).toEqual(["sensor.alarm"]);
   expect(bed.massage.buttons).toEqual(["button.massage", "button.timer"]);
   expect(bed.massage.states).toEqual(["sensor.timer"]);
@@ -1251,18 +1250,17 @@ test("Restonic BT remote B maps its combined cover, light and ZZZ button", () =>
   expect(bed.memory).toEqual([]);
 });
 
-test("SIMMONS inclined controls join presets and clock/alarm actions land in utility", () => {
+test("SIMMONS inclined controls join presets and the alarm refresh lands in utility", () => {
   const hass = hassWith([
     entry("button.s_flat", "preset_flat"),
     entry("button.s_right", "simmons_inclined_right"),
     entry("button.s_left", "simmons_inclined_left"),
     entry("button.s_middle", "simmons_inclined_middle"),
-    entry("button.s_clock", "simmons_sync_clock"),
     entry("button.s_alarms", "simmons_refresh_alarms"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.presets).toEqual(["button.s_flat", "button.s_left", "button.s_middle", "button.s_right"]);
-  expect(bed.utility).toEqual(["button.s_clock", "button.s_alarms"]);
+  expect(bed.utility).toEqual(["button.s_alarms"]);
 });
 
 test("Svane lamp intensity is exposed with its under-bed-light switch", () => {
