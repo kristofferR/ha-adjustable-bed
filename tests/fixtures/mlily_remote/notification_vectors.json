@@ -14,11 +14,7 @@
       "type": 2,
       "angle": 30,
       "monitorHeight": 60.0
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-zones-2",
@@ -41,11 +37,7 @@
           6
         ]
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-mode-2",
@@ -59,11 +51,7 @@
     "expected_bytes": "6e 20 09 02 02 02 00 03 a0",
     "expected_state": {
       "mode": 3
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-frequency-2",
@@ -77,11 +65,7 @@
     "expected_bytes": "6e 20 09 02 04 02 00 11 b0",
     "expected_state": {
       "frequency": 17
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-follow_intensity-2",
@@ -95,11 +79,7 @@
     "expected_bytes": "6e 20 09 02 05 02 00 02 a2",
     "expected_state": {
       "follow_intensity": 2
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-on-2",
@@ -113,11 +93,7 @@
     "expected_bytes": "6e 20 09 02 06 02 00 01 a2",
     "expected_state": {
       "on": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-white-2-0",
@@ -131,11 +107,7 @@
     "expected_bytes": "6e 20 09 03 01 02 00 00 9d",
     "expected_state": {
       "on": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-white-2-1",
@@ -149,11 +121,7 @@
     "expected_bytes": "6e 20 09 03 01 02 00 01 9e",
     "expected_state": {
       "on": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-2",
@@ -172,11 +140,7 @@
         255
       ],
       "alpha": 1.0
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-timer-2",
@@ -190,11 +154,7 @@
     "expected_bytes": "6e 20 0a 04 02 02 00 02 23 c5",
     "expected_state": {
       "minutes": 155
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-sensor_enabled-2-0",
@@ -208,11 +168,7 @@
     "expected_bytes": "6e 20 09 04 03 02 00 00 a0",
     "expected_state": {
       "sensor_enabled": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-sensor_enabled-2-1",
@@ -226,11 +182,7 @@
     "expected_bytes": "6e 20 09 04 03 02 00 01 a1",
     "expected_state": {
       "sensor_enabled": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-strip_on-2-0",
@@ -244,11 +196,7 @@
     "expected_bytes": "6e 20 09 04 04 02 00 00 a1",
     "expected_state": {
       "strip_on": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-strip_on-2-1",
@@ -262,11 +210,7 @@
     "expected_bytes": "6e 20 09 04 04 02 00 01 a2",
     "expected_state": {
       "strip_on": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-alarm-2",
@@ -288,11 +232,7 @@
         "field_27": 5,
         "field_2f": 6
       }
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:11951-12206",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-snore_detection-2-0",
@@ -306,11 +246,7 @@
     "expected_bytes": "6e 20 09 06 01 02 00 00 a0",
     "expected_state": {
       "snore_detection": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-snore_detection-2-1",
@@ -324,11 +260,7 @@
     "expected_bytes": "6e 20 09 06 01 02 00 01 a1",
     "expected_state": {
       "snore_detection": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-out_of_bed_detection-2-0",
@@ -342,11 +274,7 @@
     "expected_bytes": "6e 20 09 06 02 02 00 00 a1",
     "expected_state": {
       "out_of_bed_detection": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-out_of_bed_detection-2-1",
@@ -360,11 +288,7 @@
     "expected_bytes": "6e 20 09 06 02 02 00 01 a2",
     "expected_state": {
       "out_of_bed_detection": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-sleep-band-2",
@@ -383,11 +307,7 @@
         78,
         68
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-motor-3",
@@ -404,11 +324,7 @@
       "type": 2,
       "angle": 30,
       "monitorHeight": 60.0
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-zones-3",
@@ -431,11 +347,7 @@
           6
         ]
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-mode-3",
@@ -449,11 +361,7 @@
     "expected_bytes": "6e 20 09 02 02 03 00 03 a1",
     "expected_state": {
       "mode": 3
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-frequency-3",
@@ -467,11 +375,7 @@
     "expected_bytes": "6e 20 09 02 04 03 00 11 b1",
     "expected_state": {
       "frequency": 17
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-follow_intensity-3",
@@ -485,11 +389,7 @@
     "expected_bytes": "6e 20 09 02 05 03 00 02 a3",
     "expected_state": {
       "follow_intensity": 2
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-massage-on-3",
@@ -503,11 +403,7 @@
     "expected_bytes": "6e 20 09 02 06 03 00 01 a3",
     "expected_state": {
       "on": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-white-3-0",
@@ -521,11 +417,7 @@
     "expected_bytes": "6e 20 09 03 01 03 00 00 9e",
     "expected_state": {
       "on": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-white-3-1",
@@ -539,11 +431,7 @@
     "expected_bytes": "6e 20 09 03 01 03 00 01 9f",
     "expected_state": {
       "on": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-3",
@@ -562,11 +450,7 @@
         255
       ],
       "alpha": 1.0
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-timer-3",
@@ -580,11 +464,7 @@
     "expected_bytes": "6e 20 0a 04 02 03 00 02 23 c6",
     "expected_state": {
       "minutes": 155
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-sensor_enabled-3-0",
@@ -598,11 +478,7 @@
     "expected_bytes": "6e 20 09 04 03 03 00 00 a1",
     "expected_state": {
       "sensor_enabled": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-sensor_enabled-3-1",
@@ -616,11 +492,7 @@
     "expected_bytes": "6e 20 09 04 03 03 00 01 a2",
     "expected_state": {
       "sensor_enabled": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-strip_on-3-0",
@@ -634,11 +506,7 @@
     "expected_bytes": "6e 20 09 04 04 03 00 00 a2",
     "expected_state": {
       "strip_on": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-rgb-strip_on-3-1",
@@ -652,11 +520,7 @@
     "expected_bytes": "6e 20 09 04 04 03 00 01 a3",
     "expected_state": {
       "strip_on": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-alarm-3",
@@ -678,11 +542,7 @@
         "field_27": 5,
         "field_2f": 6
       }
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:11951-12206",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-snore_detection-3-0",
@@ -696,11 +556,7 @@
     "expected_bytes": "6e 20 09 06 01 03 00 00 a1",
     "expected_state": {
       "snore_detection": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-snore_detection-3-1",
@@ -714,11 +570,7 @@
     "expected_bytes": "6e 20 09 06 01 03 00 01 a2",
     "expected_state": {
       "snore_detection": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-out_of_bed_detection-3-0",
@@ -732,11 +584,7 @@
     "expected_bytes": "6e 20 09 06 02 03 00 00 a2",
     "expected_state": {
       "out_of_bed_detection": false
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-out_of_bed_detection-3-1",
@@ -750,11 +598,7 @@
     "expected_bytes": "6e 20 09 06 02 03 00 01 a3",
     "expected_state": {
       "out_of_bed_detection": true
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-sleep-band-3",
@@ -773,11 +617,7 @@
         78,
         68
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-1",
@@ -802,11 +642,7 @@
         9,
         180
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:9717-10293",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-2",
@@ -831,11 +667,7 @@
         9,
         181
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:9717-10293",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-3",
@@ -860,11 +692,7 @@
         9,
         182
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:9717-10293",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-4",
@@ -889,11 +717,7 @@
         9,
         183
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:9717-10293",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-5",
@@ -918,11 +742,7 @@
         9,
         184
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:9717-10293",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-6",
@@ -947,11 +767,7 @@
         9,
         185
       ]
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:9717-10293",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-unknown-domain",
@@ -963,11 +779,7 @@
       "construction": "synthetic branch input using artifact offsets, not a hardware capture"
     },
     "expected_bytes": "6e 20 09 07 01 02 00 01 a2",
-    "expected_state": null,
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    "expected_state": null
   },
   {
     "id": "RX-ignored-mode",
@@ -979,11 +791,7 @@
       "construction": "synthetic branch input using artifact offsets, not a hardware capture"
     },
     "expected_bytes": "6e 20 09 04 04 01 00 01 a1",
-    "expected_state": null,
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    "expected_state": null
   },
   {
     "id": "RX-alarm-wrong-subcommand",
@@ -995,11 +803,7 @@
       "construction": "synthetic branch input using artifact offsets, not a hardware capture"
     },
     "expected_bytes": "6e 20 09 05 02 02 00 01 a1",
-    "expected_state": null,
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    "expected_state": null
   },
   {
     "id": "RX-check-unknown-selector",
@@ -1011,11 +815,7 @@
       "construction": "synthetic branch input using artifact offsets, not a hardware capture"
     },
     "expected_bytes": "6e 20 09 0a 07 02 00 01 ab",
-    "expected_state": null,
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    "expected_state": null
   },
   {
     "id": "RX-v1-0x0",
@@ -1029,11 +829,7 @@
     "expected_bytes": "6e 90 00 2a 00",
     "expected_state": {
       "version": 42
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:4490-5576",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-v1-0x15",
@@ -1047,11 +843,7 @@
     "expected_bytes": "6e 90 15 2a 00",
     "expected_state": {
       "bed_mode": 5
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:4490-5576",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-v1-0x35",
@@ -1067,11 +859,7 @@
       "no": 1,
       "status": 1,
       "angle": 42
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:4490-5576",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-v1-0xa3",
@@ -1088,11 +876,7 @@
       "massage1": 2,
       "massage2": 5,
       "massage3": 4
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:4490-5576",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-status-0x10",
@@ -1106,11 +890,7 @@
     "expected_bytes": "6e 90 c2 10 00",
     "expected_state": {
       "check_status": "start"
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5890-6035; work/blutter/objs.txt:26788-26817",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-status-0x20",
@@ -1124,11 +904,7 @@
     "expected_bytes": "6e 90 c2 20 00",
     "expected_state": {
       "check_status": "stop"
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5890-6035; work/blutter/objs.txt:26788-26817",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-status-0x30",
@@ -1142,11 +918,7 @@
     "expected_bytes": "6e 90 c2 30 00",
     "expected_state": {
       "check_status": "pause"
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5890-6035; work/blutter/objs.txt:26788-26817",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-status-0x40",
@@ -1160,11 +932,7 @@
     "expected_bytes": "6e 90 c2 40 00",
     "expected_state": {
       "check_status": "repeat"
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5890-6035; work/blutter/objs.txt:26788-26817",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-check-status-0xf0",
@@ -1178,11 +946,7 @@
     "expected_bytes": "6e 90 c2 f0 00",
     "expected_state": {
       "check_status": "start"
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5890-6035; work/blutter/objs.txt:26788-26817",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-3-0x50",
@@ -1199,11 +963,7 @@
       "logged_status": "abnormal",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-3-0x51",
@@ -1220,11 +980,7 @@
       "logged_status": "normal",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-3-0x52",
@@ -1241,11 +997,7 @@
       "logged_status": "controlBoxMalfunction",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-3-0x53",
@@ -1262,11 +1014,7 @@
       "logged_status": "notPluggedIn",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-3-0x5f",
@@ -1283,11 +1031,7 @@
       "logged_status": "notPluggedIn",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-4-0x50",
@@ -1304,11 +1048,7 @@
       "logged_status": "abnormal",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-4-0x51",
@@ -1325,11 +1065,7 @@
       "logged_status": "normal",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-4-0x52",
@@ -1346,11 +1082,7 @@
       "logged_status": "controlBoxMalfunction",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-4-0x53",
@@ -1367,11 +1099,7 @@
       "logged_status": "notPluggedIn",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-4-0x5f",
@@ -1388,11 +1116,7 @@
       "logged_status": "notPluggedIn",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-5-0x50",
@@ -1409,11 +1133,7 @@
       "logged_status": "abnormal",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-5-0x51",
@@ -1430,11 +1150,7 @@
       "logged_status": "normal",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-5-0x52",
@@ -1451,11 +1167,7 @@
       "logged_status": "controlBoxMalfunction",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-5-0x53",
@@ -1472,11 +1184,7 @@
       "logged_status": "notPluggedIn",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-5-0x5f",
@@ -1493,11 +1201,7 @@
       "logged_status": "notPluggedIn",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-6-0x50",
@@ -1514,11 +1218,7 @@
       "logged_status": "abnormal",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-6-0x51",
@@ -1535,11 +1235,7 @@
       "logged_status": "normal",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-6-0x52",
@@ -1556,11 +1252,7 @@
       "logged_status": "controlBoxMalfunction",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-6-0x53",
@@ -1577,11 +1269,7 @@
       "logged_status": "notPluggedIn",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-diag-6-0x5f",
@@ -1598,11 +1286,7 @@
       "logged_status": "notPluggedIn",
       "logged_number": 5,
       "event_payload": {}
-    },
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:6036-6810; work/blutter/asm/richmat_library_utils/enum/device_common_enum.dart:7-9",
-      "parsers.py"
-    ]
+    }
   },
   {
     "id": "RX-bad-checksum",
@@ -1614,10 +1298,6 @@
       "construction": "synthetic branch input using artifact offsets, not a hardware capture"
     },
     "expected_bytes": "6e 20 0e 01 02 02 00 01 2c 02 1e 02 58 49",
-    "expected_state": null,
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:8080-13819",
-      "parsers.py"
-    ]
+    "expected_state": null
   }
 ]

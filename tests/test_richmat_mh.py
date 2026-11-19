@@ -1,4 +1,4 @@
-"""Richmat MH app profiles (APK audit row055, cluster-020): artifact vectors and behavior."""
+"""Richmat MH app profiles: artifact vectors and behavior."""
 
 from __future__ import annotations
 

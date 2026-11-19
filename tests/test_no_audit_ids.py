@@ -4,8 +4,7 @@ Name the app and its version instead. The integration and its docs are scanned
 in full, comments and docstrings included; tests, scripts and tools are scanned
 in their source text and file names. Exempt are the APK audit process docs and
 tracker guard, which handle the tracker's own id format, and the exact files in
-``EXEMPT_IDS``: saved-state keys a migration reads, and beds other in-flight
-work is rewriting.
+``EXEMPT_IDS``: saved-state keys a migration reads.
 """
 
 from __future__ import annotations
@@ -34,47 +33,7 @@ SAVED_STATE = {
     "docs/V5_BREAKING_CHANGES.md": {"cluster018"},
     "tests/test_richmat_classic_migration.py": {"cluster018"},
 }
-# Ids left in beds whose tests other in-flight v5 work is rewriting (2026-11-18):
-# Good Vibe, MLILY, Nisco, Casper, Hush, Luuna, Richmat app and MH, Jalon and
-# SonicSleep. Replace them with the app name and version, then drop the entry.
-IN_FLIGHT = {
-    "custom_components/adjustable_bed/beds/mlily_remote/receive.py": {"unit162"},
-    "scripts/wire_snapshot.py": {"cluster022"},
-    "tests/fixtures/richmat_cluster022": {"cluster022"},
-    "tests/fixtures/richmat_cluster022/README.md": {"cluster022"},
-    "tests/hush_vectors.py": {"row126"},
-    "tests/keeson_vectors.py": {"row135", "unit132"},
-    "tests/luuna_vectors.py": {"unit146"},
-    "tests/mlily_remote_vectors.py": {"unit162"},
-    "tests/richmat_cluster022_proof.py": {"cluster022"},
-    "tests/richmat_vectors.py": {"cluster-020", "cluster022", "row055", "row116", "row173"},
-    "tests/test_casper_base.py": {"row101"},
-    "tests/test_casper_base_protocol.py": {"row101"},
-    "tests/test_casper_base_review.py": {"row101"},
-    "tests/test_execution_capabilities.py": {"row055", "row061", "row081", "row132", "row173"},
-    "tests/test_goodvibe.py": {"row116"},
-    "tests/test_goodvibe_hold_lease.py": {"row116"},
-    "tests/test_hush_base.py": {"row126"},
-    "tests/test_jalon.py": {"unit132"},
-    "tests/test_jalon_bed.py": {"row135"},
-    "tests/test_luuna.py": {"unit146"},
-    "tests/test_mlily.py": {"row159"},
-    "tests/test_mlily_remote_ha.py": {"unit162"},
-    "tests/test_richmat.py": {"row055"},
-    "tests/test_richmat_app.py": {"row173"},
-    "tests/test_richmat_cluster022.py": {"cluster022"},
-    "tests/test_richmat_cluster022_parsers.py": {"cluster022"},
-    "tests/test_richmat_cluster022_services.py": {"cluster022"},
-    "tests/test_richmat_cluster022_setup.py": {"cluster022"},
-    "tests/test_richmat_cluster022_sleep.py": {"cluster022"},
-    "tests/test_richmat_mh.py": {"cluster-020", "row055"},
-    "tests/test_richmat_vectors.py": {"cluster022"},
-    "tests/test_sonicsleep_vectors.py": {"row179"},
-    "tools/generate_casper_base_catalog.py": {"row101"},
-    "tools/generate_casper_sleep_schema.py": {"row101"},
-    "tools/generate_richmat_mh_catalog.py": {"cluster-020", "row055"},
-}
-EXEMPT_IDS = {**IN_FLIGHT, **SAVED_STATE}
+EXEMPT_IDS = SAVED_STATE
 
 
 def _files(root: Path) -> Iterator[Path]:
@@ -122,11 +81,6 @@ PROVENANCE_KEYS = {
     "literal_source", "delta_source", "scope_disposition", "initial_state_origin",
     "report_sha256", "artifact_sha256", "artifact_set_sha256", "source_trace",
 }
-# Fixtures of beds other in-flight v5 work is regenerating (2026-11-18); strip them once it lands.
-IN_FLIGHT_FIXTURES = (
-    "galaxy", "goodvibe", "mlily", "casper", "hush", "luuna", "richmat_app", "richmat_mh",
-    "jalon", "sonicsleep", "bobpowerbase", "richmat_cluster022", "nisco",
-)
 
 
 def _keys(value: object) -> Iterator[str]:
@@ -144,7 +98,7 @@ def test_fixtures_carry_no_decompiler_provenance() -> None:
     found = {}
     for path in sorted(fixtures.rglob("*.json*")):
         relative = str(path.relative_to(fixtures))
-        if not path.name.endswith((".json", ".json.gz")) or any(m in relative for m in IN_FLIGHT_FIXTURES):
+        if not path.name.endswith((".json", ".json.gz")):
             continue
         raw = path.read_bytes()
         data = json.loads(gzip.decompress(raw) if path.suffix == ".gz" else raw)

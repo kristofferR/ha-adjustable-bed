@@ -26,6 +26,7 @@ from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.keeson import AppAction, AppProfile
 from ..base import BedController, ProfileExecution
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -65,6 +66,62 @@ def name_frame(name: str, *, max_units: int = 15) -> bytes:
 
 
 APP_TIMER_STATUS: Final = StateKey[int | None]("app_timer_status")
+
+
+# What each app key is, in plain words: the profile keeps the app's own labels.
+# Memory-labelled keys are opaque app presets, not memory slots.
+_APP_CONTROLS: Final[dict[str, tuple[str, Kind | None]]] = {
+    "zg": ("Zero G", None),
+    "zero_g": ("Zero G", None),
+    "zero_gravity": ("Zero G", None),
+    "tv": ("TV", None),
+    "TV": ("TV", None),
+    "tv_III": ("TV", None),
+    "read": ("Reading", None),
+    "lounge": ("Lounge", None),
+    "lounge_II": ("Lounge", None),
+    "anti_snore": ("Anti-snore", None),
+    "anti_snore_I": ("Anti-snore", None),
+    "anti_snooze": ("Anti-snooze", Kind.PRESET),
+    "m4": ("M4", Kind.PRESET),
+    "mx_memory1": ("Memory 1", Kind.PRESET),
+    "memory_2": ("Memory 2", Kind.PRESET),
+    "memory_3": ("Memory 3", Kind.PRESET),
+    "memory_4": ("Memory 4", Kind.PRESET),
+    "memory_level_1": ("Memory 1", Kind.PRESET),
+    "memory_level_2": ("Memory 2", Kind.PRESET),
+    "memory_level_3": ("Memory 3", Kind.PRESET),
+    "masheadadd": ("Increase head massage", None),
+    "massage_head": ("Increase head massage", None),
+    "massage_head_add": ("Increase head massage", None),
+    "masfootadd": ("Increase foot massage", None),
+    "massage_foot": ("Increase foot massage", None),
+    "massage_foot_add": ("Increase foot massage", None),
+    "masheadmin": ("Decrease head massage", None),
+    "massage_head_min": ("Decrease head massage", None),
+    "massage_head_decrease": ("Decrease head massage", None),
+    "masfootmin": ("Decrease foot massage", None),
+    "massage_foot_min": ("Decrease foot massage", None),
+    "massage_foot_decrease": ("Decrease foot massage", None),
+    "massage_all": ("Massage all", Kind.MASSAGE),
+    "lumbar_massage": ("Lumbar massage", Kind.MASSAGE),
+    "level": ("Massage level", Kind.MASSAGE),
+    "timer": ("Massage timer", None),
+    "massage_timer": ("Massage timer", None),
+    "ubb": ("Under-bed light", Kind.LIGHT),
+    "light": ("Light", Kind.LIGHT),
+    "tiltup": ("Tilt up", None),
+    "tiltdown": ("Tilt down", None),
+    "tilt_up": ("Tilt up", None),
+    "tilt_down": ("Tilt down", None),
+    "lumbarup": ("Lumbar up", None),
+    "lumbardown": ("Lumbar down", None),
+    "lumbar_up": ("Lumbar up", None),
+    "lumbar_down": ("Lumbar down", None),
+    "level1": ("Level 1", None),
+    "level2": ("Level 2", None),
+    "level3": ("Level 3", None),
+}
 
 
 class AppController(ProfileExecution[AppProfile], BedController):
@@ -150,33 +207,36 @@ class AppController(ProfileExecution[AppProfile], BedController):
 
             return run
 
-        specs = tuple(
-            ControllerButtonSpec(
+        specs = [
+            catalog_button(
                 a.key,
-                a.name,
+                _APP_CONTROLS.get(a.key, (a.name, None))[0],
                 press(a.key),
+                kind=_APP_CONTROLS.get(a.key, (a.name, None))[1],
                 hold=ControllerHoldSpec(a.key, 0, _CARD_RELEASE_DELAY_MS)
                 if a.mode in ("held", "held_zeros")
                 else None,
             )
             for a in self.profile.actions
-            if a.key not in {"head_up", "head_down", "foot_up", "foot_down"}
-        )
+            # The covers move head and foot; the shared Flat button sends flat.
+            if a.key not in {"head_up", "head_down", "foot_up", "foot_down", "flat"}
+        ]
         if self.profile.shutdown_count:
 
             async def dismiss(controller: BedController) -> None:
                 await controller.stop_wake_routine()
 
-            specs += (
-                ControllerButtonSpec(
+            specs.append(
+                catalog_button(
                     "dismiss_alarm",
                     "Dismiss wake vibration",
                     dismiss,
+                    kind=Kind.MASSAGE,
                     cancel_movement=False,
                     scheduler_resource="configuration",
-                ),
+                )
             )
-        return specs
+        return unique_buttons(specs)
 
     def controller_button_available(self, key: str) -> bool:
         """Old layout entities cannot keep a control admitted after reload."""

@@ -252,7 +252,6 @@ def test_profiles_expose_only_their_own_app_surface() -> None:
             "head_foot_down",
             "save_zero_g",
             "save_tv",
-            "light_toggle",
             "massage_timer_cycle",
             "massage_intensity_cycle",
         )
@@ -265,7 +264,6 @@ def test_profiles_expose_only_their_own_app_surface() -> None:
             "selector_5_down",
             "save_zero_g",
             "save_tv",
-            "light_toggle",
             "massage_timer_cycle",
             "massage_head_cycle",
             "massage_foot_cycle",

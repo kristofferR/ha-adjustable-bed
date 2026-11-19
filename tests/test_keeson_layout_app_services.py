@@ -192,7 +192,7 @@ async def test_action_button_uses_current_controller_and_existing_scheduler():
     button = ControllerActionButton(coord, spec)
     await button.async_press()
     assert coord.async_execute_controller_command.await_args.kwargs["cancel_running"] is True
-    assert button.translation_key == "remote_action"
+    assert button.translation_key == "catalog_preset"
     assert button.unique_id == "bed_mx_memory1"
 
 

@@ -1017,6 +1017,14 @@ class BedController(GattWriter):
         return False
 
     @property
+    def memory_slots_recalled_by_presets(self) -> frozenset[int]:
+        """Memory slots a named preset button already recalls.
+
+        The preset keeps the recall, so the slot shows only its save.
+        """
+        return frozenset()
+
+    @property
     def memory_slot_names_allow_blank(self) -> bool:
         """Whether a blank bed-reported memory name replaces the translated one."""
         return False
@@ -1064,10 +1072,6 @@ class BedController(GattWriter):
     def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
         """Optional held-control metadata for an existing standard button."""
         return None
-
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        """Whether the native card confirms a standard button before sending it."""
-        return False
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:

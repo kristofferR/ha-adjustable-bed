@@ -92,9 +92,6 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
     def is_memory_slot_programmable(self, memory_num: int) -> bool:
         return type(memory_num) is int and memory_num == 1
 
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key == "program_memory_1"
-
     @property
     def held_control_options(self) -> tuple[str, ...]:
         return tuple(DIRECTIONS)

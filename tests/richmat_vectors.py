@@ -45,7 +45,7 @@ def _galaxy() -> frozenset[str]:
 
 
 def _goodvibe() -> frozenset[str]:
-    """Good Vibe Sleep 2.0.1 (row116): the accepted report's vectors in ``fixtures/goodvibe``.
+    """Good Vibe Sleep 2.0.1: the accepted report's vectors in ``fixtures/goodvibe``.
 
     Every catalog action alternative, the inline startup, release and timer
     frames, and the settings, alarm and time-sync builders, plus the cancelled
@@ -539,7 +539,7 @@ _RUF_RICHMAT: dict[str, frozenset[str]] = {
 }
 
 
-# Richmat MH row055 (cluster-020): the five apps share one BLE library and their
+# Richmat MH apps: the five apps share one BLE library and their
 # reconciled builders are identical, so every app freezes the union of the five
 # accepted reports: revive3 1.0.26 (-055-006), best_mattress 1.1.1 (-055-005),
 # blvd_home 1.0.1 (-055-008), harmony 1.0.0 (-055-006), idealbed 2.4.2 (-055-003).
@@ -2151,7 +2151,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
 FROZEN_FRAMES.update(BEDTECH_APP_FRAMES)
 
 
-# Accepted row173: all preserved generic, extended and receive literal fixtures.
+# Richmat app: all preserved generic, extended and receive literal fixtures.
 def _richmat_app() -> frozenset[str]:
     rows = json.loads(
         gzip.decompress(
@@ -2253,9 +2253,9 @@ def _okimiki() -> frozenset[str]:
 FROZEN_FRAMES["okimiki"] = _okimiki() | frozenset({"2b", "2c", "65", "66"})
 
 
-def _cluster022_frames() -> dict[str, frozenset[str]]:
+def _nisco_supreme_frames() -> dict[str, frozenset[str]]:
     result = {}
-    directory = Path(__file__).parent / "fixtures/richmat_cluster022"
+    directory = Path(__file__).parent / "fixtures/richmat_nisco_supreme"
     for app in ("nisco", "mlily_supreme"):
         values = set()
         for row in json.loads((directory / f"{app}_vectors.json").read_text()):
@@ -2272,4 +2272,4 @@ def _cluster022_frames() -> dict[str, frozenset[str]]:
     return result
 
 
-FROZEN_FRAMES.update(_cluster022_frames())
+FROZEN_FRAMES.update(_nisco_supreme_frames())

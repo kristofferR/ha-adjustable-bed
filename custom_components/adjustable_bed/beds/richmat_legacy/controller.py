@@ -10,11 +10,11 @@ from math import floor
 from time import monotonic
 from typing import TYPE_CHECKING, Final
 
-from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
 from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles.richmat_legacy import Action, LegacyProfile, profiles
 from ..base import BedController, ProfileExecution
+from ..catalog_buttons import Kind, catalog_button, classify, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -301,7 +301,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
             if spec.hold is not None
             for key in (spec.hold.up_control, spec.hold.down_control)
         }
-        specs = []
+        specs: list[ControllerButtonSpec | None] = []
         for action in self.profile.actions:
             # Covers own their directions. Local-only pickers (axis/mode choice,
             # cancelling the app's refresh) and controls that only send the
@@ -323,35 +323,36 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                     label = shown
                     if program:
                         label = ("Save to " if name.startswith("Memory") else "Save ") + shown
-                    section = (
-                        CARD_PRESET_SAVE
-                        if program
-                        else CARD_PRESETS
-                        if action.programmable or name in _PRESET_NAMES
-                        else CARD_LIGHTING
-                        if label == "Toggle Light"
-                        else CARD_MASSAGE
-                        if name.startswith("Massage")
-                        else CARD_UTILITY
-                    )
+                    if program:
+                        kind: Kind | None = Kind.SAVE
+                    elif action.motion:
+                        kind = Kind.MOTOR
+                    elif action.programmable or name in _PRESET_NAMES:
+                        # A recall: a memory slot when the label names one.
+                        recall = classify(shown)
+                        kind = Kind.MEMORY if recall and recall.kind is Kind.MEMORY else Kind.PRESET
+                    elif name.startswith("Massage"):
+                        # The shown wording ("All Off", "Head On/Off") drops the word.
+                        kind = Kind.MASSAGE
+                    elif label == "Toggle Light":
+                        kind = Kind.LIGHT
+                    else:
+                        kind = None
                     specs.append(
-                        ControllerButtonSpec(
+                        catalog_button(
                             "richmat_legacy_"
                             + control.replace("@", "_")
                             + ("_save" if program else ""),
                             label,
                             partial(_press, control=control, program=program),
-                            translation_key="richmat_legacy_"
-                            + ("save" if program else section.section.value),
-                            translation_placeholders={"action": label},
+                            kind=kind,
                             hold=ControllerHoldSpec(control) if action.motion else None,
-                            requires_confirmation=program or label == "Factory Reset",
+                            requires_confirmation=label == "Factory Reset",
                             invalidates_position=action.motion,
                             scheduler_resource="*",
-                            card=section,
                         )
                     )
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:

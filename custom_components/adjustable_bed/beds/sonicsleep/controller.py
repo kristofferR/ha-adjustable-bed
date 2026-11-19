@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_PRESET_SAVE, CARD_PRESETS
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_PRODUCT_TYPE
@@ -28,6 +27,7 @@ from ...profiles.sonicsleep import (
     SonicSleepProfile,
 )
 from ..base import BedController, ProfileExecution
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -172,22 +172,20 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         names = {"zero_gravity": "Zero Gravity", "lounge": "Lounge", "tv": "TV", "anti_snore": "Anti-snore"}
         return tuple(
-            ControllerButtonSpec(
-                "sonicsleep_" + action + ("_save" if save else ""),
-                ("Save " if save else "") + names[action],
-                partial(_action, action=action, save=save),
-                icon="mdi:content-save" if save else "mdi:bed",
-                # Saves overwrite a preset: the card lists them as saves, never recalls.
-                translation_key="sonicsleep_save" if save else "sonicsleep_action",
-                translation_placeholders={"action": ("Save " if save else "") + names[action]},
-                card=CARD_PRESET_SAVE if save else CARD_PRESETS,
-                requires_confirmation=save,
-            )
+            spec
             for action in PRESETS if not action.startswith("memory_") for save in (False, True)
+            if (
+                spec := catalog_button(
+                    "sonicsleep_" + action + ("_save" if save else ""),
+                    ("Save " if save else "") + names[action],
+                    partial(_action, action=action, save=save),
+                    # Saves overwrite a preset: the card lists them as saves, never recalls.
+                    kind=Kind.SAVE if save else Kind.PRESET,
+                    icon="mdi:content-save" if save else "mdi:bed",
+                )
+            )
+            is not None
         )
-
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key in ("program_memory_1", "program_memory_2")
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

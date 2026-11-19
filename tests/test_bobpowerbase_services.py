@@ -1,4 +1,4 @@
-"""S1–S3: real service reconnect/admission and retained light entity identities."""
+"""Power Bob Base: service reconnect and admission, and retained light entity identities."""
 
 from __future__ import annotations
 

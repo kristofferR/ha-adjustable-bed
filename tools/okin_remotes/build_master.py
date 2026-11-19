@@ -8,11 +8,11 @@ Live codes -> authoritative backend keycodes.
 Pruned codes (in CSV, not live) -> inherit keycodes from a live code with the
 identical capability signature; else reconstruct from the universal keycode map.
 """
+import collections
 import csv
 import glob
 import json
 import sys
-import collections
 
 CACHE = "cache"
 CSV_PATH = "handsetlist.csv"

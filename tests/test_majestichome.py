@@ -257,8 +257,10 @@ def test_preset_saves_use_the_save_placement():
     saves = [spec for spec in controller.controller_button_specs if spec.name.startswith("Save ")]
     assert {spec.name for spec in saves} >= {"Save Zero Gravity", "Save Anti-Snore"}
     for spec in saves:
-        assert spec.requires_confirmation
-        if not spec.key.startswith("majestichome_memory_"):
-            assert (
-                spec.card == CARD_PRESET_SAVE and spec.translation_key == "majestichome_save_action"
-            )
+        if spec.key.startswith("majestichome_memory_"):
+            # A memory save is offered in the card's Set mode; it asks no second time.
+            assert spec.translation_key.startswith("program_memory_")
+            assert not spec.requires_confirmation
+        else:
+            assert spec.card == CARD_PRESET_SAVE and spec.translation_key == "catalog_save"
+            assert spec.requires_confirmation

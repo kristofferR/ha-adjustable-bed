@@ -10,8 +10,8 @@ from homeassistant.exceptions import ServiceValidationError
 from custom_components.adjustable_bed.beds.richmat_mh import app_services as actions
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
-from tests.test_richmat_cluster022 import frames, make
 from tests.test_richmat_mh import sleeps as sleeps
+from tests.test_richmat_nisco_supreme import frames, make
 
 
 def target(controller):
