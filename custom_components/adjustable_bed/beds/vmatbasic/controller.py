@@ -34,6 +34,7 @@ from ...execution import ExecutionCapabilities
 from ...profiles import vmatbasic as vmat_profiles
 from ..base import BedController, require_controller
 from ..builder import BuildContext
+from ..cancellation import cancellable
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -119,24 +120,6 @@ def validate_profile_roles(client: BleakClient, profile: str) -> None:
         _profile_characteristic(client, codec.SERVICE_UUID, codec.LIGHT_CHAR_UUID, "write")
     elif profile == "xtbox":
         _profile_characteristic(client, codec.SERVICE_UUID, codec.CBI_CHAR_UUID, "write")
-
-
-async def _cancellable[T](operation: Coroutine[Any, Any, T], event: asyncio.Event) -> T:
-    if event.is_set():
-        operation.close()
-        raise asyncio.CancelledError
-    task = asyncio.create_task(operation)
-    cancellation = asyncio.create_task(event.wait())
-    try:
-        done, _ = await asyncio.wait((task, cancellation), return_when=asyncio.FIRST_COMPLETED)
-        if cancellation in done:
-            raise asyncio.CancelledError
-        return task.result()
-    finally:
-        for pending in (task, cancellation):
-            if not pending.done():
-                pending.cancel()
-        await asyncio.gather(task, cancellation, return_exceptions=True)
 
 
 class VMatBasicController(BedController):
@@ -317,7 +300,7 @@ class VMatBasicController(BedController):
                 note_frame_written(event)
 
         async with asyncio.timeout(0.8):
-            await _cancellable(operation(), event)
+            await cancellable(operation(), event)
 
     async def _read(self, service: str, uuid: str) -> bytes:
         event = self._coordinator.cancel_command
@@ -331,7 +314,7 @@ class VMatBasicController(BedController):
                 return bytes(await client.read_gatt_char(characteristic))
 
         async with asyncio.timeout(0.8):
-            return await _cancellable(operation(), event)
+            return await cancellable(operation(), event)
 
     async def _release(self) -> None:
         async def release() -> None:
@@ -382,7 +365,7 @@ class VMatBasicController(BedController):
                         # Scheduling attempts, not guaranteed wire cadence.
                         elapsed = asyncio.get_running_loop().time() - started
                         delay = max(0, vmat_profiles.HOLD_INTERVAL_S - elapsed)
-                        await _cancellable(asyncio.sleep(delay), event)
+                        await cancellable(asyncio.sleep(delay), event)
             except TimeoutError:
                 if not budget.expired():
                     raise
@@ -424,7 +407,7 @@ class VMatBasicController(BedController):
                 await self._write(codec.SERVICE_UUID, codec.MOTOR_CHAR_UUID, command, event)
                 if index + 1 < repeat_count:
                     elapsed = asyncio.get_running_loop().time() - started
-                    await _cancellable(
+                    await cancellable(
                         asyncio.sleep(max(0, vmat_profiles.HOLD_INTERVAL_S - elapsed)), event
                     )
         finally:

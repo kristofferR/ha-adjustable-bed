@@ -26,6 +26,7 @@ from ...const import (
 from ...profiles import agingplace as app
 from ..base import BedController
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -65,21 +66,6 @@ class _AutomaticIntent:
             return False
         self.action = None
         return True
-
-
-async def _drain[T](operation: Awaitable[T]) -> T:
-    """Let an admitted write finish before cancellation can start its release."""
-    task = asyncio.ensure_future(operation)
-    interrupted: asyncio.CancelledError | None = None
-    while not task.done():
-        try:
-            await asyncio.wait((task,))
-        except asyncio.CancelledError as err:
-            interrupted = err
-    result = task.result()
-    if interrupted is not None:
-        raise interrupted
-    return result
 
 
 def _action(name: str) -> MotorCommandCallable:
@@ -332,7 +318,7 @@ class AgingPlaceController(KeesonController):
         for index in range(repeat_count):
             if cancel.is_set():
                 return
-            await _drain(self._send(command, client, epoch, cancel))
+            await settled(self._send(command, client, epoch, cancel))
             if index + 1 < repeat_count:
                 await self._wait(cancel, repeat_delay_ms / 1000)
 
@@ -390,7 +376,7 @@ class AgingPlaceController(KeesonController):
                         context.cleanup_stop_sent = True
                         self._cleanup = (client, epoch, context)
 
-                await _drain(release())
+                await settled(release())
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
         if direction is None:
@@ -448,7 +434,7 @@ class AgingPlaceController(KeesonController):
         flat_sent = False
         if name == "flat":
             # A cancelled writer can return normally without transmitting any chunks.
-            flat_sent = await _drain(
+            flat_sent = await settled(
                 self._send(
                     action.frame(self.device_id), client, epoch, self._coordinator.cancel_command
                 )

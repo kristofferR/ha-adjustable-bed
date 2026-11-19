@@ -10,9 +10,9 @@ import asyncio
 import logging
 import math
 import sys
-from collections.abc import Callable, Coroutine, Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, replace
-from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict
+from typing import TYPE_CHECKING, Final, Literal, TypedDict
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -68,6 +68,7 @@ from ...profiles.vibradorm import (
 from ...state_keys import LIGHT_LEVEL, LIGHT_TIMER_OPTION
 from ..base import BedController, require_controller
 from ..builder import BuildContext
+from ..cancellation import cancellable, settled
 from ..entity_specs import (
     POSITION_AXIS_COMMANDS,
     ControllerButtonSpec,
@@ -206,26 +207,6 @@ def parse_sync(data: bytes) -> bool | None:
     return None if reply is None else bool(reply[0] & 0x40)
 
 
-async def _cancellable[T](operation: Coroutine[Any, Any, T], event: asyncio.Event | None) -> T:
-    if event is None:
-        return await operation
-    if event.is_set():
-        operation.close()
-        raise asyncio.CancelledError
-    task = asyncio.create_task(operation)
-    cancellation = asyncio.create_task(event.wait())
-    try:
-        done, _ = await asyncio.wait((task, cancellation), return_when=asyncio.FIRST_COMPLETED)
-        if cancellation in done:
-            raise asyncio.CancelledError
-        return task.result()
-    finally:
-        for pending in (task, cancellation):
-            if not pending.done():
-                pending.cancel()
-        await asyncio.gather(task, cancellation, return_exceptions=True)
-
-
 async def _information_transaction(
     client: BleakClient,
     profile: VibradormAppProfile,
@@ -245,7 +226,7 @@ async def _information_transaction(
             return await async_read_vmat_dis(client, cancel_event, metadata_progress)
         for field, uuid in INFO_FIELDS:
             char = _characteristic(client, uuid, "read")
-            raw = await _cancellable(client.read_gatt_char(char), cancel_event)
+            raw = await cancellable(client.read_gatt_char(char), cancel_event)
             values[field] = decode_standard_info(raw)
             if metadata_progress is not None:
                 if field == "model":
@@ -259,7 +240,7 @@ async def _information_transaction(
                 if prepare_reply is None:
                     raise RuntimeError("Article reply routing is required")
                 article_reply = prepare_reply()
-                await _cancellable(
+                await cancellable(
                     client.write_gatt_char(
                         _characteristic(client, codec.CBI_CHAR_UUID, "write"),
                         ARTICLE_REQUEST,
@@ -272,7 +253,7 @@ async def _information_transaction(
                 async def receive(reply: asyncio.Future[str] = article_reply) -> str:
                     return await reply
 
-                article = await _cancellable(receive(), cancel_event)
+                article = await cancellable(receive(), cancel_event)
     return VibradormAppMetadata(values["model"], values["firmware"], values["software"], article)
 
 
@@ -327,7 +308,7 @@ async def async_prepare_vibradorm_app_pairing(
             if not profile.basic:
                 notify_char = _characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
                 subscribed = True
-                await _cancellable(client.start_notify(notify_char, callback), cancel_event)
+                await cancellable(client.start_notify(notify_char, callback), cancel_event)
             return await _information_transaction(
                 client,
                 profile,
@@ -348,26 +329,13 @@ async def async_prepare_vibradorm_app_pairing(
 
             original = sys.exception()
             try:
-                await _shield_cleanup(unsubscribe())
+                await settled(unsubscribe())
             except Exception:
                 if original is None:
                     raise
                 _LOGGER.debug(
                     "Unsubscribe failed after an earlier information failure", exc_info=True
                 )
-
-
-async def _shield_cleanup(operation: Coroutine[Any, Any, None]) -> None:
-    task = asyncio.create_task(operation)
-    interrupted = False
-    while not task.done():
-        try:
-            await asyncio.shield(task)
-        except asyncio.CancelledError:
-            interrupted = True
-    task.result()
-    if interrupted:
-        raise asyncio.CancelledError
 
 
 def _button(action: str) -> MotorCommandCallable:
@@ -824,7 +792,7 @@ class VibradormAppController(BedController):
             if self.profile.app_profile == "vmat" and packet not in _RELEASES:
                 delay = self._next_write_at - asyncio.get_running_loop().time()
                 if delay > 0:
-                    await _cancellable(asyncio.sleep(delay), effective_event)
+                    await cancellable(asyncio.sleep(delay), effective_event)
             client = self.client
             if client is None or not client.is_connected:
                 raise ConnectionError("Not connected")
@@ -915,7 +883,7 @@ class VibradormAppController(BedController):
         if self.profile.app_profile == "vmat":
             from .vmat_setup import vmat_characteristic
 
-            await _cancellable(asyncio.sleep(0.5), self._coordinator.cancel_command)
+            await cancellable(asyncio.sleep(0.5), self._coordinator.cancel_command)
             char = vmat_characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
             self._notify_generation += 1
             generation = self._notify_generation
@@ -1076,7 +1044,7 @@ class VibradormAppController(BedController):
                             assert self._sync_reply is not None
                             return await self._sync_reply
 
-                        active = await _cancellable(receive(), event)
+                        active = await cancellable(receive(), event)
                         self._sync_reply = None
                         opcode = SYNC_ACTIVE if active else SYNC_INACTIVE
                     else:
@@ -1093,7 +1061,7 @@ class VibradormAppController(BedController):
                     )
                     while not event.is_set():
                         await self._write(self.control_characteristic_uuid, packet)
-                        await _cancellable(asyncio.sleep(0.1), event)
+                        await cancellable(asyncio.sleep(0.1), event)
             except TimeoutError:
                 if not budget.expired():
                     raise
@@ -1155,7 +1123,7 @@ class VibradormAppController(BedController):
                 if self._coordinator.cancel_command.is_set():
                     break
                 await self._write(codec.CBI_CHAR_UUID, packet)
-                await _cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
+                await cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
         finally:
             await self._cleanup_preserving_error(4)
 
@@ -1321,7 +1289,7 @@ class VibradormAppController(BedController):
         try:
             for index, packet in enumerate(packets):
                 if index:
-                    await _cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
+                    await cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
                 await self._write(codec.CBI_CHAR_UUID, packet)
         except BaseException:
             if self.profile.app_profile == "vmat":
