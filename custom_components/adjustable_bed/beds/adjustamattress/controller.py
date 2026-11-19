@@ -12,7 +12,15 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
-from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY, CardPlacement
+from ...card import (
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_PRESETS,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    motor_card,
+)
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...detection import is_mac_like_name
@@ -20,6 +28,7 @@ from ...profiles import keeson as keeson_profiles
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import EXTRA_KEY
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -114,6 +123,9 @@ def _button_card(key: str) -> CardPlacement:
     """Place an app button, keyed as in BUTTON_KEYS, in the card."""
     if key == "m1":
         return CARD_PRESETS
+    if key in ("lift_head", "lift_foot"):
+        # One end of the lift rises; its row has no down of its own.
+        return motor_card(key, CardRole.UP)
     if key == "underbed_lighting":
         return CARD_LIGHTING
     if key in _MASSAGE_BUTTONS or key.startswith("query_massage"):
@@ -668,16 +680,21 @@ class AdjustaMattressController(
                 demonstration="Demonstrate anti-snore",
                 query_status="Refresh anti-snore status",
             )
+        # Named in the shared action shape: a lift end and a demonstration.
+        shared = {"liftHead", "liftFoot", "demonstration"}
         return tuple(
             ControllerButtonSpec(
                 NS + BUTTON_KEYS.get(key, key),
                 label,
                 _action(key),
-                translation_key=NS + BUTTON_KEYS.get(key, key),
+                translation_key=EXTRA_KEY if key in shared else NS + BUTTON_KEYS.get(key, key),
+                translation_placeholders={"action": label} if key in shared else None,
                 card=_button_card(BUTTON_KEYS.get(key, key)),
                 scheduler_resource="*",
                 hold=ControllerHoldSpec(key, 0, 0) if key in self.held_control_options else None,
                 diagnostic=key.startswith("query_"),
+                # A demonstration is there to try once, not for the dashboard.
+                entity_registry_enabled_default=key != "demonstration",
             )
             for key, label in actions.items()
         )

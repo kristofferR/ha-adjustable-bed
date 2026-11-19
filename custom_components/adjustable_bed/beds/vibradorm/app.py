@@ -24,6 +24,7 @@ from ...card import (
     CardPlacement,
     CardRole,
     CardSection,
+    motor_card,
 )
 from ...codec import vibradorm as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written, note_write_not_counted
@@ -668,13 +669,19 @@ class VibradormAppController(BedController):
                 ("massage_automatic", "Automatic Massage"),
                 ("massage_individual", "Individual Massage"),
             ]
+        # All motors together is the shared all-motors row.
+        rows = {"all_up": CardRole.UP, "all_down": CardRole.DOWN}
         return tuple(
             ControllerButtonSpec(
                 f"vibradorm_app_{action}",
                 name,
                 _button(action),
-                translation_key=f"vibradorm_app_{action}",
-                card=_BUTTON_CARDS.get(action, CARD_UTILITY),
+                translation_key=f"vibradorm_app_{action}"
+                if action not in rows
+                else f"all_motors_{rows[action]}",
+                card=_BUTTON_CARDS.get(action, CARD_UTILITY)
+                if action not in rows
+                else motor_card("all_motors", rows[action]),
                 diagnostic=action == "refresh_info",
             )
             for action, name in actions

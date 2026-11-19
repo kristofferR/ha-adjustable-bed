@@ -2090,23 +2090,11 @@
       "vibradorm_app_massage_individual": {
         "name": "Toggle individual massage"
       },
-      "vibradorm_app_all_up": {
-        "name": "All motors up"
-      },
-      "vibradorm_app_all_down": {
-        "name": "All motors down"
-      },
       "vibradorm_app_sync": {
         "name": "Synchronize"
       },
       "vibradorm_app_refresh_info": {
         "name": "Refresh device information"
-      },
-      "vmatbasic_all_up": {
-        "name": "All motors up"
-      },
-      "vmatbasic_all_down": {
-        "name": "All motors down"
       },
       "vmatbasic_refresh_info": {
         "name": "Refresh device information"
@@ -2159,15 +2147,6 @@
       "starcode_abm5_4_light_minus": {
         "name": "Decrease floor light"
       },
-      "starcode_abm5_4_save_tv": {
-        "name": "Save TV position"
-      },
-      "starcode_abm5_4_save_lounge": {
-        "name": "Save lounge position"
-      },
-      "starcode_abm5_4_save_zero_g": {
-        "name": "Save zero-gravity position"
-      },
       "starcode_abm5_4_reset": {
         "name": "Reset stored positions"
       },
@@ -2207,15 +2186,6 @@
       "restonic_zzz": {
         "name": "Zzz"
       },
-      "starcode_save_tv": {
-        "name": "Save TV position"
-      },
-      "starcode_save_zero_g": {
-        "name": "Save zero gravity position"
-      },
-      "starcode_save_lounge": {
-        "name": "Save lounge position"
-      },
       "starcode_reset": {
         "name": "Reset saved positions"
       },
@@ -2227,15 +2197,6 @@
       },
       "starcode_query": {
         "name": "Refresh massage and light state"
-      },
-      "starcode_m1x12_save_tv": {
-        "name": "Save TV position"
-      },
-      "starcode_m1x12_save_zero_g": {
-        "name": "Save zero gravity position"
-      },
-      "starcode_m1x12_save_lounge": {
-        "name": "Save reading or lounge position"
       },
       "starcode_m1x12_save_memory_1": {
         "name": "Save M1 position"
@@ -2294,18 +2255,6 @@
       "simmons_refresh_alarms": {
         "name": "Refresh alarms"
       },
-      "adjustable_lumbar_save_zero_g": {
-        "name": "Save zero gravity"
-      },
-      "adjustable_lumbar_save_lounge": {
-        "name": "Save lounge"
-      },
-      "adjustable_lumbar_save_incline": {
-        "name": "Save incline"
-      },
-      "adjustable_lumbar_save_anti_snore": {
-        "name": "Save anti-snore"
-      },
       "adjustable_lumbar_wave_1": {
         "name": "Massage wave 1"
       },
@@ -2348,12 +2297,6 @@
       "richmat_mh_stop_detection": {
         "name": "Stop component check"
       },
-      "ore_comfort_program_flat": {
-        "name": "Save flat"
-      },
-      "ore_comfort_program_zero_g": {
-        "name": "Save zero gravity"
-      },
       "ore_comfort_massage_start": {
         "name": "Start massage"
       },
@@ -2377,15 +2320,6 @@
       },
       "sleeptracker_identify": {
         "name": "Identify"
-      },
-      "sleeptracker_save_zero_g": {
-        "name": "Save zero gravity"
-      },
-      "sleeptracker_save_anti_snore": {
-        "name": "Save anti-snore"
-      },
-      "sleeptracker_save_tv_pc": {
-        "name": "Save TV position"
       },
       "sleeptracker_massage_28hz": {
         "name": "28 Hz massage"
@@ -2422,15 +2356,6 @@
       },
       "sleepys_app_memory_2": {
         "name": "Memory 2"
-      },
-      "sleepys_app_save_zero_gravity": {
-        "name": "Save zero gravity"
-      },
-      "sleepys_app_save_lounge": {
-        "name": "Save lounge"
-      },
-      "sleepys_app_save_tv": {
-        "name": "Save TV"
       },
       "sleepys_app_preset_flat": {
         "name": "Flat"
@@ -2498,12 +2423,6 @@
       "sleepys_app_massage_toggle": {
         "name": "Cycle massage mode"
       },
-      "eshine_save_zero_g": {
-        "name": "Save zero gravity"
-      },
-      "eshine_save_anti_snore": {
-        "name": "Save anti-snore"
-      },
       "eshine_massage_head_strength": {
         "name": "Cycle head massage strength"
       },
@@ -2515,12 +2434,6 @@
       },
       "isleep_pattern": {
         "name": "Massage pattern {pattern}"
-      },
-      "isleep_all_down": {
-        "name": "All down"
-      },
-      "isleep_all_up": {
-        "name": "All up"
       },
       "isleep_enroll": {
         "name": "Add bed to room"
@@ -2546,9 +2459,6 @@
       "adjustamattress_m1": {
         "name": "M1"
       },
-      "adjustamattress_demonstration": {
-        "name": "Demonstrate anti-snore"
-      },
       "adjustamattress_query_status": {
         "name": "Refresh anti-snore status"
       },
@@ -2566,12 +2476,6 @@
       },
       "adjustamattress_underbed_lighting": {
         "name": "Toggle under-bed light"
-      },
-      "adjustamattress_lift_head": {
-        "name": "Lift head"
-      },
-      "adjustamattress_lift_foot": {
-        "name": "Lift foot"
       },
       "hjbed_release": {
         "name": "Release held control"
@@ -2593,9 +2497,6 @@
       },
       "goodvibe_release": {
         "name": "Release held control"
-      },
-      "eshine_okin_flat_zero_g": {
-        "name": "Flat and zero gravity"
       },
       "eshine_okin_query_state": {
         "name": "Refresh bed state"
@@ -3068,12 +2969,6 @@
       "rize_pattern": {
         "name": "Massage pattern {pattern}"
       },
-      "rize_all_down": {
-        "name": "All down"
-      },
-      "rize_all_up": {
-        "name": "All up"
-      },
       "rize_enroll": {
         "name": "Add bed to room"
       },
@@ -3082,15 +2977,6 @@
       },
       "resident_sync_clock": {
         "name": "Sync clock"
-      },
-      "comfortbase_save_flat": {
-        "name": "Save flat"
-      },
-      "comfortbase_save_zero_g": {
-        "name": "Save zero gravity"
-      },
-      "comfortbase_save_anti_snore": {
-        "name": "Save anti-snore"
       },
       "richmat_app_release": {
         "name": "Release held control"
@@ -3139,24 +3025,6 @@
       },
       "rize_home_query": {
         "name": "Refresh massage state"
-      },
-      "rize_home_reset_memories": {
-        "name": "Reset saved presets"
-      },
-      "rize_home_save_reading": {
-        "name": "Save reading"
-      },
-      "rize_home_save_memory": {
-        "name": "Save memory"
-      },
-      "rize_home_save_anti_snore": {
-        "name": "Save anti-snore"
-      },
-      "rize_home_save_leisure": {
-        "name": "Save leisure"
-      },
-      "rize_home_save_zero_g": {
-        "name": "Save zero gravity"
       },
       "motionbed_preset_stop": {
         "name": "Stop preset"
@@ -3208,18 +3076,6 @@
       },
       "smart_sleep_ai_zero": {
         "name": "AI zero"
-      },
-      "smart_sleep_save_zero_g": {
-        "name": "Save zero gravity"
-      },
-      "smart_sleep_save_read": {
-        "name": "Save read"
-      },
-      "smart_sleep_save_tv": {
-        "name": "Save TV"
-      },
-      "smart_sleep_save_anti_snore": {
-        "name": "Save anti-snore"
       },
       "smart_sleep_massage_wave": {
         "name": "Cycle massage wave"
@@ -3401,9 +3257,6 @@
       "richmat_mh_toggle_smart_set_lock": {
         "name": "Toggle smart set lock"
       },
-      "malouf_oz_save_memory_2": {
-        "name": "Save memory 2"
-      },
       "richmat_mh_toggle_smart_light_lock": {
         "name": "Toggle smart light lock"
       },
@@ -3418,30 +3271,6 @@
       },
       "onlysnore_refresh": {
         "name": "Refresh status"
-      },
-      "onlysnore_demo_1": {
-        "name": "Test anti-snore level 1"
-      },
-      "onlysnore_demo_3": {
-        "name": "Test anti-snore level 3"
-      },
-      "onlysnore_demo_6": {
-        "name": "Test anti-snore level 6"
-      },
-      "onlysnore_stop_intervention": {
-        "name": "Stop anti-snore intervention"
-      },
-      "onlysnore_save_reading": {
-        "name": "Save reading"
-      },
-      "onlysnore_save_tv": {
-        "name": "Save TV"
-      },
-      "onlysnore_save_zero_gravity": {
-        "name": "Save zero gravity"
-      },
-      "onlysnore_save_anti_snore_preset": {
-        "name": "Save anti-snore preset"
       },
       "agingplace_in": {
         "name": "In"
@@ -3518,12 +3347,6 @@
       "ultramatic_light": {
         "name": "Toggle light"
       },
-      "ultramatic_save_zg": {
-        "name": "Save zero gravity position"
-      },
-      "ultramatic_save_anti": {
-        "name": "Save anti-snore position"
-      },
       "ultramatic_reset_memory": {
         "name": "Reset saved positions"
       },
@@ -3592,12 +3415,6 @@
       },
       "cheerssleep_sonic_decrease": {
         "name": "Decrease sonic level"
-      },
-      "cheerssleep_combined_up": {
-        "name": "All sections up"
-      },
-      "cheerssleep_combined_down": {
-        "name": "All sections down"
       },
       "cheerssleep_all_up": {
         "name": "Storage lift up"
@@ -3715,9 +3532,6 @@
       },
       "ormatek_both_down": {
         "name": "Head and feet down"
-      },
-      "l2motion_save_snore": {
-        "name": "Save anti-snore position"
       }
     },
     "cover": {

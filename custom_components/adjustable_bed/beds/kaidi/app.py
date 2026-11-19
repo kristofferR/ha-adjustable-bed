@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ...card import CARD_HIDDEN, CARD_MASSAGE
+from ...card import CARD_HIDDEN, CARD_MASSAGE, CardRole, motor_card
 from ...codec import kaidi as codec
 from ...command_scheduler import command_frames_not_counted
 from ...const import SIDE_LEFT, SIDE_RIGHT
@@ -127,13 +127,17 @@ class KaidiAppController(BedController):
                 f"{self.profile.key}_all_up",
                 "All up",
                 lambda c: cast(KaidiAppController, c)._move("all", True),
-                translation_key=f"{self.profile.key}_all_up",
+                # All motors together is the shared all-motors row.
+                translation_key="all_motors_up",
+                card=motor_card("all_motors", CardRole.UP),
             ),
             ControllerButtonSpec(
                 f"{self.profile.key}_all_down",
                 "All down",
                 lambda c: cast(KaidiAppController, c)._move("all", False),
-                translation_key=f"{self.profile.key}_all_down",
+                # All motors together is the shared all-motors row.
+                translation_key="all_motors_down",
+                card=motor_card("all_motors", CardRole.DOWN),
             ),
             *(
                 ControllerButtonSpec(

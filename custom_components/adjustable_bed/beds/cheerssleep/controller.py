@@ -21,6 +21,7 @@ from ...profiles import cheerssleep as app
 from ...state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -670,24 +671,25 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                     "Refresh bed state",
                     lambda ctrl: require_controller(ctrl, CheersSleepController).refresh_state(),
                     translation_key="cheerssleep_refresh",
-                    # Connect queries one side, so a split bed's other side
-                    # only gets light feedback from this button.
-                    diagnostic=not (self.model.split and not self.model.rgb),
+                    # Connect queries one side; a split bed's other side gets
+                    # light feedback from this button, enabled where needed.
+                    diagnostic=True,
                 )
             )
         if self.model.combined and "all" not in self.model.axes:
             for direction in ("up", "down"):
-                result.append(
-                    ControllerButtonSpec(
-                        f"cheerssleep_all_{direction}",
-                        f"All {direction}",
-                        lambda ctrl, direction=direction: require_controller(
-                            ctrl, CheersSleepController
-                        ).move_axis("all", direction == "up"),
-                        translation_key=f"cheerssleep_combined_{direction}",
-                        hold=ControllerHoldSpec(f"all_{direction}"),
-                    )
+                # Every section together: the shared all-motors row.
+                spec = catalog_button(
+                    f"cheerssleep_all_{direction}",
+                    f"All motors {direction}",
+                    lambda ctrl, direction=direction: require_controller(
+                        ctrl, CheersSleepController
+                    ).move_axis("all", direction == "up"),
+                    kind=Kind.MOTOR,
+                    hold=ControllerHoldSpec(f"all_{direction}"),
                 )
+                assert spec is not None
+                result.append(spec)
         if self.model.massage:
             for action in ("head", "foot", "mode"):
                 result.append(

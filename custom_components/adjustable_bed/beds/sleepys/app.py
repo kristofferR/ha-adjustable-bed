@@ -45,7 +45,7 @@ from ...execution import ExecutionCapabilities
 from ...state_keys import LIGHT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import BedController
 from ..builder import BuildContext
-from ..catalog_buttons import on_off_switch
+from ..catalog_buttons import as_save, on_off_switch
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -1073,8 +1073,9 @@ class SleepysEliteAppController(BedController):
         for key, (builder, name, icon) in app_actions.items():
             if (builder, self.selector) not in ROUTES:
                 continue
+            add = as_save if key.startswith("sleepys_app_save_") else (lambda spec: spec)
             specs.append(
-                ControllerButtonSpec(
+                add(ControllerButtonSpec(
                     key=key,
                     name=name,
                     translation_key=key,
@@ -1098,7 +1099,7 @@ class SleepysEliteAppController(BedController):
                         if key in _REPEATABLE_BUTTONS
                         else None
                     ),
-                )
+                ))
             )
 
         # The app's voice shortcuts (STOP, one-step brightness, position

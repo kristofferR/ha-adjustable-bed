@@ -19,7 +19,7 @@ from ...controller_state import StateKey
 from ...profiles.okin_nframe import DOUBLESLEEP, OkinNFrameProfile
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button
+from ..catalog_buttons import MASSAGE_KEY, Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -88,6 +88,7 @@ _ON_OFF: Final = {"massage": (28, 29), "sonic": (89, 90)}
 CLOCK_INDEX: Final = 47
 # Refreshes, clock and sensor upkeep: diagnostic buttons, disabled by default.
 _MAINTENANCE_ACTIONS: Final = frozenset({47, 50, 51, 52, 53, 54, 55, 66, 69, 71, 73, 77})
+_SONIC_SOURCES: Final = frozenset({87, 88})
 _SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
 
 
@@ -1100,6 +1101,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     # The app's own stop stays a movement control.
                     kind=Kind.MOTOR
                     if i == 27
+                    # Ending a running intervention is no preset; there is no enable.
+                    else Kind.EXTRA
+                    if i == 63
                     else None
                     if i in _MAINTENANCE_ACTIONS
                     else Kind.MASSAGE
@@ -1108,6 +1112,16 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     if i == 58
                     else None,
                     diagnostic=i in _MAINTENANCE_ACTIONS,
+                )
+                if i not in _SONIC_SOURCES
+                # Both sonic sources sit with the sonic massage they feed.
+                else ControllerButtonSpec(
+                    f"doublesleep_{i}",
+                    name,
+                    action(i),
+                    translation_key=MASSAGE_KEY,
+                    translation_placeholders={"action": name},
+                    card=CARD_MASSAGE,
                 )
             )
             is not None

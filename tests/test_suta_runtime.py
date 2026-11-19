@@ -16,12 +16,12 @@ from custom_components.adjustable_bed import const, services
 from custom_components.adjustable_bed.beds.suta import controller as bed
 from custom_components.adjustable_bed.beds.suta import services as suta_services
 from custom_components.adjustable_bed.button import _button_entities_for
-from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.codec import suta as codec
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
+from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.profiles.suta import service_for_name
 from tests.form_helpers import finish_new_bed
 from tests.test_richmat_family_flow import setup_flow

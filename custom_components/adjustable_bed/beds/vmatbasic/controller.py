@@ -20,6 +20,7 @@ from ...card import (
     CardPlacement,
     CardRole,
     CardSection,
+    motor_card,
 )
 from ...codec import vibradorm as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
@@ -666,12 +667,14 @@ class VMatBasicController(BedController):
             callback: Callable[[VMatBasicController], Coroutine[Any, Any, None]],
             card: CardPlacement = CARD_UTILITY,
         ) -> ControllerButtonSpec:
+            # All motors together is the shared all-motors row.
+            direction = {"all_up": CardRole.UP, "all_down": CardRole.DOWN}.get(key)
             return ControllerButtonSpec(
                 _PREFIX + key,
                 name,
                 lambda ctrl: callback(cast(VMatBasicController, ctrl)),
-                translation_key=_PREFIX + key,
-                card=card,
+                translation_key=_PREFIX + key if direction is None else f"all_motors_{direction}",
+                card=card if direction is None else motor_card("all_motors", direction),
                 diagnostic=key == "refresh_info",
             )
 

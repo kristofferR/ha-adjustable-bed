@@ -461,6 +461,34 @@ def kind_of(spec: ControllerButtonSpec) -> Kind | None:
     }.get(card.section)
 
 
+# Preset keys whose plain name is not the key with spaces.
+_PRESET_NAMES: Final = {
+    "zero_g": "zero gravity",
+    "zero_gravity": "zero gravity",
+    "zg": "zero gravity",
+    "anti_snore": "anti-snore",
+    "anti_snore_preset": "anti-snore",
+    "anti": "anti-snore",
+    "snore": "anti-snore",
+    "tv": "TV",
+    "tv_pc": "TV position",
+}
+
+
+def save_name(preset: str) -> str:
+    """The save button name for a bed's preset key: "Save zero gravity"."""
+    key = preset.lower()
+    return "Save " + _PRESET_NAMES.get(key, key.replace("_", " "))
+
+
+def as_save(spec: ControllerButtonSpec) -> ControllerButtonSpec:
+    """A bed's own save button (named "Save ..."), in the shared save shape."""
+    reshaped = relabel(spec, spec.name, kind=Kind.SAVE)
+    assert reshaped is not None
+    # The card confirms a tap; a held gesture would send the save unasked.
+    return replace(reshaped, hold=None)
+
+
 def relabel(
     spec: ControllerButtonSpec, label: str, *, kind: Kind | None = None
 ) -> ControllerButtonSpec | None:

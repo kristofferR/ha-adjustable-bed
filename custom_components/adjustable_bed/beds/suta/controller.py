@@ -31,9 +31,9 @@ from ...profiles.suta import (
     profile_for_name,
     service_for_name,
 )
+from ...state_keys import massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, sent_state_updates
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
-from ...state_keys import massage_intensity
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
