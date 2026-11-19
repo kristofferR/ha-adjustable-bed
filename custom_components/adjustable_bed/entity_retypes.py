@@ -319,8 +319,19 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     registry = er.async_get(hass)
     reported = _reported_moves(hass, entry)
-    moves = [move for move in reported if move.get("kept")]
-    for row in er.async_entries_for_config_entry(registry, entry.entry_id):
+    rows = er.async_entries_for_config_entry(registry, entry.entry_id)
+    recorded = {
+        (row.domain, row.unique_id)
+        for row in rows
+        if isinstance(row.options.get(DOMAIN, {}).get(RETYPED_FROM), str)
+    }
+    # Lines without a row record (kept ones, and those an earlier version raised) stay.
+    moves = [
+        move
+        for move in reported
+        if move.get("kept") or (move["domain"], move["unique_id"]) not in recorded
+    ]
+    for row in rows:
         options = row.options.get(DOMAIN, {})
         old_entity_id = options.get(RETYPED_FROM)
         if not isinstance(old_entity_id, str):

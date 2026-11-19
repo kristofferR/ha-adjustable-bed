@@ -201,9 +201,6 @@
  "binary_sensor:under_bed_light_state": {
   "card_section": "lighting"
  },
- "binary_sensor:under_bed_lights": {
-  "card_section": "lighting"
- },
  "button:adjustable_bed_speech": {
   "card_section": "utility"
  },

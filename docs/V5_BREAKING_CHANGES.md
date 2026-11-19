@@ -300,7 +300,9 @@ The same control now looks the same on every bed:
   Automations and scripts that call `switch.turn_on` or `switch.turn_off` on
   it must call `light.turn_on` or `light.turn_off` instead: a repair lists
   each one that still names the old switch. It is raised again after each
-  restart until no automation or script names the old entity, then goes away. The same happens for the other
+  restart until no automation or script names the old entity, then goes away.
+  A per-bed massage timer that kept its entity ID and only changed its
+  options is listed once, and that line stays until you dismiss the repair. The same happens for the other
   controls that changed type (Heal Every Night settings, Motion Bed toggles,
   AdjustaMattress massage levels and per-bed massage timers). Beds that cannot report the light's state show
   it as assumed, as the switch did. Octo keeps its switch: its light depends on the Octo PIN session
@@ -341,7 +343,7 @@ The same control now looks the same on every bed:
   already have keep their enabled state.
 - **No device shows one name twice.** DoubleSleep's two sleep report sensors
   are **Left sleep report status** and **Right sleep report status**; the
-  Logicdata app's reported light is **Under-bed light state** beside the
+  Logicdata app's and FurniMove's reported light is **Under-bed light state** beside the
   **Under Bed Lights** light; Paramount's height reading is **Current bed
   height** beside the **Bed Height** motor. Entity IDs stay.
 
