@@ -819,3 +819,17 @@ async def test_massage_restart_preserves_requested_levels(controller) -> None:
         "FFFFFFFF050000005A573B",
     ]
     assert controller._coordinator.controller_state["woosa_massage_active"]
+
+
+async def test_light_timer_counts_down_from_when_the_write_went_out(controller) -> None:
+    from tests.hold_lease_wire import virtual_clock
+
+    async def slow_write(*_args, **_kwargs) -> None:
+        await asyncio.sleep(5)  # The write waits for the link.
+
+    controller.write_command.side_effect = slow_write
+    with virtual_clock():
+        started = asyncio.get_running_loop().time()
+        await controller.set_light_timer("10 min")
+        deadline = controller._coordinator.controller_state["woosa_light_deadline"]
+    assert deadline == pytest.approx(started + 5 + 600)

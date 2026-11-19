@@ -287,12 +287,11 @@ class MajesticHomeController(GoodVibeController):
         if minutes == 0 and self.massage_timer_can_turn_off:
             await self.action("massage_off")
             return
-        if minutes in self.massage_timer_options:
-            await self.action(f"massage_{minutes}")
-        else:
+        if minutes not in self.massage_timer_options:
             raise ValueError("Choose a massage timer this Majestic Home model offers")
         # The bed reports no timer.
-        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.action(f"massage_{minutes}")
 
     # Each level key sets that zone's level, so the levels are one number per zone.
     @property
@@ -315,8 +314,8 @@ class MajesticHomeController(GoodVibeController):
         key = f"{zone}_massage_{level}" if level else f"{zone}_massage_off"
         if zone not in self.massage_intensity_zones or not self._has(key):
             raise ValueError("This Majestic Home model has no such massage level")
-        await self.action(key)
-        self.forward_sent_state_updates(massage_intensity(zone)(level))
+        with self.sent_state(massage_intensity(zone)(level)):
+            await self.action(key)
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -395,18 +394,22 @@ class MajesticHomeController(GoodVibeController):
         if save and control.save is None:
             raise ValueError("This Majestic Home control cannot be saved")
         link = self._current_link()
-        await self._send(
-            codec.function(
-                control.save if save and control.save is not None else control.code,
-                single=link.legacy,
-            ),
-            link=link,
-        )
-        if key == "massage_off":
-            # All Off stops the timer and both zones, whichever entity sent it.
-            self.forward_sent_state_updates(
+        # All Off stops the timer and both zones, whichever entity sent it.
+        updates = (
+            (
                 MASSAGE_TIMER_MINUTES(0),
                 *(massage_intensity(zone)(0) for zone in self.massage_intensity_zones),
+            )
+            if key == "massage_off"
+            else ()
+        )
+        with self.sent_state(*updates):
+            await self._send(
+                codec.function(
+                    control.save if save and control.save is not None else control.code,
+                    single=link.legacy,
+                ),
+                link=link,
             )
 
     async def stop_all(self) -> None:
