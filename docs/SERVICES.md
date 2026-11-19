@@ -96,6 +96,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`reverie_pairlink_alarm_comfort`](#reverie_pairlink_alarm_comfort) | Reverie: set alarm comfort | Send the complete Pairlink alarm comfort sequence, including unchanged values. |
 | [`reverie_run_routine`](#reverie_run_routine) | Reverie: run routine | Run a routine of comfort steps on the selected Reverie bed. It replaces any routine the bed is running. |
 | [`reverie_set_comfort`](#reverie_set_comfort) | Reverie: set comfort | Send one validated composite Reverie comfort setting to every selected target. |
+| [`lp2`](#lp2) | L&P Adjustable Base: settings | Lighting, aroma, fans, named controls and confirmed motor programs. |
 | [`richmat_classic`](#richmat_classic) | Richmat (classic app): settings | Settings for Avocado Eco Base, CoasterSleep, Forty Winks, Milemont and Superior beds. |
 | [`richmat_app`](#richmat_app) | Richmat app: settings | Sets the light, alarm, sleep sensing and other options of a Richmat app bed. Read the feature first before changing it. |
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Write the three aroma timing sliders of a Richmat MH app profile. |
@@ -2249,3 +2250,7 @@ concurrent connections and an explicit `left` or `right` side. The selected
 base receives the preset; the other lowers its feet for 30 seconds and releases.
 Every participant is checked before the first write. STOP, replacement or a
 lost physical session cancels delayed work and drains the captured release.
+
+### lp2
+
+`adjustable_bed.lp2` sets lighting, aroma, fans and movement programs for the L&P Adjustable Base profile. Use `set_alarm` for wake-up alarms. See [Richmat](beds/richmat.md#lp-adjustable-base).

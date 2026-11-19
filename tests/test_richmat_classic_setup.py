@@ -54,7 +54,7 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
         assert rows['richmat_classic_apps:' + app] == f'{name} app'
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
-        'luunarise2': 604, 'powercool': 586,
+        'luunarise2': 604, 'powercool': 586, 'lp2': 559,
         **dict.fromkeys(RESOURCE_APPS, 243),
     }
     for app, models in MODEL_CHOICES.items():

@@ -285,10 +285,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "okimiki": {"hold": ("okimiki",), "hold_controls": ("okimiki",)},
     "bobpowerbase": {"hold": ("bob096",), "hold_controls": ("bob096",)},
     # Scoped to the held controls that run the keep mode under the current
-    # Hold/Release, memory-arm and head/foot selection (five app reports).
+    # Hold/Release, memory-arm and head/foot selection.
     "richmat_classic_apps": {
-        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior"),
-        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior"),
+        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP"),
+        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "L&P Adjustable Base 2.3.25: stream controls only; confirmed saves never hold"),
     },
     "isleep": {"hold": ("kaidi",)},
     "ComfyProfile:komfyd": {"hold": ("komfyd084",)},
@@ -391,6 +391,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
     "profiles/mlily_remote.py:<module>.MlilyRemoteProfile": tuple(f"MlilyRemoteProfile:{key}" for key in ("ms200", "ms300", "ms600", "powercool", "ms300_sh")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
+    "beds/richmat_classic/lp2.py:<module>.Lp2Controller": ("richmat_classic_apps",),
+    "beds/richmat_classic/lp2.py:<module>.Lp2Controller.execution": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,

@@ -1019,6 +1019,9 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
     } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
+    if app == "lp2":
+        codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
+        codes.update(("RMCS", "TEST"))
     if app in ("luunarise2", "powercool"):
         codes -= {"WFRM", "FWRM"}
     if app in APPS:
@@ -1051,6 +1054,8 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         excluded = excluded | {"WFRM", "FWRM"}
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
         excluded = excluded | profile.excluded_layouts
+    if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
+        excluded = (excluded - {"RMCS", "TEST"}) | {"209A05", "6HRM", "QRRM", "ZRS3"}
     if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}

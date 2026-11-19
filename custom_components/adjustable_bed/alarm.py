@@ -20,6 +20,7 @@ WAKE_ACTIONS: Final = (
     "none",
     "flat",
     "flat_reset",
+    "flat_sleep",
     "all_up",
     "zero_g",
     "zero_g_2",
