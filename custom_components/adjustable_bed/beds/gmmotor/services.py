@@ -15,7 +15,11 @@ from .requests import GmmotorActions, Operation, Request
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
 
-OPERATIONS = get_args(Operation.__value__)
+# The bed clock belongs to the shared Set bed clock action.
+OPERATIONS = tuple(op for op in get_args(Operation.__value__) if op != "clock_sync")
+# A sleep report's side and period, sent as 1 and 2 in this order.
+_REPORT_SIDES = ("left", "right")
+_REPORT_PERIODS = ("day", "month")
 
 
 def _integer(value: object) -> int:
@@ -36,14 +40,12 @@ async def handle(call: ServiceCall) -> None:
             value=data["value"],
             mode=data["mode"],
             slot=data["slot"],
-            repeat=data["repeat"],
             hour=data["hour"],
             minute=data["minute"],
-            status=data["status"],
             enabled=data["enabled"],
             rgb=tuple(data["rgb_color"]),
-            part=data["part"],
-            report_type=data["report_type"],
+            part=_REPORT_SIDES.index(data["part"]) + 1,
+            report_type=_REPORT_PERIODS.index(data["report_type"]) + 1,
             report_date=data.get("report_date"),
             height=data["height"],
             unit=data["unit"],
@@ -76,14 +78,12 @@ def async_register_gmmotor_services(hass: HomeAssistant) -> None:
             vol.Optional("value", default=0): integer(65535),
             vol.Optional("mode", default=""): str,
             vol.Optional("slot", default=1): integer(255),
-            vol.Optional("repeat", default=0): integer(255),
             vol.Optional("hour", default=0): integer(23),
             vol.Optional("minute", default=0): integer(59),
-            vol.Optional("status", default=1): integer(255),
             vol.Optional("enabled", default=True): cv.boolean,
             vol.Optional("rgb_color", default=[0, 0, 0]): vol.ExactSequence((integer(255),) * 3),
-            vol.Optional("part", default=1): vol.All(_integer, vol.In((1, 2))),
-            vol.Optional("report_type", default=1): vol.All(_integer, vol.In((1, 2))),
+            vol.Optional("part", default="left"): vol.In(_REPORT_SIDES),
+            vol.Optional("report_type", default="day"): vol.In(_REPORT_PERIODS),
             vol.Optional("report_date"): cv.date,
             vol.Optional("height", default=60.0): vol.All(
                 vol.Coerce(float), vol.Range(min=0, max=2559.999)

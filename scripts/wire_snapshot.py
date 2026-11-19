@@ -220,6 +220,22 @@ FAMILY_ACTIONS = frozenset(
     }
 )
 
+# Controllers whose clock moved to ``sync_clock`` after this plan was frozen. It
+# runs last for them, so the rows before it keep their virtual timing and sequence.
+LATE_CLOCK_SYNC = frozenset(
+    {
+        "DoubleSleepController",
+        "GmmotorController",
+        "GoodVibeController",
+        "MajesticHomeController",
+        "MlilyRemoteController",
+        "MotionBedController",
+        "OkimikiController",
+        "SonicSleepController",
+        "SutaController",
+    }
+)
+
 Call = Callable[[Any], Awaitable[Any]]
 
 
@@ -369,6 +385,9 @@ def plan_commands(controller: Any) -> list[Command]:
         f"move_{m}_{a}" for m in MOTORS for a in ("up", "down", "stop")
     }
     done |= {"preset_memory", "program_memory"}
+    late_clock = type(controller).__name__ in LATE_CLOCK_SYNC
+    if late_clock:
+        done.add("sync_clock")
     for name in _base_actions():
         if name not in done and _overrides(controller, name):
             plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
@@ -441,6 +460,10 @@ def plan_commands(controller: Any) -> list[Command]:
             await ctrl.set_alarm(plan)
 
         plan.append(Command("ultramatic_alarm_disable", disable_ultramatic_alarm, True))
+    if late_clock and _overrides(controller, "sync_clock"):
+        plan.append(
+            Command("sync_clock", _method("sync_clock"), _flag(controller, "supports_clock_sync"))
+        )
     return plan
 
 

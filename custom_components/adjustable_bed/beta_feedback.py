@@ -37,6 +37,10 @@ FEEDBACK_DELAY: Final = timedelta(hours=24)
 FEEDBACK_ISSUES: Final[dict[int, str]] = {
     5: "https://github.com/kristofferR/ha-adjustable-bed/issues/914",
 }
+# What each major version changes for users upgrading from the one before.
+BREAKING_CHANGES: Final[dict[int, str]] = {
+    5: "https://github.com/kristofferR/ha-adjustable-bed/blob/v5/docs/V5_BREAKING_CHANGES.md",
+}
 BUG_REPORT_URL: Final = (
     "https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=bug-report.yml"
 )
@@ -57,12 +61,15 @@ def is_prerelease(version: AwesomeVersion) -> bool:
 def feedback_message(major: int) -> str:
     """Return the notification body for one major version's beta."""
     url = FEEDBACK_ISSUES.get(major, BUG_REPORT_URL)
+    changes = BREAKING_CHANGES.get(major)
     return (
         f"Thanks for trying the Adjustable Bed v{major} beta! Please tell us what works "
         "with your bed and what does not. Even a quick \"it works\" helps, since most "
         "beds cannot be tested by the maintainer.\n\n"
         f"[Share your feedback on GitHub]({url})\n\n"
-        "If something is broken, attach a support bundle from the "
+        + (f"[See what changed in v{major}]({changes}) before you report a change "
+           "as a bug.\n\n" if changes else "")
+        + "If something is broken, attach a support bundle from the "
         "`adjustable_bed.generate_support_bundle` action."
     )
 

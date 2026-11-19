@@ -209,7 +209,7 @@ Independent literals and runtime checks live in
 
 #### Home Assistant setup
 
-Choose **Personal Comfort**, then the air unit or base controller supplied with
+Choose **Personal Comfort app**, then the air unit or base controller supplied with
 the bed. Air names beginning `2618` or `2816` use ANM V5 only within the ANM
 discovery route. An RA service takes precedence. Generic Device Information or
 battery services alone do not identify this app. Shared base services offer a

@@ -670,7 +670,7 @@ async def test_preflight_retains_links_until_all_targets_finish(
             call = hass.services.async_call(
                 const.DOMAIN,
                 "majestichome",
-                {"device_id": live.parent, "operation": "sync_clock"},
+                {"device_id": live.parent, "operation": "delete", "alarm_id": 1},
                 blocking=True,
             )
             if fail:
@@ -679,7 +679,9 @@ async def test_preflight_retains_links_until_all_targets_finish(
             else:
                 await call
                 for side in targets:
-                    assert len([packet for owner, packet in live.events if owner == side]) == 2
+                    assert [packet for owner, packet in live.events if owner == side][-1] == (
+                        bytes.fromhex("6e0820050201019f")
+                    )
         assert live.connections == {"left": 1, "right": 1}
         for child in targets.values():
             assert child._command_connection_holds == 0
@@ -688,7 +690,7 @@ async def test_preflight_retains_links_until_all_targets_finish(
 
 @pytest.mark.parametrize("mode", ("concurrent", "sequential"))
 @pytest.mark.parametrize("target", ("parent", "left"))
-@pytest.mark.parametrize("operation", ("sync_clock", "list", "new", "set", "toggle", "delete"))
+@pytest.mark.parametrize("operation", ("list", "new", "set", "toggle", "delete"))
 async def test_registered_actions_rebuild_on_actual_pair_links(
     hass, live_pair, protocol_time, mode, target, operation
 ):
@@ -1169,7 +1171,7 @@ async def test_interrupted_list_refuses_incomplete_response(hass, live_pair, pro
     assert all(child._command_connection_holds == 0 for child in live.children.values())
 
 
-@pytest.mark.parametrize("operation", ("sync_clock", "new", "set", "toggle", "delete"))
+@pytest.mark.parametrize("operation", ("new", "set", "toggle", "delete"))
 async def test_non_list_optional_response_is_an_empty_mapping(
     hass, runtime, protocol_time, operation
 ):
@@ -1191,19 +1193,13 @@ async def test_non_list_optional_response_is_an_empty_mapping(
             return_response=True,
         )
         assert response == {}
-        if operation == "sync_clock":
-            assert [bytes.fromhex(packet)[3:6] for packet in written(target)] == [
-                bytes((8, 2, 1)),
-                bytes((8, 3, 1)),
-            ]
-        else:
-            expected = {
-                "new": "6e0d200501010100071e2e00f6",
-                "set": "6e0d200501010100071e2e00f6",
-                "toggle": "6e0d200501010163162dfa82c5",
-                "delete": "6e0820050201019f",
-            }
-            assert written(target)[-1] == expected[operation]
+        expected = {
+            "new": "6e0d200501010100071e2e00f6",
+            "set": "6e0d200501010100071e2e00f6",
+            "toggle": "6e0d200501010163162dfa82c5",
+            "delete": "6e0820050201019f",
+        }
+        assert written(target)[-1] == expected[operation]
     finally:
         for timer in timers:
             timer.cancel()

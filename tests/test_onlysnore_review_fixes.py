@@ -159,7 +159,7 @@ async def alarm(hass, ids, *, slot=1):
     await hass.services.async_call(
         DOMAIN,
         "onlysnore_set_alarm",
-        {"device_id": ids, "time": "07:30", "week_mask": 127, "slot": slot},
+        {"device_id": ids, "time": "07:30", "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"], "slot": slot},
         blocking=True,
     )
 

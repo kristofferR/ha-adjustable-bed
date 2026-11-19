@@ -477,6 +477,13 @@ class MajesticHomeController(GoodVibeController):
                 )
         return unique_buttons(buttons)
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return bool(self.layout.alarms)
+
+    async def sync_clock(self) -> None:
+        await self.execute_prepared(await self.prepare_live(Request("sync_clock")))
+
     def validate_request(self, request: Request) -> None:
         if request.operation not in ("list", "set", "new", "toggle", "delete", "sync_clock"):
             raise ValueError("Unknown Majestic Home action")

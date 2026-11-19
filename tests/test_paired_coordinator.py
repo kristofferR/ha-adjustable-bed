@@ -313,6 +313,7 @@ async def test_clock_sync_after_motor_activity_keeps_configuration_admission(
             requires_disconnected_transport=False,
             requires_linked_live_readiness=False,
             commands_share_timer=False,
+            _coordinator=child,
         )
         controllers.append(controller)
         monkeypatch.setattr(child, "bed_type", BED_TYPE_LINAK, raising=False)

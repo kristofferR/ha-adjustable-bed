@@ -84,6 +84,8 @@ RUNNING: Final = {
 }
 # The on/off key pair each switch sends, as its buttons did.
 _ON_OFF: Final = {"massage": (28, 29), "sonic": (89, 90)}
+# The app action that sets the bed clock to the phone time.
+CLOCK_INDEX: Final = 47
 # Refreshes, clock and sensor upkeep: diagnostic buttons, disabled by default.
 _MAINTENANCE_ACTIONS: Final = frozenset({47, 50, 51, 52, 53, 54, 55, 66, 69, 71, 73, 77})
 _SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
@@ -776,6 +778,16 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             raise ValueError("Legacy history requires a saved legacy app model")
         if index == 66 and (self._legacy_active or self._legacy_finishing):
             raise ValueError("A SleepEase legacy download is already active")
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    def validate_clock_sync(self) -> None:
+        self.validate(CLOCK_INDEX)
+
+    async def sync_clock(self) -> None:
+        await self.press(CLOCK_INDEX)
 
     async def press(self, index: int) -> None:
         await self.execute(index)

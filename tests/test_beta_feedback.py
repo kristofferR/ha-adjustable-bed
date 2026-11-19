@@ -19,6 +19,7 @@ from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.adjustable_bed.beta_feedback import (
+    BREAKING_CHANGES,
     BUG_REPORT_URL,
     NOTIFICATION_ID,
     STORAGE_KEY,
@@ -104,6 +105,7 @@ async def test_beta_asks_once_a_day_after_install(
     assert asked[0]["title"] == "How is the Adjustable Bed beta working?"
     assert "v5 beta" in asked[0]["message"]
     assert FEEDBACK_ISSUE in asked[0]["message"]
+    assert BREAKING_CHANGES[5] in asked[0]["message"]
     assert _stored(hass_storage) == {"5": {"installed_at": installed.isoformat()}}
 
     await _advance(hass, freezer, timedelta(days=3))
@@ -231,6 +233,7 @@ async def test_new_major_beta_asks_once_more(
     assert "v6 beta" in asked[1]["message"]
     assert BUG_REPORT_URL in asked[1]["message"]
     assert FEEDBACK_ISSUE not in asked[1]["message"]
+    assert "what changed" not in asked[1]["message"]
 
 
 @pytest.mark.parametrize("version", ["5.0.0", "4.2.1"])
