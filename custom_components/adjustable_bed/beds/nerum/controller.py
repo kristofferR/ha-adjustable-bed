@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Final
 
@@ -18,6 +18,7 @@ from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARI
 from ...profiles import nerum as app
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -39,21 +40,6 @@ class Link:
     write: BleakGATTCharacteristic
     notify: BleakGATTCharacteristic
     response: bool
-
-
-async def settled[T](operation: Coroutine[object, object, T]) -> T:
-    """Drain submitted radio work before cancellation can give the lane to STOP."""
-    task = asyncio.create_task(operation)
-    cancelled = False
-    while not task.done():
-        try:
-            await asyncio.shield(task)
-        except asyncio.CancelledError:
-            cancelled = True
-    result = task.result()
-    if cancelled:
-        raise asyncio.CancelledError
-    return result
 
 
 # How long to wait for the bed's alarm replies before giving up on a change.
