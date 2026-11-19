@@ -1087,8 +1087,10 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 continue
             writes.append(write)
         if self.selection.surface == "hub":
-            # Switching module runs its startup; set only the module in use.
-            active = {"motor": "home", "thermal": "thermal"}.get(self._active_module or "")
+            # Switching module runs its startup; set only the module in use. A link
+            # that went idle keeps the user's module, which reconnecting restores.
+            module = self._active_module or self._remembered_module or ""
+            active = {"motor": "home", "thermal": "thermal"}.get(module)
             writes = [write for write in writes if write.context == active]
         return tuple(writes)
 

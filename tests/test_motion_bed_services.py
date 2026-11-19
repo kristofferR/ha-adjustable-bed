@@ -267,6 +267,16 @@ def test_hub_sync_clock_sets_only_the_active_module(
             controller.validate_clock_sync()
 
 
+def test_idle_hub_sets_the_clock_of_the_module_it_remembers(hass: HomeAssistant) -> None:
+    """After an idle disconnect only the remembered module is known; it is the one to set."""
+    controller = make_target(hass, "TL-Q").controller
+    controller._module_present = lambda module: True
+    controller._active_module = None
+    controller._remembered_module = "thermal"
+    controller.validate_clock_sync()
+    assert [write.context for write in controller._clock_writes()] == ["thermal"]
+
+
 def test_air_module_has_no_clock(hass: HomeAssistant) -> None:
     assert not make_target(hass, "TL-A").controller.supports_clock_sync
 
