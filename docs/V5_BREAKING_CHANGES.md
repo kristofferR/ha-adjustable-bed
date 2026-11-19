@@ -331,6 +331,18 @@ The same control now looks the same on every bed:
   Lumbar, ORE comfort-bed apps, L2 Motion, Malouf) use the shared **Save …**
   name and save rule; their entity IDs stay. Demonstrations, intervention
   tests, resets and chords that do no one everyday thing start disabled.
+- **Settings and raw readings start disabled on the busiest beds.** On the
+  Richmat MH and RUF apps, a mattress pad's per-side heat, pressure and
+  duration selects (its mode stays), alarm and component-check sensors,
+  motor-mode and snore selects; DoubleSleep's alarm sensor and child lock and
+  privacy switches; the Sleepy's Elite motion sensor switch; StarCode and
+  Sleepy's reset buttons. Settings are configuration entities. Entities you
+  already have keep their enabled state.
+- **No device shows one name twice.** DoubleSleep's two sleep report sensors
+  are **Left sleep report status** and **Right sleep report status**; the
+  Logicdata app's reported light is **Under-bed light state** beside the
+  **Under Bed Lights** light; Paramount's height reading is **Current bed
+  height** beside the **Bed Height** motor. Entity IDs stay.
 
 [Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists the
 removed and replaced entities by bed.
@@ -492,6 +504,7 @@ Beds that 4.x supported. Renamed entities are not listed: they keep their IDs.
 | Casper Base, Hush Base, Luuna, MLILY Remote | Massage 10, 20 and 30 minute buttons | Shared **Massage timer** select (durations only); PowerCool keeps its fan timer buttons |
 | HJBed | Sync on and Sync off buttons | **Synchronization** switch, disabled by default |
 | Sleepy's Elite app (BOX25) | Massage on and Massage off buttons | **Massage** switch |
+| SUTA, DoubleSleep (OKIN SleepEase), eShine OKIN, Resident, Simmons, Symphony Sleep, Yamada, Ultramatic | The bed's own "Sync clock" or "Sync bed clock" button; DoubleSleep's "Refresh clock" (nothing showed the bed's time) | The **Set bed clock** action (`adjustable_bed.sync_clock`), which sends the same frames |
 | SUTA Smart Home | Head and foot massage off, 1, 2 and 3 buttons, Massage level 0 to 3 buttons; MOON left and right massage strength 1, 2 and 3 buttons | **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Intensity** numbers (0-3); **Left massage intensity** and **Right massage intensity** numbers (1-3) |
 
 **SUTA Smart Home** now offers the controls the SUTA app shows for your model,
