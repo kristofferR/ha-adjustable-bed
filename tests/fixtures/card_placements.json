@@ -198,7 +198,7 @@
  "binary_sensor:symphony_privacy": {
   "card_section": "hidden"
  },
- "binary_sensor:under_bed_lights": {
+ "binary_sensor:under_bed_light_state": {
   "card_section": "lighting"
  },
  "button:adjustable_bed_speech": {
@@ -787,9 +787,6 @@
   "card_section": "massage"
  },
  "button:eshine_okin_query_state": {
-  "card_section": "utility"
- },
- "button:eshine_okin_sync_clock": {
   "card_section": "utility"
  },
  "button:estimate_remote_used": {
@@ -1643,9 +1640,6 @@
  "button:resident_check_massage": {
   "card_section": "massage"
  },
- "button:resident_sync_clock": {
-  "card_section": "utility"
- },
  "button:restonic_zzz": {
   "card_section": "utility"
  },
@@ -1836,9 +1830,6 @@
   "card_section": "presets"
  },
  "button:simmons_refresh_alarms": {
-  "card_section": "utility"
- },
- "button:simmons_sync_clock": {
   "card_section": "utility"
  },
  "button:sleeptracker_identify": {
@@ -2352,9 +2343,6 @@
  "button:symphony_query_alarm": {
   "card_section": "utility"
  },
- "button:symphony_sync_clock": {
-  "card_section": "utility"
- },
  "button:sync_positions": {
   "card_section": "utility"
  },
@@ -2381,9 +2369,6 @@
  "button:toggle_light": {
   "card_section": "lighting",
   "card_role": "toggle"
- },
- "button:ultramatic_clock": {
-  "card_section": "utility"
  },
  "button:ultramatic_foot_down": {
   "card_section": "motors",
@@ -2550,9 +2535,6 @@
   "card_section": "utility"
  },
  "button:yamada_query_alarms": {
-  "card_section": "utility"
- },
- "button:yamada_sync_clock": {
   "card_section": "utility"
  },
  "button:zero_gravity_down": {
@@ -3806,6 +3788,9 @@
  "sensor:doublesleep_firmware_version": {
   "card_section": "utility"
  },
+ "sensor:doublesleep_left_report": {
+  "card_section": "utility"
+ },
  "sensor:doublesleep_left_sensitivity": {
   "card_section": "utility"
  },
@@ -3836,7 +3821,7 @@
  "sensor:doublesleep_model": {
   "card_section": "utility"
  },
- "sensor:doublesleep_report": {
+ "sensor:doublesleep_right_report": {
   "card_section": "utility"
  },
  "sensor:doublesleep_right_sensitivity": {
@@ -4207,7 +4192,7 @@
  "sensor:paramount_capabilities": {
   "card_section": "hidden"
  },
- "sensor:paramount_height": {
+ "sensor:paramount_current_height": {
   "card_section": "hidden"
  },
  "sensor:paramount_rssi": {

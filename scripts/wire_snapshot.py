@@ -297,7 +297,7 @@ def _stopped(call: Call) -> Call:
         coordinator = ctrl._coordinator  # noqa: SLF001
         movement = asyncio.ensure_future(call(ctrl))
         await asyncio.sleep(STOP_AFTER_S)
-        coordinator._cancel_counter += 1  # noqa: SLF001
+        coordinator.cancel_counter += 1
         coordinator.cancel_command.set()
         await asyncio.gather(movement, return_exceptions=True)
         await ctrl.stop_all()
@@ -1071,8 +1071,8 @@ class Coordinator:
         )
         self.cancel_command = asyncio.Event()
         self.stop_epoch = 0
-        self._cancel_counter = 0
-        self._command_scheduler = SimpleNamespace(token=object(), stop_epoch=0)
+        self.cancel_counter = 0
+        self.command_scheduler = SimpleNamespace(token=object(), stop_epoch=0)
         self._command_lock = asyncio.Lock()
         self.address = "AA:BB:CC:DD:EE:FF"
         # Some protocols embed the device name; kept from the first capture.

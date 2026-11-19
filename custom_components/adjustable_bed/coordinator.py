@@ -937,6 +937,27 @@ class AdjustableBedCoordinator(
         """Return the scheduler's STOP epoch, which every STOP on this bed advances."""
         return self._command_scheduler.stop_epoch
 
+    # Read-only state per-bed actions use to recheck their admission after an await.
+    @property
+    def command_scheduler(self) -> DeviceCommandScheduler:
+        """Return this bed's command scheduler."""
+        return self._command_scheduler
+
+    @property
+    def connection_generation(self) -> int:
+        """Return a count that advances each time a new connection is established."""
+        return self._position_connection_generation
+
+    @property
+    def cancel_counter(self) -> int:
+        """Return a count that advances with every cancellation request."""
+        return self._cancel_counter
+
+    @property
+    def connection_creator_task(self) -> asyncio.Task[object] | None:
+        """Return the task establishing the current connection, if any."""
+        return self._connection_creator_task
+
     @property
     def pairlink_peripheral(self) -> bool:
         """Return whether a local Pairlink runtime serves this bed as a peripheral."""

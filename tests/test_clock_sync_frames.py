@@ -201,6 +201,97 @@ CASES = [
         ],
         id='doublesleep:p3',
     ),
+    # The bed's own clock button, captured before it was removed (v5 round 3).
+    pytest.param(
+        'yamada',
+        {},
+        [
+            [0, '0000ffe9-0000-1000-8000-00805f9b34fb', True, 'e780017e00020304050b', 1, 0],
+        ],
+        id='yamada',
+    ),
+    pytest.param(
+        'symphony_sleep',
+        {},
+        [
+            [0, '0000ffe9-0000-1000-8000-00805f9b34fb', True, 'e780017e00020304050b', 1, 0],
+        ],
+        id='symphony_sleep',
+    ),
+    pytest.param(
+        'simmons',
+        {},
+        [
+            [0, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', False, '07047e000203040505', 1, 0],
+        ],
+        id='simmons',
+    ),
+    pytest.param(
+        'resident',
+        {},
+        [
+            [0, '62741525-52f9-8864-b1ab-3b3a8d65950b', True, 'e780017e0002030405', 1, 0],
+            [100, '62741525-52f9-8864-b1ab-3b3a8d65950b', True, '0802e18001', 1, 0],
+        ],
+        id='resident',
+    ),
+    pytest.param(
+        'ultramatic_smart_bed',
+        {},
+        [
+            [0, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', False, '070426010205030405', 2, 500],
+        ],
+        id='ultramatic_smart_bed',
+    ),
+    pytest.param(
+        'doublesleep',
+        {},
+        [
+            [0, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', False, '07047e000204030405', 1, 0],
+        ],
+        id='doublesleep',
+    ),
+    pytest.param(
+        'simmons:simmons_okin',
+        {},
+        [
+            [0, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', True, 'e780017e00020304050b', 1, 0],
+        ],
+        id='simmons:simmons_okin',
+    ),
+    pytest.param(
+        'symphony_sleep:400E:box2',
+        {},
+        [
+            [0, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', True, '070426010205030405', 1, 0],
+        ],
+        id='symphony_sleep:400E:box2',
+    ),
+    pytest.param(
+        'yamada:p2',
+        {},
+        [
+            [0, '0000ffe9-0000-1000-8000-00805f9b34fb', True, '07047e000205030405', 1, 0],
+        ],
+        id='yamada:p2',
+    ),
+    pytest.param(
+        'eshine_okin:eshine_e2000',
+        {},
+        [
+            [100, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', False, '07041a010205030405', 1, 0],
+            [307, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', False, '00c0', 1, 0],
+        ],
+        id='eshine_okin:eshine_e2000',
+    ),
+    pytest.param(
+        'suta:SUTA-MOON*',
+        {},
+        [
+            [100, '0000ffe1-0000-1000-8000-00805f9b34fb', True, '41542b53443d323630313032303330340d0a', 3, 107],
+        ],
+        id='suta:SUTA-MOON*',
+    ),
 ]
 
 

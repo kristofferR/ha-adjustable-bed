@@ -154,15 +154,6 @@ class YamadaController(KeesonController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return (
             ControllerButtonSpec(
-                "yamada_sync_clock",
-                "Sync bed clock",
-                lambda c: _yamada(c).sync_clock(),
-                "mdi:clock-check",
-                translation_key="yamada_sync_clock",
-                card=CARD_UTILITY,
-                diagnostic=True,
-            ),
-            ControllerButtonSpec(
                 "yamada_query_alarms",
                 "Refresh bed alarms",
                 lambda c: _yamada(c).query_alarms(),

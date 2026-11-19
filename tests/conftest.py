@@ -164,6 +164,12 @@ def _shorten_unanswered_probe_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0.01)
 
 
+@pytest.fixture
+def instant_vmat_settle(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Skip the VMAT settle wait; mocked beds need none before notifications."""
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.vibradorm.vmat_setup.VMAT_SETTLE_S", 0)
+
+
 @pytest.fixture(autouse=True)
 def _pair_starting_mode_from_test_data(
     request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch

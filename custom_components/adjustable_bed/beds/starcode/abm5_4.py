@@ -445,6 +445,8 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 # Saving or resetting overwrites stored positions, so the card asks first.
                 requires_confirmation=action.startswith("save_") or action == "reset",
                 diagnostic=action == "refresh",
+                # Clearing every saved position is maintenance: there to enable.
+                entity_registry_enabled_default=action != "reset",
             )
             for action in actions
         )

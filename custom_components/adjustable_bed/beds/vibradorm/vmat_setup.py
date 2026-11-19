@@ -6,7 +6,7 @@ import asyncio
 import logging
 import sys
 from collections.abc import Callable
-from typing import cast
+from typing import Final, cast
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -18,6 +18,9 @@ from ..cancellation import cancellable, settled
 from .app import VibradormAppMetadata, VibradormAppMetadataProgress
 
 _LOGGER = logging.getLogger(__name__)
+
+# VMAT initialization settles this long before it subscribes to notifications.
+VMAT_SETTLE_S: Final = 0.5
 
 DIS = "0000180a-0000-1000-8000-00805f9b34fb"
 DIS_FIELDS = (
@@ -109,7 +112,7 @@ async def async_prepare_vmat_pairing(
     subscribed = False
     try:
         async with asyncio.timeout_at(deadline):
-            await cancellable(asyncio.sleep(0.5), cancel_event)
+            await cancellable(asyncio.sleep(VMAT_SETTLE_S), cancel_event)
             await cancellable(client.start_notify(notify, callback), cancel_event)
             subscribed = True
             metadata = await async_read_vmat_dis(client, cancel_event, metadata_progress)
