@@ -228,7 +228,7 @@ set_alarm:
     wake_action:
       selector:
         select:
-          options: [none, flat, flat_reset, all_up, zero_g, zero_g_2, zero_g_left, zero_g_right, anti_snore, lounge, tv, reading, yoga, memory_1, memory_2, memory_3, memory_4, memory_5, custom_position, massage, head_massage, foot_massage, wave_massage, light, heat, sleep_aid, deep_sleep, get_up, wake_up, wake_mode_1, wake_mode_2]
+          options: [none, flat, flat_reset, flat_sleep, all_up, zero_g, zero_g_2, zero_g_left, zero_g_right, anti_snore, lounge, tv, reading, yoga, memory_1, memory_2, memory_3, memory_4, memory_5, custom_position, massage, head_massage, foot_massage, wave_massage, light, heat, sleep_aid, deep_sleep, get_up, wake_up, wake_mode_1, wake_mode_2]
           translation_key: set_alarm_wake_action
     slot:
       selector:
@@ -3778,6 +3778,95 @@ mlily_remote:
         select:
           options: [zero_g, anti_snore, tv, memory_1, memory_2, memory_3]
           translation_key: casper_base_mode
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+
+lp2:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [color, light_duration, aromatherapy, fan, motor_program, movement_test, control]
+          translation_key: lp2_operation
+    rgb_color:
+      selector:
+        color_rgb:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: s
+          mode: box
+    aroma_times:
+      selector:
+        object:
+    fan:
+      selector:
+        select:
+          options: [head, foot]
+          translation_key: lp2_fan
+    intensity:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 20
+          mode: box
+    duration:
+      selector:
+        number:
+          min: 0
+          max: 6
+          mode: box
+    schedule:
+      selector:
+        object:
+    confirm:
+      selector:
+        boolean:
+    control:
+      selector:
+        number:
+          min: 0
+          mode: box
+    mode:
+      selector:
+        number:
+          min: 0
+          max: 2
+          mode: box
+    long:
+      selector:
+        boolean:
+    held:
+      selector:
+        boolean:
+    head:
+      selector:
+        boolean:
+    motor:
+      selector:
+        number:
+          min: 3
+          max: 5
+          mode: box
+    duration_ms:
+      selector:
+        number:
+          min: 1
+          max: 60000
+          mode: box
     side:
       selector:
         select:

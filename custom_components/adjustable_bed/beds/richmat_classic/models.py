@@ -3,6 +3,8 @@
 Generated outside this repository with ``beds/richmat_classic/data``; no generator is checked in, so edits are by hand.
 """
 
+from ...profiles.lp2 import ALIASES as LP2_ALIASES
+from ...profiles.lp2 import LAYOUTS as LP2_LAYOUTS
 from ...profiles.richmat_resource_apps import ALIASES, APPS, LAYOUTS
 
 # These source screens select another layout and have no ordinary bed controls.
@@ -390,3 +392,7 @@ MANUAL_ALIASES['powercool'] = {'B6RU': 'B6RM', 'ZR90': 'S9RM', '200I': 'A8RM', '
 for _app in APPS:
     MODEL_CHOICES[_app] = LAYOUTS
     MANUAL_ALIASES[_app] = {key: value for key, value in ALIASES.items() if len(key) == 4}
+
+MODEL_CHOICES["lp2"] = LP2_LAYOUTS
+MANUAL_ALIASES["lp2"] = {key: value for key, value in LP2_ALIASES.items() if len(key) == 4}
+LAYOUT_PICKER_CHOICES["lp2"] = {"ZRS3:APRM": "APRM", "ZRS3:AQRM": "AQRM"}

@@ -2273,3 +2273,9 @@ def _nisco_supreme_frames() -> dict[str, frozenset[str]]:
 
 
 FROZEN_FRAMES.update(_nisco_supreme_frames())
+
+
+# L&P Adjustable Base 2.3.25, ordinary and direct literal writes.
+FROZEN_FRAMES["richmat_classic_lp2"] = frozenset(json.loads(gzip.decompress(
+    (Path(__file__).parent / "fixtures/lp2/outbound.json.gz").read_bytes()
+)))
