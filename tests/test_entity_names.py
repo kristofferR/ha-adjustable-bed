@@ -298,3 +298,13 @@ def test_catalog_extras_start_disabled(devices) -> None:
         and extra.search(entity.name)
         and not re.search(r"\bmassage\b|^save\b", entity.name, re.IGNORECASE)
     } == set()
+
+
+def test_a_button_that_asks_first_offers_no_held_gesture(devices) -> None:
+    """The card's hold path sends without its dialog, so a confirmed button never holds."""
+    assert {
+        (device.bed, entity.name)
+        for device in devices
+        for entity in device.entities
+        if entity.requires_confirmation and entity.held
+    } == set()

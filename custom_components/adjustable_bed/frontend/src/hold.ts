@@ -104,6 +104,8 @@ export function heldButtonMotor(
 ): MotorEntity | undefined {
   const deviceId = hass?.entities[entityId]?.device_id;
   const attributes = hass?.states[entityId]?.attributes;
+  // A button that asks first is never held: a hold would send it unconfirmed.
+  if (attributes?.requires_confirmation === true) return undefined;
   const control = attributes?.held_control;
   const startDelayMs = attributes?.hold_start_delay_ms;
   const releaseDelayMs = attributes?.hold_release_delay_ms;
