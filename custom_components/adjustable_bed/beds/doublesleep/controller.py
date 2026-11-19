@@ -1013,7 +1013,8 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        items = {47: "Sync clock", 53: "Refresh state"}
+        # The shared sync_clock action sets the clock; nothing shows the bed's own time.
+        items = {53: "Refresh state"}
         if self.protocol != "p3":
             items.update(
                 {
@@ -1057,7 +1058,6 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
         if self.protocol == "p3":
             items.update(
                 {
-                    55: "Refresh clock",
                     69: "Refresh sensitivities",
                     71: "Refresh sensor sides",
                     73: "Initialize sensor",

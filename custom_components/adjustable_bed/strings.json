@@ -2249,9 +2249,6 @@
       "simmons_inclined_right": {
         "name": "Inclined right"
       },
-      "simmons_sync_clock": {
-        "name": "Sync clock"
-      },
       "simmons_refresh_alarms": {
         "name": "Refresh alarms"
       },
@@ -2500,9 +2497,6 @@
       },
       "eshine_okin_query_state": {
         "name": "Refresh bed state"
-      },
-      "eshine_okin_sync_clock": {
-        "name": "Sync clock"
       },
       "eshine_okin_massage_on": {
         "name": "Massage on"
@@ -2975,9 +2969,6 @@
       "resident_check_massage": {
         "name": "Refresh massage timer"
       },
-      "resident_sync_clock": {
-        "name": "Sync clock"
-      },
       "richmat_app_release": {
         "name": "Release held control"
       },
@@ -3170,9 +3161,6 @@
       "symphony_query_alarm": {
         "name": "Refresh alarm"
       },
-      "symphony_sync_clock": {
-        "name": "Sync clock"
-      },
       "symphony_head_up": {
         "name": "Head up"
       },
@@ -3214,9 +3202,6 @@
       },
       "symphony_head_foot_lift_down": {
         "name": "Head and foot lifting down"
-      },
-      "yamada_sync_clock": {
-        "name": "Sync clock"
       },
       "yamada_query_alarms": {
         "name": "Refresh alarms"
@@ -3355,9 +3340,6 @@
       },
       "ultramatic_query_alarm": {
         "name": "Refresh alarm"
-      },
-      "ultramatic_clock": {
-        "name": "Sync bed clock"
       },
       "ultramatic_release": {
         "name": "Release held control"

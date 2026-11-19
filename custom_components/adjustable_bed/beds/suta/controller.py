@@ -78,7 +78,6 @@ MASSAGE_STRENGTH: Final = {
 # standard buttons are reachable only through the SUTA action.
 _TEXT_LABELS: Final = {
     "beep_enable": "Enable beep",
-    "set_date": "Sync clock",
     "both_open_all": "Open all",
     "both_close_all": "Close all",
     "mode_open_bk": "Open back",
