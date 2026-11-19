@@ -5975,6 +5975,9 @@
       },
       "motion_bed_brightness": {
         "name": "Light brightness"
+      },
+      "massage_left_intensity": {
+        "name": "Left massage intensity"
       }
     },
     "select": {

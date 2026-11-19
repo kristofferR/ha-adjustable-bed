@@ -76,6 +76,16 @@ _STANDARD_POSITION_AXES: Final[tuple[tuple[str, int], ...]] = (
 )
 
 
+def sent_state_updates(*updates: StateUpdate) -> tuple[StateUpdate, ...]:
+    """The updates to publish for values the running command set, as far as it was sent."""
+    delivery = command_delivery()
+    if delivery is Delivery.SENT:
+        return updates
+    if delivery is Delivery.PARTIAL:
+        return tuple(StateUpdate(update.key, None) for update in updates)
+    return ()
+
+
 class BedController(GattWriter):
     """Abstract base class for bed controllers.
 
@@ -195,13 +205,8 @@ class BedController(GattWriter):
         Only as far as the command reached the bed: nothing sent publishes
         nothing, a command cut off between frames makes the values unknown.
         """
-        delivery = command_delivery()
-        if delivery is Delivery.SENT:
-            self.forward_controller_state_updates(*updates)
-        elif delivery is Delivery.PARTIAL:
-            self.forward_controller_state_updates(
-                *(StateUpdate(update.key, None) for update in updates)
-            )
+        if sent := sent_state_updates(*updates):
+            self.forward_controller_state_updates(*sent)
 
     @property
     def client(self) -> BleakClient | None:
@@ -2343,6 +2348,11 @@ class BedController(GattWriter):
         """Return the lowest level ``zone`` accepts; 0 is off where the zone can turn off."""
         del zone
         return 0
+
+    def massage_intensity_available(self, zone: str) -> bool:
+        """Return whether ``zone``'s level can be set right now."""
+        del zone
+        return True
 
     @property
     def supports_massage_timer(self) -> bool:

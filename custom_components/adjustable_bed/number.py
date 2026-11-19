@@ -836,12 +836,13 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
     @property
     def available(self) -> bool:
         """Keep legacy wave automation unavailable off its current source side."""
-        controller = self._coordinator.capability_controller
-        zone_available = (
-            controller is None
-            or self.entity_description.massage_zone != "wave"
-            or controller.legacy_massage_wave_available
-        )
+        zone = self.entity_description.massage_zone
+        with self._side_scope():
+            controller = self._coordinator.capability_controller
+            zone_available = controller is None or (
+                (zone != "wave" or controller.legacy_massage_wave_available)
+                and controller.massage_intensity_available(zone)
+            )
         return super().available and zone_available
 
     @callback

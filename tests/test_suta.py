@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.profiles.suta import (
     service_for_name,
 )
 from custom_components.adjustable_bed.setup_questions import setup_profile
+from custom_components.adjustable_bed.state_keys import massage_intensity
 from tests.test_controller_contract import _FactoryCoordinator
 
 ROUTE_ROWS = json.loads((Path(__file__).parent / "fixtures/suta/routes.json").read_text())
@@ -370,9 +371,13 @@ def test_entity_labels_follow_the_app_buttons():
     assert "suta_snore_cycle" not in _labels(b402)
     b905, _ = make("SUTA-B905")
     labels = _labels(b905)
-    assert labels["suta_mass_head_dt00"] == "Head massage off"
-    assert labels["suta_mass_head_dt50"] == "Head massage 3"
-    assert labels["suta_mass_head_lv20"] == "Massage level 2"
+    # Massage steps are the shared head, foot and overall massage levels.
+    assert not any(key.startswith("suta_mass_") for key in labels)
+    assert b905.massage_intensity_zones == ["head", "foot", "all"]
+    assert b905.massage_intensity_max == 3 and b905.auto_enable_massage
+    assert labels["suta_beep_enable"] == "Enable beep"
+    beep = next(s for s in b905.controller_button_specs if s.key == "suta_beep_enable")
+    assert beep.diagnostic and not beep.entity_registry_enabled_default
     # Queries and unlabeled app gestures stay reachable only through the action.
     assert not {"suta_get_sys_version", "suta_get_alarm", "suta_get_date"} & labels.keys()
     rbhc, _ = make("SUTA-RBHC1")
@@ -381,6 +386,11 @@ def test_entity_labels_follow_the_app_buttons():
     labels = _labels(moon_)
     assert labels["suta_adaptive_14_soft_0203"] == "Right adaptive mode 5: soft"
     assert labels["suta_massage_timer_10_010a"] == "Left massage timer 10 min"
+    assert not any(key.startswith("suta_massage_strength_") for key in labels)
+    assert [s.key for s in moon_.controller_number_specs] == [
+        "suta_left_massage_strength",
+        "suta_right_massage_strength",
+    ]
     assert not any(key.startswith(("suta_automatic_adjustment", "suta_firmware_version")) for key in labels)
     temp_, _ = make("SUTA-TEMP")
     assert _labels(temp_)["suta_heating_timer_020a"] == "Right heating timer 10 h"
@@ -427,3 +437,76 @@ def test_one_off_alarm_is_the_next_day_without_the_loop_flag():
     alarm = AlarmRequest(enabled=True, hour=6, minute=30, reference_time=reference)
     assert controller._alarm_texts(alarm) == ("AT+SA=04063000",)
     assert make("SUTA-MOON")[0].alarm_capability is None
+
+
+@pytest.mark.parametrize(("zone", "key"), [("head", "mass_head_dt"), ("foot", "mass_foot_dt")])
+async def test_massage_levels_send_the_step_buttons_frames(clock, zone, key):
+    """Each level is the matching step button: off is level 0."""
+    command = bed.SHARED.get(key) or make()[0].commands[key]
+    for level, suffix in enumerate(command.suffixes):
+        by_button, c_button = make()
+        await by_button.start_notify()
+        c_button.client.write_gatt_char.reset_mock()
+        await bed._action(by_button, key=key, suffix=suffix)
+        by_number, c_number = make()
+        await by_number.start_notify()
+        c_number.client.write_gatt_char.reset_mock()
+        await by_number.set_massage_intensity(zone, level)
+        assert written(c_number) == written(c_button) != []
+        states = {
+            u.key: u.value
+            for call in c_number.handle_controller_state_updates.call_args_list
+            for u in call.args
+        }
+        assert states[massage_intensity(zone)] == level
+
+
+async def test_overall_massage_level_needs_a_running_zone(clock):
+    controller, c = make()
+    await controller.start_notify()
+    assert not controller.massage_intensity_available("all")
+    with pytest.raises(ValueError, match="Enable that massage zone"):
+        await controller.set_massage_intensity("all", 2)
+    await controller.set_massage_intensity("head", 1)
+    assert controller.massage_intensity_available("all")
+    c.client.write_gatt_char.reset_mock()
+    await controller.set_massage_intensity("all", 2)
+    by_number = written(c)
+    other, c_other = make()
+    await other.start_notify()
+    await bed._action(other, key="mass_head_dt", suffix=other.commands["mass_head_dt"].suffixes[1])
+    c_other.client.write_gatt_char.reset_mock()
+    await bed._action(other, key="mass_head_lv", suffix=other.commands["mass_head_lv"].suffixes[2])
+    assert by_number == written(c_other) != []
+
+
+@pytest.mark.parametrize("side", (1, 2))
+async def test_moon_massage_strength_numbers_send_the_strength_buttons_frames(clock, side):
+    moon_, c = make("SUTA-MOON")
+    await moon_.start_notify()
+    number = next(
+        s for s in moon_.controller_number_specs if s.key.endswith("_massage_strength")
+        and s.key.startswith(f"suta_{('left', 'right')[side - 1]}")
+    )
+    assert (number.native_min_value, number.native_max_value) == (1, 3)
+    for level in (1, 2, 3):
+        c.client.write_gatt_char.reset_mock()
+        await number.set_fn(moon_, level)
+        by_number = written(c)
+        c.client.write_gatt_char.reset_mock()
+        await bed._binary_action(moon_, action=f"massage_strength_{level}", payload=bytes((side, level)))
+        assert by_number == written(c) != []
+
+
+async def test_moon_massage_strength_shows_the_sent_level_until_the_bed_reports(clock):
+    moon_, c = make("SUTA-MOON")
+    await moon_.start_notify()
+    left = next(s for s in moon_.controller_number_specs if s.key == "suta_left_massage_strength")
+    await left.set_fn(moon_, 3)
+    states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
+    assert states[bed.MASSAGE_STRENGTH[1]] == 3 and states[bed.MASSAGE_STRENGTH[2]] is None
+    sender, callback = c.client.start_notify.call_args.args
+    # The bed's full-state report replaces it: both sides at strength 2.
+    callback(sender, bytearray.fromhex("5359970d000800020a0000020a01") + bytes((0, 0, 0)))
+    states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
+    assert states[bed.MASSAGE_STRENGTH[1]] == 2 and states[bed.MASSAGE_STRENGTH[2]] == 2
