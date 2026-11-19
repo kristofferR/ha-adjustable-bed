@@ -14,6 +14,7 @@ from pathlib import Path
 import yaml
 
 from custom_components.adjustable_bed import V5_6_REMOVED_KEYS
+from custom_components.adjustable_bed.entity_retypes import RETYPES
 
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION = ROOT / "custom_components" / "adjustable_bed"
@@ -48,10 +49,12 @@ RETIRED_WORDS = (
     "disconnect after each command",
     "idle disconnect timeout",
     "quick handoff",
+    "keep current configuration",
 )
 # The UI says Combine and Separate.
 _UNPAIR = re.compile(r"\bunpair", re.IGNORECASE)
 _CODE = re.compile(r"```.*?```|`[^`\n]*`", re.DOTALL)
+_SPACE = re.compile(r"\s+")
 
 
 def _actions() -> set[str]:
@@ -61,7 +64,7 @@ def _actions() -> set[str]:
 
 def _removed_actions() -> set[str]:
     """The first column of the upgrade page's 4.x action table."""
-    section = UPGRADE_PAGE.read_text(encoding="utf-8").split("\n## Actions\n", 1)[1]
+    section = UPGRADE_PAGE.read_text(encoding="utf-8").split("\n## Actions and automations\n", 1)[1]
     rows = (line for line in section.split("\n## ", 1)[0].splitlines() if line.startswith("| `"))
     return {name for row in rows for name in re.findall(r"`([a-z0-9_]+)`", row.split(" | ")[0])}
 
@@ -77,7 +80,8 @@ def _ui_text() -> str:
 
 
 def _prose(path: Path) -> str:
-    return _CODE.sub("", path.read_text(encoding="utf-8"))
+    # One line, so a phrase wrapped across lines is still found.
+    return _SPACE.sub(" ", _CODE.sub("", path.read_text(encoding="utf-8")))
 
 
 def test_named_actions_exist() -> None:
@@ -119,3 +123,22 @@ def test_docs_use_no_retired_setting_keys_or_words() -> None:
         if _UNPAIR.search(prose):
             stale.append(f"{path.relative_to(ROOT)}: unpair (the UI says Separate)")
     assert not stale, f"Docs use names the UI no longer shows: {sorted(stale)}"
+
+
+def test_docs_name_no_entity_that_changed_domain() -> None:
+    """An entity v5 moved to another domain is named only by its new domain.
+
+    Guides of the bed types that keep the old entity (Octo's light switch) may
+    still name it.
+    """
+    stale = []
+    for retype in RETYPES:
+        if retype.old_domain == retype.new_domain:
+            continue
+        old = re.compile(rf"`{retype.old_domain}\.[a-z0-9_<>*]*{retype.old_key}`")
+        for path in DOCS:
+            if path.stem in retype.keep_on:
+                continue
+            if old.search(path.read_text(encoding="utf-8")):
+                stale.append(f"{path.relative_to(ROOT)}: {retype.old_domain}.*{retype.old_key}")
+    assert not stale, f"Docs name entities that are now another domain: {sorted(stale)}"
