@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -22,7 +21,6 @@ from .protocol import (
     build_air_save,
     build_audio_track,
     build_audio_volume,
-    build_clock,
     build_module_bind,
     build_module_delete,
     build_module_query,
@@ -32,7 +30,6 @@ from .protocol import (
     build_sleep_calibration,
     build_sleep_report,
     build_sleep_timer,
-    build_thermal_clock,
     build_thermal_schedule,
 )
 from .requests import MotionBedWrite
@@ -71,10 +68,6 @@ def _integers(data: Mapping[str, object], key: str) -> tuple[int, ...]:
 def build_motion_bed_request(service: str, data: Mapping[str, object]) -> MotionBedWrite:
     """Construct only one of the published domain-specific writes."""
     confirm = _boolean(data, "confirmed")
-    if service == "motion_bed_clock":
-        timestamp = datetime.fromisoformat(_text(data, "timestamp"))
-        frame = build_thermal_clock(timestamp) if _boolean(data, "thermal") else build_clock(timestamp)
-        return MotionBedWrite("clock", (frame,), "thermal" if _boolean(data, "thermal") else "home")
     if service == "motion_bed_sleep_angles":
         frame = build_sleep_angles(SleepPage(_integer(data, "page")), _integers(data, "flat"), _integers(data, "side_positions"))
         return MotionBedWrite("sleep_angles", (frame,), "sleep_adjust", confirmed=confirm, persistent=True)
@@ -187,7 +180,6 @@ def async_register_motion_bed_services(hass: HomeAssistant) -> None:
     integer_list = vol.All(cv.ensure_list, [int])
     schemas = {
         "motion_bed_action": {required("action"): str, optional("branch", default="app"): vol.In(("app", "save", "clear")), optional("duration", default=1): vol.All(vol.Coerce(float), vol.Range(min=0.01,max=10))},
-        "motion_bed_clock": {required("timestamp"): str, optional("thermal",default=False): bool},
         "motion_bed_sleep_angles": {required("page"): int, required("flat"): integer_list, required("side_positions"): integer_list},
         "motion_bed_calibration": {required("flat"): int, required("side_position"): int},
         "motion_bed_sleep_timer": {required("slot"): int, optional("fall",default=False): bool},

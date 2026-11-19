@@ -638,6 +638,15 @@ class OkimikiController(GoodVibeController):
 
         await self.execute_request(Request("light_color", rgb=rgb_color))
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return self.model.alarm != "none"
+
+    async def sync_clock(self) -> None:
+        from .services import Request
+
+        await self.execute_request(Request("sync"))
+
     def validate_request(self, request: Request) -> None:
         request.validate(self)
 

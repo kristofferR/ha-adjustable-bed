@@ -152,23 +152,6 @@ async def test_registered_diagnostic_massage_query_remains_reachable(hass, proto
         await child.async_shutdown()
 
 
-@pytest.mark.parametrize("timer", (-1, 0, 1, 2))
-async def test_registered_supported_timer_settings_preserve_existing_frames(hass, timer):
-    child, _, client, device = await bed(hass)
-    await async_register_services(hass)
-    try:
-        with ready(child), virtual_clock():
-            await hass.services.async_call(
-                DOMAIN,
-                "betterliving2_diagnostic_action",
-                {"device_id": [device.id], "action": "set_massage_timer", "timer": timer},
-                blocking=True,
-            )
-        assert writes(client) == [wire.command("P1", wire.P1_TIMER_BASE + timer)]
-    finally:
-        await child.async_shutdown()
-
-
 async def test_diagnostic_capability_preflight_validates_every_native_child(hass):
     parent, attached, ids = await pair(hass)
     await async_register_services(hass)
@@ -178,9 +161,8 @@ async def test_diagnostic_capability_preflight_validates_every_native_child(hass
                 DOMAIN,
                 "betterliving2_diagnostic_action",
                 {
-                    "device_id": [ids["left"], ids["right"]],
-                    "action": "set_massage_timer",
-                    "timer": 1,
+                    "device_id": [ids["right"], ids["left"]],
+                    "action": "refresh_massage",
                 },
                 blocking=True,
             )

@@ -149,48 +149,32 @@ async def _execute_selection(
 class DiagnosticAction(StrEnum):
     REFRESH_ALARM = "refresh_alarm"
     REFRESH_MASSAGE = "refresh_massage"
-    SET_MASSAGE_TIMER = "set_massage_timer"
 
 
 def validate_diagnostic_action(
     controller: BetterLiving2Controller,
     action: DiagnosticAction,
-    timer: int | None,
 ) -> None:
     if action is DiagnosticAction.REFRESH_MASSAGE and controller.wire == "P1":
         raise ValueError("This profile has no massage status query")
-    if action is DiagnosticAction.SET_MASSAGE_TIMER:
-        if controller.wire != "P1" or type(timer) is not int or not -1 <= timer <= 2:
-            raise ValueError("Choose a supported massage timer setting")
-    elif timer is not None:
-        raise ValueError("A timer setting applies only to the timer action")
 
 
 async def execute_diagnostic_action(
     controller: BetterLiving2Controller,
     action: DiagnosticAction,
-    timer: int | None,
 ) -> None:
-    validate_diagnostic_action(controller, action, timer)
+    validate_diagnostic_action(controller, action)
     if action is DiagnosticAction.REFRESH_ALARM:
         await controller.query_alarm()
-    elif action is DiagnosticAction.REFRESH_MASSAGE:
-        await controller.query_massage()
     else:
-        assert timer is not None
-        await controller.set_level("timer", timer)
+        await controller.query_massage()
 
 
 async def diagnostic_action(call: ServiceCall) -> None:
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     action = DiagnosticAction(call.data["action"])
-    timer: int | None = call.data.get("timer")
-    selection = Selection(
-        targets,
-        admissions,
-        required_wire="p1" if action is DiagnosticAction.SET_MASSAGE_TIMER else None,
-    )
+    selection = Selection(targets, admissions)
     with selection.scope():
         await async_import_modules(call.hass, "beds.keeson.betterliving2")
 
@@ -199,11 +183,11 @@ async def diagnostic_action(call: ServiceCall) -> None:
 
         def prepare(controller: BetterLiving2Controller) -> None:
             selection.check()
-            validate_diagnostic_action(controller, action, timer)
+            validate_diagnostic_action(controller, action)
 
         async def execute(controller: BetterLiving2Controller) -> None:
             selection.start(controller)
-            await execute_diagnostic_action(controller, action, timer)
+            await execute_diagnostic_action(controller, action)
 
         await _execute_selection(
             targets, admissions, selection, "bed diagnostic action", execute, prepare
@@ -323,7 +307,6 @@ def register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required("device_id"): DEVICE_IDS,
                 vol.Required("action"): vol.In(tuple(action.value for action in DiagnosticAction)),
-                vol.Optional("timer"): vol.All(integer, vol.Range(min=-1, max=2)),
                 **SIDE_FIELD,
             }
         ),

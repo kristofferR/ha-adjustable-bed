@@ -2781,9 +2781,15 @@ async def _execute_alarm_step(
 async def handle_sync_clock(call: ServiceCall) -> None:
     """Synchronize each targeted device clock to Home Assistant's local time."""
     targets = _call_targets(call)
+    synced: set[int] = set()
 
     async def sync(controller: BedController) -> None:
+        # Both sides of a one-receiver bed share its coordinator, and its clock.
+        receiver = id(controller._coordinator)
+        if receiver in synced:
+            return
         await controller.sync_clock()
+        synced.add(receiver)
 
     if _profile_route(targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SYNC_CLOCK):
         await async_import_modules(call.hass, "beds.serenity.services")

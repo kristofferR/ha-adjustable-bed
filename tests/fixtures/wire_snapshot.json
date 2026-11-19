@@ -5015,7 +5015,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite:n1": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5070,7 +5071,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"6e400002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"6e400002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"6e400002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite:w1": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5125,7 +5127,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite:w2": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5180,7 +5183,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite:w3": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5235,7 +5239,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite:w4": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5290,7 +5295,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite:w5": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5345,7 +5351,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"00000002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"00000002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"00000002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"00000002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"00000002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite_sh:n1": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5402,7 +5409,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"6e400002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"6e400002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"6e400002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite_sh:w1": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5459,7 +5467,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite_sh:w2": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5516,7 +5525,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite_sh:w3": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5573,7 +5583,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite_sh:w4": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5630,7 +5641,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:elite_sh:w5": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5687,7 +5699,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"00000002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"00000002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"00000002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"00000002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"00000002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:props_write": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5742,7 +5755,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439",true,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439",true,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439",true,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",true,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",true,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",true,"6e200d08030138010203042c15",1,0]]}
 }},
 "bobpowerbase:ultra:n1": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5821,7 +5835,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"6e400002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"6e400002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"6e400002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra:w1": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5900,7 +5915,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra:w2": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -5979,7 +5995,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra:w3": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6058,7 +6075,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra:w4": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6137,7 +6155,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra:w5": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6216,7 +6235,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"00000002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"00000002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"00000002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"00000002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"00000002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra_sh:n1": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6297,7 +6317,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"6e400002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"6e400002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"6e400002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra_sh:w1": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6378,7 +6399,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra_sh:w2": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6459,7 +6481,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra_sh:w3": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6540,7 +6563,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000ffe2",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra_sh:w4": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6621,7 +6645,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"0000fff2",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "bobpowerbase:ultra_sh:w5": {
 "info": {"bed_type": "bobpowerbase", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -6702,7 +6727,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[200,"00000002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[200,"00000002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[200,"00000002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"00000002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[200,"00000002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d08030138010203043b24",1,0]]}
 }},
 "casper_base": {
 "info": {"bed_type": "casper_base", "controller": "CasperBaseController", "module": "casper_base.controller", "pulse": [10, 100]},
@@ -11838,6 +11864,7 @@
 "switch:doublesleep_privacy=on": {"status":"ok","writes":[[0,"6e400002",false,"01b201",1,0]]},
 "switch:doublesleep_privacy=off": {"status":"ok","writes":[[0,"6e400002",false,"01b200",1,0]]},
 "preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",10,307],[2770,"6e400002",false,"05020000000000",1,0]]},
+"sync_clock": {"status":"ok","writes":[[0,"6e400002",false,"07047e000204030526",1,0]]},
 "background": {"status":"background","writes":[[90901,"6e400002",false,"01b301",1,0]]}
 }},
 "doublesleep:p1": {
@@ -11932,6 +11959,7 @@
 "switch:doublesleep_privacy=on": {"status":"ok","writes":[[0,"6e400002",false,"01b201",1,0]]},
 "switch:doublesleep_privacy=off": {"status":"ok","writes":[[0,"6e400002",false,"01b200",1,0]]},
 "preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",10,307],[2770,"6e400002",false,"05020000000000",1,0]]},
+"sync_clock": {"status":"ok","writes":[[0,"6e400002",false,"07047e000204030526",1,0]]},
 "background": {"status":"background","writes":[[90901,"6e400002",false,"01b301",1,0]]}
 }},
 "doublesleep:p2": {
@@ -12034,6 +12062,7 @@
 "switch:doublesleep_privacy=on": {"status":"ok","writes":[[0,"6e400002",false,"aa000007020101",1,0]]},
 "switch:doublesleep_privacy=off": {"status":"ok","writes":[[0,"6e400002",false,"aa000007020100",1,0]]},
 "preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"aa000001030102",1,0],[7,"6e400002",false,"aa000001010400000000",1,0]]},
+"sync_clock": {"status":"ok","writes":[[0,"6e400002",false,"aa00000301081a01020503050e00",1,0]]},
 "background": {"status":"background","writes":[[67316,"6e400002",false,"01b301",1,0]]}
 }},
 "doublesleep:p3": {
@@ -12071,7 +12100,8 @@
 "switch:doublesleep_child_lock=off": {"status":"no_writes"},
 "switch:doublesleep_privacy=on": {"status":"ok","writes":[[0,"6e400002",true,"001c010034000011035944592d007b226964223a32372c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274696d65223a317d7d",1,0]]},
 "switch:doublesleep_privacy=off": {"status":"ok","writes":[[0,"6e400002",true,"001e0100380000110359445931007b226964223a32392c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274696d65223a36353533357d7d",1,0]]},
-"preset_lounge": {"error":"ValueError","status":"error","writes":[]}
+"preset_lounge": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"status":"ok","writes":[[0,"6e400002",true,"022001003f0000110359445938007b226964223a33312c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034362c22757463223a307d7d",1,0]]}
 }},
 "ergo_slim": {
 "info": {"bed_type": "ergo_slim", "controller": "ErgoSlimController", "module": "ergo_slim", "pulse": [10, 100]},
@@ -13233,7 +13263,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735b60050",1,0],[207,"d44bc439",false,"6e0d20080301380102030416ff",1,0]]}
 }},
 "galaxy:6BRM:nordic": {
 "info": {"bed_type": "galaxy", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13273,7 +13304,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[100,"6e400002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[100,"6e400002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[100,"6e400002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"6e400002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"6e400002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"6e400002",false,"6e0c20080201695735b60050",1,0],[207,"6e400002",false,"6e0d20080301380102030416ff",1,0]]}
 }},
 "galaxy:APRM": {
 "info": {"bed_type": "galaxy", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13356,7 +13388,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735e70081",1,0],[207,"d44bc439",false,"6e0d2008030138010203050bf5",1,0]]}
 }},
 "galaxy:D1RM": {
 "info": {"bed_type": "galaxy", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13418,7 +13451,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735d1006b",1,0],[207,"d44bc439",false,"6e0d200803013801020304311a",1,0]]}
 }},
 "galaxy:E3RM": {
 "info": {"bed_type": "galaxy", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13478,7 +13512,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735cd0067",1,0],[207,"d44bc439",false,"6e0d2008030138010203042d16",1,0]]}
 }},
 "galaxy:HNRN": {
 "info": {"bed_type": "galaxy", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13532,7 +13567,8 @@
 "number:goodvibe_snore_count=1": {"status":"ok","writes":[[100,"d44bc439",false,"6e0a20060501010001a6",1,0]]},
 "number:goodvibe_snore_count=30": {"status":"ok","writes":[[100,"d44bc439",false,"6e0a2006050101001ec3",1,0]]},
 "number:goodvibe_snore_time=5": {"status":"ok","writes":[[100,"d44bc439",false,"6e0a20060501020005ab",1,0]]},
-"number:goodvibe_snore_time=30": {"status":"ok","writes":[[100,"d44bc439",false,"6e0a2006050102001ec4",1,0]]}
+"number:goodvibe_snore_time=30": {"status":"ok","writes":[[100,"d44bc439",false,"6e0a2006050102001ec4",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735c80062",1,0],[207,"d44bc439",false,"6e0d2008030138010203042811",1,0]]}
 }},
 "galaxy:RNRN/splitHead": {
 "info": {"bed_type": "galaxy", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13625,7 +13661,8 @@
 "select:goodvibe_light_duration=1800": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b070888",1,0]]},
 "select:goodvibe_light_duration=3600": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b0e1097",1,0]]},
 "select:goodvibe_light_duration=14400": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b3840f1",1,0]]},
-"select:goodvibe_light_duration=28800": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b708069",1,0]]}
+"select:goodvibe_light_duration=28800": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b708069",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c2008020169573600009b",1,0],[207,"d44bc439",false,"6e0d200803013801020305240e",1,0]]}
 }},
 "galaxy:Y6RM": {
 "info": {"bed_type": "galaxy", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13685,7 +13722,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735d2006c",1,0],[207,"d44bc439",false,"6e0d200803013801020304321b",1,0]]}
 }},
 "glideaway_motion": {
 "info": {"bed_type": "glideaway_motion", "controller": "GlideawayMotionController", "module": "glideaway_motion.controller", "pulse": [10, 100]},
@@ -13875,7 +13913,8 @@
 "back_stop": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]},
 "legs_stop": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]},
 "feet_stop": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "gmmotor_sleep_mm": {
 "info": {"bed_type": "gmmotor_sleep_mm", "connect_error": "ValueError", "controller": "GmmotorSleepController", "gaps": ["button:gmmotor_sensor_time", "button:gmmotor_sensor_query_part", "button:gmmotor_sensor_live"], "module": "gmmotor.sleep", "pulse": [10, 100]},
@@ -13940,7 +13979,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735b60050",1,0],[7,"d44bc439",false,"6e200d080301380102030416ff",1,0]]}
 }},
 "goodvibe:selector-0004:goodvibe_nordic": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -13984,7 +14024,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[0,"6e400002",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[0,"6e400002",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[0,"6e400002",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"6e400002",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"6e400002",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[0,"6e400002",false,"6e200c080201695735b60050",1,0],[7,"6e400002",false,"6e200d080301380102030416ff",1,0]]}
 }},
 "goodvibe:selector-0026": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -14026,7 +14067,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735b2004c",1,0],[7,"d44bc439",false,"6e200d080301380102030412fb",1,0]]}
 }},
 "goodvibe:selector-0095": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -14069,7 +14111,8 @@
 "select:goodvibe_light_duration=720": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b02d04b",1,0]]},
 "select:goodvibe_light_duration=780": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b030c88",1,0]]},
 "select:goodvibe_light_duration=840": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b0348c4",1,0]]},
-"select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]}
+"select:goodvibe_light_duration=900": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b038400",1,0]]},
+"sync_clock": {"status":"ok","writes":[[0,"d44bc439",false,"6e200c080201695735b2004c",1,0],[7,"d44bc439",false,"6e200d080301380102030412fb",1,0]]}
 }},
 "goodvibe:sleep_hj:goodvibe_sleep": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -14081,7 +14124,8 @@
 "feet_stop": {"status":"no_writes"},
 "stop_all": {"status":"no_writes"},
 "button:goodvibe_monitor": {"status":"ok","writes":[[0,"00000002",true,"000301003c0000110343554435007b226964223a332c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274797065223a302c2274696d65223a317d7d",1,0]]},
-"button:goodvibe_stop_monitor": {"status":"no_writes"}
+"button:goodvibe_stop_monitor": {"status":"no_writes"},
+"sync_clock": {"status":"ok","writes":[[0,"00000002",true,"000401003e0000110343554437007b226964223a342c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d",1,0]]}
 }},
 "goodvibe:sleep_rm:goodvibe_sleep": {
 "info": {"bed_type": "goodvibe", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -14093,7 +14137,8 @@
 "feet_stop": {"status":"no_writes"},
 "stop_all": {"status":"no_writes"},
 "button:goodvibe_monitor": {"status":"ok","writes":[[0,"00000002",false,"000201003c0000110343554435007b226964223a322c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274797065223a302c2274696d65223a317d7d",1,0]]},
-"button:goodvibe_stop_monitor": {"status":"no_writes"}
+"button:goodvibe_stop_monitor": {"status":"no_writes"},
+"sync_clock": {"status":"ok","writes":[[0,"00000002",false,"0003010041000011034355443a007b226964223a332c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22747a223a22555443227d7d",1,0]]}
 }},
 "hjbed": {
 "info": {"bed_type": "hjbed", "controller": "HJBedController", "module": "hjbed.controller", "pulse": [10, 100]},
@@ -23170,7 +23215,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23234,7 +23280,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"6e400002",false,"2b",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"6e400002",false,"2c",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"6e400002",false,"2c",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e0c20080201695735c0005a",1,0],[193,"6e400002",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23298,7 +23345,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23362,7 +23410,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23426,7 +23475,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e0c20080201695735c0005a",1,0],[193,"0000ffe2",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23490,7 +23540,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e0c20080201695735c0005a",1,0],[193,"0000fff2",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23554,7 +23605,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e0c20080201695735c0005a",1,0],[193,"00000002",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JGRN:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23596,7 +23648,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"6e400002",false,"2a",2,107],[307,"6e400002",false,"6e",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"6e400002",false,"2b",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"6e400002",false,"2b",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23638,7 +23691,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002a99",2,107],[307,"d44bc439",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23680,7 +23734,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002a99",2,107],[307,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23722,7 +23777,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002a99",2,107],[307,"0000ffe2",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23764,7 +23820,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002a99",2,107],[307,"0000fff2",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23806,7 +23863,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002a99",2,107],[307,"00000002",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23832,7 +23890,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"6e400002",false,"2a",9,107],[1056,"6e400002",false,"6e",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"6e400002",false,"29",2,107],[307,"6e400002",false,"6e",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"6e400002",false,"2a",2,107],[307,"6e400002",false,"6e",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23858,7 +23917,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002a99",9,107],[1056,"d44bc439",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002998",2,107],[307,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002a99",2,107],[307,"d44bc439",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23884,7 +23944,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002a99",9,107],[1056,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002998",2,107],[307,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002a99",2,107],[307,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23910,7 +23971,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002a99",9,107],[1056,"0000ffe2",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002998",2,107],[307,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002a99",2,107],[307,"0000ffe2",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23936,7 +23998,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002a99",9,107],[1056,"0000fff2",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002998",2,107],[307,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002a99",2,107],[307,"0000fff2",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23962,7 +24025,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"00000002",false,"6e01002a99",9,107],[1056,"00000002",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"00000002",false,"6e01002998",2,107],[307,"00000002",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002a99",2,107],[307,"00000002",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JLRM:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24024,7 +24088,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"6e400002",false,"2b",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"6e400002",false,"2c",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"6e400002",false,"2c",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e0c20080201695735c0005a",1,0],[193,"6e400002",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24086,7 +24151,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24148,7 +24214,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24210,7 +24277,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e0c20080201695735c0005a",1,0],[193,"0000ffe2",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24272,7 +24340,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e0c20080201695735c0005a",1,0],[193,"0000fff2",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24334,7 +24403,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e0c20080201695735c0005a",1,0],[193,"00000002",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:none:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24352,7 +24422,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"6e400002",false,"6e",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"6e400002",false,"6e",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"6e400002",false,"6e",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24370,7 +24441,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"d44bc439",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"d44bc439",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"d44bc439",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24388,7 +24460,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24406,7 +24479,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24424,7 +24498,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"0000fff2",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"0000fff2",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"0000fff2",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -24442,7 +24517,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "malouf_app": {
 "info": {"bed_type": "malouf_app", "controller": "MaloufAppController", "module": "malouf.app", "pulse": [7, 150]},
@@ -24695,7 +24771,8 @@
 "select:goodvibe_light_duration=720": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=780": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=840": {"error":"ValueError","status":"error","writes":[]},
-"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]}
+"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200c080201695735b4004e",1,0],[193,"d44bc439",false,"6e200d080301380102030414fd",1,0]]}
 }},
 "mlily:6brm:mlily_nordic": {
 "info": {"bed_type": "mlily", "controller": "GoodVibeController", "gaps": ["button:goodvibe_light_off", "select:goodvibe_light_duration=0", "select:goodvibe_light_duration=60", "select:goodvibe_light_duration=120", "select:goodvibe_light_duration=180", "select:goodvibe_light_duration=240", "select:goodvibe_light_duration=300", "select:goodvibe_light_duration=360", "select:goodvibe_light_duration=420", "select:goodvibe_light_duration=480", "select:goodvibe_light_duration=540", "select:goodvibe_light_duration=600", "select:goodvibe_light_duration=660", "select:goodvibe_light_duration=720", "select:goodvibe_light_duration=780", "select:goodvibe_light_duration=840", "select:goodvibe_light_duration=900"], "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -24735,7 +24812,8 @@
 "select:goodvibe_light_duration=720": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=780": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=840": {"error":"ValueError","status":"error","writes":[]},
-"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]}
+"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200c080201695735b4004e",1,0],[193,"6e400002",false,"6e200d080301380102030414fd",1,0]]}
 }},
 "mlily:brrm:mlily": {
 "info": {"bed_type": "mlily", "controller": "GoodVibeController", "gaps": ["button:goodvibe_light_off", "select:goodvibe_light_duration=0", "select:goodvibe_light_duration=60", "select:goodvibe_light_duration=120", "select:goodvibe_light_duration=180", "select:goodvibe_light_duration=240", "select:goodvibe_light_duration=300", "select:goodvibe_light_duration=360", "select:goodvibe_light_duration=420", "select:goodvibe_light_duration=480", "select:goodvibe_light_duration=540", "select:goodvibe_light_duration=600", "select:goodvibe_light_duration=660", "select:goodvibe_light_duration=720", "select:goodvibe_light_duration=780", "select:goodvibe_light_duration=840", "select:goodvibe_light_duration=900"], "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -24801,7 +24879,8 @@
 "select:goodvibe_light_duration=720": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=780": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=840": {"error":"ValueError","status":"error","writes":[]},
-"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]}
+"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200c080201695735d0006a",1,0],[193,"d44bc439",false,"6e200d08030138010203043019",1,0]]}
 }},
 "mlily:e3rm:mlily": {
 "info": {"bed_type": "mlily", "controller": "GoodVibeController", "gaps": ["button:goodvibe_light_off", "select:goodvibe_light_duration=0", "select:goodvibe_light_duration=60", "select:goodvibe_light_duration=120", "select:goodvibe_light_duration=180", "select:goodvibe_light_duration=240", "select:goodvibe_light_duration=300", "select:goodvibe_light_duration=360", "select:goodvibe_light_duration=420", "select:goodvibe_light_duration=480", "select:goodvibe_light_duration=540", "select:goodvibe_light_duration=600", "select:goodvibe_light_duration=660", "select:goodvibe_light_duration=720", "select:goodvibe_light_duration=780", "select:goodvibe_light_duration=840", "select:goodvibe_light_duration=900"], "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -24861,7 +24940,8 @@
 "select:goodvibe_light_duration=720": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=780": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=840": {"error":"ValueError","status":"error","writes":[]},
-"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]}
+"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200c080201695735ca0064",1,0],[193,"d44bc439",false,"6e200d08030138010203042a13",1,0]]}
 }},
 "mlily:l3rm:mlily": {
 "info": {"bed_type": "mlily", "controller": "GoodVibeController", "gaps": ["button:goodvibe_light_off", "select:goodvibe_light_duration=0", "select:goodvibe_light_duration=60", "select:goodvibe_light_duration=120", "select:goodvibe_light_duration=180", "select:goodvibe_light_duration=240", "select:goodvibe_light_duration=300", "select:goodvibe_light_duration=360", "select:goodvibe_light_duration=420", "select:goodvibe_light_duration=480", "select:goodvibe_light_duration=540", "select:goodvibe_light_duration=600", "select:goodvibe_light_duration=660", "select:goodvibe_light_duration=720", "select:goodvibe_light_duration=780", "select:goodvibe_light_duration=840", "select:goodvibe_light_duration=900"], "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -24932,7 +25012,8 @@
 "select:goodvibe_light_duration=720": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=780": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=840": {"error":"ValueError","status":"error","writes":[]},
-"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]}
+"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200c080201695735e2007c",1,0],[193,"d44bc439",false,"6e200d080301380102030506f0",1,0]]}
 }},
 "mlily:mdrn:mlily": {
 "info": {"bed_type": "mlily", "controller": "GoodVibeController", "gaps": ["button:goodvibe_light_off", "select:goodvibe_light_duration=0", "select:goodvibe_light_duration=60", "select:goodvibe_light_duration=120", "select:goodvibe_light_duration=180", "select:goodvibe_light_duration=240", "select:goodvibe_light_duration=300", "select:goodvibe_light_duration=360", "select:goodvibe_light_duration=420", "select:goodvibe_light_duration=480", "select:goodvibe_light_duration=540", "select:goodvibe_light_duration=600", "select:goodvibe_light_duration=660", "select:goodvibe_light_duration=720", "select:goodvibe_light_duration=780", "select:goodvibe_light_duration=840", "select:goodvibe_light_duration=900"], "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -24976,7 +25057,8 @@
 "select:goodvibe_light_duration=720": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=780": {"error":"ValueError","status":"error","writes":[]},
 "select:goodvibe_light_duration=840": {"error":"ValueError","status":"error","writes":[]},
-"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]}
+"select:goodvibe_light_duration=900": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200c080201695735b90053",1,0],[193,"d44bc439",false,"6e200d08030138010203041902",1,0]]}
 }},
 "mlily:sleep_hj:mlily_sleep": {
 "info": {"bed_type": "mlily", "controller": "GoodVibeController", "module": "goodvibe.controller", "pulse": [10, 100]},
@@ -24988,10 +25070,11 @@
 "feet_stop": {"status":"no_writes"},
 "stop_all": {"status":"no_writes"},
 "button:goodvibe_monitor": {"status":"ok","writes":[[93,"00000002",true,"000201003c0000110343554435007b226964223a322c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274797065223a302c2274696d65223a317d7d",1,0]]},
-"button:goodvibe_stop_monitor": {"status":"no_writes"}
+"button:goodvibe_stop_monitor": {"status":"no_writes"},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",true,"000301003e0000110343554437007b226964223a332c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d",1,0]]}
 }},
 "mlily:sleep_rm:mlily_sleep": {
-"info": {"bed_type": "mlily", "connect_error": "ValueError", "controller": "GoodVibeController", "gaps": ["button:goodvibe_monitor"], "module": "goodvibe.controller", "pulse": [10, 100]},
+"info": {"bed_type": "mlily", "connect_error": "ValueError", "controller": "GoodVibeController", "gaps": ["button:goodvibe_monitor", "sync_clock"], "module": "goodvibe.controller", "pulse": [10, 100]},
 "commands": {
 "connect": {"error":"ValueError","status":"error","writes":[]},
 "head_stop": {"status":"no_writes"},
@@ -25000,7 +25083,8 @@
 "feet_stop": {"status":"no_writes"},
 "stop_all": {"status":"no_writes"},
 "button:goodvibe_monitor": {"error":"ConnectionError","status":"error","writes":[]},
-"button:goodvibe_stop_monitor": {"status":"no_writes"}
+"button:goodvibe_stop_monitor": {"status":"no_writes"},
+"sync_clock": {"error":"ConnectionError","status":"error","writes":[]}
 }},
 "mlily_remote": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25043,7 +25127,8 @@
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"d44bc439",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d0803013801020304260f",1,0]]}
 }},
 "mlily_remote:ms200:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25086,7 +25171,8 @@
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"6e400002",false,"59",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"6e400002",false,"65",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d0803013801020304260f",1,0]]}
 }},
 "mlily_remote:ms200:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25129,7 +25215,8 @@
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"d44bc439",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d0803013801020304260f",1,0]]}
 }},
 "mlily_remote:ms200:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25172,7 +25259,8 @@
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d0803013801020304260f",1,0]]}
 }},
 "mlily_remote:ms200:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25215,7 +25303,8 @@
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d0803013801020304260f",1,0]]}
 }},
 "mlily_remote:ms200:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25258,7 +25347,8 @@
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"0000fff2",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d0803013801020304260f",1,0]]}
 }},
 "mlily_remote:ms200:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25301,7 +25391,8 @@
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"00000002",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d0803013801020304260f",1,0]]}
 }},
 "mlily_remote:ms300:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25357,7 +25448,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"6e400002",false,"45",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25413,7 +25505,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25469,7 +25562,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25525,7 +25619,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25581,7 +25676,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000fff2",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25637,7 +25733,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"00000002",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300_sh:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25693,7 +25790,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"6e400002",false,"45",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300_sh:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25749,7 +25847,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300_sh:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25805,7 +25904,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300_sh:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25861,7 +25961,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300_sh:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25917,7 +26018,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000fff2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms300_sh:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -25973,7 +26075,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"00000002",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d08030138010203042912",1,0]]}
 }},
 "mlily_remote:ms600:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26041,7 +26144,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"6e400002",false,"58",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"6e400002",false,"64",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"6e400002",false,"64",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d08030138010203043720",1,0]]}
 }},
 "mlily_remote:ms600:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26109,7 +26213,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"d44bc439",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010064d3",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010064d3",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d08030138010203043720",1,0]]}
 }},
 "mlily_remote:ms600:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26177,7 +26282,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010064d3",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010064d3",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d08030138010203043720",1,0]]}
 }},
 "mlily_remote:ms600:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26245,7 +26351,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010064d3",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010064d3",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d08030138010203043720",1,0]]}
 }},
 "mlily_remote:ms600:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26313,7 +26420,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"0000fff2",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010064d3",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010064d3",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d08030138010203043720",1,0]]}
 }},
 "mlily_remote:ms600:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26381,7 +26489,8 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"00000002",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010064d3",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010064d3",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d08030138010203043720",1,0]]}
 }},
 "mlily_remote:powercool:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26430,7 +26539,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"6e400002",false,"45",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e200d0803013801020304240d",1,0]]}
 }},
 "mlily_remote:powercool:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26479,7 +26589,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e200d0803013801020304240d",1,0]]}
 }},
 "mlily_remote:powercool:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26528,7 +26639,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d0803013801020304240d",1,0]]}
 }},
 "mlily_remote:powercool:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26577,7 +26689,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e200d0803013801020304240d",1,0]]}
 }},
 "mlily_remote:powercool:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26626,7 +26739,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000fff2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e200d0803013801020304240d",1,0]]}
 }},
 "mlily_remote:powercool:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -26675,7 +26789,8 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"00000002",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e200d0803013801020304240d",1,0]]}
 }},
 "mline": {
 "info": {"bed_type": "mline", "controller": "MLineController", "module": "mline.controller", "pulse": [10, 100]},
@@ -27907,7 +28022,8 @@
 "button:motion_bed_sleep_adjust_head_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000204d7a3",1,0],[507,"0000ffe1",true,"ffffffff02000f0b001804",1,0],[1007,"0000ffe1",true,"ffffffff0500000000d700",1,0],[1114,"0000ffe1",true,"ffffffff02000f0b001804",1,0]]},
 "button:motion_bed_sleep_adjust_back_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000020257a1",1,0],[507,"0000ffe1",true,"ffffffff02000f0b001804",1,0],[1007,"0000ffe1",true,"ffffffff0500000000d700",1,0],[1114,"0000ffe1",true,"ffffffff02000f0b001804",1,0]]},
 "button:motion_bed_sleep_adjust_legs_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000020797a2",1,0],[507,"0000ffe1",true,"ffffffff02000f0b001804",1,0],[1007,"0000ffe1",true,"ffffffff0500000000d700",1,0],[1114,"0000ffe1",true,"ffffffff02000f0b001804",1,0]]},
-"button:motion_bed_sleep_adjust_lumbar_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000020e57a4",1,0],[507,"0000ffe1",true,"ffffffff02000f0b001804",1,0],[1007,"0000ffe1",true,"ffffffff0500000000d700",1,0],[1114,"0000ffe1",true,"ffffffff02000f0b001804",1,0]]}
+"button:motion_bed_sleep_adjust_lumbar_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000020e57a4",1,0],[507,"0000ffe1",true,"ffffffff02000f0b001804",1,0],[1007,"0000ffe1",true,"ffffffff0500000000d700",1,0],[1114,"0000ffe1",true,"ffffffff02000f0b001804",1,0]]},
+"sync_clock": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff01000111030435052601027904",1,0]]}
 }},
 "motomotion": {
 "info": {"bed_type": "motomotion", "controller": "MotoMotionController", "gaps": ["button:motomotion_unbind", "number:motomotion_treble=0", "number:motomotion_treble=15", "number:motomotion_bass=0", "number:motomotion_bass=15"], "module": "motomotion.controller", "pulse": [10, 100]},
@@ -29309,7 +29425,8 @@
 "button:okimiki_release": {"status":"no_writes"},
 "number:okimiki_light_seconds=0": {"status":"ok","writes":[[200,"d44bc439",false,"6e0bffff77",1,0]]},
 "number:okimiki_light_seconds=900": {"status":"ok","writes":[[200,"d44bc439",false,"6e0b038400",1,0]]},
-"preset_lounge": {"status":"ok","writes":[[93,"d44bc439",false,"6e010059c8",1,0]]}
+"preset_lounge": {"status":"ok","writes":[[93,"d44bc439",false,"6e010059c8",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "okimiki:HCRN:nordic": {
 "info": {"bed_type": "okimiki", "controller": "OkimikiController", "module": "okimiki.controller", "pulse": [10, 100]},
@@ -29368,7 +29485,8 @@
 "button:okimiki_release": {"status":"no_writes"},
 "number:okimiki_light_seconds=0": {"status":"ok","writes":[[200,"6e400002",false,"6e0bffff77",1,0]]},
 "number:okimiki_light_seconds=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]},
-"preset_lounge": {"status":"ok","writes":[[93,"6e400002",false,"59",1,0]]}
+"preset_lounge": {"status":"ok","writes":[[93,"6e400002",false,"59",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "okimiki:IPRM:nordic": {
 "info": {"bed_type": "okimiki", "controller": "OkimikiController", "module": "okimiki.controller", "pulse": [10, 100]},
@@ -29419,7 +29537,8 @@
 "button:okimiki_release": {"status":"no_writes"},
 "number:okimiki_light_seconds=0": {"status":"ok","writes":[[200,"6e400002",false,"6e0bffff77",1,0]]},
 "number:okimiki_light_seconds=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]},
-"preset_lounge": {"error":"ValueError","status":"error","writes":[]}
+"preset_lounge": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "okimiki:IQRM:nordic": {
 "info": {"bed_type": "okimiki", "controller": "OkimikiController", "module": "okimiki.controller", "pulse": [10, 100]},
@@ -29478,7 +29597,8 @@
 "button:okimiki_release": {"status":"no_writes"},
 "number:okimiki_light_seconds=0": {"status":"ok","writes":[[200,"6e400002",false,"6e0bffff77",1,0]]},
 "number:okimiki_light_seconds=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]},
-"preset_lounge": {"status":"ok","writes":[[93,"6e400002",false,"59",1,0]]}
+"preset_lounge": {"status":"ok","writes":[[93,"6e400002",false,"59",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e0c20080201695735d0006a",1,0],[193,"6e400002",false,"6e0d2008030138010203043019",1,0]]}
 }},
 "okimiki:KWRN:nordic": {
 "info": {"bed_type": "okimiki", "controller": "OkimikiController", "module": "okimiki.controller", "pulse": [10, 100]},
@@ -29537,7 +29657,8 @@
 "button:okimiki_release": {"status":"no_writes"},
 "number:okimiki_light_seconds=0": {"status":"ok","writes":[[200,"6e400002",false,"6e0bffff77",1,0]]},
 "number:okimiki_light_seconds=900": {"status":"ok","writes":[[200,"6e400002",false,"6e0b038400",1,0]]},
-"preset_lounge": {"status":"ok","writes":[[93,"6e400002",false,"59",1,0]]}
+"preset_lounge": {"status":"ok","writes":[[93,"6e400002",false,"59",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e0c20080201695735d0006a",1,0],[193,"6e400002",false,"6e0d2008030138010203043019",1,0]]}
 }},
 "okin_64bit": {
 "info": {"bed_type": "okin_64bit", "controller": "Okin64BitController", "module": "okin_64bit", "pulse": [10, 100]},
@@ -41940,7 +42061,8 @@
 "button:sonicsleep_tv": {"status":"ok","writes":[[100,"d44bc439",false,"6e010058c7",1,0]]},
 "button:sonicsleep_tv_save": {"status":"ok","writes":[[100,"d44bc439",false,"6e010064d3",1,0]]},
 "button:sonicsleep_anti_snore": {"status":"ok","writes":[[100,"d44bc439",false,"6e010046b5",1,0]]},
-"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"d44bc439",false,"6e010069d8",1,0]]}
+"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"d44bc439",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e0c20080201695735be0058",1,0],[207,"d44bc439",false,"6e0d2008030138010203041e07",1,0]]}
 }},
 "sonicsleep:Nordic": {
 "info": {"bed_type": "sonicsleep", "controller": "SonicSleepController", "module": "sonicsleep.controller", "pulse": [10, 100]},
@@ -41992,7 +42114,8 @@
 "button:sonicsleep_tv": {"status":"ok","writes":[[100,"6e400002",false,"58",1,0]]},
 "button:sonicsleep_tv_save": {"status":"ok","writes":[[100,"6e400002",false,"64",1,0]]},
 "button:sonicsleep_anti_snore": {"status":"ok","writes":[[100,"6e400002",false,"46",1,0]]},
-"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"6e400002",false,"69",1,0]]}
+"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"6e400002",false,"69",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"6e400002",false,"6e0c20080201695735be0058",1,0],[207,"6e400002",false,"6e0d2008030138010203041e07",1,0]]}
 }},
 "sonicsleep:W2": {
 "info": {"bed_type": "sonicsleep", "controller": "SonicSleepController", "module": "sonicsleep.controller", "pulse": [10, 100]},
@@ -42044,7 +42167,8 @@
 "button:sonicsleep_tv": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010058c7",1,0]]},
 "button:sonicsleep_tv_save": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010064d3",1,0]]},
 "button:sonicsleep_anti_snore": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
-"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]}
+"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0c20080201695735be0058",1,0],[207,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0d2008030138010203041e07",1,0]]}
 }},
 "sonicsleep:W3": {
 "info": {"bed_type": "sonicsleep", "controller": "SonicSleepController", "module": "sonicsleep.controller", "pulse": [10, 100]},
@@ -42096,7 +42220,8 @@
 "button:sonicsleep_tv": {"status":"ok","writes":[[100,"0000ffe2",false,"6e010058c7",1,0]]},
 "button:sonicsleep_tv_save": {"status":"ok","writes":[[100,"0000ffe2",false,"6e010064d3",1,0]]},
 "button:sonicsleep_anti_snore": {"status":"ok","writes":[[100,"0000ffe2",false,"6e010046b5",1,0]]},
-"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"0000ffe2",false,"6e010069d8",1,0]]}
+"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"0000ffe2",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000ffe2",false,"6e0c20080201695735be0058",1,0],[207,"0000ffe2",false,"6e0d2008030138010203041e07",1,0]]}
 }},
 "sonicsleep:W4": {
 "info": {"bed_type": "sonicsleep", "controller": "SonicSleepController", "module": "sonicsleep.controller", "pulse": [10, 100]},
@@ -42148,7 +42273,8 @@
 "button:sonicsleep_tv": {"status":"ok","writes":[[100,"0000fff2",false,"6e010058c7",1,0]]},
 "button:sonicsleep_tv_save": {"status":"ok","writes":[[100,"0000fff2",false,"6e010064d3",1,0]]},
 "button:sonicsleep_anti_snore": {"status":"ok","writes":[[100,"0000fff2",false,"6e010046b5",1,0]]},
-"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"0000fff2",false,"6e010069d8",1,0]]}
+"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"0000fff2",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",false,"6e0c20080201695735be0058",1,0],[207,"0000fff2",false,"6e0d2008030138010203041e07",1,0]]}
 }},
 "sonicsleep:W5": {
 "info": {"bed_type": "sonicsleep", "controller": "SonicSleepController", "module": "sonicsleep.controller", "pulse": [10, 100]},
@@ -42200,7 +42326,8 @@
 "button:sonicsleep_tv": {"status":"ok","writes":[[100,"00000002",false,"6e010058c7",1,0]]},
 "button:sonicsleep_tv_save": {"status":"ok","writes":[[100,"00000002",false,"6e010064d3",1,0]]},
 "button:sonicsleep_anti_snore": {"status":"ok","writes":[[100,"00000002",false,"6e010046b5",1,0]]},
-"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"00000002",false,"6e010069d8",1,0]]}
+"button:sonicsleep_anti_snore_save": {"status":"ok","writes":[[100,"00000002",false,"6e010069d8",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"00000002",false,"6e0c20080201695735be0058",1,0],[207,"00000002",false,"6e0d2008030138010203041e07",1,0]]}
 }},
 "star_elevate": {
 "info": {"bed_type": "star_elevate", "controller": "StarElevateController", "module": "starcode.star_elevate", "pulse": [10, 100]},
@@ -42603,7 +42730,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B201*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -42662,7 +42790,8 @@
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B202* except D": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -42721,7 +42850,8 @@
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B202D*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -42798,7 +42928,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B205*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -42861,7 +42992,8 @@
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",7,157],[1150,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B206* except A,H": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -42922,7 +43054,8 @@
 "button:suta_mode_set_pilates": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f54482050494c415445530d0a",2,207]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B206A*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -42995,7 +43128,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B206H*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43068,7 +43202,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B207*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43127,7 +43262,8 @@
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
 "switch:suta_lock=on": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f4e0d0a",2,107]]},
-"switch:suta_lock=off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,107]]}
+"switch:suta_lock=off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B210*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43188,7 +43324,8 @@
 "button:suta_mode_set_pilates": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f54482050494c415445530d0a",2,207]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B212*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43263,7 +43400,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B301*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43299,7 +43437,8 @@
 "button:suta_set_date": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]},
 "button:suta_ctrl_two_down": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482054574f20444f574e0d0a",7,107],[800,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_ctrl_two_up": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482054574f2055500d0a",7,107],[800,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]}
+"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-B302*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43360,7 +43499,8 @@
 "button:suta_mode_open_bk": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f5448204f50454e424b0d0a",3,107]]},
 "button:suta_mode_open_ft": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f5448204f50454e46540d0a",3,107]]},
 "button:suta_mode_open_hd": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f5448204f50454e48440d0a",3,107]]},
-"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]}
+"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-B402*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43398,7 +43538,8 @@
 "button:suta_ctrl_two_up": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482054574f2055500d0a",7,157],[1150,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",4,107]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",4,107]]},
 "switch:suta_lock=on": {"status":"ok","writes":[[0,"0000fff2",true,"41542b5345544c4f434b3d4f4e0d0a",1,0]]},
-"switch:suta_lock=off": {"status":"ok","writes":[[0,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",1,0]]}
+"switch:suta_lock=off": {"status":"ok","writes":[[0,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-B410*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43474,7 +43615,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B506*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43547,7 +43689,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B603*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43628,7 +43771,8 @@
 "button:suta_mass_head_lv20": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4153533d424f54482048454144204c5632300d0a",1,0],[300,"0000fff2",true,"41542b4d4153533d424f544820464f4f54204c5632300d0a",1,0]]},
 "button:suta_mass_head_lv30": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4153533d424f54482048454144204c5633300d0a",1,0],[300,"0000fff2",true,"41542b4d4153533d424f544820464f4f54204c5633300d0a",1,0]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B604*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43710,7 +43854,8 @@
 "button:suta_mass_head_lv30": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4153533d424f54482048454144204c5633300d0a",1,0],[300,"0000fff2",true,"41542b4d4153533d424f544820464f4f54204c5633300d0a",1,0]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B701*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43769,7 +43914,8 @@
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
 "switch:suta_lock=on": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f4e0d0a",2,107]]},
-"switch:suta_lock=off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,107]]}
+"switch:suta_lock=off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B702*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43842,7 +43988,8 @@
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
 "switch:suta_lock=on": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f4e0d0a",2,107]]},
-"switch:suta_lock=off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,107]]}
+"switch:suta_lock=off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330360d0a",3,107]]}
 }},
 "suta:SUTA-B710*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43884,7 +44031,8 @@
 "button:suta_reset_on": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b52455345543d4f4e0d0a",2,207],[3314,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]},
 "switch:suta_lock=on": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544c4f434b3d4f4e0d0a",2,207],[3314,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]},
-"switch:suta_lock=off": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,207],[3314,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]}
+"switch:suta_lock=off": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,207],[3314,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-B801*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -43960,7 +44108,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B803*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44040,7 +44189,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B804*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44120,7 +44270,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B805*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44196,7 +44347,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B810*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44265,7 +44417,8 @@
 "button:suta_mass_head_dt33": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4153533d424f5448204845414420445433330d0a",2,107]]},
 "button:suta_mass_head_dt50": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4153533d424f5448204845414420445435300d0a",2,107]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-B901*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44346,7 +44499,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B903*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44427,7 +44581,8 @@
 "button:suta_mass_head_lv30": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4153533d424f54482048454144204c5633300d0a",1,0],[300,"0000fff2",true,"41542b4d4153533d424f544820464f4f54204c5633300d0a",1,0]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-B905*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44509,7 +44664,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[4000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-DRAW*": {
 "info": {"bed_type": "suta", "connect_error": "ValueError", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44538,7 +44694,8 @@
 "memory_recall_1": {"error":"ValueError","status":"error","writes":[]},
 "memory_program_1": {"error":"ValueError","status":"error","writes":[]},
 "lights_on": {"error":"ValueError","status":"error","writes":[]},
-"lights_off": {"error":"ValueError","status":"error","writes":[]}
+"lights_off": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "suta:SUTA-DRAWER": {
 "info": {"bed_type": "suta", "connect_error": "ValueError", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44567,7 +44724,8 @@
 "memory_recall_1": {"error":"ValueError","status":"error","writes":[]},
 "memory_program_1": {"error":"ValueError","status":"error","writes":[]},
 "lights_on": {"error":"ValueError","status":"error","writes":[]},
-"lights_off": {"error":"ValueError","status":"error","writes":[]}
+"lights_off": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "suta:SUTA-ES20*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44609,7 +44767,8 @@
 "button:suta_reset_on": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b52455345543d4f4e0d0a",2,207],[3314,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]},
 "switch:suta_lock=on": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544c4f434b3d4f4e0d0a",2,207],[3314,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]},
-"switch:suta_lock=off": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,207],[3314,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]}
+"switch:suta_lock=off": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",2,207],[3314,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-F260*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44680,7 +44839,8 @@
 "button:suta_mode_fans_top_dt02": {"status":"ok","writes":[[100,"0000fff2",true,"41542b46554e3d424f5448204f4e4520445430320d0a",3,107]]},
 "button:suta_mode_fans_top_dt03": {"status":"ok","writes":[[100,"0000fff2",true,"41542b46554e3d424f5448204f4e4520445430330d0a",3,107]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
-"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]}
+"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-Flow*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44730,7 +44890,8 @@
 "button:suta_mode_both_yoga": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f544820594f47410d0a",1,0]]},
 "button:suta_mode_chair": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f54482043484149520d0a",1,0]]},
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
-"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]}
+"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-M400*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44789,7 +44950,8 @@
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-M410*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44848,7 +45010,8 @@
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-M411*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44907,7 +45070,8 @@
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-M500*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -44966,7 +45130,8 @@
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-M510* except D": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45043,7 +45208,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-M510D*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45116,7 +45282,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-M511*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45189,7 +45356,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-MOON*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "gaps": ["button:suta_adaptive_4_stiff_0101", "button:suta_adaptive_4_stiff_0201", "button:suta_adaptive_4_moderate_0102", "button:suta_adaptive_4_moderate_0202", "button:suta_adaptive_5_stiff_0101", "button:suta_adaptive_5_stiff_0201", "button:suta_adaptive_5_moderate_0102", "button:suta_adaptive_5_moderate_0202", "button:suta_adaptive_6_stiff_0101", "button:suta_adaptive_6_stiff_0201", "button:suta_adaptive_6_moderate_0102", "button:suta_adaptive_6_moderate_0202", "button:suta_adaptive_7_stiff_0101", "button:suta_adaptive_7_stiff_0201", "button:suta_adaptive_7_moderate_0102", "button:suta_adaptive_7_moderate_0202", "button:suta_adaptive_14_stiff_0101", "button:suta_adaptive_14_stiff_0201", "button:suta_adaptive_14_moderate_0102", "button:suta_adaptive_14_moderate_0202"], "module": "suta.controller", "pulse": [7, 150]},
@@ -45276,7 +45444,8 @@
 "switch:suta_automatic_adjustment_1=on": {"status":"ok","writes":[[0,"0000ffe1",true,"5359970b00020101525443",1,0]]},
 "switch:suta_automatic_adjustment_1=off": {"status":"ok","writes":[[0,"0000ffe1",true,"5359970b00020100515443",1,0]]},
 "switch:suta_automatic_adjustment_2=on": {"status":"ok","writes":[[0,"0000ffe1",true,"5359970b00020201535443",1,0]]},
-"switch:suta_automatic_adjustment_2=off": {"status":"ok","writes":[[0,"0000ffe1",true,"5359970b00020200525443",1,0]]}
+"switch:suta_automatic_adjustment_2=off": {"status":"ok","writes":[[0,"0000ffe1",true,"5359970b00020200525443",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-N520*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45342,7 +45511,8 @@
 "button:suta_mode_bed_flat": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f54482042454420464c41540d0a",3,107]]},
 "button:suta_mode_chair": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f54482043484149520d0a",3,107]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3100,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",3,107]]},
-"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]}
+"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-RBHC*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45399,7 +45569,8 @@
 "button:suta_mode_bed": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f5448204245440d0a",1,0]]},
 "button:suta_mode_chair": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f54482043484149520d0a",1,0]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-ROLL*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45432,7 +45603,8 @@
 "button:suta_beep_enable": {"status":"ok","writes":[[0,"0000fff2",true,"41542b454e41424c453d424545500d0a",1,0]]},
 "button:suta_set_date": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]},
 "button:suta_mode_sofa": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f544820534f46410d0a",1,0]]},
-"button:suta_mode_sofa_bed": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f544820534245440d0a",1,0]]}
+"button:suta_mode_sofa_bed": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f544820534245440d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-ROLLSOFA": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45465,7 +45637,8 @@
 "button:suta_beep_enable": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b454e41424c453d424545500d0a",1,0]]},
 "button:suta_set_date": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330340d0a",3,107]]},
 "button:suta_mode_sofa": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f544820534f46410d0a",1,0]]},
-"button:suta_mode_sofa_bed": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f544820534245440d0a",1,0]]}
+"button:suta_mode_sofa_bed": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f544820534245440d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-S100*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45526,7 +45699,8 @@
 "button:suta_mode_set_pilates": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f54482050494c415445530d0a",2,207]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-S200*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45587,7 +45761,8 @@
 "button:suta_mode_set_pilates": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f54482050494c415445530d0a",2,207]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-S300*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45648,7 +45823,8 @@
 "button:suta_mode_set_pilates": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f54482050494c415445530d0a",2,207]]},
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
-"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]}
+"button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:SUTA-SOFA*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45681,7 +45857,8 @@
 "button:suta_beep_enable": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b454e41424c453d424545500d0a",1,0]]},
 "button:suta_set_date": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330340d0a",3,107]]},
 "button:suta_mode_sofa": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f544820534f46410d0a",1,0]]},
-"button:suta_mode_sofa_bed": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f544820534245440d0a",1,0]]}
+"button:suta_mode_sofa_bed": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f544820534245440d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-STOR*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45719,7 +45896,8 @@
 "button:suta_ctrl_two_up": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482054574f2055500d0a",7,157],[1150,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",4,107]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",4,107]]},
 "switch:suta_lock=on": {"status":"ok","writes":[[0,"0000fff2",true,"41542b5345544c4f434b3d4f4e0d0a",1,0]]},
-"switch:suta_lock=off": {"status":"ok","writes":[[0,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",1,0]]}
+"switch:suta_lock=off": {"status":"ok","writes":[[0,"0000fff2",true,"41542b5345544c4f434b3d4f46460d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-STORAGE": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45757,7 +45935,8 @@
 "button:suta_ctrl_two_up": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4354524c3d424f54482054574f2055500d0a",7,157],[1150,"0000ffe1",true,"41542b4354524c3d424f54482053544f500d0a",4,107]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b4354524c3d424f54482053544f500d0a",4,107]]},
 "switch:suta_lock=on": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b5345544c4f434b3d4f4e0d0a",1,0]]},
-"switch:suta_lock=off": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b5345544c4f434b3d4f46460d0a",1,0]]}
+"switch:suta_lock=off": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b5345544c4f434b3d4f46460d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-TEMP*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45802,7 +45981,8 @@
 "number:suta_1_setpoint=22": {"status":"ok","writes":[[0,"0000ffe1",true,"5359a10300020116695443",1,0]]},
 "number:suta_1_setpoint=40": {"status":"ok","writes":[[0,"0000ffe1",true,"5359a103000201287b5443",1,0]]},
 "number:suta_2_setpoint=22": {"status":"ok","writes":[[0,"0000ffe1",true,"5359a103000202166a5443",1,0]]},
-"number:suta_2_setpoint=40": {"status":"ok","writes":[[0,"0000ffe1",true,"5359a103000202287c5443",1,0]]}
+"number:suta_2_setpoint=40": {"status":"ok","writes":[[0,"0000ffe1",true,"5359a103000202287c5443",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-YOGA*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45852,7 +46032,8 @@
 "button:suta_mode_both_yoga": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f544820594f47410d0a",1,0]]},
 "button:suta_mode_chair": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f54482043484149520d0a",1,0]]},
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
-"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]}
+"button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:SUTA-YOGABED": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45902,7 +46083,8 @@
 "button:suta_mode_both_yoga": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f544820594f47410d0a",1,0]]},
 "button:suta_mode_chair": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f54482043484149520d0a",1,0]]},
 "button:suta_mode_swing": {"status":"ok","writes":[[0,"0000ffe1",true,"41542b4d4f44453d424f5448205357494e470d0a",1,0]]},
-"button:suta_release": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]}
+"button:suta_release": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000ffe1",true,"41542b53443d323630313032303330340d0a",3,107]]}
 }},
 "suta:fallback": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -45975,7 +46157,8 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]}
+"button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
 }},
 "suta:short-name": {
 "info": {"bed_type": "suta", "connect_error": "ValueError", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -46004,7 +46187,8 @@
 "memory_recall_1": {"error":"ValueError","status":"error","writes":[]},
 "memory_program_1": {"error":"ValueError","status":"error","writes":[]},
 "lights_on": {"error":"ValueError","status":"error","writes":[]},
-"lights_off": {"error":"ValueError","status":"error","writes":[]}
+"lights_off": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "svane": {
 "info": {"bed_type": "svane", "controller": "SvaneController", "gaps": ["memory_recall_1"], "module": "svane.controller", "pulse": [10, 100]},

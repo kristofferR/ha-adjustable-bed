@@ -5422,12 +5422,10 @@ device targets and optional `side`, reject conflicts and validate every target
 before the first change.
 
 `betterliving2_diagnostic_action` replaces the ordinary status-refresh buttons.
-Its fixed `action` choices are `refresh_alarm`, `refresh_massage` (P2/P3 only),
-and `set_massage_timer` (P1 only, `timer` from -1 to 2). These call the same
-existing query/setting methods with the same owner, STOP and session checks.
-Numeric support settings do not imply a duration in minutes. All four existing
-P1 timer inputs remain reachable through this action; a repeated fixed input is
-not presented as a timer-cycle button. There is no
+Its fixed `action` choices are `refresh_alarm` and `refresh_massage` (P2/P3 only).
+These call the existing query methods with the same owner, STOP and session checks.
+The four raw P1 timer inputs remain codec evidence; their physical duration
+mapping is unproven, so they have no Home Assistant action. There is no
 arbitrary packet action. Clock synchronization remains available through the
 shared synchronization action and its existing connection startup.
 

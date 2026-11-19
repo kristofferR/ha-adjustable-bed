@@ -204,7 +204,8 @@ class Request:
 
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-    vol.Required("operation"): vol.In(OPERATIONS),
+    # The clock belongs to the shared Set bed clock action.
+    vol.Required("operation"): vol.In(tuple(op for op in OPERATIONS if op != "sync")),
     vol.Optional("control"): vol.In(CONTROLS),
     vol.Optional("duration_ms", default=1000): vol.All(cv.positive_int, vol.Range(max=60000)),
     vol.Optional("datetime"): cv.datetime,

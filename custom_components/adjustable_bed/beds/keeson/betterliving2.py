@@ -917,10 +917,8 @@ class BetterLiving2Controller(KeesonController):
         link = self._live(plan.link)
         started = asyncio.get_running_loop().time()
         before, finished = command_frames_written(), False
-        try:
-            await self._run((plan.frame, plan.frame), expected=link, receive_kind="alarm")
-            finished = True
-        finally:
+
+        def publish_delivery() -> None:
             delivery = _value_delivery(before, finished)
             if delivery is Delivery.SENT:
                 self._view = self._saved = plan.selected
@@ -929,18 +927,33 @@ class BetterLiving2Controller(KeesonController):
                 self._view = AlarmView()
                 self._observed_alarm = False
                 self._publish_alarm()
-        if await pause(app.ALARM_SYNC_DELAY_MS / 1000, self._cancel):
-            return
-        self._live(link)
-        await self.sync_clock()
-        if self._cancel.is_set():
-            return
-        if not await pause(
-            max(0, started + app.ALARM_QUERY_DELAY_MS / 1000 - asyncio.get_running_loop().time()),
-            self._cancel,
-        ):
+
+        try:
+            await self._run((plan.frame, plan.frame), expected=link, receive_kind="alarm")
+            finished = True
+        finally:
+            if not finished or command_cancelled():
+                publish_delivery()
+        try:
+            if await pause(app.ALARM_SYNC_DELAY_MS / 1000, self._cancel):
+                publish_delivery()
+                return
             self._live(link)
-            await self.query_alarm()
+            await self.sync_clock()
+            publish_delivery()
+            if self._cancel.is_set():
+                return
+            if not await pause(
+                max(
+                    0, started + app.ALARM_QUERY_DELAY_MS / 1000 - asyncio.get_running_loop().time()
+                ),
+                self._cancel,
+            ):
+                self._live(link)
+                await self.query_alarm()
+        except asyncio.CancelledError:
+            publish_delivery()
+            raise
 
     def _publish_alarm(self) -> None:
         view = self._view

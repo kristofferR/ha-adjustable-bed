@@ -258,7 +258,7 @@ def async_register_majestichome_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required("operation"): vol.In(
-                    ("list", "new", "set", "toggle", "delete", "sync_clock")
+                    ("list", "new", "set", "toggle", "delete")
                 ),
                 vol.Optional("alarm_id"): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
                 vol.Optional("hour", default=7): vol.All(vol.Coerce(int), vol.Range(min=0, max=23)),

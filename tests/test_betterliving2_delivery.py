@@ -179,7 +179,10 @@ async def test_fresh_cleanup_frames_do_not_deliver_the_cancelled_command(hass):
         await child.async_shutdown()
 
 
-async def test_partial_alarm_clears_shown_selection_and_retains_prior_preferences(hass):
+@pytest.mark.parametrize("after_frames", (1, 3))
+async def test_partial_alarm_clears_shown_selection_and_retains_prior_preferences(
+    hass, after_frames
+):
     child, controller, client, _ = await bed(hass, "p3")
     results = []
     prior = controller._view = controller._saved = runtime.AlarmView(hour=6, minute=15)
@@ -187,7 +190,8 @@ async def test_partial_alarm_clears_shown_selection_and_retains_prior_preference
     async def sent(*_args, **_kwargs):
         context = current_command_context()
         assert context is not None
-        context.cancel_event.set()
+        if client.write_gatt_char.await_count == after_frames:
+            context.cancel_event.set()
 
     async def operation(_controller):
         plan = controller.prepare_alarm(
@@ -204,9 +208,14 @@ async def test_partial_alarm_clears_shown_selection_and_retains_prior_preference
             client.write_gatt_char.reset_mock()
             client.write_gatt_char.side_effect = sent
             await child.async_execute_controller_command(operation)
-        assert len(writes(client)) == 1
-        assert results == [Delivery.PARTIAL]
-        assert controller._view.hour is None and controller._view.minute is None
-        assert controller._saved == prior
+        assert len(writes(client)) == after_frames
+        if after_frames == 1:
+            assert results == [Delivery.PARTIAL]
+            assert controller._view.hour is None and controller._view.minute is None
+            assert controller._saved == prior
+        else:
+            assert results == [Delivery.SENT]
+            assert controller._view.hour == controller._saved.hour == 7
+            assert controller._view.minute == controller._saved.minute == 30
     finally:
         await child.async_shutdown()

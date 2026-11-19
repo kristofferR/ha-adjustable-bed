@@ -159,11 +159,11 @@ commands.
 
 | Operation | Exact construction / field meaning |
 |-----------|------------------------------------|
-| `clock_sync` | `6E 0C 20 08 02 01 UNIX_BE32 ZONE_HOURS SUM8`, then `6E 0D 20 08 03 01 YEAR_MINUS_1970 MONTH DAY HOUR MINUTE SECOND SUM8` |
+| Clock ([`sync_clock`](../SERVICES.md#sync_clock)) | `6E 0C 20 08 02 01 UNIX_BE32 ZONE_HOURS SUM8`, then `6E 0D 20 08 03 01 YEAR_MINUS_1970 MONTH DAY HOUR MINUTE SECOND SUM8` |
 | `alarm` | `6E 05 MINUTES_LOW 00 SUM8`, then `6E 06 MINUTES_HIGH MODE SUM8` |
 | `alarm_at` | Same countdown frames; HA local hour/minute, seconds removed, nonpositive difference plus exactly 86400 seconds |
 | `alarm_cancel` | The two countdown frames with minutes/mode zero |
-| `repeat_alarm` | `6E 0D 20 05 01 01 ID REPEAT HOUR MINUTE MODE STATUS SUM8` |
+| `repeat_alarm` | `6E 0D 20 05 01 01 ID REPEAT HOUR MINUTE MODE STATUS SUM8`; the action sends `REPEAT` 0 and `STATUS` 1, whose other values have no established meaning |
 | `repeat_delete` | `6E 08 20 05 02 01 ID SUM8` |
 | `repeat_query` | `6E 08 20 05 01 00 00 SUM8` |
 | `light_color` | `6E 0C FF RED SUM8`, then `6E 0D GREEN BLUE SUM8`, concatenated in one write |
@@ -211,8 +211,9 @@ is written in sequential `MTU - 3` chunks without a delay between chunks.
 | `sensor_sensitivity` | Unavailable | `q_sens`, null value; no inferred setter |
 | `sensor_stop` | Local polling / receive cancellation, no wire STOP | Same |
 
-`value` supplies the device part setting. `part` supplies report side 1/2;
-`report_type` is 1 for day and 2 for month. `report_date` defaults to HA's local
+`value` supplies the device part setting. `part` takes the report side, `left`
+or `right` (sent as 1 or 2); `report_type` takes `day` or `month` (sent as 1 or
+2). `report_date` defaults to HA's local
 date. `sensor_live` uses `enabled` to start or stop polling. Clock synchronization
 uses HA's configured timezone. SXB time replies publish in source order and
 follow up with `q_time`, then `q_part`. MM's compiled `q_time` selector consumes

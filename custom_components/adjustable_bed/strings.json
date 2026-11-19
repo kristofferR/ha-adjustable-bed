@@ -7321,7 +7321,7 @@
     },
     "bedgear": {
       "name": "Bedgear: settings",
-      "description": "Configure supported Bedgear BED controls. Received values remain unknown until reported by the bed.",
+      "description": "Change Bedgear settings. Values show as unknown until the bed reports them.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -7365,7 +7365,7 @@
         },
         "slot": {
           "name": "Memory slot",
-          "description": "Source-supported memory slot, 1 or 2."
+          "description": "Memory slot 1 or 2."
         },
         "recall_on_release": {
           "name": "Recall after saving",
@@ -7375,7 +7375,7 @@
     },
     "bedtech_app_command": {
       "name": "BedTech: press button",
-      "description": "Run an action using the selected BedTech 7.1.3 model and its app sleeper routing. Movement uses the configured finite pulse count.",
+      "description": "Press one of the selected BedTech model's buttons, on the sleeper side the app uses for it. Movement repeats for the configured number of pulses.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -7432,7 +7432,7 @@
           "description": "Position preset recalled by the alarm."
         },
         "slot": {
-          "name": "Repeating alarm ID",
+          "name": "Repeating alarm number",
           "description": "Existing or new repeating alarm identifier."
         },
         "days": {
@@ -7578,16 +7578,16 @@
           "name": "Anti-snore mode"
         },
         "pwm": {
-          "name": "Slow anti-snore PWM byte",
+          "name": "Anti-snore strength",
           "description": "Anti-snore movement strength."
         },
         "timer": {
-          "name": "Slow anti-snore timer byte",
+          "name": "Anti-snore time",
           "description": "Anti-snore movement time."
         },
         "sensor_side": {
-          "name": "P2 sensor sides",
-          "description": "App side value1,2 or3. Omit to retain the reported setting. P3 supports reading this setting only."
+          "name": "Sensor sides",
+          "description": "The app's sensor side setting, 1, 2 or 3. Omit to keep the reported setting. Some models can only read it."
         },
         "left_sensitivity": {
           "name": "Left sensitivity",
@@ -7610,7 +7610,7 @@
           "name": "Preset to program"
         },
         "capability_page": {
-          "name": "Capability page byte",
+          "name": "Feature list",
           "description": "Which feature list to read from the bed."
         }
       }
@@ -7626,15 +7626,15 @@
           "name": "Action"
         },
         "internal_side": {
-          "name": "Internal preset selector",
-          "description": "First is the normal Floyd UI. Both and second are conditional exported-alarm selectors, not physical Left/Right targets."
+          "name": "Preset page",
+          "description": "Leave at First, the normal Floyd page. Both and Second are alarm pages, not the left and right sides."
         },
         "confirm": {
           "name": "Confirm configuration write",
           "description": "Required to save over a preset or to link the bed to a room."
         },
         "room_id": {
-          "name": "BLE room ID",
+          "name": "Room number",
           "description": "Room to link this bed to, for a bed not yet in a room. Does not change the bed's Wi-Fi."
         },
         "side": {
@@ -7644,7 +7644,7 @@
     },
     "fsm_relax_calibrate": {
       "name": "FSM Relax: calibrate",
-      "description": "Calibrate using the four configured reversal flags. One write attempt; a failed write does not prove that hardware did nothing.",
+      "description": "Calibrate the bed with its configured motor directions. Calibration is sent once; if Home Assistant reports an error, check the bed before you try again.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -7659,7 +7659,7 @@
       }
     },
     "furnimove_action": {
-      "name": "FurniMove: press handset button",
+      "name": "FurniMove: press button",
       "description": "Presses one of the handset's buttons, optionally holding it.",
       "fields": {
         "device_id": {
@@ -7695,7 +7695,7 @@
     },
     "furnimove_massage_program": {
       "name": "FurniMove: massage program",
-      "description": "Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.",
+      "description": "Select massage program 1, 2, 3 or 4 (Wave), the way the handset does.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -7749,7 +7749,7 @@
           "name": "Action"
         },
         "action": {
-          "name": "Exact alarm action ID"
+          "name": "Alarm action"
         },
         "datetime": {
           "name": "Alarm date and time",
@@ -7792,22 +7792,16 @@
           "name": "Operation value"
         },
         "mode": {
-          "name": "Exact alarm action name"
+          "name": "Alarm action"
         },
         "slot": {
-          "name": "Alarm ID"
-        },
-        "repeat": {
-          "name": "Repeat mask"
+          "name": "Alarm number"
         },
         "hour": {
           "name": "Hour"
         },
         "minute": {
           "name": "Minute"
-        },
-        "status": {
-          "name": "Alarm status"
         },
         "enabled": {
           "name": "Enabled",
@@ -7817,10 +7811,10 @@
           "name": "RGB color"
         },
         "part": {
-          "name": "Report side (1 left, 2 right)"
+          "name": "Report side"
         },
         "report_type": {
-          "name": "Report type (1 day, 2 month)"
+          "name": "Report period"
         },
         "report_date": {
           "name": "Report date"
@@ -7850,7 +7844,7 @@
           "name": "Action"
         },
         "action": {
-          "name": "Exact alarm action ID"
+          "name": "Alarm action"
         },
         "datetime": {
           "name": "Alarm date and time",
@@ -7968,7 +7962,7 @@
           "description": "Position preset recalled by the alarm."
         },
         "slot": {
-          "name": "Repeating alarm ID",
+          "name": "Repeating alarm number",
           "description": "Existing or new repeating alarm identifier."
         },
         "days": {
@@ -8162,7 +8156,7 @@
       }
     },
     "logicdata_hold_preset": {
-      "name": "Logicdata: hold preset",
+      "name": "LOGICDATA: hold preset",
       "description": "Hold a flat, preset or memory recall with repeated commands for a specified duration, then release.",
       "fields": {
         "device_id": {
@@ -8233,7 +8227,7 @@
           "name": "Action"
         },
         "action": {
-          "name": "Exact alarm action ID"
+          "name": "Alarm action"
         },
         "datetime": {
           "name": "Alarm date and time",
@@ -8286,11 +8280,11 @@
       }
     },
     "mline_command": {
-      "name": "M Line: run action",
+      "name": "M Line: settings",
       "description": "Sets sleep privacy or anti-snore, reads the current settings or alarm, or downloads sleep history.",
       "fields": {
         "device_id": {
-          "name": "Device id"
+          "name": "Bed"
         },
         "side": {
           "name": "Side"
@@ -8318,8 +8312,8 @@
       }
     },
     "motion_bed_action": {
-      "name": "Motion Bed: run app action",
-      "description": "Run a named action listed in controller diagnostics. Persistent save, clear, reset and module changes require confirmation.",
+      "name": "Motion Bed: run control",
+      "description": "Run a control by its name, as listed in the bed's diagnostics. Saving, clearing, resetting and changing modules need confirmation.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -8410,27 +8404,6 @@
         },
         "side_position": {
           "name": "Side position"
-        }
-      }
-    },
-    "motion_bed_clock": {
-      "name": "Motion Bed: set clock",
-      "description": "Set the motor or thermal module clock.",
-      "fields": {
-        "device_id": {
-          "name": "Bed"
-        },
-        "side": {
-          "name": "Side"
-        },
-        "confirmed": {
-          "name": "Confirm persistent change"
-        },
-        "timestamp": {
-          "name": "Timestamp"
-        },
-        "thermal": {
-          "name": "Thermal"
         }
       }
     },
@@ -8583,7 +8556,7 @@
     },
     "motomotion": {
       "name": "MotoMotion: postures and users",
-      "description": "Manage local measurements and custom Hall targets for a MotoMotion name with the users tab. Dimensions are height, buttocks height and knee height in centimetres. This does not report measured motor positions.",
+      "description": "Save body measurements and your own posture positions on MotoMotion beds whose app has a users tab. Measurements are height, buttocks height and knee height in centimetres. This does not read where the motors are.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -8606,8 +8579,8 @@
           "description": "Upright, recline, TV or lay posture."
         },
         "targets": {
-          "name": "Raw Hall targets",
-          "description": "Target for each of the five motors: head, base, back, lumbar and tilt, within the app's slider range."
+          "name": "Posture positions",
+          "description": "Position for each of the five motors (head, base, back, lumbar and tilt), within the app's slider range."
         },
         "side": {
           "name": "Side",
@@ -8625,7 +8598,7 @@
         },
         "octo_pin": {
           "name": "New PIN",
-          "description": "The four ASCII digits to set on the receiver."
+          "description": "The four digits to set on the receiver."
         },
         "octo_pin_confirmation": {
           "name": "Confirm PIN",
@@ -8675,18 +8648,18 @@
     },
     "reverie_run_routine": {
       "name": "Reverie: run routine",
-      "description": "Replace the selected Reverie target's Composer routine queue and execute its direct bed actions.",
+      "description": "Run a routine of comfort steps on the selected Reverie bed. It replaces any routine the bed is running.",
       "fields": {
         "device_id": {
           "name": "Bed"
         },
         "steps": {
           "name": "Steps",
-          "description": "Ordered comfort values. Pairlink skips missing settings, keeps durations in the source list order, defaults missing durations to one minute, and uses a one-minute minimum. Other Reverie profiles require a duration for each supplied step. Home Assistant automations own when to start the routine."
+          "description": "The comfort settings to apply, in order, each with a duration in minutes. Pairlink beds skip settings you leave out and use at least one minute per step; other Reverie beds need a duration for every step. Use an automation to choose when the routine starts."
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a combined bed to target. This does not change an STK numeric side selection."
+          "description": "Which side of a combined bed to target."
         }
       }
     },
@@ -8704,7 +8677,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a combined bed to target. This does not change an STK numeric side selection."
+          "description": "Which side of a combined bed to target."
         }
       }
     },
@@ -8717,7 +8690,7 @@
           "description": "Operation"
         },
         "device_id": {
-          "name": "Device id",
+          "name": "Bed",
           "description": "Device id"
         },
         "side": {
@@ -8781,7 +8754,7 @@
           "description": "Datetime"
         },
         "alarm_id": {
-          "name": "Alarm id",
+          "name": "Alarm number",
           "description": "Alarm id"
         },
         "cycle": {
@@ -8947,7 +8920,7 @@
         },
         "actions": {
           "name": "Alarm actions",
-          "description": "A list of node keys such as node_1 from this layout’s alarm_actions diagnostics. The first bed choice and the layout-ordered massage choices determine the command."
+          "description": "Alarm actions such as node_1, as listed under alarm actions in the bed's diagnostics. The first bed action and the massage choices decide what the alarm does."
         },
         "time": {
           "name": "Alarm time",
@@ -8962,11 +8935,11 @@
         },
         "timer_save": {
           "name": "Use save encoding",
-          "description": "At zero, Save writes 0000 and slider release writes FFFF."
+          "description": "Saves the timer the way the app's Save button does, instead of the way releasing the slider does."
         },
         "progress": {
           "name": "Massage timer index",
-          "description": "D1RM or D9RM slider index, 0 to 5. These are source indices, not inferred durations."
+          "description": "The app's slider position, 0 to 5, on D1RM and D9RM models."
         },
         "popup": {
           "name": "Timer popup choice",
@@ -9027,7 +9000,7 @@
       }
     },
     "sleep_number_command": {
-      "name": "Sleep Number: run command",
+      "name": "Sleep Number: run control",
       "description": "Runs a Sleep Number control or reading. Readings return their results. See the actions guide for each command's options.",
       "fields": {
         "device_id": {
@@ -9049,7 +9022,7 @@
     },
     "sleeptracker_climate": {
       "name": "Sleeptracker: climate",
-      "description": "Set local left/right/both fan modes and levels. Level 0 stops the selected fans. Heat sends a 3600 second timer; cool sends a 36000 second timer. Timers and curve are commanded settings, not reported remaining time.",
+      "description": "Set the left, right or both fan modes and levels. Level 0 stops the selected fans. Heat runs for one hour and cool for ten hours. The bed does not report the time left.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9138,7 +9111,7 @@
       }
     },
     "solace_audio": {
-      "name": "Solace: control audio",
+      "name": "Solace: audio",
       "description": "Select or preview MotionFlex music, query volume, or set volume.",
       "fields": {
         "device_id": {
@@ -9162,10 +9135,10 @@
     },
     "sonicsleep": {
       "name": "SonicSleep: settings",
-      "description": "Read alarms, create or edit a form alarm, preserve a received alarm while toggling it, delete an alarm, query the bed link name or sync its clock.",
+      "description": "Read the alarms, create or edit an alarm, turn an alarm on or off without changing it, delete an alarm, or read the bed's link name.",
       "fields": {
         "device_id": {
-          "name": "Device id"
+          "name": "Bed"
         },
         "side": {
           "name": "Side"
@@ -9174,8 +9147,8 @@
           "name": "Operation"
         },
         "alarm_id": {
-          "name": "Alarm id",
-          "description": "Received ID for edit, toggle and delete. New alarms allocate their own ID."
+          "name": "Alarm number",
+          "description": "The alarm to edit, turn on or off, or delete, as the bed reported it. New alarms get their own number."
         },
         "hour": {
           "name": "Hour"
@@ -9188,7 +9161,7 @@
         },
         "weekdays": {
           "name": "Weekdays",
-          "description": "Monday is 0 and Sunday is 6. Empty means once; select all seven for every day."
+          "description": "Leave empty for a one-time alarm; select all seven for every day."
         },
         "enabled": {
           "name": "Enabled",
@@ -9197,7 +9170,7 @@
       }
     },
     "starcode_move_lifts": {
-      "name": "Starcode: move lifts",
+      "name": "StarCode: move lifts",
       "description": "Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action.",
       "fields": {
         "device_id": {
@@ -9212,7 +9185,7 @@
     },
     "svane_release_axis": {
       "name": "Svane: release motor",
-      "description": "Signal the active writer to release one axis while the other continues.",
+      "description": "Stop one motor while the other keeps moving.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9288,7 +9261,7 @@
     },
     "mlily_remote": {
       "name": "MLILY Remote: settings",
-      "description": "Set the bed clock and the MS600 countdown alarm, or run the MS300-SH anti-snore intervention on the left side.",
+      "description": "Set the MS600 countdown alarm, or run the MS300-SH anti-snore movement on the left side. Set the clock with Set bed clock.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9310,12 +9283,12 @@
         },
         "side": {
           "name": "Side",
-          "description": "For two separate receivers, the side to set. When both sides share one receiver, select the bed: its clock and alarm are shared and the anti-snore intervention runs on the left."
+          "description": "For two separate receivers, the side to set. When both sides share one receiver, select the bed: its alarm is shared and the anti-snore movement runs on the left."
         }
       }
     },
     "richmat_legacy": {
-      "name": "SleepEvolution and W.Silver Products 3.x: run app control",
+      "name": "SleepEvolution and W.Silver Products: run control",
       "description": "Run a control from the selected app and name prefix, as a press or a save.",
       "fields": {
         "device_id": {
@@ -9340,8 +9313,8 @@
       }
     },
     "richmat_mh_control": {
-      "name": "Nisco and MLILY Supreme: run app control",
-      "description": "Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands.",
+      "name": "Nisco and MLILY Supreme: run control",
+      "description": "Run one of the selected app and model's controls, read one setting from the bed, or set the app mode used by later controls.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9349,9 +9322,9 @@
         "action": {
           "name": "Action"
         },
-        "opcode": {
-          "name": "Control number",
-          "description": "Decimal byte value from this app and model's control table."
+        "control": {
+          "name": "Control",
+          "description": "The control's name, as its button or the app shows it, such as Flat, Memory 1, Save M1 or Massage: Mode. Add up or down for a motor, such as Back up."
         },
         "query": {
           "name": "Setting to read"
@@ -9371,7 +9344,7 @@
       }
     },
     "richmat_mh_sleep_mode": {
-      "name": "Nisco: Set sleep sensor mode",
+      "name": "Nisco: sleep sensor mode",
       "description": "Set the separate sleep sensor for one or two sleepers.",
       "fields": {
         "device_id": {
@@ -9388,7 +9361,7 @@
     },
     "bobpowerbase": {
       "name": "Power Bob Base: settings",
-      "description": "Manage repeat alarms, synchronize local time, or set lighting reported by the connected bed.",
+      "description": "Manage repeat alarms or set the light, when the bed reports them. Set the clock with Set bed clock.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9428,7 +9401,7 @@
     },
     "onlysnore_set_alarm": {
       "name": "Snore Monitor: set bed alarm",
-      "description": "Set or turn off one of the bed's own alarms. Snore Monitor keeps this action instead of Set alarm because its alarm actions and raw repeat mask have no confirmed meaning.",
+      "description": "Set or turn off one of the bed's own alarms.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -9450,13 +9423,9 @@
           "name": "Time",
           "description": "Alarm time, to the minute."
         },
-        "week_mask": {
-          "name": "Repeat days (app mask)",
-          "description": "The app's repeat mask: add 1 for Sunday, 2 Monday, 4 Tuesday, 8 Wednesday, 16 Thursday, 32 Friday and 64 Saturday. 0 or 128 uses the app's one-time calculation, which picks one day for you."
-        },
-        "action": {
-          "name": "Alarm action",
-          "description": "One of the app's five alarm actions, named by the code it sends. What each does on the bed is not known."
+        "weekdays": {
+          "name": "Repeat on",
+          "description": "Leave empty for a one-time alarm."
         },
         "soft_wake": {
           "name": "Soft wake",
@@ -9465,7 +9434,7 @@
       }
     },
     "agingplace_action": {
-      "name": "Aging in Place: run action",
+      "name": "Aging in Place: run control",
       "description": "Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control.",
       "fields": {
         "device_id": {
@@ -9483,7 +9452,7 @@
       }
     },
     "agingplace_set_setting": {
-      "name": "Aging in Place: change setting",
+      "name": "Aging in Place: settings",
       "description": "Set light brightness, massage duration or motion light duration.",
       "fields": {
         "device_id": {
@@ -9505,31 +9474,31 @@
       }
     },
     "cheerssleep": {
-      "name": "CheersSleep: run bed action",
-      "description": "Run direct BLE CheersSleep bed controls. All selected targets are validated before any control writes.",
+      "name": "CheersSleep: run control",
+      "description": "Run one of the bed's controls, such as movement, presets, massage or the light. Every selected bed is checked before any of them changes.",
       "fields": {
         "device_id": {
-          "name": "Device"
+          "name": "Bed"
         },
         "operation": {
-          "name": "Bed action",
-          "description": "Select a model-supported bed action or a conditional P1 exported screen."
+          "name": "Control",
+          "description": "A control this model offers."
         },
         "value": {
           "name": "Value",
-          "description": "Model-specific level, memory slot, boolean or legacy delay setting."
+          "description": "Level, memory slot or on and off, depending on the control."
         },
         "rgb": {
-          "name": "RGB",
-          "description": "Three values from 0 to 255."
+          "name": "Color",
+          "description": "Red, green and blue, each 0 to 255."
         },
         "brightness": {
           "name": "Brightness",
-          "description": "Legacy RGB brightness from 0 to 255."
+          "description": "Light brightness, 0 to 255, on older models."
         },
         "duration_ms": {
-          "name": "Duration or Yb timer parameter",
-          "description": "Hold duration in milliseconds. Yb uses parameter 300 or 900, whose time selection is 5 or 15 minutes."
+          "name": "Duration",
+          "description": "How long to hold the control, in milliseconds. For the timer control, 300 sets 5 minutes and 900 sets 15 minutes."
         },
         "axis": {
           "name": "Axis"
@@ -9538,21 +9507,21 @@
           "name": "Move up"
         },
         "position": {
-          "name": "Position selector",
-          "description": "Ten/NewTen position 1 all, 2 back, 3 feet, 4 waist."
+          "name": "Position",
+          "description": "Which part to move: 1 all, 2 back, 3 feet or 4 waist."
         },
         "side": {
           "name": "Side"
         },
         "sleeper": {
-          "name": "Auxiliary sleeper",
-          "description": "Seven screen local side selector. Must match a targeted paired child."
+          "name": "Sleeper",
+          "description": "The side on seven-screen models. It must match the selected side."
         }
       }
     },
     "okimiki": {
-      "name": "Okimiki: controls and alarms",
-      "description": "Press or save a control, set the light or clock, or read and set the selected Okimiki product's alarms.",
+      "name": "Okimiki: settings",
+      "description": "Press or save a control, set the light, or read and set the alarms of the selected Okimiki product. Set the clock with Set bed clock.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -9597,8 +9566,8 @@
       }
     },
     "suta": {
-      "name": "SUTA Smart Home: command",
-      "description": "Send one command from the bed's SUTA layout, picked by its exact Bluetooth name. Alarms use Set alarm.",
+      "name": "SUTA Smart Home: run control",
+      "description": "Run one control from the bed's SUTA layout, which its Bluetooth name decides. Set alarms with Set alarm and the clock with Set bed clock.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9625,7 +9594,7 @@
       }
     },
     "somos_action": {
-      "name": "Somos: press app button",
+      "name": "Somos: press button",
       "description": "Press one of the selected Somos product's buttons. Every bed is checked before any is changed.",
       "fields": {
         "device_id": {
@@ -9665,7 +9634,7 @@
       }
     },
     "personal_comfort_sequence": {
-      "name": "Personal Comfort sequence",
+      "name": "Personal Comfort: run sequence",
       "description": "Run full body massage, or a preset with the other base lowering its feet for 30 seconds.",
       "fields": {
         "device_id": {
@@ -9681,7 +9650,7 @@
       }
     },
     "l2motion": {
-      "name": "Set light color or synchronization mode",
+      "name": "L2 Motion: settings",
       "description": "Change supported light colors or explicitly confirm wired or wireless synchronization.",
       "fields": {
         "device_id": {
@@ -9715,8 +9684,8 @@
       }
     },
     "betterliving2_diagnostic_action": {
-      "name": "Bed diagnostic action",
-      "description": "Request alarm or massage status, or send a supported massage timer setting for troubleshooting.",
+      "name": "BetterLiving2: settings",
+      "description": "Refresh alarm or massage status.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9724,18 +9693,14 @@
         "action": {
           "name": "Action"
         },
-        "timer": {
-          "name": "Timer setting",
-          "description": "Support setting only. These numbers do not express minutes."
-        },
         "side": {
           "name": "Side"
         }
       }
     },
     "betterliving2_massage": {
-      "name": "Set BetterLiving2 P1 massage",
-      "description": "Set both massage zones using the P1 app's paired-write sequence. Zero turns a zone off.",
+      "name": "BetterLiving2: run control",
+      "description": "Set head and foot massage intensity. Zero turns a zone off.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9753,7 +9718,7 @@
     },
     "majestichome": {
       "name": "Majestic Home: settings",
-      "description": "Read, create, edit, enable, disable or delete bed alarms, or set the bed clock.",
+      "description": "Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9766,8 +9731,8 @@
           "name": "Operation"
         },
         "alarm_id": {
-          "name": "Alarm ID",
-          "description": "Required for new, set, toggle and delete. Choose an explicit ID from 1 through 7 for new alarms, or a received ID for an existing alarm. Partial replies cannot identify a free slot."
+          "name": "Alarm number",
+          "description": "Needed to create, edit, turn on or off, or delete an alarm: 1 to 7 for a new alarm, or the number the bed reported. A partial list cannot show which numbers are free."
         },
         "hour": {
           "name": "Hour"
@@ -9780,7 +9745,7 @@
         },
         "weekdays": {
           "name": "Weekdays",
-          "description": "Monday is 0 and Sunday is 6. Empty means once."
+          "description": "Leave empty for a one-time alarm."
         },
         "enabled": {
           "name": "Enabled"
@@ -11232,7 +11197,6 @@
     },
     "gmmotor_operation": {
       "options": {
-        "clock_sync": "Set bed clock",
         "alarm": "Alarm tone",
         "alarm_at": "Alarm at a time",
         "alarm_cancel": "Cancel alarm",
@@ -11267,6 +11231,18 @@
         "inch": "Inches"
       }
     },
+    "gmmotor_report_side": {
+      "options": {
+        "left": "Left",
+        "right": "Right"
+      }
+    },
+    "gmmotor_report_type": {
+      "options": {
+        "day": "Day",
+        "month": "Month"
+      }
+    },
     "estimate_set_reference_motors": {
       "options": {
         "tv_lift": "TV lift",
@@ -11283,7 +11259,6 @@
         "repeat": "Repeating alarm",
         "delete": "Delete",
         "alarms": "Read alarms",
-        "sync": "Set bed clock",
         "light_color": "Light color",
         "light_duration": "Light timer",
         "light_off": "Light off",
@@ -11490,7 +11465,6 @@
         "repeat": "Repeating alarm",
         "delete": "Delete",
         "alarms": "Read alarms",
-        "sync": "Set bed clock",
         "light_color": "Light color",
         "light_duration": "Light timer",
         "light_off": "Light off",
@@ -11517,7 +11491,6 @@
         "enable_alarm": "Turn alarm on or off",
         "delete": "Delete",
         "alarms": "Read alarms",
-        "sync": "Set bed clock",
         "light_color": "Light color",
         "light_duration": "Light timer",
         "light_off": "Light off",
@@ -11672,8 +11645,7 @@
         "edit": "Edit alarm",
         "toggle": "Turn on or off",
         "delete": "Delete",
-        "link_name": "Link name",
-        "sync_clock": "Set bed clock"
+        "link_name": "Link name"
       }
     },
     "sonicsleep_mode": {
@@ -11844,7 +11816,6 @@
       "options": {
         "alarm": "Set alarm",
         "alarm_cancel": "Cancel alarm",
-        "time_sync": "Set bed clock",
         "anti_snore": "Anti-snore intervention"
       }
     },
@@ -11858,7 +11829,6 @@
       "options": {
         "press": "Press control",
         "remote_long": "Save with remote button",
-        "voice_queue": "Voice command",
         "query": "Read setting",
         "app_mode": "Set app mode"
       }
@@ -11907,7 +11877,6 @@
         "repeat": "Save repeating alarm",
         "delete": "Delete alarm",
         "alarms": "Read alarms",
-        "sync": "Set bed clock",
         "light_color": "Set light color",
         "light_duration": "Set light duration",
         "light_off": "Turn light off"
@@ -11920,15 +11889,6 @@
         "tv": "TV",
         "memory_1": "Memory 1",
         "memory_2": "Memory 2"
-      }
-    },
-    "onlysnore_alarm_action": {
-      "options": {
-        "action_1": "Action 1",
-        "action_9": "Action 9",
-        "action_5": "Action 5",
-        "action_6": "Action 6",
-        "action_8": "Action 8"
       }
     },
     "agingplace_action": {
@@ -12009,8 +11969,7 @@
         "alarms": "Read alarms",
         "repeat": "Set alarm",
         "enable": "Turn alarm on or off",
-        "delete": "Delete alarm",
-        "sync": "Sync clock"
+        "delete": "Delete alarm"
       }
     },
     "okimiki_control": {
@@ -12073,8 +12032,7 @@
     "betterliving2_diagnostic_action": {
       "options": {
         "refresh_alarm": "Refresh alarm",
-        "refresh_massage": "Refresh massage",
-        "set_massage_timer": "Set massage timer setting"
+        "refresh_massage": "Refresh massage"
       }
     },
     "bed_side": {
@@ -12108,8 +12066,7 @@
         "new": "New alarm",
         "set": "Set alarm",
         "toggle": "Turn alarm on or off",
-        "delete": "Delete alarm",
-        "sync_clock": "Set bed clock"
+        "delete": "Delete alarm"
       }
     },
     "majestichome_preset": {
