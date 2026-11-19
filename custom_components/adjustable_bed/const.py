@@ -1674,6 +1674,8 @@ JENSEN_CHAR_UUID: Final = "00001111-0000-1000-8000-00805f9b34fb"
 SLEEP_NUMBER_SERVICE_UUID: Final = "09d23fae-90e6-44c2-95b6-0b3d0f1abf25"
 SLEEP_NUMBER_BAMKEY_CHAR_UUID: Final = "421e00f3-ae76-4c49-ab6e-39e4df4a5333"
 SLEEP_NUMBER_AUTH_CHAR_UUID: Final = "8d4675a5-b5fa-42b2-b587-0ee71c46b709"
+SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID: Final = "e8d06e2a-c987-48f8-93a8-4d18d56b4337"
+SLEEP_NUMBER_BULK_CHAR_UUID: Final = "0ec9a5a3-8ac3-4582-92f3-1666421f323d"
 
 # Sleep Number BAM / MCR specific UUIDs (older 360 / i8 FlexFit bases)
 # Protocol reverse-engineered from com.selectcomfort.SleepIQ APK and live testing

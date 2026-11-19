@@ -804,6 +804,8 @@ class BedTechClassicController(RichmatMHAppController):
 
     async def _run_session_setup(self) -> None:
         pending = self._pending = SessionFlags()
+        self._normal_ready = False
+        self._normal_values.clear()
         self._preparing = True
         try:
             with self._operation():

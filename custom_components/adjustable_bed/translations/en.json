@@ -5261,6 +5261,24 @@
       },
       "massage": {
         "name": "Massage"
+      },
+      "sleepiq_privacy": {
+        "name": "Privacy"
+      },
+      "sleepiq_responsive_air": {
+        "name": "{side} responsive air"
+      },
+      "sleepiq_auto_light": {
+        "name": "Automatic under-bed light"
+      },
+      "sleepiq_auto_kids_light": {
+        "name": "Automatic night light"
+      },
+      "sleepiq_kids_outlet": {
+        "name": "Power outlet"
+      },
+      "sleepiq_head_tilt": {
+        "name": "Head tilt"
       }
     },
     "binary_sensor": {
@@ -10739,7 +10757,6 @@
         "get_footwarming_settings": "Get footwarming settings",
         "get_responsive_air_enabled_status": "Get responsive air enabled status",
         "get_sleepiq_privacy_state": "Get sleepiq privacy state",
-        "get_system_status": "Get system status",
         "get_temperature_programs": "Get temperature programs",
         "get_target_preset_with_timer": "Get target preset with timer",
         "get_temperature_program_info": "Get temperature program info",
@@ -10780,7 +10797,25 @@
         "stop": "Stop",
         "underbed_auto": "Underbed auto",
         "underbed_auto_status": "Underbed auto status",
-        "get_sleep_number_controls": "Read Sleep Number settings"
+        "get_sleep_number_controls": "Read Sleep Number settings",
+        "bind_foundation": "Pair base",
+        "reset_articulation_presets": "Reset saved positions",
+        "run_diagnostics": "Run bed diagnostics",
+        "cancel_current_diagnostic_run": "Cancel bed diagnostics",
+        "get_simple_diagnostic_run_results": "Read bed diagnostic results",
+        "underbed_intensity": "Set under-bed light brightness",
+        "get_central_devices_metadata": "Read paired controllers",
+        "get_fuzion_remote_mac_addresses": "Read paired remotes",
+        "get_manifest_name": "Read software manifest",
+        "get_system_configuration": "Read bed features",
+        "get_system_settings_applied_status": "Read installation status",
+        "gets_actuator_homing_state": "Read calibration status",
+        "mcr_status": "Read bed status",
+        "migrate_routines_to_temperature_programs": "Convert temperature schedules",
+        "pinch_status": "Read obstruction status",
+        "routine_migration_status": "Read schedule conversion status",
+        "set_bed_presence": "Set bed presence",
+        "software_versions": "Read software versions"
       }
     },
     "customatic_hold_memory_actions": {

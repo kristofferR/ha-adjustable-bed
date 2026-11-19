@@ -29,7 +29,7 @@ from tests.state_helpers import state_writer
 from tests.test_richmat_mh import sleeps as sleeps
 
 
-def make(model="5i", *, variant=None):
+def make(model="5i", *, variant=None, snapshot=None):
     c = MagicMock()
     c.cancel_command = asyncio.Event()
     c.stop_epoch = 0
@@ -37,7 +37,8 @@ def make(model="5i", *, variant=None):
     c.get_max_angle.return_value = 68.0
     c.motor_pulse_count = 2
     c.motor_pulse_delay_ms = 100
-    c.entry = SimpleNamespace(data={})
+    data = {"capabilities": {"richmat_mh": snapshot}} if snapshot else {}
+    c.entry = SimpleNamespace(data=data)
     c.controller_state = {}
     c.client = MagicMock(is_connected=True)
     c.client.write_gatt_char = AsyncMock()
@@ -219,6 +220,53 @@ async def test_startup_uses_own_schedule_and_never_delivers_a_user_frame(version
     assert sleeps == [0.3, 0.3] + [interval] * (16 if version else 10)
     assert frames(ctrl)[:2] == ["6e9a000008", "6e02010071"]
     assert command.frames_written == 0
+
+
+@pytest.mark.parametrize("powered_reply", [False, True])
+async def test_cached_mattress_needs_fresh_session_initialization(powered_reply, sleeps):
+    ctrl = make(
+        variant="model_5i_mattress",
+        snapshot={
+            "app": "bedtech_classic",
+            "model": "5i_mattress",
+            "version": "0000",
+            "normal_ready": True,
+        },
+    )
+    assert ctrl._normal_ready
+    assert any("mattress" in spec.key for spec in ctrl.motor_control_specs)
+    ctrl._normal_values[1, 1] = 3
+    before_probe = []
+
+    async def reply(_char, data, **_kwargs):
+        if not before_probe:
+            before_probe.append((ctrl._normal_ready, dict(ctrl._normal_values)))
+            if powered_reply:
+                raw = bytearray([0x5E, 0x1A, 0, 1] + [0] * 24)
+                raw[19] = 1
+                ctrl._apply(p.Event("mattress_init", p.finalize(raw).hex()))
+
+    ctrl.client.write_gatt_char.side_effect = reply
+    await ctrl._run_session_setup()
+    assert before_probe == [(False, {})]
+    assert ctrl._normal_ready is powered_reply
+    ctrl.client.write_gatt_char.reset_mock(side_effect=True)
+
+    if powered_reply:
+        await ctrl.normal_setting("left", "pressure", "low")
+        ctrl.client.write_gatt_char.side_effect = lambda *_a, **_kw: (
+            ctrl._coordinator.cancel_command.set()
+        )
+        await ctrl.normal_pillow("left", 1)
+        assert frames(ctrl) == ["5e01010161", "5e01060166", "5e01060065"]
+    else:
+        with pytest.raises(ValueError):
+            await ctrl.normal_setting("left", "pressure", "low")
+        with pytest.raises(ValueError):
+            await ctrl.normal_pillow("left", 1)
+        with raises_key("option_unavailable"):
+            await ctrl.normal_pillow_stop("left")
+        ctrl.client.write_gatt_char.assert_not_called()
 
 
 async def test_native_clock_sends_old_typed_clock_literals():
@@ -415,7 +463,9 @@ async def test_native_calendar_preflight_reads_slot_after_idle_disconnect(hass, 
 def test_late_calendar_records_offer_dynamic_delete_buttons():
     ctrl = calendar_model()
     assert ctrl.has_dynamic_buttons and ctrl.has_dynamic_controller_entities
-    assert next(s for s in ctrl.controller_button_specs if s.key == "bedtech_refresh_alarms").diagnostic
+    assert next(
+        s for s in ctrl.controller_button_specs if s.key == "bedtech_refresh_alarms"
+    ).diagnostic
     assert not any("delete_alarm" in spec.key for spec in ctrl.controller_button_specs)
     ctrl._apply(p.Event("calendar", "6e20000501020201071e2e83"))
     assert any(spec.key == "bedtech_delete_alarm_2" for spec in ctrl.controller_button_specs)
