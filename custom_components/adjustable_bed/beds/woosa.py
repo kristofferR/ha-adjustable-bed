@@ -247,14 +247,15 @@ class WoosaController(SolaceController):
 
     async def lights_off(self) -> None:
         await self.write_command(WOOSA_LIGHT_OFF)
-        self.forward_controller_state_updates(
+        # The bed reports no light state: show what the command delivered.
+        self.forward_sent_state_updates(
             UNDER_BED_LIGHTS_ON(False), LIGHT_TIMER_OPTION("Off"), LIGHT_DEADLINE(None)
         )
 
     async def set_light_level(self, level: int) -> None:
         await super().set_light_level(level)
         if 0 <= level <= self.light_level_max:
-            self.forward_controller_state_updates(
+            self.forward_sent_state_updates(
                 UNDER_BED_LIGHTS_ON(level > 0),
                 *((LIGHT_TIMER_OPTION("Off"), LIGHT_DEADLINE(None)) if level == 0 else ()),
             )
@@ -267,7 +268,7 @@ class WoosaController(SolaceController):
             raise ValueError("Unsupported Woosa light timer")
         await super().set_light_timer(timer_option)
         duration = {"10 min": 600, "8 hours": 28800, "10 hours": 36000}[timer_option]
-        self.forward_controller_state_updates(
+        self.forward_sent_state_updates(
             LIGHT_TIMER(timer_option),
             LIGHT_TIMER_OPTION(timer_option),
             UNDER_BED_LIGHTS_ON(True),
