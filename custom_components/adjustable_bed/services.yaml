@@ -3922,9 +3922,6 @@ lp2:
           translation_key: side
 
 jerome_bed:
-  target:
-    device:
-      integration: adjustable_bed
   fields:
     device_id:
       required: true
