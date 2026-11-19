@@ -280,7 +280,6 @@ Update scripts and automations that call these actions. The
 | `logicdata_set_alarm` | `set_alarm` |
 | `malouf_set_alarm` | `set_alarm` |
 | `motion_bed_alarm` | `set_alarm` |
-| `richmat_app_alarm` | `set_alarm` |
 | `richmat_mh_alarm` | `set_alarm` |
 | `richmat_mh_waist_alarm` | `set_alarm` |
 | `rmcontrol_alarm` | `set_alarm` (setting the clock moved to `sync_clock`) |
@@ -334,8 +333,9 @@ actions:
   that order, with the default timing); RMControl alarm query; Motion Bed split
   zero-gravity modes, the raw `switch` value and the `confirmed` flag (a
   Motion Bed alarm without a `wake_action` rings without moving the bed);
-  Keeson app tables with more than one weekly and one one-time alarm; Richmat
-  app calendar alarm deletion (`enabled: false` disables the slot instead).
+  Keeson app tables with more than one weekly and one one-time alarm. On the
+  Richmat app beds added in the betas, `enabled: false` disables a calendar
+  alarm slot instead of deleting it.
 
 Other action changes:
 
@@ -371,7 +371,7 @@ accepted.
 |-------------|---------|
 | `comfort_enhancement3_set_wakeup`, `comfort_enhancement3_delete_wakeup` | `set_alarm` |
 | `comfortbase_set_alarm`, `jalon_bed_set_alarm`, `jalon_set_alarm` | `set_alarm` |
-| `mline_set_alarm`, `n32_motion_bed_alarm`, `smart_sleep_set_alarm` | `set_alarm` |
+| `mline_set_alarm`, `n32_motion_bed_alarm`, `richmat_app_alarm`, `smart_sleep_set_alarm` | `set_alarm` |
 | `symphony_sense_set_alarm`, `symphony_set_alarm`, `yamada_set_alarm` | `set_alarm` |
 | `save_position`, `rename_position`, `update_position`, `delete_position` | `estimate_save_position`, `estimate_rename_position`, `estimate_update_position`, `estimate_delete_position` |
 | `recall_position`, `set_position_reference` | `estimate_recall_position`, `estimate_set_reference` |
