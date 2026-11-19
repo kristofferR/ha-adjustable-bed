@@ -299,7 +299,8 @@ The same control now looks the same on every bed:
   labels, icon, aliases and disabled or hidden state you gave the switch.
   Automations and scripts that call `switch.turn_on` or `switch.turn_off` on
   it must call `light.turn_on` or `light.turn_off` instead: a repair lists
-  each one that still names the old switch. The same happens for the other
+  each one that still names the old switch. It is raised again after each
+  restart until no automation or script names the old entity, then goes away. The same happens for the other
   controls that changed type (Heal Every Night settings, Motion Bed toggles,
   AdjustaMattress massage levels and per-bed massage timers). Beds that cannot report the light's state show
   it as assumed, as the switch did. Octo keeps its switch: its light depends on the Octo PIN session

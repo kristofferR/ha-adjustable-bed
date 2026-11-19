@@ -353,3 +353,48 @@ async def test_a_replacement_the_controller_still_expects_keeps_its_line(
     ):
         ledger.async_sweep()
     assert issues.async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_a_startup_cut_short_still_raises_the_repair_next_time(hass: HomeAssistant) -> None:
+    """The new row keeps the old entity ID, so a later startup reports what the first missed."""
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
+    assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
+    with patch("custom_components.adjustable_bed.entity_retypes.async_at_started"):
+        # Home Assistant stops after the rows moved, before the repair is raised.
+        async_carry_over_retyped_entities(hass, entry, _runtime())
+    issues = ir.async_get(hass)
+    issue_id = ISSUE_PREFIX + entry.entry_id
+    assert issues.async_get_issue(DOMAIN, issue_id) is None
+    light = registry.async_get("light.bed_under_bed_lights")
+    assert light is not None and light.options[DOMAIN]["retyped_from"] == "switch.bed_under_bed_lights"
+
+    # The next startup moves nothing and still raises it.
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    await hass.async_block_till_done()
+    issue = issues.async_get_issue(DOMAIN, issue_id)
+    assert issue is not None
+    assert "automation.night_light" in issue.translation_placeholders["entities"]
+
+
+async def test_the_repair_goes_once_nothing_names_the_old_entity(hass: HomeAssistant) -> None:
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
+    assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    await hass.async_block_till_done()
+    issues = ir.async_get(hass)
+    issue_id = ISSUE_PREFIX + entry.entry_id
+    assert issues.async_get_issue(DOMAIN, issue_id) is not None
+
+    # The user points the automation at the light; the next startup clears both.
+    with patch(
+        "homeassistant.components.automation.automations_with_entity", return_value=[]
+    ):
+        async_carry_over_retyped_entities(hass, entry, _runtime())
+        await hass.async_block_till_done()
+    assert issues.async_get_issue(DOMAIN, issue_id) is None
+    light = registry.async_get("light.bed_under_bed_lights")
+    assert light is not None and "retyped_from" not in light.options.get(DOMAIN, {})
