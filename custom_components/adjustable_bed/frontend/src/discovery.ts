@@ -152,7 +152,9 @@ export function bedEntitiesForDevice(
       typeof control === "string" &&
       typeof startDelayMs === "number" && Number.isFinite(startDelayMs) && startDelayMs >= 0 &&
       typeof releaseDelayMs === "number" && Number.isFinite(releaseDelayMs) && releaseDelayMs >= 0 &&
-      ownerDeviceId && (!ownRelease || releaseButton)
+      ownerDeviceId && (!ownRelease || releaseButton) &&
+      // A button that asks first is never held: a hold would send it unconfirmed.
+      attributes?.requires_confirmation !== true
     ) {
       item.deviceId = ownerDeviceId;
       item.holdEntityId = id;
