@@ -708,11 +708,12 @@ lists the layouts that expose it.
   Zero Gravity and Anti Snore by the indicator. Types 6 and 8 replace slot 5
   with the special Flat Bed and have no slot-5 clear.
 - Circulation buttons on types 1-5 (type 3 has its own whole-body frame).
-- Massage steps and wave on every layout; selecting the active timer again
-  cancels it, and a cancel button is provided. Step counters clamp at 0-3 (wave
-  0-4) but every tap writes.
-- Light-duration buttons only: there is no proven off, brightness or colour
-  command.
+- Massage steps and wave on every layout. The **Massage: Timer** select sends
+  the layout's timers, and its Off sends the cancel frame; choosing the running
+  timer again keeps it. Step counters clamp at 0-3 (wave 0-4) but every tap
+  writes.
+- Light durations only, as the **Light Timer** select: there is no proven off,
+  brightness or colour command.
 - Memory indicators are queried on every connection; there is no refresh button.
 
 <!-- generated:ff-frame-bedsense -->
@@ -906,7 +907,11 @@ Select the explicit **Motion Bed app** route and the original case-sensitive Blu
 | Modular motor | **Back down** `04`, **Leg down** `07` only |
 
 - Named presets, massage, lighting, sync, audio and sleep controls are buttons or
-  validated actions; diagnostics list the available action keys. Entity
+  validated actions; diagnostics list the available action keys. Light
+  brightness is the **Light brightness** number, the massage and light timers
+  are the **Massage: Timer** and **Light Timer** selects, and the night light,
+  smart sleep and the module light, massage, climate timer and adaptive air
+  settings are switches where the layout has them. Entity
   identities follow the control's function, so a layout change keeps a shared
   control's name and settings. Screens that send identical frames share one
   button.
@@ -917,8 +922,7 @@ Select the explicit **Motion Bed app** route and the original case-sensitive Blu
 - Audio availability follows the target's reported flag, remembered per target
   and profile; the exact `QMS3-N93-327` title overrides positive home audio
   feedback.
-- State entities: massage levels, frequency and timer, light brightness, air
-  massage levels and timer, climate level, temperature and water, faults, alarm
+- State entities: massage levels and frequency, air massage levels and timer, climate level, temperature and water, faults, alarm
   (details as attributes), module presence and the sleep report totals.
   Preset-selected flags, raw positions, calibration samples and pressure
   readbacks stay in diagnostics. Thermal gears are cooling 4-1, off and

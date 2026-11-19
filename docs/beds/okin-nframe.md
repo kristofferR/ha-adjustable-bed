@@ -2548,24 +2548,28 @@ card receives held-control metadata for the axes and P1 presets.
 The app shares one held-movement stream across motor controls. A card Stop
 cancels that shared software stream; hardware effects across axes remain unverified.
 
-Controller buttons expose regular massage, P2 sonic massage when its MFP function
-list contains 7, light toggle, privacy, explicit state/version queries and legacy
-history retrieval. P1 massage on/off share the same toggle packet and P1 time down
-has no packet. These aliases are preserved. P2 relative commands use notification
+Regular massage on and off is the **Massage** switch, and P2 sonic massage (when
+its MFP function list contains 7) the **Sonic massage** switch. Controller
+buttons expose the massage steps, light toggle, explicit state/version queries
+and legacy history retrieval; the queries are diagnostic and disabled by
+default. P1 massage on/off share the same toggle packet and P1 time down has no
+packet. These aliases are preserved. P2 relative commands use notification
 state without optimistic increments. Light toggle replays its reported mode and
 four settings; no unsupported color or brightness writes are invented.
 
-The child lock is a local, persisted HA preference with the app's exact command
-filter. It does not program a handset lock. STOP remains available. Sensor-only
+The **Child lock** switch (disabled by default) is a local, persisted HA
+preference with the app's exact command filter. **Privacy** is a switch too,
+also disabled by default. It does not program a handset lock. STOP remains available. Sensor-only
 P3 has no movement, presets or massage controls. Sensor sides are fields in one
 physical device's data, not a way to route movement to one half. Single-address
 motor pairing is therefore unavailable. Two physical entries retain their own
 model, driver and cached settings when combined.
 
-Sensors expose left/right heart and breath values, status, two raw sensor flags,
-rolling eight-value history, sensitivity, privacy, alarm, capabilities, firmware
-and sensor versions, massage state and report results. Units follow the app's
-bpm/brpm labels, with physical accuracy unverified. No measured motor position,
+Sensors expose the left and right **heart rate** (bpm) and **breathing rate**
+(breaths/min), bed status, rolling eight-value history, sensitivity, alarm,
+firmware and sensor versions, massage state and the **Left/Right sleep report
+status**. Most are diagnostic and disabled by default; physical accuracy is
+unverified. No measured motor position,
 angle, battery or current is inferred.
 
 ##### Commands
@@ -3461,9 +3465,10 @@ column lists the products that expose it.
 | `disable_alarm` | `07 05 00 00 00 00 00 00 00` | Disable the local alarm |
 
 Massage and alarm sensors expose the complete received state as attributes; the
-card includes them in its existing massage and utility sections. A clock sync
-button, state and alarm refresh buttons and separate strength and timer buttons
-are also exposed. There are no angles, positions, battery or firmware and
+card includes them in its existing massage and utility sections. A **Refresh
+bed state** button (diagnostic, disabled by default) and separate strength and
+timer cycle buttons are also exposed. The **Set bed clock** action
+(`adjustable_bed.sync_clock`) sets the clock. There are no angles, positions, battery or firmware and
 device-information parsers.
 
 ##### eShine sustained presets and chord

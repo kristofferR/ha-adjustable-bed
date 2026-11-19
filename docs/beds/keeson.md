@@ -1382,7 +1382,7 @@ off words, so the integration exposes an on/off under-bed light with assumed sta
 | Head, Foot and Wave massage numbers (0-3) | A slider change sends that zone's level word. Levels persist across restarts like the app's preferences; a fresh install starts at level 1. |
 | **Start massage** button | Sends the current wave, head and foot levels, in that order. |
 | **Massage off** button | Sends head level 0, then foot level 0. The sliders keep their levels and the timer indicator resets. No wave-off frame exists. |
-| **Massage timer** select | Sends the 10, 20 or 30 minute word. The app's timer button cycles through the same three words; it has no timer-off word. |
+| **Massage: Timer** select | Sends the 10, 20 or 30 minute word. The app's timer button cycles through the same three words; it has no timer-off word. |
 
 - **Second tap:** tapping the running preset again sends the zero word. The
   integration exposes the same frame as the **Stop** button; preset buttons
@@ -4444,9 +4444,10 @@ The lift helpers send the same `05` frames on every model.
 
 **Dedicated P2 controls** (P2 L0/L1/L2/L3/L5):
 
-- Three dedicated massage selection entities (head, foot, wave, each index
-  0..3), written once per choice.
-- 10/20/30-minute timer buttons, held like the ordinary steps.
+- The **Massage: Head Intensity**, **Massage: Foot Intensity** and
+  **Massage: Wave Intensity** numbers (1–4, for selector index 0–3), written
+  once per choice.
+- The **Massage: Timer** select (10, 20 or 30 minutes; no off).
 - Their bytes are the app's exact selector/timer commands.
 
 | Selector index | Head | Foot | Wave |
@@ -5852,7 +5853,7 @@ P2 sends clock, alarm, then query. The bed reports its alarm only when
 asked, so both routes expose **Refresh alarm**, a diagnostic button disabled
 by default. The **Alarm time** sensor shows the reported time when it is a
 valid time of day, with the signed repeat byte and raw action as attributes. P2 also
-supports the generic Sync clock, held presets and held controls actions.
+supports the **Set bed clock** action, held presets and held controls actions.
 Whole-target acceptance captures STOP epochs and paired ownership before the
 first import/connect wait. A child-device target retains its side.
 
