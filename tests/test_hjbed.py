@@ -1044,6 +1044,7 @@ async def test_local_layout_select_uses_replacement_controller(coordinator, inst
 
 async def test_sync_on_and_off_are_one_switch(coordinator, instant):
     c = controller(coordinator, "hj_bede3rm")
+    assert c._sync_details is not None
     on, off = c._sync_details
     assert not {"hjbed_sync_on", "hjbed_sync_off"} & {s.key for s in c.controller_button_specs}
     assert not any(s.name in ("Sync on", "Sync off") for s in c.controller_button_specs)

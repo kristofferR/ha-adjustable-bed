@@ -6,7 +6,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import partial
 from time import monotonic
 from typing import TYPE_CHECKING, Final
@@ -328,7 +328,7 @@ class SutaController(BedController):
                 label = self._text_label(key, suffix)
                 if label is None:
                     continue
-                result.append(catalog_button(
+                spec = catalog_button(
                     "suta_" + key + suffix, label, partial(_action, key=key, suffix=suffix),
                     kind=Kind.SAVE if command.text.startswith("AT+SETMODE")
                     else Kind.PRESET if command.text.startswith("AT+MODE")
@@ -337,9 +337,11 @@ class SutaController(BedController):
                     hold=ControllerHoldSpec(key, release_button_key="suta_release") if command.kind == "motion" else None,
                     requires_confirmation=command.kind == "save" or key == "reset_on",
                     invalidates_position=command.kind in ("motion", "save") or command.text.startswith("AT+MODE"),
+                )
+                if spec is not None and key == "beep_enable":
                     # The app has no command that turns the beep off again.
-                    **({"diagnostic": True} if key == "beep_enable" else {}),
-                ))
+                    spec = replace(spec, diagnostic=True)
+                result.append(spec)
         for action in BINARY.values():
             if (
                 self.family not in action.controllers
@@ -421,7 +423,7 @@ class SutaController(BedController):
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         key = _MASSAGE_STEPS.get(zone)
         command = self.commands.get(key) if key is not None else None
-        if command is None or not 0 <= level < len(command.suffixes):
+        if key is None or command is None or not 0 <= level < len(command.suffixes):
             raise ValueError("This SUTA layout has no such massage level")
         # The command shows the level it sent.
         await self.action(key, command.suffixes[level])

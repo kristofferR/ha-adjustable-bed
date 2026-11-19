@@ -701,6 +701,7 @@ async def test_sync_on_and_off_are_one_switch_sending_the_same_frames(coordinato
     assert keys
     for key in keys:
         obj = controller(coordinator, key)
+        assert obj._sync_details is not None
         on, off = obj._sync_details
         assert not {"goodvibe_" + on, "goodvibe_" + off} & {
             s.key for s in obj.controller_button_specs
