@@ -34,7 +34,7 @@ from contextvars import Context, ContextVar, Token, copy_context
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any, Final, Protocol
+from typing import Any, Final, Literal, Protocol
 from uuid import uuid4
 
 _LOGGER = logging.getLogger(__name__)
@@ -782,20 +782,28 @@ def note_frame_skipped() -> None:
 
 
 def _delivery_since(
-    context: CommandContext | None, written: int, skipped: int, *, failed: bool
+    context: CommandContext | None,
+    written: int,
+    skipped: int,
+    ending: Literal["returned", "cancelled", "failed"],
 ) -> Delivery:
-    """What a command step that started at ``written``/``skipped`` delivered."""
+    """What a step that started at ``written``/``skipped`` delivered.
+
+    ``ending`` is how the step ended: ``returned``, ``cancelled`` (it raised
+    ``CancelledError``) or ``failed`` (any other error).
+    """
     if context is None:
-        return Delivery.NONE if failed else Delivery.SENT
+        return Delivery.SENT if ending == "returned" else Delivery.NONE
     sent = context.frames_written > written
-    if context.cancel_event.is_set():
-        if not sent:
-            return Delivery.NONE
-        return Delivery.PARTIAL if context.frames_skipped > skipped else Delivery.SENT
-    if failed:
-        # The step failed on its own: it reached the bed at most in part.
+    if ending == "failed":
+        # A failed step reached the bed at most in part, STOP or not.
         return Delivery.PARTIAL if sent else Delivery.NONE
-    return Delivery.SENT
+    if ending == "returned" and not context.cancel_event.is_set():
+        return Delivery.SENT
+    # Cancelled, by STOP or a replacing command: its frames tell.
+    if not sent:
+        return Delivery.NONE
+    return Delivery.PARTIAL if context.frames_skipped > skipped else Delivery.SENT
 
 
 @contextlib.contextmanager
@@ -804,7 +812,8 @@ def delivered(show: Callable[[Delivery], None]) -> Iterator[None]:
 
     The only way to read delivery (tests/test_frame_delivery_guard.py), so it is
     always settled, also when the step raises: a step cancelled after its frame
-    went out was still sent, one that failed after a frame was sent in part.
+    went out was still sent, one that failed with any other error after a frame
+    was sent in part.
     The exception still propagates.
     """
     context = current_command_context()
@@ -812,10 +821,14 @@ def delivered(show: Callable[[Delivery], None]) -> Iterator[None]:
     skipped = context.frames_skipped if context is not None else 0
     try:
         yield
-    except BaseException:
-        show(_delivery_since(context, written, skipped, failed=True))
+    except asyncio.CancelledError:
+        # Cancellation ends the step; what it sent before that still counts.
+        show(_delivery_since(context, written, skipped, "cancelled"))
         raise
-    show(_delivery_since(context, written, skipped, failed=False))
+    except BaseException:
+        show(_delivery_since(context, written, skipped, "failed"))
+        raise
+    show(_delivery_since(context, written, skipped, "returned"))
 
 
 def copy_context_without_command() -> Context:

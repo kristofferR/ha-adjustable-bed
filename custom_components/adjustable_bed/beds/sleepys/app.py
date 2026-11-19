@@ -1244,7 +1244,8 @@ class SleepysEliteAppController(BedController):
             elif delivery is Delivery.PARTIAL:
                 self._app_fields.pop("field_0x0b", None)  # The bed may hold either timer.
 
-        with delivered(show), self.sent_state(MASSAGE_TIMER_MINUTES(code * 10)):
+        # The cache settles before the timer is published.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(code * 10)), delivered(show):
             await self._send_dynamic(route.builder, route.logical_values)
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:

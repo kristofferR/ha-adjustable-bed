@@ -578,6 +578,13 @@ async def _fail_after_frame(controller: SettingsController) -> None:
         raise BleakError("link lost after the first frame")
 
 
+async def _fail_after_frame_during_stop(controller: SettingsController) -> None:
+    """STOP arrives while the second frame is in flight, and that write fails."""
+    if len(controller.bed.sent) > 1:  # type: ignore[attr-defined]
+        controller.bed.request_command_cancel()
+        raise BleakError("link lost after the first frame")
+
+
 def _on_off_light(bed: Bed) -> Any:
     light = _entity(AdjustableBedOnOffLight(bed, LIGHT_DESCRIPTION))
     light._attr_is_on = False
@@ -606,8 +613,9 @@ async def _set_level(bed: Bed) -> None:
 @pytest.mark.parametrize("site", ["on_off_light", "controller_switch", "published_setting"])
 @pytest.mark.parametrize(
     ("ending", "shown"),
-    # Cancelled after its only frame: sent. Failed after one of two frames: unknown.
-    [("cancelled", "new"), ("failed", "unknown")],
+    # Cancelled after its only frame: sent. Failed after one of two frames,
+    # with or without a STOP meanwhile: unknown.
+    [("cancelled", "new"), ("failed", "unknown"), ("failed_during_stop", "unknown")],
 )
 async def test_a_command_that_raises_after_its_frame_still_shows_what_was_sent(
     hass, site, ending, shown
@@ -618,8 +626,10 @@ async def test_a_command_that_raises_after_its_frame_still_shows_what_was_sent(
         bed.frames = 1 if ending == "cancelled" else 2  # type: ignore[attr-defined]
         if ending == "cancelled":
             bed.after_write = _cancel_and_end_in_cleanup  # type: ignore[attr-defined]
-        else:
+        elif ending == "failed":
             bed.after_frame = _fail_after_frame  # type: ignore[attr-defined]
+        else:
+            bed.after_frame = _fail_after_frame_during_stop  # type: ignore[attr-defined]
         bed.controller_state[LIGHT_LEVEL] = 3
         entity = (
             _on_off_light(bed)
@@ -630,7 +640,7 @@ async def test_a_command_that_raises_after_its_frame_still_shows_what_was_sent(
         )
         run = _set_level(bed) if entity is None else _turn_on(entity)
         with virtual_clock():
-            if ending == "failed":
+            if ending != "cancelled":
                 # The failure still reaches the caller.
                 with pytest.raises(BleakError):
                     await run

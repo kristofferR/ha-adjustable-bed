@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..command_scheduler import Delivery, delivered
 from ..controller_state import StateKey, StateUpdate
 from ..profiles.ff_frame import (
     SOLACE_PROFILES,
@@ -271,12 +272,24 @@ class WoosaController(SolaceController):
         if timer_option not in self.light_timer_options:
             raise ValueError("Unsupported Woosa light timer")
         duration = {"10 min": 600, "8 hours": 28800, "10 hours": 36000}[timer_option]
-        with self.sent_state(
+        updates = (
             LIGHT_TIMER(timer_option),
             LIGHT_TIMER_OPTION(timer_option),
             UNDER_BED_LIGHTS_ON(True),
-            LIGHT_DEADLINE(asyncio.get_running_loop().time() + duration),
-        ):
+        )
+
+        def show(delivery: Delivery) -> None:
+            if delivery is Delivery.SENT:
+                # The bed's countdown starts once the write went out.
+                deadline = asyncio.get_running_loop().time() + duration
+                self.forward_controller_state_updates(*updates, LIGHT_DEADLINE(deadline))
+            elif delivery is Delivery.PARTIAL:
+                self.forward_controller_state_updates(
+                    *(StateUpdate(update.key, None) for update in updates),
+                    LIGHT_DEADLINE(None),
+                )
+
+        with delivered(show):
             await super().set_light_timer(timer_option)
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
