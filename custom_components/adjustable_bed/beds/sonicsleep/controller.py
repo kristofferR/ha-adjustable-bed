@@ -448,6 +448,13 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
     async def execute_request(self, request: Request) -> None:
         await self.execute_prepared(await self.prepare_plan(request))
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    async def sync_clock(self) -> None:
+        await self.execute_prepared(await self.prepare_plan(Request("sync_clock")))
+
     async def prepare_plan(self, request: Request) -> PreparedRequest:
         link = self._live()
         packets = await self.prepare_request(request)

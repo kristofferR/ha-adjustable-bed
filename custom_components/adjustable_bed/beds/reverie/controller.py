@@ -278,11 +278,12 @@ class ReverieController(BedController, ReverieComfortActions):
 
     @property
     def supports_head_massage_intensity_step_control(self) -> bool:
-        return self.model.massage
+        # The head and foot intensity numbers set any level, so no step buttons.
+        return False
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
-        return self.model.massage
+        return False
 
     @property
     def supports_massage_mode_step_control(self) -> bool:

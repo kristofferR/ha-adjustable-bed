@@ -159,7 +159,7 @@ async def alarm(hass, ids, *, slot=1):
     await hass.services.async_call(
         DOMAIN,
         "onlysnore_set_alarm",
-        {"device_id": ids, "time": "07:30", "week_mask": 127, "slot": slot},
+        {"device_id": ids, "time": "07:30", "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"], "slot": slot},
         blocking=True,
     )
 
@@ -667,29 +667,19 @@ async def test_real_forwarded_platforms_discover_late_alarm_slots_and_keep_disco
             with patch.object(hass.config_entries, "async_schedule_reload") as reload:
                 callback(char, bytearray(THREE))
                 await hass.async_block_till_done()
-                ids = {
-                    str(key): entity_id(domain, key)
-                    for domain, group in (
-                        ("sensor", keys.ALARM_TIME),
-                        ("binary_sensor", keys.ALARM_OPEN),
-                    )
-                    for key in group
-                }
+                ids = {str(key): entity_id("sensor", key) for key in keys.ALARM_TIME}
                 assert all(ids.values())
                 callback(char, bytearray(ALARM_TWO))
                 await hass.async_block_till_done()
-                assert hass.states.get(ids[str(keys.ALARM_TIME[1])]).state == "07:30"
-                assert hass.states.get(ids[str(keys.ALARM_OPEN[1])]).state == "on"
+                alarm = hass.states.get(ids[str(keys.ALARM_TIME[1])])
+                assert alarm.state == "07:30"
+                assert alarm.attributes[str(keys.ALARM_OPEN[1])] is True
                 await coord.async_disconnect()
                 await hass.async_block_till_done()
                 assert ctrl._alarm_count == 3
                 assert coord.controller_state.get(keys.ALARM_TIME[1]) is None
-                for domain, group in (
-                    ("sensor", keys.ALARM_TIME),
-                    ("binary_sensor", keys.ALARM_OPEN),
-                ):
-                    for key in group:
-                        assert entity_id(domain, key) == ids[str(key)]
+                for key in keys.ALARM_TIME:
+                    assert entity_id("sensor", key) == ids[str(key)]
                 reload.assert_not_called()
         finally:
             await hass.config_entries.async_unload_platforms(entry, platforms)

@@ -73,7 +73,7 @@ async def test_actual_offline_factory_only_mints_invariant_selector_catalog(
     assert controller.client is None and not controller._ready
     assert controller.controller_entity_discovery_complete
     assert controller.ui_selector == ui
-    assert bool(controller.controller_select_specs) == (command in POSITIVE)
+    assert controller.supports_massage_timer == (command in POSITIVE)
     assert bool(controller.controller_number_specs) == (command in POSITIVE)
     assert not controller._massage_on and not controller._ui_state_observed
     if command in POSITIVE:
@@ -95,7 +95,7 @@ async def test_manufacturer_catalog_mutation_preserves_U_and_proves_offline_boun
     await controller._classify()
     assert controller.ui_selector == "BOX15"
     assert controller.command_selector == ("BOX25_STAR" if manufacturer == b"star" else "BOX25")
-    assert controller.controller_number_specs and controller.controller_select_specs
+    assert controller.controller_number_specs and controller.supports_massage_timer
     assert before == (command in POSITIVE)
     assert not controller._massage_on and not controller._ui_state_observed
 

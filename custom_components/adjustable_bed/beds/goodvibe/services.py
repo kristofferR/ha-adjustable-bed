@@ -348,9 +348,14 @@ def _sleep_operand(value: object) -> int | float | tuple[int | float, ...]:
     raise vol.Invalid("Choose a number or a list of numbers")
 
 
+def _actions(operations: tuple[str, ...]) -> vol.In:
+    """Operations an action offers; the clock belongs to the shared Set bed clock action."""
+    return vol.In(tuple(operation for operation in operations if operation != "sync"))
+
+
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-    vol.Required("operation"): vol.In(OPERATIONS),
+    vol.Required("operation"): _actions(OPERATIONS),
     vol.Optional("action"): cv.string,
     vol.Optional("datetime"): cv.datetime,
     vol.Optional("alarm_id"): vol.All(vol.Coerce(int), vol.Range(min=1, max=7)),
@@ -374,7 +379,7 @@ FIELDS.update(SIDE_FIELD.items())
 SCHEMA = vol.Schema(FIELDS)
 MLILY_SCHEMA = SCHEMA.extend({vol.Optional("part"): vol.Coerce(int)})
 BED_OPERATIONS = (*OPERATIONS[:14], "enable_alarm")
-GALAXY_SCHEMA = SCHEMA.extend({vol.Required("operation"): vol.In(BED_OPERATIONS)})
+GALAXY_SCHEMA = SCHEMA.extend({vol.Required("operation"): _actions(BED_OPERATIONS)})
 BOB_OPERATIONS = ("repeat", "delete", "alarms", "sync", "light_color", "light_duration", "light_off")
 BOB_SCHEMA = vol.Schema({
     key: value for key, value in FIELDS.items()
@@ -382,7 +387,7 @@ BOB_SCHEMA = vol.Schema({
         CONF_DEVICE_ID, "operation", "action", "datetime", "alarm_id", "weekdays", "enabled",
         "seconds", "rgb_color", "side",
     )
-}).extend({vol.Required("operation"): vol.In(BOB_OPERATIONS)})
+}).extend({vol.Required("operation"): _actions(BOB_OPERATIONS)})
 
 
 async def handle_goodvibe(call: ServiceCall) -> None:

@@ -155,7 +155,7 @@ def test_legacy_keeps_caller_replacement_and_resource_policy():
 
 @pytest.mark.parametrize("model", [*BEDTECH_APP_PROFILES, "auto"])
 @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT])
-async def test_real_entity_builders_gate_lights_and_expose_only_the_supported_timer_button(
+async def test_real_entity_builders_gate_lights_and_expose_only_the_supported_timer(
     hass, model, side
 ):
     entry = MockConfigEntry(
@@ -198,14 +198,19 @@ async def test_real_entity_builders_gate_lights_and_expose_only_the_supported_ti
         } and not (model == "btx5fh" and side == SIDE_RIGHT)
         assert bool(toggle_buttons) == supported_light
         assert bool(lights) == supported_light
-        assert not any(isinstance(entity, AdjustableBedMassageTimerSelect) for entity in selects)
-        timers = [
-            entity
-            for entity in buttons
-            if isinstance(entity, ControllerActionButton)
+        assert not any(
+            isinstance(entity, ControllerActionButton)
             and entity._spec.key == "bedtech_massage_timer_20"
+            for entity in buttons
+        )
+        timers = [
+            entity for entity in selects if isinstance(entity, AdjustableBedMassageTimerSelect)
         ]
         assert bool(timers) == (model in {"bt3000", "btx5", "btx5fh"})
         if timers:
-            await timers[0].async_press()
+            # The 20-minute key is the only duration; Off is the massage stop.
+            assert timers[0].options == (
+                ["Off", "20 min"] if bed.supports_massage_off_control else ["20 min"]
+            )
+            await timers[0].async_select_option("20 min")
             assert bed.write_command.await_args.args[0].hex() == "6e010063d2"

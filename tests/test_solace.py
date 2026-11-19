@@ -373,11 +373,16 @@ class TestSolaceProfiles:
         controller.write_command = AsyncMock()
 
         await controller.set_light_level(4)
-        coordinator.handle_controller_state_update.assert_called_once_with("light_level", 4)
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {
+            "light_level": 4
+        }
 
-        coordinator.handle_controller_state_update.reset_mock()
+        coordinator.handle_controller_state_updates.reset_mock()
         await controller.lights_off()
-        coordinator.handle_controller_state_update.assert_called_once_with("light_level", 0)
+        assert coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {
+            "light_level": 0
+        }
 
     def test_motionflex_notification_parser_tracks_audio_and_alarm(self) -> None:
         coordinator = MagicMock()

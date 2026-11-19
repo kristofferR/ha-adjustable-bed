@@ -8,17 +8,14 @@
  "binary_sensor:adjustamattress_demonstration": {
   "card_section": "utility"
  },
- "binary_sensor:agingplace_occupancy": {
-  "card_section": "hidden"
- },
  "binary_sensor:bed_presence": {
-  "card_section": "hidden"
+  "card_section": "utility"
  },
  "binary_sensor:bed_presence_left": {
-  "card_section": "hidden"
+  "card_section": "utility"
  },
  "binary_sensor:bed_presence_right": {
-  "card_section": "hidden"
+  "card_section": "utility"
  },
  "binary_sensor:bedsense_m1_saved": {
   "card_section": "hidden"
@@ -38,16 +35,19 @@
  "binary_sensor:ble_connection": {
   "card_section": "connection"
  },
+ "binary_sensor:body_movement": {
+  "card_section": "utility"
+ },
+ "binary_sensor:body_movement_left": {
+  "card_section": "utility"
+ },
+ "binary_sensor:body_movement_right": {
+  "card_section": "utility"
+ },
  "binary_sensor:cheerssleep_left_asleep": {
   "card_section": "hidden"
  },
- "binary_sensor:cheerssleep_left_on_bed": {
-  "card_section": "hidden"
- },
  "binary_sensor:cheerssleep_right_asleep": {
-  "card_section": "hidden"
- },
- "binary_sensor:cheerssleep_right_on_bed": {
   "card_section": "hidden"
  },
  "binary_sensor:ergomotion4_light": {
@@ -80,13 +80,7 @@
  "binary_sensor:mline_anti_enabled": {
   "card_section": "hidden"
  },
- "binary_sensor:mline_motion": {
-  "card_section": "hidden"
- },
  "binary_sensor:mline_privacy": {
-  "card_section": "hidden"
- },
- "binary_sensor:motion_bed_air_adaptive": {
   "card_section": "hidden"
  },
  "binary_sensor:motion_bed_air_module_present": {
@@ -95,22 +89,10 @@
  "binary_sensor:motion_bed_alarm_enabled": {
   "card_section": "hidden"
  },
- "binary_sensor:motion_bed_motor_light_enabled": {
-  "card_section": "hidden"
- },
- "binary_sensor:motion_bed_motor_massage_enabled": {
-  "card_section": "hidden"
- },
  "binary_sensor:motion_bed_motor_module_present": {
   "card_section": "hidden"
  },
- "binary_sensor:motion_bed_night_light_enabled": {
-  "card_section": "hidden"
- },
  "binary_sensor:motion_bed_sensor_present": {
-  "card_section": "hidden"
- },
- "binary_sensor:motion_bed_sleep_enabled": {
   "card_section": "hidden"
  },
  "binary_sensor:motion_bed_sync_enabled": {
@@ -130,15 +112,6 @@
   "card_role": "state"
  },
  "binary_sensor:nerum_massage": {
-  "card_section": "hidden"
- },
- "binary_sensor:onlysnore_alarm_1_enabled": {
-  "card_section": "hidden"
- },
- "binary_sensor:onlysnore_alarm_2_enabled": {
-  "card_section": "hidden"
- },
- "binary_sensor:onlysnore_alarm_3_enabled": {
   "card_section": "hidden"
  },
  "binary_sensor:ormatek_massage": {
@@ -170,6 +143,12 @@
  },
  "binary_sensor:smart_sleep_flexible_wake": {
   "card_section": "hidden"
+ },
+ "binary_sensor:snoring_left": {
+  "card_section": "utility"
+ },
+ "binary_sensor:snoring_right": {
+  "card_section": "utility"
  },
  "binary_sensor:solace_alarm_enabled": {
   "card_section": "hidden"
@@ -292,15 +271,6 @@
  },
  "button:adjustamattress_query_status": {
   "card_section": "utility"
- },
- "button:adjustamattress_timer10": {
-  "card_section": "massage"
- },
- "button:adjustamattress_timer20": {
-  "card_section": "massage"
- },
- "button:adjustamattress_timer30": {
-  "card_section": "massage"
  },
  "button:adjustamattress_underbed_lighting": {
   "card_section": "lighting"
@@ -517,9 +487,6 @@
   "card_role": "up",
   "card_motor": "bedsense_waist"
  },
- "button:bedtech_massage_timer_20": {
-  "card_section": "massage"
- },
  "button:bf_cherish_both_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -655,9 +622,6 @@
  },
  "button:comfort_enhancements_quiet_sleep": {
   "card_section": "presets"
- },
- "button:comfort_enhancements_timer_cycle": {
-  "card_section": "massage"
  },
  "button:comfortbase_save_anti_snore": {
   "card_section": "presets",
@@ -836,15 +800,6 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "elevate_both"
- },
- "button:eshine_massage_10_minutes": {
-  "card_section": "massage"
- },
- "button:eshine_massage_20_minutes": {
-  "card_section": "massage"
- },
- "button:eshine_massage_30_minutes": {
-  "card_section": "massage"
  },
  "button:eshine_massage_foot_strength": {
   "card_section": "massage"
@@ -2098,9 +2053,6 @@
   "card_section": "massage"
  },
  "button:sleepys_app_massage_query": {
-  "card_section": "massage"
- },
- "button:sleepys_app_massage_timer": {
   "card_section": "massage"
  },
  "button:sleepys_app_massage_toggle": {
@@ -3442,6 +3394,10 @@
  "number:massage_wave_intensity": {
   "card_section": "massage"
  },
+ "number:motion_bed_brightness": {
+  "card_section": "lighting",
+  "card_role": "level"
+ },
  "number:motomotion_bass": {
   "card_section": "utility"
  },
@@ -3676,17 +3632,8 @@
  "select:adjustamattress_alarm_draft_type": {
   "card_section": "utility"
  },
- "select:adjustamattress_foot_selector": {
-  "card_section": "massage"
- },
- "select:adjustamattress_head_selector": {
-  "card_section": "massage"
- },
  "select:adjustamattress_strength_setting": {
   "card_section": "utility"
- },
- "select:adjustamattress_wave_selector": {
-  "card_section": "massage"
  },
  "select:comfy_timer_selection": {
   "card_section": "utility"
@@ -3743,21 +3690,8 @@
  "select:octo_light_sensitivity": {
   "card_section": "hidden"
  },
- "select:okin_app_actuator_1": {
-  "card_section": "utility"
- },
- "select:okin_app_actuator_2": {
-  "card_section": "utility"
- },
- "select:okin_app_installation": {
-  "card_section": "utility"
- },
  "select:onlysnore_intervention": {
   "card_section": "utility"
- },
- "select:ore_comfort_massage_timer": {
-  "card_section": "massage",
-  "card_role": "timer"
  },
  "select:paramount_duration": {
   "card_section": "utility"
@@ -3885,9 +3819,6 @@
  "select:sleeptracker_wave_frequency": {
   "card_section": "massage"
  },
- "select:sleepys_app_massage_timer_code": {
-  "card_section": "massage"
- },
  "select:smart_comfort_seat": {
   "card_section": "utility"
  },
@@ -3909,10 +3840,6 @@
  },
  "select:smart_sleep_wave": {
   "card_section": "massage"
- },
- "select:starcode_abm5_4_massage_timer": {
-  "card_section": "massage",
-  "card_role": "timer"
  },
  "select:starcode_color": {
   "card_section": "lighting",
@@ -3964,16 +3891,10 @@
  "sensor:adjustamattress_wave": {
   "card_section": "massage"
  },
- "sensor:agingplace_breathing_rate": {
-  "card_section": "hidden"
- },
  "sensor:agingplace_circulation_remaining": {
   "card_section": "hidden"
  },
  "sensor:agingplace_diagnostic_status": {
-  "card_section": "hidden"
- },
- "sensor:agingplace_heart_rate": {
   "card_section": "hidden"
  },
  "sensor:agingplace_relax_cycle_remaining": {
@@ -4026,14 +3947,6 @@
  "sensor:bedsense_head_steps": {
   "card_section": "massage"
  },
- "sensor:bedsense_light_duration": {
-  "card_section": "lighting",
-  "card_role": "state"
- },
- "sensor:bedsense_massage_timer": {
-  "card_section": "massage",
-  "card_role": "timer"
- },
  "sensor:bedsense_wave_steps": {
   "card_section": "massage"
  },
@@ -4042,6 +3955,15 @@
  },
  "sensor:bobpowerbase_status": {
   "card_section": "hidden"
+ },
+ "sensor:breathing_rate": {
+  "card_section": "utility"
+ },
+ "sensor:breathing_rate_left": {
+  "card_section": "utility"
+ },
+ "sensor:breathing_rate_right": {
+  "card_section": "utility"
  },
  "sensor:casper_base": {
   "card_section": "hidden"
@@ -4052,46 +3974,10 @@
  "sensor:casper_sleep": {
   "card_section": "hidden"
  },
- "sensor:casper_sleep_l_body_move": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_l_breath": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_l_heart": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_l_on_bed": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_l_snoring": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_r_body_move": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_r_breath": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_r_heart": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_r_on_bed": {
-  "card_section": "hidden"
- },
- "sensor:casper_sleep_r_snoring": {
-  "card_section": "hidden"
- },
  "sensor:cheerssleep_foot_massage": {
   "card_section": "hidden"
  },
  "sensor:cheerssleep_head_massage": {
-  "card_section": "hidden"
- },
- "sensor:cheerssleep_left_breath": {
-  "card_section": "hidden"
- },
- "sensor:cheerssleep_left_heart": {
   "card_section": "hidden"
  },
  "sensor:cheerssleep_left_snore_count": {
@@ -4101,12 +3987,6 @@
   "card_section": "hidden"
  },
  "sensor:cheerssleep_massage_mode": {
-  "card_section": "hidden"
- },
- "sensor:cheerssleep_right_breath": {
-  "card_section": "hidden"
- },
- "sensor:cheerssleep_right_heart": {
   "card_section": "hidden"
  },
  "sensor:cheerssleep_right_snore_count": {
@@ -4154,12 +4034,6 @@
  "sensor:doublesleep_firmware_version": {
   "card_section": "utility"
  },
- "sensor:doublesleep_left_breath_rate": {
-  "card_section": "utility"
- },
- "sensor:doublesleep_left_heart_rate": {
-  "card_section": "utility"
- },
  "sensor:doublesleep_left_sensitivity": {
   "card_section": "utility"
  },
@@ -4181,9 +4055,6 @@
  "sensor:doublesleep_massage_mode": {
   "card_section": "massage"
  },
- "sensor:doublesleep_massage_running": {
-  "card_section": "massage"
- },
  "sensor:doublesleep_massage_strength": {
   "card_section": "massage"
  },
@@ -4194,12 +4065,6 @@
   "card_section": "utility"
  },
  "sensor:doublesleep_report": {
-  "card_section": "utility"
- },
- "sensor:doublesleep_right_breath_rate": {
-  "card_section": "utility"
- },
- "sensor:doublesleep_right_heart_rate": {
   "card_section": "utility"
  },
  "sensor:doublesleep_right_sensitivity": {
@@ -4218,9 +4083,6 @@
   "card_section": "massage"
  },
  "sensor:doublesleep_sonic_mode": {
-  "card_section": "massage"
- },
- "sensor:doublesleep_sonic_running": {
   "card_section": "massage"
  },
  "sensor:doublesleep_sonic_source": {
@@ -4318,42 +4180,21 @@
  "sensor:gmmotor_state": {
   "card_section": "utility"
  },
- "sensor:goodvibe_l_heart": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_l_movement": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_l_occupancy": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_l_respiration": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_l_snore": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_r_heart": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_r_movement": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_r_occupancy": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_r_respiration": {
-  "card_section": "utility"
- },
- "sensor:goodvibe_r_snore": {
-  "card_section": "utility"
- },
  "sensor:goodvibe_status": {
   "card_section": "hidden"
  },
  "sensor:head_angle": {
   "card_section": "motors",
   "card_motor": "head"
+ },
+ "sensor:heart_rate": {
+  "card_section": "utility"
+ },
+ "sensor:heart_rate_left": {
+  "card_section": "utility"
+ },
+ "sensor:heart_rate_right": {
+  "card_section": "utility"
  },
  "sensor:hjbed_status": {
   "card_section": "hidden"
@@ -4462,12 +4303,6 @@
  "sensor:mline_anti_angle": {
   "card_section": "hidden"
  },
- "sensor:mline_breath": {
-  "card_section": "hidden"
- },
- "sensor:mline_heart": {
-  "card_section": "hidden"
- },
  "sensor:motion_bed_air_lower_gear": {
   "card_section": "hidden"
  },
@@ -4483,9 +4318,6 @@
  "sensor:motion_bed_audio_volume": {
   "card_section": "hidden"
  },
- "sensor:motion_bed_brightness": {
-  "card_section": "hidden"
- },
  "sensor:motion_bed_day_total": {
   "card_section": "hidden"
  },
@@ -4495,13 +4327,7 @@
  "sensor:motion_bed_fault": {
   "card_section": "hidden"
  },
- "sensor:motion_bed_light_timer": {
-  "card_section": "hidden"
- },
  "sensor:motion_bed_lower_massage": {
-  "card_section": "hidden"
- },
- "sensor:motion_bed_massage_timer": {
   "card_section": "hidden"
  },
  "sensor:motion_bed_massage_wave": {
@@ -4700,30 +4526,6 @@
   "card_section": "utility"
  },
  "sensor:ruf_richmat_sleep_attributes": {
-  "card_section": "utility"
- },
- "sensor:ruf_richmat_sleep_left_breathing_rate": {
-  "card_section": "utility"
- },
- "sensor:ruf_richmat_sleep_left_heart_rate": {
-  "card_section": "utility"
- },
- "sensor:ruf_richmat_sleep_left_movement": {
-  "card_section": "utility"
- },
- "sensor:ruf_richmat_sleep_left_occupancy": {
-  "card_section": "utility"
- },
- "sensor:ruf_richmat_sleep_right_breathing_rate": {
-  "card_section": "utility"
- },
- "sensor:ruf_richmat_sleep_right_heart_rate": {
-  "card_section": "utility"
- },
- "sensor:ruf_richmat_sleep_right_movement": {
-  "card_section": "utility"
- },
- "sensor:ruf_richmat_sleep_right_occupancy": {
   "card_section": "utility"
  },
  "sensor:saved_positions": {
@@ -5044,8 +4846,14 @@
  "switch:doublesleep_child_lock": {
   "card_section": "utility"
  },
+ "switch:doublesleep_massage": {
+  "card_section": "massage"
+ },
  "switch:doublesleep_privacy": {
   "card_section": "utility"
+ },
+ "switch:doublesleep_sonic": {
+  "card_section": "massage"
  },
  "switch:l2motion_sync": {
   "card_section": "utility"
@@ -5053,8 +4861,26 @@
  "switch:linak_automatic_drive": {
   "card_section": "utility"
  },
+ "switch:live_sleep_data": {
+  "card_section": "utility"
+ },
+ "switch:motion_bed_night_light_enabled": {
+  "card_section": "lighting"
+ },
+ "switch:motion_bed_sleep_enabled": {
+  "card_section": "utility"
+ },
  "switch:motionbed_light": {
   "card_section": "lighting"
+ },
+ "switch:okin_app_actuator_1": {
+  "card_section": "utility"
+ },
+ "switch:okin_app_actuator_2": {
+  "card_section": "utility"
+ },
+ "switch:okin_app_installation": {
+  "card_section": "utility"
  },
  "switch:onlysnore_detection": {
   "card_section": "utility"

@@ -28,8 +28,10 @@ async def handle_request(call: ServiceCall) -> None:
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     await async_import_modules(call.hass, "beds.suta.controller")
-    from .controller import Request, SutaController
+    from .controller import CLOCK_COMMAND, Request, SutaController
 
+    if call.data["action"] == CLOCK_COMMAND:
+        raise ServiceValidationError("Use the Set bed clock action to set the clock")
     logical = call.data.get("logical_side")
     request = Request(call.data["action"], call.data["suffix"], None if logical is None else _LOGICAL_SIDES[logical], call.data.get("value"))
     preflighted = []

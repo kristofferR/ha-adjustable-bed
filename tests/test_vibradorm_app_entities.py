@@ -112,21 +112,21 @@ async def floor_runtime(hass, app="caresse", control=2, *, floor=True, extension
 
 
 async def add_public_floor_entities(hass, runtime):
-    switches = _switch_entities_for(hass, runtime)
-    switch = next(
-        entity for entity in switches if entity.entity_description.key == "under_bed_lights"
+    assert not any(
+        entity.entity_description.key == "under_bed_lights"
+        for entity in _switch_entities_for(hass, runtime)
     )
+    (light,) = _light_entities_for(hass, runtime)
     number = next(
         entity
         for entity in _number_entities_for(hass, runtime)
         if entity.entity_description.key == "light_level"
     )
-    assert _light_entities_for(hass, runtime) == []
-    for entity in (switch, number):
+    for entity in (light, number):
         entity.hass = hass
         entity.async_write_ha_state = MagicMock()
         await entity.async_added_to_hass()
-    return switch, number
+    return light, number
 
 
 @pytest.mark.parametrize(("packet", "observed", "state"), [
@@ -185,7 +185,7 @@ async def test_sync_sensor_publishes_translatable_state_without_changing_parser(
         ),
     ],
 )
-async def test_actual_floor_switch_and_slider_remember_one_repeat_exact_headers(
+async def test_actual_floor_light_and_slider_remember_one_repeat_exact_headers(
     hass, app, control, extension, frames
 ):
     runtime, controller = await floor_runtime(hass, app, control, extension=extension)
@@ -215,11 +215,14 @@ async def test_actual_floor_switch_and_slider_remember_one_repeat_exact_headers(
 @pytest.mark.parametrize("floor,rgb", [(False, False), (True, False), (False, True), (True, True)])
 async def test_actual_floor_gate_is_independent_of_restored_mood_rgb(hass, floor, rgb):
     runtime, controller = await floor_runtime(hass, floor=floor, rgb=rgb)
-    switches = _switch_entities_for(hass, runtime)
+    lights = _light_entities_for(hass, runtime)
     numbers = _number_entities_for(hass, runtime)
-    assert any(entity.entity_description.key == "under_bed_lights" for entity in switches) is floor
+    assert any(entity.entity_description.key == "under_bed_lights" for entity in lights) is floor
     assert any(entity.entity_description.key == "light_level" for entity in numbers) is floor
-    assert _light_entities_for(hass, runtime) == []
+    assert not any(
+        entity.entity_description.key == "under_bed_lights"
+        for entity in _switch_entities_for(hass, runtime)
+    )
     assert bool(controller.controller_select_specs) is rgb
     assert not controller.supports_light_color_control
     assert not controller.supports_light_state_feedback

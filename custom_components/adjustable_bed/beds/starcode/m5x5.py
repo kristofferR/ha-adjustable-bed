@@ -138,13 +138,10 @@ def _action(action: str) -> Callable[[BedController], Coroutine[object, object, 
 
 
 # Reported values a typical user wants on a dashboard.
+# Massage and sonic levels and modes only mirror the step buttons (the bed
+# takes no direct level), so those readbacks start hidden.
 _ENABLED_STATE: Final = frozenset(
     {
-        "massage_head_level",
-        "massage_foot_level",
-        "massage_mode",
-        "sonic_head_level",
-        "sonic_foot_level",
         "massage_active",
         "sonic_active",
         "kneading_on",
@@ -355,6 +352,10 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
     @property
     def massage_timer_options(self) -> list[int]:
         return [10, 20, 30] if self.supports_massage else []
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return False  # The timer frame has durations only.
 
     @property
     def has_dynamic_controller_entities(self) -> bool:

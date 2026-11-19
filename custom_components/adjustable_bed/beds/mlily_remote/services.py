@@ -26,12 +26,12 @@ async def handle(call: ServiceCall) -> None:
             for parent, side in targets
         ]
     else:
-        # The clock and the countdown alarm belong to the one receiver both sides
-        # share: target the bed itself and run once, never once per side.
+        # The countdown alarm belongs to the one receiver both sides share:
+        # target the bed itself and run once, never once per side.
         for parent, side in targets:
             if isinstance(parent, SingleAddressPairedCoordinator) and side != SIDE_BOTH:
                 raise ServiceValidationError(
-                    "The clock and alarm belong to the whole bed; select the bed, not one side"
+                    "The alarm belongs to the whole bed; select the bed, not one side"
                 )
         targets = [
             (parent, SIDE_LEFT if isinstance(parent, SingleAddressPairedCoordinator) else side)
@@ -123,9 +123,7 @@ def register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required("device_id"): DEVICE_IDS,
                 **SIDE_FIELD,
-                vol.Required("operation"): vol.In(
-                    ("alarm", "alarm_cancel", "time_sync", "anti_snore")
-                ),
+                vol.Required("operation"): vol.In(("alarm", "alarm_cancel", "anti_snore")),
                 vol.Optional("hour", default=6): vol.All(cv.positive_int, vol.Range(max=23)),
                 vol.Optional("minute", default=30): vol.All(cv.positive_int, vol.Range(max=59)),
                 vol.Optional("mode", default="zero_g"): vol.In(tuple(ALARM_MODES)),

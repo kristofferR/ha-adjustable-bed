@@ -239,7 +239,6 @@ async def test_inventory_churn_during_final_clock_cannot_start_replacement_poll(
 
 
 @pytest.mark.parametrize("service,data", [
-    ("motion_bed_clock", {"timestamp": "2026-10-01T07:45:00"}),
     ("motion_bed_air_setting", {"mode": 3, "gear": 8, "timer": 2, "confirmed": True}),
     ("motion_bed_thermal_schedule", {"hour": 21, "minute": 30, "mode": 1, "gear": 4, "confirmed": True}),
 ])

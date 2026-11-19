@@ -1123,8 +1123,9 @@ galaxy:
       required: true
       selector:
         select:
-          options: [single, cancel_single, repeat, enable_alarm, delete, alarms, sync, light_color, light_duration,
-            light_off, massage_timer, snore_switch, snore_count, snore_time, snore_query]
+          options: [single, cancel_single, repeat, enable_alarm, delete, alarms, light_color,
+                    light_duration, light_off, massage_timer, snore_switch, snore_count, snore_time,
+                    snore_query]
           translation_key: galaxy_operation
     action:
       selector:
@@ -1175,10 +1176,11 @@ gmmotor:
       required: true
       selector:
         select:
-          options: [clock_sync, alarm, alarm_at, alarm_cancel, repeat_alarm, repeat_delete, repeat_query,
-            light_color, light_timeout, light_off, snore_enabled, snore_count, snore_time, snore_query,
-            sleep_name, refresh, massage_timer, sensor_time, sensor_part, sensor_query_part, sensor_live,
-            sensor_report, sensor_sensitivity, sensor_stop, desk_height, desk_unit, desk_query]
+          options: [alarm, alarm_at, alarm_cancel, repeat_alarm, repeat_delete, repeat_query,
+                    light_color, light_timeout, light_off, snore_enabled, snore_count, snore_time,
+                    snore_query, sleep_name, refresh, massage_timer, sensor_time, sensor_part,
+                    sensor_query_part, sensor_live, sensor_report, sensor_sensitivity, sensor_stop,
+                    desk_height, desk_unit, desk_query]
           translation_key: gmmotor_operation
     mode:
       selector:
@@ -1214,12 +1216,6 @@ gmmotor:
           min: 0
           max: 255
           mode: box
-    repeat:
-      selector:
-        number:
-          min: 0
-          max: 255
-          mode: box
     hour:
       selector:
         number:
@@ -1232,24 +1228,16 @@ gmmotor:
           min: 0
           max: 59
           mode: box
-    status:
-      selector:
-        number:
-          min: 0
-          max: 255
-          mode: box
     part:
       selector:
-        number:
-          min: 1
-          max: 2
-          mode: box
+        select:
+          options: [left, right]
+          translation_key: gmmotor_report_side
     report_type:
       selector:
-        number:
-          min: 1
-          max: 2
-          mode: box
+        select:
+          options: [day, month]
+          translation_key: gmmotor_report_type
     height:
       selector:
         number:
@@ -1274,9 +1262,9 @@ goodvibe:
       required: true
       selector:
         select:
-          options: [single, cancel_single, repeat, delete, alarms, sync, light_color, light_duration,
-            light_off, massage_timer, snore_switch, snore_count, snore_time, snore_query, part, time,
-            realtime, report, anti_snore, sensitivity]
+          options: [single, cancel_single, repeat, delete, alarms, light_color, light_duration,
+                    light_off, massage_timer, snore_switch, snore_count, snore_time, snore_query,
+                    part, time, realtime, report, anti_snore, sensitivity]
           translation_key: goodvibe_operation
     action:
       selector:
@@ -1781,9 +1769,9 @@ mlily:
       required: true
       selector:
         select:
-          options: [single, cancel_single, repeat, delete, alarms, sync, light_color, light_duration,
-            light_off, massage_timer, snore_switch, snore_count, snore_time, snore_query, part, time,
-            realtime, report, anti_snore, sensitivity, init, toggle]
+          options: [single, cancel_single, repeat, delete, alarms, light_color, light_duration,
+                    light_off, massage_timer, snore_switch, snore_count, snore_time, snore_query,
+                    part, time, realtime, report, anti_snore, sensitivity, init, toggle]
           translation_key: mlily_operation
     action:
       selector:
@@ -2018,31 +2006,6 @@ motion_bed_calibration:
       selector:
         number:
           mode: box
-
-motion_bed_clock:
-  fields:
-    device_id:
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    side:
-      selector:
-        select:
-          options: [both, left, right]
-          translation_key: side
-    confirmed:
-      default: false
-      selector:
-        boolean: {}
-    timestamp:
-      required: true
-      selector:
-        text: {}
-    thermal:
-      selector:
-        boolean: {}
 
 motion_bed_module:
   fields:
@@ -2341,7 +2304,8 @@ okimiki:
       required: true
       selector:
         select:
-          options: [press, save, light_color, light_duration, light_off, single, cancel_single, alarms, repeat, enable, delete, sync]
+          options: [press, save, light_color, light_duration, light_off, single, cancel_single,
+                    alarms, repeat, enable, delete]
           translation_key: okimiki_operation
     control:
       selector:
@@ -3066,7 +3030,7 @@ sonicsleep:
       required: true
       selector:
         select:
-          options: [list, new, edit, toggle, delete, link_name, sync_clock]
+          options: [list, new, edit, toggle, delete, link_name]
           translation_key: sonicsleep_operation
     alarm_id:
       selector:
@@ -3333,7 +3297,7 @@ majestichome:
       required: true
       selector:
         select:
-          options: [list, new, set, toggle, delete, sync_clock]
+          options: [list, new, set, toggle, delete]
           translation_key: majestichome_operation
     alarm_id:
       selector:
@@ -3610,20 +3574,12 @@ onlysnore_set_alarm:
       required: true
       selector:
         time:
-    week_mask:
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 255
-          step: 1
-          mode: box
-    action:
-      default: action_1
+    weekdays:
       selector:
         select:
-          options: [action_1, action_9, action_5, action_6, action_8]
-          translation_key: onlysnore_alarm_action
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+          translation_key: weekday
     soft_wake:
       default: false
       selector:
@@ -3646,7 +3602,7 @@ bobpowerbase:
       required: true
       selector:
         select:
-          options: [repeat, delete, alarms, sync, light_color, light_duration, light_off]
+          options: [repeat, delete, alarms, light_color, light_duration, light_off]
           translation_key: bobpowerbase_operation
     action:
       selector:
@@ -3694,14 +3650,11 @@ richmat_mh_control:
       required: true
       selector:
         select:
-          options: [press, remote_long, voice_queue, query, app_mode]
+          options: [press, remote_long, query, app_mode]
           translation_key: richmat_mh_control_action
-    opcode:
+    control:
       selector:
-        number:
-          min: 0
-          max: 255
-          mode: box
+        text:
     query:
       selector:
         select:
@@ -3803,7 +3756,7 @@ mlily_remote:
       required: true
       selector:
         select:
-          options: [alarm, alarm_cancel, time_sync, anti_snore]
+          options: [alarm, alarm_cancel, anti_snore]
           translation_key: mlily_remote_operation
     hour:
       default: 6

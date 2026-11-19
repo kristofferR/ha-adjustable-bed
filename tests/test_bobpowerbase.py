@@ -439,5 +439,5 @@ async def test_stop_during_first_lazy_import_invalidates_every_admitted_target(h
         c._command_scheduler._stop_epoch += 1
 
     with patch.object(configuration, "async_import_modules", stopped), pytest.raises(ServiceValidationError, match="interrupted"):
-        await hass.services.async_call(DOMAIN, "bobpowerbase", {"device_id": "bed", "operation": "sync"}, blocking=True)
+        await hass.services.async_call(DOMAIN, "bobpowerbase", {"device_id": "bed", "operation": "alarms"}, blocking=True)
     c.client.write_gatt_char.assert_not_awaited()

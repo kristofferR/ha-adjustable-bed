@@ -384,10 +384,7 @@ async def test_actual_HA_adoption_rebuilds_catalog_once_preserves_side_identity_
                 left in key and "controller_number_starcode_abm5_4_light_level" in key
                 for key in current
             )
-            assert any(
-                left in key and "controller_select_starcode_abm5_4_massage_timer" in key
-                for key in current
-            )
+            assert coordinator.entity_unique_id("massage_timer") in current
             if paired:
                 assert not any(
                     right in key and "controller_number_starcode_abm5_4_light_level" in key

@@ -286,8 +286,12 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
 
     @property
     def supports_stop_all(self) -> bool:
-        """Return False - Keeson beds don't have a dedicated stop command."""
-        return False
+        """Stop All sends the profile's release key, as the app's button-up does.
+
+        A profile whose explicit stop writes nothing has no Stop button.
+        """
+        release = self.profile.release
+        return bool(release.steps) and (release.guarded or release.on_stop)
 
     @property
     def motor_translation_keys(self) -> dict[str, str] | None:

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
@@ -358,15 +359,15 @@ async def test_shared_receiver_clock_runs_once_for_the_bed(hass, selection):
     parent = registry.async_get_device_by_identifier(next(iter(pair.device_info["identifiers"])), entry.entry_id)
     left = registry.async_get_child_device_by_identifier(side_identifier(pair, "left"), entry.entry_id)
     assert parent is not None and left is not None
-    register_services(hass)
-    data = {"device_id": [parent.id if selection == "parent" else left.id], "operation": "time_sync"}
+    hass.services.async_register(
+        const.DOMAIN,
+        services.SERVICE_SYNC_CLOCK,
+        services.handle_sync_clock,
+        schema=vol.Schema({vol.Required("device_id"): services.DEVICE_IDS, **services.SIDE_FIELD}),
+    )
+    data = {"device_id": [parent.id if selection == "parent" else left.id]}
     with virtual_clock():
-        if selection == "left":
-            with pytest.raises(ServiceValidationError, match="whole bed"):
-                await hass.services.async_call(const.DOMAIN, "mlily_remote", data, blocking=True)
-            assert not frames(c)
-        else:
-            await hass.services.async_call(const.DOMAIN, "mlily_remote", data, blocking=True)
-            # One calendar frame for the shared receiver, not one per side.
-            assert len(frames(c)) == 1 and frames(c)[0].startswith("6e20")
+        await hass.services.async_call(const.DOMAIN, "sync_clock", data, blocking=True)
+    # One calendar frame for the shared receiver, not one per side.
+    assert len(frames(c)) == 1 and frames(c)[0].startswith("6e20")
     await shutdown(c)

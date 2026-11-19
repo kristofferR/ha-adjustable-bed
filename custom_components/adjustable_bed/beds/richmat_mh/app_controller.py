@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Callable, Mapping
 from dataclasses import replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal
 
 from ...codec import richmat as codec
@@ -78,6 +80,20 @@ _NORMAL_SETTINGS: Final = {
     "sleep_duration": (9, {"15_minutes": 1, "20_minutes": 2, "30_minutes": 3}),
 }
 
+
+
+# Button names as Home Assistant shows them, read once when the module loads.
+_BUTTON_NAMES: Final[dict[str, dict[str, str]]] = json.loads(
+    (Path(__file__).parents[2] / "translations" / "en.json").read_text(encoding="utf-8")
+)["entity"]["button"]
+
+
+def _shown_name(spec: ControllerButtonSpec) -> str:
+    """The name a button shows: its translated name, or the name it was given."""
+    template = _BUTTON_NAMES.get(spec.translation_key or "", {}).get("name")
+    if template is None:
+        return spec.name
+    return template.format(**(spec.translation_placeholders or {}))
 
 class RichmatMHAppClassifier(protocol.Classifier):
     """Keep the accepted app's coalescing and diagnostic boundaries separate."""
@@ -427,6 +443,30 @@ class RichmatMHAppController(RufRichmatController):
             raise ValueError("This app/model has no smart light lock control")
         # Dedicated cfrm caller uses mask2, preserving fixed mode00, no STOP.
         await self._dispatch(codec.command(0xC0, 0))
+
+    def control_named(self, name: str) -> int:
+        """Return the code of the one control on this app/model page named ``name``.
+
+        The name its button shows is accepted, and so is the app's own wording.
+        """
+        wanted = " ".join(name.split()).casefold()
+        names: dict[int, set[str]] = {}
+        for control in self._controls():
+            # A motor's two directions share its label: "Back up", "Back down".
+            label = (
+                f"{control.label} {control.kind}"
+                if control.kind in ("up", "down")
+                else command_label(control.label, save=control.kind == "save")
+            )
+            names.setdefault(control.code, set()).add(label)
+        for spec in self.controller_button_specs:
+            code = next((c for c in names if spec.key.endswith(f"_{c:02x}")), None)
+            if code is not None:
+                names[code].add(_shown_name(spec))
+        codes = {code for code, labels in names.items() if wanted in {n.casefold() for n in labels}}
+        if len(codes) != 1:
+            raise ValueError("Choose a control by the name of its button")
+        return codes.pop()
 
     def validate_control(self, code: int, *, remote_long: bool = False) -> Control:
         control = next((control for control in self._controls() if control.code == code), None)

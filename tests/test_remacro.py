@@ -803,7 +803,7 @@ async def test_entities_follow_the_advertised_model(
         ("select", "controller_select_remacro_control_side"),
         ("number", "controller_number_remacro_led_brightness"),
         ("button", "remacro_led_brightness_save"),
-        ("switch", "under_bed_lights"),
+        ("light", "under_bed_lights"),
         ("button", "program_memory_2"),
         *present,
     ):
@@ -812,7 +812,7 @@ async def test_entities_follow_the_advertised_model(
         assert missing not in unique_ids, missing
     assert ("cover", "tilt") not in unique_ids
     assert ("button", "preset_memory_3") not in unique_ids
-    assert ("light", "under_bed_lights") not in unique_ids
+    assert ("switch", "under_bed_lights") not in unique_ids
     await hass.config_entries.async_unload(entry.entry_id)
 
 
@@ -1456,7 +1456,7 @@ async def test_leaving_remacro_clears_its_model_issues(hass: HomeAssistant) -> N
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:81") is None
 
 
-async def test_light_switch_starts_unknown_and_side_select_needs_no_link(
+async def test_light_starts_unknown_and_side_select_needs_no_link(
     hass: HomeAssistant,
     mock_coordinator_connected,
     mock_establish_connection,
@@ -1468,9 +1468,9 @@ async def test_light_switch_starts_unknown_and_side_select_needs_no_link(
     with patch(_HISTORY, return_value=MagicMock(manufacturer_data={51: b""})):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
-        switch = registry.async_get_entity_id("switch", DOMAIN, f"{address}_under_bed_lights")
-        assert switch is not None
-        state = hass.states.get(switch)
+        light = registry.async_get_entity_id("light", DOMAIN, f"{address}_under_bed_lights")
+        assert light is not None
+        state = hass.states.get(light)
         # The bed never reports its light, so there is no definitive off.
         assert state is not None and state.state == "unknown"
         assert state.attributes.get("assumed_state") is True

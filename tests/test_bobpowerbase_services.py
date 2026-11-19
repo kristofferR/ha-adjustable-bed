@@ -128,7 +128,7 @@ async def disconnected_service(hass, mock_coordinator_connected, mock_bleak_clie
         await entry._async_process_on_unload(hass)
 
 
-@pytest.mark.parametrize("operation", ("sync", "alarms", "delete", "repeat", "light_color", "light_duration", "light_off"))
+@pytest.mark.parametrize("operation", ("alarms", "delete", "repeat", "light_color", "light_duration", "light_off"))
 async def test_registered_service_from_offline_restore_uses_actual_connection(hass, disconnected_service, operation):
     coordinator, device, client, _reply = disconnected_service
     assert coordinator.controller is None and coordinator.capability_controller is not None
@@ -181,7 +181,7 @@ async def test_invalid_second_app_is_rejected_before_first_target_can_reconnect(
     try:
         with pytest.raises(ServiceValidationError, match="Power Bob Base"):
             await hass.services.async_call(DOMAIN, "bobpowerbase", {
-                "device_id": [first_device, second_device], "operation": "sync",
+                "device_id": [first_device, second_device], "operation": "alarms",
             }, blocking=True)
         client.write_gatt_char.assert_not_awaited()
         second.client.write_gatt_char.assert_not_awaited()
