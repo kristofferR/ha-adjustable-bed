@@ -1010,7 +1010,7 @@ before any write; persistent changes need `confirmed: true`.
 |---|---|
 | `motion_bed_action` | `action` from diagnostics; `branch` app/save/clear; movement `duration` in seconds |
 | [`set_alarm`](../SERVICES.md#set_alarm) | `enabled`, `time`, `weekdays`, `wake_action` (`zero_g`, `memory_1`, `none`), `massage`, `sound` (music only on targets with audio). No `confirmed` needed |
-| [`sync_clock`](../SERVICES.md#sync_clock) | Sets the motor clock and, where the bed has one, the thermal module clock to Home Assistant's time. No `confirmed` needed |
+| [`sync_clock`](../SERVICES.md#sync_clock) | Sets the motor or thermal module clock to Home Assistant's time; a hub sets the clock of the module in use, so select the motor or heating module first. No `confirmed` needed |
 | `motion_bed_sleep_angles` | page 2/3/4, four `flat` and four `side_positions` raw values |
 | `motion_bed_calibration` | integer `flat`, `side_position`; odd-width encodings are rejected before I/O |
 | `motion_bed_sleep_timer` | bedtime slot 0-8 or `fall: true` slot 0-4 |

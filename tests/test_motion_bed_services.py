@@ -250,15 +250,21 @@ async def test_sync_clock_sets_each_surface_with_its_own_app_frame(
     assert [frame.hex().upper() for frame in write.frames] == [_BUILDER_EXPECTED[vector_id]]
 
 
-@pytest.mark.parametrize(("active", "context"), ((None, "home"), ("motor", "home"), ("thermal", "thermal")))
-def test_hub_sync_clock_keeps_its_active_module(
-    hass: HomeAssistant, active: str | None, context: str
+@pytest.mark.parametrize(
+    ("active", "contexts"),
+    ((None, []), ("air", []), ("motor", ["home"]), ("thermal", ["thermal"])),
+)
+def test_hub_sync_clock_sets_only_the_active_module(
+    hass: HomeAssistant, active: str | None, contexts: list[str]
 ) -> None:
-    """A hub with motor and thermal modules sets one clock, without switching module."""
+    """A hub never switches module to set a clock, so it never reruns a module's startup."""
     controller = make_target(hass, "TL-Q").controller
-    controller._module_present = lambda module: module in ("motor", "thermal")
+    controller._module_present = lambda module: True
     controller._active_module = active
-    assert [write.context for write in controller._clock_writes()] == [context]
+    assert [write.context for write in controller._clock_writes()] == contexts
+    if not contexts:
+        with pytest.raises(ValueError, match="motor or heating module"):
+            controller.validate_clock_sync()
 
 
 def test_air_module_has_no_clock(hass: HomeAssistant) -> None:

@@ -396,7 +396,8 @@ manufacturer string enables the alarm page (see
 [`set_alarm`](#set_alarm)). Z-Series beds cannot share a call
 with other profiles. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep,
 Galaxy, MLILY, Power Bob Base, Okimiki products with an alarm, Motion Bed (the
-motor and the thermal module clock), GM Control products with an alarm and OKIN
+motor or thermal module clock; on a hub, the clock of the module in use, so
+select the motor or heating module first), GM Control products with an alarm and OKIN
 SleepEase also set their clock here; their own actions no longer do. A bed whose
 two sides share one receiver has its clock set once.
 

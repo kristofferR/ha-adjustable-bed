@@ -103,7 +103,7 @@ Update scripts and automations that call these actions. The
 | `jiecang_rename`, `linak_rename`, `logicdata_rename` | `rename` |
 | `leggett_hold_control` | `hold_control` |
 | `malouf_sync_clock` | `sync_clock` |
-| `motion_bed_clock` | `sync_clock` (sets the motor clock and, where present, the thermal module clock to Home Assistant's time; `timestamp` and `thermal` are gone) |
+| `motion_bed_clock` | `sync_clock` (sets the motor or thermal module clock to Home Assistant's time; on a hub, select the motor or heating module first. `timestamp` and `thermal` are gone) |
 | `reverie_test` | Removed (it ran a factory bed test) |
 
 `set_alarm` uses the same fields on every bed. What changed from the old alarm

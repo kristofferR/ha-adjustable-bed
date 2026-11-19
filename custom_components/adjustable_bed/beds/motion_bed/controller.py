@@ -1074,7 +1074,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         await self.async_execute_motion_bed_write(self._alarm_write(alarm))
 
     def _clock_writes(self) -> tuple[MotionBedWrite, ...]:
-        """The clock of this bed's surface; on a hub, the active module's where it has one."""
+        """The clock of this bed's surface; on a hub, the active module's, if it has one."""
         now = dt_util.now()
         writes: list[MotionBedWrite] = []
         for write in (
@@ -1086,9 +1086,9 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             except ValueError:
                 continue
             writes.append(write)
-        if len(writes) > 1:
-            # A hub reaches one module at a time, as the app's clock page does.
-            active = "thermal" if self._active_module == "thermal" else "home"
+        if self.selection.surface == "hub":
+            # Switching module runs its startup; set only the module in use.
+            active = {"motor": "home", "thermal": "thermal"}.get(self._active_module or "")
             writes = [write for write in writes if write.context == active]
         return tuple(writes)
 
@@ -1099,7 +1099,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
 
     def validate_clock_sync(self) -> None:
         if not self._clock_writes():
-            raise ValueError("This Motion Bed has no clock module")
+            raise ValueError("Select the hub's motor or heating module first, then set its clock")
 
     async def sync_clock(self) -> None:
         for write in self._clock_writes():
