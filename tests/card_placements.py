@@ -292,6 +292,15 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                     yield variant(reported, _normal_ready=True)
         elif isinstance(controller, RufRichmatController):
             yield variant(controller, _normal_ready=True)
+        elif isinstance(controller, ResourceBedController) and controller.app == "sleepfunction":
+            from custom_components.adjustable_bed.beds.richmat_classic.sleepfunction import (
+                SleepFunctionReceive,
+            )
+            layouts=("D1RM", "YGRM", *(key for key, model in load_catalog("sleepfunction").models.items() if len(model.modes)>1))
+            for layout in layouts:
+                model=load_catalog("sleepfunction").models[layout]
+                yield variant(controller,layout=layout,_model=model,_controls=model.controls,
+                              _receive=SleepFunctionReceive(light_capable=True))
         elif isinstance(controller, ResourceBedController):
             model = load_catalog(controller.app).models["D1RM"]
             yield variant(controller, layout="D1RM", _model=model, _controls=model.controls,

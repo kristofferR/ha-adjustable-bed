@@ -29,6 +29,7 @@ APP_NAMES = {
     "fortywinks": "Forty Winks",
     "milemont": "Milemont",
     "superior": "Superior",
+    "sleepfunction": "SleepFunction Bed Control",
     "luunarise2": "Luuna Rise",
     "powercool": "Power Cool Sleep System",
     **{app: profile.name for app, profile in RESOURCE_APPS.items()},
@@ -146,7 +147,7 @@ def _model(node: Node, *, scoped: bool = False) -> Model:
     )
 
 
-@lru_cache(maxsize=11)
+@lru_cache(maxsize=len(APP_NAMES))
 def load_catalog(app: str) -> Catalog:
     """Load and validate on an executor before constructing a controller."""
     if app not in APP_NAMES:

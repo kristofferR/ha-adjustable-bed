@@ -228,7 +228,7 @@ set_alarm:
     wake_action:
       selector:
         select:
-          options: [none, flat, flat_reset, all_up, zero_g, zero_g_2, zero_g_left, zero_g_right, anti_snore, lounge, tv, reading, yoga, memory_1, memory_2, memory_3, memory_4, memory_5, custom_position, massage, head_massage, foot_massage, wave_massage, light, heat, sleep_aid, deep_sleep, get_up, wake_up, wake_mode_1, wake_mode_2]
+          options: [none, flat, flat_reset, flat_sleep, all_up, zero_g, zero_g_2, zero_g_left, zero_g_right, anti_snore, lounge, tv, reading, yoga, memory_1, memory_2, memory_3, memory_4, memory_5, custom_position, massage, head_massage, foot_massage, wave_massage, light, heat, sleep_aid, deep_sleep, get_up, wake_up, wake_mode_1, wake_mode_2]
           translation_key: set_alarm_wake_action
     slot:
       selector:
@@ -3831,3 +3831,64 @@ mlily_remote:
         select:
           options: [both, left, right]
           translation_key: side
+
+sleepfunction_settings:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          translation_key: paired_side
+          options:
+            - left
+            - right
+            - both
+    operation:
+      required: true
+      selector:
+        select:
+          translation_key: sleepfunction_setting
+          options:
+            - head_fan
+            - foot_fan
+            - aroma
+    hours:
+      selector:
+        number:
+          min: 0
+          max: 6
+          step: 1
+          unit_of_measurement: h
+    speed:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 20
+          unit_of_measurement: '%'
+    mode_2_minutes:
+      selector:
+        number:
+          min: 1
+          max: 60
+          step: 1
+          unit_of_measurement: min
+    mode_3_minutes:
+      selector:
+        number:
+          min: 1
+          max: 60
+          step: 1
+          unit_of_measurement: min
+    pause_hours:
+      selector:
+        number:
+          min: 1
+          max: 12
+          step: 1
+          unit_of_measurement: h

@@ -49,6 +49,7 @@ APPS = [
     "superior",
     "luunarise2",
     "powercool",
+    "sleepfunction",
     "lady_americana",
     "acaa",
     "sta2",

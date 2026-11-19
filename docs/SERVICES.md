@@ -26,6 +26,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`hold_control`](#hold_control) | Hold control | Hold one control that the bed's app profile declares for a bounded duration, then send that profile's release sequence. Every target is checked before any bed moves; an unsupported control is rejected with the list of valid controls. |
 | [`l2motion`](#l2-motion) | L2 Motion: settings | Change supported light colors or explicitly confirm wired or wireless synchronization. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Run full body massage, or a preset with the other base lowering its feet for 30 seconds. |
+| [`sleepfunction_settings`](#sleepfunction_settings) | SleepFunction: set fan and aroma | Set local bed fan or aroma settings. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
 | [`betterliving2_massage`](#betterliving2-actions) | BetterLiving2: run control | Set head and foot massage intensity. |
 | [`betterliving2_diagnostic_action`](#betterliving2-actions) | BetterLiving2: settings | Refresh alarm or massage status. |
@@ -2234,3 +2235,12 @@ concurrent connections and an explicit `left` or `right` side. The selected
 base receives the preset; the other lowers its feet for 30 seconds and releases.
 Every participant is checked before the first write. STOP, replacement or a
 lost physical session cancels delayed work and drains the captured release.
+
+### `sleepfunction_settings`
+
+Set local fan or aroma settings on a SleepFunction bed. Supply `device_id`,
+optional `side`, and `operation` (`head_fan`, `foot_fan`, or `aroma`). Fans
+require `hours` (0–6) and `speed` (0–100 in steps of 20). Aroma requires
+`mode_2_minutes` and `mode_3_minutes` (1–60), plus `pause_hours` (1–12).
+Aroma requires the current session to report support. Foot fan time is not
+transmitted by this app; its speed frame is sent twice.

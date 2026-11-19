@@ -51,7 +51,7 @@ from custom_components.adjustable_bed.profiles import richmat_resource_apps as r
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
-from scripts.codec_docs import _galaxy, _okimiki, _richmat_legacy, _richmat_mh_apps
+from scripts.codec_docs import _galaxy, _okimiki, _richmat_legacy, _richmat_mh_apps, _sleepfunction
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -1726,3 +1726,6 @@ def render_mlily_remote() -> str:
     )
 
 BLOCKS.append((GUIDE, "mlily-remote-commands", render_mlily_remote))
+
+
+BLOCKS += _sleepfunction.BLOCKS

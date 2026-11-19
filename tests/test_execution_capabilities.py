@@ -286,8 +286,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection (five app reports).
     "richmat_classic_apps": {
-        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior"),
-        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior"),
+        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "SleepFunction Bed Control 1.3.0: mode 1 refreshes until UP, then mode 0 releases after 50 ms"),
+        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "SleepFunction Bed Control 1.3.0: only effective mode 1 controls have renewable holds"),
     },
     "isleep": {"hold": ("kaidi",)},
     "ComfyProfile:komfyd": {"hold": ("komfyd084",)},
@@ -392,6 +392,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
+    "beds/richmat_classic/sleepfunction.py:<module>.SleepFunctionController": ("richmat_classic_apps",),
+    "beds/richmat_classic/sleepfunction.py:<module>.SleepFunctionController.execution": ("richmat_classic_apps",),
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
     "beds/furnimove/controller.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove/controller.py:<module>.FurniMoveController.execution": ("furnimove",),

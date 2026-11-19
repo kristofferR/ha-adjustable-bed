@@ -1019,8 +1019,12 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
     } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
-    if app in ("luunarise2", "powercool"):
+    if app in ("luunarise2", "powercool", "sleepfunction"):
         codes -= {"WFRM", "FWRM"}
+    if app == "sleepfunction":
+        from .profiles.sleepfunction import PICKER_LAYOUTS
+
+        codes -= PICKER_LAYOUTS
     if app in APPS:
         codes -= APPS[app].excluded_layouts
     return {code: code for code in sorted(codes)}
@@ -1047,8 +1051,12 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
     excluded = _CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if data.get(CONF_PROTOCOL_VARIANT) == "powercool" else set())
-    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool"):
+    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool", "sleepfunction"):
         excluded = excluded | {"WFRM", "FWRM"}
+    if data.get(CONF_PROTOCOL_VARIANT) == "sleepfunction":
+        from .profiles.sleepfunction import PICKER_LAYOUTS
+
+        excluded = excluded | PICKER_LAYOUTS
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
         excluded = excluded | profile.excluded_layouts
     if layout in excluded or layout not in shipped:

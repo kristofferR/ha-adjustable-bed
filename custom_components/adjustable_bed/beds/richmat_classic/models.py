@@ -4,6 +4,8 @@ Generated outside this repository with ``beds/richmat_classic/data``; no generat
 """
 
 from ...profiles.richmat_resource_apps import ALIASES, APPS, LAYOUTS
+from ...profiles.sleepfunction import ALIASES as SLEEPFUNCTION_ALIASES
+from ...profiles.sleepfunction import LAYOUTS as SLEEPFUNCTION_LAYOUTS
 
 # These source screens select another layout and have no ordinary bed controls.
 LAYOUT_PICKER_CHOICES: dict[str, dict[str, str]] = {
@@ -390,3 +392,7 @@ MANUAL_ALIASES['powercool'] = {'B6RU': 'B6RM', 'ZR90': 'S9RM', '200I': 'A8RM', '
 for _app in APPS:
     MODEL_CHOICES[_app] = LAYOUTS
     MANUAL_ALIASES[_app] = {key: value for key, value in ALIASES.items() if len(key) == 4}
+
+
+MODEL_CHOICES["sleepfunction"] = SLEEPFUNCTION_LAYOUTS
+MANUAL_ALIASES["sleepfunction"] = {key: value for key, value in SLEEPFUNCTION_ALIASES.items() if len(key) == 4}

@@ -3530,6 +3530,57 @@
       },
       "betterliving2_all_sections_down": {
         "name": "Lower all sections"
+      },
+      "sleepfunction_scoped_catalog_massage": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_head_feet_down": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_head_down": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_head_up": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_tv": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_zero_g": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_catalog_action": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_catalog_light": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_massage_mode_step": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_lounge": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_flat": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_feet_down": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_memory_2": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_memory_1": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_head_feet_up": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_anti_snore": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_feet_up": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5237,6 +5288,9 @@
       },
       "massage": {
         "name": "Massage"
+      },
+      "sleepfunction_switch": {
+        "name": "{action}"
       }
     },
     "binary_sensor": {
@@ -5817,6 +5871,9 @@
       },
       "massage_left_intensity": {
         "name": "Left massage intensity"
+      },
+      "sleepfunction_lamp_timeout": {
+        "name": "Light timeout"
       }
     },
     "select": {
@@ -6444,6 +6501,17 @@
           "vocal": "Vocal",
           "cinema": "Cinema",
           "entertainment": "Entertainment"
+        }
+      },
+      "sleepfunction_massage_timer": {
+        "name": "Massage timer",
+        "state": {
+          "off": "Off",
+          "ten_minutes": "10 minutes",
+          "twenty_minutes": "20 minutes",
+          "thirty_minutes": "30 minutes",
+          "fifteen_minutes": "15 minutes",
+          "forty_five_minutes": "45 minutes"
         }
       }
     },
@@ -9350,6 +9418,38 @@
           "name": "Enabled"
         }
       }
+    },
+    "sleepfunction_settings": {
+      "name": "SleepFunction: set fan and aroma",
+      "description": "Set local fan or aroma settings on a SleepFunction bed. Foot fan time is not transmitted by this app.",
+      "fields": {
+        "operation": {
+          "name": "Setting"
+        },
+        "hours": {
+          "name": "Fan duration",
+          "description": "Hours from 0 to 6. Required for fan settings."
+        },
+        "speed": {
+          "name": "Fan speed",
+          "description": "Percent in steps of 20. Required for fan settings."
+        },
+        "mode_2_minutes": {
+          "name": "Aroma mode 2 duration"
+        },
+        "mode_3_minutes": {
+          "name": "Aroma mode 3 duration"
+        },
+        "pause_hours": {
+          "name": "Aroma pause"
+        },
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
     }
   },
   "exceptions": {
@@ -9787,6 +9887,15 @@
     },
     "pair_transfer_failed": {
       "message": "The combined bed {name} could not take over either of its beds. Home Assistant will try again; if it keeps failing, separate the beds and combine them again."
+    },
+    "sleepfunction_session": {
+      "message": "The bed connection or selected layout changed. Try the action again."
+    },
+    "sleepfunction_layout": {
+      "message": "Choose a bed layout. Desk and manufacturing layouts are outside this integration."
+    },
+    "sleepfunction_control": {
+      "message": "Choose a control available for the current bed layout and connection."
     }
   },
   "issues": {
@@ -10464,7 +10573,7 @@
         "fortywinks": "Forty Winks app",
         "milemont": "Milemont app",
         "superior": "Superior app",
-        "remote": "SleepFunction or SVEN & SON app, or a Richmat remote",
+        "remote": "SVEN & SON app, or a Richmat remote",
         "another": "Another app or remote: search every app",
         "luuna": "Luuna + app",
         "richmat_420": "Richmat app",
@@ -10483,7 +10592,8 @@
         "mlily_supreme": "MLILY Supreme app",
         "okimiki": "Okimiki app",
         "luniosmart": "Lunio Smart+ app",
-        "majestichome": "Majestic Home app"
+        "majestichome": "Majestic Home app",
+        "sleepfunction": "SleepFunction Bed Control"
       }
     },
     "setup_start": {
@@ -11440,7 +11550,8 @@
         "get_up": "Help getting up",
         "wake_up": "Wake-up",
         "wake_mode_1": "Wake mode 1",
-        "wake_mode_2": "Wake mode 2"
+        "wake_mode_2": "Wake mode 2",
+        "flat_sleep": "Flat sleep"
       }
     },
     "set_alarm_sound": {
@@ -11825,6 +11936,13 @@
         "anti_snore": "Anti-Snore",
         "memory_1": "Memory 1",
         "memory_2": "Memory 2"
+      }
+    },
+    "sleepfunction_setting": {
+      "options": {
+        "head_fan": "Head fan",
+        "foot_fan": "Foot fan",
+        "aroma": "Aroma"
       }
     }
   }

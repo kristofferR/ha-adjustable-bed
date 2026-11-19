@@ -2273,3 +2273,23 @@ def _nisco_supreme_frames() -> dict[str, frozenset[str]]:
 
 
 FROZEN_FRAMES.update(_nisco_supreme_frames())
+
+
+def _sleepfunction_frames() -> frozenset[str]:
+    import gzip
+    import json
+    from pathlib import Path
+
+    rows = json.loads(gzip.decompress((Path(__file__).parent / "fixtures/sleepfunction/frames.json.gz").read_bytes()))
+    frames=set()
+    for row in rows:
+        value=row["expected_bytes"].lower()
+        if len(value)<=10:
+            frames.add(value)
+        if len(value)>10 and len(value)%10==0:
+            frames.update(value[i:i+10] for i in range(0,len(value),10))
+    frames.update({"6e01016ede", "6e01026edf", "6e", "6e05000073", "6e06000074", "6e01006edd", "6e01008bfa"})
+    return frozenset(frames)
+
+
+FROZEN_FRAMES["richmat_classic_sleepfunction"] = _sleepfunction_frames()

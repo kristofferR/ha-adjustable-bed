@@ -959,6 +959,11 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
     await ctx.coordinator.hass.async_add_executor_job(load_catalog, ctx.variant)
     from ...profiles.richmat_resource_apps import APPS
 
+    if ctx.variant == "sleepfunction":
+        await ctx.preload("richmat_classic.sleepfunction")
+        from .sleepfunction import SleepFunctionController
+
+        return SleepFunctionController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
     if ctx.variant in APPS:
         await ctx.preload("richmat_classic.resource_controller")
         from .resource_controller import ResourceBedController

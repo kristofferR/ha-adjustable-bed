@@ -1863,7 +1863,7 @@ def route_scenarios() -> list[Scenario]:
                     + ("" if layout_id == const.BED_TYPE_RICHMAT_CLASSIC_APPS else ":nordic"),
                     bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
                     protocol_variant=app,
-                    entry_data={const.CONF_PRODUCT_TYPE: layout},
+                    entry_data={const.CONF_PRODUCT_TYPE: layout, **({const.CONF_PROTOCOL_VARIANT: app} if app == "sleepfunction" else {})},
                     factory_kwargs={"device_name": "6BRM-advertised"}
                     if app in ("lady_americana", "acaa", "sta2", "zerogravity") else {},
                     layout_id=layout_id,
@@ -1914,6 +1914,10 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("luunarise2", "AHRM", "richmat_classic_apps_nordic"),
     ("powercool", "AHRM", "richmat_classic_apps"),
     ("powercool", "E3RM", "richmat_classic_apps_nordic"),
+    ("sleepfunction", "6BRM", "richmat_classic_apps_nordic"),
+    ("sleepfunction", "YGRM", "richmat_classic_apps"),
+    ("sleepfunction", "DXRM", "richmat_classic_apps"),
+    ("sleepfunction", "DHRM", "richmat_classic_apps"),
     # Independent accepted Richmat resource apps, both GATT-selected wire formats.
     *((app, "6BRM", wire) for app in ("lady_americana", "acaa", "sta2", "zerogravity")
       for wire in ("richmat_classic_apps", "richmat_classic_apps_nordic")),
