@@ -343,8 +343,8 @@ _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
     ("upper_massage", False, ()),
     ("lower_massage", False, ()),
     ("massage_wave", False, ()),
-    # The massage timer select and brightness number show those two.
-    ("light_timer", False, ()),
+    # The massage and light timer selects and the brightness number show those,
+    # so the bed's raw light timer stays in diagnostics.
     ("audio_volume", False, ()),
     ("audio_track", False, ()),
     ("sleep_timer", False, ()),

@@ -4367,9 +4367,6 @@
       "motion_bed_sleep_timer": {
         "name": "Sleep timer"
       },
-      "motion_bed_light_timer": {
-        "name": "Light timer"
-      },
       "motion_bed_air_upper_gear": {
         "name": "Upper air massage level"
       },
