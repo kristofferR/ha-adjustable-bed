@@ -12,6 +12,11 @@ from typing import TYPE_CHECKING, Any
 from bleak import BleakClient
 from bleak.exc import BleakError
 
+from ..command_scheduler import (
+    note_frame_skipped,
+    note_frame_written,
+    note_write_not_counted,
+)
 from ..diagnostic_payloads import format_payload
 
 if TYPE_CHECKING:
@@ -97,6 +102,7 @@ class GattWriter(ABC):
         expected_client: BleakClient | None = None,
         before_write: Callable[[], None] | None = None,
         command_factory: Callable[[], bytes] | None = None,
+        track_command_write: bool = True,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -132,6 +138,8 @@ class GattWriter(ABC):
                      under the BLE lock, after all connection and cancellation checks.
             command_factory: Rebuild a caller's mode-dependent frame at the final
                      dispatch boundary, after validation and before tracing/writing.
+            track_command_write: Whether this write is the running command's
+                     frame. Set False for writes that only prepare the link.
 
         Raises:
             ConnectionError: If not connected to the bed
@@ -176,6 +184,7 @@ class GattWriter(ABC):
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.debug("Command cancelled after %d/%d writes", i, repeat_count)
+                note_frame_skipped()
                 return
 
             write_started: float | None = None
@@ -186,6 +195,7 @@ class GattWriter(ABC):
                     # A read may have held this lane while STOP invalidated the
                     # movement. Do not send a stale write or acknowledge a no-op.
                     if effective_cancel is not None and effective_cancel.is_set():
+                        note_frame_skipped()
                         return
                     client = self.client
                     if expected_client is not None and client is not expected_client:
@@ -208,11 +218,21 @@ class GattWriter(ABC):
                             command_origin=command_origin,
                             characteristic=characteristic,
                         )
-                    await client.write_gatt_char(
-                        characteristic if characteristic is not None else char_uuid,
-                        outbound,
-                        response=response,
-                    )
+                    try:
+                        await client.write_gatt_char(
+                            characteristic if characteristic is not None else char_uuid,
+                            outbound,
+                            response=response,
+                        )
+                    except asyncio.CancelledError:
+                        # Cancelled mid-write: the repeats after it are unsent.
+                        if i < repeat_count - 1:
+                            note_frame_skipped()
+                        raise
+                    if track_command_write:
+                        note_frame_written(effective_cancel)
+                    else:
+                        note_write_not_counted()
                     if on_write is not None:
                         on_write()
             except BleakError:
@@ -236,4 +256,9 @@ class GattWriter(ABC):
                 if write_started is not None:
                     delay_seconds -= asyncio.get_running_loop().time() - write_started
                 if delay_seconds > 0:
-                    await asyncio.sleep(delay_seconds)
+                    try:
+                        await asyncio.sleep(delay_seconds)
+                    except asyncio.CancelledError:
+                        # A repeat is still pending: part of the command is unsent.
+                        note_frame_skipped()
+                        raise

@@ -22,6 +22,7 @@ from ...alarm_table import (
 )
 from ...card import CARD_MASSAGE_TIMER
 from ...codec import keeson as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.keeson import AppAction, AppProfile
 from ..base import BedController, ProfileExecution
@@ -328,6 +329,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
                 if session is not self._session_cancel:
                     raise ConnectionError("App write belongs to an expired session")
                 if event.is_set():
+                    note_frame_skipped()
                     return
                 assert self._tx is not None and self.client is not None
                 response = "write" in self._tx.properties
@@ -344,7 +346,9 @@ class AppController(ProfileExecution[AppProfile], BedController):
                         controller_class=type(self).__name__,
                     )
                 await self.client.write_gatt_char(self._tx, command, response=response)
+                note_frame_written(event)
             if index + 1 < repeat_count and await self._wait(repeat_delay_ms):
+                note_frame_skipped()
                 return
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:

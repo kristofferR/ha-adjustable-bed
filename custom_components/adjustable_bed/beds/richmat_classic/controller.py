@@ -17,7 +17,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...card import CARD_HIDDEN, CARD_UTILITY
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_PRODUCT_TYPE,
@@ -374,21 +374,28 @@ class RichmatClassicController(BedController):
             self._coordinator.cache_capability_controller()
         self._publish()
 
-    async def _send(self, packet: bytes) -> None:
+    async def _send(self, packet: bytes, cancel: asyncio.Event | None = None) -> None:
+        """Write one packet; ``cancel`` is set for the command's own frames.
+
+        Setup, query and release writes pass none and are not counted.
+        """
         session = self._session
         if session is None or self.client is not session.client or not session.client.is_connected:
             raise ConnectionError("No current app BLE session")
         # Calls are admitted under the coordinator command lock. Never retry an
         # actuator write or carry cached Android objects across connections.
         await session.client.write_gatt_char(session.write, packet, response=session.response)
+        note_frame_written(cancel)
 
     async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = TICK_MS, cancel_event: asyncio.Event | None = None) -> None:
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         for index in range(repeat_count):
             if cancel.is_set():
+                note_frame_skipped()
                 return
-            await self._send(command)
+            await self._send(command, cancel)
             if index + 1 < repeat_count and not await self._wait(repeat_delay_ms, cancel):
+                note_frame_skipped()
                 return
 
     @staticmethod
@@ -416,7 +423,7 @@ class RichmatClassicController(BedController):
                 if session.wire == "FRAMED":
                     raise ValueError("Selected app getter has no framed payload")
                 continue
-            await self._send(control(emission.payload, session.wire, mode))
+            await self._send(control(emission.payload, session.wire, mode), cancel)
         return True
 
     async def _next_tick(self, cancel: asyncio.Event) -> bool:

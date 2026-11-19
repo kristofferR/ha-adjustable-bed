@@ -17,7 +17,7 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_HIDDEN
 from ...codec import suta as codec
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -530,12 +530,14 @@ class SutaController(BedController):
             async with self._ble_lock:
                 self._live(link)
                 if cancel.is_set() or deadline is not None and monotonic() >= deadline:
+                    note_frame_skipped()
                     return
                 stamp = monotonic()
                 # Normal BED h writes retain Android WRITE_TYPE_DEFAULT (2).
                 self._record_command_trace(link.write.uuid, packet, response=True, characteristic=link.write)
                 async with asyncio.timeout(WRITE_TIMEOUT):
                     await link.client.write_gatt_char(link.write, packet, response=True)
+                    note_frame_written(cancel)
 
         task = asyncio.create_task(write())
         interrupted = False

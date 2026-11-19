@@ -499,6 +499,8 @@ class KaidiController(BedController):
                 codec.WRITE_CHAR_UUID,
                 join_packet,
                 response=self._write_with_response,
+                # Joining the room only prepares the link.
+                track_command_write=False,
             )
             await self._wait_for_event(self._join_event, timeout=5.0, name="join response")
 
@@ -526,6 +528,7 @@ class KaidiController(BedController):
                     codec.WRITE_CHAR_UUID,
                     self._build_ping_packet(),
                     response=self._write_with_response,
+                    track_command_write=False,
                 )
                 await self._wait_for_event(
                     self._target_vaddr_event,
