@@ -250,3 +250,29 @@ def test_light_toggle_and_state_sit_together_in_the_card():
     assert cards == {str(state.MASSAGE): CARD_HIDDEN, str(state.LIGHT): CARD_LIGHT_STATE}
     enabled = {s.key for s in ctrl.controller_state_binary_sensor_specs if s.entity_registry_enabled_default}
     assert enabled == {str(state.LIGHT)}
+
+
+async def test_a_frame_the_app_does_not_send_is_not_held_back():
+    from custom_components.adjustable_bed import command_scheduler as scheduler
+
+    ctrl, co, client = bed("p1")
+    await ctrl.async_discover_capabilities()
+    command = scheduler.CommandContext(
+        scheduler_token=object(),
+        cancel_event=co.cancel_command,
+        admitted_stop_epoch=0,
+        intent_id="clock",
+        kind=scheduler.CommandKind.COMMAND,
+        group_id=None,
+        resources=frozenset({"*"}),
+    )
+    token = scheduler._CURRENT_COMMAND_CONTEXT.set(command)
+    shown = []
+    try:
+        with scheduler.delivered(shown.append):
+            # P1 has no clock frame: the command is complete without one.
+            await ctrl.write_command(app.clock("p1", datetime(2026, 1, 1)))
+    finally:
+        scheduler._CURRENT_COMMAND_CONTEXT.reset(token)
+    assert frames(client) == []
+    assert shown == [scheduler.Delivery.SENT]

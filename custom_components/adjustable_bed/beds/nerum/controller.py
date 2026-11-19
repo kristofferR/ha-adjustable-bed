@@ -131,9 +131,10 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
     ) -> None:
         async with self._ble_lock:
             self._live(link)
+            if not command:
+                return  # The app sends nothing here (P1 has no clock frame).
             if (
-                not command
-                or cancel.is_set()
+                cancel.is_set()
                 or deadline is not None
                 and asyncio.get_running_loop().time() >= deadline - 1e-9
             ):
