@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from typing import TYPE_CHECKING, Final, Literal, cast
 
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
@@ -1192,6 +1193,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 "on",
                 "mdi:lock",
                 local_set_fn=local,
+                # Settings, not dashboard controls: there to enable.
+                entity_category=EntityCategory.CONFIG,
+                entity_registry_enabled_default=False,
             ),
             ControllerSwitchSpec(
                 "doublesleep_privacy",
@@ -1201,6 +1205,8 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 cast(StateKey[str | None], _field_key("privacy")),
                 "on",
                 "mdi:shield-lock-outline",
+                entity_category=EntityCategory.CONFIG,
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -1280,7 +1286,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     _field_key("alarm_enabled"),
                     "mdi:alarm",
                     attribute_keys=(_field_key("alarm"),),
-                    entity_registry_enabled_default=True,
+                    entity_registry_enabled_default=False,
                     card=CARD_UTILITY,
                 ),
                 ControllerStateSensorSpec(

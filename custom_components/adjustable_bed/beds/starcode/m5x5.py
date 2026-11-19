@@ -383,6 +383,8 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 requires_confirmation=key.startswith("save_") or key == "reset",
                 # The bed reports this state itself; the query is a fallback.
                 diagnostic=key == "query",
+                # Clearing every saved position is maintenance: there to enable.
+                entity_registry_enabled_default=key != "reset",
             )
             for key, label in (
                 ("save_tv", "Save TV position"),
