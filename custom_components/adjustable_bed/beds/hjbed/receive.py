@@ -101,10 +101,6 @@ def be(f: list[int], i: int) -> int:
     return (f[i] << 8) | f[i + 1]
 
 
-def base100(f: list[int], i: int) -> float:
-    return (100 * f[i] + f[i + 1]) / 10
-
-
 def parse_frame(
     values: Sequence[int], check_integrity: bool = True, _event_sink: EventSink | None = None
 ) -> list[Event]:
