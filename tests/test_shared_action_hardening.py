@@ -328,7 +328,9 @@ async def test_two_write_errors_on_a_combined_bed_name_both(hass) -> None:
         # Two failures keep the combined error, which names each side's reason.
         assert raised.value.translation_key == "pair_side_failed"
         assert raised.value.side_errors["right"].translation_key == "alarm_refresh_needed"
-        assert "left link failed" in str(raised.value)
+        reasons = raised.value.translation_placeholders["reasons"]
+        assert "left: left link failed" in reasons
+        assert f"right: {raised.value.side_errors['right']}" in reasons
 
 
 async def test_checking_bed_that_interrupts_movement_still_writes_a_paired_side(hass) -> None:

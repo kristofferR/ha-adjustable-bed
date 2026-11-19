@@ -463,3 +463,19 @@ async def test_delayed_flat_aborts_after_any_retained_session_changes(
         }
     assert all(member._command_connection_holds == 0 for member in (main, *lifts))
     assert all(member.async_stop_command.await_count == 1 for member in (main, *lifts))
+
+
+def test_a_configured_lift_that_is_missing_or_another_bed_says_which(hass: HomeAssistant) -> None:
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.beds.starcode import accessory_group
+    from custom_components.adjustable_bed.const import BED_TYPE_LINAK, DOMAIN
+    from tests.error_helpers import raises_key
+
+    other = MagicMock(spec=AdjustableBedCoordinator)
+    other.bed_type = BED_TYPE_LINAK
+    hass.data[DOMAIN] = {"other": other}
+    with raises_key("bed_not_loaded", ServiceValidationError):
+        accessory_group._resolve(hass, "missing")
+    with raises_key("lifts_not_configured", ServiceValidationError):
+        accessory_group._resolve(hass, "other")

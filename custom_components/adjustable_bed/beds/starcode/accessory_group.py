@@ -167,11 +167,10 @@ def lift_choices(
 
 def _resolve(hass: HomeAssistant, entry_id: str) -> AdjustableBedCoordinator:
     value = hass.data.get(DOMAIN, {}).get(entry_id)
-    if (
-        not isinstance(value, AdjustableBedCoordinator)
-        or value.bed_type not in STARCODE_GROUP_BED_TYPES
-    ):
-        raise invalid("bed_not_connected")
+    if not isinstance(value, AdjustableBedCoordinator):
+        raise invalid("bed_not_loaded")
+    if value.bed_type not in STARCODE_GROUP_BED_TYPES:
+        raise invalid("lifts_not_configured")
     return value
 
 
