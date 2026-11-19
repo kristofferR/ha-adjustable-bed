@@ -218,11 +218,17 @@ class GattWriter(ABC):
                             command_origin=command_origin,
                             characteristic=characteristic,
                         )
-                    await client.write_gatt_char(
-                        characteristic if characteristic is not None else char_uuid,
-                        outbound,
-                        response=response,
-                    )
+                    try:
+                        await client.write_gatt_char(
+                            characteristic if characteristic is not None else char_uuid,
+                            outbound,
+                            response=response,
+                        )
+                    except asyncio.CancelledError:
+                        # Cancelled mid-write: the repeats after it are unsent.
+                        if i < repeat_count - 1:
+                            note_frame_skipped()
+                        raise
                     if track_command_write:
                         note_frame_written(effective_cancel)
                     else:

@@ -8,7 +8,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Final, Literal
 
 from ...codec import richmat as codec
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_written
 from ...const import RICHMAT_MH_APP_CATALOGS
 from ...controller_state import StateKey
 from ...execution import HOLD_CEILING_MS
@@ -236,10 +236,17 @@ class RichmatMHAppController(RufRichmatController):
             if limit is not None and asyncio.get_running_loop().time() >= limit:
                 raise _HoldElapsed
 
+        written = False
+
+        def wrote() -> None:
+            nonlocal written
+            written = True
+
         task = asyncio.create_task(self._write_gatt_with_retry(
             self._write_char.uuid, frame, cancel_event=cancel_event,
             response=True, characteristic=self._write_char,
             expected_client=self._owner_client, before_write=validate, command_factory=factory,
+            on_write=wrote,
         ))
         cancelled = False
         while not task.done():
@@ -250,6 +257,10 @@ class RichmatMHAppController(RufRichmatController):
                 if cancel_event is None:
                     self._coordinator.cancel_command.set()
         task.result()
+        if written and not cleanup:
+            # The shielded write went out, even if cancellation re-raises below;
+            # a frame gated on its own event (an RGB colour) is still the command's.
+            note_frame_written(self._coordinator.cancel_command)
         self._require_owner()
         if generation != self._session_generation:
             raise ConnectionError("The completed write belongs to a previous BLE session")

@@ -8,7 +8,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from ...command_scheduler import note_write_not_counted
+from ...command_scheduler import note_frame_skipped, note_write_not_counted
 
 PAIRLINK_SERVICE_UUID = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
 PAIRLINK_WRITE_UUID = "9e5d1e47-5c13-43a0-8635-82adffc1386f"
@@ -324,11 +324,18 @@ async def send_central_frame(
 ) -> None:
     """Send one encrypted frame and preserve the 15 ms inter-fragment cadence."""
     fragments = fragment_central_frame(frame, att_mtu=att_mtu)
-    for fragment in fragments:
-        await writer.write_gatt_char(characteristic, fragment, response=False)
-        note_write_not_counted()
-        if len(fragments) > 1:
-            await sleep(0.015)
+    for index, fragment in enumerate(fragments):
+        try:
+            # The writer counts each fragment it sends.
+            await writer.write_gatt_char(characteristic, fragment, response=False)
+            note_write_not_counted()
+            if len(fragments) > 1:
+                await sleep(0.015)
+        except asyncio.CancelledError:
+            # Cancelled before the last fragment: the frame is incomplete.
+            if index < len(fragments) - 1:
+                note_frame_skipped()
+            raise
 
 
 @dataclass(slots=True)
