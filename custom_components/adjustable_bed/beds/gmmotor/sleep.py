@@ -196,6 +196,8 @@ class GmmotorSleepController(BedController, GmmotorActions):
                 ).async_execute_gmmotor_request(Request("sensor_live" if on else "sensor_stop")),
                 LIVE_ENABLED,
                 icon="mdi:heart-pulse",
+                # Stopping sends nothing, so it never takes the module's link.
+                local_off_fn=self._stop_live,
             ),
         )
 
@@ -466,6 +468,11 @@ class GmmotorSleepController(BedController, GmmotorActions):
         ):
             raise ValueError("Select a part setting admitted by this sleep module's app page")
 
+    def _stop_live(self) -> None:
+        self._live_enabled = False
+        self._cancel_live_timers()
+        self._receive_buffer.clear()
+
     async def async_execute_gmmotor_request(self, request: Request) -> None:
         self.validate_gmmotor_request(request)
         self._generation += 1
@@ -475,9 +482,7 @@ class GmmotorSleepController(BedController, GmmotorActions):
                 return
             self._device_part = request.value
         if op == "sensor_stop":
-            self._live_enabled = False
-            self._cancel_live_timers()
-            self._receive_buffer.clear()
+            self._stop_live()
             return  # The source has no outbound STOP frame.
         if op == "sensor_report":
             self._report_date = request.report_date or dt_util.now().date()

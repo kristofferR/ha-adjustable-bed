@@ -286,6 +286,14 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             return self._spec.available_fn(controller)
 
     async def _async_set(self, on: bool) -> None:
+        if not on and self._spec.local_off_fn is not None:
+            controller = self._coordinator.capability_controller
+            specs = controller.controller_switch_specs if controller is not None else ()
+            live = next((spec for spec in specs if spec.key == self._spec.key), None)
+            if live is None or live.local_off_fn is None:
+                raise ServiceValidationError("Controller no longer supports this setting")
+            live.local_off_fn()
+            return
         if self._spec.local_set_fn is not None:
             # No frame is sent, so do not take the bed's single BLE link.
             controller = self._coordinator.capability_controller

@@ -286,3 +286,16 @@ async def test_timer_keys_are_one_select_and_level_keys_one_number_per_zone(cloc
         c.client.write_gatt_char.reset_mock()
         await obj.action(key)
         assert sent == written(c), key
+
+
+async def test_all_off_resets_the_timer_and_both_levels(clock):
+    obj, c = make("FARM")
+    await obj.start_notify()
+    c.handle_controller_state_updates.reset_mock()
+    await obj.action("massage_off")
+    (updates,) = [call.args for call in c.handle_controller_state_updates.call_args_list][-1:]
+    assert {str(update.key): update.value for update in updates} == {
+        "massage_timer": 0,
+        "massage_head_intensity": 0,
+        "massage_foot_intensity": 0,
+    }

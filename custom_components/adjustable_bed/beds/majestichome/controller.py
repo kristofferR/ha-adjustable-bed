@@ -284,7 +284,8 @@ class MajesticHomeController(GoodVibeController):
     async def set_massage_timer(self, minutes: int) -> None:
         if minutes == 0 and self.massage_timer_can_turn_off:
             await self.action("massage_off")
-        elif minutes in self.massage_timer_options:
+            return
+        if minutes in self.massage_timer_options:
             await self.action(f"massage_{minutes}")
         else:
             raise ValueError("Choose a massage timer this Majestic Home model offers")
@@ -397,6 +398,12 @@ class MajesticHomeController(GoodVibeController):
             ),
             link=link,
         )
+        if key == "massage_off" and not self._coordinator.cancel_command.is_set():
+            # All Off stops the timer and both zones, whichever entity sent it.
+            self.forward_controller_state_updates(
+                MASSAGE_TIMER_MINUTES(0),
+                *(massage_intensity(zone)(0) for zone in self.massage_intensity_zones),
+            )
 
     async def stop_all(self) -> None:
         if not CONTROLLER_GESTURE_RELEASE.get():

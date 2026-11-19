@@ -256,3 +256,20 @@ async def test_notification_cleanup_clears_resources_without_ending_live_intent(
     assert ctrl._live_enabled and ctrl._poll_timer is None and timer.cancelled()
     assert ctrl._transport is None and not ctrl._subscriptions
     ctrl.client.stop_notify.assert_awaited_once()
+
+
+async def test_turning_live_data_off_never_takes_the_link(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+
+    ctrl = controller(hass)
+    ctrl._live_enabled = True
+    runtime = MagicMock(capability_controller=ctrl, controller=ctrl)
+    runtime.async_execute_controller_command = AsyncMock()
+    runtime.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    (spec,) = ctrl.controller_switch_specs
+    switch = AdjustableBedControllerSwitch(runtime, spec)
+    await switch.async_turn_off()
+    runtime.async_execute_controller_command.assert_not_awaited()
+    assert not ctrl._live_enabled
+    await switch.async_turn_on()
+    runtime.async_execute_controller_command.assert_awaited_once()
