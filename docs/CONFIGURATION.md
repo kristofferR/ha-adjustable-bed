@@ -283,7 +283,8 @@ A form shows only the settings the bed uses. **Has massage feature** is left
 out for beds with no massage commands or that turn massage on themselves; the
 maximum angles are left out where the frame's travel is fixed (for example
 Paramount, Serta MP Remote, SBI and BedJet); a motor count with only one
-choice is left out; and **Bluetooth connection** is left out for beds that
+choice is left out; **Movement per tap** is left out for beds that never
+repeat a tap; and **Bluetooth connection** is left out for beds that
 must stay connected (DoubleSleep, GM Sleep, Okin RF Eco BT, Richmat sleep
 receivers and Sleep Number MCR).
 
@@ -339,6 +340,8 @@ Assistant holds blocks the physical Bluetooth remote and the bed's app.
   including STOP cleanup, then start the handoff window together. Sequential
   pairs still release one side before connecting the other.
 - The explicit Disconnect button releases the link immediately.
+- Diagnostics list the connection setting the bed actually uses, including
+  the bed's own default when you have not changed it.
 
 Connection attempts use one timing for every bed: a 25-second connect timeout
 and three attempts with 3 and 6 second backoff. Multiple usable Bluetooth paths

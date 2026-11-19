@@ -26,8 +26,14 @@ notification requirements, or preset semantics of other beds.
 ## Boundaries
 
 - Persistent-connection controllers keep their existing connection requirement.
-  An idle timeout of `0` gives any bed the same lifecycle while Disconnect After
-  Command is off: no idle timer, and a dropped link reconnects on demand.
+  **Always stay connected** gives any bed the same lifecycle: no idle timer, and
+  a dropped link reconnects on demand.
+- With **Stay connected for a while**, a link the bed or adapter drops is
+  recovered at most once per command-opened link, and only inside the window
+  the last command opened. The recovered link keeps that window's end; reads
+  and queries do not extend it. While a command needs the link, recovery is
+  unlimited, as before. Bed occupancy polls read only over an open, ready link
+  and never connect or extend the window.
   Sequential pairs still explicitly disconnect before switching sides; a group
   hold never overrides explicit disconnect.
 - The scheduler continues to serialize opaque controller operations. Same-resource
@@ -78,6 +84,31 @@ capture physical STOP epochs and pair resource generations before preflight.
 A STOP on a later target also invalidates its pending dispatch while an earlier
 target is still starting. Paired admission rechecks ownership after lane waits,
 before reservations can cancel newer work, and before committing movement.
+
+## Checked actions and STOP
+
+`set_alarm`, `set_position` and `set_positions` capture each selected bed's STOP
+state before their checks. A STOP on any selected bed or side while the action
+still connects or checks ends it with nothing written or moved; a STOP after
+the first write skips the remaining targets. Right before each write, the
+selection must still resolve to the same beds, pairing and connections it was
+checked on; otherwise the action fails with the translated "bed changed" error
+and writes nothing. `goto_preset`, `save_preset`, `rename`, `sync_clock` and
+`hold_control` run their check again on the controller that writes, when it is
+not the one preflight checked.
+
+## Shown state and delivered frames
+
+Entities show what reached the bed. Each `write_gatt_char` call declares
+whether its write is one of the running command's own frames
+(`tests/test_frame_delivery_guard.py` enforces this), and a frame the
+controller holds back is marked as skipped. Link preparation (connect,
+authentication, session setup) never counts as the command's frames.
+`command_scheduler.delivered()` is the one reader of these counts: nothing
+sent keeps the previous state, everything sent shows the new state, and a
+command cut off between frames shows unknown (a toggle counts as sent once its
+first frame went out). Entities use it through `_async_send`; controllers
+publish commanded values with `sent_state()` around the write.
 
 ## Renewable hold leases
 
