@@ -53,6 +53,7 @@ from homeassistant.helpers.issue_registry import (
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
@@ -199,7 +200,7 @@ _V5_ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         frozenset({VARIANT_AUTO, KEESON_VARIANT_BASE, KEESON_VARIANT_SINO}),
-        _keeson(KEESON_VARIANT_COMFORTFURNITURE, KEESON_VARIANT_ORE_ULTRAMATIC),
+        (*_keeson(KEESON_VARIANT_COMFORTFURNITURE, KEESON_VARIANT_ORE_ULTRAMATIC), BED_TYPE_BETTERLIVING2),
     ),
     # v4.0.2 detected these apps' advertised names on the Richmat Nordic UART
     # and WiLinke services as the generic Richmat route.
@@ -223,12 +224,12 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         _AUTO,
-        (*_keeson(KEESON_VARIANT_ADJUSTABLE_LITE), *_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS),
+        (*_keeson(KEESON_VARIANT_ADJUSTABLE_LITE), *_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS, BED_TYPE_BETTERLIVING2),
     ),
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         frozenset({KEESON_VARIANT_BASE}),
-        (*_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS),
+        (*_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS, BED_TYPE_BETTERLIVING2),
     ),
     # Adjustable Lite's frames all exist in the KSBT profile.
     _RouteApps(
@@ -239,7 +240,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         frozenset({KEESON_VARIANT_SINO}),
-        (*_OKIN_SEATING_APPS, *_ORE_APPS),
+        (*_OKIN_SEATING_APPS, *_ORE_APPS, BED_TYPE_BETTERLIVING2),
     ),
     # v4.0.2 labelled Okin ORE "Dynasty, INNOVA"; both apps use the Keeson frame.
     _RouteApps(

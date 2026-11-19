@@ -2309,11 +2309,17 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         targets,
         {
             BED_TYPE_ZSERIES: "zseries",
+            "betterliving2": "betterliving2",
             BED_TYPE_SYMPHONY: "symphony",
             BED_TYPE_ULTRAMATIC_SMART_BED: "ultramatic",
         },
         SERVICE_SET_ALARM,
     )
+    if route == "betterliving2":
+        from .beds.keeson.betterliving2_services import set_alarm
+
+        await set_alarm(call, alarm, given)
+        return
     if route == "ultramatic":
         # Its fenced A/AB/B plans capture every target before their first await.
         from .beds.ultramatic.services import set_ultramatic_alarm
@@ -2886,6 +2892,9 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.kaidi.floyd_services import async_register_floyd_services
     from .beds.kaidi.rize_services import async_register_rize_services
     from .beds.keeson.agingplace_services import register_services as register_agingplace_services
+    from .beds.keeson.betterliving2_services import (
+        register_services as register_betterliving2_services,
+    )
     from .beds.keeson.somos_services import register_services as register_somos_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
@@ -2972,6 +2981,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_fsm_relax_services,
         async_register_limoss_remote_services,
         register_apex_services,
+        register_betterliving2_services,
         register_agingplace_services,
         register_onlysnore_services,
         async_register_logicdata_app_services,
