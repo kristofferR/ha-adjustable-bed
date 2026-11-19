@@ -596,6 +596,9 @@ class CommandContext:
     # stopped it from sending; together they say what reached the bed.
     frames_written: int = 0
     frames_skipped: int = 0
+    # Above zero while the command prepares its link (connect, startup,
+    # authentication): those writes are not the command's frames.
+    preparing_link: int = 0
 
     def request_cancel(self, outcome: CommandOutcome) -> None:
         """Distinguish repeated cancellations of this exact resource admission."""
@@ -709,17 +712,22 @@ class Delivery(StrEnum):
     """Cancelled before any frame went out."""
 
 
-_FRAMES_NOT_COUNTED: ContextVar[bool] = ContextVar("adjustable_bed_frames_not_counted", default=False)
-
-
 @contextlib.contextmanager
 def command_frames_not_counted() -> Iterator[None]:
-    """Send link preparation (session join, wake, PIN) without counting it as the command."""
-    token = _FRAMES_NOT_COUNTED.set(True)
+    """Send link preparation (connect, startup, session join, PIN) uncounted.
+
+    Marks the running command itself, not the task context, so a task created
+    meanwhile (a scheduler worker, a background read) never inherits it.
+    """
+    context = current_command_context()
+    if context is None:
+        yield
+        return
+    context.preparing_link += 1
     try:
         yield
     finally:
-        _FRAMES_NOT_COUNTED.reset(token)
+        context.preparing_link -= 1
 
 
 _FRAMES_COUNTED: ContextVar[bool] = ContextVar("adjustable_bed_frames_counted", default=False)
@@ -746,7 +754,7 @@ def note_frame_written(cancel_event: asyncio.Event | None) -> None:
     if (
         context is not None
         and (cancel_event is context.cancel_event or _FRAMES_COUNTED.get())
-        and not _FRAMES_NOT_COUNTED.get()
+        and not context.preparing_link
     ):
         context.frames_written += 1
 
@@ -763,7 +771,7 @@ def note_write_not_counted() -> None:
 def note_frame_skipped() -> None:
     """Record, inside a command, that a cancellation stopped a frame being sent."""
     context = current_command_context()
-    if context is not None:
+    if context is not None and not context.preparing_link:
         context.frames_skipped += 1
 
 

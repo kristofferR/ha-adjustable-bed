@@ -20,7 +20,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ...codec import jmc
-from ...command_scheduler import current_command_context, note_frame_written
+from ...command_scheduler import current_command_context, note_frame_written, note_write_not_counted
 from ...const import SVANE_VARIANT_JENSEN_LINON, SVANE_VARIANT_JMC, SVANE_VARIANT_MULTI
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -352,7 +352,9 @@ class SvaneController(BedController):
             raise ValueError("Ambiguous Svane GATT role")
         return matches[0] if matches else None
 
-    async def _write(self, service: str, char: str, data: bytes) -> None:
+    async def _write(
+        self, service: str, char: str, data: bytes, *, cleanup: bool = False
+    ) -> None:
         role = self._role(service, char)
         if role is None:
             raise ValueError(f"Missing Svane role {service}/{char}")
@@ -368,7 +370,11 @@ class SvaneController(BedController):
         self._record_command_trace(char, data, response=response, characteristic=role)
         async with self._ble_lock:
             await client.write_gatt_char(role, data, response=response)
-            note_frame_written(self._coordinator.cancel_command)
+            if cleanup:
+                # A release STOP is cleanup, not the command's frame.
+                note_write_not_counted()
+            else:
+                note_frame_written(self._coordinator.cancel_command)
 
     async def _wait(self, seconds: float) -> bool:
         cancel = self._coordinator.cancel_command
@@ -874,6 +880,7 @@ class SvaneController(BedController):
                     service,
                     char,
                     jmc.command(jmc.STOP) if self.profile == "jmc" else SvaneCommands.MOTOR_STOP,
+                    cleanup=True,
                 )
             except Exception as error:
                 errors.append(error)

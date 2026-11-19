@@ -39,7 +39,7 @@ from .ble_auth import is_ble_authentication_error as _is_ble_authentication_erro
 from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_transport import async_connection_paths, async_path_for_source, client_source
 from .bond_verification import BondVerificationStatus
-from .command_scheduler import ALL_COMMAND_RESOURCES, CommandOutcome
+from .command_scheduler import ALL_COMMAND_RESOURCES, CommandOutcome, command_frames_not_counted
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -581,6 +581,18 @@ class CoordinatorConnectionMixin:
             self._connection_creator_task = None
 
     async def _async_connect_locked(self: AdjustableBedCoordinator, reset_timer: bool = True) -> bool:
+        """Connect under ``self._lock``; startup writes are never a command's frames.
+
+        A command that has to reconnect runs this inside its own context, so the
+        link's notify setup, handshakes and session opens would otherwise count
+        as the command having reached the bed.
+        """
+        with command_frames_not_counted():
+            return await self._async_connect_link_locked(reset_timer)
+
+    async def _async_connect_link_locked(
+        self: AdjustableBedCoordinator, reset_timer: bool = True
+    ) -> bool:
         """Allow automatic auth recovery before asking the user to re-pair."""
         if self._shutting_down and self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
             return False

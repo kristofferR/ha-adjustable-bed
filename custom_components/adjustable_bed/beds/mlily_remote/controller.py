@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
-from ...command_scheduler import note_frame_skipped, note_frame_written
+from ...command_scheduler import note_frame_skipped, note_frame_written, note_write_not_counted
 from ...controller_state import StateKey
 from ...profiles.mlily_remote import ACTIONS, PROFILES, SAVE_MS, STARTUP, TICK_S
 from ..base import BedController, require_controller
@@ -192,7 +192,11 @@ class MlilyRemoteController(CasperBaseController):
                 submitted()
             # A non-idempotent command is never replayed after a write failure.
             await link.client.write_gatt_char(link.tx, packet, response=response)
-            note_frame_written(cancel)
+            if cleanup:
+                # A cleanup STOP bypasses the cancel gate; it is not the command.
+                note_write_not_counted()
+            else:
+                note_frame_written(cancel)
         return True
 
     async def _send(self, packet: bytes, *, cleanup: bool = False) -> None:
