@@ -64,6 +64,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`jiecang_stop_wake`](#jiecang_stop_wake) | Jiecang: stop wake massage | Stop active wake massage without disabling the stored weekly clock alarm. |
 | [`jiecang_wake`](#jiecang_wake) | Jiecang: start wake routine | Move to a preset and start the selected wake massage levels immediately. |
 | [`comfy_control`](#comfy_control) | KomfyD and ComfyDS: settings | Moves the bed or runs its timer and lock buttons. |
+| [`lp2`](#lp2) | L&P Adjustable Base: settings | Lighting, aromatherapy, fans and movement programs. Use Set alarm for wake-up alarms. Physical behavior needs hardware testing. |
 | [`richmat_resource_bed`](#richmat_resource_bed) | Lady Americana and partner beds: settings | Control the selected app’s bed features. Query optional light support before changing its color or timeout. App commands do not certify a physical memory slot. |
 | [`leggett_sleep_timer`](#leggett_sleep_timer) | Leggett & Platt: sleep timer | Start a delayed preset or cancel the stored sleep timer. |
 | [`limoss_remote_calibrate`](#limoss_remote_calibrate) | Limoss Remote: calibrate | Runs the remote's calibration after you confirm, then releases the motors. |
@@ -96,7 +97,6 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`reverie_pairlink_alarm_comfort`](#reverie_pairlink_alarm_comfort) | Reverie: set alarm comfort | Send the complete Pairlink alarm comfort sequence, including unchanged values. |
 | [`reverie_run_routine`](#reverie_run_routine) | Reverie: run routine | Run a routine of comfort steps on the selected Reverie bed. It replaces any routine the bed is running. |
 | [`reverie_set_comfort`](#reverie_set_comfort) | Reverie: set comfort | Send one validated composite Reverie comfort setting to every selected target. |
-| [`lp2`](#lp2) | L&P Adjustable Base: settings | Lighting, aroma, fans, named controls and confirmed motor programs. |
 | [`richmat_classic`](#richmat_classic) | Richmat (classic app): settings | Settings for Avocado Eco Base, CoasterSleep, Forty Winks, Milemont and Superior beds. |
 | [`richmat_app`](#richmat_app) | Richmat app: settings | Sets the light, alarm, sleep sensing and other options of a Richmat app bed. Read the feature first before changing it. |
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Write the three aroma timing sliders of a Richmat MH app profile. |
@@ -448,6 +448,7 @@ data:
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
+| L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed) |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
@@ -1039,6 +1040,33 @@ product/name gates; an HA automation can repeat Start for cycle operation.
 the Timer duration select; the Control lock and Timer switches send lock/unlock
 and timer start/stop. H/F and timer buttons work as in the app. All targets are validated before any control
 write. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).
+
+## L&P Adjustable Base
+
+<a id="lp2"></a>
+**`lp2`**: Lighting, aromatherapy, fans and movement programs. Use Set alarm for wake-up alarms. Physical behavior needs hardware testing.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `operation` | Setting | One of `color`, `light_duration`, `aromatherapy`, `fan`, `motor_program`, `movement_test` or `control`. |
+| `rgb_color` | Light color | Color for `color`. |
+| `seconds` | Light duration (seconds) | A number from 0 to 300. |
+| `aroma_times` | Aromatherapy times | Three whole numbers: 1 to 60, 1 to 60 and 1 to 12. |
+| `fan` | Fan | `head` or `foot`. |
+| `intensity` | Intensity (%) | 0 to 100 in steps of 20. |
+| `duration` | Fan duration | Duration choice 0 through 6. The foot fan sends only intensity; it does not send a duration. |
+| `schedule` | Movement program | For `motor_program`: 12 `records`, `rest`, `count`, `radio` (`rf` or `ble`), `code` (`new` or `old`), `identifier` 1 to 9 and four `motors` (1 to 4). |
+| `confirm` | Confirm programming or saving | Required for `motor_program` (RMCS layout), `movement_test` (TEST layout), and a control's long press or save. |
+| `control` | Control | The layout's control number, for `control`. |
+| `mode` | Control mode | The layout's control mode, 0 to 2 (default 0). |
+| `long` | Long press | Send the control's long press. |
+| `held` | Continuous movement | Hold the control instead of pressing it once. |
+| `head` | Head selection | The app's head selection for `control` (default on). |
+| `motor` | Motor | The app's motor selector for `control`, 3 to 5 (default 3). |
+| `duration_ms` | Movement duration (milliseconds) | A held control's duration, 1 to 60000 (default 1000). |
+
+The [L&P Adjustable Base guide](beds/richmat.md#lp-adjustable-base) lists what
+each layout accepts. Set wake-up alarms with [`set_alarm`](#set_alarm).
 
 ## Lady Americana and partner beds
 
@@ -2250,7 +2278,3 @@ concurrent connections and an explicit `left` or `right` side. The selected
 base receives the preset; the other lowers its feet for 30 seconds and releases.
 Every participant is checked before the first write. STOP, replacement or a
 lost physical session cancels delayed work and drains the captured release.
-
-### lp2
-
-`adjustable_bed.lp2` sets lighting, aroma, fans and movement programs for the L&P Adjustable Base profile. Use `set_alarm` for wake-up alarms. See [Richmat](beds/richmat.md#lp-adjustable-base).
