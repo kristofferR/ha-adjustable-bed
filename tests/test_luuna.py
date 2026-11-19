@@ -460,3 +460,10 @@ def test_safe_receive_preserves_fragments_and_rejects_bad_lengths_and_checksum()
     assert rx.feed(bytes.fromhex("6e200c06030300524d2d4100")) == []
     with pytest.raises(ValueError):
         rx.feed(bytes.fromhex("6e2000"))
+
+
+@pytest.mark.parametrize("product", PROFILES)
+async def test_massage_timer_actions_are_one_select(product):
+    from tests.test_casper_base import assert_timer_select_sends_the_timer_actions
+
+    await assert_timer_select_sends_the_timer_actions(lambda: make(product))

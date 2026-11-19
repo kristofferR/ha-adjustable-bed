@@ -67,9 +67,6 @@ def test_buttons_add_only_what_shared_presets_lack():
         "Massage: Foot Up",
         "Massage mode",
         "All Off",
-        "Massage: Timer 10 Minutes",
-        "Massage: Timer 20 Minutes",
-        "Massage: Timer 30 Minutes",
         "Zero Gravity",
         "Save Zero Gravity",
         "Anti-Snore",
@@ -77,6 +74,13 @@ def test_buttons_add_only_what_shared_presets_lack():
         "TV",
         "Save TV",
     ]
+    # The timer actions are the shared massage timer select, without an Off.
+    assert controller.massage_timer_actions == {
+        10: "Massage10MinuteTimer",
+        20: "Massage20MinuteTimer",
+        30: "Massage30MinuteTimer",
+    }
+    assert not controller.massage_timer_can_turn_off and controller.auto_enable_massage
 
 
 def expected_events(row):
@@ -378,3 +382,17 @@ def test_direct_intervention_rejects_non_left_controller_scope(side):
     controller, _ = make("ms300_sh", layout="double")
     with controller.side_scope(side), pytest.raises(ValueError, match="left owner"):
         controller.validate_casper_base_request(Request("anti_snore"))
+
+
+@pytest.mark.parametrize("product", [key for key, p in PROFILES.items() if not p.cooling])
+async def test_massage_timer_actions_are_one_select(product):
+    from tests.test_casper_base import assert_timer_select_sends_the_timer_actions
+
+    await assert_timer_select_sends_the_timer_actions(lambda: make(product))
+
+
+def test_powercool_timers_stay_fan_timer_buttons():
+    controller, _ = make("powercool")
+    assert not controller.supports_massage_timer
+    names = [s.name for s in controller.controller_button_specs]
+    assert {"Fan: Timer 2 Hours", "Fan: Timer 3 Hours", "Fan: Timer 5 Hours"} <= set(names)

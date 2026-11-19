@@ -175,3 +175,10 @@ async def test_dedicated_music_descriptors_and_phone_only_exclusion():
     for key in PRODUCTS:
         other, _ = hush(key)
         assert "PhoneLight" not in other.actions
+
+
+@pytest.mark.parametrize("model", PRODUCTS)
+async def test_massage_timer_actions_are_one_select(model):
+    from tests.test_casper_base import assert_timer_select_sends_the_timer_actions
+
+    await assert_timer_select_sends_the_timer_actions(lambda: hush(model))

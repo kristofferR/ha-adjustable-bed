@@ -29,6 +29,7 @@ from ...const import (
 from ...controller_state import StateKey, StateUpdate
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import as_save
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -968,14 +969,17 @@ class SleeptrackerController(BedController):
             ),
         ]
         if self.supports_memory_programming:
-            for name in ("zero_g", "anti_snore", "tv_pc"):
+            saves = {"zero_g": "zero gravity", "anti_snore": "anti-snore", "tv_pc": "TV position"}
+            for name, label in saves.items():
                 if name != "tv_pc" or self.supports_preset_tv:
                     buttons.append(
-                        _request_button(
-                            "sleeptracker_save_" + name,
-                            "Save " + name,
-                            p.Request("preset", preset=name, save=True),
-                            CARD_PRESET_SAVE,
+                        as_save(
+                            _request_button(
+                                "sleeptracker_save_" + name,
+                                "Save " + label,
+                                p.Request("preset", preset=name, save=True),
+                                CARD_PRESET_SAVE,
+                            )
                         )
                     )
         if self._restricted:

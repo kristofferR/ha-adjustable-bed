@@ -16,7 +16,6 @@ from ...card import (
     CARD_HIDDEN,
     CARD_LIGHT_TOGGLE,
     CARD_MASSAGE,
-    CARD_PRESET_SAVE,
     CardPlacement,
     CardRole,
     CardSection,
@@ -30,6 +29,7 @@ from ...profiles.bedgear import BedgearProfile, Control
 from ...profiles.l2motion import L2MotionProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import save_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -177,15 +177,12 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
         if not self.is_l2motion or self.profile.panel != "PanelE":
             return ()
         return (
-            ControllerButtonSpec(
+            save_button(
                 "l2motion_save_snore",
                 "Save anti-snore position",
                 lambda ctrl: require_controller(ctrl, BedgearController).configure(
                     Request(operation="save_snore")
                 ),
-                translation_key="l2motion_save_snore",
-                requires_confirmation=True,
-                card=CARD_PRESET_SAVE,
             ),
         )
 

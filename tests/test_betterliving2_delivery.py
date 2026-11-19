@@ -208,24 +208,40 @@ async def test_fresh_cleanup_frames_do_not_deliver_the_cancelled_command(hass):
         await child.async_shutdown()
 
 
-@pytest.mark.parametrize("after_frames", (1, 3))
+@pytest.mark.parametrize(
+    "wire,after_frames,notification",
+    (
+        ("p3", 1, None),
+        ("p3", 3, None),
+        pytest.param("p2", 1, "ed8003", id="notification_p2"),
+        pytest.param("p3", 1, "a50c", id="notification_p3"),
+    ),
+)
 async def test_partial_alarm_clears_shown_selection_and_retains_prior_preferences(
-    hass, after_frames
+    hass, wire, after_frames, notification
 ):
-    child, controller, client, _ = await bed(hass, "p3")
+    child, controller, client, _ = await bed(hass, wire)
     results = []
+    contexts = []
+    alarm_frames = []
     prior = controller._view = controller._saved = runtime.AlarmView(hour=6, minute=15)
 
     async def sent(*_args, **_kwargs):
         context = current_command_context()
         assert context is not None
         if client.write_gatt_char.await_count == after_frames:
-            context.cancel_event.set()
+            if notification is None:
+                context.cancel_event.set()
+            else:
+                contexts.append(context)
+                sender, callback = client.start_notify.call_args.args
+                callback(sender, bytearray.fromhex(notification))
 
     async def operation(_controller):
         plan = controller.prepare_alarm(
             enabled=True, hour=7, minute=30, weekdays=frozenset({1}), action="memory_1"
         )
+        alarm_frames.append(plan.frame)
         with delivered(results.append):
             await controller.set_alarm(plan)
 
@@ -235,7 +251,14 @@ async def test_partial_alarm_clears_shown_selection_and_retains_prior_preference
             client.write_gatt_char.reset_mock()
             client.write_gatt_char.side_effect = sent
             await child.async_execute_controller_command(operation)
-        assert len(writes(client)) == after_frames
+        if notification is None:
+            assert len(writes(client)) == after_frames
+        else:
+            assert writes(client).count(alarm_frames[0]) == 1
+            assert writes(client).count(runtime.app.command(wire.upper(), 0)) == 1
+            assert len(contexts) == 1
+            assert not contexts[0].cancel_event.is_set()
+            assert contexts[0].frames_skipped == 1
         if after_frames == 1:
             assert results == [Delivery.PARTIAL]
             assert controller._view.hour is None and controller._view.minute is None

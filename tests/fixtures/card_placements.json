@@ -210,22 +210,6 @@
  "button:adjustable_lumbar_massage_on": {
   "card_section": "massage"
  },
- "button:adjustable_lumbar_save_anti_snore": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:adjustable_lumbar_save_incline": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:adjustable_lumbar_save_lounge": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:adjustable_lumbar_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
- },
  "button:adjustable_lumbar_wave_1": {
   "card_section": "massage"
  },
@@ -234,9 +218,6 @@
  },
  "button:adjustable_lumbar_wave_3": {
   "card_section": "massage"
- },
- "button:adjustamattress_demonstration": {
-  "card_section": "utility"
  },
  "button:adjustamattress_foot_strength_add": {
   "card_section": "massage"
@@ -250,10 +231,14 @@
   "card_motor": "adjustamattress_lift"
  },
  "button:adjustamattress_lift_foot": {
-  "card_section": "utility"
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "lift_foot"
  },
  "button:adjustamattress_lift_head": {
-  "card_section": "utility"
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "lift_head"
  },
  "button:adjustamattress_lift_up": {
   "card_section": "motors",
@@ -549,12 +534,6 @@
   "card_role": "up",
   "card_motor": "cheerssleep_all"
  },
- "button:cheerssleep_combined_down": {
-  "card_section": "utility"
- },
- "button:cheerssleep_combined_up": {
-  "card_section": "utility"
- },
  "button:cheerssleep_lift_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -632,18 +611,6 @@
  },
  "button:comfort_enhancements_quiet_sleep": {
   "card_section": "presets"
- },
- "button:comfortbase_save_anti_snore": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:comfortbase_save_flat": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:comfortbase_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:comfortfurniture_preset_stop": {
   "card_section": "presets"
@@ -817,9 +784,6 @@
  "button:eshine_massage_head_strength": {
   "card_section": "massage"
  },
- "button:eshine_okin_flat_zero_g": {
-  "card_section": "utility"
- },
  "button:eshine_okin_massage_foot_strength": {
   "card_section": "massage"
  },
@@ -837,14 +801,6 @@
  },
  "button:eshine_okin_sync_clock": {
   "card_section": "utility"
- },
- "button:eshine_save_anti_snore": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:eshine_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:estimate_remote_used": {
   "card_section": "saved_positions"
@@ -967,12 +923,6 @@
  "button:innova_massage_timer_hold": {
   "card_section": "massage"
  },
- "button:isleep_all_down": {
-  "card_section": "utility"
- },
- "button:isleep_all_up": {
-  "card_section": "utility"
- },
  "button:isleep_enroll": {
   "card_section": "hidden"
  },
@@ -1042,10 +992,6 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "keeson_legs"
- },
- "button:l2motion_save_snore": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:legs_down": {
   "card_section": "motors",
@@ -1142,10 +1088,6 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "main_motor"
- },
- "button:malouf_oz_save_memory_2": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:massage_all_down": {
   "card_section": "massage"
@@ -1496,15 +1438,6 @@
  "button:okin_app_home": {
   "card_section": "presets"
  },
- "button:onlysnore_demo_1": {
-  "card_section": "utility"
- },
- "button:onlysnore_demo_3": {
-  "card_section": "utility"
- },
- "button:onlysnore_demo_6": {
-  "card_section": "utility"
- },
  "button:onlysnore_massage_foot_strength_next": {
   "card_section": "massage"
  },
@@ -1518,35 +1451,8 @@
  "button:onlysnore_refresh": {
   "card_section": "utility"
  },
- "button:onlysnore_save_anti_snore_preset": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:onlysnore_save_reading": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:onlysnore_save_tv": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:onlysnore_save_zero_gravity": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:onlysnore_stop_intervention": {
-  "card_section": "utility"
- },
  "button:ore_comfort_massage_start": {
   "card_section": "massage"
- },
- "button:ore_comfort_program_flat": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:ore_comfort_program_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:ore_ultramatic_alarm_refresh": {
   "card_section": "utility"
@@ -1851,40 +1757,11 @@
  "button:richmat_mh_toggle_smart_set_lock": {
   "card_section": "utility"
  },
- "button:rize_all_down": {
-  "card_section": "utility"
- },
- "button:rize_all_up": {
-  "card_section": "utility"
- },
  "button:rize_enroll": {
   "card_section": "hidden"
  },
  "button:rize_home_query": {
   "card_section": "massage"
- },
- "button:rize_home_reset_memories": {
-  "card_section": "utility"
- },
- "button:rize_home_save_anti_snore": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:rize_home_save_leisure": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:rize_home_save_memory": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:rize_home_save_reading": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:rize_home_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:rize_home_timer": {
   "card_section": "massage"
@@ -1999,18 +1876,6 @@
  "button:sleeptracker_refresh": {
   "card_section": "utility"
  },
- "button:sleeptracker_save_anti_snore": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:sleeptracker_save_tv_pc": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:sleeptracker_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
- },
  "button:sleeptracker_wave_start": {
   "card_section": "massage"
  },
@@ -2054,12 +1919,6 @@
   "card_section": "massage"
  },
  "button:sleepys_app_massage_mode_3": {
-  "card_section": "massage"
- },
- "button:sleepys_app_massage_off": {
-  "card_section": "massage"
- },
- "button:sleepys_app_massage_on": {
   "card_section": "massage"
  },
  "button:sleepys_app_massage_query": {
@@ -2110,18 +1969,6 @@
  },
  "button:sleepys_app_rgb_action": {
   "card_section": "lighting"
- },
- "button:sleepys_app_save_lounge": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:sleepys_app_save_tv": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:sleepys_app_save_zero_gravity": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:smart_comfort_home": {
   "card_section": "presets"
@@ -2204,22 +2051,6 @@
  },
  "button:smart_sleep_refresh": {
   "card_section": "utility"
- },
- "button:smart_sleep_save_anti_snore": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:smart_sleep_save_read": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:smart_sleep_save_tv": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:smart_sleep_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:solace_music_off": {
   "card_section": "utility"
@@ -2339,18 +2170,6 @@
  "button:starcode_abm5_4_reset": {
   "card_section": "utility"
  },
- "button:starcode_abm5_4_save_lounge": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:starcode_abm5_4_save_tv": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:starcode_abm5_4_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
- },
  "button:starcode_abm5_4_union_down": {
   "card_section": "utility"
  },
@@ -2433,35 +2252,11 @@
  "button:starcode_m1x12_reset": {
   "card_section": "utility"
  },
- "button:starcode_m1x12_save_lounge": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:starcode_m1x12_save_tv": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:starcode_m1x12_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
- },
  "button:starcode_query": {
   "card_section": "utility"
  },
  "button:starcode_reset": {
   "card_section": "utility"
- },
- "button:starcode_save_lounge": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:starcode_save_tv": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:starcode_save_zero_g": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:starcode_union_down": {
   "card_section": "motors",
@@ -2678,14 +2473,6 @@
   "card_section": "presets",
   "card_role": "save"
  },
- "button:ultramatic_save_anti": {
-  "card_section": "presets",
-  "card_role": "save"
- },
- "button:ultramatic_save_zg": {
-  "card_section": "presets",
-  "card_role": "save"
- },
  "button:ultramatic_timerswitch": {
   "card_section": "massage"
  },
@@ -2705,12 +2492,6 @@
   "card_role": "up",
   "card_motor": "upper_section"
  },
- "button:vibradorm_app_all_down": {
-  "card_section": "utility"
- },
- "button:vibradorm_app_all_up": {
-  "card_section": "utility"
- },
  "button:vibradorm_app_floor_timer_toggle": {
   "card_section": "lighting",
   "card_role": "timer_toggle"
@@ -2726,12 +2507,6 @@
   "card_role": "mood_toggle"
  },
  "button:vibradorm_app_refresh_info": {
-  "card_section": "utility"
- },
- "button:vmatbasic_all_down": {
-  "card_section": "utility"
- },
- "button:vmatbasic_all_up": {
   "card_section": "utility"
  },
  "button:vmatbasic_floor_hold": {
@@ -3411,6 +3186,9 @@
  "number:massage_intensity": {
   "card_section": "massage"
  },
+ "number:massage_left_intensity": {
+  "card_section": "massage"
+ },
  "number:massage_right_intensity": {
   "card_section": "massage"
  },
@@ -3675,12 +3453,6 @@
  },
  "select:foundation_preset_right": {
   "card_section": "climate"
- },
- "select:goodvibe_light_duration": {
-  "card_section": "utility"
- },
- "select:goodvibe_massage_timer": {
-  "card_section": "utility"
  },
  "select:goodvibe_side": {
   "card_section": "motors"
@@ -4899,6 +4671,9 @@
  "switch:live_sleep_data": {
   "card_section": "utility"
  },
+ "switch:massage": {
+  "card_section": "massage"
+ },
  "switch:motion_bed_night_light_enabled": {
   "card_section": "lighting"
  },
@@ -5012,6 +4787,9 @@
  },
  "switch:synchro_mode": {
   "card_section": "motors"
+ },
+ "switch:synchronization": {
+  "card_section": "utility"
  },
  "switch:under_bed_lights": {
   "card_section": "lighting"

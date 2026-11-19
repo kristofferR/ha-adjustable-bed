@@ -103,6 +103,11 @@ class MlilyRemoteController(CasperBaseController):
         return False
 
     @property
+    def massage_timer_actions(self) -> dict[int, str]:
+        # PowerCool's timer actions are its fans' 2, 3 and 5 hour timers.
+        return {} if PROFILES[self.model].cooling else super().massage_timer_actions
+
+    @property
     def auto_stops_on_idle(self) -> bool:
         return False
 
@@ -315,7 +320,7 @@ class MlilyRemoteController(CasperBaseController):
         specs: list[ControllerButtonSpec | None] = []
         for name, (_, long) in self.actions.items():
             label = (COOLING_LABELS if cooling else LABELS).get(name)
-            if label is None:
+            if label is None or name in self.massage_timer_actions.values():
                 continue
             kind = (
                 (Kind.CLIMATE if cooling else Kind.MASSAGE)

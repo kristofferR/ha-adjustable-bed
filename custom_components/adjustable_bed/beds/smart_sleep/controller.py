@@ -14,13 +14,14 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...app_session import app_session
-from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
 from ...codec import smart_sleep as codec
 from ...const import CONF_PRODUCT_TYPE
 from ...profiles import smart_sleep as app
 from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import save_button, save_name
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -661,16 +662,12 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
         )
         if self.profile.key == "p2":
             specs.extend(
-                ControllerButtonSpec(
+                save_button(
                     f"smart_sleep_save_{name}",
-                    f"Save {name}",
+                    save_name(name),
                     lambda ctrl, name=name: require_controller(ctrl, SmartSleepController).save(
                         name
                     ),
-                    translation_key=f"smart_sleep_save_{name}",
-                    # Saving overwrites the stored preset, so the card asks first.
-                    requires_confirmation=True,
-                    card=CARD_PRESET_SAVE,
                 )
                 for name in codec.PRESETS
                 if name not in ("flat", "memory_1", "memory_2")
