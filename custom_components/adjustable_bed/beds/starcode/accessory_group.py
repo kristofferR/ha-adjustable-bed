@@ -376,12 +376,15 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             hass, main.entry.entry_id, main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, [])
         )
         return
-    ids = validate_lift_entries(
-        hass,
-        main.entry.data,
-        main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-        main_entry_id=main.entry.entry_id,
-    )
+    try:
+        ids = validate_lift_entries(
+            hass,
+            main.entry.data,
+            main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
+            main_entry_id=main.entry.entry_id,
+        )
+    except ValueError as error:  # A lift was deleted or set up as another bed.
+        raise invalid("lifts_not_configured") from error
     if not ids:
         raise invalid("lifts_not_configured")
     lifts = tuple(_resolve(hass, entry_id) for entry_id in ids)
@@ -496,13 +499,13 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
 
 async def handle_group(call: ServiceCall) -> None:
     _, entry = async_get_device_and_config_entry(call.hass, DOMAIN, call.data[CONF_DEVICE_ID])
+    if entry.data.get(CONF_BED_TYPE) not in STARCODE_GROUP_BED_TYPES:
+        raise invalid("action_for_other_beds", beds="StarCode beds")
     if call.data["action"] == "stop":
         await _stop_configured_group(
             call.hass, entry.entry_id, entry.data.get(CONF_STARCODE_LIFT_ENTRIES, [])
         )
         return
-    if entry.data.get(CONF_BED_TYPE) not in STARCODE_GROUP_BED_TYPES:
-        raise invalid("action_for_other_beds", beds="StarCode beds")
     await run_group(_resolve(call.hass, entry.entry_id), call.data["action"])
 
 

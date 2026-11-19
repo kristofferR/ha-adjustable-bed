@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.starcode.accessory_group import (
@@ -37,6 +38,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
+from tests.error_helpers import raises_key
 
 
 def target(hass: HomeAssistant, index: int, profile: str) -> AdjustableBedCoordinator:
@@ -240,6 +242,10 @@ async def test_unrelated_and_unready_rejected_before_movement(hass: HomeAssistan
     )
     with pytest.raises(ValueError, match="bedding profile"):
         validate_lift_entries(hass, main.entry.data, [lifts[0].entry.entry_id])
+    # The action says to set up the lifts again, without writing anything.
+    with raises_key("lifts_not_configured", ServiceValidationError):
+        await run_group(main, "up")
+    assert all(t.controller.write_command.await_count == 0 for t in (main, *lifts))
 
 
 async def test_ready_identity_does_not_substitute_transport(hass: HomeAssistant) -> None:
@@ -466,11 +472,8 @@ async def test_delayed_flat_aborts_after_any_retained_session_changes(
 
 
 def test_a_configured_lift_that_is_missing_or_another_bed_says_which(hass: HomeAssistant) -> None:
-    from homeassistant.exceptions import ServiceValidationError
-
     from custom_components.adjustable_bed.beds.starcode import accessory_group
     from custom_components.adjustable_bed.const import BED_TYPE_LINAK, DOMAIN
-    from tests.error_helpers import raises_key
 
     other = MagicMock(spec=AdjustableBedCoordinator)
     other.bed_type = BED_TYPE_LINAK
@@ -482,18 +485,16 @@ def test_a_configured_lift_that_is_missing_or_another_bed_says_which(hass: HomeA
 
 
 async def test_lifts_action_on_another_bed_names_the_beds_it_is_for(hass: HomeAssistant) -> None:
-    from homeassistant.exceptions import ServiceValidationError
-
     from custom_components.adjustable_bed.beds.starcode import accessory_group
     from custom_components.adjustable_bed.const import BED_TYPE_LINAK
-    from tests.error_helpers import raises_key
 
     entry = MockConfigEntry(domain="adjustable_bed", data={"bed_type": BED_TYPE_LINAK})
-    call = MagicMock(hass=hass, data={"device_id": "linak", "action": "up"})
-    with (
-        patch.object(
-            accessory_group, "async_get_device_and_config_entry", return_value=(None, entry)
-        ),
-        raises_key("action_for_other_beds", ServiceValidationError),
-    ):
-        await accessory_group.handle_group(call)
+    for action in ("up", "stop"):
+        call = MagicMock(hass=hass, data={"device_id": "linak", "action": action})
+        with (
+            patch.object(
+                accessory_group, "async_get_device_and_config_entry", return_value=(None, entry)
+            ),
+            raises_key("action_for_other_beds", ServiceValidationError),
+        ):
+            await accessory_group.handle_group(call)
