@@ -390,6 +390,10 @@ Other action changes:
 
 ### If you ran a v5 beta
 
+Saatva app support is new in v5: select its Adjustable Base or Adjustable Base
+Plus model and installation during setup. Existing 4.4.2 BedTech and Richmat
+entries retain their own profiles. See [Saatva](beds/richmat.md#saatva).
+
 These actions existed only in v5 betas and are gone. Older field names are not
 accepted.
 

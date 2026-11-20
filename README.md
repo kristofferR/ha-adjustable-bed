@@ -102,6 +102,7 @@ bed has been tested on real hardware.
 | [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | [BedJet PowerLayer adjustable frame](docs/beds/bedjet-powerlayer.md) | BedJet (the frame, not the BedJet climate unit) |
 | [Bed Tech](docs/beds/richmat.md#bed-tech) | Bed Tech app and separate local intervention receiver, not yet tested | BedTech |
 | [BedTech](docs/beds/richmat.md#bedtech) | [BedTech app](docs/beds/richmat.md#bedtech), [Legacy BedTech controls](docs/beds/richmat.md#bedtech) | BedTech |
+| [Saatva](docs/beds/richmat.md#saatva) | Saatva app, Adjustable Base and Adjustable Base Plus | Saatva |
 | [BetterLiving2](docs/beds/keeson.md#betterliving2) | [BetterLiving / BetterLiving2 app](docs/beds/keeson.md#betterliving2) | BetterLiving |
 | [Casper Base](docs/beds/casper-base.md) | [Casper Base app](docs/beds/casper-base.md), [Casper Base sleep sensor, MM or SXB](docs/beds/casper-base.md#separate-sleep-sensors-and-remote-finder), [Casper Base remote finder (RCRM handset)](docs/beds/casper-base.md#remote-finder) | Casper |
 | [CheersSleep](docs/beds/cheerssleep.md) | CheersSleep | CheersSleep |

@@ -48,6 +48,7 @@ from custom_components.adjustable_bed.profiles import majestichome as majestic
 from custom_components.adjustable_bed.profiles import mlily_remote as remote162
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
+from custom_components.adjustable_bed.profiles import saatva
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
@@ -77,6 +78,7 @@ _RICHMAT_NAMES = {
     "richmat_prefix55": "Richmat Prefix55",
     "richmat_prefixaa": "Richmat PrefixAA",
     "bedtech": "BedTech legacy",
+    **{p.key: f"Saatva {saatva.CHOICES[key]}" for key, p in saatva.PROFILES.items()},
     **{
         profile.key: f"BedTech app {model.upper()}"
         for model, profile in richmat_profiles.BEDTECH_APP_PROFILES.items()
@@ -113,6 +115,7 @@ _RICHMAT_NAMES = {
 _FIXED_ROUTES = (
     *richmat_profiles.RICHMAT.values(),
     richmat_profiles.BEDTECH,
+    *saatva.PROFILES.values(),
     *richmat_profiles.BEDTECH_APP_PROFILES.values(),
     richmat_profiles.LEGGETT_WILINKE,
 )
@@ -181,6 +184,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
         "one": (_const.BED_TYPE_SONICSLEEP,),
+        **{p.key: ("saatva",) for p in saatva.PROFILES.values()},
         "luniosmart": (_const.BED_TYPE_LUNIOSMART,),
         **{key: (profile.app,) for key, profile in legacy_profiles().items()},
         **{
@@ -1190,6 +1194,31 @@ def render_lp_legacy_notifications() -> str:
     )
 
 
+def render_saatva() -> str:
+    rows = []
+    for key, profile in saatva.PROFILES.items():
+        rows.append((saatva.CHOICES[key], f"`{key}`", saatva.LAYOUTS[key],
+                     "yes" if "massage_toggle" in (profile.codes or {}) else "no"))
+    commands: dict[richmat_profiles.Button, int] = {button: code for p in saatva.PROFILES.values() for button, code in (p.codes or {}).items()}
+    frames = [(_BUTTON_LABELS[button], _hex(codec.command(code)),
+               _hex(codec.command(code, 1)) if code in saatva.HEAD_CODES else "shared bank 0",
+               f"{saatva.REPEAT_MS} ms until release" if code in saatva.MOTORS else "once")
+              for button, code in commands.items()]
+    frames.extend((f"Memory {slot} {action}", _hex(codec.command(code)), "shared bank 0", "once")
+                  for slot, pair in enumerate(next(iter(saatva.PROFILES.values())).memory, 1)
+                  for action, code in zip(("recall", "save"), pair, strict=True))
+    return _block(
+        _table(("Model / installation", "Profile", "Layout", "Massage and light"), rows),
+        _table(("Discovery / timing", "Value"), [
+            ("Advertised UUID candidates", ", ".join(f"`{u}`" for u in saatva.SCAN_UUIDS)),
+            ("Write characteristic", f"`{saatva.WRITE_UUID}`"),
+            ("Refresh", f"{saatva.REPEAT_MS} ms; no release frame"),
+            ("Setup test", f"First head, {saatva.TEST_SECONDS} seconds"),
+        ]),
+        _table(("Control", "Frame", "Split-top right head", "Timing"), frames),
+    )
+
+
 def render_bedtech_models() -> str:
     def cells(model: str, profile: richmat_profiles.RichmatProfile) -> tuple[str, ...]:
         codes: Mapping[richmat_profiles.Button, int] = profile.codes or {}
@@ -1406,6 +1435,7 @@ def render_rise_commands() -> str:
 BLOCKS: list[Block] = [
     (GUIDE, "luniosmart", render_luniosmart),
     (GUIDE, "sonicsleep", render_sonicsleep),
+    (GUIDE, "saatva", render_saatva),
     (GUIDE, "bedtech-models", render_bedtech_models),
     (GUIDE, "bedtech-app-commands", render_bedtech_commands),
     (GUIDE, "luuna", render_luuna),

@@ -43,7 +43,7 @@ Brands using Richmat actuators:
 - Forty Winks ActivFlex
 - Superior
 - Richmat HJA5 series
-- Saatva
+- [Saatva](#saatva)
 - Lucid L300
 - Classic Brands
 - Eshine (E6000)
@@ -103,6 +103,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [Luuna +](https://play.google.com/store/apps/details?id=com.richmat.luuna) 2.0.1 (20102) | `com.richmat.luuna` | [Luuna +](#luuna-) |
 | ✅ | [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501) | `com.richmat.hushbase` | [Hush Base](#hush-base); setup, sleep sensors and remote finder in its [own guide](hush-base.md) |
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25 | `com.richmat.lp2` | [L&P Adjustable Base](#lp-adjustable-base) |
+| ✅ | [Saatva](https://play.google.com/store/apps/details?id=com.saatva) 1.1.0 | `com.saatva` | [Saatva](#saatva) |
 
 ## Features
 
@@ -176,6 +177,11 @@ sends STOP.
 | Richmat Prefix55 | `richmat` | prefix55 | `55 01 00 6E C4` | 7 × 150 ms | once | 5 slots | renewable lease |
 | Richmat PrefixAA | `richmat` | prefixaa | `AA 01 00 6E 19` | 7 × 150 ms | once | 5 slots | renewable lease |
 | BedTech legacy | `bedtech` | wilinke | `6E 01 00 5E CD` | 10 × 100 ms | once | 2 slots | no |
+| Saatva Adjustable Base: standard | `saatva` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| Saatva Adjustable Base: split (two receivers) | `saatva` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| Saatva Adjustable Base Plus: standard | `saatva` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| Saatva Adjustable Base Plus: split (two receivers) | `saatva` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| Saatva Adjustable Base Plus: split top (one receiver) | `saatva` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
 | BedTech app BT2000 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
 | BedTech app BT2500 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
 | BedTech app BT3000 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
@@ -308,7 +314,7 @@ and timing.
 |---|---|---|---|---|---|
 | N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, Classic L&P Adjustable Base |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
@@ -7767,6 +7773,112 @@ Based on L&P Adjustable Base 2.3.25 (`com.richmat.lp2`). Hardware is not yet
 tested. Wi-Fi, accounts and mesh network administration are outside the
 integration.
 
+
+### Saatva
+
+**App:** [Saatva](https://play.google.com/store/apps/details?id=com.saatva) 1.1.0, `com.saatva`
+
+**Status:** Not yet tested on hardware.
+
+#### Setup
+
+Choose **Saatva app**, then the model and installation. Adjustable Base supports
+standard or split installations. Adjustable Base Plus also supports split top.
+A split installation uses two receivers, which can be combined in Home
+Assistant. Split top uses one receiver with separate Left and Right head controls
+and a shared foot motor. Enable separate sides in the bed's options.
+Split-top profiles cannot be combined as two separate receivers.
+
+The advertised UUIDs below offer Saatva as an app choice alongside compatible
+receivers. They do not identify the app or model. Setup saves the selected
+profile and layout; the Bluetooth name does not select capabilities. Home
+Assistant uses the receiver's saved Bluetooth address for reconnects.
+
+#### Controls
+
+All models have back and legs movement, Flat, Zero G, Anti-snore and two memory
+slots. Plus models add TV, head and foot massage increase/decrease, massage toggle,
+mode cycle, 10/20 minute timers and a light toggle button. No estimated on/off light entity is offered. Timer selection shows the last
+value sent, not a measured countdown. Relative massage and light actions do not
+invent measured state or absolute levels.
+
+Split-top Right changes only head movement and head massage to bank one.
+Selecting the whole bed sends both head frames; shared foot, presets, memory,
+timers and light commands are sent once in bank zero. Two-receiver split beds
+use the shared paired-bed controls and side targeting. Use a child for independent
+head movement and the parent for synchronized foot movement, or the parent for
+both heads and feet. These targets provide the app's independent, feet-sync
+and all-sync behavior without changing a receiver setting.
+
+<!-- generated:saatva -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Model / installation | Profile | Layout | Massage and light |
+|---|---|---|---|
+| Adjustable Base: standard | `bt2000_standard` | standard | no |
+| Adjustable Base: split (two receivers) | `bt2000_split` | split | no |
+| Adjustable Base Plus: standard | `bt3000_standard` | standard | yes |
+| Adjustable Base Plus: split (two receivers) | `bt3000_split` | split | yes |
+| Adjustable Base Plus: split top (one receiver) | `bt3000fh_split_top` | splitTop | yes |
+
+| Discovery / timing | Value |
+|---|---|
+| Advertised UUID candidates | `0000fee9-0000-1000-8000-00805f9b34fb`, `d44bc439-abfd-45a2-b575-925416129600` |
+| Write characteristic | `d44bc439-abfd-45a2-b575-925416129600` |
+| Refresh | 100 ms; no release frame |
+| Setup test | First head, 2 seconds |
+
+| Control | Frame | Split-top right head | Timing |
+|---|---|---|---|
+| Head up | `6E 01 00 24 93` | `6E 01 01 24 94` | 100 ms until release |
+| Head down | `6E 01 00 25 94` | `6E 01 01 25 95` | 100 ms until release |
+| Feet up | `6E 01 00 26 95` | shared bank 0 | 100 ms until release |
+| Feet down | `6E 01 00 27 96` | shared bank 0 | 100 ms until release |
+| Flat | `6E 01 00 31 A0` | shared bank 0 | once |
+| Zero-G | `6E 01 00 45 B4` | shared bank 0 | once |
+| Anti-Snore | `6E 01 00 46 B5` | shared bank 0 | once |
+| TV | `6E 01 00 58 C7` | shared bank 0 | once |
+| Head massage up | `6E 01 00 4C BB` | `6E 01 01 4C BC` | once |
+| Head massage down | `6E 01 00 4D BC` | `6E 01 01 4D BD` | once |
+| Foot massage up | `6E 01 00 4E BD` | shared bank 0 | once |
+| Foot massage down | `6E 01 00 4F BE` | shared bank 0 | once |
+| Massage toggle | `6E 01 00 5D CC` | shared bank 0 | once |
+| Massage mode step | `6E 01 00 48 B7` | shared bank 0 | once |
+| Massage timer 10 min | `6E 01 00 5F CE` | shared bank 0 | once |
+| Massage timer 20 min | `6E 01 00 63 D2` | shared bank 0 | once |
+| Light toggle | `6E 01 00 3C AB` | shared bank 0 | once |
+| Memory 1 recall | `6E 01 00 2E 9D` | shared bank 0 | once |
+| Memory 1 save | `6E 01 00 2B 9A` | shared bank 0 | once |
+| Memory 2 recall | `6E 01 00 2F 9E` | shared bank 0 | once |
+| Memory 2 save | `6E 01 00 2C 9B` | shared bank 0 | once |
+<!-- /generated -->
+
+#### Timing
+
+Movement refresh starts immediately. Release, cancellation or the end of a
+renewable hold ends the refresh; there is no STOP packet. This does not stop a
+one-shot preset that is already running. Memory saves are explicit actions in
+Home Assistant and send one write. The phone app uses a long press for saving;
+its unused duration metadata is not a bed hold requirement. The optional
+**Test head movement (2 seconds)** button requires confirmation and tests the
+first head only. It is disabled by default.
+
+#### Notifications
+
+No application handshake, subscription, status query or position parser is
+used. Motor positions, light state and massage levels are not reported.
+
+#### Services
+
+Use `timed_move` for back/legs movement and `stop_all` to end active refresh.
+Use `goto_preset` and `save_preset` for memory slots 1 and 2. Other controls are
+native buttons and the **Massage: Timer** select. See [Actions and
+Automations](../SERVICES.md#movement-and-memory).
+
+#### Evidence
+
+Saatva 1.1.0 defines the model-specific controls and split-top head routing.
+Physical behavior and firmware compatibility need real-user testing.
 
 ## Notes
 

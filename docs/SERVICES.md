@@ -168,6 +168,13 @@ M1X12 uses `m1x12_part_1`, `m1x12_part_2`, `m1x12_part_4`,
 `elevate_actuator_1`, `elevate_actuator_2`, and `elevate_both`.
 Each target must be declared by the selected bed's controller.
 
+[Saatva](beds/richmat.md#saatva) supports `goto_preset` and `save_preset` slots
+1 and 2, `timed_move` for `back` and `legs`, and `stop_all` to end held movement.
+On split top, head actions follow the selected side; the foot motor and memory
+slots are shared. STOP ends refresh and does not cancel an already-running
+one-shot preset. Plus massage and light controls are buttons, with a 10/20 minute
+**Massage: Timer** select showing the last value sent.
+
 The maximum memory slot depends on the bed; accepting numbers up to 8 does not
 create extra hardware memory. Named presets such as Flat or Zero G are exposed
 as buttons where supported. `save_preset` changes memory stored on the bed.
