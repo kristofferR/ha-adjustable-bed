@@ -12,7 +12,7 @@ from math import ceil
 from time import monotonic
 from typing import TYPE_CHECKING, Final
 
-from homeassistant.const import CONF_ADDRESS
+from homeassistant.const import CONF_ADDRESS, EntityCategory
 from homeassistant.exceptions import HomeAssistantError
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -802,6 +802,7 @@ class BedSmartController(Lp2Controller):
                         aroma_time,
                         "h" if index == 2 else "min",
                         entity_registry_enabled_default=False,
+                        entity_category=EntityCategory.CONFIG,
                     )
                 )
         return tuple(specs)

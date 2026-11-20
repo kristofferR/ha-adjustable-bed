@@ -615,3 +615,64 @@ async def test_zone_strength_actions_use_intensity_controls(code: str, paired: b
         names = [spec.name for spec in ctrl.controller_button_specs]
         assert any("Massage Head Instensity Strengthen" in name for name in names)
         assert any("Massage Foot Instensity Strengthen" in name for name in names)
+
+
+def _products() -> list[str]:
+    from custom_components.adjustable_bed.beds.rmcontrol.profiles import RICHMAT_PRODUCT_CODES
+
+    codes = []
+    for code in RICHMAT_PRODUCT_CODES:
+        try:
+            controller(code)
+        except ValueError:
+            continue
+        codes.append(code)
+    return codes
+
+
+@pytest.mark.parametrize("nordic", [False, True])
+async def test_massage_timer_buttons_are_one_select_sending_the_same_frames(nordic: bool) -> None:
+    """A timer button the select replaces sent exactly the select's frames."""
+    checked = 0
+    for code in _products():
+        ctrl = controller(code, nordic=nordic)
+        timers = {
+            a
+            for a in ctrl.product_profile.actions
+            if "MinuteTimer" in a.action and a.action.startswith("deviceFunctionItemMassage")
+        }
+        keys = {s.key for s in ctrl.controller_button_specs}
+        if not ctrl.supports_massage_timer:
+            # A single duration keeps its button.
+            assert len({a.action for a in timers}) < 2 or not any(
+                ctrl._lookup(a.action.removeprefix("deviceFunctionItem")) for a in timers
+            )
+            continue
+        checked += 1
+        assert not ctrl.massage_timer_can_turn_off and ctrl.auto_enable_massage
+        removed = 0
+        for action in timers:
+            key = (
+                f"rmcontrol_{action.getter.removeprefix('get _ ')}_"
+                f"{action.action.removeprefix('deviceFunction')}_{action.occurrence}_short"
+            ).lower()
+            if key in keys:
+                continue
+            removed += 1
+            minutes = int(action.action.removeprefix("deviceFunctionItemMassage")[:2])
+            sent = []
+            for run in (
+                lambda c, a=action: c.async_execute_product_action(
+                    a.action, getter=a.getter, occurrence=a.occurrence
+                ),
+                lambda c, m=minutes: c.set_massage_timer(m),
+            ):
+                fresh = controller(code, nordic=nordic)
+                fresh.write_command = AsyncMock()
+                await run(fresh)
+                sent.append([call.args for call in fresh.write_command.call_args_list])
+            assert sent[0] == sent[1] != []
+        assert removed >= len(ctrl.massage_timer_options)
+        with pytest.raises(ValueError):
+            await ctrl.set_massage_timer(15)
+    assert checked

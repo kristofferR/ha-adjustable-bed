@@ -22,8 +22,14 @@ from ...codec import richmat as codec
 from ...const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
 from ...controller_state import StateKey
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ...state_keys import LIGHT_TIMER_OPTION, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ...state_keys import (
+    LIGHT_TIMER_OPTION,
+    MASSAGE_TIMER_MINUTES,
+    UNDER_BED_LIGHTS_ON,
+    UNDER_BED_LIGHTS_RGB,
+)
 from ..base import BedController
+from ..catalog_buttons import massage_timer_minutes
 from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
@@ -373,8 +379,10 @@ class RmcontrolController(RichmatController):
         """Every concrete transport control, retaining ambiguous UI contexts."""
         specs: list[ProductButtonSpec] = []
         seen: set[tuple[str, str, tuple[int, int, int, str, str]]] = set()
+        # The massage timer select sends these signatures; other contexts keep a button.
+        timers = {(a.action, a.command_signature) for a in self._massage_timer_actions.values()}
         for action in self.product_profile.actions:
-            if not _is_transport_action(action):
+            if not _is_transport_action(action) or (action.action, action.command_signature) in timers:
                 continue
             identity = (action.getter, action.action, action.command_signature)
             if identity in seen:
@@ -539,6 +547,46 @@ class RmcontrolController(RichmatController):
     @property
     def auto_enable_massage(self) -> bool:
         return self.supports_massage
+
+    @property
+    def _massage_timer_actions(self) -> dict[int, RichmatAction]:
+        """The main-page fixed-duration massage timers, by their minutes.
+
+        A product with a single duration keeps its button.
+        """
+        timers: dict[int, RichmatAction] = {}
+        for item in self.product_profile.actions:
+            minutes = massage_timer_minutes(item.action)
+            if minutes is None or minutes in timers:
+                continue
+            action = self._lookup(item.action.removeprefix(_PREFIX))
+            if action is not None and _is_transport_action(action) and action.operate == "shortPress":
+                timers[minutes] = action
+        return timers if len(timers) > 1 else {}
+
+    # Each timer control sets its duration, so they are one timer select.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_actions)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self._massage_timer_actions)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No timer control turns the timer off.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        action = self._massage_timer_actions.get(minutes)
+        if action is None:
+            raise ValueError("Choose a massage timer this product offers")
+        # The bed reports no timer.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.async_execute_product_action(
+                action.action, getter=action.getter, occurrence=action.occurrence
+            )
 
     @property
     def supports_massage_toggle_control(self) -> bool:

@@ -100,6 +100,7 @@ RETYPES: Final[tuple[Retype, ...]] = (
             "comfortfurniture_massage_timer",
             "sleepys_app_massage_timer_code",
             "goodvibe_massage_timer",
+            "jerome_massage_timer",
         )
     ),
     # Bed-specific light durations that became the shared light timer.

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from functools import partial
@@ -45,6 +46,7 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
+    ControllerSelectSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
 )
@@ -74,6 +76,11 @@ _MASSAGE_STEPS: Final = {"head": "mass_head_dt", "foot": "mass_foot_dt", "all": 
 MASSAGE_STRENGTH: Final = {
     side: StateKey[int | None](f"suta_side_{side}_massage_strength") for side in (1, 2)
 }
+MASSAGE_TIMER: Final = {
+    side: StateKey[str | None](f"suta_side_{side}_massage_timer") for side in (1, 2)
+}
+# MOON's per-side massage timers, in minutes; the bed reports 0 when massage is off.
+_MASSAGE_TIMERS: Final = (10, 20, 30)
 # Entity labels from the app's own button text. Keys absent here and from the
 # standard buttons are reachable only through the SUTA action.
 _TEXT_LABELS: Final = {
@@ -160,6 +167,8 @@ class SutaController(BedController):
         self._link: Link | None = None
         self._receiver = TextReceiver()
         self.observations: dict[str, object] = {}
+        # How many reports set each observation, so a write never hides a newer report.
+        self._reports: Counter[str] = Counter()
         self._cycles: dict[str, str] = {}
         self._gesture_released = False
         self._cleanup_context = None
@@ -303,8 +312,6 @@ class SutaController(BedController):
         side = _SIDE_NAMES[payload[0]]
         if key in _BINARY_LABELS:
             return f"{side} {_BINARY_LABELS[key]}"
-        if key.startswith("massage_timer_"):
-            return f"{side} massage timer {key.removeprefix('massage_timer_')} min"
         if key.startswith("adaptive_"):
             _, mode, stiffness = key.split("_")
             return f"{side} adaptive mode {_ADAPTIVE_MODES.index(int(mode)) + 1}: {stiffness}"
@@ -344,7 +351,7 @@ class SutaController(BedController):
             if (
                 self.family not in action.controllers
                 or action.key in _BINARY_WITHOUT_BUTTON
-                or action.key.startswith("massage_strength_")
+                or action.key.startswith(("massage_strength_", "massage_timer_"))
             ):
                 continue
             for prefix in action.prefixes:
@@ -424,14 +431,33 @@ class SutaController(BedController):
         # The command shows the level it sent.
         await self.action(key, command.suffixes[level])
 
+    def _binary_sides(self, kind: str) -> tuple[int, ...]:
+        """The sides a per-side setting (``massage_strength_``, ``massage_timer_``) exists for."""
+        sides: set[int] = set()
+        for action in BINARY.values():
+            if self.family in action.controllers and action.key.startswith(kind):
+                sides.update(prefix[6] for prefix in action.prefixes)
+        return tuple(sorted(sides))
+
     @property
     def _strength_sides(self) -> tuple[int, ...]:
         """The sides whose massage strength the layout sets, 1-3 with no off."""
-        sides: set[int] = set()
-        for action in BINARY.values():
-            if self.family in action.controllers and action.key.startswith("massage_strength_"):
-                sides.update(prefix[6] for prefix in action.prefixes)
-        return tuple(sorted(sides))
+        return self._binary_sides("massage_strength_")
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        # Each side's timer has its durations only: no command turns a timer off.
+        return tuple(
+            ControllerSelectSpec(
+                f"suta_{_SIDE_NAMES[side].lower()}_massage_timer",
+                f"massage_{_SIDE_NAMES[side].lower()}_timer",
+                MASSAGE_TIMER[side],
+                tuple(f"{minutes} min" for minutes in _MASSAGE_TIMERS),
+                partial(_massage_timer, side=side),
+                card=CARD_MASSAGE,
+            )
+            for side in self._binary_sides("massage_timer_")
+        )
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -526,6 +552,7 @@ class SutaController(BedController):
             else:
                 state = self._receiver.feed(packet)
             self.observations.update(state)
+            self._reports.update(state.keys())
             self._publish()
 
         for characteristic in link.notifications:
@@ -598,6 +625,13 @@ class SutaController(BedController):
                 MASSAGE_STRENGTH[side](value if value in (1, 2, 3) else None)
                 for side in (1, 2)
                 for value in (self.observations.get(f"side_{side}_strength"),)
+            ),
+            # TEMP reports its heating timers under the same names.
+            *(
+                MASSAGE_TIMER[side](f"{value} min" if value in _MASSAGE_TIMERS else None)
+                for side in (1, 2)
+                for value in (self.observations.get(f"side_{side}_timer"),)
+                if self.family == "MOON"
             ),
         )
 
@@ -785,20 +819,39 @@ class SutaController(BedController):
         link, cancel = self._live(), self._coordinator.cancel_command
         if request.action in BINARY and self.family in BINARY[request.action].controllers:
             side = request.logical_side
-            strength = request.action.startswith("massage_strength_") and side in (1, 2)
+            # The resolved payload's last byte is the value sent, also when the request names none.
+            prefix = self._binary_prefix(request)
+            shown = next(
+                (
+                    field
+                    for kind, field in (("massage_strength_", "strength"), ("massage_timer_", "timer"))
+                    if request.action.startswith(kind)
+                ),
+                None,
+            )
+
+            field = f"side_{side}_{shown}"
+            reports = self._reports[field]
 
             def show(delivery: Delivery) -> None:
-                # A strength shows as far as its write reached this link's bed, also when
-                # cancelled after it, until the bed's next full-state report replaces it.
-                if not strength or self._link is not link or delivery is Delivery.NONE:
+                # A strength or timer shows as far as its write reached this link's bed, also
+                # when cancelled after it, until the bed's next full-state report replaces it.
+                # A report that arrived while the write went out is newer than the write.
+                if (
+                    shown is None
+                    or side not in (1, 2)
+                    or self._link is not link
+                    or delivery is Delivery.NONE
+                    or self._reports[field] != reports
+                ):
                     return
-                self.observations[f"side_{side}_strength"] = (
-                    request.value if delivery is Delivery.SENT else None
+                self.observations[field] = (
+                    prefix[-1] if delivery is Delivery.SENT else None
                 )
                 self._publish()
 
             with delivered(show):
-                sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
+                sent = await self._send(link, codec.from_prefix(prefix), cancel)
             if sent is not None and request.action == "automatic_adjustment_switch" and self._link is link:
                 # The bed does not echo this write; like the app's checkbox, show the sent value
                 # until the next full-state report replaces it.
@@ -981,6 +1034,11 @@ async def _binary_action(controller: BedController, action: str, payload: bytes)
     if not isinstance(controller, SutaController):
         raise ValueError("SUTA controller required")
     await controller.execute_request(Request(action, logical_side=payload[0] if len(payload) == 2 else None, value=payload[-1]))
+
+
+async def _massage_timer(controller: BedController, option: str, *, side: int) -> None:
+    minutes = int(option.removesuffix(" min"))
+    await _binary_action(controller, f"massage_timer_{minutes}", bytes((side, minutes)))
 
 
 async def _massage_strength(controller: BedController, value: float, *, side: int) -> None:
