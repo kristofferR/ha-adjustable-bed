@@ -16,7 +16,7 @@ from homeassistant.util import dt as dt_util
 from ...card import CARD_HIDDEN
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
-from ...controller_state import StateKey
+from ...controller_state import StateKey, sided
 from ...profiles.richmat import HJBED, RichmatProfile
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
@@ -239,7 +239,8 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
         if detail is None:
             raise ValueError("Choose a massage timer this product offers")
         # The bed reports no timer.
-        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+        # A one-address pair's sides each have a timer.
+        with self.sent_state(sided(MASSAGE_TIMER_MINUTES, self.command_side)(minutes)):
             await self.async_execute_hjbed_action(detail)
 
     @property

@@ -624,10 +624,12 @@ class SutaController(BedController):
                 for side in (1, 2)
                 for value in (self.observations.get(f"side_{side}_strength"),)
             ),
+            # TEMP reports its heating timers under the same names.
             *(
                 MASSAGE_TIMER[side](f"{value} min" if value in _MASSAGE_TIMERS else None)
                 for side in (1, 2)
                 for value in (self.observations.get(f"side_{side}_timer"),)
+                if self.family == "MOON"
             ),
         )
 

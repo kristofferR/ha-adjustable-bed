@@ -480,3 +480,43 @@ async def test_massage_timer_keys_are_one_select_sending_the_same_frames(clock, 
         assert sent[0] == sent[1] != []
     with pytest.raises(ValueError):
         await ctrl.set_massage_timer(45)
+
+
+async def test_massage_timer_cut_off_after_the_wake_gesture_shows_nothing(monkeypatch):
+    """BE wakes the bed with m before its timer key: a STOP between them sends no timer."""
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+    )
+
+    ctrl, c = make("wsilver_legacy", "BE")
+    await ctrl.start_notify()
+    assert ctrl.supports_massage_timer
+    cancel = c.cancel_command
+
+    async def stopped(_seconds, event):
+        cancel.set()  # STOP arrives before the first timer frame.
+        return True
+
+    monkeypatch.setattr(bed, "_pause", stopped)
+    c.client.write_gatt_char.reset_mock()
+    c.handle_controller_state_updates.reset_mock()
+    context = CommandContext(
+        scheduler_token=object(),
+        cancel_event=cancel,
+        admitted_stop_epoch=0,
+        intent_id="timer",
+        kind=CommandKind.COMMAND,
+        group_id=None,
+        resources=frozenset({"*"}),
+    )
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        await ctrl.set_massage_timer(30)
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+    assert frames(c)[0] == packet("m").hex()  # Only the wake gesture and release went out.
+    assert packet("A").hex() not in frames(c)
+    shown = [u for call in c.handle_controller_state_updates.call_args_list for u in call.args]
+    assert not any(u.key == "massage_timer" for u in shown)

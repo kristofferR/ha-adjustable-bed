@@ -11,7 +11,12 @@ from math import floor
 from time import monotonic
 from typing import TYPE_CHECKING, Final
 
-from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
+from ...command_scheduler import (
+    current_command_context,
+    note_frame_skipped,
+    note_frame_written,
+    note_write_not_counted,
+)
 from ...const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles.richmat_legacy import Action, LegacyProfile, profiles
 from ...state_keys import MASSAGE_TIMER_MINUTES
@@ -468,7 +473,11 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                 )
                 async with asyncio.timeout(WRITE_TIMEOUT_S):
                     await link.client.write_gatt_char(link.write, data, response=response)
-                    note_frame_written(cancel)
+                    if literal in ("m", "n"):
+                        # The wake/release gesture readies the bed; it is not the request.
+                        note_write_not_counted()
+                    else:
+                        note_frame_written(cancel)
                 return True
 
         # Drain submitted GATT work before cleanup or releasing ownership.

@@ -16,7 +16,7 @@ from homeassistant.util import dt as dt_util
 
 from ...card import CARD_UTILITY
 from ...const import CONF_GMMOTOR_SIDE, CONF_PRODUCT_TYPE
-from ...controller_state import StateKey
+from ...controller_state import StateKey, sided
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..builder import BuildContext
@@ -226,7 +226,8 @@ class GmmotorController(BedController, GmmotorActions):
         if control is None:
             raise ValueError("Choose a massage timer this product offers")
         # The bed reports no timer.
-        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+        # A one-address pair's sides each have a timer.
+        with self.sent_state(sided(MASSAGE_TIMER_MINUTES, self.command_side)(minutes)):
             await self.hold_control(control, 0)
 
     @property

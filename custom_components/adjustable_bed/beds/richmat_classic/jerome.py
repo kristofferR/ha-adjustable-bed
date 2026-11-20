@@ -275,7 +275,6 @@ class JeromeController(RichmatClassicController):
         self._light_on = None
         self.forward_controller_state_updates(
             LIGHT_SECONDS(None),
-            MASSAGE_TIMER_MINUTES(None),
             INTENSITY(None),
             MASSAGE(None),
             SYNC(None),
@@ -482,7 +481,8 @@ class JeromeController(RichmatClassicController):
 
     @property
     def supports_massage_timer(self) -> bool:
-        return bool(self._massage_timer_values)
+        # Its frame has no side field, so one-address combined-bed sides have none.
+        return bool(self._massage_timer_values) and self.command_side not in (SIDE_LEFT, SIDE_RIGHT)
 
     @property
     def auto_enable_massage(self) -> bool:

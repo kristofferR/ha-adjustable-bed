@@ -248,3 +248,32 @@ async def test_massage_timer_controls_are_one_select_sending_the_same_frames() -
         with pytest.raises(ValueError):
             await ctrl.set_massage_timer(15)
     assert checked == 342
+
+
+async def test_one_address_pair_sides_each_show_their_own_massage_timer() -> None:
+    """Both sides share one controller; each side's select shows what was sent to it."""
+    from custom_components.adjustable_bed.select import (
+        MASSAGE_TIMER_DESCRIPTION,
+        AdjustableBedMassageTimerSelect,
+    )
+    from tests.state_helpers import state_writer
+
+    ctrl = controller("DHRM")
+    assert ctrl.supports_single_address_pairing and ctrl.supports_massage_timer
+    state: dict[str, object] = {}
+    ctrl._coordinator.handle_controller_state_updates.side_effect = state_writer(state)
+    ctrl.write_command = AsyncMock()
+    for side, minutes in (("left", 10), ("right", 20)):
+        with ctrl.side_scope(side):
+            await ctrl.set_massage_timer(minutes)
+    selects = {}
+    for side in ("left", "right"):
+        runtime = MagicMock(bed_type="gmmotor", entity_side=side, controller_side=side)
+        runtime.controller_state = state
+        selects[side] = AdjustableBedMassageTimerSelect(
+            runtime, MASSAGE_TIMER_DESCRIPTION, ctrl.massage_timer_options, has_off=False
+        )
+    assert (selects["left"].current_option, selects["right"].current_option) == (
+        "10 min",
+        "20 min",
+    )

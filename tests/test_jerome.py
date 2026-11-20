@@ -420,6 +420,12 @@ async def test_massage_timer_is_the_shared_select_sending_the_old_selects_frames
     with pytest.raises(ServiceValidationError):
         await ctrl.set_massage_timer(25)
     assert not controller("6BRM")[0].supports_massage_timer
+    # The bed never reports the timer: a disconnect keeps the last one sent.
+    ctrl.on_disconnect()
+    assert "massage_timer" not in published(*coord.handle_controller_state_updates.call_args.args)
+    # The frame has no side field, so a one-address combined side offers no timer.
+    with ctrl.side_scope("left"):
+        assert not ctrl.supports_massage_timer
 
 
 def test_setup_discovery_are_explicit_and_searchable():
