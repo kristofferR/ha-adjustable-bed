@@ -159,6 +159,7 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SUPERIOR_SLEEP,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
@@ -626,6 +627,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app",
     BED_TYPE_ADJUSTABLE_BED: "Adjustable bed app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
+    BED_TYPE_SUPERIOR_SLEEP: "Superior sleep app (SS350 / SS650)",
     BED_TYPE_RIZE_HOME: "Rize Home app",
     BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app",
     BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 app",
@@ -1499,6 +1501,22 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             *(result.ambiguous_types or ()), BED_TYPE_RIZE_REMEDY_II,
         ]))
         result.signals.append("name:rize_remedy_ii_app_candidate")
+    if (
+        isinstance(platform_name, str) and platform_name.startswith(("Smartbed", "BLE"))
+        and (
+            "00001000-0000-1000-8000-00805f9b34fb" if platform_name.startswith("BLE")
+            else "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+        ) in {u.lower() for u in (service_info.service_uuids or ())}
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # The app's broad name scan chooses transport, not hardware identity.
+        # Require the selected route as corroboration; names alone stay manual.
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SUPERIOR_SLEEP, 0.3, ["name:superior_sleep_app_candidate"])
+        elif result.bed_type != BED_TYPE_SUPERIOR_SLEEP:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SUPERIOR_SLEEP]))
+            result.signals.append("name:superior_sleep_app_candidate")
     # A shared service makes this app a choice, never overrides a stronger
     # receiver signature and never infers a remote from the Bluetooth name.
     if OKIMAT_SERVICE_UUID.lower() in {u.lower() for u in (service_info.service_uuids or ())} and not any(

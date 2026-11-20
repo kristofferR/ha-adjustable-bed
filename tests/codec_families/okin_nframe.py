@@ -9,11 +9,13 @@ from custom_components.adjustable_bed.profiles.adjustable_bed import AdjustableA
 from custom_components.adjustable_bed.profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from custom_components.adjustable_bed.profiles.okin_nframe import OkinNFrameProfile
 from custom_components.adjustable_bed.profiles.rize_home import RizeHomeProfile
+from custom_components.adjustable_bed.profiles.superior_sleep import SuperiorSleepProfile
 from tests.adjustable_bed_vectors import FROZEN_FRAMES as ADJUSTABLE_BED_FRAMES
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.okin_nframe_vectors import FIELD_FRAMES, FROZEN_FRAMES, GATEWAY_FRAMES
 from tests.rize_home_vectors import FROZEN_FRAMES as RIZE_HOME_FRAMES
 from tests.starcode_abm5_4_vectors import BUILDER_VECTORS
+from tests.superior_sleep_vectors import FROZEN_FRAMES as SUPERIOR_FRAMES
 from tests.ultramatic_vectors import FROZEN_FRAMES as ULTRAMATIC_FRAMES
 
 
@@ -34,12 +36,14 @@ def _variant(key: str, bed_type: str) -> str | None:
         const.BED_TYPE_ADJUSTABLE_BED: key,
         const.BED_TYPE_ESHINE_OKIN: key,
         const.BED_TYPE_RIZE_HOME: key.removeprefix("rize_home_"),
+        const.BED_TYPE_SUPERIOR_SLEEP: key.removeprefix("superior_sleep_"),
     }.get(bed_type)
 
 
 FAMILY = CodecFamily(
     profiles={
-        OkinNFrameProfile: {**FROZEN_FRAMES, **ULTRAMATIC_FRAMES},
+        OkinNFrameProfile: {k: v for k, v in {**FROZEN_FRAMES, **ULTRAMATIC_FRAMES}.items() if k not in SUPERIOR_FRAMES},
+        SuperiorSleepProfile: SUPERIOR_FRAMES,
         AdjustableAppProfile: ADJUSTABLE_BED_FRAMES,
         RizeHomeProfile: RIZE_HOME_FRAMES,
     },
@@ -60,6 +64,7 @@ FAMILY = CodecFamily(
             "resident",
             "ultramatic_smart_bed",
             "rize_home",
+            "superior_sleep",
             "okin_motionbed",
             "comfort_enhancement3",
             "n32_motion_bed",
