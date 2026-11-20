@@ -684,3 +684,16 @@ async def test_massage_timer_buttons_are_one_select_sending_the_same_frames(nord
         with pytest.raises(ValueError):
             await ctrl.set_massage_timer(15)
     assert checked
+
+
+def test_product_buttons_skip_what_the_bed_entities_send_and_keep_unique_ids() -> None:
+    ctrl = controller("A4RN")
+    keys = {s.key for s in ctrl.controller_button_specs}
+    # The TV preset entity sends the main page's TV; its save is a confirmed button.
+    assert not any(k.endswith("itemtvposition_1_short") for k in keys)
+    save = next(s for s in ctrl.controller_button_specs if s.name == "Save TV position")
+    assert save.key == "product_action_rmcontrol_detailspagedisplaylist_itemtvposition_5_long"
+    assert save.requires_confirmation and save.entity_registry_enabled_default
+    # One button per function: other pages' copies of a control are not repeated.
+    names = [s.name for s in ctrl.controller_button_specs]
+    assert len(names) == len(set(names))

@@ -277,3 +277,35 @@ async def test_one_address_pair_sides_each_show_their_own_massage_timer() -> Non
         "10 min",
         "20 min",
     )
+
+
+async def test_product_buttons_take_the_catalog_shape_and_send_what_they_sent() -> None:
+    ctrl = controller("6DRM")
+    ctrl._pause = AsyncMock(return_value=True)
+    specs = {s.key: s for s in ctrl.controller_button_specs}
+    zero_g = named(ctrl, "deviceFunctionItemZeroGravity")
+    assert specs[zero_g].translation_key == "preset_zero_g"
+    # Zero gravity's own long operand saves it: a confirmed preset save.
+    save = specs[zero_g + "_long"]
+    assert save.name == "Save Zero gravity" and save.requires_confirmation and save.hold is None
+    assert specs[named(ctrl, "deviceFunctionItemHeadUp")].translation_key == "head_up"
+    reset = specs[named(ctrl, "deviceFunctionItemMotorReset")]
+    assert reset.translation_placeholders == {"action": "Motor reset"}
+    assert not reset.entity_registry_enabled_default
+    for key in (zero_g, zero_g + "_long"):
+        ctrl.write_command = AsyncMock()
+        await specs[key].press_fn(ctrl)
+        assert ctrl.write_command.call_args.args[0][3] == (0x66 if key.endswith("_long") else 0x45)
+
+
+def test_empty_slots_headings_and_empty_long_presses_have_no_button() -> None:
+    from custom_components.adjustable_bed.beds.gmmotor.profiles import profile_choices
+
+    for key in profile_choices():
+        ctrl = controller(key)
+        keys = {s.key for s in ctrl.controller_button_specs}
+        names = {s.name for s in ctrl.controller_button_specs}
+        assert not names & {"No action", "Massage menu", "Logo", "Menu"}
+        for i, action in enumerate(ctrl.profile.controls):
+            if f"gm_{i}_long" in keys:
+                assert action.codes("long") - {0} - action.codes("normal")

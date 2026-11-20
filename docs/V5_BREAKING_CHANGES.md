@@ -385,10 +385,6 @@ Other action changes:
 
 ### If you ran a v5 beta
 
-Saatva app support is new in v5: select its Adjustable Base or Adjustable Base
-Plus model and installation during setup. Existing 4.4.2 BedTech and Richmat
-entries retain their own profiles. See [Saatva](beds/richmat.md#saatva).
-
 These actions existed only in v5 betas and are gone. Older field names are not
 accepted.
 
@@ -561,7 +557,7 @@ described under [One shape per control](#one-shape-per-control).
 | eShine OKIN | Alarm refresh and "Sync bed clock" buttons | Clock: the **Set bed clock** action |
 | FSM Relax | 11 count, acknowledgement, calibration, information and raw motor sensors | |
 | FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
-| GM Control | | Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only), on products with more than one duration |
+| GM Control | "None", "Logo" and "Title …" buttons from empty app slots and menu headings; "(long press)" buttons whose long press sends no command of its own | A preset's or memory's long press that sends its save: the **Save …** button (same entity ID). Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only), on products with more than one duration |
 | GM Control sleep module | Time and Query part buttons (the clock is set on every connection; the `gmmotor` action still queries the part) | Start and stop live data buttons: **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
 | Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save: the **Save …** button. Massage 10, 20 and 30 minute buttons and the "Massage timer" select: **Massage: Timer** select (with Off where the app has a countdown off; the select keeps its entity ID). "Light duration (seconds)" select: **Light Timer** select (same entity ID). Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both |
 | Good Vibe, Casper and Hush sleep sensors | | In-bed, snoring and movement text sensors: **In bed**, **Snoring** and **Body movement** binary sensors, with the same object ID; heart and breathing rate sensors take the shared names and keep their IDs |
@@ -574,7 +570,7 @@ described under [One shape per control](#one-shape-per-control).
 | OKIN CST | | Memory recall buttons for slots a named preset recalls: **Zero Gravity**, **Incline**, **Reading** or **Lounge**; the slot's save stays |
 | ORE comfort-bed apps (Avanti, Bedsense, Dynasty, MaxCoil Una), StarCode ABM5-4 | | Bed-specific massage timer select: **Massage: Timer** select (durations only; same entity ID) |
 | Reverie, Reverie Nightstand, Pairlink, Jiecang app | Wave sensor, Pairlink massage mode and timer sensors (the select and number show them), head and foot massage up and down buttons where an intensity number exists | Pairlink massage rhythm select: **Massage rhythm** switch |
-| RMControl | Protocol version, bed mode and last alarm record sensors | Massage timer buttons: **Massage: Timer** select (durations only), on products with more than one duration. A timer button on another app page that sends different bytes stays |
+| RMControl | Protocol version, bed mode and last alarm record sensors. Disabled catalog buttons a standard entity already sends (motor covers, presets, memory recall and save, light, sync and massage controls), and another app page's copy of a control (the motor or memory list, an alarm picker) | Massage timer buttons: **Massage: Timer** select (durations only), on products with more than one duration. A timer button on another app page that sends different bytes stays. The other catalog buttons keep their entity IDs, lose the app page and position from their names and, except music, fans, resets and similar extras, start enabled. A preset's long press that sends its save: the **Save …** button |
 | Serta MP Remote | Memory request sensor | |
 | SIMMONS | "Sync Clock" button | Clock: the **Set bed clock** action |
 | Sleeptracker | Massage pattern and strength sensors (the selects show them) | |
