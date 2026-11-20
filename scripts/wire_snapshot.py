@@ -547,6 +547,10 @@ def _argument_commands(controller: Any) -> list[Command]:
         out.append(Command(name, _method(method, *args, **kwargs), declared))
 
     if _flag(c, "supports_light_level_control"):
+        if c._coordinator.bed_type == "sleep_assistant":
+            # Brightness carries RGB too. Prepare an explicit color, as the
+            # native light caller does, instead of guessing one after reconnect.
+            add(True, "set_light_color", "light_color_before_brightness", (255, 128, 0))
         low, high = int(_value(c, "light_level_min", 0)), int(_value(c, "light_level_max", 10))
         mid = (low + high) // 2
         levels = (
@@ -1366,6 +1370,8 @@ def default_scenario(bed_type: str) -> Scenario:
     replies: dict[str, str] = {}
     if bed_type == "sealy_posturematic":
         data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
+    if bed_type == "sleep_assistant":
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="sleep_assistant")
     if bed_type == const.BED_TYPE_LINX:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
@@ -2173,6 +2179,15 @@ def build_scenarios() -> list[Scenario]:
                 protocol_variant=route, layout_id="linx",
                 entry_data={"product_type": model, "ble_device_name": "KSWF07D00000000"},
             ))
+    for name, lighting, presets in (
+        ("selected", "4193", ["o1", "o2", "o3", "o4"]),
+        ("palette", "sleep8", ["o2", "o5"]),
+    ):
+        scenarios.append(Scenario(id=f"sleep_assistant:{name}", bed_type="sleep_assistant",
+            layout_id="sleep_assistant", entry_data={"sleep_assistant_presets": presets,
+                "sleep_assistant_controls": ["m1", "m2", "m3", "m4", "m7", "m8"],
+                "sleep_assistant_lighting": lighting, "has_light": True},
+            replies={"*": "dd000000000000000000000000004002000000"}))
     scenarios.extend(ultramatic_scenarios())
     scenarios.extend(mh_app_scenarios())
     # Bedgear A12: each selected layout, dynamic zone array and independent M gate.
@@ -2309,7 +2324,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

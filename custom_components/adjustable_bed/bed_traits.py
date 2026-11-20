@@ -219,6 +219,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "nerum": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "cheerssleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "smart_sleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "sleep_assistant": _NO_ANGLES_SCOPED,
     "onlysnore": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "smart_comfort_synargy": _NO_ANGLES_SCOPED,
     "smart_comfort_synergy": _NO_ANGLES_SCOPED,

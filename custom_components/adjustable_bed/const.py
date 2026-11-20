@@ -438,6 +438,7 @@ BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniM
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
+BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
 BED_TYPE_ONLYSNORE: Final = "onlysnore"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
 BED_TYPE_SYMPHONY_SLEEP: Final = "symphony_sleep"
@@ -757,6 +758,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_CHEERSSLEEP,
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
+    BED_TYPE_SLEEP_ASSISTANT,
     BED_TYPE_ONLYSNORE,
     BED_TYPE_ENSO,
     BED_TYPE_SEALY_POSTUREMATIC,

@@ -132,6 +132,7 @@ if TYPE_CHECKING:
     from .serenity.controller import ZSeriesController as ZSeriesController
     from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
     from .simmons.controller import SimmonsController as SimmonsController
+    from .sleep_assistant.controller import SleepAssistantController as SleepAssistantController
     from .sleep_number.controller import SleepNumberController as SleepNumberController
     from .sleep_number.mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
@@ -205,6 +206,7 @@ _EXPORT_MODULES = {
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
     "SealyController": ("sealy.controller", "SealyController"),
+    "SleepAssistantController": "sleep_assistant.controller",
     "YamadaController": ("keeson.yamada", "YamadaController"),
     "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
     "GlideawayMotionController": "glideaway_motion.controller",

@@ -2244,6 +2244,10 @@
       "local_name": "KRRN*"
     },
     {
+      "local_name": "KSBT*",
+      "connectable": true
+    },
+    {
       "local_name": "KSBT01C*",
       "connectable": true
     },

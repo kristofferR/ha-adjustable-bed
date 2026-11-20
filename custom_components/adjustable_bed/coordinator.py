@@ -604,6 +604,7 @@ class AdjustableBedCoordinator(
         self._connect_failure_logged = False
         # Set once a connect finished startup; a drop before then is part of an outage.
         self._link_ready = False
+        self._retained_session_client: BleakClient | None = None
         self._last_connection_error_type: str | None = None
         self._last_disconnect_reason: str | None = (
             None  # "idle_timeout", "intentional", "unexpected"
