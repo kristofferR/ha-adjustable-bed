@@ -428,7 +428,7 @@ a bed does not have is refused with a message naming it.
 | `massage`, `massage_zone`, `massage_intensity`, `massage_duration`, `head_massage_level`, `foot_massage_level` | Wake-up massage, where the bed has one |
 | `light`, `sound` | Turn on the light or play a sound at the alarm, where available |
 | `mattress_side` | Set the alarm of a vibrating mattress topper on that side instead of the bed's |
-| `confirm_custom_position` | Required to wake at a saved custom position (SIMMONS) |
+| `confirm_custom_position` | Required to wake at a saved custom position (SIMMONS, and saved memories on Jerome's power base) |
 | `side` | Side of a combined bed |
 
 ```yaml
