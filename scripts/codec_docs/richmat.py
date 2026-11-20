@@ -1421,7 +1421,7 @@ def render_rise_commands() -> str:
                 if key[:3] == ("none", "none", "none") and key[4] == "none":
                     continue
                 groups.setdefault(key, []).append(layout)
-        lines.append(f"### {CLASSIC_APPS[app]} resource commands\n\n<details><summary>Selected-layout command and gesture gates</summary>\n")
+        lines.append(f"#### {CLASSIC_APPS[app]} resource commands\n\n<details><summary>Selected-layout command and gesture gates</summary>\n")
         lines.append(_table(("Layouts", "Short", "Raw old-short", "Long", "Status", "Tag", "Threshold ms", "Initial visibility"), [
             (", ".join(sorted(set(layouts))), *key) for key, layouts in sorted(groups.items())
         ]))
@@ -1813,7 +1813,7 @@ def render_jerome_controls() -> str:
                     gesture += " (explicit gesture)"
                 groups.setdefault((key, *cells, gesture, str(c.threshold_ms) if action.long_press and not c.mem_special else "0"), []).append(layout)
     return _block(
-        "### Layout actions",
+        "#### Layout actions",
         "Frames below use operating mode zero. Framed modes one and two change the mode byte and checksum. "
         "The raw path has no side or operating-mode field. The layout picker owns the whole layout domain; "
         "a matching Bluetooth name is only an app hint.",
@@ -1830,7 +1830,7 @@ def render_jerome_controls() -> str:
             (name, layout, "Unused in this package" if name.startswith("L&P") else "Manual layout required" if layout == "QRRM" else "Shorter prefix selects the same layout" if name == "MPE_HJ006-1" else "Explicit app/name choice")
             for name, layout in sorted(ALIASES.items())
         )),
-        "### Settings and timing",
+        "#### Settings and timing",
         _table(("Operation", "Write", "Timing"), (
             ("Initialize framed connection", _hex(classic_frames.INITIALIZE), "300 ms after notification registration"),
             ("Alarm query", _hex(classic_frames.ALARM_QUERY), "Only with layout alarm choices; 500 ms afterward"),
