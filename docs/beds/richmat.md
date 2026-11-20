@@ -13546,11 +13546,10 @@ only their own typed controls. Generic 5I includes combined down; GRRM and BPRN
 keep their selected-tab up-only behavior. In the 3I entity page, saving M3 sends
 the app's M4-save code. Pillow and lumbar names follow the app's typed mapping.
 
-The cfrm light-lock indicator can report state, but its visible app button has
-no connected listener in this build. Home Assistant exposes feedback without
-adding a lock command. Snore acknowledgments and selected intervention are
-separate state: the app's initialization handler reads the wrong byte and does
-not establish a selected snore mode. The normal callback remains supported.
+The light lock shows the lock state the bed reports; there is no lock command,
+because the app's lock button sends nothing. Snore acknowledgements and the
+selected intervention are separate states: the selected snore mode comes from
+the bed's normal reply, not from its initialization reply.
 
 Use the shared **Set alarm** and **Set bed clock** actions. Supported surfaces
 choose countdown, three-slot or calendar alarms; mattress alarms remain
@@ -13565,8 +13564,8 @@ No app-clock buttons or raw packet controls are exposed.
 
 #### Timing
 
-Held widgets refresh at their declared interval, normally 100 ms. Release and
-ordinary one-shot completion send the source-defined END frame after 120 ms.
+Held controls refresh at their declared interval, normally 100 ms. Release and
+ordinary one-shot completion send the app's END frame after 120 ms.
 Home Assistant bounds held movement and drains release before allowing the next
 command. It captures the physical connection and transmit mode before waiting
 and rejects stale commands and callbacks. END's physical effect is unverified.
@@ -13576,7 +13575,7 @@ Notifications start before the 300 ms version probe; initialization starts
 version 1. Primary writes use the selected
 characteristic's supported write mode. The auxiliary receiver paces writes
 300 ms apart, retries notification setup up to three times and uses a five-second
-heartbeat. These source intervals are not measured radio timings.
+heartbeat. These are the app's intervals, not timings measured on a bed.
 
 #### Notifications
 
@@ -13585,15 +13584,13 @@ malformed double-negative values are ignored. Capabilities on entity pages
 reset on each initialization reply rather than accumulating. Calendar records
 preserve decimal slot/bed parsing and signed times; repeated records are retained
 as observations while the latest record supplies each actionable slot.
-Home Assistant fences truncated callbacks and clears connection state on reuse.
-The app's QRRM overwrite and late global-target/release races are not reproduced
-as automatic routing changes.
+Home Assistant ignores truncated replies and clears connection state when a
+link is reused.
 
 Wi-Fi, network administration, cloud accounts, group administration, firmware
 updates, audio, phone recognition infrastructure, manufacturing/test paths,
-desks and unrelated physiological reports are outside this integration.
-The source-defined bed outputs of speech dispatch remain available through
-the ordinary native bed controls, without the phone recognizer.
+desks and unrelated physiological reports are outside this integration. The
+bed actions the app's voice control sends are available as ordinary controls.
 
 #### Command reference
 
@@ -13830,3 +13827,7 @@ them; entity pages require the receiver's version and initialization replies.
 | KWRM | Back: 0..64° (display offset 0); Foot: 0..43° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
 | LPRM | Back: 0..64° (display offset 0); Foot: 0..43° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
 <!-- /generated -->
+
+#### Evidence
+
+Based on Bed Tech 2.8.3 (`com.richmat.bed_tech`). Hardware is not yet tested.

@@ -535,24 +535,17 @@ For the [Bed Tech app](beds/richmat.md#bed-tech), use the native movement,
 preset, memory, light and massage entities for everyday controls. This is
 separate from the newer [BedTech app](#bedtech).
 
-**[`richmat_mh_control`](#richmat_mh_control)** runs a named control, reads a
-setting or changes the local mode used by later controls. Each selected model
-must offer the requested control before any bed is commanded.
+Bed Tech shares two actions with Nisco and MLILY Supreme; their fields are
+listed under [Nisco and MLILY Supreme](#richmat_mh_control).
 
-| Field | Name | Meaning |
-|-------|------|---------|
-| `action` | Action | `press`, `query` or `app_mode`. |
-| `control` | Control | The displayed control name for `press`, with up or down for a motor, such as Back up. |
-| `query` | Setting to read | A named setting for `query`, such as `alarm`, `light`, `snore`, `motor_mode` or `massage`. |
-| `transmit_mode` | Transmit mode | `mode_0`, `mode_1` or `mode_2`, for `app_mode`. This does not select a physical Bluetooth device. |
-| `motor_group` | Motor group | `single`, `group_sync` or `group_split` where the model offers it, for `app_mode`. |
-
-**[`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode)** changes the separate sleep
-and intervention receiver's local user mode. It does not move bed motors.
-
-| Field | Name | Meaning |
-|-------|------|---------|
-| `mode` | Sleepers | `single` for one sleeper or `double` for two. |
+- **[`richmat_mh_control`](#richmat_mh_control)** runs a named control, reads a
+  setting or changes the local mode used by later controls. Each selected model
+  must offer the requested control before any bed is commanded. On Bed Tech,
+  `transmit_mode` (`mode_0`, `mode_1` or `mode_2`) does not select a physical
+  Bluetooth device, and `motor_group` is offered only where the model has it.
+- **[`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode)** changes the separate
+  sleep and intervention receiver's local user mode. It does not move bed
+  motors.
 
 Use [`set_alarm`](#set_alarm) for bed and mattress alarms, and
 [`sync_clock`](#sync_clock) for the supported clock. Calendar alarms need a
