@@ -122,6 +122,7 @@ if TYPE_CHECKING:
     from .row_control import RowControlController as RowControlController
     from .ruf_richmat.controller import RufRichmatController as RufRichmatController
     from .ruf_richmat.sleep import RufRichmatSleepController as RufRichmatSleepController
+    from .saatva import SaatvaController as SaatvaController
     from .sbi import QPlusAppController as QPlusAppController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
@@ -161,6 +162,7 @@ _EXPORT_MODULES = {
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "N32MotionBedController": "n32_motion_bed.controller",
     "LunioSmartController": "luniosmart.controller",
+    "SaatvaController": "saatva",
     "SonicSleepController": "sonicsleep.controller",
     "MlilyRemoteController": "mlily_remote.controller",
     "ResidentController": "resident.controller",

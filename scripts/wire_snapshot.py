@@ -1328,6 +1328,10 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "saatva":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
+                        layout_id="bedtech")
     data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {"product_type": "2"} if bed_type == "enso" else {}
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
@@ -1668,6 +1672,15 @@ def route_scenarios() -> list[Scenario]:
                 protocol_variant=route,
                 entry_data={const.CONF_PRODUCT_TYPE: model, const.CONF_PROTOCOL_VARIANT: route},
                 layout_id="symphony_sleep:box2" if route == "box2" else "symphony_sleep",
+            ))
+    from custom_components.adjustable_bed.profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
+
+    for product, layout in SAATVA_LAYOUTS.items():
+        if product != "bt2000_standard":
+            scenarios.append(Scenario(
+                id=f"saatva:{product}", bed_type="saatva", protocol_variant=product,
+                entry_data={const.CONF_PROTOCOL_VARIANT: product, const.CONF_PRODUCT_TYPE: layout},
+                layout_id="bedtech",
             ))
     # BedTech's manual model selector: each model has its own controls and release.
     from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
