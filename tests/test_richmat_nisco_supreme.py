@@ -378,7 +378,9 @@ def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
             for name in names:
                 assert not raw.search(name) and not problems(name), (model, name)
             if model == "bhrm" and not advanced:
-                assert {"Massage: Head Up", "Massage: Timer 10 Minutes"} <= set(names)
+                assert "Massage: Head Up" in names
+                # Its 10, 20 and 30 minute timers are the massage timer select.
+                assert controller.massage_timer_options == [10, 20, 30]
 
 
 def test_undecoded_mlily_alarm_reply_never_sets_the_alarm_sensor() -> None:
