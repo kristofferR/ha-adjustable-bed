@@ -197,6 +197,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return SBI_VARIANT_BOTH
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
+    if bed_type == "saatva":
+        return "bt2000_standard"
     if bed_type == const.BED_TYPE_CASPER_BASE:
         return "casperpro"
     if bed_type == const.BED_TYPE_SOMOS:
@@ -271,6 +273,9 @@ async def _create_controller_for_bed_type(
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"
     if bed_type == "nerum":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "nerum"
+
+    if bed_type == "sealy_posturematic":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "0"
 
     if bed_type == "enso":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "2"

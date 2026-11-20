@@ -10,6 +10,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
 )
 from custom_components.adjustable_bed.profiles import okin_5a as okin_5a_profiles
+from custom_components.adjustable_bed.profiles import sealy
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/okin-5a.md"
@@ -133,6 +134,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             for key, controller in _OKIN_5A_CONTROLLERS.items()
         },
         "star_elevate": (BED_TYPE_STAR_ELEVATE,),
+        **dict.fromkeys(sealy.PROFILES, ("sealy_posturematic",)),
     }
 
 
@@ -294,4 +296,44 @@ BLOCKS: list[Block] = [
     (GUIDE, "okin-5a-massage", lambda: _okin_5a_commands("massage")),
     (GUIDE, "okin-5a-lights", lambda: _okin_5a_commands("lights")),
     (GUIDE, "okin-5a-starcode", render_okin_5a_starcode),
+]
+
+
+def render_sealy_commands() -> str:
+    return "\n".join(
+        _table(
+            ("Control", "Bytes"),
+            ((key.replace("_", " "), _hex(frame)) for key, frame in sealy.FRAMES.items()),
+        )
+    )
+
+
+def render_sealy_timing() -> str:
+    return "\n".join(
+        _table(
+            ("Operation", "Behavior"),
+            (
+                ("Bed type", "`sealy_posturematic`"),
+                ("Product choices", ", ".join(sealy.LAYOUTS.values())),
+                ("Movement refresh", f"{sealy.REFRESH_MS} ms; single UI dispatch waits 50 ms"),
+                ("Ordinary and one-touch STOP", f"2 writes, {sealy.REFRESH_MS} ms apart"),
+                ("Massage toggle/on/off", f"2 writes, {sealy.REFRESH_MS} ms apart"),
+                (
+                    "Programming and non-Element reset",
+                    f"{sealy.PROGRAM_MS} ms finite hold, then ordinary release",
+                ),
+                ("Element reset", f"Ordinary STOP twice, then one reset at {sealy.PROGRAM_MS} ms"),
+                (
+                    "Startup",
+                    f"Initializer with response, subscribe, query anti-pinch and massage after {sealy.QUERY_DELAY_MS} ms",
+                ),
+                ("Normal write mode", "Without response"),
+            ),
+        )
+    )
+
+
+BLOCKS += [
+    (GUIDE, "sealy-commands", render_sealy_commands),
+    (GUIDE, "sealy-timing", render_sealy_timing),
 ]

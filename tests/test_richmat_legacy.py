@@ -197,6 +197,7 @@ async def test_all_profile_controls_run_on_captured_gatt_and_expose_specs(clock,
         sent = {*action.down, *action.short, *(w for _, b in action.branches for w in b.writes)}
         assert bool(buttons) != (
             action.key in covered
+            or action.key in ctrl._massage_timer_controls.values()
             or action.label == "Tilt ZG selector (mode 2)"
             or sent <= {"m", "n"}
         ), action
@@ -443,3 +444,116 @@ def test_gesture_only_controls_and_zero_gravity_set():
     assert "All Off" in {s.name for s in ctrl.controller_button_specs}  # sends G
     ctrl, _ = make("sleep_evolution", "T3")
     assert {"Zero Gravity", "Save Zero Gravity"} <= {s.name for s in ctrl.controller_button_specs}
+
+
+@pytest.mark.parametrize("key", list(profiles()))
+async def test_massage_timer_keys_are_one_select_sending_the_same_frames(clock, key):
+    """Each replaced timer key's press sends exactly what the timer select sends."""
+    app, code = key.split(":")
+    ctrl, c = make(app, code)
+    keys = {
+        int(m["minutes"]): action.key
+        for action in ctrl.profile.actions
+        if (m := re.fullmatch(r"(?P<minutes>\d+)MIN", action.label))
+    }
+    if len(keys) < 2:
+        # A single duration keeps its button.
+        assert not ctrl.supports_massage_timer
+        return
+    assert ctrl._massage_timer_controls == keys
+    assert ctrl.massage_timer_options == sorted(keys)
+    assert not ctrl.massage_timer_can_turn_off and ctrl.auto_enable_massage
+    assert not {"richmat_legacy_" + k for k in keys.values()} & {
+        s.key for s in ctrl.controller_button_specs
+    }
+    for minutes, control in keys.items():
+        sent = []
+        for run in (
+            lambda b, k=control: bed._press(b, control=k),
+            lambda b, m=minutes: b.set_massage_timer(m),
+        ):
+            fresh, fc = make(app, code)
+            await fresh.start_notify()
+            fc.client.write_gatt_char.reset_mock()
+            await run(fresh)
+            sent.append(frames(fc))
+        assert sent[0] == sent[1] != []
+    with pytest.raises(ValueError):
+        await ctrl.set_massage_timer(45)
+
+
+async def test_massage_timer_cut_off_after_the_wake_gesture_shows_nothing(monkeypatch):
+    """BE wakes the bed with m before its timer key: a STOP between them sends no timer."""
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+    )
+
+    ctrl, c = make("wsilver_legacy", "BE")
+    await ctrl.start_notify()
+    assert ctrl.supports_massage_timer
+    cancel = c.cancel_command
+
+    async def stopped(_seconds, event):
+        cancel.set()  # STOP arrives before the first timer frame.
+        return True
+
+    monkeypatch.setattr(bed, "_pause", stopped)
+    c.client.write_gatt_char.reset_mock()
+    c.handle_controller_state_updates.reset_mock()
+    context = CommandContext(
+        scheduler_token=object(),
+        cancel_event=cancel,
+        admitted_stop_epoch=0,
+        intent_id="timer",
+        kind=CommandKind.COMMAND,
+        group_id=None,
+        resources=frozenset({"*"}),
+    )
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        await ctrl.set_massage_timer(30)
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+    assert frames(c)[0] == packet("m").hex()  # Only the wake gesture and release went out.
+    assert packet("A").hex() not in frames(c)
+    shown = [u for call in c.handle_controller_state_updates.call_args_list for u in call.args]
+    assert not any(u.key == "massage_timer" for u in shown)
+
+
+async def test_massage_timer_whose_window_ends_before_its_key_shows_nothing(clock, monkeypatch):
+    """A window that ends before BE's first timer refresh sent only the wake gesture."""
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+    )
+
+    ctrl, c = make("wsilver_legacy", "BE")
+    await ctrl.start_notify()
+
+    async def late(seconds, _event):
+        clock[0] += 5  # The first refresh comes after the press window.
+        return False
+
+    monkeypatch.setattr(bed, "_pause", late)
+    c.client.write_gatt_char.reset_mock()
+    c.handle_controller_state_updates.reset_mock()
+    context = CommandContext(
+        scheduler_token=object(),
+        cancel_event=c.cancel_command,
+        admitted_stop_epoch=0,
+        intent_id="timer",
+        kind=CommandKind.COMMAND,
+        group_id=None,
+        resources=frozenset({"*"}),
+    )
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        await ctrl.set_massage_timer(30)
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+    assert packet("A").hex() not in frames(c)
+    shown = [u for call in c.handle_controller_state_updates.call_args_list for u in call.args]
+    assert not any(u.key == "massage_timer" for u in shown)

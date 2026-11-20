@@ -476,6 +476,9 @@
   "card_role": "up",
   "card_motor": "bedsense_waist"
  },
+ "button:bedsmart_query": {
+  "card_section": "utility"
+ },
  "button:betterliving2_all_sections_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1830,6 +1833,16 @@
   "card_role": "up",
   "card_motor": "ruf_richmat_mattress_right_pillow"
  },
+ "button:selected_motor_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "selected_motor"
+ },
+ "button:selected_motor_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "selected_motor"
+ },
  "button:set_back_reference": {
   "card_section": "motors",
   "card_role": "reference",
@@ -3092,6 +3105,21 @@
   "card_section": "motors",
   "card_motor": "back_right"
  },
+ "number:bedsmart_aroma_0": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_aroma_1": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_aroma_2": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_lamp_seconds": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_massage_index": {
+  "card_section": "utility"
+ },
  "number:betterliving2_massage_feet": {
   "card_section": "massage"
  },
@@ -3458,6 +3486,15 @@
  "select:adjustamattress_strength_setting": {
   "card_section": "utility"
  },
+ "select:bedsmart_axis": {
+  "card_section": "utility"
+ },
+ "select:bedsmart_head_foot": {
+  "card_section": "utility"
+ },
+ "select:bedsmart_mode": {
+  "card_section": "utility"
+ },
  "select:comfy_timer_selection": {
   "card_section": "utility"
  },
@@ -3482,14 +3519,17 @@
  "select:hjbed_layout": {
   "card_section": "utility"
  },
- "select:jerome_massage_timer": {
-  "card_section": "massage"
- },
  "select:l2motion_sound_mode": {
   "card_section": "utility"
  },
  "select:light_timer": {
   "card_section": "lighting"
+ },
+ "select:massage_left_timer": {
+  "card_section": "massage"
+ },
+ "select:massage_right_timer": {
+  "card_section": "massage"
  },
  "select:massage_timer": {
   "card_section": "massage",
@@ -4370,6 +4410,16 @@
  "sensor:saved_positions": {
   "card_section": "saved_positions"
  },
+ "sensor:sealy_massage_foot_level": {
+  "card_section": "massage"
+ },
+ "sensor:sealy_massage_head_level": {
+  "card_section": "massage"
+ },
+ "sensor:sealy_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
  "sensor:simmons_alarm_1": {
   "card_section": "hidden"
  },
@@ -4774,6 +4824,9 @@
  },
  "switch:ruf_richmat_sleep_right_intervention": {
   "card_section": "utility"
+ },
+ "switch:sealy_massage": {
+  "card_section": "massage"
  },
  "switch:sleepiq_auto_kids_light": {
   "card_section": "utility"

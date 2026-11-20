@@ -443,11 +443,14 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         """Return the last published timer, unknown until the controller publishes one."""
-        key = sided(
-            MASSAGE_TIMER_MINUTES,
-            massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
-        )
+        side = massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side)
+        key = sided(MASSAGE_TIMER_MINUTES, side)
         state = self._coordinator.controller_state
+        if side is None and (own := self._coordinator.controller_side) is not None:
+            # A controller shared by both sides may publish each side's timer.
+            scoped = sided(MASSAGE_TIMER_MINUTES, own)
+            if scoped in state:
+                key = scoped
         if key not in state:
             # Nothing sent or reported yet.
             return None

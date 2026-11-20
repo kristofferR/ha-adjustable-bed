@@ -6,13 +6,14 @@ import asyncio
 from collections.abc import Coroutine
 
 
-async def settled[T](operation: Coroutine[object, object, T]) -> T:
+async def settled[T](operation: Coroutine[object, object, T], *, eager_start: bool | None = None) -> T:
     """Finish ``operation`` even when the caller is cancelled meanwhile, then re-raise.
 
     An in-flight write or release completes before cancellation can hand its
     wire lane to STOP. A failure of the operation itself takes precedence.
+    ``eager_start`` lets safety work reserve its lane before this caller yields.
     """
-    task = asyncio.create_task(operation)
+    task = asyncio.create_task(operation, eager_start=eager_start)
     interrupted: asyncio.CancelledError | None = None
     while not task.done():
         try:

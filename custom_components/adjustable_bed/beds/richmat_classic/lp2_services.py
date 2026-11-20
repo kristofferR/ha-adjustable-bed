@@ -26,6 +26,7 @@ from ...services import (
     _Selection,
 )
 from ..base import BedController
+from .resource_protocol import BED_COMMANDS
 from .rise import Schedule
 from .rise_services import SCHEDULE
 
@@ -70,14 +71,15 @@ FIELDS.update(SIDE_FIELD.items())
 async def handle_settings(call: ServiceCall) -> None:
     data = call.data
     op = data["operation"]
-    movement = op in ("control", "motor_program", "movement_test")
+    movement = op in ("control", "motor_program", "movement_test", "bed_command")
     resource = "movement" if movement else "configuration"
     targets = _call_targets(call)
     selection = _Selection.capture(targets)
     admissions = [
         _capture_command_admission(coordinator, side, (resource,)) for coordinator, side in targets
     ]
-    await async_import_modules(call.hass, "beds.richmat_classic.lp2")
+    await async_import_modules(call.hass, "beds.richmat_classic.lp2", "beds.richmat_classic.bedsmart")
+    from .bedsmart import BedSmartController
     from .lp2 import Lp2Controller
 
     required = {
@@ -88,12 +90,18 @@ async def handle_settings(call: ServiceCall) -> None:
         "motor_program": ("schedule",),
         "movement_test": (),
         "control": ("control",),
+        "bed_command": ("command",),
     }[op]
 
     def validate(controller: Lp2Controller) -> None:
+        if isinstance(controller, BedSmartController) != (call.service == "bedsmart"):
+            raise invalid("bed_changed")
         if any(key not in data for key in required):
             raise ValueError("Provide every parameter for the chosen bed setting")
-        if op == "motor_program":
+        if op == "bed_command":
+            if not isinstance(controller, BedSmartController) or data["command"] not in BED_COMMANDS:
+                raise invalid("bedsmart_control")
+        elif op == "motor_program":
             if not data["confirm"] or controller.layout != "RMCS":
                 raise ValueError("Choose the motor program layout and confirm programming")
             controller.schedule_frame(Schedule(**data["schedule"]))
@@ -142,9 +150,16 @@ async def handle_settings(call: ServiceCall) -> None:
         if not started and not check_batch(before_admission=False):
             return
         validate(controller)
+        if isinstance(controller, BedSmartController) and op in ("color", "light_duration", "aromatherapy"):
+            await controller.ensure_feature(aroma=op == "aromatherapy")
+            if not check_batch(before_admission=False):
+                return
         validate_live(controller)
         started = True
-        if op == "motor_program":
+        if op == "bed_command":
+            assert isinstance(controller, BedSmartController)
+            await controller.bed_command(data["command"], data["duration_ms"])
+        elif op == "motor_program":
             await controller.program_schedule(Schedule(**data["schedule"]))
         elif op == "movement_test":
             await controller.diagnostic_cycle()
@@ -186,6 +201,8 @@ async def handle_settings(call: ServiceCall) -> None:
                     async def query(controller: BedController) -> bool:
                         if not isinstance(controller, Lp2Controller):
                             raise invalid("bed_changed")
+                        if isinstance(controller, BedSmartController):
+                            await controller.ensure_feature(aroma=op == "aromatherapy")
                         validate_live(controller)
                         return True
 
@@ -232,3 +249,10 @@ async def handle_settings(call: ServiceCall) -> None:
 
 def async_register_lp2_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, "lp2", handle_settings, schema=vol.Schema(FIELDS))
+    bedsmart = {
+        key: value for key, value in FIELDS.items()
+        if key.schema in (CONF_DEVICE_ID, "operation", "rgb_color", "seconds", "aroma_times", "confirm", "side", "duration_ms")
+    }
+    bedsmart[vol.Required("operation")] = vol.In(("color", "light_duration", "aromatherapy", "movement_test", "bed_command"))
+    bedsmart[vol.Optional("command")] = vol.In(BED_COMMANDS)
+    hass.services.async_register(DOMAIN, "bedsmart", handle_settings, schema=vol.Schema(bedsmart))

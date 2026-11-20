@@ -38,6 +38,7 @@ from custom_components.adjustable_bed.execution import (
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
+from custom_components.adjustable_bed.profiles.saatva import PROFILES as SAATVA_PROFILES
 from custom_components.adjustable_bed.profiles.suta import PROFILES as SUTA_PROFILES
 from tests.codec_families import families
 from tests.test_controller_contract import (
@@ -111,6 +112,8 @@ SUTA_STREAM = tuple(f"SutaProfile:{p.key}@{p.layout}" for p in SUTA_PROFILES.val
 
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SilvermotionProfile:android": {"hold": ("silvermotion-android",)},
+    **{f"SealyProfile:{n}@{n}": {"hold": ("Sealy Posturematic 1.1.3: 300ms held refresh, two STOP writes on release",)} for n in range(3)},
+    **{f"RichmatProfile:{p.key}": {"hold": ("Saatva 1.1.0: immediate 100 ms refresh, ends without a release frame",)} for p in SAATVA_PROFILES.values()},
     **{f"KeesonProfile:betterliving2_p{wire}_{layout}": {"hold": ("BetterLiving2 1.3.0",), "hold_controls": ("BetterLiving2 1.3.0",)}
        for wire in (1, 2, 3) for layout in (2, 3)},
     **{f"EnsoProfile:{n}": {"hold": ("Enso Remote 2.3: immediate 100 ms refresh until zero release",)} for n in (2, 3, 4)},
@@ -289,7 +292,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection.
     "richmat_classic_apps": {
-        "hold": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP', "Jerome's power base 1.0.9: mode1 refresh until release, then50ms END"),
+        "hold": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', "BedSmart 1.0.7: status 1 finite/leased refresh, mode-specific release", 'L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP', "Jerome's power base 1.0.9: mode1 refresh until release, then50ms END"),
         "hold_controls": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'L&P Adjustable Base 2.3.25: stream controls only; confirmed saves never hold', "Jerome's power base 1.0.9: selected-layout held widgets only; never saves"),
     },
     "isleep": {"hold": ("kaidi",)},
@@ -449,6 +452,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/vibradorm/app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
     "beds/vmatbasic/controller.py:<module>.VMatBasicController": ("vmatbasic",),
     "beds/vmatbasic/controller.py:<module>.VMatBasicController.execution": ("vmatbasic",),
+    "profiles/sealy.py:<module>.PROFILES": tuple(f"SealyProfile:{n}@{n}" for n in range(3)),
     "profiles/enso.py:<module>.PROFILES": tuple(f"EnsoProfile:{n}" for n in (2, 3, 4)),
     "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
     "profiles/ff_frame.py:<module>.SOLACE_PROFILES": (
@@ -497,6 +501,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     ),
     "profiles/okin_nframe.py:<module>._lumbar": _LUMBAR,
     "profiles/okin_nframe.py:<module>._simmons": _SIMMONS,
+    "profiles/saatva.py:<module>.PROFILES": tuple(f"RichmatProfile:{p.key}" for p in SAATVA_PROFILES.values()),
     "profiles/richmat.py:<module>.BEDTECH_APP_PROFILES": tuple(
         f"RichmatProfile:bedtech_{model}"
         for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")
@@ -559,6 +564,7 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
     from custom_components.adjustable_bed.profiles.somos import PROFILES as SOMOS_PROFILES
 
     profiles.extend(SOMOS_PROFILES.values())
+    profiles.extend(SAATVA_PROFILES.values())
     profiles.extend(legacy_profiles().values())
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))

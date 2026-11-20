@@ -5434,8 +5434,9 @@ arbitrary packet action. The **Set bed clock** action
 startup does.
 
 Alarm selection/preferences are diagnostic data, not an alarm-state entity.
-Wave/timer response settings are diagnostic sensors disabled by default and
-hidden from the card. Their values and the alarm details are included in
+On P2 and P3, the head and foot massage levels the bed reports are dashboard
+sensors in the card's massage section. Wave/timer response settings are
+diagnostic sensors disabled by default and hidden from the card. Their values and the alarm details are included in
 diagnostics/support bundles. Kept motion, preset, memory, lighting and massage
 controls retain their existing entity identities.
 

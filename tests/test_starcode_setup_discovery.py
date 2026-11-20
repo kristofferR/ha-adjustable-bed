@@ -385,13 +385,15 @@ async def test_shared_star_uart_manual_auto_requires_explicit_choice(
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
+@pytest.mark.parametrize("app_hint", [const.BED_TYPE_STARCODE_ABM5_4, "sealy_posturematic"])
 @pytest.mark.parametrize("other_ambiguity", [None, const.BED_TYPE_LINAK])
 def test_confident_receiver_app_hint_preserves_other_ambiguities(
+    app_hint: str,
     other_ambiguity: str | None,
 ) -> None:
     from custom_components.adjustable_bed.config_flow import _confident_auto_detect
 
-    alternatives = [const.BED_TYPE_STARCODE_ABM5_4]
+    alternatives = [app_hint]
     if other_ambiguity:
         alternatives.append(other_ambiguity)
     result = const.DetectionResult(
