@@ -9,6 +9,10 @@
   ],
   "bluetooth": [
     {
+      "service_uuid": "00001000-0000-1000-8000-00805f9b34fb",
+      "connectable": true
+    },
+    {
       "service_uuid": "00001234-0000-1000-8000-00805f9b34fb"
     },
     {

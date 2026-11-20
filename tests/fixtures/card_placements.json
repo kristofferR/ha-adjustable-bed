@@ -190,6 +190,9 @@
  "binary_sensor:starcode_sonic_active": {
   "card_section": "hidden"
  },
+ "binary_sensor:superior_sleep_alarm_enabled": {
+  "card_section": "hidden"
+ },
  "binary_sensor:symphony_alarm_enabled": {
   "card_section": "utility"
  },
@@ -4610,6 +4613,24 @@
  "sensor:super_colchones": {
   "card_section": "hidden"
  },
+ "sensor:superior_sleep_alarm_hour": {
+  "card_section": "hidden"
+ },
+ "sensor:superior_sleep_foot_level": {
+  "card_section": "massage"
+ },
+ "sensor:superior_sleep_head_level": {
+  "card_section": "massage"
+ },
+ "sensor:superior_sleep_mode": {
+  "card_section": "massage"
+ },
+ "sensor:superior_sleep_timer_minutes": {
+  "card_section": "massage"
+ },
+ "sensor:superior_sleep_timer_seconds": {
+  "card_section": "hidden"
+ },
  "sensor:svane_firmware": {
   "card_section": "hidden"
  },
@@ -4877,6 +4898,9 @@
   "card_section": "massage"
  },
  "switch:smart_sleep_privacy": {
+  "card_section": "utility"
+ },
+ "switch:superior_sleep_motion": {
   "card_section": "utility"
  },
  "switch:suta_heating": {

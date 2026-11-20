@@ -3089,6 +3089,34 @@ somos_action:
           options: [flat, zero_g, anti_snore, memory_1, memory_2, memory_3, head_massage, foot_massage, massage_timer_cycle, light, status_query]
           translation_key: somos_action_action
 
+superior_sleep_speech:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+    action:
+      required: true
+      selector:
+        select:
+          options: [head_up, head_down, foot_up, foot_down, back_up, back_down, lumbar_up, lumbar_down, speech_stop, lounge, zero_g, anti_snore, flat, memory_1, memory_2, massage_on, massage_off, light, motion_on, motion_off]
+          translation_key: superior_sleep_speech_action
+    duration_ms:
+      default: 1000
+      selector:
+        number:
+          min: 1
+          max: 60000
+          mode: box
+          unit_of_measurement: ms
+
 suta:
   fields:
     device_id:

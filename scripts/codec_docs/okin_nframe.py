@@ -618,6 +618,30 @@ def render_resident_session() -> str:
     )
 
 
+def render_superior_sleep() -> str:
+    from custom_components.adjustable_bed.profiles import superior_sleep as p
+    return _block(
+        _table(("Profile", "Bed type", "App motor labels", "Presets", "Massage adjustments", "Programmable"), (
+            (profile.key, "`superior_sleep`", ", ".join(profile.axes), ", ".join(profile.presets),
+             ", ".join(profile.adjustments), ", ".join(profile.programmable))
+            for profile in p.PROFILES.values()
+        )),
+        _table(("Name route", "Service", "Write without response", "Notify"), (
+            (name, f"`{t.service}`", f"`{t.write}`", f"`{t.notify}`") for name, t in p.TRANSPORTS.items()
+        )),
+        _table(("Action", "Frame"), ((key, _hex(frame)) for key, frame in p.FRAMES.items())),
+        _table(("Operation", "Timing"), (
+            ("Held refresh", f"{p.REFRESH_MS} ms"),
+            ("One-shot, STOP and queries", f"{p.ONCE_COUNT} attempts, {p.REFRESH_MS} ms apart"),
+            ("Save/reset gesture", f"{p.SAVE_MS} ms of the recall/chord frame, then STOP"),
+            ("Motion activation on/off", f"{p.MOTION_MS} ms refresh, then end without STOP"),
+            ("Massage release", f"Refresh continues until query starts after {p.MASSAGE_RELEASE_MS} ms; no STOP"),
+            ("Startup massage / post-alarm query", f"+{p.QUERY_DELAY_MS} ms from operation start"),
+        )),
+        "Selected speech targets: " + ", ".join(f"`{key}`" for key in p.SPEECH_ACTIONS) + ".",
+    )
+
+
 def render_rize_home() -> str:
     p = rize_home
     return _block(
@@ -759,6 +783,7 @@ def render_n32_session() -> str:
 BLOCKS: list[Block] = [
     (GUIDE, "ultramatic-controls", render_ultramatic),
     (GUIDE, "rize-home", render_rize_home),
+    (GUIDE, "superior-sleep", render_superior_sleep),
     (GUIDE, "okin-motionbed", render_okin_motionbed),
     (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),
     (GUIDE, "apex-controls", render_apex),
