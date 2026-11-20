@@ -2260,6 +2260,8 @@ def _check_alarm(
         ("massage_intensity", alarm.massage_intensity, 1, capability.massage_intensities),
     )
     for name, value, low, high in limits:
+        if name == "slot" and capability.live_slots:
+            continue  # The controller admits the exact identity during check_alarm.
         if name in given and not low <= value <= high:
             raise invalid("alarm_value_out_of_range", device_name=device_name, option=name, min=str(low), max=str(high))
     if "massage_duration" in given and alarm.massage_duration not in capability.massage_durations:
@@ -2309,11 +2311,17 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         targets,
         {
             BED_TYPE_ZSERIES: "zseries",
+            "betterliving2": "betterliving2",
             BED_TYPE_SYMPHONY: "symphony",
             BED_TYPE_ULTRAMATIC_SMART_BED: "ultramatic",
         },
         SERVICE_SET_ALARM,
     )
+    if route == "betterliving2":
+        from .beds.keeson.betterliving2_services import set_alarm
+
+        await set_alarm(call, alarm, given)
+        return
     if route == "ultramatic":
         # Its fenced A/AB/B plans capture every target before their first await.
         from .beds.ultramatic.services import set_ultramatic_alarm
@@ -2370,6 +2378,7 @@ class _CheckedSession:
 
     controller: BedController
     generation: object
+    alarm_identity: tuple[int, int] | None = None
 
 
 def _connection_generation(child: BedChild) -> object:
@@ -2425,7 +2434,14 @@ async def _write_checked_alarms(
             request = _check_alarm(child.name, controller, alarm, given)
             if plan.live_check:
                 await controller.check_alarm(request)
-            sessions[id(child)] = _CheckedSession(controller, _connection_generation(child))
+            identity = controller.alarm_record_identity(request) if plan.live_slots else None
+            if plan.live_slots and request.mattress_side is None and identity is None:
+                raise _bed_changed()
+            sessions[id(child)] = _CheckedSession(
+                controller,
+                _connection_generation(child),
+                identity,
+            )
 
         # One side at a time, and a read never preempts movement: a failed
         # check is not a reason to stop anything.
@@ -2497,7 +2513,12 @@ async def _write_checked_alarms(
                 stopped = True
                 return
             # Check the request again on the controller that actually writes.
-            await controller.configure_alarm(_check_alarm(child.name, controller, alarm, given))
+            request = _check_alarm(child.name, controller, alarm, given)
+            if (session := sessions.get(id(child))) is not None and session.alarm_identity is not None:
+                request = dataclasses.replace(request, record_identity=session.alarm_identity)
+            if _capability.live_slots and request.mattress_side is None and request.record_identity is None:
+                raise _bed_changed()
+            await controller.configure_alarm(request)
             written.add(id(child))
 
         return step(configure)
@@ -2886,6 +2907,9 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.kaidi.floyd_services import async_register_floyd_services
     from .beds.kaidi.rize_services import async_register_rize_services
     from .beds.keeson.agingplace_services import register_services as register_agingplace_services
+    from .beds.keeson.betterliving2_services import (
+        register_services as register_betterliving2_services,
+    )
     from .beds.keeson.somos_services import register_services as register_somos_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
@@ -2905,6 +2929,8 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     )
     from .beds.reverie.services import async_register_reverie_services
     from .beds.richmat_app.services import async_register_richmat_app_services
+    from .beds.richmat_classic.jerome_services import async_register_jerome_services
+    from .beds.richmat_classic.lp2_services import async_register_lp2_services
     from .beds.richmat_classic.resource_services import async_register_resource_bed_services
     from .beds.richmat_classic.rise_services import async_register_richmat_rise_services
     from .beds.richmat_classic.services import async_register_richmat_classic_services
@@ -2944,6 +2970,8 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_mh_app_services,
         async_register_position_estimate_services,
         async_register_richmat_classic_services,
+        async_register_lp2_services,
+        async_register_jerome_services,
         async_register_resource_bed_services,
         async_register_richmat_legacy_services,
         async_register_richmat_rise_services,
@@ -2972,6 +3000,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_fsm_relax_services,
         async_register_limoss_remote_services,
         register_apex_services,
+        register_betterliving2_services,
         register_agingplace_services,
         register_onlysnore_services,
         async_register_logicdata_app_services,

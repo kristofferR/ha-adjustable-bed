@@ -26,6 +26,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
@@ -114,6 +115,7 @@ from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
+from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
@@ -158,6 +160,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_MLILY: MLILY_PROFILES,
     "majestichome": MAJESTICHOME_PROFILES,
     BED_TYPE_OKIMIKI: OKIMIKI_PROFILES,
+    "saatva": SAATVA_CHOICES,
     "bobpowerbase": BOB_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
@@ -196,6 +199,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
     BED_TYPE_YAMADA: {"p1": "P1 control box", "p2": "P2 control box"},
+    BED_TYPE_BETTERLIVING2: {"p1": "P1 control box", "p2": "P2 control box", "p3": "P3 control box"},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},
     "richmat_sleep_receiver": {"wsilver2": "W.Silver Products", "americanstar": "AMERICANSTAR",
                                "bailey2": "Bailey's Bed Control", "tx": "TX"},

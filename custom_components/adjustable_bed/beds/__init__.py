@@ -60,8 +60,10 @@ if TYPE_CHECKING:
     from .kaidi.controller import KaidiController as KaidiController
     from .kaidi.rize import RizeController as RizeController
     from .keeson.agingplace import AgingPlaceController as AgingPlaceController
+    from .keeson.betterliving2 import BetterLiving2Controller as BetterLiving2Controller
     from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.controller import KeesonController as KeesonController
+    from .keeson.enso import EnsoController as EnsoController
     from .keeson.jalon import JalonController as JalonController
     from .keeson.ormatek import OrmatekController as OrmatekController
     from .keeson.somos import SomosController as SomosController
@@ -119,9 +121,11 @@ if TYPE_CHECKING:
     from .row_control import RowControlController as RowControlController
     from .ruf_richmat.controller import RufRichmatController as RufRichmatController
     from .ruf_richmat.sleep import RufRichmatSleepController as RufRichmatSleepController
+    from .saatva import SaatvaController as SaatvaController
     from .sbi import QPlusAppController as QPlusAppController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
+    from .sealy.controller import SealyController as SealyController
     from .serenity.controller import SerenityController as SerenityController
     from .serenity.controller import TranquilController as TranquilController
     from .serenity.controller import ZSeriesController as ZSeriesController
@@ -158,6 +162,7 @@ _EXPORT_MODULES = {
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "N32MotionBedController": "n32_motion_bed.controller",
     "LunioSmartController": "luniosmart.controller",
+    "SaatvaController": "saatva",
     "SonicSleepController": "sonicsleep.controller",
     "MlilyRemoteController": "mlily_remote.controller",
     "ResidentController": "resident.controller",
@@ -198,7 +203,10 @@ _EXPORT_MODULES = {
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
     "SomosController": ("keeson.somos", "SomosController"),
+    "EnsoController": ("keeson.enso", "EnsoController"),
+    "SealyController": ("sealy.controller", "SealyController"),
     "YamadaController": ("keeson.yamada", "YamadaController"),
+    "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
     "GlideawayMotionController": "glideaway_motion.controller",
     "BedSenseController": "bedsense",
     "InnovaController": "innova",

@@ -3,6 +3,14 @@
 Generated outside this repository with ``beds/richmat_classic/data``; no generator is checked in, so edits are by hand.
 """
 
+from ...profiles.bedsmart import ALIASES as BEDSMART_ALIASES
+from ...profiles.bedsmart import LAYOUTS as BEDSMART_LAYOUTS
+from ...profiles.bedsmart import NAVIGATION_LAYOUTS as BEDSMART_NAVIGATION
+from ...profiles.jerome2 import ALIASES as JEROME_ALIASES
+from ...profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED
+from ...profiles.jerome2 import LAYOUTS as JEROME_LAYOUTS
+from ...profiles.lp2 import ALIASES as LP2_ALIASES
+from ...profiles.lp2 import LAYOUTS as LP2_LAYOUTS
 from ...profiles.richmat_resource_apps import ALIASES, APPS, LAYOUTS
 
 # These source screens select another layout and have no ordinary bed controls.
@@ -390,3 +398,21 @@ MANUAL_ALIASES['powercool'] = {'B6RU': 'B6RM', 'ZR90': 'S9RM', '200I': 'A8RM', '
 for _app in APPS:
     MODEL_CHOICES[_app] = LAYOUTS
     MANUAL_ALIASES[_app] = {key: value for key, value in ALIASES.items() if len(key) == 4}
+
+MODEL_CHOICES["lp2"] = LP2_LAYOUTS
+MANUAL_ALIASES["lp2"] = {key: value for key, value in LP2_ALIASES.items() if len(key) == 4}
+LAYOUT_PICKER_CHOICES["lp2"] = {"ZRS3:APRM": "APRM", "ZRS3:AQRM": "AQRM"}
+
+# BedSmart owns its package-local layouts and manual aliases.
+
+MODEL_CHOICES["bedsmart"] = BEDSMART_LAYOUTS
+MANUAL_ALIASES["bedsmart"] = {k: v for k, v in BEDSMART_ALIASES.items() if len(k) == 4}
+LAYOUT_PICKER_CHOICES["bedsmart"] = {
+    f"{menu}:{layout}": layout
+    for menu, layouts in BEDSMART_NAVIGATION.items()
+    for layout in layouts
+}
+
+# Jerome's power base has its own complete, frozen resource domain.
+MODEL_CHOICES['jerome2'] = JEROME_LAYOUTS
+MANUAL_ALIASES['jerome2'] = {key: value for key, value in JEROME_ALIASES.items() if not key.startswith("L&P") and value not in JEROME_EXCLUDED}

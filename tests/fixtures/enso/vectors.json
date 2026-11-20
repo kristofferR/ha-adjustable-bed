@@ -1,0 +1,285 @@
+[
+  {
+    "action": "release",
+    "kind": "control",
+    "inputs": {
+      "key": "00000000"
+    },
+    "expected_bytes": "e5fe160000000006"
+  },
+  {
+    "action": "back_up",
+    "kind": "control",
+    "inputs": {
+      "key": "00000001"
+    },
+    "expected_bytes": "e5fe160100000005"
+  },
+  {
+    "action": "back_down",
+    "kind": "control",
+    "inputs": {
+      "key": "00000002"
+    },
+    "expected_bytes": "e5fe160200000004"
+  },
+  {
+    "action": "foot_up",
+    "kind": "control",
+    "inputs": {
+      "key": "00000004"
+    },
+    "expected_bytes": "e5fe160400000002"
+  },
+  {
+    "action": "foot_down",
+    "kind": "control",
+    "inputs": {
+      "key": "00000008"
+    },
+    "expected_bytes": "e5fe1608000000fe"
+  },
+  {
+    "action": "combined_up",
+    "kind": "control",
+    "inputs": {
+      "key": "00000005"
+    },
+    "expected_bytes": "e5fe160500000001"
+  },
+  {
+    "action": "combined_down",
+    "kind": "control",
+    "inputs": {
+      "key": "0000000A"
+    },
+    "expected_bytes": "e5fe160a000000fc"
+  },
+  {
+    "action": "waist_up",
+    "kind": "control",
+    "inputs": {
+      "key": "00000010"
+    },
+    "expected_bytes": "e5fe1610000000f6"
+  },
+  {
+    "action": "waist_down",
+    "kind": "control",
+    "inputs": {
+      "key": "00000020"
+    },
+    "expected_bytes": "e5fe1620000000e6"
+  },
+  {
+    "action": "lumbar_up",
+    "kind": "control",
+    "inputs": {
+      "key": "00000040"
+    },
+    "expected_bytes": "e5fe1640000000c6"
+  },
+  {
+    "action": "lumbar_down",
+    "kind": "control",
+    "inputs": {
+      "key": "00000080"
+    },
+    "expected_bytes": "e5fe168000000086"
+  },
+  {
+    "action": "flat",
+    "kind": "control",
+    "inputs": {
+      "key": "08000000"
+    },
+    "expected_bytes": "e5fe1600000008fe"
+  },
+  {
+    "action": "zero_gravity",
+    "kind": "control",
+    "inputs": {
+      "key": "00001000"
+    },
+    "expected_bytes": "e5fe1600100000f6"
+  },
+  {
+    "action": "memory_A",
+    "kind": "control",
+    "inputs": {
+      "key": "00002000"
+    },
+    "expected_bytes": "e5fe1600200000e6"
+  },
+  {
+    "action": "memory_B",
+    "kind": "control",
+    "inputs": {
+      "key": "00004000"
+    },
+    "expected_bytes": "e5fe1600400000c6"
+  },
+  {
+    "action": "timer",
+    "kind": "control",
+    "inputs": {
+      "key": "00000200"
+    },
+    "expected_bytes": "e5fe160002000004"
+  },
+  {
+    "action": "massage_mode",
+    "kind": "control",
+    "inputs": {
+      "key": "04000000"
+    },
+    "expected_bytes": "e5fe160000000402"
+  },
+  {
+    "action": "foot_massage_increase",
+    "kind": "control",
+    "inputs": {
+      "key": "00000400"
+    },
+    "expected_bytes": "e5fe160004000002"
+  },
+  {
+    "action": "foot_massage_decrease",
+    "kind": "control",
+    "inputs": {
+      "key": "01000000"
+    },
+    "expected_bytes": "e5fe160000000105"
+  },
+  {
+    "action": "head_massage_increase",
+    "kind": "control",
+    "inputs": {
+      "key": "00000800"
+    },
+    "expected_bytes": "e5fe1600080000fe"
+  },
+  {
+    "action": "head_massage_decrease",
+    "kind": "control",
+    "inputs": {
+      "key": "00800000"
+    },
+    "expected_bytes": "e5fe160000800086"
+  },
+  {
+    "action": "massage_level",
+    "kind": "control",
+    "inputs": {
+      "key": "00000100"
+    },
+    "expected_bytes": "e5fe160001000005"
+  },
+  {
+    "action": "light_button",
+    "kind": "control",
+    "inputs": {
+      "key": "00020000"
+    },
+    "expected_bytes": "e5fe160000020004"
+  },
+  {
+    "action": "rename local BLE device A",
+    "kind": "rename",
+    "inputs": {
+      "name": "A"
+    },
+    "expected_bytes": "ef02410000000000000000000000000000cd"
+  },
+  {
+    "action": "rename local BLE device Enso",
+    "kind": "rename",
+    "inputs": {
+      "name": "Enso"
+    },
+    "expected_bytes": "ef02456e736f000000000000000000000079"
+  },
+  {
+    "action": "notification parser 16-timer10",
+    "kind": "notification",
+    "inputs": {
+      "page": 0
+    },
+    "expected_bytes": "00000000000000000000000000000100",
+    "expected_parse": {
+      "accepted": true,
+      "timer_minutes": 10
+    }
+  },
+  {
+    "action": "notification parser 19-lamp-on",
+    "kind": "notification",
+    "inputs": {
+      "page": 2
+    },
+    "expected_bytes": "00000000000000000000000000004003000000",
+    "expected_parse": {
+      "accepted": true,
+      "lamp": 1
+    }
+  },
+  {
+    "action": "notification parser 16-suppressed",
+    "kind": "notification",
+    "inputs": {
+      "page": 1
+    },
+    "expected_bytes": "00000000000000000000000000200100",
+    "expected_parse": {
+      "accepted": true,
+      "suppressed": true
+    }
+  },
+  {
+    "action": "notification parser 16-timer-off",
+    "kind": "notification",
+    "inputs": {
+      "page": 1
+    },
+    "expected_bytes": "0000000000000000000000000000ff00",
+    "expected_parse": {
+      "accepted": true,
+      "timer": "off"
+    }
+  },
+  {
+    "action": "notification parser 16-unmapped-timer",
+    "kind": "notification",
+    "inputs": {
+      "page": 0
+    },
+    "expected_bytes": "00000000000000000000000000000000",
+    "expected_parse": {
+      "accepted": true,
+      "timer": "unchanged"
+    }
+  },
+  {
+    "action": "notification parser 15-rejected",
+    "kind": "notification",
+    "inputs": {
+      "page": 0
+    },
+    "expected_bytes": "000000000000000000000000000000",
+    "expected_parse": {
+      "accepted": false
+    }
+  },
+  {
+    "action": "notification parser 19-timer30",
+    "kind": "notification",
+    "inputs": {
+      "page": 1
+    },
+    "expected_bytes": "00000000000000000000000000000003000000",
+    "expected_parse": {
+      "accepted": true,
+      "timer_minutes": 30
+    }
+  }
+]

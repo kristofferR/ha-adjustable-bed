@@ -1062,3 +1062,30 @@ async def test_sync_on_and_off_are_one_switch(coordinator, instant):
     # A product with only Sync on keeps its button.
     single = controller(coordinator, "flexxafeg300sh")
     assert single._sync_details is None and single.controller_switch_specs == ()
+
+
+@pytest.mark.parametrize("profile", [k for k, p in PRODUCTS.items() if p.massage])
+async def test_massage_timer_controls_are_one_select(coordinator, instant, profile):
+    """Each fixed-duration timer button's frames are what the timer select sends."""
+    c = controller(coordinator, profile)
+    timers = {
+        minutes: detail
+        for detail in c.product.massage
+        if (minutes := {95: 10, 99: 20, 97: 30}.get(ACTIONS[detail].code))
+        and "MinuteTimer" in ACTIONS[detail].enum
+    }
+    assert c.supports_massage_timer is bool(timers)
+    assert c.massage_timer_options == sorted(timers)
+    assert not c.massage_timer_can_turn_off
+    keys = {s.key for s in c.controller_button_specs}
+    assert not {k for k in keys if "minute_timer" in k}
+    for minutes, detail in timers.items():
+        coordinator.client.write_gatt_char.reset_mock()
+        await bed._action(c, detail=detail)
+        by_button = written(coordinator)
+        coordinator.client.write_gatt_char.reset_mock()
+        await c.set_massage_timer(minutes)
+        assert written(coordinator) == by_button != []
+        assert coordinator.controller_state["massage_timer"] == minutes
+    with pytest.raises(ValueError):
+        await c.set_massage_timer(15)

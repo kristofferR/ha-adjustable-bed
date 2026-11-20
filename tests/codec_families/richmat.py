@@ -26,6 +26,8 @@ from tests import (
 from tests.codec_families import CodecFamily, CodecGuide
 from tests.richmat_legacy_vectors import FROZEN_FRAMES as LEGACY_FRAMES
 from tests.richmat_vectors import FROZEN_FRAMES
+from tests.saatva_vectors import FROZEN_FRAMES as SAATVA_FRAMES
+from tests.saatva_vectors import VECTORS as SAATVA_VECTORS
 
 _SPELLED = re.compile(r"`((?:6E|5E|55|AA|04)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE)
 # Profiles reached through a protocol variant of their bed type.
@@ -35,6 +37,7 @@ _VARIANTS = {
     "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
     "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
     **{f"bedtech_{model}": model for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")},
+    "richmat_mh_bedtech_classic": "model_5i",
     "hjbed": "hj_bedbjrn",
     "galaxy": "6BRM",
     "richmat_app": "6BRM",
@@ -52,6 +55,7 @@ _FROZEN = frozenset().union(
     *FROZEN_FRAMES.values(),
     *luniosmart_vectors.FROZEN_FRAMES.values(),
     mlily_remote_vectors.FROZEN_FRAMES,
+    frozenset(row[2] for row in SAATVA_VECTORS),
     *(frozenset(r["expected_bytes"] for r in sonicsleep_vectors.VECTORS["commands"] + sonicsleep_vectors.VECTORS["alarm_repair"]),),
     *(
         vectors.SHARED_FRAMES.union(*vectors.FROZEN_FRAMES.values())
@@ -81,7 +85,7 @@ def _spelled(text: str) -> set[str]:
 
 FAMILY = CodecFamily(
     profiles={
-        RichmatProfile: FROZEN_FRAMES,
+        RichmatProfile: FROZEN_FRAMES | SAATVA_FRAMES,
         LunioSmartProfile: luniosmart_vectors.FROZEN_FRAMES,
         LegacyProfile: LEGACY_FRAMES,
         MlilyRemoteProfile: dict.fromkeys(MLILY_REMOTE_PROFILES, mlily_remote_vectors.FROZEN_FRAMES),
@@ -94,6 +98,7 @@ FAMILY = CodecFamily(
         {
             "bailey_bed_control",
             "bedtech",
+            "bedtech_classic",
             "casper_base",
             "eshine",
             "galaxy",
@@ -108,6 +113,7 @@ FAMILY = CodecFamily(
             "hush_base",
             "luuna",
             "sonicsleep",
+            "saatva",
             "luniosmart",
             "sleep_evolution",
             "wsilver_legacy",
@@ -133,7 +139,7 @@ FAMILY = CodecFamily(
         path="docs/beds/richmat.md",
         spelled=_spelled,
         frozen=_FROZEN,
-        variant=lambda key, bed_type: key.split(":", 1)[1] if bed_type in ("sleep_evolution", "wsilver_legacy") else key if bed_type in _PRODUCT_VARIANTS else _VARIANTS.get(key),
+        variant=lambda key, bed_type: key.removeprefix("saatva_") if bed_type == "saatva" else key.split(":", 1)[1] if bed_type in ("sleep_evolution", "wsilver_legacy") else key if bed_type in _PRODUCT_VARIANTS else _VARIANTS.get(key),
         entry_data={
             "bobpowerbase": {const.CONF_PRODUCT_TYPE: "standard"},
             "sonicsleep": {const.CONF_PRODUCT_TYPE: "one"},

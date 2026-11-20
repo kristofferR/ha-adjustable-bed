@@ -97,3 +97,14 @@ STOP: Final = command(0x0F)
 WAKE: Final = request(0x0B)
 MATTRESSFIRM_HANDSHAKE: Final = bytes.fromhex("09050A23050000")
 CONNECTION_FRAMES: Final = frozenset({WAKE, MATTRESSFIRM_HANDSHAKE})
+
+
+def raw_parts_clock(parts: Sequence[int]) -> bytes:
+    """Sealy's exact Dart DateTime parts formula, with no inferred calendar conversion.
+
+    Index 6's device meaning is unverified. Callers must supply the source
+    parts, never substitute a Python weekday convention.
+    """
+    return bytes(
+        (7, 4, parts[8] - 2000, parts[7], parts[5], parts[6], parts[4], parts[3], parts[2])
+    )

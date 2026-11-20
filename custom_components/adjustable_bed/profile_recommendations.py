@@ -29,6 +29,7 @@ from .app_state_store import app_state_store
 from .const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_GALAXY,
@@ -187,7 +188,9 @@ def _reported_recommendation(
     if (
         detected.bed_type != BED_TYPE_SLEEPYS_BOX25
         or detected.requires_characteristic_check
-        or set(detected.ambiguous_types or ()) - {BED_TYPE_STARCODE_ABM5_4} - _GMMOTOR_APP_HINTS
+        or set(detected.ambiguous_types or ())
+        - {BED_TYPE_STARCODE_ABM5_4, "sealy_posturematic"}
+        - _GMMOTOR_APP_HINTS
     ):
         return None
     # This key changes only for materially different evidence, not releases,
@@ -208,6 +211,11 @@ def recommend_profile(
     controls. Ambiguous routes therefore offer review without choosing a winner.
     """
     if info is None:
+        return None
+    if (data.get("bed_type") == BED_TYPE_BETTERLIVING2
+        and data.get("protocol_variant") in ("p1", "p2", "p3")
+        and data.get("product_type") in ("2", "3")):
+        # Shared receiver names/services cannot replace this explicit app choice.
         return None
     if (
         _SLEEPTRACKER_PROFILE in SUPPORTED_BED_TYPES
@@ -280,8 +288,8 @@ def recommend_profile(
         BED_TYPE_MLILY, BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_GALAXY, "bobpowerbase",
         BED_TYPE_ESHINE_OKIN, BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_RESIDENT, BED_TYPE_MLINE, BED_TYPE_YAMADA, BED_TYPE_COMFORT_ENHANCEMENT3,
-        BED_TYPE_N32_MOTION_BED, BED_TYPE_OKIMIKI,
-        BED_TYPE_SOMOS,
+        BED_TYPE_N32_MOTION_BED, BED_TYPE_BETTERLIVING2, BED_TYPE_OKIMIKI,
+        BED_TYPE_SOMOS, "saatva",
         BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP,
     }
     if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
@@ -291,7 +299,7 @@ def recommend_profile(
             "name:bobpowerbase_app_candidate",
             "name:eshine_okin_app_candidate", "name:richmat_classic_app_candidate",
             "name:resident_app_candidate", "name:mline_app_candidate", "name:yamada_app_candidate",
-            "name:n32_app_candidate", "name:okimiki_app_candidate",
+            "name:n32_app_candidate", "name:betterliving2_app_candidate", "name:okimiki_app_candidate",
             "name:richmat_app_candidate", "name:richmat_sleep_candidate",
         )
         for signal in detected.signals

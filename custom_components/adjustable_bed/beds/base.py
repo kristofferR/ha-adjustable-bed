@@ -189,17 +189,20 @@ class BedController(GattWriter):
         """Forward several ``KEY(value)`` updates at once."""
         self._coordinator.handle_controller_state_updates(*updates)
 
-    def sent_state(self, *updates: StateUpdate) -> AbstractContextManager[None]:
+    def sent_state(
+        self, *updates: StateUpdate, is_current: Callable[[], bool] | None = None
+    ) -> AbstractContextManager[None]:
         """Publish values the step inside sets but the bed does not report.
 
         Wrap the write: ``with self.sent_state(KEY(value)): await self.write(...)``.
         Only as far as it reached the bed: nothing sent publishes nothing, a
         step cut off between frames makes the values unknown. Settled also when
-        the step raises, which still propagates.
+        the step raises, which still propagates. A session-bound writer can
+        suppress publication once its owner changes.
         """
 
         def show(delivery: Delivery) -> None:
-            if not updates:
+            if not updates or is_current is not None and not is_current():
                 return
             if delivery is Delivery.SENT:
                 self.forward_controller_state_updates(*updates)
@@ -223,6 +226,11 @@ class BedController(GattWriter):
     @property
     def commands_share_timer(self) -> bool:
         """Whether every command replaces one physical stream, across axes and sides."""
+        return False
+
+    @property
+    def reconnect_for_explicit_stop(self) -> bool:
+        """Whether a released paired side must reconnect for a user-requested STOP."""
         return False
 
     @property
@@ -2099,6 +2107,10 @@ class BedController(GattWriter):
 
     async def check_alarm(self, alarm: AlarmRequest) -> None:
         """Check an alarm against the bed's reported state, for ``live_check`` beds."""
+        return None
+
+    def alarm_record_identity(self, alarm: AlarmRequest) -> tuple[int, int] | None:
+        """Bind a live slot to its reported receiver for subsequent dispatch."""
         return None
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:

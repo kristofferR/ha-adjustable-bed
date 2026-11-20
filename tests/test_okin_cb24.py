@@ -807,3 +807,23 @@ async def test_separate_address_routes_are_all_validated_before_child_constructi
     with raises_key("smartbed_choose_receiver"):
         _build_paired_children(hass, entry)
     constructor.assert_not_called()
+
+
+@pytest.mark.parametrize("controller_side", (None, "left", "right"))
+async def test_unknown_smartbed_timer_remains_unknown_after_disconnect(make, controller_side):
+    from custom_components.adjustable_bed.select import AdjustableBedMassageTimerSelect
+
+    c, co, _, _, _ = make("cb24_ab")
+    co.controller_state.update({"massage_timer": 10, "massage_timer_left": 20, "massage_timer_right": 30})
+    view = SimpleNamespace(
+        bed_type=BED_TYPE_OKIN_CB24, entity_side=controller_side, controller_side=controller_side,
+        controller_state=co.controller_state,
+    )
+    timer = object.__new__(AdjustableBedMassageTimerSelect)
+    timer._coordinator = view
+    timer._attr_options = ["10 min", "20 min", "30 min"]
+    timer._has_off = c.massage_timer_can_turn_off
+    assert not timer._has_off
+    assert timer.current_option == {None: "10 min", "left": "20 min", "right": "30 min"}[controller_side]
+    c.on_disconnect()
+    assert timer.current_option is None

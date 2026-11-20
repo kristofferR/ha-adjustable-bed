@@ -19,6 +19,7 @@ from .const import (
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_BF,
     BED_TYPE_BOBPOWERBASE,
     BED_TYPE_CASPER_BASE,
@@ -249,7 +250,10 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_LINX: replace(_NO_ANGLES_SCOPED, connection_timeout=10.0, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY_SLEEP: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=8.0),
+    "enso": _NO_ANGLES_SCOPED,
+    "sealy_posturematic": BedTraits(no_angle_feedback=True, connection_scoped_state=True, connection_timeout=5.0),
     BED_TYPE_YAMADA: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    BED_TYPE_BETTERLIVING2: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_CASPER_BASE: _NO_ANGLES,
     "casper_remote": _NO_ANGLES,
     BED_TYPE_CASPER_SLEEP_MM: _NO_ANGLES,
@@ -297,6 +301,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "luniosmart": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sleep_evolution": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "wsilver_legacy": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "saatva": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sonicsleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "hush_remote": _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_MM: _NO_ANGLES,
@@ -412,9 +417,13 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return _NONE
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
     traits = _BED_TRAITS.get(resolved, _NONE)
+    if resolved == "richmat_classic_apps" and protocol_variant == "lp2":
+        return replace(traits, owns_device_info_reads=True)
+    if resolved == "richmat_classic_apps" and protocol_variant == "jerome2":
+        return replace(traits, single_address_native_both=False)
     if resolved == "solace" and protocol_variant == "sophie":
         return replace(traits, no_angle_feedback=True, connection_scoped_state=True, owns_device_info_reads=True)
-    if resolved in ("richmat_nisco", "richmat_mlily_supreme") and protocol_variant == "sleep":
+    if resolved in ("richmat_nisco", "richmat_mlily_supreme", "bedtech_classic") and protocol_variant == "sleep":
         return replace(traits, persistent_connection=True)
     if resolved == "bedtech" and protocol_variant not in (None, "", VARIANT_AUTO):
         return _NO_ANGLES
@@ -514,7 +523,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "richmat_tx", "rize_home", "rize_remedy_ii", "row_control", "ruf_betten",
      "serenity", "serta_mp_remote", "simmons", "sleep_number", "sleepstar",
      "sleeptracker", "sleepys_box15", "sleepys_box24", "smart_comfort_synargy",
-     "smart_comfort_synergy", "solace", "sonicsleep", "star_elevate", "starcode_abm5_4",
+     "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
      "wsilver_products", "yamada", "ormatek",

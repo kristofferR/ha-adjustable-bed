@@ -49,6 +49,7 @@ of this one (see [Nectar](#nectar)).
 | ✅ | Nectar Motion / Nectar Move | `com.okin.bedding.nectarmotion` | Not this codec: select [Nectar Move](okin-nframe.md#nectar-move-profile) under Okin CST |
 | See [Okin CST](okin-nframe.md#okin-cst) | Mattress Firm 900 - O / MFirm 900-O | `com.okin.bedding.rizemf900` | Not this codec: [Okin CST](okin-nframe.md#okin-cst) |
 | ✅ | [Sealy Posturematic](https://play.google.com/store/apps/details?id=com.okin.sealy) v1.1.1 | `com.okin.sealy` | [Sealy Posturematic (CB35)](#sealy-posturematic-cb35) |
+| ✅ | [Sealy Posturematic](https://play.google.com/store/apps/details?id=com.okin.sealy) 1.1.3 | `com.okin.sealy` | [Sealy Posturematic app](#sealy-posturematic-app) |
 | ✅ | [Adjustable Comfort M1X12](https://play.google.com/store/apps/details?id=com.starcode.adjustablem1x12) 1.1.3 | `com.starcode.adjustablem1x12` | [DewertOkin ELEVATE](#dewertokin-elevate) |
 | ✅ | [AdjustableM5X5](https://play.google.com/store/apps/details?id=com.starcode.abm5_5) 1.2.3 | `com.starcode.abm5_5` | [DewertOkin ELEVATE](#dewertokin-elevate) |
 
@@ -287,6 +288,7 @@ sends is in its own guide.
 |---------|--------|
 | Nectar, Mattress Firm 900 / iFlex | None: no subscription |
 | Sealy Posturematic (CB35) | Subscribes to the Nordic UART notify characteristic. Massage status frames start with `A5 0B` (8 bytes or longer); they are logged and captured for diagnostics but not parsed into entities |
+| Sealy Posturematic app | Massage timer, wave and head/foot strengths; raw anti-pinch status in protocol diagnostics |
 | DewertOkin ELEVATE | Subscribes and forwards raw notifications; the analyzed apps assign them no semantic fields |
 
 ### STOP and release behavior
@@ -301,7 +303,10 @@ sends is in its own guide.
 
 ### Vectors
 
-`tests/okin_5a_vectors.py` freezes every frame each profile sends, and
+`tests/sealy_vectors.py` and `tests/test_sealy.py` cover the Sealy app controls,
+raw-parts clock formula, parser and captured-session execution.
+
+`tests/okin_5a_vectors.py` freezes the earlier profiles' frames, and
 `tests/test_okin_5a_vectors.py` checks each literal against the codec and each
 profile's frames against its vectors. `tests/test_codec_docs.py` checks every
 frame spelled in this guide against the vectors and each bed type against the
@@ -519,6 +524,143 @@ controller sent, from the `com.okin.sealy` v1.1.1 analysis in
 [#310](https://github.com/kristofferR/ha-adjustable-bed/issues/310). Complete
 protocol definition at
 `disassembly/output/com.okin.sealy/extracted/assets/flutter_assets/assets/protocol/35_22_01.json`.
+
+### Sealy Posturematic app
+
+**App:** [Sealy Posturematic](https://play.google.com/store/apps/details?id=com.okin.sealy) 1.1.3, `com.okin.sealy`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **Sealy Posturematic**, then the product printed on the bed: Element,
+Ascent or Apex. Reconfigure changes that choice. Each physical bed keeps its
+own choice when two entries are paired. A Bluetooth name beginning with
+`star`, ignoring case without trimming, is an app candidate; it cannot select
+a product. The app has no advertised-service or manufacturer scan filter.
+Existing CB35 entries retain their tested release behavior; select this app
+route explicitly to use the behavior described here.
+
+#### Controls
+
+Head, foot and combined movement, Flat, TV, zero gravity, anti-snore and two
+memory slots are available. Save zero gravity, TV and memory slots use finite
+held programming. Save and reset buttons ask for confirmation and offer no
+held gesture. Element hides massage and light in its app screen, but its local
+voice-result routes reach them, so these BLE controls remain available for all
+three products. There are no additional axes, bed-side selectors, position
+sliders, alarms, brightness or color controls.
+
+<!-- generated:sealy-commands -->
+| Control | Bytes |
+|---|---|
+| stop | `5A 01 03 10 30 0F A5` |
+| head up | `5A 01 03 10 30 00 A5` |
+| head down | `5A 01 03 10 30 01 A5` |
+| feet up | `5A 01 03 10 30 02 A5` |
+| feet down | `5A 01 03 10 30 03 A5` |
+| both up | `5A 01 03 10 30 0C A5` |
+| both down | `5A 01 03 10 30 0D A5` |
+| flat | `5A 01 03 10 30 10 A5` |
+| tv | `5A 01 03 10 30 11 A5` |
+| zero g | `5A 01 03 10 30 13 A5` |
+| anti snore | `5A 01 03 10 30 16 A5` |
+| memory 1 | `5A 01 03 10 30 1A A5` |
+| memory 2 | `5A 01 03 10 30 1B A5` |
+| light toggle | `5A 01 03 10 30 71 A5` |
+| light on | `5A 01 03 10 30 73 A5` |
+| light off | `5A 01 03 10 30 74 A5` |
+| massage toggle | `5A 01 03 10 30 5A A5` |
+| massage on | `5A 01 03 10 30 52 A5` |
+| massage off | `5A 01 03 10 30 6F A5` |
+| massage timer | `5A 01 03 10 30 6D A5` |
+| massage head up | `5A 01 03 10 30 60 A5` |
+| massage head down | `5A 01 03 10 30 61 A5` |
+| massage foot up | `5A 01 03 10 30 62 A5` |
+| massage foot down | `5A 01 03 10 30 63 A5` |
+| wave up | `5A 01 03 10 30 58 A5` |
+| mode 0 | `5A 01 03 10 30 52 A5` |
+| mode 1 | `5A 01 03 10 30 53 A5` |
+| mode 2 | `5A 01 03 10 30 54 A5` |
+| save zero g | `5A 01 03 10 30 90 A5` |
+| save tv | `5A 01 03 10 30 92 A5` |
+| save memory 1 | `5A 01 03 10 30 94 A5` |
+| save memory 2 | `5A 01 03 10 30 95 A5` |
+| reset | `5A 01 03 10 30 96 A5` |
+| reset element | `5A 01 03 10 30 37 A5` |
+| force flat | `5A 01 03 10 30 7E A5` |
+| voice stop | `5A 01 03 10 30 1F A5` |
+| voice head up | `5A 01 03 10 40 00 A5` |
+| voice head down | `5A 01 03 10 40 01 A5` |
+| voice feet up | `5A 01 03 10 40 02 A5` |
+| voice feet down | `5A 01 03 10 40 03 A5` |
+| initialize | `5A 0B 00 A5` |
+| query massage | `5A B0 00 A5` |
+| query anti pinch | `5A E0 00 A5` |
+<!-- /generated -->
+
+Massage controls advance head or foot strength, timer or wave. The mode control
+uses the latest reported wave to choose its next command. The app's timer
+labels and intensity marks do not prove absolute-setting values or hardware
+limits, so these remain step controls. The light is a native on/off light;
+commanded state is assumed, starts unknown and clears on disconnection.
+
+#### Timing
+
+<!-- generated:sealy-timing -->
+| Operation | Behavior |
+|---|---|
+| Bed type | `sealy_posturematic` |
+| Product choices | Element, Ascent, Apex |
+| Movement refresh | 300 ms; single UI dispatch waits 50 ms |
+| Ordinary and one-touch STOP | 2 writes, 300 ms apart |
+| Massage toggle/on/off | 2 writes, 300 ms apart |
+| Programming and non-Element reset | 6000 ms finite hold, then ordinary release |
+| Element reset | Ordinary STOP twice, then one reset at 6000 ms |
+| Startup | Initializer with response, subscribe, query anti-pinch and massage after 100 ms |
+| Normal write mode | Without response |
+<!-- /generated -->
+
+A finite movement or held preset always drains its two ordinary STOP cleanup
+writes to its captured session with a fresh cancellation event. Replaced
+clients never receive the old release. No source-proven automatic STOP exists
+for app backgrounding, link loss, one-shot movement, or an anti-pinch status.
+BLE write completion is transport delivery, not a hardware acknowledgement.
+An explicit Stop in a sequential pair reconnects the selected physical beds
+one at a time. A failed release of the other link prevents a second connection.
+
+#### Notifications
+
+Massage packets beginning `A5 0B` require at least three bytes. Remaining time
+is the ceiling of the big-endian value at offsets 4 and 5 divided by 600;
+missing bytes default to zero. The low nibble at offset 6 is wave, and offset 7
+contains head in the low nibble and foot in the high nibble. Packets are
+independent, with no suffix, checksum or declared-length validation.
+
+`A5 0E` forwards status at offset 10, defaulting to zero. The value stays in
+protocol diagnostics. The app's shared dialog flag and global command-admission
+state are separate UI state, so the integration does not derive a hardware
+lock or authentication requirement from the latest byte. Force flat is an
+explicit confirmed extra. It does not claim an anti-pinch safety guarantee.
+
+#### Services
+
+Use the shared actions in [Actions and Automations](../SERVICES.md).
+
+| Action | Fields | Behavior |
+|--------|--------|----------|
+| `hold_control` | `device_id`, `control`, `duration` (seconds), optional `side` | Hold a head, foot, combined or preset control; ordinary STOP release |
+| `goto_preset` | `device_id`, `preset`, optional `duration` (seconds) and `side` | Recall memory 1 or 2, with ordinary STOP release |
+| `save_preset` | `device_id`, `preset`, optional `side` | Save slot 1 or 2 with finite programming and release |
+| `stop` | `device_id`, optional `side` | Ordinary STOP twice; does not promise interruption of every firmware preset |
+
+#### Evidence
+
+Command literals and public execution are checked in `tests/test_sealy.py` and
+`tests/sealy_vectors.py`. The raw Dart-parts clock encoder retains the exact
+source formula. Automatic clock synchronization is unavailable until the
+meaning of parts index 6 is established; no Python weekday conversion is
+assumed. Physical behavior remains unverified.
 
 ### DewertOkin ELEVATE
 

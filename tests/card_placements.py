@@ -201,13 +201,21 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     Some controls exist only for a reported model, layout or page, which no
     offline configuration reaches.
     """
+    from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
     from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
     from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
         OreUltramaticController,
     )
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
+    from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
+    from custom_components.adjustable_bed.beds.richmat_classic.jerome import JeromeController
+    from custom_components.adjustable_bed.beds.richmat_classic.jerome_controls import (
+        actions,
+        inverse_pairs,
+    )
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
+    from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
         ResourceBedController,
     )
@@ -236,6 +244,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
     from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
+    from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
     from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES
 
     def variant(controller: BedController, **attributes: object) -> BedController:
@@ -248,6 +257,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         yield controller
         if isinstance(controller, OkinCB24Controller) and controller.protocol == 5:
             yield variant(controller, _sonic=True, _rgb=True, _motors=5)
+        if isinstance(controller, EnsoController):
+            for profile in ENSO_PROFILES.values():
+                yield variant(controller, profile=profile)
         if isinstance(controller, SutaController):
             for route in SUTA_ROUTES:
                 name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]
@@ -295,6 +307,17 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                     yield variant(reported, _normal_ready=True)
         elif isinstance(controller, RufRichmatController):
             yield variant(controller, _normal_ready=True)
+        elif isinstance(controller, BedSmartController):
+            for layout in ("DHRM", "D1RM", "U3RM", "GVRM"):
+                model = load_catalog(controller.app).models[layout]
+                yield variant(controller, layout=layout, _model=model, _controls=model.controls,
+                              _receive=ReceiveState(light_capable=True, aroma_capable=True))
+        elif isinstance(controller, JeromeController):
+            for layout in ("D1RM", "D9RM", "Y6RM", "R2RM", "DXRM", "B9TT"):
+                model = load_catalog("jerome2").models[layout]
+                yield variant(controller, layout=layout, _model=model, _controls=model.controls,
+                              _actions=actions(layout), _pairs=inverse_pairs(layout),
+                              _receive=ReceiveState(light_capable=True, aroma_capable=True))
         elif isinstance(controller, ResourceBedController):
             model = load_catalog(controller.app).models["D1RM"]
             yield variant(controller, layout="D1RM", _model=model, _controls=model.controls,

@@ -425,6 +425,8 @@ def plan_commands(controller: Any) -> list[Command]:
                     True,
                 )
             )
+    if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
+        plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
     for name in sorted(LATE_ACTIONS):
         if _overrides(controller, name):
             plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
@@ -465,6 +467,70 @@ def plan_commands(controller: Any) -> list[Command]:
             Command("sync_clock", _method("sync_clock"), _flag(controller, "supports_clock_sync"))
         )
     return plan
+
+
+def _betterliving2_historical_actions(plan: list[Command], protocol: str) -> list[Command]:
+    """Preserve function-wire contract IDs after UI entities become fixed actions.
+
+    The button:/number: names below are historical snapshot row IDs, NOT current
+    HA entities. Queries use the current diagnostic action; raw timer rows only
+    exercise their frozen encodings, with no duration or effect claimed. Do not
+    reconstruct removed entities or actions to satisfy the snapshot.
+    """
+    from custom_components.adjustable_bed.beds.keeson.betterliving2 import require
+    from custom_components.adjustable_bed.beds.keeson.betterliving2_services import (
+        DiagnosticAction,
+        execute_diagnostic_action,
+    )
+
+    if protocol not in {"P1", "P2", "P3"}:
+        raise ValueError("Unknown BetterLiving2 snapshot route")
+    historical = {
+        "button:betterliving2_refresh_alarm",
+        "button:betterliving2_sync_clock",
+        "button:betterliving2_refresh_massage",
+        "number:betterliving2_massage_timer=-1",
+        "number:betterliving2_massage_timer=2",
+    }
+    if any(command.name in historical for command in plan):
+        raise ValueError("Historical actions already registered")
+    anchors = [
+        index
+        for index, command in enumerate(plan)
+        if command.name == "button:betterliving2_program_zero_g"
+    ]
+    if len(anchors) != 1:
+        raise ValueError("Missing or duplicate BetterLiving2 action anchor")
+    query_and_clock = [
+        Command(
+            "button:betterliving2_refresh_alarm",
+            lambda ctrl: execute_diagnostic_action(require(ctrl), DiagnosticAction.REFRESH_ALARM),
+            True,
+        ),
+        Command("button:betterliving2_sync_clock", lambda ctrl: require(ctrl).sync_clock(), True),
+    ]
+    result = list(plan)
+    result[anchors[0] + 1 : anchors[0] + 1] = query_and_clock
+    if protocol == "P1":
+        result.extend(
+            Command(
+                f"number:betterliving2_massage_timer={value}",
+                lambda ctrl, value=value: require(ctrl).set_level("timer", value),
+                True,
+            )
+            for value in (-1, 2)
+        )
+    else:
+        result.append(
+            Command(
+                "button:betterliving2_refresh_massage",
+                lambda ctrl: execute_diagnostic_action(
+                    require(ctrl), DiagnosticAction.REFRESH_MASSAGE
+                ),
+                True,
+            )
+        )
+    return result
 
 
 def _argument_commands(controller: Any) -> list[Command]:
@@ -1072,6 +1138,7 @@ class Coordinator:
         self.cancel_command = asyncio.Event()
         self.stop_epoch = 0
         self.cancel_counter = 0
+        self.connection_generation = 0
         self.command_scheduler = SimpleNamespace(token=object(), stop_epoch=0)
         self._command_lock = asyncio.Lock()
         self.address = "AA:BB:CC:DD:EE:FF"
@@ -1153,6 +1220,7 @@ class Coordinator:
     remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
     remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
+    remember_sleep_number_mcr_client_id = _ignore
     _ble_bond_established = False
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore
@@ -1260,7 +1328,11 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
-    data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {}
+    if bed_type == "saatva":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
+                        layout_id="bedtech")
+    data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {"product_type": "2"} if bed_type == "enso" else {}
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
             entry_data={const.CONF_PROTOCOL_VARIANT: "A1"}, layout_id="sonicsleep:Nordic")
@@ -1283,6 +1355,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_COMFORTBASE: "accord",
         const.BED_TYPE_SOMOS: "a",
         const.BED_TYPE_YAMADA: "p1",
+        const.BED_TYPE_BETTERLIVING2: "p1",
         const.BED_TYPE_RICHMAT_APP: "6BRM",
         const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
         const.BED_TYPE_DOUBLESLEEP: "p1",
@@ -1291,6 +1364,8 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == "sealy_posturematic":
+        data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
     if bed_type == const.BED_TYPE_LINX:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
@@ -1306,6 +1381,8 @@ def default_scenario(bed_type: str) -> Scenario:
         data[const.CONF_PRODUCT_TYPE] = "single"
     if bed_type == const.BED_TYPE_SONICSLEEP:
         data[const.CONF_PRODUCT_TYPE] = "one"
+    if bed_type == const.BED_TYPE_BETTERLIVING2:
+        data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_PROTOCOL_VARIANT: "p1"})
     if bed_type == const.BED_TYPE_ONLYSNORE:
         data[const.CONF_PRODUCT_TYPE] = "single"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
@@ -1479,7 +1556,10 @@ def route_scenarios() -> list[Scenario]:
     """Protocol-variant and app-profile routes, one scenario each."""
     from custom_components.adjustable_bed import const
 
-    scenarios: list[Scenario] = []
+    scenarios: list[Scenario] = [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
+    scenarios.extend(Scenario(id=f"sealy_posturematic:{n}", bed_type="sealy_posturematic",
+                              entry_data={"product_type": str(n), "bed_type": "sealy_posturematic"}, layout_id="sealy_posturematic")
+                     for n in (1, 2))
     for wire in ("okin15", "okin24"):
         for product in ("new", "lite"):
             for transport in ("ffe", "nordic"):
@@ -1593,6 +1673,15 @@ def route_scenarios() -> list[Scenario]:
                 entry_data={const.CONF_PRODUCT_TYPE: model, const.CONF_PROTOCOL_VARIANT: route},
                 layout_id="symphony_sleep:box2" if route == "box2" else "symphony_sleep",
             ))
+    from custom_components.adjustable_bed.profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
+
+    for product, layout in SAATVA_LAYOUTS.items():
+        if product != "bt2000_standard":
+            scenarios.append(Scenario(
+                id=f"saatva:{product}", bed_type="saatva", protocol_variant=product,
+                entry_data={const.CONF_PROTOCOL_VARIANT: product, const.CONF_PRODUCT_TYPE: layout},
+                layout_id="bedtech",
+            ))
     # BedTech's manual model selector: each model has its own controls and release.
     from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
 
@@ -1654,6 +1743,13 @@ def route_scenarios() -> list[Scenario]:
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))
     scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))
+    # Keep the legitimate explicit P1/2 default baseline and all six independent
+    # selected route/layout scenarios. Do not hide an invalid default by filtering.
+    for wire in ("p1", "p2", "p3"):
+        for layout in ("2", "3"):
+            scenarios.append(Scenario(id=f"betterliving2:{wire}:{layout}", bed_type="betterliving2",
+                protocol_variant=wire, entry_data={"protocol_variant": wire, "product_type": layout},
+                layout_id=f"betterliving2:{wire}"))
 
     # Jiecang family: one app, four profiles, shared and distinct layouts.
     for profile in ("dreamask", "dreamotion", "dreamhd", "comfort_motion"):
@@ -1789,7 +1885,7 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout},
                     factory_kwargs={"device_name": "6BRM-advertised"}
-                    if app in ("lady_americana", "acaa", "sta2", "zerogravity") else {},
+                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart") else {},
                     layout_id=layout_id,
                 )
             )
@@ -1838,6 +1934,12 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("luunarise2", "AHRM", "richmat_classic_apps_nordic"),
     ("powercool", "AHRM", "richmat_classic_apps"),
     ("powercool", "E3RM", "richmat_classic_apps_nordic"),
+    ("bedsmart", "DHRM", "richmat_classic_apps"),
+    ("bedsmart", "6BRM", "richmat_classic_apps_nordic"),
+    ("lp2", "APRM", "richmat_classic_apps"),
+    ("lp2", "6BRM", "richmat_classic_apps_nordic"),
+    ("jerome2", "6BRM", "richmat_classic_apps"),
+    ("jerome2", "DXRM", "richmat_classic_apps_nordic"),
     # Independent accepted Richmat resource apps, both GATT-selected wire formats.
     *((app, "6BRM", wire) for app in ("lady_americana", "acaa", "sta2", "zerogravity")
       for wire in ("richmat_classic_apps", "richmat_classic_apps_nordic")),
@@ -2203,12 +2305,21 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type == "sealy_posturematic":
+            controller._coordinator.connection_generation += 1
+            session = SimpleNamespace(async_start_notify=controller.start_notify)
+            await controller.async_on_connect(session)
+            await controller.async_after_connect(session)
+            return
         if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"rize_home", "okin_64bit", "ultramatic_smart_bed"}:
-            await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
+        if controller._coordinator.bed_type in {"rize_home", "okin_64bit", "betterliving2", "ultramatic_smart_bed"}:
+            session = SimpleNamespace(async_start_notify=controller.start_notify)
+            if controller._coordinator.bed_type == "betterliving2":
+                session.store_device_info = lambda *_: None
+            await controller.async_on_connect(session)
             return
         if controller._coordinator.bed_type in {"symphony", "linx", "agingplace"}:
             session = SimpleNamespace(

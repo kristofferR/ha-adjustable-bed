@@ -12,7 +12,6 @@ from custom_components.adjustable_bed.beds.richmat_classic.models import MODEL_C
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
     APP_NAMES,
     DATA_DIR,
-    RISE_APPS,
     load_catalog,
     resolve_layout,
 )
@@ -54,7 +53,9 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
         assert rows['richmat_classic_apps:' + app] == f'{name} app'
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
-        'luunarise2': 604, 'powercool': 586,
+        'luunarise2': 604, 'powercool': 586, 'lp2': 559,
+        'bedsmart': 558,
+        'jerome2': 532,
         **dict.fromkeys(RESOURCE_APPS, 243),
     }
     for app, models in MODEL_CHOICES.items():
@@ -67,7 +68,8 @@ def test_runtime_catalog_matches_every_frozen_member_layout_contract():
     with gzip.open(path, "rt") as source:
         expected = json.load(source)
     assert len(expected["models"]) == 3569
-    catalogs = {app: load(DATA_DIR, app).entries() for app in APP_NAMES.keys() - RISE_APPS - RESOURCE_APPS.keys()}
+    # Each app owns its schema; this fixture covers the original five catalogs.
+    catalogs = {app: load(DATA_DIR, app).entries() for app in {row["app"] for row in expected["models"]}}
     for catalog in catalogs.values():
         assert catalog["fields"].json() == expected["fields"]
     models = {app: catalog["models"].entries() for app, catalog in catalogs.items()}

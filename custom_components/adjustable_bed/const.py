@@ -499,6 +499,7 @@ BED_TYPE_GOODVIBE: Final = "goodvibe"
 BED_TYPE_MLILY: Final = "mlily"
 BED_TYPE_MAJESTICHOME: Final = "majestichome"
 BED_TYPE_OKIMIKI: Final = "okimiki"
+BED_TYPE_SAATVA: Final = "saatva"
 BED_TYPE_BOBPOWERBASE: Final = "bobpowerbase"
 BED_TYPE_MLILY_REMOTE: Final = "mlily_remote"
 BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
@@ -531,7 +532,10 @@ ZSERIES_VARIANTS: Final = {
     ZSERIES_VARIANT_Z280: "Z-280 page (M1/M2, separate massage zones)",
 }
 # Bed types whose variant is a user choice with no automatic default.
+BED_TYPE_ENSO: Final = "enso"
+BED_TYPE_SEALY_POSTUREMATIC: Final = "sealy_posturematic"
 BED_TYPE_YAMADA: Final = "yamada"
+BED_TYPE_BETTERLIVING2: Final = "betterliving2"
 BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_LINX: Final = "linx"
@@ -543,8 +547,8 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_MAJESTICHOME, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
-)
+    {BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+).union({BED_TYPE_BETTERLIVING2})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
 CONF_AGINGPLACE_BED_MODE: Final = "agingplace_bed_mode"
@@ -601,9 +605,11 @@ RUF_RICHMAT_APPS: Final[dict[str, str]] = {
 }
 BED_TYPE_RICHMAT_NISCO: Final = "richmat_nisco"
 BED_TYPE_RICHMAT_MLILY_SUPREME: Final = "richmat_mlily_supreme"
+BED_TYPE_BEDTECH_CLASSIC: Final = "bedtech_classic"
 RICHMAT_MH_APP_CATALOGS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_NISCO: "nisco",
     BED_TYPE_RICHMAT_MLILY_SUPREME: "mlily_supreme",
+    BED_TYPE_BEDTECH_CLASSIC: "bedtech_classic",
 }
 RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_REVIVE: "revive",
@@ -752,7 +758,10 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_ONLYSNORE,
+    BED_TYPE_ENSO,
+    BED_TYPE_SEALY_POSTUREMATIC,
     BED_TYPE_YAMADA,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_BEDGEAR,
     BED_TYPE_L2MOTION,
     BED_TYPE_PARAMOUNT,
@@ -765,6 +774,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_MLILY,
     BED_TYPE_MAJESTICHOME,
     BED_TYPE_OKIMIKI,
+    BED_TYPE_SAATVA,
     BED_TYPE_BOBPOWERBASE,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
@@ -1668,6 +1678,8 @@ JENSEN_CHAR_UUID: Final = "00001111-0000-1000-8000-00805f9b34fb"
 SLEEP_NUMBER_SERVICE_UUID: Final = "09d23fae-90e6-44c2-95b6-0b3d0f1abf25"
 SLEEP_NUMBER_BAMKEY_CHAR_UUID: Final = "421e00f3-ae76-4c49-ab6e-39e4df4a5333"
 SLEEP_NUMBER_AUTH_CHAR_UUID: Final = "8d4675a5-b5fa-42b2-b587-0ee71c46b709"
+SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID: Final = "e8d06e2a-c987-48f8-93a8-4d18d56b4337"
+SLEEP_NUMBER_BULK_CHAR_UUID: Final = "0ec9a5a3-8ac3-4582-92f3-1666421f323d"
 
 # Sleep Number BAM / MCR specific UUIDs (older 360 / i8 FlexFit bases)
 # Protocol reverse-engineered from com.selectcomfort.SleepIQ APK and live testing
@@ -3000,6 +3012,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_LINX: (334, 3),  # HA finite tap bound; Linx attempts held refresh every 3 ms.
     BED_TYPE_SYMPHONY_SLEEP: (4, 300),
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.
+    BED_TYPE_BETTERLIVING2: (10, 100),  # The chosen layout owns the actual refresh cadence.
     BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.
     BED_TYPE_ULTRAMATIC_SMART_BED: (4, 300),  # HA finite tap; app held refresh is 300 ms.
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement

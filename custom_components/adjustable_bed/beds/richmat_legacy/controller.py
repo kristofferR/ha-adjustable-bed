@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import partial
@@ -10,9 +11,15 @@ from math import floor
 from time import monotonic
 from typing import TYPE_CHECKING, Final
 
-from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
+from ...command_scheduler import (
+    current_command_context,
+    note_frame_skipped,
+    note_frame_written,
+    note_write_not_counted,
+)
 from ...const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles.richmat_legacy import Action, LegacyProfile, profiles
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution
 from ..catalog_buttons import Kind, catalog_button, classify, unique_buttons
 from ..entity_specs import (
@@ -152,6 +159,8 @@ def _choice(control: str) -> int | None:
 
 
 WRITE_TIMEOUT_S: Final = 5.0
+# A remote's fixed-duration massage timer key ("10MIN").
+_TIMER_LABEL: Final = re.compile(r"(?P<minutes>\d+)min", re.IGNORECASE)
 
 
 @dataclass(slots=True, eq=False)
@@ -294,7 +303,48 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
         )
 
     @property
+    def _massage_timer_controls(self) -> dict[int, str]:
+        """The remote's fixed-duration massage timer keys, by their minutes.
+
+        A remote with a single duration keeps its button.
+        """
+        timers: dict[int, str] = {}
+        for action in self.profile.actions:
+            match = _TIMER_LABEL.fullmatch(action.label)
+            if match and action.select is None and not action.motion and not action.programmable:
+                timers.setdefault(int(match["minutes"]), action.key)
+        return timers if len(timers) > 1 else {}
+
+    # Each timer key sets its duration, so they are one timer select.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_controls)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The remote always shows its massage timers.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self._massage_timer_controls)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No key turns only the timer off; "Timer / all off" keeps its own button.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        control = self._massage_timer_controls.get(minutes)
+        if control is None:
+            raise ValueError("Choose a massage timer this remote offers")
+        # The bed reports no timer.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.action(control)
+
+    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        timers = set(self._massage_timer_controls.values())
         covered = {
             key
             for spec in self.motor_control_specs
@@ -311,6 +361,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
             }
             if (
                 action.key in covered
+                or action.key in timers
                 or not sent - {"m", "n"}
                 or action.label == "Tilt ZG selector (mode 2)"
             ):
@@ -422,7 +473,11 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                 )
                 async with asyncio.timeout(WRITE_TIMEOUT_S):
                     await link.client.write_gatt_char(link.write, data, response=response)
-                    note_frame_written(cancel)
+                    if literal in ("m", "n"):
+                        # The wake/release gesture readies the bed; it is not the request.
+                        note_write_not_counted()
+                    else:
+                        note_frame_written(cancel)
                 return True
 
         # Drain submitted GATT work before cleanup or releasing ownership.
@@ -500,6 +555,8 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
             deadline = max(now, tick_at) + (threshold + 2) * period_s + WRITE_TIMEOUT_S
         count = link.counters.get(action.screen, 0)
         completed = False
+        # Whether the request itself went out, not only the wake/release gesture.
+        requested = any(literal not in ("m", "n") for literal in phase.down)
         try:
             for literal in phase.down:
                 if not await self._send(link, literal, cancel, deadline if action.motion else None):
@@ -520,6 +577,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                     for literal in writes:
                         if not await self._send(link, literal, cancel, deadline):
                             return
+                        requested = requested or literal not in ("m", "n")
                     if program and writes:
                         completed = True
                         break
@@ -528,6 +586,9 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                         tick_at + period_s,
                         epoch + (floor((monotonic() - epoch) / period_s) + 1) * period_s,
                     )
+                if not requested and not cancel.is_set():
+                    # The window ended before the request's first refresh.
+                    note_frame_skipped()
             elif phase.down or phase.cleanup:
                 await _pause(max(0, deadline - monotonic()), cancel)
             if not program:
