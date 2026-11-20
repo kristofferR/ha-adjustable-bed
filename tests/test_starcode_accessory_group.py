@@ -505,13 +505,14 @@ async def test_stop_names_each_bed_that_did_not_stop(hass: HomeAssistant) -> Non
 
     main, *lifts = group(hass)
     lifts[0].async_stop_command.side_effect = ConnectionError("out of range")
-    lifts[2].async_stop_command.side_effect = TimeoutError("no reply")
+    lifts[2].async_stop_command.side_effect = TimeoutError()
     with raises_key("lifts_not_stopped") as raised:
         await accessory_group._stop_configured_group(
             hass, main.entry.entry_id, main.entry.data[CONF_STARCODE_LIFT_ENTRIES]
         )
     reasons = raised.value.translation_placeholders["reasons"]
-    assert reasons == f"{lifts[0].name}: out of range; {lifts[2].name}: no reply"
+    # A failure without a message is named by its kind.
+    assert reasons == f"{lifts[0].name}: out of range; {lifts[2].name}: TimeoutError"
     # Every bed was still told to stop.
     assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))
 
@@ -536,4 +537,21 @@ async def test_a_lift_set_up_as_another_bed_mid_action_says_so(hass: HomeAssista
         wait.set()
         with raises_key("lifts_not_configured", ServiceValidationError):
             await running
+    assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))
+
+
+async def test_a_lift_set_up_as_another_bed_as_lifts_start_says_so(hass: HomeAssistant) -> None:
+    """The lifts run in parallel; the reason still reaches the user unwrapped."""
+    main, *lifts = group(hass)
+
+    async def execute(fn, **kwargs):
+        if fn.__name__ == "_up":
+            hass.config_entries.async_update_entry(
+                lifts[1].entry, data={**lifts[1].entry.data, CONF_BED_TYPE: "linak"}
+            )
+        await fn(lifts[0].controller)
+
+    lifts[0].async_execute_controller_command.side_effect = execute
+    with raises_key("lifts_not_configured", ServiceValidationError):
+        await run_group(main, "up")
     assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))

@@ -213,7 +213,8 @@ async def _preflight(
 def _not_stopped(failures: Sequence[tuple[str, BaseException]]) -> Exception:
     """One error naming each bed of the group that did not stop, and why."""
     return failed(
-        "lifts_not_stopped", reasons="; ".join(f"{name}: {error}" for name, error in failures)
+        "lifts_not_stopped",
+        reasons="; ".join(f"{name}: {str(error) or type(error).__name__}" for name, error in failures),
     )
 
 
@@ -450,11 +451,6 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             )
             await asyncio.sleep(1.6)
             require_admission()
-            if _configured_lifts(hass, main) != ids or any(
-                loaded_runtime(hass, target.entry.entry_id) is not target
-                for target in targets
-            ):
-                raise asyncio.CancelledError("The AdjustableM5X5 selection changed")
             if any(
                 target.controller is not controller
                 or target.client is not client
@@ -466,13 +462,20 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             command = _flat
         else:
             command = _up if action == "up" else _down
-        async with asyncio.TaskGroup() as running:
-            for target in lifts:
-                running.create_task(
-                    target.async_execute_controller_command(
-                        owned(command), read_positions_after_operation=False
+        try:
+            async with asyncio.TaskGroup() as running:
+                for target in lifts:
+                    running.create_task(
+                        target.async_execute_controller_command(
+                            owned(command), read_positions_after_operation=False
+                        )
                     )
-                )
+        except ExceptionGroup as group:
+            # A lift set up as another bed meanwhile is the user's to fix: say so plainly.
+            configured, other = group.split(ServiceValidationError)
+            if configured is not None and other is None:
+                raise configured.exceptions[0] from group
+            raise
         completed = True
     finally:
         for target in targets:
