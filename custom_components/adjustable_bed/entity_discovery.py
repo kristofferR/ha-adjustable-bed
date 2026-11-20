@@ -38,7 +38,17 @@ def async_setup_dynamic_entities(
 
     def discover(_state: object) -> None:
         candidates = build()
-        async_add_entities.publish(record, (entity.unique_id for entity in candidates))
+        identities = {entity.unique_id for entity in candidates}
+        for runtime in (coordinator, *additional_coordinators):
+            with controller_side_scope(runtime):
+                controller = runtime.capability_controller
+                if controller is None or not controller.controller_entity_discovery_complete:
+                    # A queued sweep can outlive this live controller and see
+                    # a complete offline cache. Keep previously built rows
+                    # until a complete discovery can authoritatively replace them.
+                    identities.update(known)
+                    break
+        async_add_entities.publish(record, identities)
         # Forget added entities whose rows a sweep retired, so they can return.
         for identity, entity in list(known.items()):
             if (

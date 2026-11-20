@@ -469,6 +469,7 @@ def mock_bleak_client() -> MagicMock:
     client.mtu_size = 23
     client.services = MagicMock()
     default_characteristic = client.services.get_characteristic.return_value
+    default_characteristic.properties = ["read", "write", "write-without-response", "notify"]
     mcr_characteristic = MagicMock()
     mcr_characteristic.properties = ["write", "write-without-response"]
     client.services.get_characteristic.side_effect = lambda uuid: (
@@ -542,6 +543,31 @@ def mock_bleak_client() -> MagicMock:
             response_text = (
                 "PASS:dual yes yes yes yes heat_cool yes yes yes yes yes yes yes yes yes yes"
             )
+        elif decoded_payload == "SPRG":
+            response_text = f"PASS:{sleep_number_state.get('privacy', 'active')}"
+        elif decoded_payload.startswith("SPRS "):
+            sleep_number_state["privacy"] = decoded_payload.split(" ")[1]
+            response_text = "PASS:ACK"
+        elif decoded_payload.startswith("LRAG "):
+            side_state = sleep_number_state[decoded_payload.split(" ")[1]]
+            assert isinstance(side_state, dict)
+            response_text = f"PASS:{side_state.get('responsive_air', '0')}"
+        elif decoded_payload.startswith("LRAS "):
+            _, side, enabled = decoded_payload.split(" ")
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            side_state["responsive_air"] = enabled
+            response_text = "PASS:ACK"
+        elif decoded_payload == "UBAG":
+            response_text = (
+                f"PASS:{sleep_number_state.get('automatic_light', 'false')} "
+                f"{sleep_number_state.get('automatic_light_level', 'low')}"
+            )
+        elif decoded_payload.startswith("UBAS "):
+            _, enabled, level = decoded_payload.split(" ")
+            sleep_number_state["automatic_light"] = enabled
+            sleep_number_state["automatic_light_level"] = level
+            response_text = "PASS:ACK"
         elif decoded_payload.startswith("SNCG "):
             side = decoded_payload.split(" ")[1]
             side_state = sleep_number_state[side]

@@ -157,6 +157,10 @@ class _FactoryCoordinator(SimpleNamespace):
 
     _ble_bond_established = False
 
+    def remember_sleep_number_mcr_client_id(self, identifier: int) -> None:
+        """Retain the builder's local identity for later factory calls."""
+        self.entry.data = {**self.entry.data, const.CONF_SLEEP_NUMBER_MCR_CLIENT_ID: identifier}
+
     def _begin_internal_entry_update(self, bond_established: bool) -> None:
         """Accept the internal-update marker a builder sets before persisting."""
         del bond_established
