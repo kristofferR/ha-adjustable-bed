@@ -6555,13 +6555,19 @@
         }
       },
       "bedsmart_mode": {
-        "name": "Bed mode"
+        "name": "Bed mode",
+        "state": {
+          "mode_1": "Mode 1",
+          "mode_2": "Mode 2",
+          "mode_3": "Mode 3"
+        }
       },
-      "bedsmart_axis": {
-        "name": "Selected motor"
-      },
-      "bedsmart_head_foot": {
-        "name": "Head or foot"
+      "bedsmart_side": {
+        "name": "Controlled side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
+        }
       }
     },
     "climate": {
