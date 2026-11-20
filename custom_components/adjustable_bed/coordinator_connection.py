@@ -2396,34 +2396,42 @@ class CoordinatorConnectionMixin:
             self._last_disconnect_reason = reason
             client = self._client
             try:
-                # Stop keep-alive and notifications before disconnecting
-                if controller is not None:
-                    try:
-                        await controller.stop_keepalive()
-                    except Exception as err:
-                        _LOGGER.debug("Error stopping keep-alive: %s", err)
-                    try:
-                        await controller.stop_notify()
-                    except Exception as err:
-                        _LOGGER.debug("Error stopping notifications: %s", err)
-                connect_lock = async_get_connect_lock(self.hass, self._address)
-                if connect_lock.retained_setup_client is client:
-                    await connect_lock.async_release_setup_client()
-                else:
-                    await client.disconnect()
-                _LOGGER.debug("Successfully disconnected from %s", self._address)
-            except BleakError as err:
-                _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
+                try:
+                    # Stop keep-alive and notifications before disconnecting
+                    if controller is not None:
+                        try:
+                            await controller.stop_keepalive()
+                        except Exception as err:
+                            _LOGGER.debug("Error stopping keep-alive: %s", err)
+                        try:
+                            await controller.stop_notify()
+                        except Exception as err:
+                            _LOGGER.debug("Error stopping notifications: %s", err)
+                    connect_lock = async_get_connect_lock(self.hass, self._address)
+                    if connect_lock.retained_setup_client is client:
+                        await connect_lock.async_release_setup_client()
+                    else:
+                        await client.disconnect()
+                    _LOGGER.debug("Successfully disconnected from %s", self._address)
+                except BleakError as err:
+                    _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
+                # Bleak may fail to close the link. Keep the intentional flag
+                # through restoration: a delayed close callback is still ours.
+                if client.is_connected:
+                    self._client = client
+                    _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
+                    if not self._shutting_down and controller is not None and self._controller is controller:
+                        try:
+                            async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
+                                await self.async_start_notify()
+                        except Exception:
+                            _LOGGER.exception("Could not restore notifications on retained link to %s", self._address)
+                    # Restoration awaits the OS. It may have closed the link
+                    # meanwhile, with or without delivering its callback.
+                    if client.is_connected:
+                        return False
             finally:
                 self._intentional_disconnect = False
-            # Bleak can raise or return while the OS link remains active. Keep
-            # the live client/controller instead of reporting a logical
-            # disconnect: the paired sequential guard must know that opening
-            # the other side could create two physical links.
-            if client.is_connected:
-                self._client = client
-                _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
-                return False
             # Some Bleak backends do not emit the disconnect callback for an
             # intentional close. Preserve the same physical-session invalidation
             # by notifying the controller when the callback did not already own it.

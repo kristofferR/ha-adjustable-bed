@@ -11,10 +11,13 @@ report is quarantined) list the frames the pre-v5 controller sent.
 
 
 from tests.rize_remedy_ii_vectors import VECTORS as RIZE_REMEDY_II_VECTORS
+from tests.superior_sleep_vectors import FROZEN_FRAMES as SUPERIOR_FRAMES
+from tests.superior_sleep_vectors import RECORD_FRAMES as SUPERIOR_RECORDS
 
 ESHINE = ("eshine_e2000", "eshine_e30003100", "eshine_e5000")
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    **SUPERIOR_FRAMES,
     # com.okin.motionbed 1.0 (2), all sixteen reachable literals.
     "okin_motionbed": frozenset(['e5fe160000000006', 'e5fe160000000105', 'e5fe160000000204', 'e5fe160000000402', 'e5fe160000000501', 'e5fe1600000008fe', 'e5fe160000000afc', 'e5fe1620000014d2', 'e5fe1620000016d0', 'e5fe1621000000e5', 'e5fe1621000001e4', 'e5fe1621000002e3', 'e5fe1621000004e1', 'e5fe1621000006df', 'e5fe1631000000d5', 'e5fe1631000001d4']),
     "rize_remedy_ii": frozenset(literal for _, literal in RIZE_REMEDY_II_VECTORS),
@@ -1408,3 +1411,4 @@ _APEX_FRAMES = frozenset({
     "040210000000", "040202000000",
 })
 FROZEN_FRAMES.update({f"apex_{i}": _APEX_FRAMES for i in range(15)})
+SETTING_FRAMES.update(dict.fromkeys(SUPERIOR_FRAMES, SUPERIOR_RECORDS))

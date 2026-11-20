@@ -1329,6 +1329,12 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "superior_sleep":
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="ss350",
+            entry_data={"ble_device_name": "Smartbed123"},
+            layout_id="superior_sleep:nordic",
+        )
     if bed_type == "dreamsense":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="blue",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "blue", const.CONF_PRODUCT_TYPE: "blue"})
@@ -1916,6 +1922,14 @@ def route_scenarios() -> list[Scenario]:
                     layout_id="eshine_okin",
                 )
             )
+    if "superior_sleep" in const.SUPPORTED_BED_TYPES:
+        for product in ("ss350", "ss650"):
+            for route, name in (("nordic", "Smartbed123"), ("ble", "BLE123")):
+                scenarios.append(Scenario(
+                    id=f"superior_sleep:{product}:{route}", bed_type="superior_sleep",
+                    protocol_variant=product, layout_id=f"superior_sleep:{route}",
+                    factory_kwargs={"device_name": name}, entry_data={"ble_device_name": name},
+                ))
     if "rize_home" in const.SUPPORTED_BED_TYPES:
         for product in ("remedy_iii", "contempo_iv"):
             scenarios.append(Scenario(
@@ -2319,8 +2333,8 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"rize_home", "okin_64bit", "betterliving2", "ultramatic_smart_bed"}:
-            session = SimpleNamespace(async_start_notify=controller.start_notify)
+        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed"}:
+            session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
