@@ -409,6 +409,27 @@ class PairedBedCoordinator:
             expected_stop_epochs=expected_stop_epochs,
         )
 
+    async def async_inspect_child_operation(
+        self,
+        operation: Callable[[BedChild], Coroutine[Any, Any, None]],
+        *,
+        side: str = SIDE_BOTH,
+        resource: str | None = None,
+        expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
+        expected_stop_epochs: Mapping[str, int] | None = None,
+    ) -> None:
+        """Reserve routed query work without replacing an active command.
+
+        The callback must only inspect. STOP, ownership and connection topology
+        admission remain the same as for a paired operation.
+        """
+        await self._run(
+            "inspection", side, operation, cancel_running=False, resource=resource,
+            expected_pair_generations=expected_pair_generations,
+            expected_stop_epochs=expected_stop_epochs,
+            reservation_kind=CommandKind.INSPECTION,
+        )
+
     async def _run(
         self,
         action: str,
@@ -420,6 +441,7 @@ class PairedBedCoordinator:
         resources: Collection[str] | None = None,
         expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
         expected_stop_epochs: Mapping[str, int] | None = None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         if resource is not None and resources is not None:
             raise ValueError("Pass resource or resources, not both")
@@ -474,6 +496,7 @@ class PairedBedCoordinator:
                 resources=command_scope,
                 entry_cancel=entry_cancel,
                 expected_stop_epochs=expected_stop_epochs,
+                reservation_kind=reservation_kind,
             )
         except ConnectionModeChanged:
             # Queued in concurrent mode, admitted after automatic fallback: run
@@ -492,6 +515,7 @@ class PairedBedCoordinator:
                 resources=command_scope,
                 entry_cancel=entry_cancel,
                 expected_stop_epochs=expected_stop_epochs,
+                reservation_kind=reservation_kind,
             )
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:

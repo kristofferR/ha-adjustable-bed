@@ -5279,6 +5279,12 @@
       },
       "sleepiq_head_tilt": {
         "name": "Head tilt"
+      },
+      "jerome_massage": {
+        "name": "Massage"
+      },
+      "jerome_synchronization": {
+        "name": "Synchronization"
       }
     },
     "binary_sensor": {
@@ -5862,6 +5868,21 @@
       },
       "massage_left_intensity": {
         "name": "Left massage intensity"
+      },
+      "jerome_light_seconds": {
+        "name": "Light duration"
+      },
+      "jerome_aroma_0": {
+        "name": "Aroma mode 2 time"
+      },
+      "jerome_aroma_1": {
+        "name": "Aroma mode 3 time"
+      },
+      "jerome_aroma_2": {
+        "name": "Aroma mode 3 pause"
+      },
+      "jerome_massage_intensity": {
+        "name": "Massage intensity"
       }
     },
     "select": {
@@ -6489,6 +6510,17 @@
           "vocal": "Vocal",
           "cinema": "Cinema",
           "entertainment": "Entertainment"
+        }
+      },
+      "jerome_massage_timer": {
+        "name": "Massage timer",
+        "state": {
+          "off": "Off",
+          "10_minutes": "10 minutes",
+          "15_minutes": "15 minutes",
+          "20_minutes": "20 minutes",
+          "30_minutes": "30 minutes",
+          "45_minutes": "45 minutes"
         }
       }
     },
@@ -9456,6 +9488,52 @@
           "name": "Bed side"
         }
       }
+    },
+    "jerome_bed": {
+      "name": "Jerome’s power base: control bed",
+      "description": "Run an action from the selected bed layout. Preset saves and long-press controls require confirmation.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Configured bed devices."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Named layout action, such as head_up, zero_gravity or save_m1. Available actions are listed in the bed guide."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target one side or both sides of a combined bed."
+        },
+        "keep": {
+          "name": "Keep moving",
+          "description": "Use the layout’s continuous movement behavior until the duration ends."
+        },
+        "mode": {
+          "name": "Operating mode",
+          "description": "Mode 0, 1 or 2 on layouts with Mode 1, Mode 2 and Mode 3 controls. Use Side for layouts labeled Left and Right."
+        },
+        "confirm": {
+          "name": "Confirm action",
+          "description": "Required for preset saves and long-press actions."
+        },
+        "duration_ms": {
+          "name": "Movement duration",
+          "description": "How long a continuous control runs, in milliseconds."
+        },
+        "rgb_color": {
+          "name": "Light color",
+          "description": "Red, green and blue values for the light_color action."
+        },
+        "aroma_times": {
+          "name": "Aroma settings",
+          "description": "Mode 2 time in minutes, mode 3 time in minutes, and mode 3 pause in hours for the aroma_settings action."
+        },
+        "long_press": {
+          "name": "Long press",
+          "description": "Use the layout’s long-press gesture when it also offers a separate save button. Confirmation is required."
+        }
+      }
     }
   },
   "exceptions": {
@@ -9908,6 +9986,45 @@
     },
     "enso_duration_invalid": {
       "message": "Choose a hold duration between 1 and 60000 milliseconds."
+    },
+    "jerome_layout": {
+      "message": "Choose a bed layout with controls in Jerome’s power base."
+    },
+    "jerome_action": {
+      "message": "Choose an action offered by the selected bed layout."
+    },
+    "jerome_confirm": {
+      "message": "Confirm the save or long-press action before continuing."
+    },
+    "jerome_hold": {
+      "message": "This action cannot be held. Choose a movement control and a duration from 1 to 60000 milliseconds."
+    },
+    "jerome_mode": {
+      "message": "Choose an operating mode offered by this layout. Use the Side field for Left or Right controls. Other modes require the framed Bluetooth connection."
+    },
+    "jerome_capability": {
+      "message": "The current bed connection has not reported this feature or its current state."
+    },
+    "jerome_timer": {
+      "message": "Choose a massage duration offered by this layout."
+    },
+    "jerome_alarm": {
+      "message": "Choose a wake position and optional massage offered by this bed layout."
+    },
+    "jerome_color": {
+      "message": "Choose three whole RGB values from 0 to 255."
+    },
+    "jerome_aroma": {
+      "message": "Choose aroma intervals and durations from 1 to 60 minutes, and a pause from 1 to 12 hours."
+    },
+    "jerome_intensity": {
+      "message": "Choose massage intensity 1, 2 or 3."
+    },
+    "jerome_feature_scope": {
+      "message": "This setting applies to a whole physical bed. It cannot target one half of a one-address combined bed. Keep this bed standalone to use its whole-bed settings."
+    },
+    "jerome_device_name": {
+      "message": "The original Bluetooth name is needed to choose this bed’s command timing. Rescan the bed so Home Assistant can read its name, then try again."
     }
   },
   "issues": {
@@ -10606,7 +10723,8 @@
         "luniosmart": "Lunio Smart+ app",
         "majestichome": "Majestic Home app",
         "lp2": "L&P Adjustable Base app",
-        "bedtech_classic": "Bed Tech app"
+        "bedtech_classic": "Bed Tech app",
+        "jerome2": "Jerome's power base app"
       }
     },
     "setup_start": {

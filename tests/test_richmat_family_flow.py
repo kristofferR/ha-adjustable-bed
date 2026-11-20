@@ -51,6 +51,7 @@ APPS = [
     "luunarise2",
     "powercool",
     "lp2",
+    "jerome2",
     "lady_americana",
     "acaa",
     "sta2",
