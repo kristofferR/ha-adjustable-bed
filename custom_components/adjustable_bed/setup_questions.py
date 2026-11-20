@@ -316,6 +316,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "sleep_evolution": GENERIC_FIELDS,
     "wsilver_legacy": GENERIC_FIELDS,
+    "super_colchones": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "agingplace": GENERIC_FIELDS,
@@ -1673,6 +1674,15 @@ def _mlily_remote_settings(data: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _super_colchones_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        CONF_MOTOR_COUNT: 3 if data.get(CONF_PROTOCOL_VARIANT) == "afeg350" else 2,
+        CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_MOTOR_PULSE_DELAY_MS: 100,
+    }
+
+
 def _luuna_settings(data: Mapping[str, Any]) -> dict[str, Any]:
     from .profiles.luuna import PROFILES
 
@@ -2894,6 +2904,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                             when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN,
                                   "value": ["malouf", "reverie_v1", "reverie_v2"]})),
         derive=_personal_comfort_settings,
+    ),
+    "super_colchones": _asking(
+        "super_colchones",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("super_colchones")),),
+        derive=_super_colchones_settings,
     ),
     "luuna": _asking(
         "luuna",

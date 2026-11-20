@@ -75,7 +75,7 @@ FOOTWARMING_TIMER_OPTION: Final = StateKey[str | None]("footwarming_timer_option
 
 # Massage, as each controller last tracked or received it. The massage number,
 # timer select and sensors read these, connected or not.
-MASSAGE_TIMER_MINUTES: Final = StateKey[int | None]("massage_timer")
+MASSAGE_TIMER_MINUTES: Final = StateKey[int | str | None]("massage_timer")
 MASSAGE_ACTIVE: Final = StateKey[bool]("massage_active")
 
 

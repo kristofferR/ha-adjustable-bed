@@ -102,7 +102,7 @@ SENSOR_DESCRIPTIONS: tuple[AdjustableBedSensorEntityDescription, ...] = (
 class AdjustableBedMassageSensorEntityDescription(SensorEntityDescription):
     """Describes a massage state sensor entity."""
 
-    state_key: StateKey[int | None]
+    state_key: StateKey[int | None] | StateKey[int | str | None]
 
 
 MASSAGE_SENSOR_DESCRIPTIONS: tuple[AdjustableBedMassageSensorEntityDescription, ...] = (
@@ -299,7 +299,8 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
             # Like the massage number, a connected bed with no report yet shows zero.
             if key not in state:
                 return None if self._coordinator.controller is None else 0
-            return state[key]
+            value = state[key]
+            return value if isinstance(value, (str, int)) else None
         value = state.get(key)
         return None if value is None else str(value) if value else "Off"
 

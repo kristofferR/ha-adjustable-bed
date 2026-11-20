@@ -1329,6 +1329,9 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "super_colchones":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
     if bed_type == "superior_sleep":
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="ss350",
@@ -1615,6 +1618,10 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(dataclasses.replace(default_scenario("symphony"),
             id=f"symphony:{product}:{selector}", protocol_variant=selector,
             entry_data={const.CONF_PRODUCT_TYPE: product}, layout_id="symphony"))
+    for product in ("afeg302", "afeg350"):
+        for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
+            scenarios.append(Scenario(id=f"super_colchones:{product}:{route}", bed_type="super_colchones",
+                protocol_variant=product, entry_data={const.CONF_PROTOCOL_VARIANT: product}, layout_id=f"super_colchones:{route}"))
     for route in ("S1", "S3", "S4", "S5", "S6"):
         scenarios.append(Scenario(id=f"luniosmart:{route}", bed_type="luniosmart", layout_id=f"luniosmart:{route}"))
     for route in ("Nordic", "W2", "W3", "W4", "W5"):
