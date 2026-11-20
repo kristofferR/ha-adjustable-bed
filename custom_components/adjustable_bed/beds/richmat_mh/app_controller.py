@@ -721,6 +721,11 @@ class _HoldElapsed(Exception):
 
 async def build_controller(ctx: BuildContext) -> BedController:
     app = RICHMAT_MH_APP_CATALOGS[ctx.bed_type]
+    if app == "bedtech_classic":
+        await ctx.preload("bedtech.classic")
+        from ..bedtech.classic import build_classic_controller
+
+        return await build_classic_controller(ctx)
     if ctx.variant == "sleep":
         await ctx.preload("richmat_mh.app_sleep")
         from .app_sleep import RichmatMHAppSleepController
