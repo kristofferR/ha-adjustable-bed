@@ -168,10 +168,29 @@ class Lp2Controller(RichmatClassicController):
         return True
 
     @property
-    def controller_entity_discovery_complete(self) -> bool:
-        # A format's own controls are listed once the format is known; until
-        # then the sweep keeps their rows.
-        return self._resolved_wire is not None
+    def has_dynamic_buttons(self) -> bool:
+        # The first connection adds the format's own buttons.
+        return True
+
+    @property
+    def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
+        """Before the format is known, keep both formats' own rows."""
+        if self._resolved_wire is not None:
+            return super().retained_entity_keys
+        return frozenset(self._format_entity_keys())
+
+    def _format_entity_keys(self) -> set[tuple[str, str]]:
+        """(platform, key) of entities that only one command format lists."""
+        by_wire = self._button_gestures()
+        shared = by_wire["RAW"] & by_wire["FRAMED"]
+        keys = {
+            ("button", g.key + "_" + wire.lower())
+            for wire, gestures in by_wire.items()
+            for g in gestures - shared
+        }
+        raw, framed = self._pairs("RAW").keys(), self._pairs("FRAMED").keys()
+        keys.update(("switch", f"controller_switch_lp2_{name}") for name in raw ^ framed)
+        return keys
 
     def _button(self, node: int) -> Control:
         if self._active_button is not None and self._active_button.node == node:
@@ -571,13 +590,8 @@ class Lp2Controller(RichmatClassicController):
         wire = self._resolved_wire
         return bool(wire and key.removeprefix("lp2_") in self._pairs(wire))
 
-    def _button_actions(self) -> dict[str, tuple[Gesture, Wire | None]]:
-        """Gestures both formats send alike, plus those of the bed's own format.
-
-        A gesture that differs between formats keeps its format in its key, so
-        each format's entities have stable unique IDs. The other format's are
-        never listed: on some layouts the same node does something else there.
-        """
+    def _button_gestures(self) -> dict[Wire, set[Gesture]]:
+        """Each format's gestures that are buttons, not switches or timers."""
         by_wire: dict[Wire, set[Gesture]] = {}
         for wire in ("RAW", "FRAMED"):
             pairs = {g for pair in self._pairs(wire).values() for g in pair}
@@ -587,6 +601,16 @@ class Lp2Controller(RichmatClassicController):
                 for g in self._gestures(wire)
                 if g not in pairs and not (not g.long and not g.held and g.node in timers)
             }
+        return by_wire
+
+    def _button_actions(self) -> dict[str, tuple[Gesture, Wire | None]]:
+        """Gestures both formats send alike, plus those of the bed's own format.
+
+        A gesture that differs between formats keeps its format in its key, so
+        each format's entities have stable unique IDs. The other format's are
+        never listed: on some layouts the same node does something else there.
+        """
+        by_wire = self._button_gestures()
         shared = by_wire["RAW"] & by_wire["FRAMED"]
         result: dict[str, tuple[Gesture, Wire | None]] = {g.key: (g, None) for g in shared}
         if wire := self._resolved_wire:
@@ -866,11 +890,8 @@ async def _press(controller: BedController, *, key: str, expected: Gesture) -> N
     if not isinstance(controller, Lp2Controller):
         raise TypeError("The selected bed controller changed")
     selected = controller._button_actions().get(key)
-    if (
-        not controller.controller_button_available(key)
-        or selected is None
-        or selected[0] != expected
-    ):
+    # Listed means the bed's own format or shared by both.
+    if selected is None or selected[0] != expected:
         raise ValueError("The selected control changed on this connection")
     await controller.execute_action(
         expected.node, long=expected.long, held=expected.held, flag=expected.flag

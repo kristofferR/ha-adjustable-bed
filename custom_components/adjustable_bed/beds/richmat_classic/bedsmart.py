@@ -375,17 +375,6 @@ class BedSmartController(Lp2Controller):
             else gesture
         )
 
-    def validate_action(
-        self,
-        node: int,
-        *,
-        long: bool = False,
-        held: bool = False,
-        head: bool = True,
-        flag: str = "53",
-    ) -> tuple[Gesture, ...]:
-        return super().validate_action(node, long=long, held=held, head=head, flag=flag)
-
     def _flags(self, button: Control) -> tuple[str, ...]:
         # The app's motor selector: one button per motor instead.
         if self.layout == "U3RM" and button.tag in ("51", "52"):
@@ -660,6 +649,15 @@ class BedSmartController(Lp2Controller):
             ),
             None,
         )
+
+    def _format_entity_keys(self) -> set[tuple[str, str]]:
+        keys = super()._format_entity_keys()
+        if self._mode_options:
+            keys.add(("select", "controller_select_bedsmart_mode"))
+        lights = [self._light_gesture(wire) for wire in ("RAW", "FRAMED")]
+        if any(lights) and not all(lights):
+            keys.update({("button", "toggle_light"), ("light", "under_bed_lights_assumed")})
+        return keys
 
     def _light_keys(self) -> set[str]:
         """The light gesture of the bed's format, or of both before it is known."""

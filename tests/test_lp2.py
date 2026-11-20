@@ -692,21 +692,25 @@ def _format_controller(app, layout):
 )
 def test_only_the_beds_own_format_lists_its_controls(app, layout):
     c = _format_controller(app, layout)
-    assert not c.controller_entity_discovery_complete
+    assert c.has_dynamic_buttons
     assert c.persisted_app_state.get("wire") is None
     shared = {s.key for s in c.controller_button_specs}
     assert not any(k.endswith(("_raw", "_framed")) for k in shared)
+    # The sweep keeps both formats' own rows until the format is known.
+    retained = {key for domain, key in c.retained_entity_keys if domain == "button"}
+    assert retained and all(k.endswith(("_raw", "_framed")) for k in retained)
     switches = {s.key for s in c.controller_switch_specs}
     listed = {}
     for wire, other in (("RAW", "_framed"), ("FRAMED", "_raw")):
         # A restart restores the format of the last connection.
         restored = _format_controller(app, layout)
         restored.restore_persisted_app_state({**c.persisted_app_state, "wire": wire})
-        assert restored.controller_entity_discovery_complete
+        assert restored.retained_entity_keys == frozenset()
         assert restored.persisted_app_state["wire"] == wire
         specs = restored.controller_button_specs
         keys = {s.key for s in specs}
         assert shared < keys
+        assert keys - shared <= retained
         assert not any(k.endswith(other) for k in keys)
         assert all(restored.controller_button_available(k) for k in keys)
         names = [s.name for s in specs]
