@@ -3134,6 +3134,9 @@
  "number:comfortfurniture_wave_level": {
   "card_section": "massage"
  },
+ "number:dreamsense_light_seconds": {
+  "card_section": "lighting"
+ },
  "number:fan_level": {
   "card_section": "climate"
  },
@@ -3480,6 +3483,9 @@
   "card_section": "motors"
  },
  "select:comfy_timer_selection": {
+  "card_section": "utility"
+ },
+ "select:dreamsense_selected_side": {
   "card_section": "utility"
  },
  "select:footwarming_timer": {
@@ -3955,6 +3961,9 @@
  },
  "sensor:doublesleep_use_side": {
   "card_section": "utility"
+ },
+ "sensor:dreamsense_alarm_ack": {
+  "card_section": "hidden"
  },
  "sensor:enso_massage_timer": {
   "card_section": "massage",
@@ -4727,6 +4736,9 @@
  },
  "switch:doublesleep_sonic": {
   "card_section": "massage"
+ },
+ "switch:dreamsense_split": {
+  "card_section": "utility"
  },
  "switch:jerome_massage": {
   "card_section": "massage"
