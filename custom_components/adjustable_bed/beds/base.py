@@ -1093,6 +1093,11 @@ class BedController(GattWriter):
         """Whether a named action remains valid for current discovered capabilities."""
         return True
 
+    @property
+    def replaced_standard_button_keys(self) -> frozenset[str]:
+        """Standard buttons supplied as controller specs, with their own metadata."""
+        return frozenset()
+
     def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
         """Optional held-control metadata for an existing standard button."""
         return None

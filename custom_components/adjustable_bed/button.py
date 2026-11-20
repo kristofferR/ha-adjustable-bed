@@ -1080,6 +1080,8 @@ def _should_add_button(
     has_massage: bool,
 ) -> bool:
     """Return whether the button should be exposed for the current controller."""
+    if controller is not None and description.key in controller.replaced_standard_button_keys:
+        return False
     if description.requires_massage and not has_massage:
         return False
 

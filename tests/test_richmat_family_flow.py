@@ -26,6 +26,7 @@ APPS = [
     "sleep_evolution",
     "wsilver_legacy",
     "sonicsleep",
+    "super_colchones",
     "mlily",
     "majestichome",
     "okimiki",

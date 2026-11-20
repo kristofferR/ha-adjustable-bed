@@ -4610,6 +4610,9 @@
  "sensor:starcode_sonic_mode": {
   "card_section": "hidden"
  },
+ "sensor:super_colchones": {
+  "card_section": "hidden"
+ },
  "sensor:superior_sleep_alarm_hour": {
   "card_section": "hidden"
  },
