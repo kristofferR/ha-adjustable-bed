@@ -202,7 +202,7 @@ class SuperColchonesController(ProfileExecution[SuperColchonesProfile], BedContr
             if action.alternate is not None:
                 spec = catalog_button(
                     "program_memory_" + key[-1] if key.startswith("memory_") else "super_colchones_save_" + key,
-                    "Save " + action.label, partial(_action, action=key, alternate=True), kind=Kind.SAVE, requires_confirmation=True,
+                    "Save " + action.label, partial(_action, action=key, alternate=True), kind=Kind.SAVE,
                 )
                 if spec is not None:
                     specs.append(spec)

@@ -82,7 +82,7 @@ async def test_native_entity_shapes_shared_memory_and_hold_services(hass, runtim
     assert len(ids) == len(set(ids))
     for slot in range(1, ctrl.memory_slot_count + 1):
         save = next(e for e in entities if e.unique_id.endswith(f"program_memory_{slot}"))
-        assert save.extra_state_attributes["requires_confirmation"] is True
+        assert not save.extra_state_attributes.get("requires_confirmation", False)
     client.write_gatt_char.reset_mock()
     await hass.services.async_call(const.DOMAIN, "save_preset", {"device_id": ["bed"], "preset": 1}, blocking=True)
     assert written(client) == ["6e01002b9a"]
@@ -163,3 +163,20 @@ async def test_light_entity_requires_the_selected_product(hass, runtime):
         client.write_gatt_char.reset_mock()
         await lights[0].async_press()
         assert written(client) == ["6e01003cab"]
+
+
+def test_app_candidate_alone_never_corroborates_receiver_recommendation():
+    from custom_components.adjustable_bed.detection import DetectionResult
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from tests.test_bluetooth_matchers import _info
+
+    detected = DetectionResult(
+        const.BED_TYPE_BEDTECH, .8,
+        ["uuid:" + const.BEDTECH_SERVICE_UUID, "name:super_colchones_app_candidate"],
+        ambiguous_types=["super_colchones"],
+    )
+    with patch("custom_components.adjustable_bed.profile_recommendations.detect_bed_type_detailed", return_value=detected):
+        assert recommend_profile(
+            {const.CONF_BED_TYPE: const.BED_TYPE_LINAK, const.CONF_PROTOCOL_VARIANT: "auto"},
+            _info("Receiver", (const.BEDTECH_SERVICE_UUID,)), {},
+        ) is None

@@ -280,6 +280,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # and ``leggett_lp_legacy`` is not declared yet (see the design note). Svane
     # Remote declares hold and composition on its controller (#516), and Sleepy's
     # BOX25 declares on the controller for both dialects.
+    "dreamsense": {"hold": ("Dream Sense Bed 1.0.4 E-HOLD: direction arrows first tick100ms, refresh100ms until release; MotorPage STOP after delivery",), "hold_controls": ("Dream Sense Bed 1.0.4 E-CONTROL: selected product arrows only; saves and preset callbacks never hold",)},
     "furnimove": {"hold": ("fm157",)},
     # Scoped to held controls whose effective gesture is a sustained press:
     # short, long and short-and-long gestures and memory mode keep theirs.
@@ -348,6 +349,8 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "beds/dreamsense/controller.py:<module>.DreamSenseController.execution": ("dreamsense",),
+    "beds/dreamsense/controller.py:<module>.DreamSenseController": ("dreamsense",),
     "profiles/keeson.py:<module>.BETTERLIVING2": tuple(
         f"KeesonProfile:betterliving2_p{wire}_{layout}" for wire in (1, 2, 3) for layout in (2, 3)),
     "profiles/ormatek.py:<module>.PROFILES": ("KeesonProfile:ormatek_okin15", "KeesonProfile:ormatek_okin24"),

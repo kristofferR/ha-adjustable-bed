@@ -2240,6 +2240,8 @@ def _check_alarm(
     capability = controller.alarm_capability
     if capability is None:
         raise invalid("alarm_not_supported", device_name=device_name)
+    if capability.requires_slot and "slot" not in given:
+        raise invalid("alarm_slot_required", device_name=device_name)
     for name in given:
         if not capability.accepts(name):
             raise invalid("alarm_option_not_supported", device_name=device_name, option=name)
@@ -2897,6 +2899,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.comfort_enhancement3.services import register_services as register_apex_services
     from .beds.customatic.services import async_register_customatic_services
     from .beds.doublesleep.services import async_register_doublesleep_services
+    from .beds.dreamsense.services import async_register_dreamsense_services
     from .beds.fsm_relax.services import async_register_fsm_relax_services
     from .beds.furnimove.services import async_register_furnimove_services
     from .beds.gmmotor.services import async_register_gmmotor_services
@@ -2973,6 +2976,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_lp2_services,
         async_register_jerome_services,
         async_register_resource_bed_services,
+        async_register_dreamsense_services,
         async_register_richmat_legacy_services,
         async_register_richmat_rise_services,
         async_register_motomotion_services,
@@ -3151,7 +3155,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(ATTR_ENABLED): cv.boolean,
                 vol.Optional(ATTR_TIME): cv.time,
                 vol.Optional(ATTR_WEEKDAYS): vol.All(cv.ensure_list, [vol.In(ALARM_WEEKDAYS)]),
-                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=0, max=99)),
+                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=0, max=255)),
                 vol.Optional("wake_action"): vol.In(WAKE_ACTIONS),
                 vol.Optional(ATTR_MASSAGE): cv.boolean,
                 vol.Optional("head_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),

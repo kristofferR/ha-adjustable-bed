@@ -662,6 +662,13 @@ beds, Reconfigure that bed, then combine them again.
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister), [VMAT](beds/vibradorm.md#vmat), [V-MAT Basic](beds/vibradorm.md#v-mat-basic): app, exact remote or product, and offered light settings. |
 | アシステック / Yamada | See the [setup steps](beds/keeson.md#アシステック--yamada). |
 
+### Super Colchones products
+
+Choose **Super Colchones app (AFEG302, AFEG350)**, then **AFEG302** or **AFEG350**.
+Choose the product printed on your bed; Bluetooth discovery cannot identify it.
+The product determines the available movement and massage controls.
+See [Super Colchones](beds/richmat.md#super-colchones) for controls and save behavior.
+
 ### Octo PIN
 
 **Setting:** 4-digit PIN code
@@ -913,11 +920,3 @@ a dialog are described in the
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to know more about your bed?** Find its guide in the [documentation index](README.md#bed-guides)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
-
-
-### Super Colchones products
-
-Choose **Super Colchones app (AFEG302, AFEG350)**, then **AFEG302** or **AFEG350**.
-The product owns motor layout and massage availability. `QRRM` discovery does
-not identify the product; `NLRN` and `NMRN` are metadata, not name rules.
-See [Super Colchones](beds/richmat.md#super-colchones) for controls and save qualifications.
