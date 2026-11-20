@@ -4598,6 +4598,9 @@
  "sensor:starcode_sonic_mode": {
   "card_section": "hidden"
  },
+ "sensor:super_colchones": {
+  "card_section": "hidden"
+ },
  "sensor:svane_firmware": {
   "card_section": "hidden"
  },

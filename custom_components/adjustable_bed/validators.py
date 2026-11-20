@@ -117,6 +117,7 @@ from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.somos import CHOICES as SOMOS_CHOICES
+from .profiles.super_colchones import VARIANTS as SUPER_COLCHONES_VARIANTS
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
 _LOGGER = logging.getLogger(__name__)
@@ -175,6 +176,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,
     "hush_base": HUSH_BASE_VARIANTS,
     "luuna": LUUNA_VARIANTS,
+    "super_colchones": SUPER_COLCHONES_VARIANTS,
     "personal_comfort": PERSONAL_COMFORT_ROUTES,
     "mlily_remote": MLILY_REMOTE_PROFILES,
     "mline": {"auto": AUTOMATIC_LABEL, **{key: key.title() for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")}},

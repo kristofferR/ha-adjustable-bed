@@ -15,6 +15,10 @@ from custom_components.adjustable_bed.profiles.richmat import RICHMAT_CLASSIC, R
 from custom_components.adjustable_bed.profiles.richmat_legacy import LegacyProfile
 from custom_components.adjustable_bed.profiles.richmat_legacy import choices as legacy_choices
 from custom_components.adjustable_bed.profiles.sonicsleep import SonicSleepProfile
+from custom_components.adjustable_bed.profiles.super_colchones import (
+    PROFILES as SUPER_COLCHONES_PROFILES,
+)
+from custom_components.adjustable_bed.profiles.super_colchones import SuperColchonesProfile
 from tests import (
     casper_base_vectors,
     hush_vectors,
@@ -28,6 +32,7 @@ from tests.richmat_legacy_vectors import FROZEN_FRAMES as LEGACY_FRAMES
 from tests.richmat_vectors import FROZEN_FRAMES
 from tests.saatva_vectors import FROZEN_FRAMES as SAATVA_FRAMES
 from tests.saatva_vectors import VECTORS as SAATVA_VECTORS
+from tests.super_colchones_vectors import FROZEN_FRAMES as SUPER_COLCHONES_FRAMES
 
 _SPELLED = re.compile(r"`((?:6E|5E|55|AA|04)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE)
 # Profiles reached through a protocol variant of their bed type.
@@ -41,6 +46,7 @@ _VARIANTS = {
     "hjbed": "hj_bedbjrn",
     "galaxy": "6BRM",
     "richmat_app": "6BRM",
+    **{key: key for key in SUPER_COLCHONES_PROFILES},
     "goodvibe": "selector-0001",
     "mlily": "6brm",
     "majestichome": "FARM",
@@ -51,6 +57,7 @@ _VARIANTS = {
 # The Casper Base and Hush Base products are their bed type's protocol variant.
 _PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE, const.BED_TYPE_LUUNA, const.BED_TYPE_MLILY_REMOTE})
 _FROZEN = frozenset().union(
+    SUPER_COLCHONES_FRAMES,
     *LEGACY_FRAMES.values(),
     *FROZEN_FRAMES.values(),
     *luniosmart_vectors.FROZEN_FRAMES.values(),
@@ -85,6 +92,7 @@ def _spelled(text: str) -> set[str]:
 
 FAMILY = CodecFamily(
     profiles={
+        SuperColchonesProfile: dict.fromkeys(SUPER_COLCHONES_PROFILES, SUPER_COLCHONES_FRAMES),
         RichmatProfile: FROZEN_FRAMES | SAATVA_FRAMES,
         LunioSmartProfile: luniosmart_vectors.FROZEN_FRAMES,
         LegacyProfile: LEGACY_FRAMES,
@@ -113,6 +121,7 @@ FAMILY = CodecFamily(
             "hush_base",
             "luuna",
             "sonicsleep",
+            "super_colchones",
             "saatva",
             "luniosmart",
             "sleep_evolution",

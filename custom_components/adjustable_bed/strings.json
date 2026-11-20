@@ -5095,6 +5095,9 @@
       },
       "sealy_massage_foot_level": {
         "name": "Foot massage intensity"
+      },
+      "super_colchones": {
+        "name": "Super Colchones"
       }
     },
     "light": {
@@ -10120,6 +10123,15 @@
     },
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "super_colchones_control": {
+      "message": "Choose a control supported by the selected Super Colchones product."
+    },
+    "super_colchones_session": {
+      "message": "The Super Colchones connection or product changed. Reconnect and try again."
+    },
+    "super_colchones_route": {
+      "message": "Super Colchones needs a supported writable Bluetooth service and a notification characteristic."
     }
   },
   "issues": {
@@ -10820,7 +10832,8 @@
         "lp2": "L&P Adjustable Base app",
         "bedsmart": "BedSmart / X-Series app",
         "bedtech_classic": "Bed Tech app",
-        "jerome2": "Jerome's power base app"
+        "jerome2": "Jerome's power base app",
+        "super_colchones": "Super Colchones app"
       }
     },
     "setup_start": {

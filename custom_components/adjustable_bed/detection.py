@@ -606,6 +606,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "luniosmart": "Lunio Smart+ app",
     "sleep_evolution": "SleepEvolution app",
     "wsilver_legacy": "W.Silver Products app (older version)",
+    "super_colchones": "Super Colchones app (AFEG302, AFEG350)",
     "sonicsleep": "SonicSleep / 소닉슬립 app",
     "hush_remote": "Hush Base remote finder",
     "hush_sleep_mm": "Hush Base sleep sensor (name starts with RM-)",
@@ -1377,7 +1378,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type in ("bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in ("super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1606,6 +1607,16 @@ def _detect_bed_type_with_app_candidates(
 ) -> DetectionResult:
     """Keep existing receiver detection while offering an explicit app candidate."""
     result = _detect_bed_type_detailed(service_info, first=first)
+    if first.name("super_colchones") and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result.bed_type, result.confidence = "super_colchones", 0.3
+        elif result.bed_type != "super_colchones":
+            result.ambiguous_types = list(dict.fromkeys([
+                *(result.ambiguous_types or ()), "super_colchones",
+            ]))
+        result.signals.append("name:super_colchones_app_candidate")
     if sealy_name(service_info.name or "") and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):

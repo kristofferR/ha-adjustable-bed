@@ -346,6 +346,7 @@ they are not exposed through `hold_control`.
 
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
+| [Super Colchones](beds/richmat.md#super-colchones) | `head_up`, `head_down`, `foot_up`, `foot_down`; AFEG350 also `lumbar_up`, `lumbar_down` | First tick at 100 ms, 100 ms refresh, one global STOP after movement; saves use confirmation-first buttons |
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The selected layout's available `richmat_classic_<node>` controls with hold metadata, including a route suffix where declared; saves have no held gesture | The layout's app refresh interval and fresh release, as listed in the guide; finite duration 0.1–60 seconds. Renewable holds use only the declared streaming controls |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
@@ -493,6 +494,7 @@ data:
 | Ultramatic (ORE) | `none`, `massage`, `memory_1`, `memory_2` on the older bed route; `tv`, `massage`, `zero_g` on the newer | `weekdays` or once. Turning it on needs a `wake_action`; connect once first so the route is known |
 | Ultramatic Smart Bed | `massage`, `zero_g`, `memory_1` (required to turn on) | `weekdays` or once. Left, Right and Both set the A, B and AB alarms; a standalone bed uses its configured side. Turning off without a time keeps the reported alarm's other fields; refresh the alarm first |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |
+| [Super Colchones](beds/richmat.md#super-colchones) | Unavailable | The app only queries clock capability and decodes opaque alarm records; no alarm-setting producer is present |
 | Bedgear, Casper Base, classic Richmat apps, Galaxy Bed Control, GM Control, Good Vibe Sleep, HJBed, Hush Base, Lady Americana and partner beds, Luuna, Luuna Rise and Power Cool, MLILY, MLILY Remote, OKIN SleepEase, Okimiki, Power Bob Base, Richmat app (`richmat_app` bed type), Snore Monitor, SonicSleep | Use the bed's own action | See [Bedgear](#bedgear), [Casper Base](#casper_base), [classic Richmat apps](#richmat_classic), [Galaxy](#galaxy), [GM Control](#gmmotor), [Good Vibe Sleep](#good-vibe-sleep), [HJBed](#hjbed), [Hush Base](#hush_base), [Lady Americana and partner beds](#richmat_resource_bed), [Luuna](#luuna), [Luuna Rise and Power Cool](#richmat_rise), [MLILY](#mlily), [MLILY Remote](#mlily-remote), [OKIN SleepEase](#doublesleep_configure), [Okimiki](#okimiki), [Power Bob Base](#bobpowerbase), [Richmat app](#richmat_app), [`onlysnore_set_alarm`](#onlysnore_set_alarm) and [SonicSleep](#sonicsleep) |
 
 ### Estimated positions
