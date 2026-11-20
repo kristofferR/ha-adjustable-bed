@@ -11,6 +11,7 @@ import gzip
 import json
 from pathlib import Path
 
+from tests.bedtech_classic_vectors import FROZEN_FRAMES as BEDTECH_CLASSIC_FRAMES
 from tests.bedtech_vectors import FROZEN_FRAMES as BEDTECH_APP_FRAMES
 from tests.richmat_rise_vectors import FROZEN_FRAMES as RISE_FROZEN_FRAMES
 
@@ -2275,13 +2276,25 @@ def _nisco_supreme_frames() -> dict[str, frozenset[str]]:
 FROZEN_FRAMES.update(_nisco_supreme_frames())
 
 
+# Bed Tech has its own literals, separate from both modern and older sibling apps.
+FROZEN_FRAMES["richmat_mh_bedtech_classic"] = BEDTECH_CLASSIC_FRAMES
+
+
 # L&P Adjustable Base 2.3.25, ordinary and direct literal writes.
 FROZEN_FRAMES["richmat_classic_lp2"] = frozenset(json.loads(gzip.decompress(
     (Path(__file__).parent / "fixtures/lp2/outbound.json.gz").read_bytes()
 )))
 
-# BedSmart owns its frozen vectors independently of the other resource apps.
-FROZEN_FRAMES["richmat_classic_bedsmart"] = frozenset(
-    frame for row in json.loads((Path(__file__).parent / "fixtures/bedsmart/wire.json").read_text())
-    for frame in row["expected"].split()
-)
+def _bedsmart_frames() -> frozenset[str]:
+    # Release/end is shared by all layouts, outside the widget vector catalog.
+    frames = {"6e", "6e01006edd", "6e01016ede", "6e01026edf"}
+    rows = json.loads((Path(__file__).parent / "fixtures/bedsmart/wire.json").read_text())
+    for row in rows:
+        for literal in row["expected"].split():
+            # RGB writes contain two independently checksummed five-byte frames.
+            size = 10 if row["kind"] == "rgb" else len(literal)
+            frames.update(literal[i : i + size] for i in range(0, len(literal), size))
+    return frozenset(frames)
+
+
+FROZEN_FRAMES["richmat_classic_bedsmart"] = _bedsmart_frames()

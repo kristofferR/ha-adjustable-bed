@@ -1220,6 +1220,7 @@ class Coordinator:
     remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
     remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
+    remember_sleep_number_mcr_client_id = _ignore
     _ble_bond_established = False
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore

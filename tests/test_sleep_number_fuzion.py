@@ -34,6 +34,11 @@ def controller_with_client() -> tuple[SleepNumberController, MagicMock]:
     client.stop_notify = AsyncMock()
     client.write_gatt_char = AsyncMock()
     client.services.get_characteristic.return_value.max_write_without_response_size = 20
+    client.services.get_characteristic.return_value.properties = [
+        "read",
+        "write-without-response",
+        "notify",
+    ]
     controller = SleepNumberController(coordinator)
     return controller, client
 
@@ -297,7 +302,14 @@ async def test_configuration_gates_single_chamber_and_thermal_modules() -> None:
         "no",
     ]
     controller._send_bamkey_command = AsyncMock(
-        side_effect=[config, ["0", "35", "50"], ["cooling_pull_low", "60"]]
+        side_effect=[
+            config,
+            ["0", "35", "50"],
+            ["true"],
+            ["cooling_pull_low", "60"],
+            ["active"],
+            ["0"],
+        ]
     )
     controller._ensure_notifications_started = AsyncMock()
     await controller.query_config()
@@ -418,18 +430,27 @@ async def test_grouped_queries_fall_back_only_for_unknown_command(
 async def test_optional_state_payload_failure_does_not_abort_hydration(thermal: str) -> None:
     controller, _client = controller_with_client()
     controller._ensure_notifications_started = AsyncMock()
-    controller.async_execute_sleep_number_command = AsyncMock(return_value={
-        "chamber_type": "dual", "rapid_sleep_setting_enable_flag": "yes",
-        "thermal_control_enabled_flag": thermal,
-    })
+    controller.async_execute_sleep_number_command = AsyncMock(
+        return_value={
+            "chamber_type": "dual",
+            "rapid_sleep_setting_enable_flag": "yes",
+            "thermal_control_enabled_flag": thermal,
+            "footwarming_presence_flag": 1,
+            "frosty_presence": "true",
+            "heidi_presence": "true",
+        }
+    )
     controller.read_sleep_number_setting_for_side = AsyncMock(side_effect=ValueError("payload"))
     controller.read_footwarming_state_for_side = AsyncMock(side_effect=ValueError("payload"))
     controller.read_frosty_state_for_side = AsyncMock(side_effect=ValueError("payload"))
     controller.read_heidi_state_for_side = AsyncMock(side_effect=ValueError("payload"))
     await controller.query_config()
     assert controller.read_footwarming_state_for_side.await_count == 2
-    thermal_read = (controller.read_frosty_state_for_side if thermal == "cool"
-                    else controller.read_heidi_state_for_side)
+    thermal_read = (
+        controller.read_frosty_state_for_side
+        if thermal == "cool"
+        else controller.read_heidi_state_for_side
+    )
     assert thermal_read.await_count == 2
 
 
@@ -437,10 +458,14 @@ async def test_optional_state_payload_failure_does_not_abort_hydration(thermal: 
 async def test_optional_state_transport_failure_still_retries_connection(error: Exception) -> None:
     controller, _client = controller_with_client()
     controller._ensure_notifications_started = AsyncMock()
-    controller.async_execute_sleep_number_command = AsyncMock(return_value={
-        "chamber_type": "single", "rapid_sleep_setting_enable_flag": "yes",
-        "thermal_control_enabled_flag": "none",
-    })
+    controller.async_execute_sleep_number_command = AsyncMock(
+        return_value={
+            "chamber_type": "single",
+            "rapid_sleep_setting_enable_flag": "yes",
+            "thermal_control_enabled_flag": "none",
+            "footwarming_presence_flag": 1,
+        }
+    )
     controller.read_sleep_number_setting_for_side = AsyncMock()
     controller.read_footwarming_state_for_side = AsyncMock(side_effect=error)
     with pytest.raises(type(error)):

@@ -10,6 +10,8 @@ from ._common import _block, _table
 def render() -> str:
     lines = []
     for app, profile in APPS.items():
+        if app == "bedtech_classic":
+            continue  # Bed Tech has its own generated reference table.
         lines.append(f"**{profile.label}**")
         records = catalog(app)
         permitted = set(models(app))

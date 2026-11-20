@@ -1833,6 +1833,16 @@
   "card_role": "up",
   "card_motor": "ruf_richmat_mattress_right_pillow"
  },
+ "button:selected_motor_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "selected_motor"
+ },
+ "button:selected_motor_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "selected_motor"
+ },
  "button:set_back_reference": {
   "card_section": "motors",
   "card_role": "reference",
@@ -4776,6 +4786,24 @@
   "card_section": "utility"
  },
  "switch:ruf_richmat_sleep_right_intervention": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_auto_kids_light": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_auto_light": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_head_tilt": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_kids_outlet": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_privacy": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_responsive_air": {
   "card_section": "utility"
  },
  "switch:sleepys_app_motion_sensor": {
