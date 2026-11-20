@@ -35,6 +35,7 @@ _VARIANTS = {
     "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
     "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
     **{f"bedtech_{model}": model for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")},
+    "richmat_mh_bedtech_classic": "model_5i",
     "hjbed": "hj_bedbjrn",
     "galaxy": "6BRM",
     "richmat_app": "6BRM",
@@ -94,6 +95,7 @@ FAMILY = CodecFamily(
         {
             "bailey_bed_control",
             "bedtech",
+            "bedtech_classic",
             "casper_base",
             "eshine",
             "galaxy",

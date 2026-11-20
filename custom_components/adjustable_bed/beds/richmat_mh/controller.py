@@ -310,7 +310,7 @@ def resolve_model(
         return None, "unknown_model"
     if not name or len(name) < 4:
         return None, "no_name"
-    if app in ("idealbed", "wsilver2", "americanstar", "bailey2", "tx") and len(name) >= 10 and name[:10].lower() == COOL_TOUCH:
+    if app in ("idealbed", "wsilver2", "americanstar", "bailey2", "tx", "bedtech_classic") and len(name) >= 10 and name[:10].lower() == COOL_TOUCH:
         return None, "choose_model"
     prefix = name[:4].lower()
     if prefix == "qrrm":

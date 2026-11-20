@@ -3143,6 +3143,21 @@
   "card_role": "estimate",
   "card_motor": "head"
  },
+ "number:jerome_aroma_0": {
+  "card_section": "utility"
+ },
+ "number:jerome_aroma_1": {
+  "card_section": "utility"
+ },
+ "number:jerome_aroma_2": {
+  "card_section": "utility"
+ },
+ "number:jerome_light_seconds": {
+  "card_section": "lighting"
+ },
+ "number:jerome_massage_intensity": {
+  "card_section": "massage"
+ },
  "number:l2motion_bass": {
   "card_section": "utility"
  },
@@ -3466,6 +3481,9 @@
  },
  "select:hjbed_layout": {
   "card_section": "utility"
+ },
+ "select:jerome_massage_timer": {
+  "card_section": "massage"
  },
  "select:l2motion_sound_mode": {
   "card_section": "utility"
@@ -4676,6 +4694,12 @@
  "switch:doublesleep_sonic": {
   "card_section": "massage"
  },
+ "switch:jerome_massage": {
+  "card_section": "massage"
+ },
+ "switch:jerome_synchronization": {
+  "card_section": "utility"
+ },
  "switch:l2motion_sync": {
   "card_section": "utility"
  },
@@ -4749,6 +4773,24 @@
   "card_section": "utility"
  },
  "switch:ruf_richmat_sleep_right_intervention": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_auto_kids_light": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_auto_light": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_head_tilt": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_kids_outlet": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_privacy": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_responsive_air": {
   "card_section": "utility"
  },
  "switch:sleepys_app_motion_sensor": {

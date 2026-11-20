@@ -419,9 +419,11 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
     traits = _BED_TRAITS.get(resolved, _NONE)
     if resolved == "richmat_classic_apps" and protocol_variant == "lp2":
         return replace(traits, owns_device_info_reads=True)
+    if resolved == "richmat_classic_apps" and protocol_variant == "jerome2":
+        return replace(traits, single_address_native_both=False)
     if resolved == "solace" and protocol_variant == "sophie":
         return replace(traits, no_angle_feedback=True, connection_scoped_state=True, owns_device_info_reads=True)
-    if resolved in ("richmat_nisco", "richmat_mlily_supreme") and protocol_variant == "sleep":
+    if resolved in ("richmat_nisco", "richmat_mlily_supreme", "bedtech_classic") and protocol_variant == "sleep":
         return replace(traits, persistent_connection=True)
     if resolved == "bedtech" and protocol_variant not in (None, "", VARIANT_AUTO):
         return _NO_ANGLES

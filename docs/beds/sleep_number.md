@@ -1,6 +1,6 @@
 # Sleep Number
 
-**Status:** Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the controls added from SleepIQ 5.4.11 need testing
+**Status:** Partly tested. Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the controls added from SleepIQ 5.4.11 need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) with protocol detail and field testing from [@homer-aty](https://github.com/homer-aty) and [@JonGilmore](https://github.com/JonGilmore)
 
@@ -137,12 +137,10 @@ pair a connection whose bond is still usable.
   response for subsequent frames. It does not derive the client identity from
   the bed's Bluetooth address or continue after a missing bind response.
 - Basic BLE control works without OS-level pairing.
-- MCR keeps its BLE connection open after startup. Idle disconnect,
-  disconnect-after-command and timer-based auto-reconnect are disabled for this
-  transport to avoid reconnect churn during its session handshake: older
-  BAM/MCR firmware is sensitive to reconnect churn between the notify
-  subscribe, init handshake, and follow-up reads. A dropped link reconnects on
-  the next command.
+- MCR keeps its Bluetooth connection open after startup. **Bluetooth
+  connection** does not change this behavior. A dropped link reconnects on the
+  next command, avoiding repeated connections between notification subscription,
+  session binding and follow-up reads on older BAM/MCR beds.
 
 ## Protocol Details
 
@@ -168,7 +166,7 @@ pair a connection whose bond is still usable.
   parsing.
 - Command acknowledgements and query responses depend on the
   notification/readback path, so the integration keeps the BamKey notification
-  channel subscribed even when angle sensing is disabled.
+  channel subscribed even when **Read bed position** is off.
 - `head` is mapped to the integration's `back` actuator and `foot` is mapped to
   `legs`.
 
@@ -201,8 +199,7 @@ FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases** row. When Home Assistant has
 seen the advertisement, setup confirms the transport from its service without
 asking; otherwise it asks which base the bed is, and a detected transport stays
 one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks no
-side, since it exposes both. Either then asks whether to read the bed's
-positions. A model name alone never chooses the
+side, since it exposes both. Either then asks **Read bed position**. A model name alone never chooses the
 transport, and existing entries are not moved to the other one. **Reconfigure**
 lists both transports under their own names.
 
@@ -312,8 +309,8 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 - `heating_push_low`, `heating_push_med`, `heating_push_high` (Heidi only)
 
 - Thermal and footwarming entities are created from the system configuration
-  (`SYCG`) flags; the presence bamkeys remain available through
-  `adjustable_bed.sleep_number_command`.
+  (`SYCG`) flags and each side's presence query, which the integration reads
+  itself.
 - Turning Frosty or Heidi off sends `timer=0` to match the SleepIQ app's
   behaviour. Footwarming keeps the current remaining timer when turned off, also
   matching the app.
@@ -373,7 +370,7 @@ another controller.
   global.
 - A 90-second integration timeout bounds the wait if the bed never reports
   completion; it is not a hardware movement deadline.
-- Homing uses its separate `ACHG` progress state and reads both sides on
+- Homing polls every 300 ms using its separate `ACHG` progress state and reads both sides on
   completion; it does not infer progress percentages.
 - Preset monitoring follows the current movement, without holding the command
   queue for a preset timer's countdown.
@@ -395,6 +392,82 @@ another controller.
   sections. Firmware/layout-specific reports that some presets move both sides
   remain pending real-user validation; there is no blanket whole-bed preset
   restriction.
+
+## Wire codec
+
+`codec/sleepiq.py` implements the two independent formats. The controllers keep
+Auth/binding, capability hydration, movement checks and cancellation cleanup.
+The example frames below are built from the app's encoders, not captured from
+a bed. `tests/test_sleepiq_vectors.py`
+checks framing, corruption rejection, address fields and notification splits.
+
+<!-- generated:sleepiq-frames -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Example | Frame |
+|---|---|
+| Fuzion halt | `66 55 7A 49 6F 4E 13 00 00 00 41 43 48 41 20 42 8F 7B AF` |
+| Fuzion left head 100 | `66 55 7A 49 6F 4E 20 00 00 00 41 43 54 53 20 6C 65 66 74 20 68 65 61 64 20 31 30 30 2D D0 43 18` |
+| MCR flat, assigned addresses 1234 / 5678 | `16 16 42 12 34 56 78 42 12 34 15 02 04 00 10 4C` |
+<!-- /generated -->
+
+## Profiles
+
+### SleepIQ Fuzion and MCR
+
+**Status:** Partly tested. Existing foundation and pressure controls have field
+reports; the additional diagnostic and configuration actions need hardware testing.
+
+<!-- generated:sleepiq-profiles -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Profile | Response timeout | Response retries | Discovery delay | Selection |
+|---|---|---|---|---|
+| fuzion | 7.128 s | 0 | 0 s | FUZION generation |
+| mcr | 0.9 s | 3 | 0.128 s | Other generations, UART service |
+<!-- /generated -->
+
+#### Setup
+
+Choose **Sleep Number**, then the route advertised by the bed. The app remains
+findable as **SleepIQ** in setup and Reconfigure. Service UUIDs determine the
+route; Bluetooth names and product names do not enable optional hardware.
+Fuzion requires readable Auth and TransferInfo, readable/notifiable/writable
+BulkTransfer and public command characteristics. BulkTransfer is validated but
+is never used to transfer files. MCR requires writable RX and notifiable TX.
+Home Assistant manages the host's MTU and bond; Android SDK-specific MTU and
+CCCD operations are not issued through unrelated backend APIs.
+
+#### Controls
+
+Privacy, per-side responsive air and automatic under-bed lighting are native
+switches. Discrete under-bed lighting uses the light entity. MCR also offers a
+head-tilt switch for a HEADTILT chamber and local outlet/automatic night-light
+switches when their nodes are present. Extra local light/outlet and timer
+parameters remain on the structured action, which sends immediately.
+
+Fuzion has a **Reading** preset where the bed reports it. Once the bed's
+configuration has been read, it also has diagnostic **Restart bed**,
+**Calibrate bed position** and **Reset saved positions** buttons (the last two
+only with articulation), disabled by default; the dashboard card asks for
+confirmation before pressing them. **Restart bed** restarts both components. Clock synchronization
+uses the shared `sync_clock` action. Local hardware diagnostics and their results
+use the structured action. Requests cannot enable cloud uploads or network tests.
+The beds have no bed alarm here; phone alarms are outside this integration.
+
+#### Notifications and state
+
+Fuzion's text parser removes the first `PASS:ACK` occurrence and then the first
+`PASS:` occurrence, even within JSON. MCR compares the full weighted checksum
+before accepting a response, and its notification merger emits the first complete
+frame, discarding trailing bytes in that callback. Massage and footwarming reply
+timers use signed shorts; foundation timer fields use unsigned arithmetic.
+
+A fragmented buffer finishes before cancellation can send a STOP buffer.
+Queued work, readback and cleanup are fenced to the original client, controller,
+profile and connection. Queries, binding and release frames do not count as the
+user's control write. Optional thermal hardware must pass the per-side presence
+query as well as the system feature flag.
 
 ## Notes
 

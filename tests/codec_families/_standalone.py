@@ -33,8 +33,6 @@ STANDALONE: dict[str, str] = {
     "reverie": "own wire format",
     "reverie_nightstand": "own wire format",
     "reverie_pairlink": "own wire format behind a Pairlink session",
-    "sleep_number": "own wire format",
-    "sleep_number_mcr": "own wire format",
     "sleepstar": "a CB37 sleep-monitor session that carries codec/okin_5a.py StarCode frames"
     " in its AA 00 00 09 02 envelope; the envelope, sleep-monitor and MODBUS environment"
     " frames have no codec",

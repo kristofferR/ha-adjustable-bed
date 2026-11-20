@@ -253,7 +253,15 @@ The same control now looks the same on every bed:
 - **New controls.** Keeson, Serta, Ergomotion and OKIN FFE beds have a **Stop
   All** button, sending the release key the remote sends when a button is let
   go (Adjustable Lite and the KSBT remotes have no such key and still have
-  none). Logicdata beds show their two memory slots, recall and save.
+  none). Logicdata beds show their two memory slots, recall and save. Sleep
+  Number beds get **responsive air** switches per side and an **Automatic
+  under-bed light** switch where the model has them, a **Privacy** switch on
+  Fuzion beds, and **Head tilt**, **Power outlet** and **Automatic night
+  light** switches on BAM/MCR beds that have them. Once a Fuzion bed's
+  configuration has been read, it also gets diagnostic **Restart bed**,
+  **Calibrate bed position** and **Reset saved positions** buttons (the last
+  two only on beds that move), disabled by default; the dashboard card asks
+  for confirmation before it presses them.
 
 [Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists the
 removed and replaced entities by bed.
@@ -345,13 +353,26 @@ Other action changes:
   `right` and `day` or `month` instead of 1 and 2.
 - `goodvibe` no longer offers `operation: sync`; use `sync_clock`.
 - `furnimove_action` no longer takes `consumer`.
-- `sleep_number_command` no longer accepts service, firmware and diagnostic
-  commands such as `reboot_system` and `software_versions`.
+- `sleep_number_command` no longer offers `reboot_system`,
+  `starts_actuator_homing`, `set_system_time`, the cooling and core-temperature
+  module commands (`get_frosty_mode`, `set_frosty_mode`, `get_frosty_presence`,
+  `get_heidi_mode`, `set_heidi_mode`, `get_heidi_presence`) or
+  `get_system_status` (network and update status). Restarting and homing are
+  buttons now (see **New controls** under [Entities](#entities)); **Restart
+  bed** always restarts both components, so one component can no longer be
+  restarted alone. Set the clock with `sync_clock`, which writes Home
+  Assistant's current time and takes no `date_time`. Cooling and heating modes
+  are the **Climate** entities and their duration the **Climate Timer**
+  selects; module presence is detected automatically. `kid_outlet` and
+  `kid_outlet_status` accept only `device: 0`. New
+  commands: `reset_articulation_presets`, `run_diagnostics`, `bind_foundation`
+  and `underbed_intensity`. See the
+  [Sleep Number command guide](beds/sleep-number-services.md).
 - `timed_move` and `hold_control` gain optional `hold_owner` and
   `hold_generation` fields for renewable holds. Calls without them work as
   before. See [Renewable holds](SERVICES.md#renewable-holds).
 - `sync_clock` also sets the clock of SUTA Smart Home, OKIN SleepEase, Motion
-  Bed, GM Control and Good Vibe Sleep beds, whose own actions or buttons no
+  Bed, GM Control, Good Vibe Sleep and Sleep Number (Fuzion) beds, whose own actions or buttons no
   longer do. On a bed whose two sides share one receiver, it
   sets the clock once.
 - Bed actions are named "Brand: what they do" in the action list, with
