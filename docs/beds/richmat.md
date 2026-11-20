@@ -15492,13 +15492,14 @@ four colors appear in the normal app chooser. Home Assistant retains the chosen
 product across restarts and keeps each paired side's product data separate.
 
 Case-sensitive names containing `QRRM`, `COOL`, `MPE_`, `209A` or `BED-` offer this
-app as a candidate. Shared services and names never choose its product. A Left /
-Right choice is available only for products that offer sides and a link that
-encodes them. The selected side survives controller rebuilds for that product. On a link that
+app as a candidate. Shared services and names never choose its product. The
+**Controlled side** select offers Right only for products that offer sides and a
+link that encodes them. The selected side survives controller rebuilds for that product. On a link that
 cannot encode sides, choose **Left** to recover from a retained Right selection;
 Right movement is rejected and STOP remains available. The last discovered
 framing also restricts choices while the bed is disconnected.
-Green, Orange and Blue separately offer split/standard control.
+Green, Orange and Blue separately offer split/standard control. The
+**Synchronization** switch, on products with Sync on and Sync off, starts disabled.
 
 #### Controls
 

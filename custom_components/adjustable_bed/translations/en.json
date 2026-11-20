@@ -6613,7 +6613,7 @@
         }
       },
       "dreamsense_selected_side": {
-        "name": "Selected side",
+        "name": "Controlled side",
         "state": {
           "left": "Left",
           "right": "Right"
