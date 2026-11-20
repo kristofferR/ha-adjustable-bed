@@ -13549,9 +13549,9 @@ the app's M4-save code. Pillow and lumbar names follow the app's typed mapping.
 On CFRM, the light lock state the bed reports is a sensor, disabled by
 default; the light lock has no toggle command, because the app's button for it
 sends nothing. The motor-page lock command is separate. Snore acknowledgements
-and the selected intervention are separate states: the bed-reported snore mode
-comes from its normal reply (and a successful write), never from the
-initialization reply.
+and the selected intervention are separate states: the bed reports its snore
+mode in its normal reply, and a successful write shows the commanded mode; the
+initialization reply does neither.
 
 Use the shared **Set alarm** and **Set bed clock** actions. Supported surfaces
 choose countdown, three-slot or calendar alarms; mattress alarms remain
@@ -13586,8 +13586,8 @@ malformed double-negative values are ignored. Capabilities on entity pages
 reset on each initialization reply rather than accumulating. Calendar records
 preserve decimal slot/bed parsing and signed times; repeated records are retained
 as observations while the latest record supplies each actionable slot.
-Calendar records that are too short are dropped, and other incomplete replies
-are held until they are complete before decoding. Connection state is cleared
+Calendar records that are too short are dropped; whether another incomplete
+reply is held until it is complete depends on the reply type. Connection state is cleared
 when a link is reused.
 
 Wi-Fi, network administration, cloud accounts, group administration, firmware
