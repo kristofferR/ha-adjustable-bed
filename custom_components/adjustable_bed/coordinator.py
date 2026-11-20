@@ -2284,6 +2284,7 @@ class AdjustableBedCoordinator(
                 scheduler_managed
                 and command_context is not None
                 and "*" in command_context.resources
+                and command_context.kind is not CommandKind.STOP
             )
             cancel_event = self.cancel_command
             controller_before_prepare = self._controller

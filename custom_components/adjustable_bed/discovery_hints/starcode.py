@@ -12,7 +12,7 @@ from ._hints import Case, Hint, names
 
 # The apps match a "star" prefix in any case; bases advertise these spellings.
 SCAN = names(
-    "STAR", "Star", "star", bed_types={BED_TYPE_STARCODE_ABM5_4, BED_TYPE_SLEEPYS_BOX25}
+    "STAR", "Star", "star", bed_types={BED_TYPE_STARCODE_ABM5_4, BED_TYPE_SLEEPYS_BOX25, "sealy_posturematic"}
 )
 
 HINTS: tuple[Hint, ...] = (

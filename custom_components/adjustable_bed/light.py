@@ -880,9 +880,11 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         del kwargs
 
         generation = self._state_generation
+        owner: BedController | None = None
 
         async def _turn_on(ctrl: BedController) -> None:
-            nonlocal generation
+            nonlocal generation, owner
+            owner = ctrl
             generation = self._state_generation
             await ctrl.lights_on()
 
@@ -890,6 +892,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             # Published state wins; a value sent only in part is unknown.
             if (
                 not self._feedback_only
+                and owner is self._coordinator.controller
                 and delivery is not Delivery.NONE
                 and generation == self._state_generation
             ):
@@ -905,15 +908,18 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         del kwargs
 
         generation = self._state_generation
+        owner: BedController | None = None
 
         async def _turn_off(ctrl: BedController) -> None:
-            nonlocal generation
+            nonlocal generation, owner
+            owner = ctrl
             generation = self._state_generation
             await ctrl.lights_off()
 
         def show(delivery: Delivery) -> None:
             if (
                 not self._feedback_only
+                and owner is self._coordinator.controller
                 and delivery is not Delivery.NONE
                 and generation == self._state_generation
             ):

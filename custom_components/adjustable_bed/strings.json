@@ -5077,6 +5077,15 @@
       },
       "enso_massage_timer": {
         "name": "Massage timer"
+      },
+      "sealy_massage_timer": {
+        "name": "Massage time remaining"
+      },
+      "sealy_massage_head_level": {
+        "name": "Head massage intensity"
+      },
+      "sealy_massage_foot_level": {
+        "name": "Foot massage intensity"
       }
     },
     "light": {
@@ -5260,6 +5269,9 @@
         "name": "Synchronization"
       },
       "massage": {
+        "name": "Massage"
+      },
+      "sealy_massage": {
         "name": "Massage"
       }
     },
@@ -9890,6 +9902,15 @@
     },
     "enso_duration_invalid": {
       "message": "Choose a hold duration between 1 and 60000 milliseconds."
+    },
+    "sealy_control_invalid": {
+      "message": "Choose a supported Sealy control, product and duration."
+    },
+    "sealy_session_changed": {
+      "message": "The Sealy connection or selected product changed. Try the action again."
+    },
+    "sealy_gatt_missing": {
+      "message": "The Sealy bed control and notification characteristics were not found."
     }
   },
   "issues": {

@@ -30,6 +30,7 @@ from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
 from .bed_traits import bed_traits
 from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController
+from .beds.cancellation import settled
 from .beds.remacro.discovery import remacro_side_lacks_global_stop
 from .command_scheduler import (
     CommandHandle,
@@ -514,8 +515,11 @@ class PairedBedCoordinator:
             if not remacro_side_lacks_global_stop(child)
         ]
         self._cancel_behind_mode_transition(targets)
-        async with self._connection_mode_transition_lock:
-            errors = await self._stop_children(targets)
+        async def stop() -> dict[str, BaseException]:
+            async with self._connection_mode_transition_lock:
+                return await self._topology.explicit_stop_children(targets)
+
+        errors = await settled(stop(), eager_start=True)
         if errors:
             raise PairedSideError("stop", errors)
 
@@ -559,8 +563,11 @@ class PairedBedCoordinator:
         self._cancel_behind_mode_transition(
             targets, command_resources("motor:*" if resource.startswith("motor:") else resource)
         )
-        async with self._connection_mode_transition_lock:
-            errors = await self._topology.stop_motor(targets, stop_fn, resource)
+        async def stop() -> dict[str, BaseException]:
+            async with self._connection_mode_transition_lock:
+                return await self._topology.stop_motor(targets, stop_fn, resource)
+
+        errors = await settled(stop(), eager_start=True)
         if errors:
             raise PairedSideError("stop", errors)
 

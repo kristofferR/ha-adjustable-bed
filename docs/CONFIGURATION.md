@@ -656,6 +656,7 @@ beds, Reconfigure that bed, then combine them again.
 | SonicSleep | See the [setup steps](beds/richmat.md#sonicsleep). |
 | Sophie | See the [setup steps](beds/ff_frame.md#sophie). |
 | StarCode apps | One question for the app, then its own settings. Reconfigure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): control box and connection type, under **Advanced**. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
+| Sealy Posturematic | [Element, Ascent or Apex](beds/okin-5a.md#sealy-posturematic-app), stored per physical side. |
 | Symphony Sleep Sense | [Symphony setup](beds/okin-soundwave.md#symphony-sleep-sense): choose the product the app shows. Split-Head and KGD-SHQ/SHK beds offer Left and Right controls; each bed of a combined pair keeps its own app choices. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app for ProSmart / ProSmart Air and ActiveBreeze, then the layout the app shows. The processor's own fields are under **Advanced**. Motors and massage follow the layout; the bed does not report its position. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister), [VMAT](beds/vibradorm.md#vmat), [V-MAT Basic](beds/vibradorm.md#v-mat-basic): app, exact remote or product, and offered light settings. |

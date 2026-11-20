@@ -2306,6 +2306,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,
     ),
+    "sealy_posturematic": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
+              CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_PRODUCT_TYPE, {
+            "0": "Element", "1": "Ascent", "2": "Apex",
+        }, "0"),),
+        title=lambda _data: "Sealy Posturematic",
+    ),
     "enso": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
