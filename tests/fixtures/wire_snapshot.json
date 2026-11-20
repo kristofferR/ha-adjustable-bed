@@ -14871,7 +14871,8 @@
 "button:hjbed_music_volumu_up": {"status":"ok","writes":[[93,"d44bc439",false,"6e0100d443",1,0]]},
 "button:hjbed_release": {"status":"no_writes"},
 "select:hjbed_layout=Normal": {"status":"no_writes"},
-"select:hjbed_layout=Motion": {"status":"no_writes"}
+"select:hjbed_layout=Motion": {"status":"no_writes"},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e0c20080201695735e2007c",1,0],[193,"d44bc439",false,"6e0d20080301380102030506f0",1,0]]}
 }},
 "hjbed:props_write": {
 "info": {"bed_type": "hjbed", "controller": "HJBedController", "module": "hjbed.controller", "pulse": [10, 100]},
@@ -14951,10 +14952,11 @@
 "button:hjbed_music_volumu_up": {"status":"ok","writes":[[93,"d44bc439",true,"6e0100d443",1,0]]},
 "button:hjbed_release": {"status":"no_writes"},
 "select:hjbed_layout=Normal": {"status":"no_writes"},
-"select:hjbed_layout=Motion": {"status":"no_writes"}
+"select:hjbed_layout=Motion": {"status":"no_writes"},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",true,"6e0c20080201695735e2007c",1,0],[193,"d44bc439",true,"6e0d20080301380102030506f0",1,0]]}
 }},
 "hjbed:props_wwr": {
-"info": {"bed_type": "hjbed", "connect_error": "ValueError", "controller": "HJBedController", "gaps": ["stop_all", "cover:hjbed_head_open", "cover:hjbed_head_close", "cover:hjbed_head_stop", "cover:hjbed_foot_open", "cover:hjbed_foot_close", "cover:hjbed_foot_stop", "cover:hjbed_head_and_foot_open", "cover:hjbed_head_and_foot_close", "cover:hjbed_head_and_foot_stop", "cover:hjbed_lumber_open", "cover:hjbed_lumber_close", "cover:hjbed_lumber_stop", "cover:hjbed_pillow_open", "cover:hjbed_pillow_close", "cover:hjbed_pillow_stop", "hold_hjbed_head_up", "hold_hjbed_head_down", "hold_hjbed_foot_up", "hold_hjbed_foot_down", "hold_hjbed_head_and_foot_up", "hold_hjbed_head_and_foot_down", "hold_hjbed_lumber_up", "hold_hjbed_lumber_down", "hold_hjbed_pillow_up", "hold_hjbed_pillow_down", "hold_hjbed_bed_light", "hold_hjbed_motor_reset", "hold_hjbed_memory_position1", "hold_hjbed_memory_position2", "hold_hjbed_memory_position3", "stop:hjbed_head_open", "stop:hjbed_head_close", "stop:hjbed_foot_open", "stop:hjbed_foot_close", "stop:hjbed_head_and_foot_open", "stop:hjbed_head_and_foot_close", "stop:hjbed_lumber_open", "stop:hjbed_lumber_close", "stop:hjbed_pillow_open", "stop:hjbed_pillow_close", "button:hjbed_bed_light", "button:hjbed_motor_reset", "button:hjbed_memory_position1", "button:hjbed_save_memory_position1", "button:hjbed_memory_position2", "button:hjbed_save_memory_position2", "button:hjbed_memory_position3", "button:hjbed_save_memory_position3", "button:hjbed_music_blue_tooth_switch", "button:hjbed_music_next_song", "button:hjbed_music_pause_play", "button:hjbed_music_previous_song", "button:hjbed_music_shake_mode", "button:hjbed_music_switch_sound_track", "button:hjbed_music_volumu_down", "button:hjbed_music_volumu_up"], "module": "hjbed.controller", "pulse": [10, 100]},
+"info": {"bed_type": "hjbed", "connect_error": "ValueError", "controller": "HJBedController", "gaps": ["stop_all", "cover:hjbed_head_open", "cover:hjbed_head_close", "cover:hjbed_head_stop", "cover:hjbed_foot_open", "cover:hjbed_foot_close", "cover:hjbed_foot_stop", "cover:hjbed_head_and_foot_open", "cover:hjbed_head_and_foot_close", "cover:hjbed_head_and_foot_stop", "cover:hjbed_lumber_open", "cover:hjbed_lumber_close", "cover:hjbed_lumber_stop", "cover:hjbed_pillow_open", "cover:hjbed_pillow_close", "cover:hjbed_pillow_stop", "hold_hjbed_head_up", "hold_hjbed_head_down", "hold_hjbed_foot_up", "hold_hjbed_foot_down", "hold_hjbed_head_and_foot_up", "hold_hjbed_head_and_foot_down", "hold_hjbed_lumber_up", "hold_hjbed_lumber_down", "hold_hjbed_pillow_up", "hold_hjbed_pillow_down", "hold_hjbed_bed_light", "hold_hjbed_motor_reset", "hold_hjbed_memory_position1", "hold_hjbed_memory_position2", "hold_hjbed_memory_position3", "stop:hjbed_head_open", "stop:hjbed_head_close", "stop:hjbed_foot_open", "stop:hjbed_foot_close", "stop:hjbed_head_and_foot_open", "stop:hjbed_head_and_foot_close", "stop:hjbed_lumber_open", "stop:hjbed_lumber_close", "stop:hjbed_pillow_open", "stop:hjbed_pillow_close", "button:hjbed_bed_light", "button:hjbed_motor_reset", "button:hjbed_memory_position1", "button:hjbed_save_memory_position1", "button:hjbed_memory_position2", "button:hjbed_save_memory_position2", "button:hjbed_memory_position3", "button:hjbed_save_memory_position3", "button:hjbed_music_blue_tooth_switch", "button:hjbed_music_next_song", "button:hjbed_music_pause_play", "button:hjbed_music_previous_song", "button:hjbed_music_shake_mode", "button:hjbed_music_switch_sound_track", "button:hjbed_music_volumu_down", "button:hjbed_music_volumu_up", "sync_clock"], "module": "hjbed.controller", "pulse": [10, 100]},
 "commands": {
 "connect": {"error":"ValueError","status":"error","writes":[]},
 "head_up": {"error":"ConnectionError","status":"error","writes":[]},
@@ -15031,7 +15033,8 @@
 "button:hjbed_music_volumu_up": {"error":"ConnectionError","status":"error","writes":[]},
 "button:hjbed_release": {"status":"no_writes"},
 "select:hjbed_layout=Normal": {"status":"no_writes"},
-"select:hjbed_layout=Motion": {"status":"no_writes"}
+"select:hjbed_layout=Motion": {"status":"no_writes"},
+"sync_clock": {"error":"ConnectionError","status":"error","writes":[]}
 }},
 "hush_base": {
 "info": {"bed_type": "hush_base", "controller": "HushBaseController", "module": "hush_base.controller", "pulse": [10, 100]},

@@ -18,6 +18,7 @@ from ...card import CARD_HIDDEN, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...execution import ExecutionCapabilities
 from ...profiles.okimiki import CATALOG, CONTROLS, LIGHT_DELAY_S, PRODUCTS, QUERY_S, SAVE_S, TICK_S
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
@@ -494,7 +495,7 @@ class OkimikiController(GoodVibeController):
             raise ValueError("This control has no save action")
         context = current_command_context()
         if context is not None and context.lease is not None and not control.held:
-            raise ValueError("Only motor controls support renewable holds")
+            raise invalid("control_hold_renewal_not_supported")
         loop = asyncio.get_running_loop()
         started = loop.time()
         deadline = started + self.leased_hold_ms(duration) / 1000

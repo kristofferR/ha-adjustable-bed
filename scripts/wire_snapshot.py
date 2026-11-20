@@ -227,6 +227,7 @@ LATE_CLOCK_SYNC = frozenset(
         "DoubleSleepController",
         "GmmotorController",
         "GoodVibeController",
+        "HJBedController",
         "MajesticHomeController",
         "MlilyRemoteController",
         "MotionBedController",
