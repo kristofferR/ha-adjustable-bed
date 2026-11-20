@@ -130,6 +130,9 @@ def test_every_declared_question_belongs_to_its_side() -> None:
         assert {question.key for question in profile.questions} <= owned, key
     sides = [(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)] * 2
     assert _per_side_refusal(sides[0], sides, {CONF_MOTOR_COUNT: 4}) == (CONF_MOTOR_COUNT, "INNOVA")
+    sealy = per_side_profile("sealy_posturematic", None)
+    assert sealy is not None
+    assert {CONF_PRODUCT_TYPE, CONF_MOTOR_COUNT} <= sealy.keys
 
 
 def test_the_side_table_lists_only_what_no_question_asks() -> None:
