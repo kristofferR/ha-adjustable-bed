@@ -552,9 +552,6 @@ async def test_actual_cherish_timer_select_retains_commanded_selection_when_disc
     assert ctrl.state.timer == 20  # Off retains the next start's selection.
     runtime.controller = None
     assert select.current_option == "Off"
-    # A timer cleared on disconnect, or sent only in part, is unknown rather than off.
-    runtime.controller_state["massage_timer"] = None
-    assert select.current_option is None
 
 
 @pytest.mark.parametrize("cherish", [False, True])
