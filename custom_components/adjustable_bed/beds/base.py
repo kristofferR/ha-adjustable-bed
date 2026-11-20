@@ -2109,6 +2109,10 @@ class BedController(GattWriter):
         """Check an alarm against the bed's reported state, for ``live_check`` beds."""
         return None
 
+    def alarm_record_identity(self, alarm: AlarmRequest) -> tuple[int, int] | None:
+        """Bind a live slot to its reported receiver for subsequent dispatch."""
+        return None
+
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         """Write one alarm. The default suits beds built on ``configure_clock_alarm``."""
         await self.configure_clock_alarm(

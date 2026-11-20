@@ -2844,7 +2844,7 @@ sleep_number_command:
       required: true
       selector:
         select:
-          options: [cancel_target_preset, create_temperature_program, delete_temperature_program, firmness_favorite, firmness_favorites, foot_warming, foot_warming_status, foundation_status, get_active_temperature_programs, get_actuator_movement_status, get_actuator_position, get_bed_configuration, get_current_preset, get_favorite_sleep_number, get_footwarming_presence, get_footwarming_settings, get_responsive_air_enabled_status, get_sleep_number_controls, get_sleepiq_privacy_state, get_system_status, get_temperature_programs, get_target_preset_with_timer, get_temperature_program_info, get_temperature_program_settings, get_underbed_light_auto_mode_status, get_underbed_light_settings, halt_all_actuators, head_tilt, interrupt_sleep_number_adjustment, kid_outlet, kid_outlet_status, light_intensity, massage, massage_status, outlet, outlet_status, position, preset_reset, preset_save, preset_timer, responsive_air, responsive_air_status, sense_and_do, sense_and_do_status, set_actuator_target_position, set_actuator_target_position_with_timer, set_articulation_preset_settings, set_favorite_sleep_number, set_footwarming_settings, set_responsive_air_enabled_status, set_sleepiq_privacy_state, set_target_preset_with_timer, set_target_preset_without_timer, set_temperature_program, set_underbed_light_auto_mode, set_underbed_light_settings, start_sleep_number_adjustment, stop, underbed_auto, underbed_auto_status]
+          options: [bind_foundation, cancel_current_diagnostic_run, cancel_target_preset, create_temperature_program, delete_temperature_program, firmness_favorite, firmness_favorites, foot_warming, foot_warming_status, foundation_status, get_active_temperature_programs, get_actuator_movement_status, get_actuator_position, get_bed_configuration, get_central_devices_metadata, get_current_preset, get_favorite_sleep_number, get_footwarming_presence, get_footwarming_settings, get_fuzion_remote_mac_addresses, get_manifest_name, get_responsive_air_enabled_status, get_simple_diagnostic_run_results, get_sleep_number_controls, get_sleepiq_privacy_state, get_system_configuration, get_system_settings_applied_status, get_target_preset_with_timer, get_temperature_program_info, get_temperature_program_settings, get_temperature_programs, get_underbed_light_auto_mode_status, get_underbed_light_settings, gets_actuator_homing_state, halt_all_actuators, head_tilt, interrupt_sleep_number_adjustment, kid_outlet, kid_outlet_status, light_intensity, massage, massage_status, mcr_status, migrate_routines_to_temperature_programs, outlet, outlet_status, pinch_status, position, preset_reset, preset_save, preset_timer, reset_articulation_presets, responsive_air, responsive_air_status, routine_migration_status, run_diagnostics, sense_and_do, sense_and_do_status, set_actuator_target_position, set_actuator_target_position_with_timer, set_articulation_preset_settings, set_bed_presence, set_favorite_sleep_number, set_footwarming_settings, set_responsive_air_enabled_status, set_sleepiq_privacy_state, set_target_preset_with_timer, set_target_preset_without_timer, set_temperature_program, set_underbed_light_auto_mode, set_underbed_light_settings, software_versions, start_sleep_number_adjustment, stop, underbed_auto, underbed_auto_status, underbed_intensity]
           translation_key: sleep_number_command_command
     parameters:
       selector:
@@ -3920,3 +3920,57 @@ lp2:
         select:
           options: [both, left, right]
           translation_key: side
+
+jerome_bed:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      example: head_up
+      selector:
+        text:
+    side:
+      selector:
+        select:
+          translation_key: side
+          options: [both, left, right]
+    rgb_color:
+      selector:
+        color_rgb:
+    aroma_times:
+      example: [1, 1, 2]
+      selector:
+        object:
+    keep:
+      default: false
+      selector:
+        boolean:
+    mode:
+      selector:
+        number:
+          min: 0
+          max: 2
+          step: 1
+          mode: box
+    long_press:
+      default: false
+      selector:
+        boolean:
+    confirm:
+      default: false
+      selector:
+        boolean:
+    duration_ms:
+      default: 1000
+      selector:
+        number:
+          min: 1
+          max: 60000
+          step: 1
+          unit_of_measurement: ms
+          mode: box

@@ -29,34 +29,21 @@ from ..base import BedController, controller_as
 from .commands import SleepNumberActions
 
 SERVICE_SLEEP_NUMBER_COMMAND = "sleep_number_command"
-# Service, firmware and internal-feature commands the bed uses itself; not user actions.
+# Climate, clock and confirmed maintenance controls use their native surfaces.
 INTERNAL_COMMANDS = frozenset(
     {
-        "cancel_current_diagnostic_run",
-        "get_central_devices_metadata",
         "get_frosty_mode",
         "get_frosty_presence",
-        "get_fuzion_remote_mac_addresses",
         "get_heidi_mode",
         "get_heidi_presence",
-        "get_manifest_name",
-        "get_simple_diagnostic_run_results",
-        "get_system_configuration",
-        "get_system_settings_applied_status",
-        "gets_actuator_homing_state",
-        "mcr_status",
-        "migrate_routines_to_temperature_programs",
-        "pinch_status",
-        "reboot_system",
-        "routine_migration_status",
-        "set_bed_presence",
         "set_frosty_mode",
         "set_heidi_mode",
         "set_system_time",
-        "software_versions",
         "starts_actuator_homing",
+        "reboot_system",
     }
 )
+
 MOTION_COMMANDS = frozenset(
     {
         "set_actuator_target_position",
@@ -120,7 +107,8 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                 sleep_number = controller_as(controller, SleepNumberActions)
                 physical_side = (
                     next(
-                        child_side for child_side, child in coordinator.children.items()
+                        child_side
+                        for child_side, child in coordinator.children.items()
                         if child is target
                     )
                     if isinstance(coordinator, PairedBedCoordinator)
@@ -159,7 +147,11 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                 )
                 sleep_number = controller_as(controller, SleepNumberActions)
                 if sleep_number is None:
-                    raise invalid("sleep_number_command_not_supported", device_name=controller._coordinator.name, command=command)
+                    raise invalid(
+                        "sleep_number_command_not_supported",
+                        device_name=controller._coordinator.name,
+                        command=command,
+                    )
                 with controller.side_scope(physical_side):
                     sleep_number.validate_sleep_number_command(command, parameters)
                     key = physical_side or "single"

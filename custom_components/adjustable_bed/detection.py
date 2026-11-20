@@ -576,6 +576,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
             ("richmat_tx", "TX"),
             ("richmat_nisco", "Nisco"),
             ("richmat_mlily_supreme", "MLILY Supreme"),
+            ("bedtech_classic", "Bed Tech"),
         )
     },
     "richmat_sleep_receiver": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver",

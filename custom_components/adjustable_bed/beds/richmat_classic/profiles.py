@@ -32,6 +32,7 @@ APP_NAMES = {
     "luunarise2": "Luuna Rise",
     "powercool": "Power Cool Sleep System",
     "lp2": "L&P Adjustable Base",
+    "jerome2": "Jerome's power base",
     **{app: profile.name for app, profile in RESOURCE_APPS.items()},
 }
 

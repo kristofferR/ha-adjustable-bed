@@ -113,12 +113,16 @@ class AlarmCapability:
     confirm_actions: frozenset[str] = field(default_factory=frozenset)
     # Run ``check_alarm`` on every target over Bluetooth before the first write.
     live_check: bool = False
+    # Slot identities come from check_alarm, rather than a static capacity.
+    live_slots: bool = False
     # The bed finds the alarm to turn off by its time, so turning one off needs a time too.
     time_to_turn_off: bool = False
     cancel_running: bool = False
     resource: str | None = "configuration"
 
     def __post_init__(self) -> None:
+        if self.live_slots and not self.live_check:
+            raise ValueError("Live alarm slots require a live check")
         unknown = set(self.wake_actions).difference(WAKE_ACTIONS)
         unknown |= set(self.sounds).difference(ALARM_SOUNDS)
         unknown |= set(self.massage_zones).difference(MASSAGE_ZONES)
@@ -129,7 +133,7 @@ class AlarmCapability:
         """Return whether a caller may set the optional request field ``name``."""
         return {
             "weekdays": self.weekdays,
-            "slot": self.slots > 1,
+            "slot": self.slots > 1 or self.live_slots,
             "wake_action": bool(self.wake_actions),
             "massage": self.massage,
             "head_massage_level": self.massage_levels > 0,
@@ -166,6 +170,8 @@ class AlarmRequest:
     sound: str = "none"
     light: bool = False
     confirm_custom_position: bool = False
+    # Internal, captured by live preflight; never accepted from service input.
+    record_identity: tuple[int, int] | None = None
     # Home Assistant local time, captured once for the whole call.
     reference_time: datetime
 

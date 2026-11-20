@@ -208,7 +208,13 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         OreUltramaticController,
     )
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
+    from custom_components.adjustable_bed.beds.richmat_classic.jerome import JeromeController
+    from custom_components.adjustable_bed.beds.richmat_classic.jerome_controls import (
+        actions,
+        inverse_pairs,
+    )
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
+    from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
         ResourceBedController,
     )
@@ -297,6 +303,12 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                     yield variant(reported, _normal_ready=True)
         elif isinstance(controller, RufRichmatController):
             yield variant(controller, _normal_ready=True)
+        elif isinstance(controller, JeromeController):
+            for layout in ("D1RM", "D9RM", "Y6RM", "R2RM", "DXRM", "B9TT"):
+                model = load_catalog("jerome2").models[layout]
+                yield variant(controller, layout=layout, _model=model, _controls=model.controls,
+                              _actions=actions(layout), _pairs=inverse_pairs(layout),
+                              _receive=ReceiveState(light_capable=True, aroma_capable=True))
         elif isinstance(controller, ResourceBedController):
             model = load_catalog(controller.app).models["D1RM"]
             yield variant(controller, layout="D1RM", _model=model, _controls=model.controls,

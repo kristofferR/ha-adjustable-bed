@@ -1220,6 +1220,7 @@ class Coordinator:
     remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
     remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
+    remember_sleep_number_mcr_client_id = _ignore
     _ble_bond_established = False
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore
@@ -1922,6 +1923,8 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("powercool", "E3RM", "richmat_classic_apps_nordic"),
     ("lp2", "APRM", "richmat_classic_apps"),
     ("lp2", "6BRM", "richmat_classic_apps_nordic"),
+    ("jerome2", "6BRM", "richmat_classic_apps"),
+    ("jerome2", "DXRM", "richmat_classic_apps_nordic"),
     # Independent accepted Richmat resource apps, both GATT-selected wire formats.
     *((app, "6BRM", wire) for app in ("lady_americana", "acaa", "sta2", "zerogravity")
       for wire in ("richmat_classic_apps", "richmat_classic_apps_nordic")),

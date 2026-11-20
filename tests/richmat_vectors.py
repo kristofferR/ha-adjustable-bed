@@ -11,7 +11,9 @@ import gzip
 import json
 from pathlib import Path
 
+from tests.bedtech_classic_vectors import FROZEN_FRAMES as BEDTECH_CLASSIC_FRAMES
 from tests.bedtech_vectors import FROZEN_FRAMES as BEDTECH_APP_FRAMES
+from tests.jerome_vectors import FROZEN_FRAMES as JEROME_FROZEN_FRAMES
 from tests.richmat_rise_vectors import FROZEN_FRAMES as RISE_FROZEN_FRAMES
 
 
@@ -2140,6 +2142,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_classic_fortywinks": _RICHMAT_CLASSIC,
     "richmat_classic_milemont": _RICHMAT_CLASSIC,
     "richmat_classic_superior": _RICHMAT_CLASSIC,
+    "richmat_classic_jerome2": JEROME_FROZEN_FRAMES,
     "galaxy": _galaxy(),
     **RISE_FROZEN_FRAMES,
     "goodvibe": _goodvibe(),
@@ -2273,6 +2276,10 @@ def _nisco_supreme_frames() -> dict[str, frozenset[str]]:
 
 
 FROZEN_FRAMES.update(_nisco_supreme_frames())
+
+
+# Bed Tech has its own literals, separate from both modern and older sibling apps.
+FROZEN_FRAMES["richmat_mh_bedtech_classic"] = BEDTECH_CLASSIC_FRAMES
 
 
 # L&P Adjustable Base 2.3.25, ordinary and direct literal writes.

@@ -257,6 +257,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "RichmatProfile:richmat_mh_ruf": {"hold": ("ruf", "richmat-mh-ruf")},
     "RichmatProfile:richmat_mh_tx": {"hold": ("tx", "richmat-mh-ruf")},
     "RichmatProfile:richmat_mh_wsilver2": {"hold": ("wsilver", "richmat-mh-ruf")},
+    "RichmatProfile:richmat_mh_bedtech_classic": {"hold": ("bedtech-classic",)},
     "RichmatProfile:richmat_mh_nisco": {"hold": ("nisco", "richmat-mh-nisco")},
     "RichmatProfile:richmat_mh_mlily_supreme": {"hold": ("mlily-supreme", "richmat-mh-nisco")},
     "RichmatProfile:richmat_nordic": {"hold": ("rmc2",)},
@@ -288,8 +289,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection.
     "richmat_classic_apps": {
-        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP"),
-        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "L&P Adjustable Base 2.3.25: stream controls only; confirmed saves never hold"),
+        "hold": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP', "Jerome's power base 1.0.9: mode1 refresh until release, then50ms END"),
+        "hold_controls": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'L&P Adjustable Base 2.3.25: stream controls only; confirmed saves never hold', "Jerome's power base 1.0.9: selected-layout held widgets only; never saves"),
     },
     "isleep": {"hold": ("kaidi",)},
     "ComfyProfile:komfyd": {"hold": ("komfyd084",)},
@@ -396,6 +397,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/richmat_classic/lp2.py:<module>.Lp2Controller.execution": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
+    "beds/richmat_classic/jerome.py:<module>.JeromeController.execution": ("richmat_classic_apps",),
+    "beds/richmat_classic/jerome.py:<module>.JeromeController": ("richmat_classic_apps",),
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
     "beds/furnimove/controller.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove/controller.py:<module>.FurniMoveController.execution": ("furnimove",),
@@ -511,7 +514,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         for app in (
             *("best_mattress", "blvd_home", "harmony", "idealbed", "revive"),
             *("americanstar", "bailey2", "ruf", "tx", "wsilver2"),
-            *("nisco", "mlily_supreme"),
+            *("nisco", "mlily_supreme", "bedtech_classic"),
         )
     ),
 }

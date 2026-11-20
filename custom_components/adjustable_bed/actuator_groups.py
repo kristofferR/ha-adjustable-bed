@@ -202,6 +202,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
         (BED_TYPE_RICHMAT_IDEALBED, None),
         ("richmat_nisco", None),
         ("richmat_mlily_supreme", None),
+        ("bedtech_classic", None),
     ),
     "sleepys": ((BED_TYPE_SLEEPYS_ELITE_APP, None),),
     "solace": ((BED_TYPE_SOLACE, None),),

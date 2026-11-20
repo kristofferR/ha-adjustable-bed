@@ -35,6 +35,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from .command_scheduler import (
     CommandHandle,
+    CommandKind,
     CommandOutcome,
     PreparedCommandInvalidated,
     command_resources,
@@ -477,6 +478,7 @@ class PairTopology(ABC):
         resources: frozenset[str],
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epochs: Mapping[str, int] | None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         """Admit and execute one command on its target sides."""
 
@@ -552,6 +554,7 @@ class _SideLaneTopology(PairTopology):
         resources: frozenset[str],
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epochs: Mapping[str, int] | None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         """Run one lane command without connection-mode fallback."""
         if len(targets) == 1:
@@ -563,6 +566,7 @@ class _SideLaneTopology(PairTopology):
                 op,
                 cancel_running=cancel_running,
                 resources=resources,
+                reservation_kind=reservation_kind,
                 entry_cancel=entry_cancel,
                 expected_stop_epoch=(
                     expected_stop_epochs.get(target_side)
@@ -597,6 +601,7 @@ class _SideLaneTopology(PairTopology):
                         resources=resources,
                         entry_cancel=entry_cancel,
                         expected_stop_epochs=expected_stop_epochs,
+                        reservation_kind=reservation_kind,
                     )
             finally:
                 self._admission.active_children = set()
@@ -613,6 +618,7 @@ class _SideLaneTopology(PairTopology):
         resources: frozenset[str],
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epoch: int | None = None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         """Admit one side without holding pair metadata across its operation."""
         del action
@@ -626,7 +632,13 @@ class _SideLaneTopology(PairTopology):
                 side, resources, entry_cancel
             ) or not admission.stop_epochs_match([(side, child)], expected):
                 return
-            if expected_stop_epoch is None:
+            if reservation_kind is CommandKind.INSPECTION:
+                handle = await child.async_prepare_command_operation(
+                    lambda: op(child), resources=resources, cancel_running=False,
+                    kind=CommandKind.INSPECTION, group_id=uuid4().hex,
+                    expected_stop_epoch=expected_stop_epoch,
+                )
+            elif expected_stop_epoch is None:
                 handle = await child.async_prepare_command_operation(
                     lambda: op(child),
                     resources=resources,
@@ -694,6 +706,7 @@ class _SideLaneTopology(PairTopology):
         resources: frozenset[str],
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epochs: Mapping[str, int] | None = None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         """Run one command across several sides under the group lock."""
 
@@ -711,6 +724,7 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
         resources: frozenset[str],
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epochs: Mapping[str, int] | None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         attempt_cursors = {
             target_side: connection_attempt_cursor(child)
@@ -725,6 +739,7 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                 resources=resources,
                 entry_cancel=entry_cancel,
                 expected_stop_epochs=expected_stop_epochs,
+                reservation_kind=reservation_kind,
             )
         except ConnectionModeChanged:
             raise
@@ -742,6 +757,7 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
         resources: frozenset[str],
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epochs: Mapping[str, int] | None = None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         """Prepare every physical scheduler, then commit the linked command."""
         admission = self._admission
@@ -795,6 +811,12 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                         if expected_stop_epochs is not None
                         else None
                     )
+                    if reservation_kind is CommandKind.INSPECTION:
+                        return await child.async_prepare_command_operation(
+                            lambda child=child: op(child), resources=resources,
+                            cancel_running=False, kind=CommandKind.INSPECTION,
+                            group_id=group_id, expected_stop_epoch=expected_stop_epoch,
+                        )
                     if expected_stop_epoch is None:
                         return await child.async_prepare_command_operation(
                             lambda child=child: op(child),
@@ -1171,6 +1193,7 @@ class SequentialTwoLinkTopology(PairTopology):
         resources: frozenset[str],
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epochs: Mapping[str, int] | None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         del cancel_running
         admission = self._admission
@@ -1475,6 +1498,7 @@ class SingleLinkSideAwareTopology(_SideLaneTopology):
         resources: frozenset[str],
         entry_cancel: Mapping[str, tuple[int, ...]],
         expected_stop_epochs: Mapping[str, int] | None = None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         """Serialize non-native both over the one physical command lock."""
         del cancel_running
