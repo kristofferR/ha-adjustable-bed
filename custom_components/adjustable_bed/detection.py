@@ -317,6 +317,7 @@ from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.okimiki import scan_matches as okimiki_scan_matches
 from .profiles.onlysnore import advertisement as onlysnore_advertisement
 from .profiles.saatva import SCAN_UUIDS as SAATVA_SCAN_UUIDS
+from .profiles.sealy import matches_name as sealy_name
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.sophie import accepts_name as accepts_sophie_name
 from .profiles.vmatbasic import manufacturer_payload_matches
@@ -1605,8 +1606,6 @@ def _detect_bed_type_with_app_candidates(
 ) -> DetectionResult:
     """Keep existing receiver detection while offering an explicit app candidate."""
     result = _detect_bed_type_detailed(service_info, first=first)
-    from .profiles.sealy import matches_name as sealy_name
-
     if sealy_name(service_info.name or "") and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
