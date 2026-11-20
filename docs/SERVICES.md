@@ -119,6 +119,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`solace_audio`](#solace_audio) | Solace: audio | Select or preview MotionFlex music, query volume, or set volume. |
 | [`somos_action`](#somos_action) | Somos: press button | Press one of the selected Somos product's buttons. Every bed is checked before any is changed. |
 | [`sonicsleep`](#sonicsleep) | SonicSleep: settings | Read the alarms, create or edit an alarm, turn an alarm on or off without changing it, delete an alarm, or read the bed's link name. |
+| [`superior_sleep_speech`](#superior_sleep_speech) | Superior Sleep: command input | Send one selected speech-map target with its real timing, without phone audio. Motor refresh is bounded. |
 | [`suta`](#suta) | SUTA Smart Home: run control | Run one control from the bed's SUTA layout, which its Bluetooth name decides. Set alarms with Set alarm and the clock with Set bed clock. |
 | [`starcode_move_lifts`](#starcode_move_lifts) | StarCode: move lifts | Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action. |
 | [`svane_release_axis`](#svane_release_axis) | Svane: release motor | Stop one motor while the other keeps moving. |
@@ -367,6 +368,7 @@ they are not exposed through `hold_control`.
 | [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister) | Profile motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | Completion-gated refresh, then a fresh release. All-down is a held direction, not a flat preset. Save memory uses the Save buttons |
 | [V-MAT Basic](beds/vibradorm.md#v-mat-basic) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
 | [OCTO Smart Control](beds/octo.md) | Advertised motor directions and `memory_1` through the discovered memory count | P1 commands repeat every 350 ms inside each bounded operation, which ends with STOP. The 60-second service maximum is a Home Assistant safety bound; the card starts another bounded call only while the user still holds the control. |
+| [Superior sleep](beds/okin-nframe.md#superior-sleep-ss350--ss650) | Selected SS350/SS650 button controls with hold metadata | 100 ms refresh; movement/preset/light STOP twice 100 ms apart; massage refresh ends at its delayed query, without STOP. Confirmed saves, reset and five-second motion activation are separate |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss.md#limoss-remote) | Controls rendered for the receiver's layout | Five-frame release |
 | [FSM Relax](beds/limoss.md#fsm-relax) | `command_XX` values from the profile's protocol diagnostics | Replies cannot prove physical arrival |
@@ -487,6 +489,7 @@ data:
 | SIMMONS | `custom_position`, `flat`, `anti_snore` (regular bed) | `slot` 1–2, `weekdays`, `confirm_custom_position`. Both alarms are read from the bed first |
 | Solace | `none`, `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` |
 | Sophie (Solace) | `none`, `zero_g`, `memory_1`; side models `none`, `zero_g_left`, `zero_g_right`, `zero_g` | `weekdays`, `massage` (not QMS2), `sound: alarm` rings. Once the bed reports alarm support |
+| Superior sleep | `wake_mode_1`, `wake_mode_2` (app labels `m1`/`m2`, both encode selector 6) | `weekdays`; enable bit 7, Monday–Saturday bits 1–6, Sunday bit 0. Disable zeroes time and mask. Incoming app display fields are independent |
 | SUTA Smart Home (models whose app has an alarm) | None | `weekdays` or once. To turn an alarm off, send the same `time` and `weekdays` it was set with |
 | Symphony Sleep | `none`, `memory_1`, `memory_2` | Once |
 | Symphony Sleep Sense | By product | `weekdays` |
@@ -2267,6 +2270,24 @@ Massage and light actions press the app button without guessing its current
 state. Use the standard `hold_control`, `timed_move` and STOP actions for
 movement; Signature Split Head and Ultra Split Head lifts are `axis_1`–`axis_3`.
 See [Somos](beds/keeson.md#somos--somosbeds).
+
+## Superior Sleep
+
+### `superior_sleep_speech`
+
+Send a target from the Superior sleep app's selected speech-command map without
+phone audio. A preset, light or massage on/off target attempts two writes 100 ms
+apart. Motor targets refresh at 100 ms for the bounded HA duration. Motion
+activation on/off refreshes for five seconds and ends without STOP. The ten
+button-only massage adjustments are rejected. Product button holds use
+`hold_control` instead.
+
+| Field | Description |
+|-------|-------------|
+| `device_id` | Required Adjustable Bed device or devices |
+| `action` | Required selected target from the profile guide |
+| `duration_ms` | Motor duration, 1–60000 ms, default 1000; fixed operations retain their own timing |
+| `side` | Side of a combined bed |
 
 ## SUTA Smart Home
 

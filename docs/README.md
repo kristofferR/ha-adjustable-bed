@@ -77,6 +77,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Snore Monitor](beds/onlysnore.md) | The Snore Monitor app | |
 | [StarCode Adjustable Comfort M1X12](beds/starcode-m1x12.md) | The Adjustable Comfort M1X12 app | |
 | [StarCode AdjustableM5X5](beds/starcode-m5x5.md) | The AdjustableM5X5 app | |
+| [Superior sleep](beds/okin-nframe.md#superior-sleep-ss350--ss650) | SS350 and SS650 | |
 | [SUTA Smart Home](beds/suta.md) | The SUTA Smart Home app | |
 | [Svane Remote](beds/svane.md) | The Svane Remote app | |
 | [TiMOTION AHF](beds/timotion-ahf.md) | TiMOTION AHF | |

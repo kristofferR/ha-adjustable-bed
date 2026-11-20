@@ -113,6 +113,7 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SUPERIOR_SLEEP,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
     BED_TYPE_SYMPHONY_SLEEP,
@@ -3077,6 +3078,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    BED_TYPE_SUPERIOR_SLEEP: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, {"ss350": "SS350", "ss650": "SS650"}, "ss350"),
+            Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),
+        ),
+        title=lambda _data: "Superior sleep",
     ),
     BED_TYPE_RIZE_HOME: SetupProfile(
         owns={

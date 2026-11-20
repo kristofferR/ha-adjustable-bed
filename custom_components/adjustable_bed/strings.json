@@ -5095,6 +5095,24 @@
       },
       "sealy_massage_foot_level": {
         "name": "Foot massage intensity"
+      },
+      "superior_sleep_timer_minutes": {
+        "name": "Massage timer"
+      },
+      "superior_sleep_timer_seconds": {
+        "name": "Remaining massage time"
+      },
+      "superior_sleep_mode": {
+        "name": "Massage mode (app)"
+      },
+      "superior_sleep_head_level": {
+        "name": "Head massage level (app)"
+      },
+      "superior_sleep_foot_level": {
+        "name": "Foot massage level (app)"
+      },
+      "superior_sleep_alarm_hour": {
+        "name": "Alarm hour (app)"
       }
     },
     "light": {
@@ -5306,6 +5324,9 @@
       },
       "sealy_massage": {
         "name": "Massage"
+      },
+      "superior_sleep_motion": {
+        "name": "Under-bed motion activation"
       }
     },
     "binary_sensor": {
@@ -5542,6 +5563,9 @@
       },
       "enso_light": {
         "name": "Light"
+      },
+      "superior_sleep_alarm_enabled": {
+        "name": "Alarm enabled (app)"
       }
     },
     "number": {
@@ -9608,6 +9632,28 @@
           "description": "Use the layout’s long-press gesture when it also offers a separate save button. Confirmation is required."
         }
       }
+    },
+    "superior_sleep_speech": {
+      "name": "Superior Sleep command input",
+      "description": "Send a command selected by the Superior sleep speech map, without using phone audio. Motor refresh is bounded by duration_ms.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Adjustable Bed devices to control."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a paired bed."
+        },
+        "action": {
+          "name": "Action",
+          "description": "One of the app’s selected command targets."
+        },
+        "duration_ms": {
+          "name": "Motor duration",
+          "description": "Maximum motor refresh duration in milliseconds. Other selected targets retain their fixed timing."
+        }
+      }
     }
   },
   "exceptions": {
@@ -10120,6 +10166,21 @@
     },
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "superior_sleep_product": {
+      "message": "Choose the Superior sleep product, SS350 or SS650."
+    },
+    "superior_sleep_session": {
+      "message": "The Superior Sleep Bluetooth session has ended. Connect again and retry."
+    },
+    "superior_sleep_gatt": {
+      "message": "This receiver does not provide the selected Superior Sleep Bluetooth route."
+    },
+    "superior_sleep_control": {
+      "message": "The selected Superior Sleep product or command input does not offer {control}."
+    },
+    "superior_sleep_duration": {
+      "message": "Hold duration must be an integer from 1 to 60000 milliseconds."
     }
   },
   "issues": {
@@ -12223,6 +12284,30 @@
         "memory_three": "Memory 3",
         "flat": "Flat",
         "voice_stop_request": "Voice stop request"
+      }
+    },
+    "superior_sleep_speech_action": {
+      "options": {
+        "head_up": "Head up",
+        "head_down": "Head down",
+        "foot_up": "Foot up",
+        "foot_down": "Foot down",
+        "back_up": "Back up",
+        "back_down": "Back down",
+        "lumbar_up": "Lumbar up",
+        "lumbar_down": "Lumbar down",
+        "speech_stop": "Speech stop",
+        "lounge": "Lounge",
+        "zero_g": "Zero gravity",
+        "anti_snore": "Anti-snore",
+        "flat": "Flat",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2",
+        "massage_on": "Massage on",
+        "massage_off": "Massage off",
+        "light": "Toggle under-bed light",
+        "motion_on": "Motion on",
+        "motion_off": "Motion off"
       }
     }
   }

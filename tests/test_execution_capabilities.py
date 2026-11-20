@@ -181,6 +181,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
     # Okin N-frame (#483): each app streams a held key until release. Nectar
     # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
+    "SuperiorSleepProfile:superior_sleep_ss350": {"hold": ("Superior sleep 1.0.0 (2): E09/E10 button refresh100ms until release",)},
+    "SuperiorSleepProfile:superior_sleep_ss650": {"hold": ("Superior sleep 1.0.0 (2): E09/E10 button refresh100ms until release",)},
     "RizeHomeProfile:rize_home_remedy_iii": {"hold": ("rize-home",)},
     "RizeHomeProfile:rize_home_contempo_iv": {"hold": ("rize-home",)},
     "OkinNFrameProfile:okin_motionbed": {"hold": ("motionbed",)},
@@ -384,6 +386,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         ) for site in ("AdjustableAppProfile", "PROFILES")
     },
     "profiles/smart_comfort.py:<module>.SmartComfortProfile": ("SmartComfortProfile:synargy", "SmartComfortProfile:synergy"),
+    "profiles/superior_sleep.py:<module>.SuperiorSleepProfile": ("SuperiorSleepProfile:superior_sleep_ss350", "SuperiorSleepProfile:superior_sleep_ss650"),
     "profiles/rize_home.py:<module>.RizeHomeProfile": (
         "RizeHomeProfile:rize_home_remedy_iii", "RizeHomeProfile:rize_home_contempo_iv",
     ),
