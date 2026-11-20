@@ -17,8 +17,10 @@ from homeassistant.util import dt as dt_util
 from ...card import CARD_UTILITY
 from ...const import CONF_GMMOTOR_SIDE, CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import massage_timer_minutes
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -188,11 +190,54 @@ class GmmotorController(BedController, GmmotorActions):
         return any(row[0] == self._ui_state and row[1] == phase for row in action.transitions)
 
     @property
+    def _massage_timer_controls(self) -> dict[int, str]:
+        """The product's fixed-duration massage timer controls, by their minutes.
+
+        A product with a single duration keeps its button.
+        """
+        timers: dict[int, str] = {}
+        for i, action in enumerate(self.profile.controls):
+            minutes = massage_timer_minutes(action.material.name)
+            if minutes is not None and not action.phone_only:
+                timers.setdefault(minutes, f"gm_{i}")
+        return timers if len(timers) > 1 else {}
+
+    # Each timer control sets its duration, so they are one timer select.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_controls)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows a product's massage timers.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self._massage_timer_controls)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No timer control turns the timer off.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        control = self._massage_timer_controls.get(minutes)
+        if control is None:
+            raise ValueError("Choose a massage timer this product offers")
+        # The bed reports no timer.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.hold_control(control, 0)
+
+    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         specs = []
+        timed = bool(self._massage_timer_controls)
         for i, action in enumerate(self.profile.controls):
             if action.phone_only:
                 continue
+            if timed and massage_timer_minutes(action.material.name) is not None:
+                continue  # The massage timer select sends these.
             control = f"gm_{i}"
             duration = 1000 if action.gesture == 1 else 3000 if action.gesture == 2 else 0
             specs.append(

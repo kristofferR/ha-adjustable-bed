@@ -205,3 +205,46 @@ async def test_missing_capability_never_writes_and_wait_ends(monkeypatch, end) -
             with pytest.raises(ValueError, match="live light_capability"):
                 await task
     ctrl.write_command.assert_not_awaited()
+
+
+def _timer_controls(ctrl: GmmotorController) -> dict[str, int]:
+    return {
+        f"gm_{i}": minutes
+        for i, a in enumerate(ctrl.profile.controls)
+        if (minutes := {95: 10, 99: 20, 97: 30}.get(a.material.opcode))
+        and a.material.name.endswith("MinuteTimer")
+    }
+
+
+async def test_massage_timer_controls_are_one_select_sending_the_same_frames() -> None:
+    """Each timer button's press (a zero-length hold) is what the timer select sends."""
+    from custom_components.adjustable_bed.beds.gmmotor.profiles import profile_choices
+
+    checked = 0
+    for key in profile_choices():
+        ctrl = controller(key)
+        controls = _timer_controls(ctrl)
+        keys = {s.key for s in ctrl.controller_button_specs}
+        if len(set(controls.values())) < 2:
+            # One duration (or none) keeps its button.
+            assert not ctrl.supports_massage_timer
+            assert set(controls) <= keys
+            continue
+        checked += 1
+        assert ctrl.massage_timer_options == sorted(set(controls.values()))
+        assert ctrl.auto_enable_massage and not ctrl.massage_timer_can_turn_off
+        assert not set(controls) & keys
+        for control, minutes in controls.items():
+            sent = []
+            for run in (
+                lambda c, k=control: c.hold_control(k, 0),
+                lambda c, m=minutes: c.set_massage_timer(m),
+            ):
+                fresh = controller(key)
+                fresh.write_command = AsyncMock()
+                await run(fresh)
+                sent.append([call.args[0] for call in fresh.write_command.call_args_list])
+            assert sent[0] == sent[1] != []
+        with pytest.raises(ValueError):
+            await ctrl.set_massage_timer(15)
+    assert checked == 342
