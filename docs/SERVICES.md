@@ -447,7 +447,7 @@ data:
 |-----|--------------|---------------|
 | Bed Tech | From the selected model's alarm choices | Countdown or three-slot alarms on supported models. Calendar models use a uniquely reported `slot`, with `weekdays` or once. `mattress_side` selects the separate vibrating mattress alarm, with intensity 1–3 |
 | BF and Cherish | `none`, `memory_1`, `memory_2` | Once only |
-| BedSmart / X-Series | From the selected layout's alarm page; required to turn the alarm on | The layout's `massage` zones and combinations. Once, at the next occurrence: leave out `weekdays` and `slot` |
+| BedSmart / X-Series | From the selected layout's alarm page; left out, the layout's first wake action is used. `none` only with `massage: true` and a supported zone | The layout's `massage` zones and combinations. Once, at the next occurrence: leave out `weekdays` and `slot` |
 | BetterLiving2 | `massage`, `memory_1`, `memory_2` | `weekdays` or once, at the next occurrence |
 | Comfort Enhancement 3 | Depends on the remote: `none`, `memory_1`, `memory_2`, `zero_g`, `tv`, `anti_snore` | `slot` 0–99, `massage` with zone, intensity and 10/20/30-minute duration, `light`. Once, at the next occurrence |
 | Comfort Enhancements | `none`, `memory_1`, `memory_2` | `massage`; today only |
@@ -546,7 +546,7 @@ See [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) for
 | `rgb_color` | Light color | Three channels from 0 to 255, required for `color`. |
 | `seconds` | Light duration (seconds) | 0 to 300, required for `light_duration`. |
 | `aroma_times` | Aromatherapy times | Three whole numbers: 1 to 60, 1 to 60 and 1 to 12, required for `aromatherapy`. |
-| `confirm` | Confirm movement test | Required for `movement_test`, available only on the TEST layout. |
+| `confirm` | Confirm programming or saving | Set `confirm: true` for `movement_test`, available only on the TEST layout. |
 | `command` | Bed command | Required for `bed_command`: `head_up`, `head_down`, `foot_up`, `foot_down`, `tv`, `lounge`, `zero_gravity`, `anti_snore`, `memory_one`, `memory_two`, `memory_three`, `flat` or `voice_stop_request`. |
 | `duration_ms` | Movement duration (milliseconds) | 1 to 60000, default 1000, for repeating named bed commands. It does not change the finite movement-test sequence. |
 
