@@ -27,6 +27,7 @@ from .const import (
     resolve_explicit_bed_type,
 )
 from .pairing import is_paired, pair_member_addresses
+from .profiles.saatva import TWO_RECEIVER_PROFILES as SAATVA_TWO_RECEIVER_PROFILES
 
 CONF_PAIR_SELECTION = "pair_selection"
 
@@ -67,6 +68,8 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
         and not (entry.data.get(CONF_BED_TYPE) == "personal_comfort"
                  and (entry.data.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
                       or entry.data.get("product_type") == "none"))
+        and not (entry.data.get(CONF_BED_TYPE) == "saatva"
+                 and entry.data.get(CONF_PROTOCOL_VARIANT) not in SAATVA_TWO_RECEIVER_PROFILES)
         and entry.entry_id not in group_members
         and isinstance((address := entry.data.get(CONF_ADDRESS)), str)
         and address.upper() not in absorbed_addresses
