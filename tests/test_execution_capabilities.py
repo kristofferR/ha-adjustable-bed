@@ -139,6 +139,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
     "LunioSmartProfile:luniosmart": {"hold": ("luniosmart",)},
     **{f"MlilyRemoteProfile:{key}": {"hold": ("mlily162",)} for key in ("ms200", "ms300", "ms600", "powercool", "ms300_sh")},
+    **{f"SuperColchonesProfile:{key}": {"hold": ("super_colchones",)} for key in ("afeg302", "afeg350")},
     "SonicSleepProfile:one": {"hold": ("sonicsleep",)},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
@@ -380,6 +381,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/luniosmart.py:<module>.LunioSmartProfile": ("LunioSmartProfile:luniosmart",),
     "profiles/richmat_legacy.py:<module>.LegacyProfile": tuple(f"LegacyProfile:{key}" for key in legacy_profiles()),
     "profiles/richmat_legacy.py:<module>.LegacyProfile.__post_init__": tuple(f"LegacyProfile:{key}" for key in legacy_profiles()),
+    "profiles/super_colchones.py:<module>.SuperColchonesProfile": ("SuperColchonesProfile:afeg302", "SuperColchonesProfile:afeg350"),
     "profiles/sonicsleep.py:<module>.SonicSleepProfile": ("SonicSleepProfile:one",),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
     **{

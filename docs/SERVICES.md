@@ -349,6 +349,7 @@ they are not exposed through `hold_control`.
 
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
+| [Super Colchones](beds/richmat.md#super-colchones) | `head_up`, `head_down`, `foot_up`, `foot_down`; AFEG350 also `lumbar_up`, `lumbar_down` | First tick at 100 ms, 100 ms refresh, one global STOP after movement |
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The selected layout's available `richmat_classic_<node>` controls with hold metadata, including a route suffix where declared; saves have no held gesture | The layout's app refresh interval and fresh release, as listed in the guide; finite duration 0.1–60 seconds. Renewable holds use only the declared streaming controls |
 | [Dream Sense Bed](beds/richmat.md#dream-sense-bed) | The selected product’s declared held controls, such as `HeadUp`; save buttons are separate | First frame after 100 ms, then 100 ms refresh and a fresh STOP on the owned connection and side |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
