@@ -668,3 +668,26 @@ async def test_alarm_preemption_is_not_replaced_by_saved_write_error(task_cancel
             await task
     assert writes == [p.alarm(alarm)] * 2
     assert task.cancelled()
+
+
+async def test_massage_on_and_off_are_one_switch_sending_the_old_buttons_frames():
+    keys = {spec.key for spec in controller()[0].controller_button_specs}
+    assert not {"superior_sleep_massage_on", "superior_sleep_massage_off"} & keys
+    for on, action in ((True, "massage_on"), (False, "massage_off")):
+        sent = []
+        for press in (
+            lambda ctrl, a=action: ctrl.action(a),  # what the button pressed
+            lambda ctrl, o=on: next(
+                spec for spec in ctrl.controller_switch_specs if spec.key == "superior_sleep_massage"
+            ).set_fn(ctrl, o),
+        ):
+            c, coord, client = controller()
+            with virtual_clock():
+                await c.async_discover_capabilities()
+                client.write_gatt_char.reset_mock()
+                await press(c)
+            sent.append([bytes(call.args[1]) for call in client.write_gatt_char.await_args_list])
+            assert coord.controller_state[s.MASSAGE] is on
+        assert sent[0] == sent[1] and p.FRAMES[action] in sent[0]
+        c.on_disconnect()
+        assert coord.controller_state[s.MASSAGE] is None
