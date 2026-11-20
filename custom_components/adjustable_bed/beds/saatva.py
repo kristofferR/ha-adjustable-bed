@@ -130,7 +130,7 @@ class SaatvaController(RichmatProfileController):
             return ()
         spec = catalog_button(
             "test_head",
-            "Test head movement (2 seconds)",
+            "Test head movement for 2 seconds",
             _test_head,
             kind=Kind.EXTRA,
             requires_confirmation=True,

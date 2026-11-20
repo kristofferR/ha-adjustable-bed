@@ -7860,7 +7860,7 @@ renewable hold ends the refresh; there is no STOP packet. This does not stop a
 one-shot preset that is already running. Memory saves are explicit actions in
 Home Assistant and send one write. The phone app uses a long press for saving;
 its unused duration metadata is not a bed hold requirement. The optional
-**Test head movement (2 seconds)** button requires confirmation and tests the
+**Test head movement for 2 seconds** button requires confirmation and tests the
 first head only. It is disabled by default.
 
 #### Notifications
