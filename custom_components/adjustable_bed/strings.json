@@ -2671,7 +2671,7 @@
         "name": "Legs Down"
       },
       "all_motors_up": {
-        "name": "All motors Up"
+        "name": "All motors up"
       },
       "motion_bed_tilt_up": {
         "name": "Tilt Up"
@@ -2692,7 +2692,7 @@
         "name": "Lift Down"
       },
       "all_motors_down": {
-        "name": "All motors Down"
+        "name": "All motors down"
       },
       "motion_bed_hip_down": {
         "name": "Hip Down"
@@ -5943,6 +5943,12 @@
       "massage_timer": {
         "name": "Massage: Timer"
       },
+      "massage_left_timer": {
+        "name": "Left massage timer"
+      },
+      "massage_right_timer": {
+        "name": "Right massage timer"
+      },
       "light_timer": {
         "name": "Light Timer"
       },
@@ -6556,17 +6562,6 @@
       },
       "bedsmart_head_foot": {
         "name": "Head or foot"
-      },
-      "jerome_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "off": "Off",
-          "10_minutes": "10 minutes",
-          "15_minutes": "15 minutes",
-          "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes",
-          "45_minutes": "45 minutes"
-        }
       }
     },
     "climate": {

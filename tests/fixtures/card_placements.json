@@ -3519,14 +3519,17 @@
  "select:hjbed_layout": {
   "card_section": "utility"
  },
- "select:jerome_massage_timer": {
-  "card_section": "massage"
- },
  "select:l2motion_sound_mode": {
   "card_section": "utility"
  },
  "select:light_timer": {
   "card_section": "lighting"
+ },
+ "select:massage_left_timer": {
+  "card_section": "massage"
+ },
+ "select:massage_right_timer": {
+  "card_section": "massage"
  },
  "select:massage_timer": {
   "card_section": "massage",
