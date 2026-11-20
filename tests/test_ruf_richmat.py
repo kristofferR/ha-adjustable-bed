@@ -673,34 +673,67 @@ async def test_set_alarm_calendar_needs_an_explicit_wake_action(hass):
     c.ruf_richmat_alarm.assert_not_awaited()
 
 
-@pytest.mark.parametrize("app", ["bailey2", "americanstar", "wsilver2", "tx"])
-async def test_massage_timer_buttons_are_one_select_sending_the_same_frames(app):
-    """The tap each timer button sent is what the select sends; one duration keeps its button."""
-    from custom_components.adjustable_bed.beds.richmat_mh.controller import (
-        _MASSAGE_TIMERS,
-        _tap_action,
-    )
-    from custom_components.adjustable_bed.beds.ruf_richmat.models import MODEL_IDS
+def _timer_layout(kind: str, app: str, model: str):
+    """A Richmat MH-family controller of one controller kind on a model's first page."""
+    if kind == "app":
+        from tests.test_richmat_nisco_supreme import make as make_app
 
-    checked = 0
-    for model in MODEL_IDS[app]:
-        c = make(app, model)
-        timers = c._massage_timer_codes
-        keys = {s.key for s in c.controller_button_specs}
-        if not timers:
-            continue
-        checked += 1
-        assert c.massage_timer_options == sorted(timers) and not c.massage_timer_can_turn_off
-        assert not {f"richmat_mh_{code:02x}" for code in timers.values()} & keys
-        for minutes, code in timers.items():
-            assert _MASSAGE_TIMERS[code] == minutes
-            sent = []
-            for run in (
-                lambda ctrl, k=code: _tap_action(k)(ctrl),
-                lambda ctrl, m=minutes: ctrl.set_massage_timer(m),
-            ):
-                fresh = make(app, model)
-                await run(fresh)
-                sent.append(frames(fresh))
-            assert sent[0] == sent[1] != []
-    assert checked
+        return make_app(app, model)
+    if kind == "ruf":
+        return make(app, model)
+    from tests.test_richmat_mh import W1
+    from tests.test_richmat_mh import make as make_mh
+
+    c = make_mh(app, None, variant=f"model_{model}")
+    c._write_char = SimpleNamespace(uuid=W1[1], properties=["write"], handle=1)
+    return c
+
+
+TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"], ["6e010061d0", "6e01006edd"]
+
+
+# Running every timer button and the select on all 4,104 Richmat MH-family
+# layout pages gives 7 groups by the frames and delays they send; one layout of
+# each group is pinned here. The frames are what the buttons sent.
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "sent", "stop_after"),
+    [
+        ("mh", "revive", "farm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "wsilver2", "6hrm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "bailey2", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.1),
+        ("app", "nisco", "6hrm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("app", "nisco", "aerm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.15),
+        ("app", "nisco", "mlrm", {10: TEN, 30: THIRTY}, 0.12),
+        ("app", "nisco", "ygrm", {10: TEN, 20: TWENTY}, 0.12),
+    ],
+)
+async def test_massage_timer_select_sends_what_its_buttons_sent(delays, kind, app, model, sent, stop_after):
+    from custom_components.adjustable_bed.beds.richmat_mh.controller import _tap_action
+
+    c = _timer_layout(kind, app, model)
+    assert c.massage_timer_options == sorted(sent) and not c.massage_timer_can_turn_off
+    keys = {spec.key for spec in c.controller_button_specs}
+    assert not {f"richmat_mh_{code:02x}" for code in c._massage_timer_codes.values()} & keys
+    for minutes, expected in sent.items():
+        for press in (
+            lambda ctrl, code=c._massage_timer_codes[minutes]: _tap_action(code)(ctrl),
+            lambda ctrl, m=minutes: ctrl.set_massage_timer(m),
+        ):
+            fresh = _timer_layout(kind, app, model)
+            delays.clear()
+            await press(fresh)
+            assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
+
+
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "button"),
+    [
+        ("app", "nisco", "a9rm", "richmat_mh_5f"),  # 10 minutes only
+        ("app", "nisco", "ilrm", "richmat_mh_61"),  # 30 minutes only
+        ("ruf", "americanstar", "j2rm", "richmat_mh_63"),  # hour timers
+    ],
+)
+def test_a_layout_without_a_minute_timer_choice_keeps_its_buttons(kind, app, model, button):
+    c = _timer_layout(kind, app, model)
+    assert not c.supports_massage_timer
+    assert button in {spec.key for spec in c.controller_button_specs}
