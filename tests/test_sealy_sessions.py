@@ -204,6 +204,99 @@ async def test_sequential_explicit_stop_reopens_without_two_links():
         await pair.async_shutdown()
 
 
+@pytest.mark.parametrize("motor", [False, True])
+@pytest.mark.parametrize("queued", [False, True])
+async def test_reconnecting_stop_preempts_the_other_sides_link_owner(motor, queued):
+    log = []
+    cap, _, _, _ = await bed()
+    entered = asyncio.Event()
+    children = {}
+
+    class Child(RecordingChild):
+        async def async_execute_controller_command(self, *args, **kwargs):
+            self._gate.clear()
+            if self.side == "left":
+                entered.set()
+            try:
+                await super().async_execute_controller_command(*args, **kwargs)
+            finally:
+                log.append((self.side, "release"))
+
+        async def async_connect(self):
+            assert not any(c.is_connected for c in children.values() if c is not self)
+            return await super().async_connect()
+
+        async def async_stop_command(self):
+            if not self.is_connected:
+                assert await self.async_connect()
+            await super().async_stop_command()
+
+        async def async_stop_motor(self, stop_fn, resource, *, stream_member=False):
+            await self.async_stop_command()
+
+    for side in ("left", "right"):
+        child = Child(side, log, connected=False, block=side == "left")
+        child.capability_controller = cap
+        children[side] = child
+    pair = PairedBedCoordinator(
+        None,
+        SimpleNamespace(data={"pair_id": "sealy", "name": "Bed"}),
+        children,
+        connection_mode="sequential",
+    )
+    tasks = []
+    try:
+        await pair.async_execute_controller_command(
+            lambda c: c.action("voice_head_up"), side="right"
+        )
+        assert not children["right"].is_connected
+        log.clear()
+        tasks.append(
+            asyncio.create_task(
+                pair.async_execute_controller_command(
+                    lambda c: c.action("voice_head_up"), side="left", resource="motor:head"
+                )
+            )
+        )
+        await entered.wait()
+        if queued:
+            tasks.append(
+                asyncio.create_task(
+                    pair.async_execute_controller_command(
+                        lambda c: c.move_legs_up(),
+                        side="left",
+                        resource="motor:feet",
+                        cancel_running=False,
+                    )
+                )
+            )
+            await asyncio.sleep(0)
+        stop = asyncio.create_task(
+            pair.async_stop_motor(lambda c: c.stop_all(), "motor:head", side="right")
+            if motor
+            else pair.async_stop_command(side="right")
+        )
+        tasks.append(stop)
+        done, _ = await asyncio.wait({stop}, timeout=3)
+        assert done, "STOP waited for the other side's held command"
+        await stop
+        await asyncio.gather(*tasks)
+        assert log.count(("left", "command")) == 1
+        assert ("right", "command") not in log
+        assert log.index(("left", "release")) < log.index(("left", "disconnect"))
+        assert log.index(("left", "disconnect")) < log.index(("right", "connect"))
+        assert log[-3:] == [("right", "connect"), ("right", "stop"), ("right", "disconnect")]
+        assert pair.stop_count("left") == children["left"].stop_epoch == 0
+        assert pair.stop_count("right") == 1
+        assert not any(c.is_connected for c in children.values())
+    finally:
+        for child in children.values():
+            child._block = False
+            child._gate.set()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        await pair.async_shutdown()
+
+
 async def test_old_light_completion_preserves_a_replacement_sessions_state():
     c, co, client, state = await bed()
     began, finish = asyncio.Event(), asyncio.Event()
