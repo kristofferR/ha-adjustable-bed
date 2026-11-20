@@ -565,6 +565,21 @@ async def test_moon_timer_action_without_a_value_shows_the_duration_it_sent(cloc
     assert states[bed.MASSAGE_TIMER[1]] == "20 min"
 
 
+async def test_moon_timer_report_during_the_write_wins(clock):
+    """A report that arrives while the write goes out is newer than the sent duration."""
+    moon_, c = make("SUTA-MOON")
+    await moon_.start_notify()
+    sender, callback = c.client.start_notify.call_args.args
+
+    async def write(*_args, **_kwargs):
+        callback(sender, bytearray.fromhex("5359970d000800020a0000020a01") + bytes((0, 0, 0)))
+
+    c.client.write_gatt_char.side_effect = write
+    await moon_.execute_request(bed.Request("massage_timer_30", logical_side=1, value=30))
+    states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
+    assert states[bed.MASSAGE_TIMER[1]] == "10 min"
+
+
 async def test_overall_level_cut_off_between_zones_is_unknown(clock):
     """Stop between the head and foot writes leaves the overall level unknown."""
     from custom_components.adjustable_bed.command_scheduler import (

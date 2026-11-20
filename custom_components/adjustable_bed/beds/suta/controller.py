@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from functools import partial
@@ -166,6 +167,8 @@ class SutaController(BedController):
         self._link: Link | None = None
         self._receiver = TextReceiver()
         self.observations: dict[str, object] = {}
+        # How many reports set each observation, so a write never hides a newer report.
+        self._reports: Counter[str] = Counter()
         self._cycles: dict[str, str] = {}
         self._gesture_released = False
         self._cleanup_context = None
@@ -549,6 +552,7 @@ class SutaController(BedController):
             else:
                 state = self._receiver.feed(packet)
             self.observations.update(state)
+            self._reports.update(state.keys())
             self._publish()
 
         for characteristic in link.notifications:
@@ -826,12 +830,22 @@ class SutaController(BedController):
                 None,
             )
 
+            field = f"side_{side}_{shown}"
+            reports = self._reports[field]
+
             def show(delivery: Delivery) -> None:
                 # A strength or timer shows as far as its write reached this link's bed, also
                 # when cancelled after it, until the bed's next full-state report replaces it.
-                if shown is None or side not in (1, 2) or self._link is not link or delivery is Delivery.NONE:
+                # A report that arrived while the write went out is newer than the write.
+                if (
+                    shown is None
+                    or side not in (1, 2)
+                    or self._link is not link
+                    or delivery is Delivery.NONE
+                    or self._reports[field] != reports
+                ):
                     return
-                self.observations[f"side_{side}_{shown}"] = (
+                self.observations[field] = (
                     prefix[-1] if delivery is Delivery.SENT else None
                 )
                 self._publish()
