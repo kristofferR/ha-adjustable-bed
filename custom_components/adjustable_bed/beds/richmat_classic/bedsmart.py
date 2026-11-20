@@ -654,16 +654,20 @@ class BedSmartController(Lp2Controller):
         keys = super()._format_entity_keys()
         if self._mode_options:
             keys.add(("select", "controller_select_bedsmart_mode"))
-        lights = [self._light_gesture(wire) for wire in ("RAW", "FRAMED")]
-        if any(lights) and not all(lights):
-            keys.update({("button", "toggle_light"), ("light", "under_bed_lights_assumed")})
         return keys
 
     def _light_keys(self) -> set[str]:
-        """The light gesture of the bed's format, or of both before it is known."""
+        """The light gesture of the bed's format, or of either before it is known.
+
+        The shared light entities stay until the format is known, as on a
+        paired bed's parent; only a session in the light's format can toggle it.
+        """
         wire = self._resolved_wire
-        gestures = [self._light_gesture(w) for w in ((wire,) if wire else ("RAW", "FRAMED"))]
-        return {g.key for g in gestures if g is not None} if all(gestures) else set()
+        return {
+            g.key
+            for w in ((wire,) if wire else ("RAW", "FRAMED"))
+            if (g := self._light_gesture(w)) is not None
+        }
 
     @property
     def supports_lights(self) -> bool:
