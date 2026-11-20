@@ -148,15 +148,23 @@ async def test_exact_conflicting_occurrence_has_separate_button() -> None:
         assert ctrl.write_command.call_args_list[0].args[0][3] == action.short_opcode
     specs = ctrl.controller_button_specs
     assert len({spec.key for spec in specs}) == len(specs)
-    assert all(not spec.entity_registry_enabled_default for spec in specs)
+    # Neither copy is the bed's own memory 1 recall, so each keeps a button.
+    assert sum("itemmemoryposition1_" in spec.key and spec.key.endswith("_short") for spec in specs) == 2
 
 
 async def test_product_button_callback_uses_selected_occurrence() -> None:
     ctrl = controller()
     ctrl.write_command = AsyncMock()
-    spec = next(spec for spec in ctrl.controller_button_specs if "pillowup" in spec.key)
+    # The bed's own pillow cover sends this product's pillow control.
+    assert not any("pillowup" in spec.key for spec in ctrl.controller_button_specs)
+    spec = next(spec for spec in ctrl.controller_button_specs if spec.key.endswith("_long"))
+    action = next(
+        a
+        for a in ctrl.product_profile.actions
+        if spec.key.endswith(f"{a.action.removeprefix('deviceFunction')}_{a.occurrence}_long".lower())
+    )
     await spec.press_fn(ctrl)
-    assert ctrl.write_command.call_args_list[0].args[0][3] == 0x3F
+    assert ctrl.write_command.call_args_list[0].args[0][3] == action.long_opcode
 
 
 async def test_fixed_queue_spacing_and_cancelled_write_cleanup() -> None:
@@ -613,8 +621,8 @@ async def test_zone_strength_actions_use_intensity_controls(code: str, paired: b
         ]
     else:
         names = [spec.name for spec in ctrl.controller_button_specs]
-        assert any("Massage Head Instensity Strengthen" in name for name in names)
-        assert any("Massage Foot Instensity Strengthen" in name for name in names)
+        assert "Massage head intensity up" in names
+        assert "Massage foot intensity up" in names
 
 
 def _products() -> list[str]:
@@ -653,7 +661,7 @@ async def test_massage_timer_buttons_are_one_select_sending_the_same_frames(nord
         removed = 0
         for action in timers:
             key = (
-                f"rmcontrol_{action.getter.removeprefix('get _ ')}_"
+                f"product_action_rmcontrol_{action.getter.removeprefix('get _ ')}_"
                 f"{action.action.removeprefix('deviceFunction')}_{action.occurrence}_short"
             ).lower()
             if key in keys:

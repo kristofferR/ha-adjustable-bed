@@ -57,6 +57,14 @@ class Action:
     def phases(self) -> frozenset[Phase]:
         return frozenset(row[1] for row in self.transitions)
 
+    def codes(self, phase: Phase) -> frozenset[int]:
+        """The command bytes this phase sends from any state; empty if it sends none."""
+        return frozenset(
+            material(target).code(single=False, long=long)
+            for _state, row_phase, _after, emit, long, target in self.transitions
+            if row_phase == phase and emit
+        )
+
     @property
     def phone_only(self) -> bool:
         return self.material.name == "deviceFunctionItemPhoneLight"

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Final
 
@@ -20,13 +19,14 @@ from ...controller_state import StateKey, sided
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..builder import BuildContext
-from ..catalog_buttons import massage_timer_minutes
+from ..catalog_buttons import Kind, catalog_button, classify, massage_timer_minutes, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from ..richmat.labels import function_label
 from .catalog_types import Phase
 from .notifications import Event, Value, common, desk21, extra
 from .profiles import Action, load_profile
@@ -66,10 +66,23 @@ _CAPABILITY_TIMEOUT = 5.0
 
 
 def _label(action: Action) -> str:
-    text = action.material.name.removeprefix("deviceFunctionItem").removeprefix(
-        "deviceFunctionVersionOne"
+    return function_label(action.material.name.replace("VersionOne", ""))
+
+
+def _long_saves(action: Action) -> bool | None:
+    """Whether a long press saves the control's position; None if it adds no command.
+
+    In this app's vocabulary a preset's or memory's own long operand saves it
+    (``66`` saves zero gravity, ``2B`` memory 1). A zero operand is no command,
+    and one the short press also sends adds nothing.
+    """
+    long, normal = action.codes("long") - {0}, action.codes("normal")
+    if not long or long <= normal:
+        return None
+    control = classify(_label(action))
+    return (
+        control is not None and control.kind in (Kind.PRESET, Kind.MEMORY) and not long & normal
     )
-    return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", text)
 
 
 PROFILE: Final = StateKey[str]("gmmotor_profile")
@@ -232,7 +245,7 @@ class GmmotorController(BedController, GmmotorActions):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        specs = []
+        specs: list[ControllerButtonSpec | None] = []
         timed = bool(self._massage_timer_controls)
         for i, action in enumerate(self.profile.controls):
             if action.phone_only:
@@ -240,24 +253,31 @@ class GmmotorController(BedController, GmmotorActions):
             if timed and massage_timer_minutes(action.material.name) is not None:
                 continue  # The massage timer select sends these.
             control = f"gm_{i}"
+            label = _label(action)
             duration = 1000 if action.gesture == 1 else 3000 if action.gesture == 2 else 0
+            # A long-press-only control's one gesture may be its save.
+            saves = action.gesture == 2 and _long_saves(action)
             specs.append(
-                ControllerButtonSpec(
-                    key=control,
-                    name=_label(action),
-                    press_fn=lambda ctrl, c=control, d=duration: ctrl.hold_control(c, d),
+                catalog_button(
+                    control,
+                    "Save " + label if saves else label,
+                    lambda ctrl, c=control, d=duration: ctrl.hold_control(c, d),
+                    kind=Kind.SAVE if saves else None,
                     hold=ControllerHoldSpec(control, 100, 0) if action.gesture == 1 else None,
                 )
             )
-            if action.gesture in (3, 4) and "long" in action.phases:
+            if action.gesture in (3, 4) and (saves := _long_saves(action)) is not None:
                 specs.append(
-                    ControllerButtonSpec(
-                        key=control + "_long",
-                        name=_label(action) + " (long press)",
-                        press_fn=lambda ctrl, c=control: ctrl.hold_control(c, 3000),
+                    catalog_button(
+                        control + "_long",
+                        "Save " + label if saves else label + " (long press)",
+                        lambda ctrl, c=control: ctrl.hold_control(c, 3000),
+                        kind=Kind.SAVE if saves else None,
+                        # Another long operand's effect is unnamed: there to enable.
+                        enabled=saves,
                     )
                 )
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
