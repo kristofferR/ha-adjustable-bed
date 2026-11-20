@@ -205,8 +205,10 @@ async def test_sequential_explicit_stop_reopens_without_two_links():
 
 
 @pytest.mark.parametrize("motor", [False, True])
-@pytest.mark.parametrize("queued", [False, True])
-async def test_reconnecting_stop_preempts_the_other_sides_link_owner(motor, queued):
+@pytest.mark.parametrize(
+    "stop_side,queued_side", [("right", None), ("right", "left"), ("left", "right")]
+)
+async def test_reconnecting_stop_preempts_the_other_sides_link_owner(motor, stop_side, queued_side):
     log = []
     cap, _, _, _ = await bed()
     entered = asyncio.Event()
@@ -246,10 +248,12 @@ async def test_reconnecting_stop_preempts_the_other_sides_link_owner(motor, queu
     )
     tasks = []
     try:
-        await pair.async_execute_controller_command(
-            lambda c: c.action("voice_head_up"), side="right"
-        )
+        if stop_side == "right":
+            await pair.async_execute_controller_command(
+                lambda c: c.action("voice_head_up"), side="right"
+            )
         assert not children["right"].is_connected
+        children["right"]._block = queued_side == "right"
         log.clear()
         tasks.append(
             asyncio.create_task(
@@ -259,12 +263,12 @@ async def test_reconnecting_stop_preempts_the_other_sides_link_owner(motor, queu
             )
         )
         await entered.wait()
-        if queued:
+        if queued_side is not None:
             tasks.append(
                 asyncio.create_task(
                     pair.async_execute_controller_command(
                         lambda c: c.move_legs_up(),
-                        side="left",
+                        side=queued_side,
                         resource="motor:feet",
                         cancel_running=False,
                     )
@@ -272,9 +276,9 @@ async def test_reconnecting_stop_preempts_the_other_sides_link_owner(motor, queu
             )
             await asyncio.sleep(0)
         stop = asyncio.create_task(
-            pair.async_stop_motor(lambda c: c.stop_all(), "motor:head", side="right")
+            pair.async_stop_motor(lambda c: c.stop_all(), "motor:head", side=stop_side)
             if motor
-            else pair.async_stop_command(side="right")
+            else pair.async_stop_command(side=stop_side)
         )
         tasks.append(stop)
         done, _ = await asyncio.wait({stop}, timeout=3)
@@ -284,10 +288,10 @@ async def test_reconnecting_stop_preempts_the_other_sides_link_owner(motor, queu
         assert log.count(("left", "command")) == 1
         assert ("right", "command") not in log
         assert log.index(("left", "release")) < log.index(("left", "disconnect"))
-        assert log.index(("left", "disconnect")) < log.index(("right", "connect"))
-        assert log[-3:] == [("right", "connect"), ("right", "stop"), ("right", "disconnect")]
-        assert pair.stop_count("left") == children["left"].stop_epoch == 0
-        assert pair.stop_count("right") == 1
+        assert log.index(("left", "disconnect")) < len(log) - 3
+        assert log[-3:] == [(stop_side, "connect"), (stop_side, "stop"), (stop_side, "disconnect")]
+        for side, child in children.items():
+            assert pair.stop_count(side) == child.stop_epoch == int(side == stop_side)
         assert not any(c.is_connected for c in children.values())
     finally:
         for child in children.values():

@@ -557,10 +557,10 @@ class PairedBedCoordinator:
         ):
             # A released receiver's STOP needs the one link even when the
             # current cycle belongs to the other side. Invalidate older work
-            # queued for that owner too, before it can retake the link.
+            # queued anywhere on this lane before it can overtake safety STOP.
             for side, child in self._children.items():
+                self._admission.bump(side, command_resources("*"))
                 if child in self._admission.active_children:
-                    self._admission.bump(side, command_resources("*"))
                     child.request_command_cancel()
         elif self._connection_mode_transition_lock.locked():
             for _side, child in targets:
