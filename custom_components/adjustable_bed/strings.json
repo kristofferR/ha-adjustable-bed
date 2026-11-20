@@ -2671,7 +2671,7 @@
         "name": "Legs Down"
       },
       "all_motors_up": {
-        "name": "All motors Up"
+        "name": "All motors up"
       },
       "motion_bed_tilt_up": {
         "name": "Tilt Up"
@@ -2692,7 +2692,7 @@
         "name": "Lift Down"
       },
       "all_motors_down": {
-        "name": "All motors Down"
+        "name": "All motors down"
       },
       "motion_bed_hip_down": {
         "name": "Hip Down"
