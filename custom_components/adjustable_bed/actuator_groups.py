@@ -99,6 +99,7 @@ Route = tuple[str, str | None]
 
 # Groups are in alphabetical order by key.
 ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
+    "sealy": (("sealy_posturematic", None),),
     "starcode_abm5_4": (
         (BED_TYPE_STARCODE_ABM5_4, None),
         (BED_TYPE_STARCODE_M5X5, None),

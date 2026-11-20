@@ -126,6 +126,7 @@ if TYPE_CHECKING:
     from .sbi import QPlusAppController as QPlusAppController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
+    from .sealy.controller import SealyController as SealyController
     from .serenity.controller import SerenityController as SerenityController
     from .serenity.controller import TranquilController as TranquilController
     from .serenity.controller import ZSeriesController as ZSeriesController
@@ -203,6 +204,7 @@ _EXPORT_MODULES = {
     "JalonController": "keeson.jalon",
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
+    "SealyController": ("sealy.controller", "SealyController"),
     "YamadaController": ("keeson.yamada", "YamadaController"),
     "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
     "GlideawayMotionController": "glideaway_motion.controller",

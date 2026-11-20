@@ -458,7 +458,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.65
         assert "uuid:nordic_uart" in result.signals
         assert "star_digits:35" in result.signals
-        assert result.ambiguous_types == [BED_TYPE_STARCODE_ABM5_4]
+        assert result.ambiguous_types == ["sealy_posturematic", BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_sleepys_box25_by_star25_name_and_nordic_uart(self):
         """Star25/Nordic identifies a BOX25 candidate alongside the explicit app."""
@@ -471,7 +471,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.65
         assert "uuid:nordic_uart" in result.signals
         assert "star_digits:25" in result.signals
-        assert result.ambiguous_types == [BED_TYPE_STARCODE_ABM5_4]
+        assert result.ambiguous_types == ["sealy_posturematic", BED_TYPE_STARCODE_ABM5_4]
 
     def test_detect_star_elevate_by_name_and_nordic_uart(self):
         """ELEVATE is one route for both apps, including AdjustableM5X5 lifts."""
@@ -506,10 +506,12 @@ class TestDetectBedTypeByServiceUUID:
         assert result.ambiguous_types == [
             BED_TYPE_STARCODE_M5X5,
             BED_TYPE_STARCODE_M1X12,
+            "sealy_posturematic",
         ] + ([other_app] if other_app else [])
-        assert result.signals == ["name:starcode_bedding_app_choices"] + (
-            ["name:starcode_abm5_4_app_candidate"] if other_app else []
-        )
+        assert result.signals == [
+            "name:starcode_bedding_app_choices",
+            "name:sealy_posturematic_app_candidate",
+        ] + (["name:starcode_abm5_4_app_candidate"] if other_app else [])
 
     @pytest.mark.parametrize("name", ["FLX_AUDIO", "FLX_RUSH"])
     def test_shared_nordic_uart_does_not_imply_sleepys_or_elevate(self, name: str):
@@ -597,7 +599,11 @@ class TestDetectBedTypeByServiceUUID:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_OKIN_CB35
         assert result.confidence == 0.65
-        assert result.ambiguous_types == [BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4]
+        assert result.ambiguous_types == [
+            BED_TYPE_SLEEPYS_BOX25,
+            "sealy_posturematic",
+            BED_TYPE_STARCODE_ABM5_4,
+        ]
 
     def test_detect_suta_by_fff0_uuid_and_name(self):
         """Test SUTA detection by FFF0 UUID + SUTA name pattern."""
@@ -744,6 +750,7 @@ class TestDetectBedTypeByNamePattern:
         assert result.ambiguous_types == [
             BED_TYPE_SLEEPYS_BOX25,
             BED_TYPE_OCTO,
+            "sealy_posturematic",
             BED_TYPE_STARCODE_ABM5_4,
         ]
 
@@ -756,7 +763,11 @@ class TestDetectBedTypeByNamePattern:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_OKIN_CB35
         assert result.confidence == 0.65
-        assert result.ambiguous_types == [BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STARCODE_ABM5_4]
+        assert result.ambiguous_types == [
+            BED_TYPE_SLEEPYS_BOX25,
+            "sealy_posturematic",
+            BED_TYPE_STARCODE_ABM5_4,
+        ]
 
     def test_detect_timotion_ahf_by_name(self):
         """Test TiMOTION AHF detection by AHF prefix."""
