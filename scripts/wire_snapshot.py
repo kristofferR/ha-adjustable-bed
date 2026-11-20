@@ -1445,6 +1445,10 @@ def default_scenario(bed_type: str) -> Scenario:
         # The exact name selects the panel: here panel One.
         data[const.CONF_BLE_DEVICE_NAME] = MOTOMOTION_NAMES[0]
         kwargs = {"device_name": MOTOMOTION_NAMES[0]}
+    if bed_type == "relax_motion":
+        data[const.CONF_BED_TYPE] = "relax_motion"
+        data[const.CONF_PRODUCT_TYPE] = "32"
+        variant = "relax"
     if bed_type == "cheerssleep":
         data[const.CONF_PRODUCT_TYPE] = "45"
     if bed_type == "smart_sleep":
@@ -2064,6 +2068,9 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             },
         )
     )
+    for route, model in (("relax", 14), ("relax", 31), ("relax", 500), ("relax", 725), ("cheers_zh", 32), ("cheers_en", 32), ("legacy", 500)):
+        routes.append(Scenario(id=f"relax_motion:{route}:{model}", bed_type="relax_motion", protocol_variant=route,
+            entry_data={"bed_type": "relax_motion", "product_type": str(model), "protocol_variant": route}, layout_id="relax_motion"))
     from custom_components.adjustable_bed.profiles.cheerssleep import MODELS as CHEERSSLEEP_MODELS
     routes.extend(Scenario(id=f"cheerssleep:{model}", bed_type="cheerssleep", entry_data={"product_type": str(model)}, layout_id="cheerssleep") for model in CHEERSSLEEP_MODELS)
     # One accepted P1 outcome per numeric model; P2 scan selects only model80.
@@ -2270,6 +2277,8 @@ async def _timed(awaitable: Awaitable[Any], recorder: Recorder, clock: FakeClock
         if recorder.events:
             return {"status": "not_implemented", "writes": _collapse(recorder.events)}
         return {"status": "unsupported"}
+    except asyncio.CancelledError:
+        return {"status": "cancelled", "writes": _collapse(recorder.events)}
     except TimeoutError:
         return {"status": "timeout", "writes": _collapse(recorder.events)}
     except Exception as err:  # noqa: BLE001 - recorded, not hidden
@@ -2299,7 +2308,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_after_connect(session)
             return
-        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep"}:
+        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep", "relax_motion"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return

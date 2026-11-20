@@ -316,6 +316,7 @@ from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.okimiki import scan_matches as okimiki_scan_matches
 from .profiles.onlysnore import advertisement as onlysnore_advertisement
+from .profiles.relax_motion import discovery_matches as relax_motion_matches
 from .profiles.saatva import SCAN_UUIDS as SAATVA_SCAN_UUIDS
 from .profiles.sealy import matches_name as sealy_name
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
@@ -560,6 +561,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "nerum": "Nerum app",
+    "relax_motion": "Relax Motion app",
     "cheerssleep": "CheersSleep app",
     "agingplace": "Aging in Place / Dawn House app",
     "smart_sleep": "OKIN Smart Sleep app",
@@ -1598,6 +1600,12 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
+    if relax_motion_matches(service_info.advertisement.local_name, service_info.service_uuids or ()):
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "relax_motion"]))
+        result.signals.append("service:relax_motion_app_candidate")
+        # This service is shared by app profiles with different model gates.
+        # Discovery must ask which app runs the bed, even for a known receiver.
+        result.confidence = min(result.confidence, 0.5)
     return result
 
 

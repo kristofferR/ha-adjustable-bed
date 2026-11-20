@@ -369,6 +369,7 @@ they are not exposed through `hold_control`.
 | [OCTO Smart Control](beds/octo.md) | Advertised motor directions and `memory_1` through the discovered memory count | P1 commands repeat every 350 ms inside each bounded operation, which ends with STOP. The 60-second service maximum is a Home Assistant safety bound; the card starts another bounded call only while the user still holds the control. |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss.md#limoss-remote) | Controls rendered for the receiver's layout | Five-frame release |
+| [Relax Motion](beds/relax-motion.md) | Model-supported `back_up/down`, `legs_up/down`, `lumbar_up/down` or `all_motors_up/down` | P1 endpoint command followed by global STOP; P2 refresh every 100 ms and two five-zero release writes. No preset-save holds |
 | [FSM Relax](beds/limoss.md#fsm-relax) | `command_XX` values from the profile's protocol diagnostics | Replies cannot prove physical arrival |
 | [TiMOTION AHF](beds/timotion-ahf.md) | `control_1_up`/`control_1_down` through `control_5_up`/`control_5_down`, `night`, `light`, `chair` | First 100 ms wait is inside the requested bound; a 100 ms wait separates writes, plus BLE write latency. Release sends three neutral STOP writes. This is bounded HA behavior, not Android timing parity or a firmware maximum |
 

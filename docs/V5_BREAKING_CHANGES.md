@@ -389,6 +389,10 @@ Saatva app support is new in v5: select its Adjustable Base or Adjustable Base
 Plus model and installation during setup. Existing 4.4.2 BedTech and Richmat
 entries retain their own profiles. See [Saatva](beds/richmat.md#saatva).
 
+Relax Motion is new in v5 and does not change a 4.4.2 bed entry. Select its
+numeric model and app page in setup. Its model-dependent memory, massage,
+lighting and snore controls are described in the [Relax Motion guide](beds/relax-motion.md).
+
 These actions existed only in v5 betas and are gone. Older field names are not
 accepted.
 

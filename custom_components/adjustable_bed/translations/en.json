@@ -849,7 +849,8 @@
       "l2motion_profile": "Enter the bed's Bluetooth name exactly as L2 Motion shows it.",
       "pair_bed_missing": "One of the chosen beds is no longer set up. Choose two beds from the list.",
       "octo_tv_lift_pairing_unsupported": "A one-motor Octo TV or bed lift cannot have Left and Right controls. Keep it as a single bed.",
-      "invalid_angle": "Angle must be a positive number between 0 and 180 degrees."
+      "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
+      "relax_motion_model": "Enter the numeric model shown in Relax Motion or captured in its advertisement."
     }
   },
   "options": {
@@ -5306,6 +5307,9 @@
       },
       "sealy_massage": {
         "name": "Massage"
+      },
+      "relax_motion_snore": {
+        "name": "Active snore intervention"
       }
     },
     "binary_sensor": {
@@ -5542,6 +5546,9 @@
       },
       "enso_light": {
         "name": "Light"
+      },
+      "relax_motion_sleep": {
+        "name": "Sleep state"
       }
     },
     "number": {
@@ -5919,6 +5926,12 @@
       },
       "jerome_massage_intensity": {
         "name": "Massage intensity"
+      },
+      "relax_motion_light_time": {
+        "name": "Sensed-light automatic-off time"
+      },
+      "relax_motion_snore_interval": {
+        "name": "Snore intervention interval"
       }
     },
     "select": {
@@ -10117,6 +10130,24 @@
     },
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "relax_motion_model": {
+      "message": "Enter the numeric model shown for your bed in Relax Motion or captured in its advertisement."
+    },
+    "relax_motion_session": {
+      "message": "The Relax Motion Bluetooth session or selected model changed. Reconnect the bed and try again."
+    },
+    "relax_motion_gatt": {
+      "message": "The selected Relax Motion Bluetooth service has no usable write and notification characteristics."
+    },
+    "relax_motion_control": {
+      "message": "This control is unavailable for the selected Relax Motion model, app page or current state."
+    },
+    "relax_motion_memory": {
+      "message": "Choose a memory slot supported by the selected Relax Motion model."
+    },
+    "relax_motion_hold": {
+      "message": "Hold this Relax Motion control for more than {minimum} milliseconds so movement can start."
     }
   },
   "issues": {

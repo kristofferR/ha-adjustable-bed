@@ -80,6 +80,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [SUTA Smart Home](beds/suta.md) | The SUTA Smart Home app | |
 | [Svane Remote](beds/svane.md) | The Svane Remote app | |
 | [TiMOTION AHF](beds/timotion-ahf.md) | TiMOTION AHF | |
+| [Relax Motion](beds/relax-motion.md) | Relax Motion numeric models and app-page routes |
 | [Vibradorm](beds/vibradorm.md) | Vibradorm remotes, Caresse, Werkmeister, VMAT and V-MAT Basic | Shared |
 
 ## Design Notes

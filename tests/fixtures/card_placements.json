@@ -121,6 +121,9 @@
  "binary_sensor:ormatek_massage": {
   "card_section": "massage"
  },
+ "binary_sensor:relax_motion_sleep": {
+  "card_section": "hidden"
+ },
  "binary_sensor:reverie_pairlink_low_battery": {
   "card_section": "utility"
  },
@@ -3333,6 +3336,12 @@
  "number:personal_comfort_right_firmness": {
   "card_section": "firmness"
  },
+ "number:relax_motion_light_time": {
+  "card_section": "lighting"
+ },
+ "number:relax_motion_snore_interval": {
+  "card_section": "utility"
+ },
  "number:reverie_body_tilt": {
   "card_section": "motors",
   "card_motor": "lumbar"
@@ -4805,6 +4814,9 @@
   "card_section": "utility"
  },
  "switch:paramount_switch_prohibition": {
+  "card_section": "utility"
+ },
+ "switch:relax_motion_snore": {
   "card_section": "utility"
  },
  "switch:remote_control_lock": {
