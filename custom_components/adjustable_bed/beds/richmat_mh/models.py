@@ -52,5 +52,8 @@ for _app in ("wsilver2", "americanstar", "tx"):
 for _app in MH_APP_POLICIES:
     RICHMAT_MH_VARIANTS_BY_APP[_app] = {
         **mh_app_variants(_app),
-        "sleep": "Separate HJ_Bed sleep and intervention receiver",
+        "sleep": (
+            "Separate sleep and intervention receiver" if _app == "bedtech_classic"
+            else "Separate HJ_Bed sleep and intervention receiver"
+        ),
     }

@@ -432,8 +432,8 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {"bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
-     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
+    {"saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic"}
 )
 
 
@@ -7744,16 +7744,24 @@ class AdjustableBedOptionsFlow(
     ) -> ConfigFlowResult:
         """Enable the reversible left/right/both surface on one BLE address."""
         runtime = loaded_runtime(self.hass, self.config_entry.entry_id)
-        controller = getattr(runtime, "capability_controller", None)
-        needs_casper_transport_proof = self.config_entry.data.get(CONF_BED_TYPE) in {"casper_base", "hush_base"}
-        casper_not_connected = False
-        if needs_casper_transport_proof and self._side_transport_supported is None:
+        from .coordinator import AdjustableBedCoordinator
+
+        controller = (
+            runtime.capability_controller if isinstance(runtime, AdjustableBedCoordinator) else None
+        )
+        needs_transport_proof = (
+            self.config_entry.data.get(CONF_BED_TYPE) in {"casper_base", "hush_base"}
+            or self.config_entry.data.get(CONF_BED_TYPE) == "richmat_classic_apps"
+            and self.config_entry.data.get(CONF_PROTOCOL_VARIANT) == "jerome2"
+        )
+        transport_not_connected = False
+        if needs_transport_proof and self._side_transport_supported is None:
             if runtime is not None and runtime.is_connected and controller is not None:
                 self._side_transport_supported = bool(
-                    getattr(controller, "supports_single_address_pairing", False)
+                    controller.supports_single_address_pairing
                 )
             elif runtime is None or (self._side_transport_probe_failed and user_input is None):
-                casper_not_connected = True
+                transport_not_connected = True
             else:
                 # These beds usually hand their connection back a second after
                 # each command, so connect on demand instead of asking the user
@@ -7768,12 +7776,12 @@ class AdjustableBedOptionsFlow(
         motomotion_unsupported = self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_MOTOMOTION and not supports_single_address_pairing(BED_TYPE_MOTOMOTION, ble_device_name=self.config_entry.data.get(CONF_BLE_DEVICE_NAME))
         if (
             motomotion_unsupported
-            or casper_not_connected
+            or transport_not_connected
             or self._side_transport_supported is False
             or (
-                not needs_casper_transport_proof
+                not needs_transport_proof
                 and controller is not None
-                and not getattr(controller, "supports_single_address_pairing", True)
+                and not controller.supports_single_address_pairing
             )
         ):
             return self.async_show_form(
@@ -7782,7 +7790,7 @@ class AdjustableBedOptionsFlow(
                 errors={
                     "base": (
                         "casper_pairing_needs_connection"
-                        if casper_not_connected
+                        if transport_not_connected
                         else "single_address_pairing_unsupported"
                     )
                 },
@@ -7805,6 +7813,7 @@ class AdjustableBedOptionsFlow(
                 paired_data = build_single_address_pair_entry_data(
                     original_data,
                     name=entry.title,
+                    transport_proven=self._side_transport_supported is True,
                     origin_entry_id=entry.entry_id,
                     origin_unique_id=entry.unique_id,
                     origin_title=entry.title,
@@ -7857,7 +7866,7 @@ class AdjustableBedOptionsFlow(
 
         async def probe(controller: BedController) -> None:
             nonlocal supported
-            supported = bool(getattr(controller, "supports_single_address_pairing", False))
+            supported = bool(controller.supports_single_address_pairing)
 
         try:
             # Side detection runs on one standalone bed; a pair has no such probe.

@@ -52,6 +52,7 @@ class CommandKind(StrEnum):
     COMMAND = "command"
     SEEK = "seek"
     GROUP = "group"
+    INSPECTION = "inspection"
     STOP = "stop"
     HOLD = "hold"
     STREAM = "stream"

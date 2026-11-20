@@ -1986,6 +1986,12 @@
       "main_motor_down": {
         "name": "Main motor down"
       },
+      "selected_motor_up": {
+        "name": "Selected motor up"
+      },
+      "selected_motor_down": {
+        "name": "Selected motor down"
+      },
       "mid_body_up": {
         "name": "Mid-body up"
       },
@@ -2665,7 +2671,7 @@
         "name": "Legs Down"
       },
       "all_motors_up": {
-        "name": "All motors Up"
+        "name": "All motors up"
       },
       "motion_bed_tilt_up": {
         "name": "Tilt Up"
@@ -2686,7 +2692,7 @@
         "name": "Lift Down"
       },
       "all_motors_down": {
-        "name": "All motors Down"
+        "name": "All motors down"
       },
       "motion_bed_hip_down": {
         "name": "Hip Down"
@@ -3531,13 +3537,67 @@
       "betterliving2_all_sections_down": {
         "name": "Lower all sections"
       },
-      "sleepfunction_scoped_catalog_massage": {
-        "name": "{action}"
+      "enso_head_massage_increase": {
+        "name": "Increase head massage"
+      },
+      "enso_head_massage_decrease": {
+        "name": "Decrease head massage"
+      },
+      "enso_foot_massage_increase": {
+        "name": "Increase foot massage"
+      },
+      "enso_foot_massage_decrease": {
+        "name": "Decrease foot massage"
+      },
+      "enso_massage_level": {
+        "name": "Cycle massage intensity"
+      },
+      "enso_timer_massage_page": {
+        "name": "Cycle massage timer"
+      },
+      "enso_massage_mode": {
+        "name": "Cycle massage mode"
+      },
+      "bedsmart_query": {
+        "name": "Refresh bed features"
       },
       "sleepfunction_scoped_head_feet_down": {
         "name": "{action}"
       },
+      "sleepfunction_scoped_feet_up": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_memory_1": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_catalog_light": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_zero_g": {
+        "name": "{action}"
+      },
       "sleepfunction_scoped_head_down": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_head_feet_up": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_feet_down": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_anti_snore": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_catalog_action": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_massage_mode_step": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_flat": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_memory_2": {
         "name": "{action}"
       },
       "sleepfunction_scoped_head_up": {
@@ -3546,40 +3606,10 @@
       "sleepfunction_scoped_preset_tv": {
         "name": "{action}"
       },
-      "sleepfunction_scoped_preset_zero_g": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_catalog_action": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_catalog_light": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_massage_mode_step": {
+      "sleepfunction_scoped_catalog_massage": {
         "name": "{action}"
       },
       "sleepfunction_scoped_preset_lounge": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_preset_flat": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_feet_down": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_preset_memory_2": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_preset_memory_1": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_head_feet_up": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_preset_anti_snore": {
-        "name": "{action}"
-      },
-      "sleepfunction_scoped_feet_up": {
         "name": "{action}"
       }
     },
@@ -5104,6 +5134,18 @@
       },
       "paramount_current_height": {
         "name": "Current bed height"
+      },
+      "enso_massage_timer": {
+        "name": "Massage timer"
+      },
+      "sealy_massage_timer": {
+        "name": "Massage time remaining"
+      },
+      "sealy_massage_head_level": {
+        "name": "Head massage intensity"
+      },
+      "sealy_massage_foot_level": {
+        "name": "Foot massage intensity"
       }
     },
     "light": {
@@ -5287,6 +5329,33 @@
         "name": "Synchronization"
       },
       "massage": {
+        "name": "Massage"
+      },
+      "sleepiq_privacy": {
+        "name": "Privacy"
+      },
+      "sleepiq_responsive_air": {
+        "name": "{side} responsive air"
+      },
+      "sleepiq_auto_light": {
+        "name": "Automatic under-bed light"
+      },
+      "sleepiq_auto_kids_light": {
+        "name": "Automatic night light"
+      },
+      "sleepiq_kids_outlet": {
+        "name": "Power outlet"
+      },
+      "sleepiq_head_tilt": {
+        "name": "Head tilt"
+      },
+      "jerome_massage": {
+        "name": "Massage"
+      },
+      "jerome_synchronization": {
+        "name": "Synchronization"
+      },
+      "sealy_massage": {
         "name": "Massage"
       },
       "sleepfunction_switch": {
@@ -5524,6 +5593,9 @@
       },
       "under_bed_light_state": {
         "name": "Under-bed light state"
+      },
+      "enso_light": {
+        "name": "Light"
       }
     },
     "number": {
@@ -5872,6 +5944,36 @@
       "massage_left_intensity": {
         "name": "Left massage intensity"
       },
+      "bedsmart_lamp_seconds": {
+        "name": "Light timeout"
+      },
+      "bedsmart_massage_index": {
+        "name": "Massage timer setting"
+      },
+      "bedsmart_aroma_0": {
+        "name": "Aroma mode 2 startup"
+      },
+      "bedsmart_aroma_1": {
+        "name": "Aroma mode 3 startup"
+      },
+      "bedsmart_aroma_2": {
+        "name": "Aroma pause"
+      },
+      "jerome_light_seconds": {
+        "name": "Light duration"
+      },
+      "jerome_aroma_0": {
+        "name": "Aroma mode 2 time"
+      },
+      "jerome_aroma_1": {
+        "name": "Aroma mode 3 time"
+      },
+      "jerome_aroma_2": {
+        "name": "Aroma mode 3 pause"
+      },
+      "jerome_massage_intensity": {
+        "name": "Massage intensity"
+      },
       "sleepfunction_lamp_timeout": {
         "name": "Light timeout"
       }
@@ -5897,6 +5999,12 @@
       },
       "massage_timer": {
         "name": "Massage: Timer"
+      },
+      "massage_left_timer": {
+        "name": "Left massage timer"
+      },
+      "massage_right_timer": {
+        "name": "Right massage timer"
       },
       "light_timer": {
         "name": "Light Timer"
@@ -6502,6 +6610,15 @@
           "cinema": "Cinema",
           "entertainment": "Entertainment"
         }
+      },
+      "bedsmart_mode": {
+        "name": "Bed mode"
+      },
+      "bedsmart_axis": {
+        "name": "Selected motor"
+      },
+      "bedsmart_head_foot": {
+        "name": "Head or foot"
       },
       "sleepfunction_massage_timer": {
         "name": "Massage timer",
@@ -9419,6 +9536,147 @@
         }
       }
     },
+    "lp2": {
+      "name": "L&P Adjustable Base: settings",
+      "description": "Lighting, aromatherapy, fans and movement programs. Use Set alarm for wake-up alarms. Physical behavior needs hardware testing.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Setting"
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "seconds": {
+          "name": "Light duration (seconds)"
+        },
+        "aroma_times": {
+          "name": "Aromatherapy times"
+        },
+        "fan": {
+          "name": "Fan"
+        },
+        "intensity": {
+          "name": "Intensity (%)"
+        },
+        "duration": {
+          "name": "Fan duration",
+          "description": "Duration choice 0 through 6. The foot fan sends only intensity; it does not send a duration."
+        },
+        "schedule": {
+          "name": "Movement program"
+        },
+        "confirm": {
+          "name": "Confirm programming or saving"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "mode": {
+          "name": "Control mode"
+        },
+        "long": {
+          "name": "Long press"
+        },
+        "held": {
+          "name": "Continuous movement"
+        },
+        "head": {
+          "name": "Head selection"
+        },
+        "motor": {
+          "name": "Motor"
+        },
+        "duration_ms": {
+          "name": "Movement duration (milliseconds)"
+        },
+        "side": {
+          "name": "Bed side"
+        }
+      }
+    },
+    "bedsmart": {
+      "name": "BedSmart / X-Series: settings",
+      "description": "Change direct bed lighting and aroma settings, or run a finite bed command. Use Set alarm for wake-up alarms.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Setting"
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "seconds": {
+          "name": "Light duration (seconds)"
+        },
+        "aroma_times": {
+          "name": "Aromatherapy times"
+        },
+        "confirm": {
+          "name": "Confirm programming or saving"
+        },
+        "duration_ms": {
+          "name": "Movement duration (milliseconds)"
+        },
+        "side": {
+          "name": "Bed side"
+        },
+        "command": {
+          "name": "Bed command",
+          "description": "Choose a bed control. Voice stop requests massage off before releasing movement."
+        }
+      }
+    },
+    "jerome_bed": {
+      "name": "Jerome’s power base: control bed",
+      "description": "Run an action from the selected bed layout. Preset saves and long-press controls require confirmation.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Configured bed devices."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Named layout action, such as head_up, zero_gravity or save_m1. Available actions are listed in the bed guide."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target one side or both sides of a combined bed."
+        },
+        "keep": {
+          "name": "Keep moving",
+          "description": "Use the layout’s continuous movement behavior until the duration ends."
+        },
+        "mode": {
+          "name": "Operating mode",
+          "description": "Mode 0, 1 or 2 on layouts with Mode 1, Mode 2 and Mode 3 controls. Use Side for layouts labeled Left and Right."
+        },
+        "confirm": {
+          "name": "Confirm action",
+          "description": "Required for preset saves and long-press actions."
+        },
+        "duration_ms": {
+          "name": "Movement duration",
+          "description": "How long a continuous control runs, in milliseconds."
+        },
+        "rgb_color": {
+          "name": "Light color",
+          "description": "Red, green and blue values for the light_color action."
+        },
+        "aroma_times": {
+          "name": "Aroma settings",
+          "description": "Mode 2 time in minutes, mode 3 time in minutes, and mode 3 pause in hours for the aroma_settings action."
+        },
+        "long_press": {
+          "name": "Long press",
+          "description": "Use the layout’s long-press gesture when it also offers a separate save button. Confirmation is required."
+        }
+      }
+    },
     "sleepfunction_settings": {
       "name": "SleepFunction: set fan and aroma",
       "description": "Set local fan or aroma settings on a SleepFunction bed. Foot fan time is not transmitted by this app.",
@@ -9888,14 +10146,86 @@
     "pair_transfer_failed": {
       "message": "The combined bed {name} could not take over either of its beds. Home Assistant will try again; if it keeps failing, separate the beds and combine them again."
     },
-    "sleepfunction_session": {
-      "message": "The bed connection or selected layout changed. Try the action again."
+    "enso_session_changed": {
+      "message": "The bed disconnected or its Bluetooth session changed. Reconnect and try again."
+    },
+    "enso_gatt_missing": {
+      "message": "The bed must expose writable and notification characteristics. Check the selected device."
+    },
+    "enso_control_invalid": {
+      "message": "This control is not available for the selected bed layout."
+    },
+    "enso_name_invalid": {
+      "message": "Enter a Bluetooth name with 1 to 14 characters."
+    },
+    "enso_duration_invalid": {
+      "message": "Choose a hold duration between 1 and 60000 milliseconds."
+    },
+    "bedsmart_layout": {
+      "message": "Choose a bed layout from BedSmart / X-Series."
+    },
+    "bedsmart_session": {
+      "message": "The BedSmart bed connection or configuration changed. Try the action again."
+    },
+    "bedsmart_control": {
+      "message": "Choose an available BedSmart bed control."
+    },
+    "jerome_layout": {
+      "message": "Choose a bed layout with controls in Jerome’s power base."
+    },
+    "jerome_action": {
+      "message": "Choose an action offered by the selected bed layout."
+    },
+    "jerome_confirm": {
+      "message": "Confirm the save or long-press action before continuing."
+    },
+    "jerome_hold": {
+      "message": "This action cannot be held. Choose a movement control and a duration from 1 to 60000 milliseconds."
+    },
+    "jerome_mode": {
+      "message": "Choose an operating mode offered by this layout. Use the Side field for Left or Right controls. Other modes require the framed Bluetooth connection."
+    },
+    "jerome_capability": {
+      "message": "The current bed connection has not reported this feature or its current state."
+    },
+    "jerome_timer": {
+      "message": "Choose a massage duration offered by this layout."
+    },
+    "jerome_alarm": {
+      "message": "Choose a wake position and optional massage offered by this bed layout."
+    },
+    "jerome_color": {
+      "message": "Choose three whole RGB values from 0 to 255."
+    },
+    "jerome_aroma": {
+      "message": "Choose aroma intervals and durations from 1 to 60 minutes, and a pause from 1 to 12 hours."
+    },
+    "jerome_intensity": {
+      "message": "Choose massage intensity 1, 2 or 3."
+    },
+    "jerome_feature_scope": {
+      "message": "This setting applies to a whole physical bed. It cannot target one half of a one-address combined bed. Keep this bed standalone to use its whole-bed settings."
+    },
+    "jerome_device_name": {
+      "message": "The original Bluetooth name is needed to choose this bed’s command timing. Rescan the bed so Home Assistant can read its name, then try again."
+    },
+    "sealy_control_invalid": {
+      "message": "Choose a supported Sealy control, product and duration."
+    },
+    "sealy_session_changed": {
+      "message": "The Sealy connection or selected product changed. Try the action again."
+    },
+    "sealy_gatt_missing": {
+      "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "sleepfunction_control": {
+      "message": "Choose a control available for the current bed layout and connection."
     },
     "sleepfunction_layout": {
       "message": "Choose a bed layout. Desk and manufacturing layouts are outside this integration."
     },
-    "sleepfunction_control": {
-      "message": "Choose a control available for the current bed layout and connection."
+    "sleepfunction_session": {
+      "message": "The bed connection or selected layout changed. Try the action again."
     }
   },
   "issues": {
@@ -10593,6 +10923,10 @@
         "okimiki": "Okimiki app",
         "luniosmart": "Lunio Smart+ app",
         "majestichome": "Majestic Home app",
+        "lp2": "L&P Adjustable Base app",
+        "bedsmart": "BedSmart / X-Series app",
+        "bedtech_classic": "Bed Tech app",
+        "jerome2": "Jerome's power base app",
         "sleepfunction": "SleepFunction Bed Control"
       }
     },
@@ -10744,7 +11078,6 @@
         "get_footwarming_settings": "Get footwarming settings",
         "get_responsive_air_enabled_status": "Get responsive air enabled status",
         "get_sleepiq_privacy_state": "Get sleepiq privacy state",
-        "get_system_status": "Get system status",
         "get_temperature_programs": "Get temperature programs",
         "get_target_preset_with_timer": "Get target preset with timer",
         "get_temperature_program_info": "Get temperature program info",
@@ -10785,7 +11118,25 @@
         "stop": "Stop",
         "underbed_auto": "Underbed auto",
         "underbed_auto_status": "Underbed auto status",
-        "get_sleep_number_controls": "Read Sleep Number settings"
+        "get_sleep_number_controls": "Read Sleep Number settings",
+        "bind_foundation": "Pair base",
+        "reset_articulation_presets": "Reset saved positions",
+        "run_diagnostics": "Run bed diagnostics",
+        "cancel_current_diagnostic_run": "Cancel bed diagnostics",
+        "get_simple_diagnostic_run_results": "Read bed diagnostic results",
+        "underbed_intensity": "Set under-bed light brightness",
+        "get_central_devices_metadata": "Read paired controllers",
+        "get_fuzion_remote_mac_addresses": "Read paired remotes",
+        "get_manifest_name": "Read software manifest",
+        "get_system_configuration": "Read bed features",
+        "get_system_settings_applied_status": "Read installation status",
+        "gets_actuator_homing_state": "Read calibration status",
+        "mcr_status": "Read bed status",
+        "migrate_routines_to_temperature_programs": "Convert temperature schedules",
+        "pinch_status": "Read obstruction status",
+        "routine_migration_status": "Read schedule conversion status",
+        "set_bed_presence": "Set bed presence",
+        "software_versions": "Read software versions"
       }
     },
     "customatic_hold_memory_actions": {
@@ -11936,6 +12287,49 @@
         "anti_snore": "Anti-Snore",
         "memory_1": "Memory 1",
         "memory_2": "Memory 2"
+      }
+    },
+    "lp2_operation": {
+      "options": {
+        "color": "Set light color",
+        "light_duration": "Set light duration",
+        "aromatherapy": "Set aromatherapy times",
+        "fan": "Set fan",
+        "motor_program": "Program movement sequence",
+        "control": "Run control",
+        "movement_test": "Run movement test"
+      }
+    },
+    "lp2_fan": {
+      "options": {
+        "head": "Head",
+        "foot": "Foot"
+      }
+    },
+    "bedsmart_operation": {
+      "options": {
+        "color": "Light color",
+        "light_duration": "Light timeout",
+        "aromatherapy": "Aroma times",
+        "movement_test": "Movement test",
+        "bed_command": "Bed command"
+      }
+    },
+    "bedsmart_command": {
+      "options": {
+        "head_up": "Head up",
+        "head_down": "Head down",
+        "foot_up": "Foot up",
+        "foot_down": "Foot down",
+        "tv": "TV",
+        "lounge": "Lounge",
+        "zero_gravity": "Zero gravity",
+        "anti_snore": "Anti-snore",
+        "memory_one": "Memory 1",
+        "memory_two": "Memory 2",
+        "memory_three": "Memory 3",
+        "flat": "Flat",
+        "voice_stop_request": "Voice stop request"
       }
     },
     "sleepfunction_setting": {

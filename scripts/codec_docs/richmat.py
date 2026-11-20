@@ -48,11 +48,21 @@ from custom_components.adjustable_bed.profiles import majestichome as majestic
 from custom_components.adjustable_bed.profiles import mlily_remote as remote162
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
+from custom_components.adjustable_bed.profiles import saatva
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
-from scripts.codec_docs import _galaxy, _okimiki, _richmat_legacy, _richmat_mh_apps, _sleepfunction
+from scripts.codec_docs import (
+    _bedtech_classic,
+    _galaxy,
+    _okimiki,
+    _richmat_legacy,
+    _richmat_mh_apps,
+    _sleepfunction,
+)
+from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 
 GUIDE = "docs/beds/richmat.md"
 # The Casper Base and Hush Base apps: their profile class and controller module.
@@ -69,6 +79,7 @@ _RICHMAT_NAMES = {
     "richmat_prefix55": "Richmat Prefix55",
     "richmat_prefixaa": "Richmat PrefixAA",
     "bedtech": "BedTech legacy",
+    **{p.key: f"Saatva {saatva.CHOICES[key]}" for key, p in saatva.PROFILES.items()},
     **{
         profile.key: f"BedTech app {model.upper()}"
         for model, profile in richmat_profiles.BEDTECH_APP_PROFILES.items()
@@ -92,7 +103,7 @@ _RICHMAT_NAMES = {
             (
                 *("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
                 *("RUF Betten", "W.Silver", "AMERICANSTAR", "Bailey", "TX"),
-                *("Nisco", "MLILY Supreme"),
+                *("Nisco", "MLILY Supreme", "Bed Tech"),
             ),
             strict=True,
         )
@@ -105,6 +116,7 @@ _RICHMAT_NAMES = {
 _FIXED_ROUTES = (
     *richmat_profiles.RICHMAT.values(),
     richmat_profiles.BEDTECH,
+    *saatva.PROFILES.values(),
     *richmat_profiles.BEDTECH_APP_PROFILES.values(),
     richmat_profiles.LEGGETT_WILINKE,
 )
@@ -173,6 +185,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
         "one": (_const.BED_TYPE_SONICSLEEP,),
+        **{p.key: ("saatva",) for p in saatva.PROFILES.values()},
         "luniosmart": (_const.BED_TYPE_LUNIOSMART,),
         **{key: (profile.app,) for key, profile in legacy_profiles().items()},
         **{
@@ -1182,6 +1195,31 @@ def render_lp_legacy_notifications() -> str:
     )
 
 
+def render_saatva() -> str:
+    rows = []
+    for key, profile in saatva.PROFILES.items():
+        rows.append((saatva.CHOICES[key], f"`{key}`", saatva.LAYOUTS[key],
+                     "yes" if "massage_toggle" in (profile.codes or {}) else "no"))
+    commands: dict[richmat_profiles.Button, int] = {button: code for p in saatva.PROFILES.values() for button, code in (p.codes or {}).items()}
+    frames = [(_BUTTON_LABELS[button], _hex(codec.command(code)),
+               _hex(codec.command(code, 1)) if code in saatva.HEAD_CODES else "shared bank 0",
+               f"{saatva.REPEAT_MS} ms until release" if code in saatva.MOTORS else "once")
+              for button, code in commands.items()]
+    frames.extend((f"Memory {slot} {action}", _hex(codec.command(code)), "shared bank 0", "once")
+                  for slot, pair in enumerate(next(iter(saatva.PROFILES.values())).memory, 1)
+                  for action, code in zip(("recall", "save"), pair, strict=True))
+    return _block(
+        _table(("Model / installation", "Profile", "Layout", "Massage and light"), rows),
+        _table(("Discovery / timing", "Value"), [
+            ("Advertised UUID candidates", ", ".join(f"`{u}`" for u in saatva.SCAN_UUIDS)),
+            ("Write characteristic", f"`{saatva.WRITE_UUID}`"),
+            ("Refresh", f"{saatva.REPEAT_MS} ms; no release frame"),
+            ("Setup test", f"First head, {saatva.TEST_SECONDS} seconds"),
+        ]),
+        _table(("Control", "Frame", "Split-top right head", "Timing"), frames),
+    )
+
+
 def render_bedtech_models() -> str:
     def cells(model: str, profile: richmat_profiles.RichmatProfile) -> tuple[str, ...]:
         codes: Mapping[richmat_profiles.Button, int] = profile.codes or {}
@@ -1384,7 +1422,7 @@ def render_rise_commands() -> str:
                 if key[:3] == ("none", "none", "none") and key[4] == "none":
                     continue
                 groups.setdefault(key, []).append(layout)
-        lines.append(f"### {CLASSIC_APPS[app]} resource commands\n\n<details><summary>Selected-layout command and gesture gates</summary>\n")
+        lines.append(f"#### {CLASSIC_APPS[app]} resource commands\n\n<details><summary>Selected-layout command and gesture gates</summary>\n")
         lines.append(_table(("Layouts", "Short", "Raw old-short", "Long", "Status", "Tag", "Threshold ms", "Initial visibility"), [
             (", ".join(sorted(set(layouts))), *key) for key, layouts in sorted(groups.items())
         ]))
@@ -1398,6 +1436,7 @@ def render_rise_commands() -> str:
 BLOCKS: list[Block] = [
     (GUIDE, "luniosmart", render_luniosmart),
     (GUIDE, "sonicsleep", render_sonicsleep),
+    (GUIDE, "saatva", render_saatva),
     (GUIDE, "bedtech-models", render_bedtech_models),
     (GUIDE, "bedtech-app-commands", render_bedtech_commands),
     (GUIDE, "luuna", render_luuna),
@@ -1729,3 +1768,106 @@ BLOCKS.append((GUIDE, "mlily-remote-commands", render_mlily_remote))
 
 
 BLOCKS += _sleepfunction.BLOCKS
+
+BLOCKS += _bedtech_classic.BLOCKS
+
+
+BLOCKS += LP2_BLOCKS
+
+
+BLOCKS += BEDSMART_BLOCKS
+
+
+def render_jerome_controls() -> str:
+    """Render the selected app's complete command domain from its runtime catalog."""
+    from custom_components.adjustable_bed.beds.richmat_classic.caller import (
+        Selection,
+        selected_operand,
+    )
+    from custom_components.adjustable_bed.beds.richmat_classic.jerome_controls import (
+        actions,
+        long_actions,
+    )
+    from custom_components.adjustable_bed.profiles.jerome2 import (
+        ALARM_CODES,
+        ALIASES,
+        COMBINATIONS,
+        EXCLUDED_LAYOUTS,
+        LAYOUTS,
+        SIDE_LAYOUTS,
+        TIMER_PROGRESS,
+    )
+
+    catalog = load_catalog("jerome2")
+    groups: dict[tuple[str, ...], list[str]] = {}
+    for layout in LAYOUTS:
+        if layout in EXCLUDED_LAYOUTS:
+            continue
+        model = catalog.models[layout]
+        controls = {c.node: c for c in model.controls}
+        for long_press, choices in ((False, actions(layout)), (True, long_actions(layout))):
+            for key, action in choices.items():
+                c = controls[action.node]
+                cells = []
+                for wire in ("RAW", "FRAMED"):
+                    operand = selected_operand(c, wire, 3 if action.long_press else 1 if action.keep else 2, Selection(press_flag=action.flag))
+                    cells.append(_hex(classic_frames.control(operand, wire)) if isinstance(operand, bytes) else "No write")
+                gesture = "long press" if action.long_press else "continuous" if action.keep else "tap"
+                if long_press:
+                    gesture += " (explicit gesture)"
+                groups.setdefault((key, *cells, gesture, str(c.threshold_ms) if action.long_press and not c.mem_special else "0"), []).append(layout)
+    return _block(
+        "#### Layout actions",
+        "Frames below use operating mode zero. Framed modes one and two change the mode byte and checksum. "
+        "The raw path has no side or operating-mode field. The layout picker owns the whole layout domain; "
+        "a matching Bluetooth name is only an app hint.",
+        "<details><summary>All layout action bindings</summary>",
+        _table(("Action", "Raw", "Framed mode 0", "Gesture", "Threshold ms", "Layouts"), (
+            (*key, ", ".join(sorted(set(layouts)))) for key, layouts in sorted(groups.items())
+        )),
+        "</details>",
+        _table(("Mode choices", "Layouts"), (
+            ("Left / Right", ", ".join(sorted(SIDE_LAYOUTS))),
+            ("Mode 1 / Mode 2 / Mode 3", ", ".join(k for k, m in catalog.models.items() if m.modes == (0, 1, 2))),
+        )),
+        _table(("Name alias", "Layout", "Applicability"), (
+            (name, layout, "Unused in this package" if name.startswith("L&P") else "Manual layout required" if layout == "QRRM" else "Shorter prefix selects the same layout" if name == "MPE_HJ006-1" else "Explicit app/name choice")
+            for name, layout in sorted(ALIASES.items())
+        )),
+        "#### Settings and timing",
+        _table(("Operation", "Write", "Timing"), (
+            ("Initialize framed connection", _hex(classic_frames.INITIALIZE), "300 ms after notification registration"),
+            ("Alarm query", _hex(classic_frames.ALARM_QUERY), "Only with layout alarm choices; 500 ms afterward"),
+            ("Light query", _hex(classic_frames.LAMP_QUERY), "500 ms afterward"),
+            ("Aroma query", _hex(classic_frames.AROMA_QUERY), "500 ms afterward"),
+            ("Red color example", _hex(classic_frames.rgb(255, 68, 68)), "One 10-byte write; 150 ms afterward"),
+            ("Light timeout, 300 seconds", _hex(classic_frames.direct(0x0B, 1, 44)), "One write; valid range 0 to 300 seconds"),
+            ("Aroma defaults, 1 / 1 / 2", " / ".join(_hex(classic_frames.aroma(op, value)) for op, value in zip((0x1B, 0x1C, 0x1D), (1, 1, 2), strict=True)), "150 ms between writes"),
+            ("Alarm cancellation", " / ".join(_hex(frame) for frame in classic_frames.alarm(0, 0)), "300 ms after each write"),
+            ("Alarm, tomorrow at the same minute, TV", " / ".join(_hex(frame) for frame in classic_frames.alarm(1440, 0x58)), "300 ms after each write"),
+            ("Held release", _hex(classic_frames.release("FRAMED")), "50 ms after the held action ends"),
+            ("Tap release", _hex(classic_frames.release("RAW")), "150 ms after the tap; raw long-only controls define no release"),
+        )),
+        _table(("Massage duration", "D1RM", "D9RM"), (
+            (name.replace("_", " "), _hex(classic_frames.massage_timer("D1RM", progress)), _hex(classic_frames.massage_timer("D9RM", progress)))
+            for name, progress in TIMER_PROGRESS.items()
+        )),
+        _table(("Y6RM popup label", "Write"), (
+            (choice + " minutes", _hex(classic_frames.massage_popup(choice))) for choice in ("15", "30", "45")
+        )),
+        _table(("Alarm choice", "Operand", "Layouts"), (
+            (name.replace("_", " "), _code_hex(code), ", ".join(layout for layout, model in catalog.models.items() if any(c.alarm_clock and int(c.alarm_clock, 16) == code for c in model.controls)))
+            for name, code in ALARM_CODES.items()
+        )),
+        _table(("Refresh interval", "Original Bluetooth name"), (
+            (f"{classic_frames.FAST_TICK_MS} ms", "TWRM / MLRM"),
+            (str(classic_frames.worker_interval("6BRM", "RAW", rise=True)) + " ms", "6BRM on raw GATT"),
+            (f"{classic_frames.TICK_MS} ms", "Other valid names"),
+        )),
+        _table(("Alarm position", "Both massage", "Head massage", "Foot massage"), (
+            (f"`{position:02X}`", *(_code_hex(v) for v in values)) for position, values in COMBINATIONS.items()
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "jerome-controls", render_jerome_controls))

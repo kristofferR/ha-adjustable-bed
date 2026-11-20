@@ -289,7 +289,7 @@ class TestSleepNumberController:
             _char_uuid: str, payload: bytes, response: bool = False
         ) -> None:
             assert response is False
-            assert _decode_sleep_number_payload(payload) == "ACHA"
+            assert _decode_sleep_number_payload(payload) == "ACHA "
             mock_bleak_client.read_gatt_char.return_value = _build_sleep_number_blob("PASS:ACK")
             mock_bleak_client.read_gatt_char.side_effect = None
             coordinator.controller._handle_bamkey_notification(

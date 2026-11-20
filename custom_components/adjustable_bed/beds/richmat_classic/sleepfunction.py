@@ -166,11 +166,16 @@ class SleepFunctionController(ResourceBedController):
         self._selection = replace(self._selection, hold=hold)
 
     @contextmanager
-    def sent_state(self, *updates: StateUpdate):
+    def sent_state(self, *updates: StateUpdate, is_current: Callable[[], bool] | None = None):
         session = self._captured_session()
 
         def show(delivery: Delivery) -> None:
-            if session is None or not self._owned(session):
+            if (
+                session is None
+                or not self._owned(session)
+                or is_current is not None
+                and not is_current()
+            ):
                 return
             if delivery is Delivery.SENT:
                 for update in updates:

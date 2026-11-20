@@ -1096,3 +1096,29 @@ async def test_a_skipped_pair_preflight_blocks_all_targets_before_any_settings_w
         await first.async_shutdown()
         await left.async_shutdown()
         await right.async_shutdown()
+
+
+async def test_sent_state_honors_the_shared_current_owner_predicate(clock):
+    from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+
+    ctrl, target = controller()
+    ctrl.forward_controller_state_updates = MagicMock()
+    with ctrl.sent_state(UNDER_BED_LIGHTS_ON(True), is_current=lambda: False):
+        await ctrl.write_command(bytes.fromhex("6e0a000179"))
+    assert packets(target) == ["6e0a000179"]
+    assert ctrl._light_on is None
+    ctrl.forward_controller_state_updates.assert_not_called()
+
+
+def test_app_timer_unknown_is_distinct_from_its_explicit_off_choice():
+    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+
+    ctrl, target = controller("D1RM")
+    target.controller_state = {}
+    spec = ctrl.controller_select_specs[0]
+    entity = AdjustableBedControllerSelect(target, spec)
+    assert entity.current_option is None
+    target.controller_state[spec.state_key] = None
+    assert entity.current_option is None
+    target.controller_state[spec.state_key] = "off"
+    assert entity.current_option == "off"

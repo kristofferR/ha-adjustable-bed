@@ -110,12 +110,15 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
+from .errors import invalid
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
+from .profiles.saatva import CHOICES as SAATVA_PROFILES
+from .profiles.saatva import TWO_RECEIVER_PROFILES as SAATVA_TWO_RECEIVER_PROFILES
 
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -134,6 +137,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MAJESTICHOME: frozenset(MAJESTICHOME_PROFILES),
     BED_TYPE_OKIMIKI: frozenset(OKIMIKI_PROFILES),
     "bobpowerbase": frozenset(BOB_PROFILES),
+    "saatva": frozenset(SAATVA_PROFILES),
     BED_TYPE_MLILY_REMOTE: frozenset(MLILY_REMOTE_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
     BED_TYPE_RICHMAT_APP: frozenset(RICHMAT_APP_PRODUCTS),
@@ -243,6 +247,12 @@ def supports_single_address_pairing(
     ble_device_name: str | None = None,
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
+    if bed_type == "richmat_classic_apps":
+        from .profiles.jerome2 import SIDE_LAYOUTS
+
+        return protocol_variant == "jerome2" and product_type in SIDE_LAYOUTS
+    if bed_type == "saatva":
+        return protocol_variant == "bt3000fh_split_top"
     if bed_type == "bobpowerbase":
         return protocol_variant in ("elite_sh", "ultra_sh")
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
@@ -731,6 +741,9 @@ def build_pair_entry_data(
         for item in (left_data, right_data)
     ):
         raise ValueError("Only configured Personal Comfort bases can be combined")
+    if any(item.get(CONF_BED_TYPE) == "saatva" and item.get(CONF_PROTOCOL_VARIANT) not in SAATVA_TWO_RECEIVER_PROFILES
+           for item in (left_data, right_data)):
+        raise invalid("not_supported_by_bed", feature="two-receiver pairing")
     left_addr = left_data[CONF_ADDRESS]
     right_addr = right_data[CONF_ADDRESS]
     left_entry_id, left_unique_id = left_origin or (None, None)
@@ -776,6 +789,7 @@ def build_single_address_pair_entry_data(
     single_data: Mapping[str, Any],
     *,
     name: str,
+    transport_proven: bool = False,
     origin_entry_id: str | None = None,
     origin_unique_id: str | None = None,
     origin_title: str | None = None,
@@ -802,6 +816,9 @@ def build_single_address_pair_entry_data(
         ble_device_name=single_data.get(CONF_BLE_DEVICE_NAME),
     ):
         raise ValueError(f"{bed_type!r} does not support single-address pairing")
+
+    if bed_type == "richmat_classic_apps" and not transport_proven:
+        raise ValueError("Jerome side routing requires live framed transport proof")
 
     address = cast("str", single_data[CONF_ADDRESS])
     left = _descriptor_from_single(

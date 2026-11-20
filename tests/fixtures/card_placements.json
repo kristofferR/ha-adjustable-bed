@@ -50,6 +50,10 @@
  "binary_sensor:cheerssleep_right_asleep": {
   "card_section": "hidden"
  },
+ "binary_sensor:enso_light": {
+  "card_section": "lighting",
+  "card_role": "state"
+ },
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
@@ -472,6 +476,9 @@
   "card_role": "up",
   "card_motor": "bedsense_waist"
  },
+ "button:bedsmart_query": {
+  "card_section": "utility"
+ },
  "button:betterliving2_all_sections_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -777,6 +784,27 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "elevate_both"
+ },
+ "button:enso_foot_massage_decrease": {
+  "card_section": "massage"
+ },
+ "button:enso_foot_massage_increase": {
+  "card_section": "massage"
+ },
+ "button:enso_head_massage_decrease": {
+  "card_section": "massage"
+ },
+ "button:enso_head_massage_increase": {
+  "card_section": "massage"
+ },
+ "button:enso_massage_level": {
+  "card_section": "massage"
+ },
+ "button:enso_massage_mode": {
+  "card_section": "massage"
+ },
+ "button:enso_timer_massage_page": {
+  "card_section": "massage"
  },
  "button:eshine_massage_foot_strength": {
   "card_section": "massage"
@@ -1804,6 +1832,16 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "ruf_richmat_mattress_right_pillow"
+ },
+ "button:selected_motor_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "selected_motor"
+ },
+ "button:selected_motor_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "selected_motor"
  },
  "button:set_back_reference": {
   "card_section": "motors",
@@ -3118,6 +3156,21 @@
   "card_section": "motors",
   "card_motor": "back_right"
  },
+ "number:bedsmart_aroma_0": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_aroma_1": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_aroma_2": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_lamp_seconds": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_massage_index": {
+  "card_section": "utility"
+ },
  "number:betterliving2_massage_feet": {
   "card_section": "massage"
  },
@@ -3168,6 +3221,21 @@
   "card_section": "motors",
   "card_role": "estimate",
   "card_motor": "head"
+ },
+ "number:jerome_aroma_0": {
+  "card_section": "utility"
+ },
+ "number:jerome_aroma_1": {
+  "card_section": "utility"
+ },
+ "number:jerome_aroma_2": {
+  "card_section": "utility"
+ },
+ "number:jerome_light_seconds": {
+  "card_section": "lighting"
+ },
+ "number:jerome_massage_intensity": {
+  "card_section": "massage"
  },
  "number:l2motion_bass": {
   "card_section": "utility"
@@ -3472,6 +3540,15 @@
  "select:adjustamattress_strength_setting": {
   "card_section": "utility"
  },
+ "select:bedsmart_axis": {
+  "card_section": "utility"
+ },
+ "select:bedsmart_head_foot": {
+  "card_section": "utility"
+ },
+ "select:bedsmart_mode": {
+  "card_section": "utility"
+ },
  "select:comfy_timer_selection": {
   "card_section": "utility"
  },
@@ -3501,6 +3578,12 @@
  },
  "select:light_timer": {
   "card_section": "lighting"
+ },
+ "select:massage_left_timer": {
+  "card_section": "massage"
+ },
+ "select:massage_right_timer": {
+  "card_section": "massage"
  },
  "select:massage_timer": {
   "card_section": "massage",
@@ -3946,6 +4029,10 @@
  "sensor:doublesleep_use_side": {
   "card_section": "utility"
  },
+ "sensor:enso_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
  "sensor:eshine_alarm": {
   "card_section": "hidden"
  },
@@ -4380,6 +4467,16 @@
  "sensor:saved_positions": {
   "card_section": "saved_positions"
  },
+ "sensor:sealy_massage_foot_level": {
+  "card_section": "massage"
+ },
+ "sensor:sealy_massage_head_level": {
+  "card_section": "massage"
+ },
+ "sensor:sealy_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
  "sensor:simmons_alarm_1": {
   "card_section": "hidden"
  },
@@ -4704,6 +4801,12 @@
  "switch:doublesleep_sonic": {
   "card_section": "massage"
  },
+ "switch:jerome_massage": {
+  "card_section": "massage"
+ },
+ "switch:jerome_synchronization": {
+  "card_section": "utility"
+ },
  "switch:l2motion_sync": {
   "card_section": "utility"
  },
@@ -4779,7 +4882,28 @@
  "switch:ruf_richmat_sleep_right_intervention": {
   "card_section": "utility"
  },
+ "switch:sealy_massage": {
+  "card_section": "massage"
+ },
  "switch:sleepfunction_switch": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_auto_kids_light": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_auto_light": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_head_tilt": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_kids_outlet": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_privacy": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_responsive_air": {
   "card_section": "utility"
  },
  "switch:sleepys_app_motion_sensor": {

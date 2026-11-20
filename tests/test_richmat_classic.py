@@ -20,7 +20,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.transport import Tran
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.state_helpers import published
 
-APP_NAMES = {app: name for app, name in ALL_APP_NAMES.items() if app not in RISE_APPS and app not in RESOURCE_APPS and app != "sleepfunction"}
+APP_NAMES = {app: name for app, name in ALL_APP_NAMES.items() if app not in RISE_APPS and app not in RESOURCE_APPS and app not in ("sleepfunction", "lp2", "jerome2", "bedsmart")}
 
 
 def controller(app="avocadoecobase", layout="GXRM", wire="FRAMED"):
@@ -563,3 +563,14 @@ async def test_native_release_entity_keeps_the_admitted_mode_through_cleanup(has
     assert not CONTROLLER_GESTURE_RELEASE.get()
     coord._client.is_connected = False
     await coord.async_shutdown()
+
+
+async def test_changed_control_rejects_renewable_hold_with_translated_key(monkeypatch):
+    from tests.error_helpers import raises_key
+
+    ctrl, coord = controller(layout="A0RN")
+    node = next(c.node for c in ctrl._controls if c.short == "58" and c.status == 3)
+    monkeypatch.setattr(bed, "current_command_context", lambda: SimpleNamespace(lease=object()))
+    with raises_key("control_hold_renewal_not_supported"):
+        await ctrl.execute_action(node)
+    assert packets(coord) == []

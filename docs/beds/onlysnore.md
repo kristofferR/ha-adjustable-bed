@@ -195,8 +195,8 @@ but not the alarm slots. To read alarms set in the app, enable and press
 **Refresh status** (diagnostic, disabled by default); setting an alarm with the
 action reads that slot back.
 
-Each alarm slot shows an **Alarm N time** sensor, with the repeat mask, action
-code and soft wake as attributes, and an **Alarm N enabled** binary sensor.
+Each alarm slot shows an **Alarm N time** sensor, with whether the alarm is on,
+the repeat mask, action code and soft wake as attributes.
 **Firmware version** and **Hardware version** are diagnostic and disabled by
 default. The app's local management command (`management_1`) has no known
 user-visible effect and is not exposed.

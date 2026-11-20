@@ -65,6 +65,7 @@ using independently identified Keeson protocols remains supported.
 | ✅ | BetterLiving 1.3.0 (16) | `com.ore.betterliving2` | [BetterLiving2](#betterliving2) |
 | ✅ | [OrmatekTechnoSmart](https://play.google.com/store/apps/details?id=com.okin.ormatek) | `com.okin.ormatek` | [Techno Smart New / Lite](#ormatek-technosmart) |
 | ✅ | [Aging in Place / Dawn House](https://play.google.com/store/apps/details?id=com.keeson.agingplace) 1.1.0 (87) | `com.keeson.agingplace` | [Dawn House JSON](#aging-in-place--dawn-house) |
+| ✅ | [Enso Remote](https://play.google.com/store/apps/details?id=com.ore.sfm2) 2.3 | `com.ore.sfm2` | [Enso Remote](#enso-remote) |
 | ✅ (verified scope) | [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada) 1.0.1 (6) | `com.okin.yamada` | [Explicit P1/P2](#アシステック--yamada) |
 | ✅ | Somos / SomosBeds 1.0.0 (code 1) | `cn.com.somos` | [Five explicit products](#somos--somosbeds) |
 | ✅ | [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6) | `com.ore.yorkfeng.comfortbaseble2` | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
@@ -1395,7 +1396,7 @@ off words, so the integration exposes an on/off under-bed light with assumed sta
 | Head, Foot and Wave massage numbers (0-3) | A slider change sends that zone's level word. Levels persist across restarts like the app's preferences; a fresh install starts at level 1. |
 | **Start massage** button | Sends the current wave, head and foot levels, in that order. |
 | **Massage off** button | Sends head level 0, then foot level 0. The sliders keep their levels and the timer indicator resets. No wave-off frame exists. |
-| **Massage timer** select | Sends the 10, 20 or 30 minute word. The app's timer button cycles through the same three words; it has no timer-off word. |
+| **Massage: Timer** select | Sends the 10, 20 or 30 minute word. The app's timer button cycles through the same three words; it has no timer-off word. |
 
 - **Second tap:** tapping the running preset again sends the zero word. The
   integration exposes the same frame as the **Stop** button; preset buttons
@@ -4463,9 +4464,10 @@ The lift helpers send the same `05` frames on every model.
 
 **Dedicated P2 controls** (P2 L0/L1/L2/L3/L5):
 
-- Three dedicated massage selection entities (head, foot, wave, each index
-  0..3), written once per choice.
-- 10/20/30-minute timer buttons, held like the ordinary steps.
+- The **Massage: Head Intensity**, **Massage: Foot Intensity** and
+  **Massage: Wave Intensity** numbers (1–4, for selector index 0–3), written
+  once per choice.
+- The **Massage: Timer** select (10, 20 or 30 minutes; no off).
 - Their bytes are the app's exact selector/timer commands.
 
 | Selector index | Head | Foot | Wave |
@@ -5281,14 +5283,15 @@ All five models and fifteen dispatch outcomes are implemented; physical checks s
 **App:** [BetterLiving](https://play.google.com/store/apps/details?id=com.ore.betterliving2)
 1.3.0 (16), `com.ore.betterliving2`
 
-**Status:** Not yet tested. All three app routes are statically supported;
-hardware remains unverified.
+**Status:** Not yet tested (built from the app, all three control boxes)
 
 #### Setup
 
-Choose **BetterLiving / BetterLiving2**, the P1, P2 or P3 wire route, and the
-app's two- or three-motor screen. Reconfigure asks the same questions. These are
-independent choices, retained per side when combining two physical beds.
+Choose **BetterLiving / BetterLiving2 app**, then the **P1**, **P2** or **P3
+control box** and **2 motors: back and feet** or **3 motors: back, feet and all
+sections**, the app's two- or three-motor screen. Reconfigure asks the same
+questions. These are independent choices, kept per side when combining two
+physical beds.
 An unknown route or layout has no offline controls. The names `okin*` and
 `smartbed*` are shared scan hints, not evidence that a device uses this app.
 
@@ -5296,7 +5299,7 @@ The manufacturer read in the Android app can change its wire selector after
 GATT binding. HA keeps the explicit route and its endpoint pair coherent.
 P1/P2 use separate write and notification services; P3 uses Nordic UART. HA
 validates their live properties and prefers write-with-response when supported.
-The artifact does not prove an explicit Android write-mode override.
+No explicit Android write mode is known.
 
 Only back and feet are separately proven axes. The two-motor HF controls and
 three-motor ALL controls use distinct words; the latter does not establish a
@@ -5426,12 +5429,14 @@ Its fixed `action` choices are `refresh_alarm` and `refresh_massage` (P2/P3 only
 These call the existing query methods with the same owner, STOP and session checks.
 The four raw P1 timer inputs remain codec evidence; their physical duration
 mapping is unproven, so they have no Home Assistant action. There is no
-arbitrary packet action. Clock synchronization remains available through the
-shared synchronization action and its existing connection startup.
+arbitrary packet action. The **Set bed clock** action
+([`sync_clock`](../SERVICES.md#sync_clock)) sets the clock, as the connection
+startup does.
 
 Alarm selection/preferences are diagnostic data, not an alarm-state entity.
-Wave/timer response settings are diagnostic sensors disabled by default and
-hidden from the card. Their values and the alarm details are included in
+On P2 and P3, the head and foot massage levels the bed reports are dashboard
+sensors in the card's massage section. Wave/timer response settings are
+diagnostic sensors disabled by default and hidden from the card. Their values and the alarm details are included in
 diagnostics/support bundles. Kept motion, preset, memory, lighting and massage
 controls retain their existing entity identities.
 
@@ -5442,8 +5447,10 @@ timer and unowned delayed recall STOP. Ending refresh alone is not a proven
 physical STOP. Renewable holds are restricted to the six named movement
 controls; they do not assert renewable generic timed movement.
 
-Based on BetterLiving2 1.3.0. Hardware remains unverified. External users with
-existing beds can qualify behavior after a beta or release.
+#### Evidence
+
+Based on BetterLiving2 1.3.0 (`com.ore.betterliving2`). Hardware is not yet
+tested.
 
 ### アシステック / Yamada
 
@@ -6040,7 +6047,7 @@ P2 sends clock, alarm, then query. The bed reports its alarm only when
 asked, so both routes expose **Refresh alarm**, a diagnostic button disabled
 by default. The **Alarm time** sensor shows the reported time when it is a
 valid time of day, with the signed repeat byte and raw action as attributes. P2 also
-supports the generic Sync clock, held presets and held controls actions.
+supports the **Set bed clock** action, held presets and held controls actions.
 Whole-target acceptance captures STOP epochs and paired ownership before the
 first import/connect wait. A child-device target retains its side.
 
@@ -6217,3 +6224,128 @@ commands are rejected rather than converted into added wire selectors.
 #### Analysis provenance
 
 Based on Aging in Place 1.1.0 (87) (`com.keeson.agingplace`).
+
+### Enso Remote
+
+**App:** [Enso Remote](https://play.google.com/store/apps/details?id=com.ore.sfm2) 2.3, `com.ore.sfm2`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Detection: none. Choose **Enso Remote**, select the bed address, then choose
+**2 motors: back and feet**, **3 motors: back, feet and lumbar** or **4 motors:
+back, feet, waist and lumbar**, as in the app. The layout is also available through
+Reconfigure. Advertisements do not identify a layout. Both characteristic roles
+must exist; services are enumerated without a fixed service UUID. The last
+matching handle for each role is selected independently.
+
+Write mode follows live characteristic properties: acknowledged writes when
+available, otherwise writes without response. The app does not set a write mode.
+The app only registers for notifications locally; for Home Assistant, Bleak
+handles the subscription and any required CCCD write. Actual properties and
+notification delivery need hardware testing.
+
+#### Controls
+
+Back and foot controls are present on all layouts. The 2-motor layout also has
+combined back/foot movement. The 3-motor layout adds the app's lumbar-labelled
+controls; its artwork depicts head motion, so the physical actuator needs
+confirmation. The 4-motor layout adds separately labelled waist and lumbar
+controls. No position or angle readout is supported.
+
+**Flat** and **Zero Gravity** are single presses with release. Memory A/B use
+held commands, exposed as **Memory 1** and **Memory 2**; no save/program command
+is supported. The massage page has **Increase head massage**, **Decrease head
+massage**, **Increase foot massage**, **Decrease foot massage**, **Cycle massage
+intensity** and **Cycle massage timer** buttons, and the **Massage timer**
+sensor shows the reported timer. The memory page's held timer gesture is
+available through [`hold_control`](../SERVICES.md#hold_control). **Cycle
+massage mode** is available only on the 3-motor layout. These cycle commands do
+not set an absolute intensity or timer.
+
+**Toggle Light** is a single press, with no extra zero release. The **Light**
+binary sensor shows the reported light state; the physical toggle behavior
+needs confirmation.
+
+<!-- generated:keeson-enso -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Layout | Controls | Refresh |
+|---|---|---|
+| 2 | back, foot, combined | 100 ms |
+| 3 | back, foot, lumbar | 100 ms |
+| 4 | back, foot, waist, lumbar | 100 ms |
+
+| Control | Frame |
+|---|---|
+| Release | `E5 FE 16 00 00 00 00 06` |
+| Flat | `E5 FE 16 00 00 00 08 FE` |
+| Zero Gravity | `E5 FE 16 00 10 00 00 F6` |
+| Light button | `E5 FE 16 00 00 02 00 04` |
+| head_massage_increase | `E5 FE 16 00 08 00 00 FE` |
+| head_massage_decrease | `E5 FE 16 00 00 80 00 86` |
+| foot_massage_increase | `E5 FE 16 00 04 00 00 02` |
+| foot_massage_decrease | `E5 FE 16 00 00 00 01 05` |
+| massage_level | `E5 FE 16 00 01 00 00 05` |
+| timer_massage_page | `E5 FE 16 00 02 00 00 04` |
+| memory_A | `E5 FE 16 00 20 00 00 E6` |
+| memory_B | `E5 FE 16 00 40 00 00 C6` |
+| timer_memory_page | `E5 FE 16 00 02 00 00 04` |
+| massage_mode | `E5 FE 16 00 00 00 04 02` |
+| Back up | `E5 FE 16 01 00 00 00 05` |
+| Back down | `E5 FE 16 02 00 00 00 04` |
+| Foot up | `E5 FE 16 04 00 00 00 02` |
+| Foot down | `E5 FE 16 08 00 00 00 FE` |
+| Waist up | `E5 FE 16 10 00 00 00 F6` |
+| Waist down | `E5 FE 16 20 00 00 00 E6` |
+| Lumbar up | `E5 FE 16 40 00 00 00 C6` |
+| Lumbar down | `E5 FE 16 80 00 00 00 86` |
+| Back and foot up | `E5 FE 16 05 00 00 00 01` |
+| Back and foot down | `E5 FE 16 0A 00 00 00 FC` |
+
+| Role | Characteristic | Service |
+|---|---|---|
+| Write | 0000ffe9-0000-1000-8000-00805f9b34fb | Discovered at runtime |
+| Notify | 0000ffe4-0000-1000-8000-00805f9b34fb | Discovered at runtime |
+<!-- /generated -->
+
+#### Timing
+
+Ordinary taps use a bounded one-second window at the fixed refresh interval.
+Movement per tap is not offered for this profile; use an explicit timed move or
+held-control action for another duration. Held controls start immediately and
+refresh at that interval until
+release, cancellation or the bounded hold expires. Each sends the zero-key
+release in `finally` using a fresh cancellation event. Flat/Zero Gravity send
+one nonzero frame followed by release; massage-page and light actions send one
+nonzero frame only. STOP sends the native zero-key release, not a separate
+emergency-stop opcode. Cleanup stays bound to its original link and cannot be
+sent through a reconnected bed. Physical stopping after link loss is unverified.
+
+#### Notifications
+
+Only complete 16- and 19-byte values are parsed. Bit 5 at offset 13 or 14
+suppresses processing. The light page displays bit 6 at that offset; the
+movement/massage pages display the next byte as 10/20/30 minutes for 1/2/3, or
+off for 255. Home Assistant maintains both page projections. Other timer values
+leave the previous value unchanged. There is no header/checksum check, fragment
+assembly, position field or command acknowledgement. Session changes clear the
+indicators and invalidate old notification callbacks.
+
+#### Services
+
+The shared [`rename`](../SERVICES.md#rename) action sends the Bluetooth name
+frame. The name is trimmed of leading and trailing characters U+0000 to U+0020
+and must then be 1 to 14 UTF-16 code units, so a character outside the basic
+plane, such as an emoji, counts twice. Like the app, the integration sends only
+as many UTF-8 bytes as the name has UTF-16 code units, so a non-ASCII name is
+cut short (`é` is sent as the single byte `C3`). ASCII names are sent exactly;
+how the bed handles other bytes needs hardware testing. Rename sends once, with
+no release and no confirmation from the bed, and the bed may not advertise the
+new name. Standard movement, memory and held-control actions are supported;
+clock and alarm actions are unavailable.
+
+#### Evidence
+
+Based on Enso Remote 2.3 (`com.ore.sfm2`). Hardware is not yet tested.

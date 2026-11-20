@@ -2548,24 +2548,28 @@ card receives held-control metadata for the axes and P1 presets.
 The app shares one held-movement stream across motor controls. A card Stop
 cancels that shared software stream; hardware effects across axes remain unverified.
 
-Controller buttons expose regular massage, P2 sonic massage when its MFP function
-list contains 7, light toggle, privacy, explicit state/version queries and legacy
-history retrieval. P1 massage on/off share the same toggle packet and P1 time down
-has no packet. These aliases are preserved. P2 relative commands use notification
+Regular massage on and off is the **Massage** switch, and P2 sonic massage (when
+its MFP function list contains 7) the **Sonic massage** switch. Controller
+buttons expose the massage steps, light toggle, explicit state/version queries
+and legacy history retrieval; the queries are diagnostic and disabled by
+default. P1 massage on/off share the same toggle packet and P1 time down has no
+packet. These aliases are preserved. P2 relative commands use notification
 state without optimistic increments. Light toggle replays its reported mode and
 four settings; no unsupported color or brightness writes are invented.
 
-The child lock is a local, persisted HA preference with the app's exact command
-filter. It does not program a handset lock. STOP remains available. Sensor-only
+The **Child lock** switch (disabled by default) is a local, persisted HA
+preference with the app's exact command filter. **Privacy** is a switch too,
+also disabled by default. It does not program a handset lock. STOP remains available. Sensor-only
 P3 has no movement, presets or massage controls. Sensor sides are fields in one
 physical device's data, not a way to route movement to one half. Single-address
 motor pairing is therefore unavailable. Two physical entries retain their own
 model, driver and cached settings when combined.
 
-Sensors expose left/right heart and breath values, status, two raw sensor flags,
-rolling eight-value history, sensitivity, privacy, alarm, capabilities, firmware
-and sensor versions, massage state and report results. Units follow the app's
-bpm/brpm labels, with physical accuracy unverified. No measured motor position,
+Sensors expose the left and right **heart rate** (bpm) and **breathing rate**
+(breaths/min), bed status, rolling eight-value history, sensitivity, alarm,
+firmware and sensor versions, massage state and the **Left/Right sleep report
+status**. Most are diagnostic and disabled by default; physical accuracy is
+unverified. No measured motor position,
 angle, battery or current is inferred.
 
 ##### Commands
@@ -3461,9 +3465,10 @@ column lists the products that expose it.
 | `disable_alarm` | `07 05 00 00 00 00 00 00 00` | Disable the local alarm |
 
 Massage and alarm sensors expose the complete received state as attributes; the
-card includes them in its existing massage and utility sections. A clock sync
-button, state and alarm refresh buttons and separate strength and timer buttons
-are also exposed. There are no angles, positions, battery or firmware and
+card includes them in its existing massage and utility sections. A **Refresh
+bed state** button (diagnostic, disabled by default) and separate strength and
+timer cycle buttons are also exposed. The **Set bed clock** action
+(`adjustable_bed.sync_clock`) sets the clock. There are no angles, positions, battery or firmware and
 device-information parsers.
 
 ##### eShine sustained presets and chord
@@ -3951,7 +3956,7 @@ Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Serenit
 | Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save TV) |
 | Presets | ✅ Flat, Zero Gravity, TV, Leisure (exposed through Lounge), Anti-Snore |
 | Massage | ✅ (head/foot/mode/timer cycles, toggle, off, Wave 1-3) |
-| Lights | ✅ (native toggle, assumed-state on/off switch; no RGB or brightness) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under Bed Lights** light; no RGB or brightness) |
 | Alarms | ❌ (alarm replies are parsed as diagnostic state only) |
 | Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
 
@@ -4027,8 +4032,8 @@ every release zeros the whole command.
 | Light toggle | `light_toggle` | `0x20000` | 0 |
 | Light on, off | `light_on`, `light_off` | 0 | `0x40`, `0x80` |
 
-Light on/off is exposed as a switch that starts unknown and marks commanded
-values as assumed. The separate **Toggle Light** button preserves the app's
+Light on/off is the **Under Bed Lights** light, which starts unknown and marks
+commanded values as assumed. The separate **Toggle Light** button preserves the app's
 native toggle/cycle. Neither control has physical state feedback, RGB
 selection, or brightness selection.
 
@@ -4220,7 +4225,7 @@ Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Tranqui
 | Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save Lounge) |
 | Presets | ✅ Flat, Zero Gravity, Lounge, Anti-Snore (voice only); no TV |
 | Massage | ✅ (head/foot/mode/timer cycles, toggle; voice-only off and Wave 1-3) |
-| Lights | ✅ (native toggle, assumed-state on/off switch; no RGB or brightness) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under Bed Lights** light; no RGB or brightness) |
 | Alarms | ❌ (no alarm page; alarm replies are parsed as diagnostic state only) |
 | Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
 
@@ -4282,7 +4287,7 @@ Lounge** buttons cover the other chords.
 | Light toggle (`light_toggle`) | `0x20000` | 0 | Massage page and voice |
 | Light on, off (`light_on`, `light_off`) | 0 | `0x40`, `0x80` | Voice only |
 
-Light on/off is an assumed-state switch; **Toggle Light** sends the native
+Light on/off is the assumed-state **Under Bed Lights** light; **Toggle Light** sends the native
 toggle. There is no RGB or brightness command, although the app help mentions
 color cycling.
 

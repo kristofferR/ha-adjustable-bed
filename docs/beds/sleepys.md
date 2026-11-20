@@ -107,8 +107,9 @@ setter still supports the distinct source value-zero brightness frame. Slider an
 enabled state. HA commits require the active BLE controller session but do
 not reproduce the app's UI-only debounce or local preview. Combined massage
 intensity spans `0..7` and maps to builder
-value `0` or `2..8`; timer options are opaque codes `1`, `2`, and `3`, not
-minute labels. Intensity and timer commits require active massage; timer
+value `0` or `2..8`. The **Massage: Timer** select offers 10, 20 and 30 minutes
+(timer codes `1`, `2` and `3`) and no off. Intensity and timer commits require
+active massage; timer
 selection also skips the already-selected code. The source sends brightness
 after slider end/active cancellation, timer choices on button up/cancel, and
 intensity on slider end/active cancellation or button up/cancel; its intensity
@@ -392,7 +393,7 @@ offers preset colors:
   them. Light state stays assumed.
 
 The legacy CB25 dialect has no proven color frame. Its extended frame carries
-only two values, so legacy beds keep the on/off switch. With the auto variant, a
+only two values, so legacy beds keep the on/off light. With the auto variant, a
 later connection that resolves the other dialect reloads the entities once the
 link is released.
 

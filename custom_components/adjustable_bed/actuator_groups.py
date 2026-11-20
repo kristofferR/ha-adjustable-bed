@@ -99,6 +99,7 @@ Route = tuple[str, str | None]
 
 # Groups are in alphabetical order by key.
 ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
+    "sealy": (("sealy_posturematic", None),),
     "starcode_abm5_4": (
         (BED_TYPE_STARCODE_ABM5_4, None),
         (BED_TYPE_STARCODE_M5X5, None),
@@ -201,6 +202,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
         (BED_TYPE_RICHMAT_IDEALBED, None),
         ("richmat_nisco", None),
         ("richmat_mlily_supreme", None),
+        ("bedtech_classic", None),
     ),
     "sleepys": ((BED_TYPE_SLEEPYS_ELITE_APP, None),),
     "solace": ((BED_TYPE_SOLACE, None),),

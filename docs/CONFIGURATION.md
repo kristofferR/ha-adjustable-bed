@@ -127,7 +127,7 @@ to that family's other routes.
    & Platt), **I don't know: keep the detected controls** (Okin, Keeson, Solace,
    Sleepy's Elite, Malouf / Lucid, LOGICDATA), **Keep the current app**
    (Customatic, Jordan's), **Keep the current controls** (Jensen / Svane,
-   Limoss) or **Keep current setup** (Vibradorm).
+   Limoss) or **Keep the current setup** (Vibradorm).
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
    Home Assistant releases its connection and checks the chosen setup. The
    check screen lists its steps. Nothing is saved yet.
@@ -137,12 +137,12 @@ to that family's other routes.
    control.
 4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
    The last screen names the new setup and the previous one; to switch back,
-   run **Reconfigure** again. **Keep current setup** is the other answer on the
+   run **Reconfigure** again. **Keep the current setup** is the other answer on the
    review.
 
 A failed check shows **Nothing was changed** with **Try again** and **Keep
-current setup**. A failed check, a closed window, the keep answer, **Keep
-current setup** or a concurrent edit leaves the saved setup unchanged and
+the current setup**. A failed check, a closed window, the keep answer, **Keep
+the current setup** or a concurrent edit leaves the saved setup unchanged and
 working. Choosing a label that resolves to
 the saved setup changes nothing. A passed check does not prove the bed's
 physical layout or presets, so test the controls after applying a change.
@@ -173,7 +173,7 @@ setup again, or the question's keep answer, keeps the current profile. Closing i
 leaves the notice open. A review about a Richmat remote setting alone opens
 Configure, where saving the settings confirms it.
 
-**Keep current profile** (or Ignore) dismisses the assessment across restarts and
+**Keep the current setup** (or Ignore) dismisses the assessment across restarts and
 updates. Only a materially different profile or candidate set may ask again.
 Notices for a combined bed name the physical bed and say whether you need to
 separate the beds or remove the Left, Right and Both controls first; neither
@@ -283,7 +283,8 @@ A form shows only the settings the bed uses. **Has massage feature** is left
 out for beds with no massage commands or that turn massage on themselves; the
 maximum angles are left out where the frame's travel is fixed (for example
 Paramount, Serta MP Remote, SBI and BedJet); a motor count with only one
-choice is left out; and **Bluetooth connection** is left out for beds that
+choice is left out; **Movement per tap** is left out for beds that never
+repeat a tap; and **Bluetooth connection** is left out for beds that
 must stay connected (DoubleSleep, GM Sleep, Okin RF Eco BT, Richmat sleep
 receivers and Sleep Number MCR).
 
@@ -339,9 +340,11 @@ Assistant holds blocks the physical Bluetooth remote and the bed's app.
   including STOP cleanup, then start the handoff window together. Sequential
   pairs still release one side before connecting the other.
 - The explicit Disconnect button releases the link immediately.
+- Diagnostics list the connection setting the bed actually uses, including
+  the bed's own default when you have not changed it.
 
 Connection attempts use one timing for every bed: a 25-second connect timeout
-and three attempts with 3 and 6 second backoff. Multiple usable Bluetooth paths
+(shorter on a few beds whose app uses one) and three attempts with 3 and 6 second backoff. Multiple usable Bluetooth paths
 receive a larger bounded retry budget; see
 [connection routing](CONNECTION_GUIDE.md#multiple-adapters-and-proxies).
 
@@ -640,7 +643,7 @@ beds, Reconfigure that bed, then combine them again.
 | Remacro | [One question for Slumberland, The Brick or Jerome's](beds/remacro.md#home-assistant-setup), offering the apps that list the model the bed advertises, or all three when none does. Reconfigure changes the app, and checks that it lists the bed's model. |
 | Resident Adjustable Base | See the [setup steps](beds/okin-nframe.md#resident-adjustable-base). |
 | Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Reconfigure lists both receivers. |
-| Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or **Automatic** from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps) , [Luuna Rise / Power Cool Sleep System](beds/richmat.md#luuna-rise--power-cool) and [Lady Americana / ACAA / STA Homecare / Zero Gravity](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family) the app's layout code. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Reconfigure changes the app and lists each one by name, so an entry can switch apps or opt in to RMControl and out of it; Configure changes the app's own settings. |
+| Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or **Automatic** from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps), [Luuna Rise / Power Cool Sleep System](beds/richmat.md#luuna-rise--power-cool), [Lady Americana / ACAA / STA Homecare / Zero Gravity](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family) and [Jerome's power base](beds/richmat.md#jeromes-power-base) the app's layout code. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Reconfigure changes the app and lists each one by name, so an entry can switch apps or opt in to RMControl and out of it; Configure changes the app's own settings. |
 | Richmat app | See the [setup steps](beds/richmat.md#richmat-420). |
 | Rize Beds | See the [setup steps](beds/kaidi.md#rize-beds). |
 | Rize Remedy II | See the [setup steps](beds/okin-nframe.md#rize-remedy-ii). |
@@ -653,6 +656,7 @@ beds, Reconfigure that bed, then combine them again.
 | SonicSleep | See the [setup steps](beds/richmat.md#sonicsleep). |
 | Sophie | See the [setup steps](beds/ff_frame.md#sophie). |
 | StarCode apps | One question for the app, then its own settings. Reconfigure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): control box and connection type, under **Advanced**. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
+| Sealy Posturematic | [Element, Ascent or Apex](beds/okin-5a.md#sealy-posturematic-app), stored per physical side. |
 | Symphony Sleep Sense | [Symphony setup](beds/okin-soundwave.md#symphony-sleep-sense): choose the product the app shows. Split-Head and KGD-SHQ/SHK beds offer Left and Right controls; each bed of a combined pair keeps its own app choices. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app for ProSmart / ProSmart Air and ActiveBreeze, then the layout the app shows. The processor's own fields are under **Advanced**. Motors and massage follow the layout; the bed does not report its position. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister), [VMAT](beds/vibradorm.md#vmat), [V-MAT Basic](beds/vibradorm.md#v-mat-basic): app, exact remote or product, and offered light settings. |

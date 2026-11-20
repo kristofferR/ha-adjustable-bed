@@ -1,6 +1,6 @@
 """SleepIQ 5.4.11 MCR response decoders and bounded command values.
 
-Derived from the frozen APK Protocol Audit MCR/SE evidence; no hardware validation claimed.
+The app's field order, signed timers and model-specific capability flags.
 """
 
 from __future__ import annotations
@@ -109,7 +109,10 @@ def decode_massage(payload: bytes, side: str) -> dict[str, object]:
         f"massage_{name}_{side}": value
         for name, value in zip(
             ("head", "foot", "mode", "head_timer", "foot_timer", "mode_timer"),
-            (*payload[1:4], *(int.from_bytes(payload[i : i + 2], "little") for i in (5, 7, 9))),
+            (
+                *payload[1:4],
+                *(int.from_bytes(payload[i : i + 2], "little", signed=True) for i in (5, 7, 9)),
+            ),
             strict=True,
         )
     }

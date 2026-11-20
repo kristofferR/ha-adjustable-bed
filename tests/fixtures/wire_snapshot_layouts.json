@@ -6048,8 +6048,13 @@
       ]
     },
     "properties": {
-      "d44bc439-abfd-45a2-b575-925416129600": ["write", "write-without-response"],
-      "d44bc439-abfd-45a2-b575-925416129601": ["notify"]
+      "d44bc439-abfd-45a2-b575-925416129600": [
+        "write",
+        "write-without-response"
+      ],
+      "d44bc439-abfd-45a2-b575-925416129601": [
+        "notify"
+      ]
     }
   },
   "majestichome:n1": {
@@ -6060,8 +6065,13 @@
       ]
     },
     "properties": {
-      "6e400002-b5a3-f393-e0a9-e50e24dcca9e": ["write", "write-without-response"],
-      "6e400003-b5a3-f393-e0a9-e50e24dcca9e": ["notify"]
+      "6e400002-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write",
+        "write-without-response"
+      ],
+      "6e400003-b5a3-f393-e0a9-e50e24dcca9e": [
+        "notify"
+      ]
     }
   },
   "majestichome:w2": {
@@ -6072,8 +6082,13 @@
       ]
     },
     "properties": {
-      "d44bc439-abfd-45a2-b575-925416129622": ["write", "write-without-response"],
-      "d44bc439-abfd-45a2-b575-925416129611": ["notify"]
+      "d44bc439-abfd-45a2-b575-925416129622": [
+        "write",
+        "write-without-response"
+      ],
+      "d44bc439-abfd-45a2-b575-925416129611": [
+        "notify"
+      ]
     }
   },
   "majestichome:w3": {
@@ -6084,8 +6099,13 @@
       ]
     },
     "properties": {
-      "0000ffe2-0000-1000-8000-00805f9b34fb": ["write", "write-without-response"],
-      "0000ffe1-0000-1000-8000-00805f9b34fb": ["notify"]
+      "0000ffe2-0000-1000-8000-00805f9b34fb": [
+        "write",
+        "write-without-response"
+      ],
+      "0000ffe1-0000-1000-8000-00805f9b34fb": [
+        "notify"
+      ]
     }
   },
   "majestichome:w4": {
@@ -6096,8 +6116,13 @@
       ]
     },
     "properties": {
-      "0000fff2-0000-1000-8000-00805f9b34fb": ["write", "write-without-response"],
-      "0000fff1-0000-1000-8000-00805f9b34fb": ["notify"]
+      "0000fff2-0000-1000-8000-00805f9b34fb": [
+        "write",
+        "write-without-response"
+      ],
+      "0000fff1-0000-1000-8000-00805f9b34fb": [
+        "notify"
+      ]
     }
   },
   "majestichome:w5": {
@@ -6108,8 +6133,13 @@
       ]
     },
     "properties": {
-      "00000002-3c17-d293-8e48-14fe2e4da212": ["write", "write-without-response"],
-      "00000003-3c17-d293-8e48-14fe2e4da212": ["notify"]
+      "00000002-3c17-d293-8e48-14fe2e4da212": [
+        "write",
+        "write-without-response"
+      ],
+      "00000003-3c17-d293-8e48-14fe2e4da212": [
+        "notify"
+      ]
     }
   },
   "sonicsleep:W5": {
@@ -6859,6 +6889,54 @@
       "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
         "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
         "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    }
+  },
+  "enso": {
+    "services": {
+      "12345678-1234-1234-1234-123456789abc": [
+        "0000ffe9-0000-1000-8000-00805f9b34fb",
+        "0000ffe4-0000-1000-8000-00805f9b34fb"
+      ]
+    },
+    "properties": {
+      "0000ffe9-0000-1000-8000-00805f9b34fb": [
+        "write"
+      ],
+      "0000ffe4-0000-1000-8000-00805f9b34fb": [
+        "notify"
+      ]
+    }
+  },
+  "bedtech_classic": {
+    "services": {
+      "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    }
+  },
+  "bedtech_classic:sleep": {
+    "services": {
+      "2320567c-05cf-6eb4-c341-772851827e1b": [
+        "26f66991-68ee-c2be-444d-b95c3f2dc38a"
+      ]
+    }
+  },
+  "sealy_posturematic": {
+    "services": {
+      "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    },
+    "properties": {
+      "6e400002-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write",
+        "write-without-response"
+      ],
+      "6e400003-b5a3-f393-e0a9-e50e24dcca9e": [
+        "notify"
       ]
     }
   }

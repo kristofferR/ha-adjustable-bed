@@ -261,6 +261,8 @@ from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
+from .profiles.saatva import CHOICES as SAATVA_CHOICES
+from .profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -326,6 +328,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MLILY: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY_REMOTE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -1019,6 +1022,15 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
     } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
+    if app == "bedsmart":
+        from .profiles.bedsmart import ALIASES, EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
+
+        unavailable = EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+        codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
+        codes.add("TEST")
+    if app == "lp2":
+        codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
+        codes.update(("RMCS", "TEST"))
     if app in ("luunarise2", "powercool", "sleepfunction"):
         codes -= {"WFRM", "FWRM"}
     if app == "sleepfunction":
@@ -1027,6 +1039,10 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         codes -= PICKER_LAYOUTS
     if app in APPS:
         codes -= APPS[app].excluded_layouts
+    if app == "jerome2":
+        from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
+
+        codes -= JEROME_EXCLUDED_LAYOUTS
     return {code: code for code in sorted(codes)}
 
 
@@ -1059,6 +1075,16 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         excluded = excluded | PICKER_LAYOUTS
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
         excluded = excluded | profile.excluded_layouts
+    if data.get(CONF_PROTOCOL_VARIANT) == "bedsmart":
+        from .profiles.bedsmart import EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
+
+        excluded = (excluded - {"TEST"}) | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+    if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
+        excluded = (excluded - {"RMCS", "TEST"}) | {"209A05", "6HRM", "QRRM", "ZRS3"}
+    if data.get(CONF_PROTOCOL_VARIANT) == "jerome2":
+        from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
+
+        excluded = excluded | JEROME_EXCLUDED_LAYOUTS
     if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
@@ -2309,6 +2335,26 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,
     ),
+    "sealy_posturematic": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
+              CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_PRODUCT_TYPE, {
+            "0": "Element", "1": "Ascent", "2": "Apex",
+        }, "0"),),
+        title=lambda _data: "Sealy Posturematic",
+    ),
+    "enso": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, {
+            "2": "2 motors: back and feet", "3": "3 motors: back, feet and lumbar",
+            "4": "4 motors: back, feet, waist and lumbar",
+        }, "2"),),
+        derive=lambda data: {CONF_MOTOR_COUNT: int(data.get(CONF_PRODUCT_TYPE, "2"))},
+        title=lambda _data: "Enso Remote",
+    ),
     BED_TYPE_YAMADA: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
               CONF_DISABLE_ANGLE_SENSING: True},
@@ -2525,7 +2571,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
         },
         questions=(
-            Question(CONF_PRODUCT_TYPE, _classic_layouts),
+            Question(CONF_PRODUCT_TYPE, _classic_layouts, searchable=True),
             Question(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, default=False, advanced=True),
         ),
         normalize=_classic_normalize,
@@ -2743,6 +2789,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
     ),
     # The app's product sets every control, so its one row asks it.
+    "saatva": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, SAATVA_CHOICES),),
+        derive=lambda data: {
+            CONF_HAS_MASSAGE: str(data.get(CONF_PROTOCOL_VARIANT, "")).startswith("bt3000"),
+            CONF_PRODUCT_TYPE: SAATVA_LAYOUTS[str(data[CONF_PROTOCOL_VARIANT])],
+        },
+        title=lambda _data: "Saatva",
+    ),
     "bobpowerbase": _asking(
         "bobpowerbase",
         questions=(Question(CONF_PROTOCOL_VARIANT, BOB_PROFILES),

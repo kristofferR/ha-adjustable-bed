@@ -25,6 +25,7 @@ from ...const import (
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
 )
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import RICHMAT_CLASSIC
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
@@ -124,7 +125,7 @@ class RichmatClassicController(BedController):
         self.app = app or str(coordinator.entry.data[CONF_PROTOCOL_VARIANT])
         self.profile = RICHMAT_CLASSIC[self.app]
         self.layout = str(coordinator.entry.data[CONF_PRODUCT_TYPE]).strip().upper()
-        if self.layout in ("TEST", "RMCS") and self.app != "powercool":
+        if self.layout in ("TEST", "RMCS") and self.app not in ("powercool", "lp2", "bedsmart"):
             raise ValueError("Diagnostic endurance and motor-mapping layouts are excluded")
         if self.app in RISE_APPS and self.layout in ("WFRM", "FWRM"):
             raise ValueError("Standalone desk layouts are outside the bed integration")
@@ -513,7 +514,7 @@ class RichmatClassicController(BedController):
         context = current_command_context()
         if context is not None and context.lease is not None and not self._keeps(button, selection):
             # Admission checks the scope too; a selector may change after it.
-            raise ValueError("This control does not support renewable holds")
+            raise invalid("control_hold_renewal_not_supported")
         status = effective_status(button, self.layout, selection)
         programmed = button.mem_special and selection.armed or button.select_special and selection.armed
         up_applied = False
@@ -957,6 +958,14 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
     from .profiles import load_catalog
 
     await ctx.coordinator.hass.async_add_executor_job(load_catalog, ctx.variant)
+    if ctx.variant == "jerome2":
+        await ctx.preload("richmat_classic.jerome")
+        from .jerome import JeromeController
+
+        return JeromeController(
+            ctx.coordinator, app=ctx.variant, device_name=ctx.device_name,
+            capability_snapshot=ctx.stored_capabilities("richmat_classic_apps"),
+        )
     from ...profiles.richmat_resource_apps import APPS
 
     if ctx.variant == "sleepfunction":
@@ -964,6 +973,16 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
         from .sleepfunction import SleepFunctionController
 
         return SleepFunctionController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
+    if ctx.variant == "bedsmart":
+        await ctx.preload("richmat_classic.bedsmart")
+        from .bedsmart import BedSmartController
+
+        return BedSmartController(ctx.coordinator, device_name=ctx.device_name)
+    if ctx.variant == "lp2":
+        await ctx.preload("richmat_classic.lp2")
+        from .lp2 import Lp2Controller
+
+        return Lp2Controller(ctx.coordinator, device_name=ctx.device_name)
     if ctx.variant in APPS:
         await ctx.preload("richmat_classic.resource_controller")
         from .resource_controller import ResourceBedController

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Final
 
 from ..const import AUTOMATIC_LABEL
+from .bedtech_classic import SURFACE_IDS as BEDTECH_MODELS
 from .richmat import RICHMAT_MH, RichmatProfile
 
 
@@ -37,6 +38,10 @@ APPS: Final = {
     "mlily_supreme": AppProfile(
         "mlily_supreme", "MLILY Supreme", "com.richmat.mlily_supreme", "1.3.1", 5,
         RICHMAT_MH["mlily_supreme"], True, True, True, True, (14, 18, 19), 3,
+    ),
+    "bedtech_classic": AppProfile(
+        "bedtech_classic", "Bed Tech", "com.richmat.bed_tech", "2.8.3", 13,
+        RICHMAT_MH["bedtech_classic"], True, True, True, False, (14, 18, 19), 3,
     ),
 }
 
@@ -83,6 +88,8 @@ NAMED_MODELS: Final = {
 
 def models(app: str) -> tuple[str, ...]:
     profile = APPS[app]
+    if app == "bedtech_classic":
+        return BEDTECH_MODELS
     return tuple(
         model for model in SURFACE_IDS
         if model != "qrrm" and (profile.manual_short_models or model not in SHORT_IDS)
@@ -90,13 +97,16 @@ def models(app: str) -> tuple[str, ...]:
 
 
 def variants(app: str) -> dict[str, str]:
+    from .bedtech_classic import MODEL_LABELS
+
+    labels = MODEL_LABELS if app == "bedtech_classic" else NAMED_MODELS
     choices = {
         "auto": AUTOMATIC_LABEL,
-        **{f"model_{model}": NAMED_MODELS.get(model, model.upper()) for model in models(app)},
+        **{f"model_{model}": labels.get(model, model.upper()) for model in models(app)},
     }
     if APPS[app].normal_mattress:
         choices.update({
-            f"model_{model}_mattress": f"{NAMED_MODELS.get(model, model.upper())} with normal mattress"
+            f"model_{model}_mattress": f"{labels.get(model, model.upper())} with normal mattress"
             for model in models(app)
         })
     return choices

@@ -1138,6 +1138,7 @@ class Coordinator:
         self.cancel_command = asyncio.Event()
         self.stop_epoch = 0
         self.cancel_counter = 0
+        self.connection_generation = 0
         self.command_scheduler = SimpleNamespace(token=object(), stop_epoch=0)
         self._command_lock = asyncio.Lock()
         self.address = "AA:BB:CC:DD:EE:FF"
@@ -1219,6 +1220,7 @@ class Coordinator:
     remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
     remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
+    remember_sleep_number_mcr_client_id = _ignore
     _ble_bond_established = False
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore
@@ -1326,7 +1328,11 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
-    data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {}
+    if bed_type == "saatva":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
+                        layout_id="bedtech")
+    data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {"product_type": "2"} if bed_type == "enso" else {}
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
             entry_data={const.CONF_PROTOCOL_VARIANT: "A1"}, layout_id="sonicsleep:Nordic")
@@ -1358,6 +1364,8 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == "sealy_posturematic":
+        data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
     if bed_type == const.BED_TYPE_LINX:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
@@ -1548,7 +1556,10 @@ def route_scenarios() -> list[Scenario]:
     """Protocol-variant and app-profile routes, one scenario each."""
     from custom_components.adjustable_bed import const
 
-    scenarios: list[Scenario] = []
+    scenarios: list[Scenario] = [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
+    scenarios.extend(Scenario(id=f"sealy_posturematic:{n}", bed_type="sealy_posturematic",
+                              entry_data={"product_type": str(n), "bed_type": "sealy_posturematic"}, layout_id="sealy_posturematic")
+                     for n in (1, 2))
     for wire in ("okin15", "okin24"):
         for product in ("new", "lite"):
             for transport in ("ffe", "nordic"):
@@ -1661,6 +1672,15 @@ def route_scenarios() -> list[Scenario]:
                 protocol_variant=route,
                 entry_data={const.CONF_PRODUCT_TYPE: model, const.CONF_PROTOCOL_VARIANT: route},
                 layout_id="symphony_sleep:box2" if route == "box2" else "symphony_sleep",
+            ))
+    from custom_components.adjustable_bed.profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
+
+    for product, layout in SAATVA_LAYOUTS.items():
+        if product != "bt2000_standard":
+            scenarios.append(Scenario(
+                id=f"saatva:{product}", bed_type="saatva", protocol_variant=product,
+                entry_data={const.CONF_PROTOCOL_VARIANT: product, const.CONF_PRODUCT_TYPE: layout},
+                layout_id="bedtech",
             ))
     # BedTech's manual model selector: each model has its own controls and release.
     from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
@@ -1865,7 +1885,7 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout, **({const.CONF_PROTOCOL_VARIANT: app} if app == "sleepfunction" else {})},
                     factory_kwargs={"device_name": "6BRM-advertised"}
-                    if app in ("lady_americana", "acaa", "sta2", "zerogravity") else {},
+                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart") else {},
                     layout_id=layout_id,
                 )
             )
@@ -1918,6 +1938,12 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("sleepfunction", "YGRM", "richmat_classic_apps"),
     ("sleepfunction", "DXRM", "richmat_classic_apps"),
     ("sleepfunction", "DHRM", "richmat_classic_apps"),
+    ("bedsmart", "DHRM", "richmat_classic_apps"),
+    ("bedsmart", "6BRM", "richmat_classic_apps_nordic"),
+    ("lp2", "APRM", "richmat_classic_apps"),
+    ("lp2", "6BRM", "richmat_classic_apps_nordic"),
+    ("jerome2", "6BRM", "richmat_classic_apps"),
+    ("jerome2", "DXRM", "richmat_classic_apps_nordic"),
     # Independent accepted Richmat resource apps, both GATT-selected wire formats.
     *((app, "6BRM", wire) for app in ("lady_americana", "acaa", "sta2", "zerogravity")
       for wire in ("richmat_classic_apps", "richmat_classic_apps_nordic")),
@@ -2271,6 +2297,12 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type == "sealy_posturematic":
+            controller._coordinator.connection_generation += 1
+            session = SimpleNamespace(async_start_notify=controller.start_notify)
+            await controller.async_on_connect(session)
+            await controller.async_after_connect(session)
+            return
         if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)

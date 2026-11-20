@@ -30,6 +30,7 @@ from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
 from .bed_traits import bed_traits
 from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController
+from .beds.cancellation import settled
 from .beds.remacro.discovery import remacro_side_lacks_global_stop
 from .command_scheduler import (
     CommandHandle,
@@ -409,6 +410,27 @@ class PairedBedCoordinator:
             expected_stop_epochs=expected_stop_epochs,
         )
 
+    async def async_inspect_child_operation(
+        self,
+        operation: Callable[[BedChild], Coroutine[Any, Any, None]],
+        *,
+        side: str = SIDE_BOTH,
+        resource: str | None = None,
+        expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
+        expected_stop_epochs: Mapping[str, int] | None = None,
+    ) -> None:
+        """Reserve routed query work without replacing an active command.
+
+        The callback must only inspect. STOP, ownership and connection topology
+        admission remain the same as for a paired operation.
+        """
+        await self._run(
+            "inspection", side, operation, cancel_running=False, resource=resource,
+            expected_pair_generations=expected_pair_generations,
+            expected_stop_epochs=expected_stop_epochs,
+            reservation_kind=CommandKind.INSPECTION,
+        )
+
     async def _run(
         self,
         action: str,
@@ -420,6 +442,7 @@ class PairedBedCoordinator:
         resources: Collection[str] | None = None,
         expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
         expected_stop_epochs: Mapping[str, int] | None = None,
+        reservation_kind: CommandKind = CommandKind.GROUP,
     ) -> None:
         if resource is not None and resources is not None:
             raise ValueError("Pass resource or resources, not both")
@@ -474,6 +497,7 @@ class PairedBedCoordinator:
                 resources=command_scope,
                 entry_cancel=entry_cancel,
                 expected_stop_epochs=expected_stop_epochs,
+                reservation_kind=reservation_kind,
             )
         except ConnectionModeChanged:
             # Queued in concurrent mode, admitted after automatic fallback: run
@@ -492,6 +516,7 @@ class PairedBedCoordinator:
                 resources=command_scope,
                 entry_cancel=entry_cancel,
                 expected_stop_epochs=expected_stop_epochs,
+                reservation_kind=reservation_kind,
             )
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
@@ -513,21 +538,31 @@ class PairedBedCoordinator:
             for target_side, child in targets
             if not remacro_side_lacks_global_stop(child)
         ]
-        self._cancel_behind_mode_transition(targets)
-        async with self._connection_mode_transition_lock:
-            errors = await self._stop_children(targets)
+        self._cancel_before_stop(targets)
+        async def stop() -> dict[str, BaseException]:
+            async with self._connection_mode_transition_lock:
+                return await self._topology.explicit_stop_children(targets)
+
+        errors = await settled(stop(), eager_start=True)
         if errors:
             raise PairedSideError("stop", errors)
 
-    def _cancel_behind_mode_transition(
+    def _cancel_before_stop(
         self, targets: Collection[PairTarget], resources: Collection[str] | None = None
     ) -> None:
-        """End running commands a switch to one link at a time is waiting for.
-
-        That switch holds the transition lock until every side's running command
-        finishes, so a STOP queued behind it would wait out a whole move.
-        """
-        if self._connection_mode_transition_lock.locked():
+        """Release the command owner before STOP waits for a connection lane."""
+        if self.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL and any(
+            getattr(child.capability_controller, "reconnect_for_explicit_stop", False) is True
+            for _side, child in targets
+        ):
+            # A released receiver's STOP needs the one link even when the
+            # current cycle belongs to the other side. Invalidate older work
+            # queued anywhere on this lane before it can overtake safety STOP.
+            for side, child in self._children.items():
+                self._admission.bump(side, command_resources("*"))
+                if child in self._admission.active_children:
+                    child.request_command_cancel()
+        elif self._connection_mode_transition_lock.locked():
             for _side, child in targets:
                 child.request_command_cancel(resources=resources)
 
@@ -556,11 +591,14 @@ class PairedBedCoordinator:
                 target_side, self._topology.command_scope(command_resources(resource))
             )
         # Like an ordinary motor STOP, preempt any motion holding the writer.
-        self._cancel_behind_mode_transition(
+        self._cancel_before_stop(
             targets, command_resources("motor:*" if resource.startswith("motor:") else resource)
         )
-        async with self._connection_mode_transition_lock:
-            errors = await self._topology.stop_motor(targets, stop_fn, resource)
+        async def stop() -> dict[str, BaseException]:
+            async with self._connection_mode_transition_lock:
+                return await self._topology.stop_motor(targets, stop_fn, resource)
+
+        errors = await settled(stop(), eager_start=True)
         if errors:
             raise PairedSideError("stop", errors)
 

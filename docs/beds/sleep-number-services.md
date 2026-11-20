@@ -9,7 +9,7 @@ object, never raw packets. Unknown or missing fields fail validation.
 action: adjustable_bed.sleep_number_command
 data:
   device_id: YOUR_DEVICE_ID
-  command: get_system_status
+  command: get_bed_configuration
 response_variable: bed_status
 ```
 
@@ -37,73 +37,78 @@ physical side cannot be overridden by a conflicting `side` or program `side`.
 The service returns a dictionary with the listed response fields. JSON schedule,
 paired-device metadata and diagnostic results are decoded into native objects.
 Commands missing from the connected bed's SYCG capability flags are rejected.
-`set_system_time.date_time` uses UTC `YYYY-MM-DDTHH:mm:ss`, from the app's Hh/a.d formatter.
+Set the clock with **Set bed clock** (`adjustable_bed.sync_clock`).
 
 Integer actuator/preset positions are 0-100. Firmness is 5-100 in steps of 5.
 Footwarming timers are 0-360 minutes, underbed lighting 0-180, and core/cooling
-timers 0-600. Articulation preset timers retain the nonnegative Java integer
-range of their artifact builder; no thermal limit is borrowed for articulation.
+timers 0-600. Articulation preset timers accept nonnegative integers up to
+2,147,483,647; their range differs from thermal timers.
 Off commands use a zero timer. Enum request values are strings (including `0`/`1`
 for Responsive Air). Readback enum strings retain their wire values.
 
-| Operation | Parameters in wire order | Response fields in wire order |
-|---|---|---|
-| `cancel_current_diagnostic_run` | None | Empty dictionary |
-| `cancel_target_preset` | `side`: Side | Empty dictionary |
-| `create_temperature_program` | `program`: String | `program_json`: String |
-| `delete_temperature_program` | `program_id`: String | Empty dictionary |
-| `get_active_temperature_programs` | None | `program_ids`: String |
-| `get_actuator_movement_status` | None | `right_head`: ActuatorMovementStatus, `right_foot`: ActuatorMovementStatus, `left_head`: ActuatorMovementStatus, `left_foot`: ActuatorMovementStatus |
-| `get_actuator_position` | `side`: Side, `actuator`: ActLocation | `current_actuator_position`: int |
-| `get_bed_configuration` | None | `mattress_size`: MattressSize, `base_type`: BaseType, `chamber_type`: ChamberType |
-| `get_central_devices_metadata` | None | `paired_devices_information`: String |
-| `get_current_preset` | `side`: Side | `current_preset`: ArticulationPreset |
-| `get_favorite_sleep_number` | `side`: Side | `favorite_sleep_number`: int |
-| `get_footwarming_presence` | `side`: Side | `footwarming_presence_flag`: int |
-| `get_footwarming_settings` | `side`: Side | `footwarming_level`: FootwarmingSetting, `remaining_time`: int, `total_remaining_time`: int |
-| `get_frosty_mode` | `side`: Side | `frosty_mode_state`: ThermalMode, `remaining_time`: int |
-| `get_frosty_presence` | `side`: Side | `frosty_presence`: Presence |
-| `get_fuzion_remote_mac_addresses` | None | `remote_device_addresses`: String |
-| `get_heidi_mode` | `side`: Side | `heidi_mode_state`: ThermalMode, `remaining_time`: int |
-| `get_heidi_presence` | `side`: Side | `heidi_presence`: Presence |
-| `get_manifest_name` | None | `current_manifest_name`: String |
-| `get_responsive_air_enabled_status` | `side`: Side | `responsive_air_enable_flag`: EnabledSetting |
-| `get_simple_diagnostic_run_results` | None | `run_results`: String |
-| `get_sleep_number_controls` | `side`: Side | `sleep_number_adjustment_status`: SleepNumberAdjustmentStatus, `ambient_sleep_number`: int, `user_sleep_number`: int |
-| `get_sleepiq_privacy_state` | None | `sleepiq_privacy_state`: SleepiqDataState |
-| `get_system_configuration` | None | `chamber_type`: ChamberType, `pressure_control_enabled_flag`: EnableFlag, `articulation_enable_flag`: EnableFlag, `underbed_light_enable_flag`: EnableFlag, `rapid_sleep_setting_enable_flag`: EnableFlag, `thermal_control_enabled_flag`: ThermalEnableFlag, `right_head_actuator`: EnableFlag, `right_foot_actuator`: EnableFlag, `left_head_actuator`: EnableFlag, `left_foot_actuator`: EnableFlag, `flat_preset`: EnableFlag, `favorite_preset`: EnableFlag, `snore_preset`: EnableFlag, `zero_gravity_preset`: EnableFlag, `watch_tv_preset`: EnableFlag, `read_preset`: EnableFlag |
-| `get_system_settings_applied_status` | None | `bed_installation_status`: InstallationStatus, `hardware_sku`: HwSku |
-| `get_system_status` | None | `network_connectivity_status`: NetworkConnectivity, `fuzion_device_software_download_status`: SoftwareDownloadStatus |
-| `get_target_preset_with_timer` | `side`: Side | `target_preset_with_timer`: ArticulationPreset, `remaining_time`: int |
-| `get_temperature_program_info` | `side`: Side | `program_json`: String |
-| `get_temperature_program_settings` | `side`: Side | `program_json`: String |
-| `get_underbed_light_auto_mode_status` | None | `underbed_light_auto_mode_enable_status`: UblAutoEnable, `underbed_light_auto_mode_intensity_level`: UblLevel |
-| `get_underbed_light_settings` | None | `underbed_light_intensity_level`: UblLevel, `underbed_light_timer_value`: int |
-| `gets_actuator_homing_state` | None | `bed_homing_state`: Homing |
-| `halt_all_actuators` | None | Empty dictionary |
-| `interrupt_sleep_number_adjustment` | None | Empty dictionary |
-| `migrate_routines_to_temperature_programs` | `side`: Side, `migration_options`: MigrateOptions | Empty dictionary |
-| `reboot_system` | `reboot_device`: RebootDevice | Empty dictionary |
-| `routine_migration_status` | `side`: Side | `migration_status`: int |
-| `set_actuator_target_position` | `side`: Side, `actuator`: ActLocation, `target_actuator_position`: int | Empty dictionary |
-| `set_actuator_target_position_with_timer` | `side`: Side, `actuator`: ActLocation, `target_actuator_position`: int | Empty dictionary |
-| `set_articulation_preset_settings` | `side`: Side, `articulation_preset`: ArticulationPreset, `preset_head_position`: int, `preset_foot_position`: int | Empty dictionary |
-| `set_bed_presence` | `side`: Side, `bed_presence_flag`: BedPresenceFlag | Empty dictionary |
-| `set_favorite_sleep_number` | `side`: Side, `favorite_sleep_number`: int | Empty dictionary |
-| `set_footwarming_settings` | `side`: Side, `footwarming_level`: FootwarmingSetting, `footwarming_timer_value`: int | Empty dictionary |
-| `set_frosty_mode` | `side`: Side, `frosty_mode_control`: ThermalMode, `cooling_timer_value`: int | Empty dictionary |
-| `set_heidi_mode` | `side`: Side, `heidi_mode_control`: ThermalMode, `timer`: int | Empty dictionary |
-| `set_responsive_air_enabled_status` | `side`: Side, `responsive_air_enable_flag`: EnabledSetting | Empty dictionary |
-| `set_sleepiq_privacy_state` | `sleepiq_privacy_state`: SleepiqDataState | Empty dictionary |
-| `set_system_time` | `date_time`: String | Empty dictionary |
-| `set_target_preset_with_timer` | `side`: Side, `target_preset_with_timer`: ArticulationPreset, `timer`: int | Empty dictionary |
-| `set_target_preset_without_timer` | `side`: Side, `target_preset`: ArticulationPreset | Empty dictionary |
-| `set_temperature_program` | `program`: String | `program_json`: String |
-| `set_underbed_light_auto_mode` | `underbed_light_auto_mode_enable_status`: UblAutoEnable, `underbed_light_auto_mode_intensity_level`: UblLevel | Empty dictionary |
-| `set_underbed_light_settings` | `underbed_light_intensity_level`: UblLevel, `underbed_light_timer_value`: int | Empty dictionary |
-| `start_sleep_number_adjustment` | `side`: Side, `user_sleep_number`: int | Empty dictionary |
-| `starts_actuator_homing` | None | Empty dictionary |
-| `get_temperature_programs` | `side`: Side | `programs`: combined list |
+<!-- generated:sleepiq-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Operation | Key | Parameters | Result | Surface |
+|---|---|---|---|---|
+| reset_articulation_presets | ACFR | `side`: Side, `preset`: ResetType | None | Action |
+| run_diagnostics | DSRS | `diagnostics`: DiagnosticRun | `start_status`: String | Action |
+| cancel_current_diagnostic_run | DSRC | None | None | Action |
+| cancel_target_preset | ACCP | `side`: Side | None | Action |
+| create_temperature_program | TTPC | `program`: String | `program_json`: String | Action |
+| delete_temperature_program | TTPD | `program_id`: String | None | Action |
+| get_active_temperature_programs | TTPR | None | `program_ids`: String | Action |
+| get_actuator_movement_status | ACTM | None | `right_head`: ActuatorMovementStatus, `right_foot`: ActuatorMovementStatus, `left_head`: ActuatorMovementStatus, `left_foot`: ActuatorMovementStatus | Action |
+| get_actuator_position | ACTG | `side`: Side, `actuator`: ActLocation | `current_actuator_position`: int | Action |
+| get_bed_configuration | SYAG | None | `mattress_size`: MattressSize, `base_type`: BaseType, `chamber_type`: ChamberType | Action |
+| get_central_devices_metadata | BGCD | None | `paired_devices_information`: String | Action |
+| get_current_preset | AGCP | `side`: Side | `current_preset`: ArticulationPreset | Action |
+| get_favorite_sleep_number | SNFG | `side`: Side | `favorite_sleep_number`: int | Action |
+| get_footwarming_presence | FWPG | `side`: Side | `footwarming_presence_flag`: int | Action |
+| get_footwarming_settings | FWTG | `side`: Side | `footwarming_level`: FootwarmingSetting, `remaining_time`: int, `total_remaining_time`: int | Action |
+| get_frosty_mode | CLMG | `side`: Side | `frosty_mode_state`: ThermalMode, `remaining_time`: int | Native control / diagnostics |
+| get_frosty_presence | CLPG | `side`: Side | `frosty_presence`: Presence | Native control / diagnostics |
+| get_fuzion_remote_mac_addresses | FRMG | None | `remote_device_addresses`: String | Action |
+| get_heidi_mode | THMG | `side`: Side | `heidi_mode_state`: ThermalMode, `remaining_time`: int | Native control / diagnostics |
+| get_heidi_presence | THPG | `side`: Side | `heidi_presence`: Presence | Native control / diagnostics |
+| get_manifest_name | SMNG | None | `current_manifest_name`: String | Action |
+| get_responsive_air_enabled_status | LRAG | `side`: Side | `responsive_air_enable_flag`: EnabledSetting | Action |
+| get_simple_diagnostic_run_results | DSRG | None | `run_results`: String | Action |
+| get_sleep_number_controls | SNCG | `side`: Side | `sleep_number_adjustment_status`: SleepNumberAdjustmentStatus, `ambient_sleep_number`: int, `user_sleep_number`: int | Action |
+| get_sleepiq_privacy_state | SPRG | None | `sleepiq_privacy_state`: SleepiqDataState | Action |
+| get_system_configuration | SYCG | None | `chamber_type`: ChamberType, `pressure_control_enabled_flag`: EnableFlag, `articulation_enable_flag`: EnableFlag, `underbed_light_enable_flag`: EnableFlag, `rapid_sleep_setting_enable_flag`: EnableFlag, `thermal_control_enabled_flag`: ThermalEnableFlag, `right_head_actuator`: EnableFlag, `right_foot_actuator`: EnableFlag, `left_head_actuator`: EnableFlag, `left_foot_actuator`: EnableFlag, `flat_preset`: EnableFlag, `favorite_preset`: EnableFlag, `snore_preset`: EnableFlag, `zero_gravity_preset`: EnableFlag, `watch_tv_preset`: EnableFlag, `read_preset`: EnableFlag | Action |
+| get_system_settings_applied_status | SYSA | None | `bed_installation_status`: InstallationStatus, `hardware_sku`: HwSku | Action |
+| get_target_preset_with_timer | ACGP | `side`: Side | `target_preset_with_timer`: ArticulationPreset, `remaining_time`: int | Action |
+| get_temperature_program_info | TTPG | `side`: Side | `program_json`: String | Action |
+| get_temperature_program_settings | TTPE | `side`: Side | `program_json`: String | Action |
+| get_underbed_light_auto_mode_status | UBAG | None | `underbed_light_auto_mode_enable_status`: UblAutoEnable, `underbed_light_auto_mode_intensity_level`: UblLevel | Action |
+| get_underbed_light_settings | UBLG | None | `underbed_light_intensity_level`: UblLevel, `underbed_light_timer_value`: int | Action |
+| gets_actuator_homing_state | ACHG | None | `bed_homing_state`: Homing | Action |
+| halt_all_actuators | ACHA | None | None | Action |
+| interrupt_sleep_number_adjustment | PSNI | None | None | Action |
+| migrate_routines_to_temperature_programs | TTPM | `side`: Side, `migration_options`: MigrateOptions | None | Action |
+| reboot_system | SYRS | `reboot_device`: RebootDevice | None | Native control / diagnostics |
+| routine_migration_status | TTPN | `side`: Side | `migration_status`: int | Action |
+| set_actuator_target_position | ACTS | `side`: Side, `actuator`: ActLocation, `target_actuator_position`: int | None | Action |
+| set_actuator_target_position_with_timer | ASTM | `side`: Side, `actuator`: ActLocation, `target_actuator_position`: int | None | Action |
+| set_articulation_preset_settings | ACPS | `side`: Side, `articulation_preset`: ArticulationPreset, `preset_head_position`: int, `preset_foot_position`: int | None | Action |
+| set_bed_presence | LBPS | `side`: Side, `bed_presence_flag`: BedPresenceFlag | None | Action |
+| set_favorite_sleep_number | SNFS | `side`: Side, `favorite_sleep_number`: int | None | Action |
+| set_footwarming_settings | FWTS | `side`: Side, `footwarming_level`: FootwarmingSetting, `footwarming_timer_value`: int | None | Action |
+| set_frosty_mode | CLMS | `side`: Side, `frosty_mode_control`: ThermalMode, `cooling_timer_value`: int | None | Native control / diagnostics |
+| set_heidi_mode | THMS | `side`: Side, `heidi_mode_control`: ThermalMode, `timer`: int | None | Native control / diagnostics |
+| set_responsive_air_enabled_status | LRAS | `side`: Side, `responsive_air_enable_flag`: EnabledSetting | None | Action |
+| set_sleepiq_privacy_state | SPRS | `sleepiq_privacy_state`: SleepiqDataState | None | Action |
+| set_system_time | SYTS | `date_time`: String | None | Native control / diagnostics |
+| set_target_preset_with_timer | ACSP | `side`: Side, `target_preset_with_timer`: ArticulationPreset, `timer`: int | None | Action |
+| set_target_preset_without_timer | ASTP | `side`: Side, `target_preset`: ArticulationPreset | None | Action |
+| set_temperature_program | TTPS | `program`: String | `program_json`: String | Action |
+| set_underbed_light_auto_mode | UBAS | `underbed_light_auto_mode_enable_status`: UblAutoEnable, `underbed_light_auto_mode_intensity_level`: UblLevel | None | Action |
+| set_underbed_light_settings | UBLS | `underbed_light_intensity_level`: UblLevel, `underbed_light_timer_value`: int | None | Action |
+| start_sleep_number_adjustment | PSNS | `side`: Side, `user_sleep_number`: int | None | Action |
+| starts_actuator_homing | ACHS | None | None | Native control / diagnostics |
+| get_temperature_programs | TTPG | `side`: Side | `program_json`: String | Action |
+<!-- /generated -->
 
 ### Fuzion request enums
 
@@ -148,35 +153,41 @@ These commands require the older MCR protocol. Every listed required parameter
 must be supplied. Optional durations default to zero, except active foot warming defaults to 120 minutes. Omitted massage timer preserves its current value. Numeric fields
 must be integers and booleans must be actual booleans.
 
-| Command | Required parameters | Optional parameters |
-|---|---|---|
-| `mcr_status` | None | None |
-| `foundation_status` | None | None |
-| `position` | `axis`, `position`, `side` | None |
-| `stop` | `side` | None |
-| `preset_save` | `preset`, `side` | None |
-| `preset_reset` | `preset`, `side` | None |
-| `preset_timer` | `preset`, `side`, `timer` | None |
-| `firmness_favorite` | `firmness`, `side` | None |
-| `firmness_favorites` | None | None |
-| `responsive_air` | `enabled`, `side` | None |
-| `responsive_air_status` | None | None |
-| `massage` | `side` | `foot`, `head`, `mode`, `timer` |
-| `massage_status` | `side` | None |
-| `foot_warming` | `level`, `side` | `duration` |
-| `foot_warming_status` | `side` | None |
-| `outlet` | `enabled`, `outlet` | `duration` |
-| `outlet_status` | `outlet` | None |
-| `light_intensity` | `intensity`, `side` | None |
-| `underbed_auto` | `enabled` | None |
-| `underbed_auto_status` | None | None |
-| `pinch_status` | None | None |
-| `sense_and_do` | `enabled` | None |
-| `sense_and_do_status` | None | None |
-| `kid_outlet` | `device` | `light_on`, `outlet_on` |
-| `kid_outlet_status` | `device` | None |
-| `head_tilt` | `enabled` | None |
-| `software_versions` | None | None |
+<!-- generated:sleepiq-mcr-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Operation | Required parameters | Optional parameters | Surface |
+|---|---|---|---|
+| bind_foundation | None | None | Action |
+| underbed_intensity | `intensity` | None | Action |
+| mcr_status | None | None | Action |
+| foundation_status | None | None | Action |
+| position | `axis`, `position`, `side` | None | Action |
+| stop | `side` | None | Action |
+| preset_save | `preset`, `side` | None | Action |
+| preset_reset | `preset`, `side` | None | Action |
+| preset_timer | `preset`, `side`, `timer` | None | Action |
+| firmness_favorite | `firmness`, `side` | None | Action |
+| firmness_favorites | None | None | Action |
+| responsive_air | `enabled`, `side` | None | Action |
+| responsive_air_status | None | None | Action |
+| massage | `side` | `foot`, `head`, `mode`, `timer` | Action |
+| massage_status | `side` | None | Action |
+| foot_warming | `level`, `side` | `duration` | Action |
+| foot_warming_status | `side` | None | Action |
+| outlet | `enabled`, `outlet` | `duration` | Action |
+| outlet_status | `outlet` | None | Action |
+| light_intensity | `intensity`, `side` | None | Action |
+| underbed_auto | `enabled` | None | Action |
+| underbed_auto_status | None | None | Action |
+| pinch_status | None | None | Action |
+| sense_and_do | `enabled` | None | Action |
+| sense_and_do_status | None | None | Action |
+| kid_outlet | `device` | `light_on`, `outlet_on` | Action |
+| kid_outlet_status | `device` | None | Action |
+| head_tilt | `enabled` | None | Action |
+| software_versions | None | None | Action |
+<!-- /generated -->
 
 Parameter values:
 
@@ -185,9 +196,9 @@ Parameter values:
 - `head`, `foot`, `mode`, `level`: 0–3.
 - `duration`, `timer`: 0–32767. Massage and outlet timers use seconds.
   Foot-warming durations use minutes. Preset timers accept the raw protocol value,
-  with zero cancelling the timer; the APK evidence does not establish a time unit.
+  with zero cancelling the timer; the time unit is unknown.
   Massage timer 255 preserves the existing timer.
-- `outlet`: 1–4 (right/left nightstand 1/2, right/left nightlight 3/4; outlet 3 is the under-bed light on models with that feature); `device`: 0–15.
+- `outlet`: 1–4 (right/left nightstand 1/2, right/left nightlight 3/4; outlet 3 is the under-bed light on models with that feature); `device`: 0 (the app's single local outlet/light).
 - `intensity`: 1, 30, 45, 75 or 100.
 - `enabled`, `outlet_on`, `light_on`: true or false.
 - `preset`: `Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G` or `Snore`,
@@ -209,9 +220,8 @@ data:
     position: 35
 ```
 
-Protocol behavior comes from the SleepIQ 5.4.11 APK. Physical validation on each
-bed model remains pending; successful static tests do not establish hardware
-compatibility.
+The additional SleepIQ 5.4.11 controls need physical testing on each bed model.
+Successful static tests do not establish hardware compatibility.
 
 ### MCR position services
 
@@ -219,3 +229,32 @@ Use `set_position` or `set_positions` with the motor keys `left_back`,
 `right_back`, `left_legs`, or `right_legs` and percentage targets from 0 to 100.
 Only axes reported by the foundation are accepted. Unsided `back` and `legs`
 are rejected so a request cannot silently move the wrong side.
+
+## Local diagnostics and maintenance
+
+`reset_articulation_presets` accepts `side` and `preset` (`flat`, `favorite`,
+`snore`, `zero_g`, `watch_tv`, `read`, or `all`). It resets saved positions; it
+never holds a movement command. The card asks before its native button runs.
+
+`run_diagnostics` accepts `diagnostics` with `group` (`Mattress`, `Base`,
+`Temperature`, or `Foot warming`) and a nonempty `tests` list. For example:
+
+```yaml
+command: run_diagnostics
+parameters:
+  diagnostics:
+    group: Base
+    tests: [actuator-test]
+```
+
+Only the app's local hardware test IDs are accepted. Network tests, uploads,
+account credentials and arbitrary test parameters cannot be supplied. The request
+uses a new local request ID and sets `uploadToCloud` to false. Read the result with
+`get_simple_diagnostic_run_results` or cancel with `cancel_current_diagnostic_run`.
+`bind_foundation` sends the app's short foundation-binding request.
+`underbed_intensity` sets both under-bed light levels together (1, 30 or 100),
+while `light_intensity` retains the side-specific path and model-specific values.
+
+Wi-Fi setup, network status, cloud accounts, firmware updates and file
+administration are outside the integration. The former `get_system_status`
+operation is removed because it reports network/update state.

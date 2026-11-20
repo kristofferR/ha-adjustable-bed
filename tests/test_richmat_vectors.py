@@ -353,6 +353,32 @@ def _census(key: str) -> set[str]:
         return _galaxy_census()
     if key == "leggett_lp_legacy":
         return _lp_legacy_census()
+    if key == "richmat_classic_jerome2":
+        from custom_components.adjustable_bed.beds.richmat_classic.caller import (
+            Selection,
+            selected_operand,
+        )
+        from custom_components.adjustable_bed.beds.richmat_classic.jerome_controls import (
+            actions,
+            long_actions,
+        )
+        from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
+        from custom_components.adjustable_bed.profiles.jerome2 import EXCLUDED_LAYOUTS
+
+        frames = {classic.release("RAW"), classic.release("FRAMED"), classic.INITIALIZE,
+                  classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY, *classic.alarm(0, 0)}
+        for layout, model in load_catalog("jerome2").models.items():
+            if layout in EXCLUDED_LAYOUTS:
+                continue
+            buttons = {c.node: c for c in model.controls}
+            for action in (*actions(layout).values(), *long_actions(layout).values()):
+                for wire in ("RAW", "FRAMED"):
+                    operand = selected_operand(buttons[action.node], wire, 3 if action.long_press else 1 if action.keep else 2, Selection(press_flag=action.flag))
+                    if isinstance(operand, bytes):
+                        frames.add(classic.control(operand, wire))
+        frames.update(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in (0, 2, 3, 5))
+        frames.update(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP)
+        return {frame.hex() for frame in frames}
     if key.removeprefix("richmat_classic_") in RESOURCE_APPS:
         # These bed-only apps do not expose the older apps' desk or aroma writers.
         # Parameterized alarm/RGB/timeout builders have their own literal harness.
@@ -380,6 +406,8 @@ def _census(key: str) -> set[str]:
             *(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP),
             *(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in (0,2,3,5)),
         )}
+    if key in ("richmat_classic_lp2", "richmat_classic_bedsmart"):
+        return {classic.release("RAW").hex(), classic.release("FRAMED").hex(), classic.INITIALIZE.hex(), classic.ALARM_QUERY.hex(), classic.LAMP_QUERY.hex(), classic.AROMA_QUERY.hex()}
     if key.startswith("richmat_classic_"):
         return _classic_census()
     if key.startswith("richmat_mh_"):

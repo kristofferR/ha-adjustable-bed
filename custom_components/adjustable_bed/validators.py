@@ -115,6 +115,7 @@ from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
+from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
@@ -159,6 +160,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_MLILY: MLILY_PROFILES,
     "majestichome": MAJESTICHOME_PROFILES,
     BED_TYPE_OKIMIKI: OKIMIKI_PROFILES,
+    "saatva": SAATVA_CHOICES,
     "bobpowerbase": BOB_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
