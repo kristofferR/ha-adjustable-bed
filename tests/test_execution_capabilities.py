@@ -288,7 +288,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection.
     "richmat_classic_apps": {
-        "hold": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP', "Jerome's power base 1.0.9: mode1 refresh until release, then50ms END"),
+        "hold": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', "BedSmart 1.0.7: status 1 finite/leased refresh, mode-specific release", 'L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP', "Jerome's power base 1.0.9: mode1 refresh until release, then50ms END"),
         "hold_controls": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'L&P Adjustable Base 2.3.25: stream controls only; confirmed saves never hold', "Jerome's power base 1.0.9: selected-layout held widgets only; never saves"),
     },
     "isleep": {"hold": ("kaidi",)},

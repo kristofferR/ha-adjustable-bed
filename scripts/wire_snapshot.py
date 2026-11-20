@@ -1138,6 +1138,7 @@ class Coordinator:
         self.cancel_command = asyncio.Event()
         self.stop_epoch = 0
         self.cancel_counter = 0
+        self.connection_generation = 0
         self.command_scheduler = SimpleNamespace(token=object(), stop_epoch=0)
         self._command_lock = asyncio.Lock()
         self.address = "AA:BB:CC:DD:EE:FF"
@@ -1866,7 +1867,7 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout},
                     factory_kwargs={"device_name": "6BRM-advertised"}
-                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2") else {},
+                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart") else {},
                     layout_id=layout_id,
                 )
             )
@@ -1915,6 +1916,8 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("luunarise2", "AHRM", "richmat_classic_apps_nordic"),
     ("powercool", "AHRM", "richmat_classic_apps"),
     ("powercool", "E3RM", "richmat_classic_apps_nordic"),
+    ("bedsmart", "DHRM", "richmat_classic_apps"),
+    ("bedsmart", "6BRM", "richmat_classic_apps_nordic"),
     ("lp2", "APRM", "richmat_classic_apps"),
     ("lp2", "6BRM", "richmat_classic_apps_nordic"),
     ("jerome2", "6BRM", "richmat_classic_apps"),

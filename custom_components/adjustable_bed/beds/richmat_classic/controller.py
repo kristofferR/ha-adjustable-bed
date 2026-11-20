@@ -124,7 +124,7 @@ class RichmatClassicController(BedController):
         self.app = app or str(coordinator.entry.data[CONF_PROTOCOL_VARIANT])
         self.profile = RICHMAT_CLASSIC[self.app]
         self.layout = str(coordinator.entry.data[CONF_PRODUCT_TYPE]).strip().upper()
-        if self.layout in ("TEST", "RMCS") and self.app not in ("powercool", "lp2"):
+        if self.layout in ("TEST", "RMCS") and self.app not in ("powercool", "lp2", "bedsmart"):
             raise ValueError("Diagnostic endurance and motor-mapping layouts are excluded")
         if self.app in RISE_APPS and self.layout in ("WFRM", "FWRM"):
             raise ValueError("Standalone desk layouts are outside the bed integration")
@@ -967,6 +967,11 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
         )
     from ...profiles.richmat_resource_apps import APPS
 
+    if ctx.variant == "bedsmart":
+        await ctx.preload("richmat_classic.bedsmart")
+        from .bedsmart import BedSmartController
+
+        return BedSmartController(ctx.coordinator, device_name=ctx.device_name)
     if ctx.variant == "lp2":
         await ctx.preload("richmat_classic.lp2")
         from .lp2 import Lp2Controller
