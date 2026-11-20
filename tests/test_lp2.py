@@ -673,3 +673,65 @@ async def test_settled_release_finishes_on_owned_link_before_cancel_returns():
         await release
     assert packets(co) == ["6e"]
     assert not co.cancel_command.is_set()
+
+
+def _format_controller(app, layout):
+    if app == "bedsmart":
+        from tests.test_bedsmart import controller as bedsmart_controller
+
+        c, _co = bedsmart_controller(layout)
+        c._scope = None
+    else:
+        c, _co = controller(layout)
+    c._session = c._wire = None
+    return c
+
+
+@pytest.mark.parametrize(
+    ("app", "layout"), [("lp2", "6BRM"), ("lp2", "A3RM"), ("bedsmart", "6BRM")]
+)
+def test_only_the_beds_own_format_lists_its_controls(app, layout):
+    c = _format_controller(app, layout)
+    assert c.has_dynamic_buttons
+    assert c.persisted_app_state.get("wire") is None
+    shared = {s.key for s in c.controller_button_specs}
+    assert not any(k.endswith(("_raw", "_framed")) for k in shared)
+    # The sweep keeps both formats' own rows until the format is known.
+    retained = {key for domain, key in c.retained_entity_keys if domain == "button"}
+    assert retained and all(k.endswith(("_raw", "_framed")) for k in retained)
+    switches = {s.key for s in c.controller_switch_specs}
+    listed = {}
+    for wire, other in (("RAW", "_framed"), ("FRAMED", "_raw")):
+        # A restart restores the format of the last connection.
+        restored = _format_controller(app, layout)
+        restored.restore_persisted_app_state({**c.persisted_app_state, "wire": wire})
+        assert restored.retained_entity_keys == frozenset()
+        assert restored.persisted_app_state["wire"] == wire
+        specs = restored.controller_button_specs
+        keys = {s.key for s in specs}
+        assert shared < keys
+        assert keys - shared <= retained
+        assert not any(k.endswith(other) for k in keys)
+        assert all(restored.controller_button_available(k) for k in keys)
+        names = [s.name for s in specs]
+        assert len(names) == len(set(names))
+        assert switches <= {s.key for s in restored.controller_switch_specs}
+        listed[wire] = {s.key: s.name for s in specs}
+    # Never merged: on A3RM the same node is a different control per format.
+    if layout == "A3RM":
+        assert listed["RAW"]["richmat_classic_15_raw"] != (
+            listed["FRAMED"]["richmat_classic_15_framed"]
+        )
+    with pytest.raises(ValueError, match="command format"):
+        _format_controller(app, layout).restore_persisted_app_state({"wire": "OTHER"})
+
+
+async def test_renewable_hold_of_a_tap_control_is_a_translated_refusal(clock, monkeypatch):
+    from tests.error_helpers import raises_key
+
+    c, co = controller("A0RM")
+    monkeypatch.setattr(lp2, "current_command_context", lambda: SimpleNamespace(lease=object()))
+    node = next(g.node for g in c._gestures("FRAMED") if g.status != 1 and not g.long)
+    with raises_key("control_hold_renewal_not_supported"):
+        await c.execute_action(node)
+    co.client.write_gatt_char.assert_not_awaited()
