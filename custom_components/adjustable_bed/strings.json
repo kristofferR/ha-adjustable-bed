@@ -6550,17 +6550,6 @@
       },
       "bedsmart_head_foot": {
         "name": "Head or foot"
-      },
-      "jerome_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "off": "Off",
-          "10_minutes": "10 minutes",
-          "15_minutes": "15 minutes",
-          "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes",
-          "45_minutes": "45 minutes"
-        }
       }
     },
     "climate": {

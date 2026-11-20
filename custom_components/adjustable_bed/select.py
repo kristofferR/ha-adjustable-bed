@@ -452,6 +452,9 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
             # Nothing sent or reported yet.
             return None
         minutes = state[key]
+        if minutes is None:
+            # Cleared on disconnect, or a send that was cut short.
+            return None
         formatted = f"{minutes} min"
         if minutes and formatted in self._attr_options:
             return formatted

@@ -13,6 +13,7 @@ from time import monotonic
 from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -41,7 +42,7 @@ from ...profiles.jerome2 import (
     SIDE_LAYOUTS,
     TIMER_PROGRESS,
 )
-from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
 from ..cancellation import settled
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
@@ -68,7 +69,6 @@ _SCOPE: ContextVar[tuple[BedController, Transport] | None] = ContextVar(
     "jerome_session", default=None
 )
 LIGHT_SECONDS: Final = StateKey[int | None]("jerome_light_seconds")
-MASSAGE_TIMER: Final = StateKey[str | None]("jerome_massage_timer")
 INTENSITY: Final = StateKey[int | None]("jerome_massage_intensity")
 AROMA_KEYS: Final = tuple(StateKey[int | None](f"jerome_aroma_{i}") for i in range(3))
 MASSAGE: Final = StateKey[bool | None]("jerome_massage")
@@ -275,7 +275,7 @@ class JeromeController(RichmatClassicController):
         self._light_on = None
         self.forward_controller_state_updates(
             LIGHT_SECONDS(None),
-            MASSAGE_TIMER(None),
+            MASSAGE_TIMER_MINUTES(None),
             INTENSITY(None),
             MASSAGE(None),
             SYNC(None),
@@ -471,47 +471,48 @@ class JeromeController(RichmatClassicController):
                 await self._release(p.HELD_RELEASE_MS)
 
     @property
+    def _massage_timer_values(self) -> dict[int, str]:
+        """The massage timer choices this layout sends, by their minutes (0 is off)."""
+        if self.layout == "Y6RM":
+            # The popup's on/off row is a toggle, never an idempotent off.
+            return {15: "15_minutes", 30: "30_minutes", 45: "45_minutes"}
+        if self.layout in ("D1RM", "D9RM"):
+            return {0 if value == "off" else int(value.split("_")[0]): value for value in TIMER_PROGRESS}
+        return {}
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_values)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows the layout's massage timer.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(minutes for minutes in self._massage_timer_values if minutes)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return 0 in self._massage_timer_values
+
+    @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        if self.layout not in ("D1RM", "D9RM", "Y6RM"):
-            return ()
-        options = (
-            ("15_minutes", "30_minutes", "45_minutes")
-            if self.layout == "Y6RM"
-            else tuple(TIMER_PROGRESS)
-        )
+        # The massage timer is the shared timer select.
+        return ()
 
-        async def timer(controller: BedController, value: str) -> None:
-            await require_controller(controller, JeromeController).set_massage_duration(value)
-
-        return (
-            ControllerSelectSpec(
-                "jerome_massage_timer",
-                "jerome_massage_timer",
-                MASSAGE_TIMER,
-                options,
-                timer,
-                card=CARD_MASSAGE,
-            ),
-        )
-
-    async def set_massage_duration(self, value: str) -> None:
+    async def set_massage_timer(self, minutes: int) -> None:
+        value = self._massage_timer_values.get(minutes)
+        if value is None:
+            raise invalid("jerome_timer")
         self._require_physical_settings()
         if self.layout == "Y6RM":
-            choice = {
-                "off": "toggle",
-                "15_minutes": "15",
-                "30_minutes": "30",
-                "45_minutes": "45",
-            }.get(value)
-            if choice is None or choice == "toggle":
-                # The popup's on/off row is a toggle, never an idempotent off.
-                raise invalid("jerome_timer")
-            frame = p.massage_popup(choice)
-        elif self.layout in ("D1RM", "D9RM") and value in TIMER_PROGRESS:
-            frame = p.massage_timer(self.layout, TIMER_PROGRESS[value])
+            frame = p.massage_popup(value.removesuffix("_minutes"))
         else:
-            raise invalid("jerome_timer")
-        with self._transaction(), self.sent_state(MASSAGE_TIMER(value)):
+            frame = p.massage_timer(self.layout, TIMER_PROGRESS[value])
+        # The bed reports no timer.
+        with self._transaction(), self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
             await self._send(frame, self._coordinator.cancel_command)
 
     @property
@@ -592,6 +593,9 @@ class JeromeController(RichmatClassicController):
                         aroma_time,
                         "h" if index == 2 else "min",
                         card=CARD_UTILITY,
+                        # A setting, not a dashboard control.
+                        entity_registry_enabled_default=False,
+                        entity_category=EntityCategory.CONFIG,
                     )
                 )
         return tuple(result)
