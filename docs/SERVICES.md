@@ -455,7 +455,7 @@ data:
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
-| Jerome's power base | `none` and the selected layout's wake positions | `massage` with the layout's zones. Once, as a countdown to the time. Not on a Left or Right side of a one-address combined bed |
+| Jerome's power base | The selected layout's wake positions; `none` only with `massage: true` and a supported zone | `massage` with the layout's zones. `memory_1` to `memory_3` need `confirm_custom_position: true`. Once, as a countdown to the time. Standalone beds and the physical sides of a two-address pair only, not a one-address combined bed |
 | L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
