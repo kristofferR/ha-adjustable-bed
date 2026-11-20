@@ -7768,15 +7768,6 @@ tested. Wi-Fi, accounts and mesh network administration are outside the
 integration.
 
 
-## Notes
-
-### Analysis provenance
-
-Based on RMControl, the Richmat MH apps, HJBed, Eshine, the classic apps,
-Good Vibe Sleep, MLILY Control, the L&P legacy app, Casper Base 1.0.8 and Hush
-Base 1.0.5, each named with its version in its section. The Richmat remotes,
-Legacy BedTech and L&P MlRM routes send the pre-v5 controllers' frames.
-
 ### Galaxy Bed Control
 
 **App:** [Galaxy Bed Control](https://play.google.com/store/apps/details?id=nl.starinternational.galaxy) 3.3.0 (330002), `nl.starinternational.galaxy`
@@ -9135,11 +9126,11 @@ validate firmware, physical sides and release behavior with timestamped captures
 
 Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
-## Luuna Rise / Power Cool
+### Luuna Rise / Power Cool
 
 **Status:** Not yet tested
 
-### Known Models
+#### Known Models
 
 Select the app first, then its exact four-character layout. Luuna Rise has its
 own 604-layout catalog and Power Cool its own 586-layout catalog. An app name,
@@ -9148,7 +9139,7 @@ Luuna's H-series layouts include HKRM with its own Left/Right selector. AHRM's
 one-shot action differs between apps; Luuna also has an H9RM reset-labelled
 action that is absent in Power Cool. That label does not prove a factory reset.
 
-### Features
+#### Features
 
 Layout-bound movement, combined movement, recall/save, massage, USB, fan, lock
 and light-labelled controls retain the selected app's gesture and visibility
@@ -9164,7 +9155,7 @@ deliberately and use `adjustable_bed.richmat_rise`. RMCS has no proven readback,
 abort, commit or acknowledgment command. Radio selection is a field in the
 program; the phone still sends it over BLE.
 
-### Detection / Setup
+#### Detection / Setup
 
 Search for **Luuna Rise** or **Power Cool Sleep System** in the Richmat app
 question. Choose the layout that matches your app, including manual selection
@@ -9174,7 +9165,7 @@ firmware. A shared name or service never selects either app automatically.
 The third-service fallback remains an explicit advanced opt-in, with runtime
 characteristics rather than guessed UUIDs. Standalone desk layouts are omitted.
 
-### Protocol Details
+#### Protocol Details
 
 Both profiles use the [Richmat transports](#transports), in W1, W2, Nordic UART,
 W4 order. The first present service wins; incomplete roles do not fall through.
@@ -9190,7 +9181,7 @@ only when the layout has alarm choices, then lamp capability, 500 ms apart.
 Replies are checked on the current connection; cached Android flags and handles
 cannot authorize a new session.
 
-### Commands
+#### Commands
 
 Status 1 refreshes while held, status 2 is a one-shot with 150 ms release,
 and status 3 offers short recall or thresholded long action. E3RM's local MEM
@@ -9237,7 +9228,7 @@ proven long lock-labelled gestures remain available.
 | `2F` | `A6` | `A7` | `A8` |
 | `30` | `A9` | `AA` | `AB` |
 
-### Luuna Rise resource commands
+#### Luuna Rise resource commands
 
 <details><summary>Selected-layout command and gesture gates</summary>
 
@@ -9471,7 +9462,7 @@ proven long lock-labelled gestures remain available.
 
  </details>
 
-### Power Cool Sleep System resource commands
+#### Power Cool Sleep System resource commands
 
 <details><summary>Selected-layout command and gesture gates</summary>
 
@@ -9723,7 +9714,7 @@ proven long lock-labelled gestures remain available.
 | `2A` | 12 | 5 |
 <!-- /generated -->
 
-### Position Feedback / Notifications
+#### Position Feedback / Notifications
 
 The source recognizer's checksum, prefix order and partial/coalesced-message
 behavior are preserved. Malformed input reports a bounded diagnostic rejection.
@@ -9732,7 +9723,7 @@ current-session state. An alarm confirmation preserves the local selection;
 it is not a schedule readback or general movement acknowledgment. Desk telemetry
 and accessory messages do not create bed position or accessory entities.
 
-### Command Timing
+#### Command Timing
 
 Ordinary refresh is 150 ms, or 110 ms for actual advertised TWRM/MLRM names.
 Raw advertised 6BRM uses 170 ms. Manual layout selection does not change cadence.
@@ -9749,7 +9740,7 @@ the admitted route's release. Diagnostic movement participates in HA's movement
 scheduler and cancellation. Ordinary holds use renewable leases where the
 selected gesture actually refreshes until release.
 
-### Notes
+#### Notes
 
 HA cancels pending saves and clears stale gesture latches instead of allowing
 Android's in-bounds CANCEL/pause behavior to resume movement. Release targets
@@ -9762,7 +9753,7 @@ controls and separate aroma/audio accessories are outside this bed integration.
 Luuna's manufacturing layouts remain excluded; Power Cool's separately accepted
 direct bed diagnostics are available only through their explicit layouts.
 
-### Analysis provenance
+#### Analysis provenance
 
 Based on Luuna Rise 1.0.13 (`com.richmat.luunarise2`) and Power Cool Sleep System 1.0.8 (`com.richmat.powercool`).
 
@@ -13517,11 +13508,11 @@ Based on SleepEvolution 3.5.5 (13) and W.Silver Products 3.3.7 (9).
 
 **App:** [X-Series](https://play.google.com/store/apps/details?id=com.richmat.bedsmart) 1.0.7 (8), `com.richmat.bedsmart`
 
-**Status:** Not yet tested on hardware.
+**Status:** Not yet tested
 
 #### Setup
 
-Choose **BedSmart / X-Series** in the Richmat app question, then choose the
+Choose **BedSmart / X-Series app** in the Richmat app question, then choose the
 four-character layout matching the app. **Reconfigure** changes the app or
 layout later. Each physical bed in a combined pair keeps its own choices.
 Name matches offer the app as a choice; they do not establish a physical model.
@@ -14412,8 +14403,8 @@ The movement test makes one finite traversal of the generated sequence.
 
 #### Notifications
 
-The source-ordered checksum parser recognizes alarm, light and aroma replies.
-It retains the app's whole-buffer clearing and trailing-header behavior.
+The parser checks each reply's checksum and recognizes alarm, light and aroma
+replies. It clears and trims its buffer the way the app does.
 Discovered lighting and aroma controls remain available across reconnects. Each
 new connection must report support before a settings write; a remembered control
 is not permission to write without that reply.
@@ -14433,9 +14424,9 @@ expand a layout from a shared UUID. There is no clock synchronization command.
 
 #### Evidence
 
-BedSmart / X-Series 1.0.7 supplies the layout operands, raw old-short overrides,
-framed controls, direct auxiliary frames, parser and event timing. Tests match
-its frozen bytes through the Richmat codec. Hardware behavior remains untested.
+Based on BedSmart / X-Series 1.0.7 (`com.richmat.bedsmart`): the layout
+operands, raw old-short overrides, framed controls, direct auxiliary frames,
+parser and event timing. Hardware is not yet tested.
 
 
 ### Bed Tech
@@ -14474,11 +14465,12 @@ only their own typed controls. Generic 5I includes combined down; GRRM and BPRN
 keep their selected-tab up-only behavior. In the 3I entity page, saving M3 sends
 the app's M4-save code. Pillow and lumbar names follow the app's typed mapping.
 
-The cfrm light-lock indicator can report state, but its visible app button has
-no connected listener in this build. Home Assistant exposes feedback without
-adding a lock command. Snore acknowledgments and selected intervention are
-separate state: the app's initialization handler reads the wrong byte and does
-not establish a selected snore mode. The normal callback remains supported.
+On CFRM, the light lock state the bed reports is a sensor, disabled by
+default; the light lock has no toggle command, because the app's button for it
+sends nothing. The motor-page lock command is separate. Snore acknowledgements
+and the selected intervention are separate states: the bed reports its snore
+mode in its normal reply, and a successful write shows the commanded mode; the
+initialization reply does neither.
 
 Use the shared **Set alarm** and **Set bed clock** actions. Supported surfaces
 choose countdown, three-slot or calendar alarms; mattress alarms remain
@@ -14493,8 +14485,8 @@ No app-clock buttons or raw packet controls are exposed.
 
 #### Timing
 
-Held widgets refresh at their declared interval, normally 100 ms. Release and
-ordinary one-shot completion send the source-defined END frame after 120 ms.
+Held controls refresh at their declared interval, normally 100 ms. Release and
+ordinary one-shot completion send the app's END frame after 120 ms.
 Home Assistant bounds held movement and drains release before allowing the next
 command. It captures the physical connection and transmit mode before waiting
 and rejects stale commands and callbacks. END's physical effect is unverified.
@@ -14504,7 +14496,7 @@ Notifications start before the 300 ms version probe; initialization starts
 version 1. Primary writes use the selected
 characteristic's supported write mode. The auxiliary receiver paces writes
 300 ms apart, retries notification setup up to three times and uses a five-second
-heartbeat. These source intervals are not measured radio timings.
+heartbeat. These are the app's intervals, not timings measured on a bed.
 
 #### Notifications
 
@@ -14513,15 +14505,15 @@ malformed double-negative values are ignored. Capabilities on entity pages
 reset on each initialization reply rather than accumulating. Calendar records
 preserve decimal slot/bed parsing and signed times; repeated records are retained
 as observations while the latest record supplies each actionable slot.
-Home Assistant fences truncated callbacks and clears connection state on reuse.
-The app's QRRM overwrite and late global-target/release races are not reproduced
-as automatic routing changes.
+Calendar records that are too short are dropped; whether another incomplete
+reply is held until it is complete depends on the reply type. Connection state is cleared
+when a link is reused.
 
 Wi-Fi, network administration, cloud accounts, group administration, firmware
 updates, audio, phone recognition infrastructure, manufacturing/test paths,
-desks and unrelated physiological reports are outside this integration.
-The source-defined bed outputs of speech dispatch remain available through
-the ordinary native bed controls, without the phone recognizer.
+desks and unrelated physiological reports are outside this integration. A
+bed action the app's voice control sends is available where the selected model
+also has it as an ordinary control.
 
 #### Command reference
 
@@ -14759,25 +14751,24 @@ them; entity pages require the receiver's version and initialization replies.
 | LPRM | Back: 0..64° (display offset 0); Foot: 0..43° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
 <!-- /generated -->
 
-## Jerome's power base
+#### Evidence
 
-**Status:** Not yet tested on hardware.
+Based on Bed Tech 2.8.3 (`com.richmat.bed_tech`). Hardware is not yet tested.
 
-### Apps
+### Jerome's power base
 
-Jerome's power base (`com.richmat.jerome2`) uses a separate layout catalog from
-other Richmat apps. Select the app explicitly, then choose the four-character
-layout shown by the app. Shared Bluetooth services do not identify that layout.
+**App:** Jerome's power base 1.0.9, `com.richmat.jerome2`
 
-### Features
+**Status:** Not yet tested
 
-Movement, presets, saved positions, massage, light and aroma controls follow the
-selected layout. Optional light and aroma settings appear after discovery and
+Jerome's power base uses a separate layout catalog from the other Richmat apps.
+Shared Bluetooth services do not identify the layout. Movement, presets, saved
+positions, massage, light and aroma controls follow the selected layout. Optional light and aroma settings appear after discovery and
 remain configured while idle. Writes require a reply on the current connection.
 There is no motor-position feedback, inferred physical
 mapping for additional motors, or inferred preset capacity.
 
-### Home Assistant setup
+#### Setup
 
 Choose **Jerome's power base app** in the Richmat app picker, then search the
 layout list. Use **Reconfigure** to change the app or layout. If the Russian app displays
@@ -14796,7 +14787,7 @@ frames have no side field, so whole-bed settings require a standalone physical
 bed entry. They are not offered on one-address combined-bed children. Two-address
 combined beds retain each physical bed’s settings.
 
-### Controls
+#### Controls
 
 The entities expose named actions, inverse on/off pairs as switches, known
 light state through the light platform, massage duration choices, and the
@@ -14814,12 +14805,12 @@ layout’s wake mode when offered. An equal target minute means the next day. Th
 one-shot countdown, not a clock-synchronized weekly schedule. Acknowledgments
 are diagnostic events and do not prove a stored alarm time or selected action.
 
-### Commands and timing
+#### Timing
 
 <!-- generated:jerome-controls -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
-### Layout actions
+#### Layout actions
 
 Frames below use operating mode zero. Framed modes one and two change the mode
 byte and checksum. The raw path has no side or operating-mode field. The layout
@@ -15115,7 +15106,7 @@ hint.
 | MPE_HJ012 | ZRA2 | Explicit app/name choice |
 | ZR90 | S9RM | Explicit app/name choice |
 
-### Settings and timing
+#### Settings and timing
 
 | Operation | Write | Timing |
 |---|---|---|
@@ -15174,39 +15165,46 @@ hint.
 | `30` | `A9` | `AA` | `AB` |
 <!-- /generated -->
 
-### Notifications
+#### Notifications
 
 The streaming parser recognizes alarm set/cancel acknowledgments and alarm,
 light and aroma capability replies. Light replies distinguish on and off.
-Aroma's result comparisons and integer conversion are defective in the app;
-Home Assistant does not invent aroma readback. No normal-bed position or massage
+The app does not read aroma settings back correctly, so Home Assistant shows no
+aroma readback. No normal-bed position or massage
 state decoder is defined. Malformed packets are recorded diagnostically.
 
-### Safety and source behavior
+#### Cleanup
 
-The app's sender can retain its long-press counter and fired latch, overwrite
-queued intent, and sample a changed target or mode while a release sleeps.
-Those schedules do not establish an accepted GATT write or a physical outcome.
-Home Assistant captures the session and target, serializes writes, settles an
-in-flight write before cleanup, and cancels pending long intent between actions.
-It never carries an old gesture onto a replacement connection.
+Home Assistant keeps each command on the connection and target it started on,
+sends one write at a time, finishes a write in flight before cleanup, and drops
+a pending long press between actions. A gesture never carries over to a new
+connection.
 
-The raw lock controls on `AORM` and `E9RM`, and synchronization controls on
-`DXRM`, have no short operand or release frame. Their framed counterparts use
-the held-release delay. The app's missing raw release is preserved; ending its
-pending sender work is the native cleanup. An explicit Stop still uses the
-normal protocol release.
+The raw lock controls on `AORM` and `E9RM`, and the synchronization controls on
+`DXRM`, have no short operand or release frame; their framed counterparts use
+the held-release delay. On the raw path, cleanup ends the pending writes
+without a release frame, as the app does. An explicit Stop still sends the
+normal release.
 
-A light duration of zero selects the app’s automatic mode, rather than an
-inferred keep-on or immediate-off command.
+A light duration of zero selects the app's automatic mode.
 
-The Y6RM popup labels 15, 30 and 45 minutes disagree with the resource names
-10, 20 and 30 minutes. The listed bytes are preserved, but actual durations
-are not established. Controls that reuse a timer command under another icon
-retain their distinct app bindings; they are not treated as confirmed inverse
-state changes. Additional motors keep their numbered control names because
-physical actuator assignments are unknown.
+On Y6RM, the app's timer labels (15, 30 and 45 minutes) disagree with its
+resource names (10, 20 and 30 minutes), so the actual durations are unknown; the
+bytes are sent as the app sends them. Controls that reuse a timer command under
+another icon keep their own app bindings and are not treated as on/off pairs.
+Additional motors keep numbered names because their physical position is
+unknown.
+
+#### Evidence
+
+Based on Jerome's power base 1.0.9 (`com.richmat.jerome2`). Hardware is not yet
+tested.
+
+## Notes
 
 ### Analysis provenance
 
-Based on Jerome's power base 1.0.9 (`com.richmat.jerome2`).
+Based on RMControl, the Richmat MH apps, HJBed, Eshine, the classic apps,
+Good Vibe Sleep, MLILY Control, the L&P legacy app, Casper Base 1.0.8 and Hush
+Base 1.0.5, each named with its version in its section. The Richmat remotes,
+Legacy BedTech and L&P MlRM routes send the pre-v5 controllers' frames.
