@@ -60,7 +60,7 @@ def test_only_the_stream_rows_declare_a_hold() -> None:
     }
     assert profiles.BEDTECH.key not in declared
     assert {"richmat_mh_nisco", "richmat_mh_mlily_supreme"} <= declared
-    assert len(declared) == 18
+    assert len(declared) == 19
 
 
 async def _timed_move(controller: Any) -> None:

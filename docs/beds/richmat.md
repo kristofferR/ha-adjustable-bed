@@ -206,6 +206,7 @@ sends STOP.
 | Richmat MH TX | `richmat_tx` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Nisco | `richmat_nisco` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH MLILY Supreme | `richmat_mlily_supreme` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH Bed Tech | `bedtech_classic` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Classic Avocado Eco Base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic CoasterSleep | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
@@ -301,12 +302,12 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, Classic L&P Adjustable Base |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
@@ -13507,3 +13508,325 @@ for fields and an A1 recall/save example. There is no arbitrary-command interfac
 #### Evidence
 
 Based on SleepEvolution 3.5.5 (13) and W.Silver Products 3.3.7 (9).
+
+
+### Bed Tech
+
+**App:** Bed Tech 2.8.3, `com.richmat.bed_tech`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **Bed Tech app**, then your model. This is separate from the modern
+**BedTech app** and its legacy controls. Automatic uses the first four Bluetooth
+name characters. **Cool Touch** and **QRRM** ask for a model. Short model names
+such as **5I** require an explicit selection. BT3000 and BT3000FH select the same
+controls. Combine two Bluetooth devices to control separate physical sides.
+
+The model survives Configure, Reconfigure, import and restore. Two physical
+addresses can be paired with Home Assistant's parent and Left/Right devices;
+each side retains its own app and model. App transmit modes 0, 1 and 2 are
+separate from physical bed sides. Set them and the declared motor group with
+`richmat_mh_control`, using `action: app_mode`.
+
+Choose **Separate sleep and intervention receiver** for the auxiliary
+receiver. It exposes local single/double user mode and left/right intervention
+switches, with its own BLE session and clock. It has no motor controls or
+physiological report entities. Its intervention settings do not establish a
+mechanical bed movement effect. Normal mattress controls require the explicit
+normal-mattress option and powered initialization; waist controls require the
+receiver's waist initialization.
+
+#### Controls
+
+The selected surface determines motor directions, presets, memory recall and
+save, massage, lighting, aroma and alarm options. Version 1 entity pages use
+only their own typed controls. Generic 5I includes combined down; GRRM and BPRN
+keep their selected-tab up-only behavior. In the 3I entity page, saving M3 sends
+the app's M4-save code. Pillow and lumbar names follow the app's typed mapping.
+
+The cfrm light-lock indicator can report state, but its visible app button has
+no connected listener in this build. Home Assistant exposes feedback without
+adding a lock command. Snore acknowledgments and selected intervention are
+separate state: the app's initialization handler reads the wrong byte and does
+not establish a selected snore mode. The normal callback remains supported.
+
+Use the shared **Set alarm** and **Set bed clock** actions. Supported surfaces
+choose countdown, three-slot or calendar alarms; mattress alarms remain
+separate. Calendar saves and disables read slots from the bed and preserve the
+reported bed identifier. A native request needs one unambiguous slot; no fixed
+capacity is assumed. Disabling preserves the latest time, days and wake mode.
+Disabled-by-default **Refresh alarms** and confirmed **Delete alarm** buttons
+manage the reported records. Deleting withdraws that slot until bed readback.
+Known delete buttons keep their identities across reconnects and wait for
+current-session readback to become available.
+No app-clock buttons or raw packet controls are exposed.
+
+#### Timing
+
+Held widgets refresh at their declared interval, normally 100 ms. Release and
+ordinary one-shot completion send the source-defined END frame after 120 ms.
+Home Assistant bounds held movement and drains release before allowing the next
+command. It captures the physical connection and transmit mode before waiting
+and rejects stale commands and callbacks. END's physical effect is unverified.
+
+Notifications start before the 300 ms version probe; initialization starts
+300 ms later, with 300 ms task spacing for the generic route and 400 ms for
+version 1. Primary writes use the selected
+characteristic's supported write mode. The auxiliary receiver paces writes
+300 ms apart, retries notification setup up to three times and uses a five-second
+heartbeat. These source intervals are not measured radio timings.
+
+#### Notifications
+
+Motor angles preserve signed-byte interpretation and declared display offsets;
+malformed double-negative values are ignored. Capabilities on entity pages
+reset on each initialization reply rather than accumulating. Calendar records
+preserve decimal slot/bed parsing and signed times; repeated records are retained
+as observations while the latest record supplies each actionable slot.
+Home Assistant fences truncated callbacks and clears connection state on reuse.
+The app's QRRM overwrite and late global-target/release races are not reproduced
+as automatic routing changes.
+
+Wi-Fi, network administration, cloud accounts, group administration, firmware
+updates, audio, phone recognition infrastructure, manufacturing/test paths,
+desks and unrelated physiological reports are outside this integration.
+The source-defined bed outputs of speech dispatch remain available through
+the ordinary native bed controls, without the phone recognizer.
+
+#### Command reference
+
+<!-- generated:bedtech-classic-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+514 selectable surfaces. Controls below are offered only by surfaces that declare
+them; entity pages require the receiver's version and initialization replies.
+
+| Page | Control | Gesture | Mode 0 bytes | Refresh ms |
+|---|---|---|---|---|
+| Button light | Button light off | press | 6E 01 00 75 E4 | once |
+| Entity | Back | down | 6E 01 00 25 94 | 100 |
+| Entity | Back Foot Both | down | 6E 01 00 2A 99 | 100 |
+| Entity | Foot | down | 6E 01 00 27 96 | 100 |
+| Entity | Lumbar | down | 6E 01 00 40 AF | 100 |
+| Entity | Pillow | down | 6E 01 00 40 AF | 100 |
+| Entity | Pillow | down | 6E 01 00 42 B1 | 100 |
+| Entity | 10Mins | press | 6E 01 00 5F CE | once |
+| Entity | 20Mins | press | 6E 01 00 63 D2 | once |
+| Entity | 30Mins | press | 6E 01 00 61 D0 | once |
+| Entity | All Off | press | 6E 01 00 5E CD | once |
+| Entity | FLAT | press | 6E 01 00 31 A0 | once |
+| Entity | FLAT | press | 6E 01 00 31 A0 | 100 |
+| Entity | Mode | press | 6E 01 00 48 B7 | once |
+| Entity | UBL | press | 6E 01 00 3C AB | once |
+| Entity | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| Entity | Factory Reset | recall | 6E 01 00 62 D1 | once |
+| Entity | M1 | recall | 6E 01 00 2E 9D | once |
+| Entity | M2 | recall | 6E 01 00 2F 9E | once |
+| Entity | M3 | recall | 6E 01 00 30 9F | once |
+| Entity | M4 | recall | 6E 01 00 B2 21 | once |
+| Entity | M5 | recall | 6E 01 00 F4 63 | once |
+| Entity | Memory | recall | 6E 01 00 2F 9E | once |
+| Entity | Reading | recall | 6E 01 00 2E 9D | once |
+| Entity | Sleeping | recall | 6E 01 00 59 C8 | once |
+| Entity | TV | recall | 6E 01 00 58 C7 | once |
+| Entity | Zero Gravity Mode | recall | 6E 01 00 45 B4 | once |
+| Entity | M1 | save | 6E 01 00 2B 9A | once |
+| Entity | M2 | save | 6E 01 00 2C 9B | once |
+| Entity | M3 | save | 6E 01 00 2D 9C | once |
+| Entity | M3 | save | 6E 01 00 B3 22 | once |
+| Entity | M4 | save | 6E 01 00 B3 22 | once |
+| Entity | M5 | save | 6E 01 00 F5 64 | once |
+| Entity | Memory | save | 6E 01 00 2C 9B | once |
+| Entity | Reading | save | 6E 01 00 2B 9A | once |
+| Entity | Sleeping | save | 6E 01 00 65 D4 | once |
+| Entity | TV | save | 6E 01 00 64 D3 | once |
+| Entity | Zero Gravity Mode | save | 6E 01 00 66 D5 | once |
+| Entity | Back | up | 6E 01 00 24 93 | 100 |
+| Entity | Back Foot Both | up | 6E 01 00 29 98 | 100 |
+| Entity | Foot | up | 6E 01 00 26 95 | 100 |
+| Entity | Lumbar | up | 6E 01 00 3F AE | 100 |
+| Entity | Pillow | up | 6E 01 00 3F AE | 100 |
+| Entity | Pillow | up | 6E 01 00 41 B0 | 100 |
+| Generic | All Motor | down | 6E 01 00 57 C6 | 100 |
+| Generic | Back | down | 6E 01 00 25 94 | 100 |
+| Generic | Back Foot Both | down | 6E 01 00 2A 99 | 100 |
+| Generic | Foot | down | 6E 01 00 27 96 | 100 |
+| Generic | Lumbar | down | 6E 01 00 42 B1 | 100 |
+| Generic | Motor5 | down | 6E 01 00 72 E1 | 100 |
+| Generic | Motor6 | down | 6E 01 00 74 E3 | 100 |
+| Generic | Pillow | down | 6E 01 00 40 AF | 100 |
+| Generic | Pillow Lumbar Both | down | 6E 01 00 44 B3 | 100 |
+| Generic | Tilt | down | 6E 01 00 5C CB | 100 |
+| Generic | Back Fan | press | 6E 01 00 4C BB | once |
+| Generic | Blow Suction | press | 6E 01 00 48 B7 | once |
+| Generic | Fan1 Level Inc | press | 6E 01 00 E1 50 | once |
+| Generic | Flat | press | 6E 01 00 31 A0 | once |
+| Generic | Flat 2 | press | 6E 01 00 31 A0 | once |
+| Generic | Foot Fan | press | 6E 01 00 4E BD | once |
+| Generic | Foot Massager | press | 6E 01 00 33 A2 | once |
+| Generic | Forward | press | 6E 01 00 49 B8 | once |
+| Generic | Head Foot On Off | press | 6E 01 00 6F DE | once |
+| Generic | Heat Low | press | 6E 01 00 9D 0C | once |
+| Generic | Heat Medium | press | 6E 01 00 9E 0D | once |
+| Generic | Heat Min30 | press | 6E 01 00 A1 10 | once |
+| Generic | Heat Min60 | press | 6E 01 00 A2 11 | once |
+| Generic | Heat Off | press | 6E 01 00 9C 0B | once |
+| Generic | Heat Switch | press | 6E 01 00 A0 0F | once |
+| Generic | Hour2 | press | 6E 01 00 5F CE | once |
+| Generic | Hour3 | press | 6E 01 00 63 D2 | once |
+| Generic | Hour5 | press | 6E 01 00 61 D0 | once |
+| Generic | Led Light | press | 6E 01 00 50 BF | once |
+| Generic | Lock | press | 6E 01 00 84 F3 | once |
+| Generic | Massager Intensity | press | 6E 01 00 4C BB | once |
+| Generic | Massager Intensity | press | 6E 01 00 4E BD | once |
+| Generic | Msg 10Min | press | 6E 01 00 5F CE | once |
+| Generic | Msg 15Min | press | 6E 01 00 60 CF | once |
+| Generic | Msg 20Min | press | 6E 01 00 63 D2 | once |
+| Generic | Msg 30Min | press | 6E 01 00 61 D0 | once |
+| Generic | Msg All Off | press | 6E 01 00 47 B6 | once |
+| Generic | Msg All Off | press | 6E 01 00 5E CD | once |
+| Generic | Msg All Off | press | 6E 01 00 5F CE | once |
+| Generic | Msg All Off2 | press | 6E 01 00 5E CD | once |
+| Generic | Msg All Off3 | press | 6E 01 00 5E CD | once |
+| Generic | Msg All Off3 | press | 6E 01 00 61 D0 | once |
+| Generic | Msg Both On Off | press | 6E 01 00 34 A3 | once |
+| Generic | Msg Both On Off | press | 6E 01 00 5D CC | once |
+| Generic | Msg Both On Off | press | 6E 01 00 6F DE | once |
+| Generic | Msg Constant | press | 6E 01 00 3A A9 | once |
+| Generic | Msg Foot Intensity Dec | press | 6E 01 00 4F BE | once |
+| Generic | Msg Foot Intensity Inc | press | 6E 01 00 4E BD | once |
+| Generic | Msg Foot Intensity Inc1 | press | 6E 01 00 4E BD | once |
+| Generic | Msg Foot On Off | press | 6E 01 00 33 A2 | once |
+| Generic | Msg Head Foot Both Off | press | 6E 01 00 5E CD | once |
+| Generic | Msg Head Foot Both On | press | 6E 01 00 5D CC | once |
+| Generic | Msg Head Foot Intensity Inc | press | 6E 01 00 34 A3 | once |
+| Generic | Msg Head Foot Speed Dec | press | 6E 01 00 37 A6 | once |
+| Generic | Msg Head Foot Speed Inc | press | 6E 01 00 36 A5 | once |
+| Generic | Msg Head Intensity Dec | press | 6E 01 00 4D BC | once |
+| Generic | Msg Head Intensity Inc | press | 6E 01 00 4C BB | once |
+| Generic | Msg Head Intensity Inc1 | press | 6E 01 00 4C BB | once |
+| Generic | Msg Intensity1 | press | 6E 01 00 67 D6 | once |
+| Generic | Msg Intensity2 | press | 6E 01 00 AF 1E | once |
+| Generic | Msg Intensity3 | press | 6E 01 00 68 D7 | once |
+| Generic | Msg Mode | press | 6E 01 00 48 B7 | once |
+| Generic | Msg Off | press | 6E 01 00 47 B6 | once |
+| Generic | Msg Pulse | press | 6E 01 00 38 A7 | once |
+| Generic | Msg Wave | press | 6E 01 00 39 A8 | once |
+| Generic | Msg Wave1 | press | 6E 01 00 49 B8 | once |
+| Generic | Msg Wave2 | press | 6E 01 00 4A B9 | once |
+| Generic | Msg2 Intensity3 | press | 6E 01 00 9F 0E | once |
+| Generic | Msg3 Intensity Inc | press | 6E 01 00 E0 4F | once |
+| Generic | Off | press | 6E 01 00 5E CD | once |
+| Generic | On Off | press | 6E 01 00 5D CC | once |
+| Generic | On Off | press | 6E 01 00 5E CD | once |
+| Generic | Reverse | press | 6E 01 00 4A B9 | once |
+| Generic | Sync | press | 6E 01 00 BC 2B | once |
+| Generic | Ubl Off | press | 6E 01 00 75 E4 | once |
+| Generic | Ubl On Off | press | 6E 01 00 3C AB | once |
+| Generic | Vibration Mode2 | press | 6E 01 00 48 B7 | once |
+| Generic | Vibration Off | press | 6E 01 00 5E CD | once |
+| Generic | Anti Snore Mode | recall | 6E 01 00 46 B5 | once |
+| Generic | Anti Snore3 | recall | 6E 01 00 30 9F | once |
+| Generic | Anti Snore3 | recall | 6E 01 00 46 B5 | once |
+| Generic | Erlieving Stress | recall | 6E 01 00 58 C7 | once |
+| Generic | Factory Reset | recall | 6E 01 00 62 D1 | once |
+| Generic | Flat2 | recall | 6E 01 00 6C DB | once |
+| Generic | Head Down Foot Up | recall | 6E 01 00 22 91 | once |
+| Generic | Head Up Foot Down | recall | 6E 01 00 21 90 | once |
+| Generic | Head Up Foot Up | recall | 6E 01 00 23 92 | once |
+| Generic | Head Up Only | recall | 6E 01 00 3D AC | once |
+| Generic | Help Get Up | recall | 6E 01 00 3D AC | once |
+| Generic | Lactation | recall | 6E 01 00 2F 9E | once |
+| Generic | Lactation Mode | recall | 6E 01 00 F4 63 | once |
+| Generic | Lounge Back | recall | 6E 01 00 59 C8 | once |
+| Generic | Lounge Mode | recall | 6E 01 00 59 C8 | once |
+| Generic | Lumbar Back | recall | 6E 01 00 91 00 | once |
+| Generic | M | recall | 6E 01 00 2E 9D | once |
+| Generic | M1 | recall | 6E 01 00 2E 9D | once |
+| Generic | M1 Back | recall | 6E 01 00 2E 9D | once |
+| Generic | M2 Back | recall | 6E 01 00 2F 9E | once |
+| Generic | M3 Back | recall | 6E 01 00 30 9F | once |
+| Generic | M4 Back | recall | 6E 01 00 B2 21 | once |
+| Generic | M5 Back | recall | 6E 01 00 F4 63 | once |
+| Generic | Memory1 Mode | recall | 6E 01 00 2E 9D | once |
+| Generic | Memory1 Mode | recall | 6E 01 00 2F 9E | once |
+| Generic | Memory1 Mode2 | recall | 6E 01 00 2E 9D | once |
+| Generic | Motor Keep 15 | recall | 6E 01 00 76 E5 | once |
+| Generic | Motor Keep 30 | recall | 6E 01 00 90 FF | once |
+| Generic | Movie | recall | 6E 01 00 2E 9D | once |
+| Generic | Movie Mode | recall | 6E 01 00 58 C7 | once |
+| Generic | Movie Watching | recall | 6E 01 00 58 C7 | once |
+| Generic | Read Back | recall | 6E 01 00 F2 61 | once |
+| Generic | Reading | recall | 6E 01 00 2E 9D | once |
+| Generic | Reading | recall | 6E 01 00 58 C7 | once |
+| Generic | Reading Mode | recall | 6E 01 00 58 C7 | once |
+| Generic | Recline | recall | 6E 01 00 F6 65 | once |
+| Generic | Relax | recall | 6E 01 00 70 DF | once |
+| Generic | Release Press | recall | 6E 01 00 C5 34 | once |
+| Generic | Sleep Mode Back | recall | 6E 01 00 8E FD | once |
+| Generic | Sleeping | recall | 6E 01 00 59 C8 | once |
+| Generic | Sleeping Mode | recall | 6E 01 00 86 F5 | once |
+| Generic | Sleeping2 | recall | 6E 01 00 76 E5 | once |
+| Generic | Snore Back | recall | 6E 01 00 46 B5 | once |
+| Generic | Snore Intervention | recall | 6E 01 00 46 B5 | once |
+| Generic | Snoring Intervention | recall | 6E 01 00 46 B5 | once |
+| Generic | Text Snore Intercept | recall | 6E 01 00 46 B5 | once |
+| Generic | Tv Back | recall | 6E 01 00 58 C7 | once |
+| Generic | Xiaofeiyan | recall | 6E 01 00 F0 5F | once |
+| Generic | Yoga | recall | 6E 01 00 2F 9E | once |
+| Generic | Yoga | recall | 6E 01 00 30 9F | once |
+| Generic | Yoga | recall | 6E 01 00 59 C8 | once |
+| Generic | Yoga | recall | 6E 01 00 6B DA | once |
+| Generic | Yoga Back | recall | 6E 01 00 F0 5F | once |
+| Generic | Yoga Mode | recall | 6E 01 00 2E 9D | once |
+| Generic | Yoga Mode | recall | 6E 01 00 58 C7 | once |
+| Generic | Yoga Mode | recall | 6E 01 00 6B DA | once |
+| Generic | Yoga Mode | recall | 6E 01 00 F0 5F | once |
+| Generic | Zg | recall | 6E 01 00 45 B4 | once |
+| Generic | Zg Back | recall | 6E 01 00 45 B4 | once |
+| Generic | Zg Mode | recall | 6E 01 00 45 B4 | once |
+| Generic | Zg2 Back | recall | 6E 01 00 6B DA | once |
+| Generic | Zg3 | recall | 6E 01 00 45 B4 | once |
+| Generic | Zg4 | recall | 6E 01 00 45 B4 | once |
+| Generic | Flat Sleep Save | save | 6E 01 00 F7 66 | once |
+| Generic | Lounge Set | save | 6E 01 00 65 D4 | once |
+| Generic | Lumbar Set | save | 6E 01 00 92 01 | once |
+| Generic | M1 Set | save | 6E 01 00 2B 9A | once |
+| Generic | M2 Set | save | 6E 01 00 2C 9B | once |
+| Generic | M3 Set | save | 6E 01 00 2D 9C | once |
+| Generic | M4 Set | save | 6E 01 00 B3 22 | once |
+| Generic | M5 Set | save | 6E 01 00 F5 64 | once |
+| Generic | Read Set | save | 6E 01 00 F3 62 | once |
+| Generic | Sleep Mode Set | save | 6E 01 00 8F FE | once |
+| Generic | Snore Set | save | 6E 01 00 69 D8 | once |
+| Generic | Tv Set | save | 6E 01 00 64 D3 | once |
+| Generic | Yoga Set | save | 6E 01 00 F1 60 | once |
+| Generic | Zg Set | save | 6E 01 00 66 D5 | once |
+| Generic | Zg2 Set | save | 6E 01 00 6A D9 | once |
+| Generic | All Motor | up | 6E 01 00 56 C5 | 100 |
+| Generic | Back | up | 6E 01 00 24 93 | 100 |
+| Generic | Back Foot Both | up | 6E 01 00 29 98 | 100 |
+| Generic | Foot | up | 6E 01 00 26 95 | 100 |
+| Generic | Lumbar | up | 6E 01 00 41 B0 | 100 |
+| Generic | Motor5 | up | 6E 01 00 71 E0 | 100 |
+| Generic | Motor6 | up | 6E 01 00 73 E2 | 100 |
+| Generic | Pillow | up | 6E 01 00 3F AE | 100 |
+| Generic | Pillow Lumbar Both | up | 6E 01 00 43 B2 | 100 |
+| Generic | Tilt | up | 6E 01 00 5B CA | 100 |
+
+| Model | Angle controls | Massage levels |
+|---|---|---|
+| 4I | Back: 0..35° (display offset 0); Foot: 0..30° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+| 4IT | Back: 0..75° (display offset 0); Foot: 0..30° (display offset 0); Pillow: 0..25° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+| 5I | Back: 0..70° (display offset 0); Foot: 0..45° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+| 6I | Back: 0..70° (display offset 0); Foot: 0..45° (display offset 0); Pillow: 0..25° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+| 7I | Back: 0..70° (display offset 0); Foot: 0..45° (display offset 0); Pillow: 0..25° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+| 7IRM | Back: 0..70° (display offset 0); Foot: 0..45° (display offset 0); Pillow: 0..25° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+| AMRN | Back: 0..70° (display offset 0); Foot: 0..45° (display offset 0); Pillow: 0..25° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+| CERM | Back: 0..58° (display offset 0); Foot: 0..42° (display offset 0) |  |
+| ELRM | Back: 0..59° (display offset 0); Foot: 0..34° (display offset 0) |  |
+| KWRM | Back: 0..64° (display offset 0); Foot: 0..43° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+| LPRM | Back: 0..64° (display offset 0); Foot: 0..43° (display offset 0) | Head Massager: 0..7; Foot Massager: 0..7 |
+<!-- /generated -->

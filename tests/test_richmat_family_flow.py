@@ -42,6 +42,7 @@ APPS = [
     "tx",
     "nisco",
     "mlily_supreme",
+    "bedtech_classic",
     "avocadoecobase",
     "coastersleep",
     "fortywinks",
