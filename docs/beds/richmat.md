@@ -13508,11 +13508,11 @@ Based on SleepEvolution 3.5.5 (13) and W.Silver Products 3.3.7 (9).
 
 **App:** [X-Series](https://play.google.com/store/apps/details?id=com.richmat.bedsmart) 1.0.7 (8), `com.richmat.bedsmart`
 
-**Status:** Not yet tested on hardware.
+**Status:** Not yet tested
 
 #### Setup
 
-Choose **BedSmart / X-Series** in the Richmat app question, then choose the
+Choose **BedSmart / X-Series app** in the Richmat app question, then choose the
 four-character layout matching the app. **Reconfigure** changes the app or
 layout later. Each physical bed in a combined pair keeps its own choices.
 Name matches offer the app as a choice; they do not establish a physical model.
@@ -14403,8 +14403,8 @@ The movement test makes one finite traversal of the generated sequence.
 
 #### Notifications
 
-The source-ordered checksum parser recognizes alarm, light and aroma replies.
-It retains the app's whole-buffer clearing and trailing-header behavior.
+The parser checks each reply's checksum and recognizes alarm, light and aroma
+replies. It clears and trims its buffer the way the app does.
 Discovered lighting and aroma controls remain available across reconnects. Each
 new connection must report support before a settings write; a remembered control
 is not permission to write without that reply.
@@ -14424,9 +14424,9 @@ expand a layout from a shared UUID. There is no clock synchronization command.
 
 #### Evidence
 
-BedSmart / X-Series 1.0.7 supplies the layout operands, raw old-short overrides,
-framed controls, direct auxiliary frames, parser and event timing. Tests match
-its frozen bytes through the Richmat codec. Hardware behavior remains untested.
+Based on BedSmart / X-Series 1.0.7 (`com.richmat.bedsmart`): the layout
+operands, raw old-short overrides, framed controls, direct auxiliary frames,
+parser and event timing. Hardware is not yet tested.
 
 
 ### Bed Tech

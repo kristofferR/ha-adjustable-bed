@@ -43,7 +43,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`agingplace_set_setting`](#agingplace_set_setting) | Aging in Place: settings | Set light brightness, massage duration or motion light duration. |
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Press one of the selected BedTech model's buttons, on the sleeper side the app uses for it. Movement repeats for the configured number of pulses. |
 | [`bedgear`](#bedgear) | Bedgear: settings | Change Bedgear settings. Values show as unknown until the bed reports them. |
-| [`bedsmart`](#bedsmart) | BedSmart / X-Series: settings | Set lighting or aromatherapy, run a named bed command, or confirm a finite movement test. |
+| [`bedsmart`](#bedsmart) | BedSmart / X-Series: settings | Change direct bed lighting and aroma settings, or run a finite bed command. Use Set alarm for wake-up alarms. |
 | [`betterliving2_diagnostic_action`](#betterliving2_diagnostic_action) | BetterLiving2: settings | Refresh alarm or massage status. |
 | [`betterliving2_massage`](#betterliving2_massage) | BetterLiving2: run control | Set head and foot massage intensity. Zero turns a zone off. |
 | [`casper_base`](#casper_base) | Casper Base: settings | Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields. |
@@ -447,6 +447,7 @@ data:
 |-----|--------------|---------------|
 | Bed Tech | From the selected model's alarm choices | Countdown or three-slot alarms on supported models. Calendar models use a uniquely reported `slot`, with `weekdays` or once. `mattress_side` selects the separate vibrating mattress alarm, with intensity 1–3 |
 | BF and Cherish | `none`, `memory_1`, `memory_2` | Once only |
+| BedSmart / X-Series | From the selected layout's alarm page; required to turn the alarm on | The layout's `massage` zones and combinations. Once, at the next occurrence: leave out `weekdays` and `slot` |
 | BetterLiving2 | `massage`, `memory_1`, `memory_2` | `weekdays` or once, at the next occurrence |
 | Comfort Enhancement 3 | Depends on the remote: `none`, `memory_1`, `memory_2`, `zero_g`, `tv`, `anti_snore` | `slot` 0–99, `massage` with zone, intensity and 10/20/30-minute duration, `light`. Once, at the next occurrence |
 | Comfort Enhancements | `none`, `memory_1`, `memory_2` | `massage`; today only |
@@ -459,7 +460,6 @@ data:
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
 | Jerome's power base | The selected layout's wake positions; `none` only with `massage: true` and a supported zone | `massage` with the layout's zones. `memory_1` to `memory_3` need `confirm_custom_position: true`. Once, as a countdown to the time. Standalone beds and the physical sides of a two-address pair only, not a one-address combined bed |
 | L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
-| BedSmart / X-Series | From the selected layout's alarm page; required to turn the alarm on | The layout's `massage` zones and combinations. Once, at the next occurrence: leave out `weekdays` and `slot` |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
@@ -538,12 +538,10 @@ See [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) for
 ## BedSmart / X-Series
 
 <a id="bedsmart"></a>
-**`bedsmart`**: Set lighting or aromatherapy, run a named bed command, or confirm a finite movement test.
+**`bedsmart`**: Change direct bed lighting and aroma settings, or run a finite bed command. Use Set alarm for wake-up alarms.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `device_id` | Bed | One or more configured BedSmart / X-Series devices. |
-| `side` | Side | `both`, `left` or `right` on a combined bed. Each physical target keeps its own layout and local mode. |
 | `operation` | Setting | `color`, `light_duration`, `aromatherapy`, `movement_test` or `bed_command`. |
 | `rgb_color` | Light color | Three channels from 0 to 255, required for `color`. |
 | `seconds` | Light duration (seconds) | 0 to 300, required for `light_duration`. |
@@ -552,7 +550,8 @@ See [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) for
 | `command` | Bed command | Required for `bed_command`: `head_up`, `head_down`, `foot_up`, `foot_down`, `tv`, `lounge`, `zero_gravity`, `anti_snore`, `memory_one`, `memory_two`, `memory_three`, `flat` or `voice_stop_request`. |
 | `duration_ms` | Movement duration (milliseconds) | 1 to 60000, default 1000, for repeating named bed commands. It does not change the finite movement-test sequence. |
 
-All targets are checked before writing. Lighting and aromatherapy require a
+All targets are checked before writing; each physical bed of a combined pair
+keeps its own layout and local mode. Lighting and aromatherapy require a
 support reply on the connection used for the write. The TEST movement sequence
 runs once and performs its release cleanup on cancellation. Use
 [`set_alarm`](#set_alarm) for the selected layout's wake actions and massage
