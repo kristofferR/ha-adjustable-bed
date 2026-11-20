@@ -24,8 +24,6 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`set_positions`](#movement-and-memory) | Move motors to positions | Move several motors to validated target positions in one ordered request. Every target is validated before movement starts. |
 | [`timed_move`](#movement-and-memory) | Move motor for a time | Move a motor for a specified duration. |
 | [`hold_control`](#hold_control) | Hold control | Hold one control that the bed's app profile declares for a bounded duration, then send that profile's release sequence. Every target is checked before any bed moves; an unsupported control is rejected with the list of valid controls. |
-| [`dreamsense_delete_alarm`](#dream-sense-bed) | Delete Dream Sense alarm | Delete an existing observed repeat-alarm record. |
-| [`dreamsense_light`](#dream-sense-bed) | Dream Sense lighting | Set supported bed RGB color and light duration. |
 | [`l2motion`](#l2-motion) | L2 Motion: settings | Change supported light colors or explicitly confirm wired or wireless synchronization. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Run full body massage, or a preset with the other base lowering its feet for 30 seconds. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
@@ -53,6 +51,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`comfort_enhancement3_start_massage`](#comfort_enhancement3_start_massage) | Comfort Enhancement 3: start massage | Start a relative massage program. Values are app choices, not measured bed state. |
 | [`customatic_hold_memory`](#customatic_hold_memory) | Customatic: hold memory buttons | Hold a nonempty combination of the Clarity or Remedy memory-page actions. Program combinations can change stored positions. |
 | [`customatic_move_simultaneously`](#customatic_move_simultaneously) | Customatic: move motors together | Moves up to three motors together, then stops them. |
+| [`dreamsense_delete_alarm`](#dream-sense-bed) | Delete Dream Sense alarm | Delete an existing observed repeat-alarm record. |
+| [`dreamsense_light`](#dream-sense-bed) | Dream Sense lighting | Set supported bed RGB color and light duration. |
 | [`fsm_relax_calibrate`](#fsm_relax_calibrate) | FSM Relax: calibrate | Calibrate the bed with its configured motor directions. Calibration is sent once; if Home Assistant reports an error, check the bed before you try again. |
 | [`floyd_action`](#floyd_action) | Floyd: settings | Moves to a preset, saves over a built-in preset, or links a bed to a room in the app. |
 | [`furnimove_action`](#furnimove_action) | FurniMove: press button | Presses one of the handset's buttons, optionally holding it. |
@@ -349,6 +349,7 @@ they are not exposed through `hold_control`.
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The selected layout's available `richmat_classic_<node>` controls with hold metadata, including a route suffix where declared; saves have no held gesture | The layout's app refresh interval and fresh release, as listed in the guide; finite duration 0.1–60 seconds. Renewable holds use only the declared streaming controls |
+| [Dream Sense Bed](beds/richmat.md#dream-sense-bed) | The selected product’s declared held controls, such as `HeadUp`; save buttons are separate | First frame after 100 ms, then 100 ms refresh and a fresh STOP on the owned connection and side |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
 | [Leggett Okin app profiles](beds/okin-nframe.md#leggett-okin-family) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide |
@@ -418,9 +419,10 @@ with other profiles. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep,
 Galaxy, MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, Motion Bed (the
 motor or thermal module clock; on a hub, the clock of the module in use, so
 select the motor or heating module first), GM Control products with an alarm and OKIN
-SleepEase also set their clock here; their own actions no longer do. A bed whose
+SleepEase also set their clock here; their own actions no longer do. HJBed sets its
+clock here too; its `hjbed` action keeps the `sync` operation, which sends the same frames. A bed whose
 two sides share one receiver has its clock set once. Bed Tech uses this action
-for its typed alarm page, calendar models and separate intervention receiver.
+for its typed alarm page, calendar models and separate intervention receiver. Dream Sense Bed sets the clock-enabled product’s timezone and local calendar here.
 
 ### `set_alarm`
 
@@ -439,7 +441,7 @@ a bed does not have is refused with a message naming it.
 | `massage`, `massage_zone`, `massage_intensity`, `massage_duration`, `head_massage_level`, `foot_massage_level` | Wake-up massage, where the bed has one |
 | `light`, `sound` | Turn on the light or play a sound at the alarm, where available |
 | `mattress_side` | Set the alarm of a vibrating mattress topper on that side instead of the bed's |
-| `confirm_custom_position` | Required to wake at a saved custom position (SIMMONS, and saved memories on Jerome's power base) |
+| `confirm_custom_position` | Required for SIMMONS saved custom positions and saved-memory wake actions on Jerome's power base and Dream Sense Bed |
 | `side` | Side of a combined bed |
 
 ```yaml
@@ -462,6 +464,7 @@ data:
 | Comfort Enhancements | `none`, `memory_1`, `memory_2` | `massage`; today only |
 | ComfortBase | `memory_1`, `memory_2` | Once only |
 | Customatic Z-Series | `massage`, `memory_1` (required to turn on) | Once. Needs a Z-Series controller with an alarm page |
+| Dream Sense Bed | The selected product’s presets; required to turn on. Saved memories require `confirm_custom_position: true` | Single alarms count down to the next occurrence. Repeat products accept `weekdays` and require an explicit observed `slot` (0–255); new record allocation is unavailable |
 | eShine | `zero_g`, `flat`, `massage` (by model) | Once; the bed clock is set first |
 | Glideaway Motion | `none`, `memory_1`, `memory_2` | Once |
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
@@ -810,6 +813,37 @@ Home Assistant cannot list the programs already stored in the bed.
 |-------|------|---------|
 | `actions` | Motor directions | A mapping of back, legs and optionally lumbar to up or down. Lumbar requires the Remedy profile. Opposing directions on one motor are rejected. |
 | `duration` | Duration | Hold for 0.1 to 60 seconds, in whole milliseconds, then release. |
+
+## Dream Sense Bed
+
+Select **Dream Sense Bed** and its exact product in setup. The
+[guide](beds/richmat.md#dream-sense-bed) lists product controls and capability gates.
+Lighting, clock, alarm, split-mode and vibration settings target the physical bed
+without a side. Ordinary held controls follow the selected side where supported.
+The app offers no Bluetooth rename command.
+
+**`dreamsense_delete_alarm`**: Delete an existing repeat-alarm record. Enable both
+**Refresh alarms** and **Alarm response** on the device; both start disabled.
+Press **Refresh alarms**, then read the record numbers from the **Alarm response**
+sensor's attributes. Every selected bed must have that record.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `device_id` | Bed | Required. One or more Adjustable Bed devices. |
+| `alarm_number` | Alarm number | Required. An observed record number, 0–255. This does not allocate a new record. |
+
+**`dreamsense_light`**: Change supported bed RGB color and/or light duration.
+The connected bed must report lighting support before a write is accepted.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `device_id` | Bed | Required. One or more Adjustable Bed devices. |
+| `rgb_color` | Color | Three values from 0 to 255. Supply this, `seconds`, or both. |
+| `seconds` | Light duration | 0–300 seconds; zero keeps the light on. |
+
+Use [`hold_control`](#hold_control) for declared held controls,
+[`sync_clock`](#sync_clock) for clock-enabled products and
+[`set_alarm`](#set_alarm) for single alarms or observed repeat-alarm records.
 
 ## FSM Relax
 
@@ -2390,22 +2424,3 @@ concurrent connections and an explicit `left` or `right` side. The selected
 base receives the preset; the other lowers its feet for 30 seconds and releases.
 Every participant is checked before the first write. STOP, replacement or a
 lost physical session cancels delayed work and drains the captured release.
-
-
-### Dream Sense Bed
-
-| Action | Dream Sense Bed behavior |
-|--------|-------------------------|
-| `hold_control` | Product direction buttons, such as `HeadUp`, repeat after the first 100 ms tick; `duration` is seconds. Release sends STOP on the owned connection and side. |
-| `sync_clock` | Synchronize the clock-enabled product's timezone and local calendar. |
-| `set_alarm` | Single alarms use the product's preset choices. Repeat products update or turn off an explicitly selected existing `slot` from the current alarm list. New record allocation is unavailable. |
-| `dreamsense_delete_alarm` | Delete an existing `alarm_number` from the current list; every target must already have that record. |
-| `dreamsense_light` | Set `rgb_color` (three values 0–255) and/or `seconds` (0–300, zero means always on). Current lighting support must be reported first. |
-
-Select **Dream Sense Bed** and its exact product in setup. Product controls and
-capability gates are listed in the [guide](beds/richmat.md#dream-sense-bed).
-Use the disabled-by-default **Refresh alarms** button to retrieve existing record
-numbers; the **Alarm response** diagnostic sensor includes those records. Lighting,
-clock, alarm, split-mode and vibration settings target the physical bed without a
-side. Ordinary controls follow the selected side only on products and links that
-encode it. No Bluetooth rename command is exposed by this app.

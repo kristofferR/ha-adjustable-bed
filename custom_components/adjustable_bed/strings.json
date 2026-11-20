@@ -2671,7 +2671,7 @@
         "name": "Legs Down"
       },
       "all_motors_up": {
-        "name": "All motors Up"
+        "name": "All motors up"
       },
       "motion_bed_tilt_up": {
         "name": "Tilt Up"
@@ -2692,7 +2692,7 @@
         "name": "Lift Down"
       },
       "all_motors_down": {
-        "name": "All motors Down"
+        "name": "All motors down"
       },
       "motion_bed_hip_down": {
         "name": "Hip Down"
@@ -5087,6 +5087,15 @@
       "enso_massage_timer": {
         "name": "Massage timer"
       },
+      "sealy_massage_timer": {
+        "name": "Massage time remaining"
+      },
+      "sealy_massage_head_level": {
+        "name": "Head massage intensity"
+      },
+      "sealy_massage_foot_level": {
+        "name": "Foot massage intensity"
+      },
       "dreamsense_alarm_ack": {
         "name": "Alarm response",
         "state": {
@@ -5301,6 +5310,9 @@
       },
       "jerome_synchronization": {
         "name": "Synchronization"
+      },
+      "sealy_massage": {
+        "name": "Massage"
       },
       "dreamsense_split": {
         "name": "Split control"
@@ -5944,6 +5956,12 @@
       "massage_timer": {
         "name": "Massage: Timer"
       },
+      "massage_left_timer": {
+        "name": "Left massage timer"
+      },
+      "massage_right_timer": {
+        "name": "Right massage timer"
+      },
       "light_timer": {
         "name": "Light Timer"
       },
@@ -6557,17 +6575,6 @@
       },
       "bedsmart_head_foot": {
         "name": "Head or foot"
-      },
-      "jerome_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "off": "Off",
-          "10_minutes": "10 minutes",
-          "15_minutes": "15 minutes",
-          "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes",
-          "45_minutes": "45 minutes"
-        }
       },
       "dreamsense_selected_side": {
         "name": "Selected side",
@@ -10019,6 +10026,9 @@
     "lifts_not_configured": {
       "message": "Set up the lifts in the main bed's settings first."
     },
+    "lifts_not_stopped": {
+      "message": "Not every bed of the group stopped. {reasons}"
+    },
     "prodigy_hold_mode_blocked": {
       "message": "Changing the button mode is turned off on this bed, because the command can reset it and erase its presets."
     },
@@ -10153,6 +10163,15 @@
     },
     "jerome_device_name": {
       "message": "The original Bluetooth name is needed to choose this bed’s command timing. Rescan the bed so Home Assistant can read its name, then try again."
+    },
+    "sealy_control_invalid": {
+      "message": "Choose a supported Sealy control, product and duration."
+    },
+    "sealy_session_changed": {
+      "message": "The Sealy connection or selected product changed. Try the action again."
+    },
+    "sealy_gatt_missing": {
+      "message": "The Sealy bed control and notification characteristics were not found."
     },
     "dreamsense_product": {
       "message": "Choose the product saved in Dream Sense Bed."

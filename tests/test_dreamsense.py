@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_UNKNOWN
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const, services
@@ -293,6 +293,42 @@ async def test_delivered_timer_state_survives_release_failure(hass):
     with pytest.raises(OSError):
         await c.async_execute_controller_command(lambda live: live.set_massage_timer(10))
     assert c.controller_state.get(MASSAGE_TIMER_MINUTES) == 10
+
+
+async def test_timer_unknown_is_distinct_from_off_and_owner_fences_publication(hass):
+    from custom_components.adjustable_bed.command_scheduler import note_frame_skipped
+    from custom_components.adjustable_bed.select import (
+        MASSAGE_TIMER_DESCRIPTION,
+        AdjustableBedMassageTimerSelect,
+    )
+
+    c, ctrl = await runtime(hass)
+    timer = AdjustableBedMassageTimerSelect(
+        c, MASSAGE_TIMER_DESCRIPTION, list(ctrl.massage_timer_options), has_off=True
+    )
+    await c.async_execute_controller_command(lambda live: live.set_massage_timer(10))
+    assert timer.current_option == "10 min"
+
+    async def stale_owner(live):
+        with live.sent_state(MASSAGE_TIMER_MINUTES(20), is_current=lambda: False):
+            await live._send(codec.function(0x5F), c.cancel_command)
+
+    await c.async_execute_controller_command(stale_owner)
+    assert timer.current_option == "10 min"
+
+    async def partial(live):
+        with live.sent_state(MASSAGE_TIMER_MINUTES(20), is_current=lambda: True):
+            await live._send(codec.function(0x5F), c.cancel_command)
+            note_frame_skipped()
+
+    await c.async_execute_controller_command(partial)
+    assert c.controller_state[MASSAGE_TIMER_MINUTES] == STATE_UNKNOWN
+    assert timer.current_option is None
+    c.handle_controller_state_updates(MASSAGE_TIMER_MINUTES(None))
+    assert timer.current_option == "Off"
+    ctrl.on_disconnect()
+    assert c.controller_state[MASSAGE_TIMER_MINUTES] == STATE_UNKNOWN
+    assert timer.current_option is None
 
 
 async def test_repeat_list_observed_ids_update_delete_and_stale_fence(hass):

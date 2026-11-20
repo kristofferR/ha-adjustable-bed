@@ -16,11 +16,18 @@ from homeassistant.util import dt as dt_util
 from ...card import CARD_HIDDEN
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
-from ...controller_state import StateKey
+from ...controller_state import StateKey, sided
 from ...profiles.richmat import HJBED, RichmatProfile
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button, on_off_switch, unique_buttons
+from ..catalog_buttons import (
+    Kind,
+    catalog_button,
+    massage_timer_minutes,
+    on_off_switch,
+    unique_buttons,
+)
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -198,6 +205,43 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
     @property
     def supports_preset_tv(self) -> bool:
         return False
+
+    @property
+    def _massage_timer_details(self) -> dict[int, str]:
+        """The product's fixed-duration massage timer controls, by their minutes."""
+        return {
+            minutes: detail
+            for detail in self.product.massage
+            if (minutes := massage_timer_minutes(ACTIONS[detail].enum)) is not None
+        }
+
+    # Each timer control sets its duration, so they are one timer select.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_details)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows a product's massage timers.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self._massage_timer_details)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No timer control turns the timer off.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        detail = self._massage_timer_details.get(minutes)
+        if detail is None:
+            raise ValueError("Choose a massage timer this product offers")
+        # The bed reports no timer.
+        # A one-address pair's sides each have a timer.
+        with self.sent_state(sided(MASSAGE_TIMER_MINUTES, self.command_side)(minutes)):
+            await self.async_execute_hjbed_action(detail)
 
     @property
     def memory_slot_count(self) -> int:
@@ -579,6 +623,8 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             action = ACTIONS[detail]
             if detail in (self._sync_details or ()):
                 continue  # The synchronization switch sends these.
+            if detail in self._massage_timer_details.values():
+                continue  # The massage timer select sends these.
             if action.kind == "motor":
                 partner = (
                     action.enum.removesuffix("Up") + "Down"
@@ -856,6 +902,17 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             for number in self._free_alarm_slots
             if not any(row.get("number") == number for row in self._state.alarms)
         )
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    def validate_clock_sync(self) -> None:
+        self.validate_hjbed_request(Request("sync"))
+
+    async def sync_clock(self) -> None:
+        # The hjbed action's sync operation (kept: it existed in 4.x) sends the same frames.
+        await self.async_execute_hjbed_request(Request("sync"))
 
     def validate_hjbed_request(self, request: Request) -> None:
         op = request.operation

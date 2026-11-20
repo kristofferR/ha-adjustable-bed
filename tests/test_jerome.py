@@ -379,17 +379,53 @@ async def test_real_timer_choices_and_inverse_switches(clock):
     await switch.set_fn(ctrl, True)
     assert packets(coord)[0] == "6e0100bc2b"
     assert not any("synchronization" in s.key for s in ctrl.controller_button_specs)
-    for layout, value, expected in (
-        ("D1RM", "off", "6e01005ecd"),
-        ("D9RM", "off", "6e01008bfa"),
-        ("Y6RM", "45_minutes", "6e010061d0"),
+    for layout, minutes, expected in (
+        ("D1RM", 0, "6e01005ecd"),
+        ("D9RM", 0, "6e01008bfa"),
+        ("Y6RM", 45, "6e010061d0"),
     ):
         ctrl, coord = controller(layout)
-        await ctrl.set_massage_duration(value)
+        await ctrl.set_massage_timer(minutes)
         assert packets(coord) == [expected]
-        assert all(not s.local_select_fn for s in ctrl.controller_select_specs)
-        if layout == "Y6RM":
-            assert "off" not in ctrl.controller_select_specs[0].options
+        assert ctrl.controller_select_specs == ()
+        # The popup's on/off row is a toggle, so Y6RM offers no off.
+        assert ctrl.massage_timer_can_turn_off is (layout != "Y6RM")
+
+
+@pytest.mark.parametrize("layout", ["D1RM", "D9RM", "Y6RM"])
+async def test_massage_timer_is_the_shared_select_sending_the_old_selects_frames(clock, layout):
+    """Each choice of the former Jerome timer select is the shared select's same frame."""
+    from custom_components.adjustable_bed.profiles.jerome2 import TIMER_PROGRESS
+
+    old = (
+        {15: p.massage_popup("15"), 30: p.massage_popup("30"), 45: p.massage_popup("45")}
+        if layout == "Y6RM"
+        else {
+            0: p.massage_timer(layout, TIMER_PROGRESS["off"]),
+            10: p.massage_timer(layout, TIMER_PROGRESS["10_minutes"]),
+            20: p.massage_timer(layout, TIMER_PROGRESS["20_minutes"]),
+            30: p.massage_timer(layout, TIMER_PROGRESS["30_minutes"]),
+        }
+    )
+    ctrl, coord = controller(layout)
+    assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
+    assert ctrl.massage_timer_options == sorted(m for m in old if m)
+    for minutes, frame in old.items():
+        ctrl, coord = controller(layout)
+        await ctrl.set_massage_timer(minutes)
+        assert packets(coord) == [frame.hex()]
+        assert published(*coord.handle_controller_state_updates.call_args.args)[
+            "massage_timer"
+        ] == minutes
+    with pytest.raises(ServiceValidationError):
+        await ctrl.set_massage_timer(25)
+    assert not controller("6BRM")[0].supports_massage_timer
+    # The bed never reports the timer: a disconnect keeps the last one sent.
+    ctrl.on_disconnect()
+    assert "massage_timer" not in published(*coord.handle_controller_state_updates.call_args.args)
+    # The frame has no side field, so a one-address combined side offers no timer.
+    with ctrl.side_scope("left"):
+        assert not ctrl.supports_massage_timer
 
 
 def test_setup_discovery_are_explicit_and_searchable():

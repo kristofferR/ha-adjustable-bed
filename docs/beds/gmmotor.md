@@ -25,7 +25,7 @@
 | Motor Control | Exact named app controls and holds | Up, down, reset | None |
 | Position Feedback | Raw indexed reports; no inferred axis mapping | Raw height, unit, bounds and state | None |
 | Memory Presets | Exact product controls, including state-dependent recall/program gestures | Three short recalls; long memory callback sends nothing | None |
-| Massage | Exact product controls; bottom countdown where admitted | None | None |
+| Massage | Exact product controls; bottom countdown where admitted; **Massage: Timer** select for products with several fixed timers | None | None |
 | Lights | Product controls; RGB/timeout menu requires its capability reply | None | None |
 | Alarms | Countdown or repeat table according to product; requires clock reply | None | None |
 | Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | Incoming raw state only |

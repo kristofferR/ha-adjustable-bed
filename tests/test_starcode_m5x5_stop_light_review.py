@@ -49,13 +49,17 @@ async def test_registered_stop_cancels_then_attempts_every_reachable_member(
     hass.data[DOMAIN].pop(members[missing].entry.entry_id)
     await async_register_services(hass)
     try:
-        with pytest.raises(ExceptionGroup):
+        with raises_key("lifts_not_stopped") as raised:
             await hass.services.async_call(
                 DOMAIN,
                 "starcode_move_lifts",
                 {CONF_DEVICE_ID: device.id, "action": "stop"},
                 blocking=True,
             )
+        # The unloaded bed is named.
+        assert raised.value.translation_placeholders["reasons"].startswith(
+            f"{members[missing].entry.title}: "
+        )
         with pytest.raises(asyncio.CancelledError):
             await pending
         for index, member in enumerate(members):
@@ -77,13 +81,16 @@ async def test_registered_stop_transport_failure_does_not_skip_other_members(
     )
     lifts[0].async_stop_command.side_effect = ConnectionError("lift transport lost")
     await async_register_services(hass)
-    with pytest.raises(ExceptionGroup):
+    with raises_key("lifts_not_stopped") as raised:
         await hass.services.async_call(
             DOMAIN,
             "starcode_move_lifts",
             {CONF_DEVICE_ID: device.id, "action": "stop"},
             blocking=True,
         )
+    assert raised.value.translation_placeholders == {
+        "reasons": f"{lifts[0].name}: lift transport lost"
+    }
     assert all(member.async_stop_command.await_count == 1 for member in (main, *lifts))
 
 

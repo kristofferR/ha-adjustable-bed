@@ -227,6 +227,7 @@ LATE_CLOCK_SYNC = frozenset(
         "DoubleSleepController",
         "GmmotorController",
         "GoodVibeController",
+        "HJBedController",
         "MajesticHomeController",
         "MlilyRemoteController",
         "MotionBedController",
@@ -1328,6 +1329,9 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "dreamsense":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="blue",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "blue", const.CONF_PRODUCT_TYPE: "blue"})
     if bed_type == "saatva":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
@@ -1364,6 +1368,8 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == "sealy_posturematic":
+        data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
     if bed_type == const.BED_TYPE_LINX:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
@@ -1555,6 +1561,9 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed import const
 
     scenarios: list[Scenario] = [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
+    scenarios.extend(Scenario(id=f"sealy_posturematic:{n}", bed_type="sealy_posturematic",
+                              entry_data={"product_type": str(n), "bed_type": "sealy_posturematic"}, layout_id="sealy_posturematic")
+                     for n in (1, 2))
     for wire in ("okin15", "okin24"):
         for product in ("new", "lite"):
             for transport in ("ffe", "nordic"):
@@ -2159,6 +2168,18 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    # Dream Sense: each saved BED product plus all six accepted GATT routes.
+    from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
+    for product in DREAMSENSE_PROFILES:
+        scenarios.append(Scenario(
+            id=f"dreamsense:{product}", bed_type="dreamsense", protocol_variant=product,
+            entry_data={"protocol_variant": product, "product_type": product}, layout_id="dreamsense",
+        ))
+    for route in range(1, 6):
+        scenarios.append(dataclasses.replace(
+            default_scenario("dreamsense"), id=f"dreamsense:gatt:{route}",
+            layout_id=f"dreamsense:gatt:{route}",
+        ))
     # Linx 1.0.7: all independent model/route combinations, preserving
     # the existing Keeson JSON scenarios and their characteristic fixtures.
     for model in ("quest", "orbes"):
@@ -2288,6 +2309,12 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type == "sealy_posturematic":
+            controller._coordinator.connection_generation += 1
+            session = SimpleNamespace(async_start_notify=controller.start_notify)
+            await controller.async_on_connect(session)
+            await controller.async_after_connect(session)
+            return
         if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)

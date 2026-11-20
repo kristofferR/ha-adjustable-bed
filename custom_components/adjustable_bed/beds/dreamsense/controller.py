@@ -12,6 +12,7 @@ from time import monotonic
 from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -195,17 +196,30 @@ class DreamSenseController(BedController):
         return session
 
     @contextmanager
-    def sent_state(self, *updates: StateUpdate) -> Iterator[None]:
+    def sent_state(
+        self, *updates: StateUpdate, is_current: Callable[[], bool] | None = None
+    ) -> Iterator[None]:
         session = self._live()
 
         def show(delivery: Delivery) -> None:
-            if not updates or not self._current(session):
+            if (
+                not updates
+                or not self._current(session)
+                or is_current is not None
+                and not is_current()
+            ):
                 return
             if delivery is Delivery.SENT:
                 self.forward_controller_state_updates(*updates)
             elif delivery is Delivery.PARTIAL:
                 self.forward_controller_state_updates(
-                    *(StateUpdate(update.key, None) for update in updates)
+                    *(
+                        StateUpdate(
+                            update.key,
+                            STATE_UNKNOWN if update.key == MASSAGE_TIMER_MINUTES else None,
+                        )
+                        for update in updates
+                    )
                 )
 
         with delivered(show):
@@ -384,7 +398,7 @@ class DreamSenseController(BedController):
             SPLIT(None),
             SYNC(None),
             LIGHT_SECONDS(None),
-            MASSAGE_TIMER_MINUTES(None),
+            StateUpdate(MASSAGE_TIMER_MINUTES, STATE_UNKNOWN),
             UNDER_BED_LIGHTS_RGB(None),
             ALARMS(None),
             ACK(None),

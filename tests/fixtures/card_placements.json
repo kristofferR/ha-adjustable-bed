@@ -3525,14 +3525,17 @@
  "select:hjbed_layout": {
   "card_section": "utility"
  },
- "select:jerome_massage_timer": {
-  "card_section": "massage"
- },
  "select:l2motion_sound_mode": {
   "card_section": "utility"
  },
  "select:light_timer": {
   "card_section": "lighting"
+ },
+ "select:massage_left_timer": {
+  "card_section": "massage"
+ },
+ "select:massage_right_timer": {
+  "card_section": "massage"
  },
  "select:massage_timer": {
   "card_section": "massage",
@@ -4416,6 +4419,16 @@
  "sensor:saved_positions": {
   "card_section": "saved_positions"
  },
+ "sensor:sealy_massage_foot_level": {
+  "card_section": "massage"
+ },
+ "sensor:sealy_massage_head_level": {
+  "card_section": "massage"
+ },
+ "sensor:sealy_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
  "sensor:simmons_alarm_1": {
   "card_section": "hidden"
  },
@@ -4823,6 +4836,9 @@
  },
  "switch:ruf_richmat_sleep_right_intervention": {
   "card_section": "utility"
+ },
+ "switch:sealy_massage": {
+  "card_section": "massage"
  },
  "switch:sleepiq_auto_kids_light": {
   "card_section": "utility"

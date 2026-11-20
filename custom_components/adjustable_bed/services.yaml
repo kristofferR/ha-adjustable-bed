@@ -4044,9 +4044,6 @@ jerome_bed:
           mode: box
 
 dreamsense_light:
-  target:
-    device:
-      integration: adjustable_bed
   fields:
     device_id:
       required: true

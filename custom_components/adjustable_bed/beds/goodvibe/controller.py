@@ -27,6 +27,7 @@ from ...command_scheduler import (
     note_frame_written,
 )
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import GOODVIBE, RichmatProfile
 from ...profiles.richmat_catalog import Catalog
@@ -1257,7 +1258,7 @@ class GoodVibeController(BedController):
         context = current_command_context()
         if gesture != "sustainPress" and context is not None and context.lease is not None:
             # Admission checks the scope too; memory mode may change after it.
-            raise ValueError("This control does not support renewable holds")
+            raise invalid("control_hold_renewal_not_supported")
         side, link = self._side(), self._current_link()
         bed = self.catalog.bed
         finite_bed_hold = (
