@@ -4,340 +4,238 @@
     "protocol": "P1",
     "action": "queryAlarm",
     "inputs": {},
-    "expected_bytes": "00 c0",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:515 (queryAlarm default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "00 c0"
   },
   {
     "id": "P1-queryMassage",
     "protocol": "P1",
     "action": "queryMassage",
     "inputs": {},
-    "expected_bytes": "00 b0",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:1150 (queryMassage default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "00 b0"
   },
   {
     "id": "P1-motionSensorOff",
     "protocol": "P1",
     "action": "motionSensorOff",
     "inputs": {},
-    "expected_bytes": "05 02 00 02 80 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:1188 (motionSensorOff default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 02 80 00 00"
   },
   {
     "id": "P1-motionSensorOn",
     "protocol": "P1",
     "action": "motionSensorOn",
     "inputs": {},
-    "expected_bytes": "05 02 00 02 10 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:1242 (motionSensorOn default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 02 10 00 00"
   },
   {
     "id": "P1-underbedLighting",
     "protocol": "P1",
     "action": "underbedLighting",
     "inputs": {},
-    "expected_bytes": "05 02 00 02 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:1477 (underbedLighting default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 02 00 00 00"
   },
   {
     "id": "P1-waveReduce",
     "protocol": "P1",
     "action": "waveReduce",
     "inputs": {},
-    "expected_bytes": "05 02 04 00 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:1640 (waveReduce default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 04 00 00 00 00"
   },
   {
     "id": "P1-waveAdd",
     "protocol": "P1",
     "action": "waveAdd",
     "inputs": {},
-    "expected_bytes": "05 02 10 00 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:1798 (waveAdd default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 10 00 00 00 00"
   },
   {
     "id": "P1-footStrengthReduce",
     "protocol": "P1",
     "action": "footStrengthReduce",
     "inputs": {},
-    "expected_bytes": "05 02 01 00 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:1956 (footStrengthReduce default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 01 00 00 00 00"
   },
   {
     "id": "P1-footStrengthAdd",
     "protocol": "P1",
     "action": "footStrengthAdd",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 04 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:2114 (footStrengthAdd default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 04 00 00"
   },
   {
     "id": "P1-headStrengthReduce",
     "protocol": "P1",
     "action": "headStrengthReduce",
     "inputs": {},
-    "expected_bytes": "05 02 00 80 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:2272 (headStrengthReduce default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 80 00 00 00"
   },
   {
     "id": "P1-headStrengthAdd",
     "protocol": "P1",
     "action": "headStrengthAdd",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 08 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:2430 (headStrengthAdd default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 08 00 00"
   },
   {
     "id": "P1-meanwhileStrengthReduce",
     "protocol": "P1",
     "action": "meanwhileStrengthReduce",
     "inputs": {},
-    "expected_bytes": "05 02 01 80 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:2505 (meanwhileStrengthReduce default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 01 80 00 00 00"
   },
   {
     "id": "P1-meanwhileStrengthAdd",
     "protocol": "P1",
     "action": "meanwhileStrengthAdd",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 0c 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:2663 (meanwhileStrengthAdd default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 0c 00 00"
   },
   {
     "id": "P1-massageMode",
     "protocol": "P1",
     "action": "massageMode",
     "inputs": {},
-    "expected_bytes": "05 02 10 00 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:2738 (massageMode default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 10 00 00 00 00"
   },
   {
     "id": "P1-massageTimer",
     "protocol": "P1",
     "action": "massageTimer",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 02 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:2894 (massageTimer default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 02 00 00"
   },
   {
     "id": "P1-massageOff",
     "protocol": "P1",
     "action": "massageOff",
     "inputs": {},
-    "expected_bytes": "05 02 02 00 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:2951 (massageOff default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 02 00 00 00 00"
   },
   {
     "id": "P1-massageOn",
     "protocol": "P1",
     "action": "massageOn",
     "inputs": {},
-    "expected_bytes": "05 02 00 08 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:3003 (massageOn default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 08 00 00 00"
   },
   {
     "id": "P1-resetMemory",
     "protocol": "P1",
     "action": "resetMemory",
     "inputs": {},
-    "expected_bytes": "05 02 08 00 10 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:3055 (resetMemory default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 08 00 10 00 00"
   },
   {
     "id": "P1-m2",
     "protocol": "P1",
     "action": "m2",
     "inputs": {},
-    "expected_bytes": "05 02 00 04 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:3290 (m2 default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 04 00 00 00"
   },
   {
     "id": "P1-m1",
     "protocol": "P1",
     "action": "m1",
     "inputs": {},
-    "expected_bytes": "05 02 00 01 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:3533 (m1 default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 01 00 00 00"
   },
   {
     "id": "P1-flatPosition",
     "protocol": "P1",
     "action": "flatPosition",
     "inputs": {},
-    "expected_bytes": "05 02 08 00 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:3776 (flatPosition default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 08 00 00 00 00"
   },
   {
     "id": "P1-anti",
     "protocol": "P1",
     "action": "anti",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 80 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:4019 (anti default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 80 00 00"
   },
   {
     "id": "P1-zeroGravity",
     "protocol": "P1",
     "action": "zeroGravity",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 10 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:4262 (zeroGravity default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 10 00 00"
   },
   {
     "id": "P1-lounge",
     "protocol": "P1",
     "action": "lounge",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 20 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:4505 (lounge default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 20 00 00"
   },
   {
     "id": "P1-voiceStop",
     "protocol": "P1",
     "action": "voiceStop",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 03 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:4744 (voiceStop default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 03 00"
   },
   {
     "id": "P1-stop",
     "protocol": "P1",
     "action": "stop",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:4983 (stop default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 00 00"
   },
   {
     "id": "P1-lumbarDown",
     "protocol": "P1",
     "action": "lumbarDown",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 20 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:5144 (lumbarDown default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 20 00"
   },
   {
     "id": "P1-lumbarUp",
     "protocol": "P1",
     "action": "lumbarUp",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 10 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:5302 (lumbarUp default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 10 00"
   },
   {
     "id": "P1-neckTiltDown",
     "protocol": "P1",
     "action": "neckTiltDown",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 80 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:5460 (neckTiltDown default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 80 00"
   },
   {
     "id": "P1-neckTiltUp",
     "protocol": "P1",
     "action": "neckTiltUp",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 40 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:5618 (neckTiltUp default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 40 00"
   },
   {
     "id": "P1-footDown",
     "protocol": "P1",
     "action": "footDown",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 08 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:5856 (footDown default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 08 00"
   },
   {
     "id": "P1-footUp",
     "protocol": "P1",
     "action": "footUp",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 04 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:6099 (footUp default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 04 00"
   },
   {
     "id": "P1-headDown",
     "protocol": "P1",
     "action": "headDown",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 02 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:6342 (headDown default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 02 00"
   },
   {
     "id": "P1-headUp",
     "protocol": "P1",
     "action": "headUp",
     "inputs": {},
-    "expected_bytes": "05 02 00 00 00 01 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:6585 (headUp default branch; Smi constants divided by2)"
-    ]
+    "expected_bytes": "05 02 00 00 00 01 00"
   },
   {
     "id": "clock-2026",
@@ -353,9 +251,6 @@
       "second": 45
     },
     "expected_bytes": "07 04 1a 0b 14 05 0e 1e 2d",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:546-1137 setCurrentTime 0x39cebc-0x39d554"
-    ],
     "note": "Source-derived concrete parameterization, not a captured hardware packet; weekday mask supplied as raw byte, no claim of resolved UI weekday packing."
   },
   {
@@ -372,9 +267,6 @@
       "second": 0
     },
     "expected_bytes": "07 04 00 01 01 06 00 00 00",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:546-1137 setCurrentTime 0x39cebc-0x39d554"
-    ],
     "note": "Source-derived concrete parameterization, not a captured hardware packet; weekday mask supplied as raw byte, no claim of resolved UI weekday packing."
   },
   {
@@ -388,9 +280,6 @@
       "mode": 5
     },
     "expected_bytes": "07 05 3e 06 06 1e 00 01 01",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:10-313 setAlarm 0x361884-0x361c04"
-    ],
     "note": "Source-derived concrete parameterization, not a captured hardware packet; weekday mask supplied as raw byte, no claim of resolved UI weekday packing."
   },
   {
@@ -404,9 +293,6 @@
       "mode": 6
     },
     "expected_bytes": "07 05 80 06 07 2d 00 01 01",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:10-313 setAlarm 0x361884-0x361c04"
-    ],
     "note": "Source-derived concrete parameterization, not a captured hardware packet; weekday mask supplied as raw byte, no claim of resolved UI weekday packing."
   },
   {
@@ -420,9 +306,6 @@
       "mode": 0
     },
     "expected_bytes": "07 05 00 06 00 00 00 01 01",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:10-313 setAlarm 0x361884-0x361c04"
-    ],
     "note": "Source-derived concrete parameterization, not a captured hardware packet; weekday mask supplied as raw byte, no claim of resolved UI weekday packing."
   },
   {
@@ -436,9 +319,6 @@
       "mode": 17
     },
     "expected_bytes": "07 05 02 05 08 0a 00 01 01",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:10-313 setAlarm 0x361884-0x361c04"
-    ],
     "note": "Builder branch only; this mode input has no reachable UI caller in the shipped app."
   },
   {
@@ -452,9 +332,6 @@
       "mode": 9
     },
     "expected_bytes": "07 05 04 08 09 0f 00 01 01",
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_command.dart:10-313 setAlarm 0x361884-0x361c04"
-    ],
     "note": "Builder branch only."
   },
   {
@@ -471,9 +348,6 @@
       "head_level": 3,
       "foot_level": 2
     },
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_manager.dart:485-1400 _dealBox24Data 0x36250c-0x362f40"
-    ],
     "note": "Source-derived parser branch vector; not an actual notification capture."
   },
   {
@@ -490,9 +364,6 @@
       "head_level": 4,
       "foot_level": 3
     },
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_manager.dart:485-1400 _dealBox24Data 0x36250c-0x362f40"
-    ],
     "note": "Source-derived parser branch vector; not an actual notification capture."
   },
   {
@@ -510,9 +381,6 @@
       "alarm_selector": 17,
       "alarm_enabled": true
     },
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_manager.dart:485-1400 _dealBox24Data 0x36250c-0x362f40"
-    ],
     "note": "Source-derived parser branch vector; not an actual notification capture."
   },
   {
@@ -530,9 +398,6 @@
       "alarm_selector": 19,
       "alarm_enabled": false
     },
-    "evidence": [
-      "work/blutter303/asm/superior/control/control_manager.dart:485-1400 _dealBox24Data 0x36250c-0x362f40"
-    ],
     "note": "Source-derived parser branch vector; not an actual notification capture."
   },
   {
@@ -546,11 +411,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 80 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -566,11 +426,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 82 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -586,11 +441,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 84 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -606,11 +456,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 88 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -626,11 +471,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 90 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -646,11 +486,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 a0 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -666,11 +501,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 c0 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -686,11 +516,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 81 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -708,11 +533,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 8b 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -730,11 +550,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 e4 06 06 2a 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   },
   {
@@ -752,11 +567,6 @@
       "minute": 42
     },
     "expected_bytes": "07 05 00 06 00 00 00 01 01",
-    "evidence": [
-      "E13",
-      "work/weekday-dispatch-resolution/bindings.json:outbound.vectors",
-      "work/weekday-dispatch-resolution/weekday-vectors.log"
-    ],
     "note": "Adopted passing focused source-slice whole-frame vector; no hardware capture and no inbound round-trip assertion."
   }
 ]

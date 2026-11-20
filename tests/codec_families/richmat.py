@@ -6,6 +6,7 @@ import re
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.profiles.casper import CasperProfile
+from custom_components.adjustable_bed.profiles.dreamsense import DreamSenseProfile
 from custom_components.adjustable_bed.profiles.hush import HushProfile
 from custom_components.adjustable_bed.profiles.luniosmart import LunioSmartProfile
 from custom_components.adjustable_bed.profiles.luuna import LuunaProfile
@@ -24,6 +25,8 @@ from tests import (
     sonicsleep_vectors,
 )
 from tests.codec_families import CodecFamily, CodecGuide
+from tests.dreamsense_vectors import FRAMES as DREAMSENSE_LITERALS
+from tests.dreamsense_vectors import FROZEN_FRAMES as DREAMSENSE_FRAMES
 from tests.richmat_legacy_vectors import FROZEN_FRAMES as LEGACY_FRAMES
 from tests.richmat_vectors import FROZEN_FRAMES
 from tests.saatva_vectors import FROZEN_FRAMES as SAATVA_FRAMES
@@ -51,6 +54,7 @@ _VARIANTS = {
 # The Casper Base and Hush Base products are their bed type's protocol variant.
 _PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE, const.BED_TYPE_LUUNA, const.BED_TYPE_MLILY_REMOTE})
 _FROZEN = frozenset().union(
+    DREAMSENSE_LITERALS,
     *LEGACY_FRAMES.values(),
     *FROZEN_FRAMES.values(),
     *luniosmart_vectors.FROZEN_FRAMES.values(),
@@ -85,6 +89,7 @@ def _spelled(text: str) -> set[str]:
 
 FAMILY = CodecFamily(
     profiles={
+        DreamSenseProfile: DREAMSENSE_FRAMES,
         RichmatProfile: FROZEN_FRAMES | SAATVA_FRAMES,
         LunioSmartProfile: luniosmart_vectors.FROZEN_FRAMES,
         LegacyProfile: LEGACY_FRAMES,
@@ -113,6 +118,7 @@ FAMILY = CodecFamily(
             "hush_base",
             "luuna",
             "sonicsleep",
+            "dreamsense",
             "saatva",
             "luniosmart",
             "sleep_evolution",
@@ -139,7 +145,7 @@ FAMILY = CodecFamily(
         path="docs/beds/richmat.md",
         spelled=_spelled,
         frozen=_FROZEN,
-        variant=lambda key, bed_type: key.removeprefix("saatva_") if bed_type == "saatva" else key.split(":", 1)[1] if bed_type in ("sleep_evolution", "wsilver_legacy") else key if bed_type in _PRODUCT_VARIANTS else _VARIANTS.get(key),
+        variant=lambda key, bed_type: key.removeprefix("dreamsense_") if bed_type == "dreamsense" else key.removeprefix("saatva_") if bed_type == "saatva" else key.split(":", 1)[1] if bed_type in ("sleep_evolution", "wsilver_legacy") else key if bed_type in _PRODUCT_VARIANTS else _VARIANTS.get(key),
         entry_data={
             "bobpowerbase": {const.CONF_PRODUCT_TYPE: "standard"},
             "sonicsleep": {const.CONF_PRODUCT_TYPE: "one"},

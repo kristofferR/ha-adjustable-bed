@@ -5096,6 +5096,13 @@
       "sealy_massage_foot_level": {
         "name": "Foot massage intensity"
       },
+      "dreamsense_alarm_ack": {
+        "name": "Alarm response",
+        "state": {
+          "alarm_added": "Alarm set",
+          "alarm_cancelled": "Alarm cancelled"
+        }
+      },
       "superior_sleep_timer_minutes": {
         "name": "Massage timer"
       },
@@ -5324,6 +5331,9 @@
       },
       "sealy_massage": {
         "name": "Massage"
+      },
+      "dreamsense_split": {
+        "name": "Split control"
       },
       "superior_sleep_motion": {
         "name": "Under-bed motion activation"
@@ -5943,6 +5953,9 @@
       },
       "jerome_massage_intensity": {
         "name": "Massage intensity"
+      },
+      "dreamsense_light_seconds": {
+        "name": "Light duration"
       }
     },
     "select": {
@@ -6586,6 +6599,13 @@
       },
       "bedsmart_head_foot": {
         "name": "Head or foot"
+      },
+      "dreamsense_selected_side": {
+        "name": "Selected side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
+        }
       }
     },
     "climate": {
@@ -9633,8 +9653,40 @@
         }
       }
     },
+    "dreamsense_light": {
+      "name": "Dream Sense: lighting",
+      "description": "Set the bed light color or duration after the bed reports lighting support.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The physical bed."
+        },
+        "rgb_color": {
+          "name": "Color",
+          "description": "Red, green and blue, each 0–255."
+        },
+        "seconds": {
+          "name": "Duration",
+          "description": "0 keeps the light on; otherwise 1–300 seconds."
+        }
+      }
+    },
+    "dreamsense_delete_alarm": {
+      "name": "Dream Sense: delete alarm",
+      "description": "Delete an existing repeat alarm from the current bed alarm list.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The physical bed."
+        },
+        "alarm_number": {
+          "name": "Alarm number",
+          "description": "An existing record returned by Refresh alarms."
+        }
+      }
+    },
     "superior_sleep_speech": {
-      "name": "Superior Sleep command input",
+      "name": "Superior Sleep: speech input",
       "description": "Send a command selected by the Superior sleep speech map, without using phone audio. Motor refresh is bounded by duration_ms.",
       "fields": {
         "device_id": {
@@ -10166,6 +10218,36 @@
     },
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "dreamsense_product": {
+      "message": "Choose the product saved in Dream Sense Bed."
+    },
+    "dreamsense_transport": {
+      "message": "The bed did not provide a writable Dream Sense command endpoint and notifications."
+    },
+    "dreamsense_session": {
+      "message": "The bed connection or selected product changed. Try the action again."
+    },
+    "dreamsense_side": {
+      "message": "This product and connection do not offer that side."
+    },
+    "dreamsense_physical": {
+      "message": "Target the physical bed for this setting, without a side."
+    },
+    "dreamsense_action": {
+      "message": "Choose a control or setting offered by this Dream Sense product."
+    },
+    "dreamsense_capability": {
+      "message": "The bed must report support for this feature on the current connection first."
+    },
+    "dreamsense_alarm_list": {
+      "message": "The bed did not return its alarm list. Try again."
+    },
+    "dreamsense_alarm_record": {
+      "message": "Choose an existing alarm number from the current bed alarm list. Creating a new record is unavailable."
+    },
+    "alarm_slot_required": {
+      "message": "Choose the existing alarm number for {device_name}."
     },
     "superior_sleep_product": {
       "message": "Choose the Superior sleep product, SS350 or SS650."
