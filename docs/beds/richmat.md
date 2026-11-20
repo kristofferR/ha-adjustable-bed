@@ -13546,10 +13546,12 @@ only their own typed controls. Generic 5I includes combined down; GRRM and BPRN
 keep their selected-tab up-only behavior. In the 3I entity page, saving M3 sends
 the app's M4-save code. Pillow and lumbar names follow the app's typed mapping.
 
-The light lock shows the lock state the bed reports; there is no lock command,
-because the app's lock button sends nothing. Snore acknowledgements and the
-selected intervention are separate states: the selected snore mode comes from
-the bed's normal reply, not from its initialization reply.
+On CFRM, the light lock state the bed reports is a sensor, disabled by
+default; the light lock has no toggle command, because the app's button for it
+sends nothing. The motor-page lock command is separate. Snore acknowledgements
+and the selected intervention are separate states: the bed-reported snore mode
+comes from its normal reply (and a successful write), never from the
+initialization reply.
 
 Use the shared **Set alarm** and **Set bed clock** actions. Supported surfaces
 choose countdown, three-slot or calendar alarms; mattress alarms remain
@@ -13584,13 +13586,15 @@ malformed double-negative values are ignored. Capabilities on entity pages
 reset on each initialization reply rather than accumulating. Calendar records
 preserve decimal slot/bed parsing and signed times; repeated records are retained
 as observations while the latest record supplies each actionable slot.
-Home Assistant ignores truncated replies and clears connection state when a
-link is reused.
+Calendar records that are too short are dropped, and other incomplete replies
+are held until they are complete before decoding. Connection state is cleared
+when a link is reused.
 
 Wi-Fi, network administration, cloud accounts, group administration, firmware
 updates, audio, phone recognition infrastructure, manufacturing/test paths,
-desks and unrelated physiological reports are outside this integration. The
-bed actions the app's voice control sends are available as ordinary controls.
+desks and unrelated physiological reports are outside this integration. A
+bed action the app's voice control sends is available where the selected model
+also has it as an ordinary control.
 
 #### Command reference
 

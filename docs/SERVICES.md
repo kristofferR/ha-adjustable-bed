@@ -535,12 +535,14 @@ For the [Bed Tech app](beds/richmat.md#bed-tech), use the native movement,
 preset, memory, light and massage entities for everyday controls. This is
 separate from the newer [BedTech app](#bedtech).
 
-Bed Tech shares two actions with Nisco and MLILY Supreme; their fields are
-listed under [Nisco and MLILY Supreme](#richmat_mh_control).
+Bed Tech shares `richmat_mh_control` with Nisco and MLILY Supreme, and
+`richmat_mh_sleep_mode` with Nisco; their fields are listed under
+[Nisco and MLILY Supreme](#richmat_mh_control).
 
 - **[`richmat_mh_control`](#richmat_mh_control)** runs a named control, reads a
   setting or changes the local mode used by later controls. Each selected model
   must offer the requested control before any bed is commanded. On Bed Tech,
+  `action` is `press`, `query` or `app_mode` (not `remote_long`),
   `transmit_mode` (`mode_0`, `mode_1` or `mode_2`) does not select a physical
   Bluetooth device, and `motor_group` is offered only where the model has it.
 - **[`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode)** changes the separate
