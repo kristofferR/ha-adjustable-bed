@@ -671,3 +671,36 @@ async def test_set_alarm_calendar_needs_an_explicit_wake_action(hass):
     with pytest.raises(ServiceValidationError, match="Choose a wake action"):
         await call_set_alarm(hass, c, {"enabled": True, "time": "07:00:00", "slot": 1})
     c.ruf_richmat_alarm.assert_not_awaited()
+
+
+@pytest.mark.parametrize("app", ["bailey2", "americanstar", "wsilver2", "tx"])
+async def test_massage_timer_buttons_are_one_select_sending_the_same_frames(app):
+    """The tap each timer button sent is what the select sends; one duration keeps its button."""
+    from custom_components.adjustable_bed.beds.richmat_mh.controller import (
+        _MASSAGE_TIMERS,
+        _tap_action,
+    )
+    from custom_components.adjustable_bed.beds.ruf_richmat.models import MODEL_IDS
+
+    checked = 0
+    for model in MODEL_IDS[app]:
+        c = make(app, model)
+        timers = c._massage_timer_codes
+        keys = {s.key for s in c.controller_button_specs}
+        if not timers:
+            continue
+        checked += 1
+        assert c.massage_timer_options == sorted(timers) and not c.massage_timer_can_turn_off
+        assert not {f"richmat_mh_{code:02x}" for code in timers.values()} & keys
+        for minutes, code in timers.items():
+            assert _MASSAGE_TIMERS[code] == minutes
+            sent = []
+            for run in (
+                lambda ctrl, k=code: _tap_action(k)(ctrl),
+                lambda ctrl, m=minutes: ctrl.set_massage_timer(m),
+            ):
+                fresh = make(app, model)
+                await run(fresh)
+                sent.append(frames(fresh))
+            assert sent[0] == sent[1] != []
+    assert checked
