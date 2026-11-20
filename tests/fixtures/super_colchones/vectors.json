@@ -14,11 +14,6 @@
       ]
     },
     "expected_bytes": "46",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e01",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -36,11 +31,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 46 b5",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e01",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -58,11 +48,6 @@
       ]
     },
     "expected_bytes": "69",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e01",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -80,11 +65,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 69 d8",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e01",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -102,11 +82,6 @@
       ]
     },
     "expected_bytes": "3c",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f01",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -124,11 +99,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 3c ab",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f01",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -146,11 +116,6 @@
       ]
     },
     "expected_bytes": "86",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915d81",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -168,11 +133,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 86 f5",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915d81",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -190,11 +150,6 @@
       ]
     },
     "expected_bytes": "89",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915d81",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -212,11 +167,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 89 f8",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915d81",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -234,11 +184,6 @@
       ]
     },
     "expected_bytes": "27",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f81",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -256,11 +201,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 27 96",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f81",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -278,11 +218,6 @@
       ]
     },
     "expected_bytes": "26",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915fa1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -300,11 +235,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 26 95",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915fa1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -322,11 +252,6 @@
       ]
     },
     "expected_bytes": "25",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915fc1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -344,11 +269,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 25 94",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915fc1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -366,11 +286,6 @@
       ]
     },
     "expected_bytes": "24",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915fe1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -388,11 +303,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 24 93",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915fe1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -410,11 +320,6 @@
       ]
     },
     "expected_bytes": "40",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f41",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -432,11 +337,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 40 af",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f41",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -454,11 +354,6 @@
       ]
     },
     "expected_bytes": "3f",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f61",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -476,11 +371,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 3f ae",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f61",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -498,11 +388,6 @@
       ]
     },
     "expected_bytes": "5f",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e61",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -520,11 +405,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 5f ce",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e61",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -542,11 +422,6 @@
       ]
     },
     "expected_bytes": "63",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e41",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -564,11 +439,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 63 d2",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e41",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -586,11 +456,6 @@
       ]
     },
     "expected_bytes": "61",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e21",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -608,11 +473,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 61 d0",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e21",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -630,11 +490,6 @@
       ]
     },
     "expected_bytes": "4e",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915ec1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -652,11 +507,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 4e bd",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915ec1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -674,11 +524,6 @@
       ]
     },
     "expected_bytes": "4c",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915ee1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -696,11 +541,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 4c bb",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915ee1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -718,11 +558,6 @@
       ]
     },
     "expected_bytes": "5e",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e81",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -740,11 +575,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 5e cd",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915e81",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -762,11 +592,6 @@
       ]
     },
     "expected_bytes": "48",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915ea1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -784,11 +609,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 48 b7",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915ea1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -806,11 +626,6 @@
       ]
     },
     "expected_bytes": "2e",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915dc1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -828,11 +643,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 2e 9d",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915dc1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -850,11 +660,6 @@
       ]
     },
     "expected_bytes": "2b",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915dc1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -872,11 +677,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 2b 9a",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915dc1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -894,11 +694,6 @@
       ]
     },
     "expected_bytes": "2f",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915da1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -916,11 +711,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 2f 9e",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915da1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -938,11 +728,6 @@
       ]
     },
     "expected_bytes": "2c",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915da1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -960,11 +745,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 2c 9b",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915da1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -982,11 +762,6 @@
       ]
     },
     "expected_bytes": "31",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f21",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1004,11 +779,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 31 a0",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915f21",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1026,11 +796,6 @@
       ]
     },
     "expected_bytes": "45",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915de1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1048,11 +813,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 45 b4",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915de1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1070,11 +830,6 @@
       ]
     },
     "expected_bytes": "66",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915de1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1092,11 +847,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 66 d5",
-    "evidence": [
-      "blutter/objs.txt:Obj!DeviceFunctionItemType@915de1",
-      "blutter/asm/richmat_library_utils/product/device_instruct_util.dart:0x680c3c-0x6814b0",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x77cf6c,0x77db78,0x78043c,0x780480"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1114,11 +864,6 @@
       ]
     },
     "expected_bytes": "6e",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:0x67f76c-0x67f77c,0x67faa8",
-      "blutter/asm/roomi/data/model/bluetooth_model.dart:0x6a1ee0-0x6a20b8",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x78043c"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1136,11 +881,6 @@
       ]
     },
     "expected_bytes": "6e 01 00 6e dd",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:0x67f76c-0x67f77c,0x67faa8",
-      "blutter/asm/roomi/data/model/bluetooth_model.dart:0x6a1ee0-0x6a20b8",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x78043c"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1158,11 +898,6 @@
       ]
     },
     "expected_bytes": "00",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:0x67f76c-0x67f77c,0x67faa8",
-      "blutter/asm/roomi/data/model/bluetooth_model.dart:0x6a1ee0-0x6a20b8",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x78043c"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1180,11 +915,6 @@
       ]
     },
     "expected_bytes": "6e 02 01 00 71",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:0x67f76c-0x67f77c,0x67faa8",
-      "blutter/asm/roomi/data/model/bluetooth_model.dart:0x6a1ee0-0x6a20b8",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x78043c"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1202,11 +932,6 @@
       ]
     },
     "expected_bytes": "01",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:0x67f76c-0x67f77c,0x67faa8",
-      "blutter/asm/roomi/data/model/bluetooth_model.dart:0x6a1ee0-0x6a20b8",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x78043c"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1224,11 +949,6 @@
       ]
     },
     "expected_bytes": "6e 08 01 01 78",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:0x67f76c-0x67f77c,0x67faa8",
-      "blutter/asm/roomi/data/model/bluetooth_model.dart:0x6a1ee0-0x6a20b8",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x78043c"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1246,11 +966,6 @@
       ]
     },
     "expected_bytes": "01",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:0x67f76c-0x67f77c,0x67faa8",
-      "blutter/asm/roomi/data/model/bluetooth_model.dart:0x6a1ee0-0x6a20b8",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x78043c"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   },
   {
@@ -1268,11 +983,6 @@
       ]
     },
     "expected_bytes": "6e 0a 00 01 79",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:0x67f76c-0x67f77c,0x67faa8",
-      "blutter/asm/roomi/data/model/bluetooth_model.dart:0x6a1ee0-0x6a20b8",
-      "blutter/asm/roomi/pages/device_details/motor_page.dart:0x78043c"
-    ],
     "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
   }
 ]
