@@ -407,7 +407,7 @@ async def test_massage_timer_is_the_shared_select_sending_the_old_selects_frames
             30: p.massage_timer(layout, TIMER_PROGRESS["30_minutes"]),
         }
     )
-    ctrl, _ = controller(layout)
+    ctrl, coord = controller(layout)
     assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
     assert ctrl.massage_timer_options == sorted(m for m in old if m)
     for minutes, frame in old.items():
