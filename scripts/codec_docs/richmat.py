@@ -58,6 +58,7 @@ from scripts.codec_docs import (
     _richmat_legacy,
     _richmat_mh_apps,
 )
+from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 
@@ -1738,6 +1739,9 @@ BLOCKS += _bedtech_classic.BLOCKS
 
 
 BLOCKS += LP2_BLOCKS
+
+
+BLOCKS += BEDSMART_BLOCKS
 
 
 def render_jerome_controls() -> str:

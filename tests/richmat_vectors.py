@@ -2286,3 +2286,17 @@ FROZEN_FRAMES["richmat_mh_bedtech_classic"] = BEDTECH_CLASSIC_FRAMES
 FROZEN_FRAMES["richmat_classic_lp2"] = frozenset(json.loads(gzip.decompress(
     (Path(__file__).parent / "fixtures/lp2/outbound.json.gz").read_bytes()
 )))
+
+def _bedsmart_frames() -> frozenset[str]:
+    # Release/end is shared by all layouts, outside the widget vector catalog.
+    frames = {"6e", "6e01006edd", "6e01016ede", "6e01026edf"}
+    rows = json.loads((Path(__file__).parent / "fixtures/bedsmart/wire.json").read_text())
+    for row in rows:
+        for literal in row["expected"].split():
+            # RGB writes contain two independently checksummed five-byte frames.
+            size = 10 if row["kind"] == "rgb" else len(literal)
+            frames.update(literal[i : i + size] for i in range(0, len(literal), size))
+    return frozenset(frames)
+
+
+FROZEN_FRAMES["richmat_classic_bedsmart"] = _bedsmart_frames()

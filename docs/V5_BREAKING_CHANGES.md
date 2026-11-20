@@ -155,6 +155,11 @@ Every other saved setting, bed type and ID loads unchanged.
   [the app profiles repair](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 - **App suggestions in Repairs** open Reconfigure with the suggested app
   selected. A suggestion about a Richmat remote setting still opens Configure.
+- **BedSmart / X-Series** is a new choice in the Richmat app question.
+  Reconfigure a generic Richmat entry to select this app and its exact layout.
+  Its layout controls, local selectors, optional features and shared alarm
+  action are described in the [BedSmart guide](beds/richmat.md#bedsmart--x-series).
+  Physical behavior still needs testing.
 - **The Octo PIN repair is fixable.** It asks for the PIN, saves it on the
   bed (or the matching side of a combined bed) and reloads the entry.
 - **Combined beds.** Dual Bed wording is now **Combine** and **Separate**.
