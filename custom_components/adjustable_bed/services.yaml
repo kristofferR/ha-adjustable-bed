@@ -234,7 +234,7 @@ set_alarm:
       selector:
         number:
           min: 0
-          max: 99
+          max: 255
           mode: box
     massage:
       selector:
@@ -4041,4 +4041,39 @@ jerome_bed:
           max: 60000
           step: 1
           unit_of_measurement: ms
+          mode: box
+
+dreamsense_light:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    rgb_color:
+      selector:
+        color_rgb:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
+          mode: box
+
+
+dreamsense_delete_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    alarm_number:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255
           mode: box

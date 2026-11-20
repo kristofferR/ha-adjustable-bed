@@ -1329,6 +1329,9 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "dreamsense":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="blue",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "blue", const.CONF_PRODUCT_TYPE: "blue"})
     if bed_type == "saatva":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
@@ -2165,6 +2168,18 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    # Dream Sense: each saved BED product plus all six accepted GATT routes.
+    from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
+    for product in DREAMSENSE_PROFILES:
+        scenarios.append(Scenario(
+            id=f"dreamsense:{product}", bed_type="dreamsense", protocol_variant=product,
+            entry_data={"protocol_variant": product, "product_type": product}, layout_id="dreamsense",
+        ))
+    for route in range(1, 6):
+        scenarios.append(dataclasses.replace(
+            default_scenario("dreamsense"), id=f"dreamsense:gatt:{route}",
+            layout_id=f"dreamsense:gatt:{route}",
+        ))
     # Linx 1.0.7: all independent model/route combinations, preserving
     # the existing Keeson JSON scenarios and their characteristic fixtures.
     for model in ("quest", "orbes"):
