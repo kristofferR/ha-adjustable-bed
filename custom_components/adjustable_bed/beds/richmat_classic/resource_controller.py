@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Mapping
-from contextlib import contextmanager
-from contextvars import ContextVar
 from dataclasses import replace
 from functools import partial
 from math import ceil
@@ -16,7 +14,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...card import CARD_UTILITY
-from ...command_scheduler import current_command_context, note_frame_written
+from ...command_scheduler import current_command_context
 from ...const import CONF_MOTOR_PULSE_COUNT, CONF_RICHMAT_CLASSIC_THIRD_SERVICE
 from ...controller_state import StateKey
 from ...profiles.richmat_resource_apps import APPS, worker_interval
@@ -24,7 +22,7 @@ from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec
 from . import resource_protocol as p
 from .caller import Selection, selected_operand
-from .controller import APP, LAYOUT, PREFERENCES, REJECTION, STATE, STATUS, RichmatClassicController
+from .controller import APP, LAYOUT, PREFERENCES, REJECTION, STATE, STATUS
 from .protocol import (
     ALARM_QUERY,
     ALARM_SPACING_MS,
@@ -37,24 +35,21 @@ from .protocol import (
     alarm_delay,
     control,
     massage_timer,
-    release,
     rgb,
 )
 from .resource_receive import ResourceReceiveState
+from .session import SessionController
 from .transport import Transport, select
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
     from .requests import Request
 
-_SCOPE: ContextVar[tuple[BedController, Transport] | None] = ContextVar(
-    "richmat_resource_session", default=None
-)
 LAMP_TIMEOUT: Final = StateKey[int | None]("richmat_resource_lamp_timeout")
 MASSAGE_TIMER: Final = StateKey[int | None]("richmat_resource_massage_timer")
 
 
-class ResourceBedController(RichmatClassicController):
+class ResourceBedController(SessionController):
     """Resource getters stay shared; app timing, parser and utilities are explicit."""
 
     def __init__(
@@ -140,47 +135,6 @@ class ResourceBedController(RichmatClassicController):
             _selection_key("head_foot")("head" if self._selection.head else "foot")
         )
 
-    @contextmanager
-    def _transaction(self):
-        session = self._session
-        if session is None:
-            raise ConnectionError("The bed has no current BLE session")
-        token = _SCOPE.set((self, session))
-        try:
-            yield session
-        finally:
-            _SCOPE.reset(token)
-
-    def _captured_session(self) -> Transport | None:
-        scope = _SCOPE.get()
-        return scope[1] if scope is not None and scope[0] is self else self._session
-
-    async def _send(self, packet: bytes, cancel: asyncio.Event | None = None) -> None:
-        session = self._captured_session()
-        if (
-            session is None
-            or self._session is not session
-            or self.client is not session.client
-            or not session.client.is_connected
-        ):
-            raise ConnectionError("The captured bed session has ended")
-        self._record_command_trace(
-            session.write.uuid, packet, response=session.response, characteristic=session.write
-        )
-        task = asyncio.create_task(
-            session.client.write_gatt_char(session.write, packet, response=session.response)
-        )
-        cancelled = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                cancelled = True
-        task.result()
-        note_frame_written(cancel)
-        if cancelled:
-            raise asyncio.CancelledError
-
     def _notification(
         self, session: Transport, _sender: BleakGATTCharacteristic, data: bytearray
     ) -> None:
@@ -263,29 +217,6 @@ class ResourceBedController(RichmatClassicController):
             finally:
                 self._deadline = None
                 self._worker.cancel()
-
-    async def _release(self, delay_ms: int = 0, *, mode: int | None = None) -> None:
-        session = self._captured_session()
-        if session is None or self._session is not session or not session.client.is_connected:
-            return
-
-        async def cleanup() -> None:
-            if delay_ms:
-                await asyncio.sleep(delay_ms / 1000)
-            # Cleanup is owned by the admitted session, never a reconnect.
-            if self._session is session:
-                await self._send(release(session.wire))
-
-        task = asyncio.create_task(cleanup())
-        cancelled = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                cancelled = True
-        task.result()
-        if cancelled:
-            raise asyncio.CancelledError
 
     async def stop_all(self) -> None:
         self._worker.cancel()

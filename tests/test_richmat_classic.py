@@ -20,7 +20,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.transport import Tran
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.state_helpers import published
 
-APP_NAMES = {app: name for app, name in ALL_APP_NAMES.items() if app not in RISE_APPS and app not in RESOURCE_APPS and app not in ("lp2", "jerome2", "bedsmart")}
+APP_NAMES = {app: name for app, name in ALL_APP_NAMES.items() if app not in RISE_APPS and app not in RESOURCE_APPS and app not in ("lp2", "jerome2", "bedsmart", "baseremote")}
 
 
 def controller(app="avocadoecobase", layout="GXRM", wire="FRAMED"):

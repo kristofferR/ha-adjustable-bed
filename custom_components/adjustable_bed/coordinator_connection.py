@@ -2252,7 +2252,8 @@ class CoordinatorConnectionMixin:
             return
         try:
             async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
-                await self.async_start_notify()
+                if controller.restore_notifications_after_cancel:
+                    await self.async_start_notify()
                 await controller.async_resume_session()
                 self._reset_disconnect_timer()
         except TimeoutError:

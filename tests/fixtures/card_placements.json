@@ -356,6 +356,16 @@
   "card_role": "up",
   "card_motor": "back"
  },
+ "button:baseremote_m0_motor_3_and_4_tilt_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "baseremote_m0_motor_3_and_4_tilt"
+ },
+ "button:baseremote_m0_motor_3_and_4_tilt_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "baseremote_m0_motor_3_and_4_tilt"
+ },
  "button:bed_height_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -3105,6 +3115,18 @@
   "card_section": "motors",
   "card_motor": "back_right"
  },
+ "number:baseremote_aroma_interval": {
+  "card_section": "utility"
+ },
+ "number:baseremote_aroma_on_time": {
+  "card_section": "utility"
+ },
+ "number:baseremote_aroma_pause": {
+  "card_section": "utility"
+ },
+ "number:baseremote_lamp_timeout": {
+  "card_section": "lighting"
+ },
  "number:bedsmart_aroma_0": {
   "card_section": "utility"
  },
@@ -3485,6 +3507,9 @@
  },
  "select:adjustamattress_strength_setting": {
   "card_section": "utility"
+ },
+ "select:baseremote_massage_timer": {
+  "card_section": "massage"
  },
  "select:bedsmart_axis": {
   "card_section": "utility"
@@ -4721,6 +4746,9 @@
   "card_section": "utility"
  },
  "switch:automatic_light": {
+  "card_section": "utility"
+ },
+ "switch:baseremote_switch": {
   "card_section": "utility"
  },
  "switch:comfortfurniture_massage": {

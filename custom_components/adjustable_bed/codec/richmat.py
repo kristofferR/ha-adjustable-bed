@@ -196,6 +196,15 @@ def rgb(red: int, green: int, blue: int) -> bytes:
     return frame(BED, 0x0C, 0xFF, red) + frame(BED, 0x0D, green, blue)
 
 
+def local_group(name: str | None) -> bytes:
+    """Base Remote's ASCII group configuration; None removes the binding."""
+    if name is None:
+        return b"AT+REBIND\r\n"
+    if len(name) != 4 or not all(32 <= ord(c) < 127 for c in name):
+        raise ValueError("A group requires four printable ASCII characters")
+    return b"AT+GROUP" + name.encode("ascii") + b"\r\n"
+
+
 def countdown(minutes: int, action: int, slot: int = 0) -> tuple[bytes, bytes]:
     """Countdown alarm: ``6E 05 low slot`` then ``6E 06 high action``; zero cancels."""
     return frame(BED, 0x05, minutes, slot), frame(BED, 0x06, minutes >> 8, action)

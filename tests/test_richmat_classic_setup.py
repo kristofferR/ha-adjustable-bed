@@ -56,6 +56,7 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
         'luunarise2': 604, 'powercool': 586, 'lp2': 559,
         'bedsmart': 558,
         'jerome2': 532,
+        'baseremote': 558,
         **dict.fromkeys(RESOURCE_APPS, 243),
     }
     for app, models in MODEL_CHOICES.items():

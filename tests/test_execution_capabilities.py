@@ -291,8 +291,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection.
     "richmat_classic_apps": {
-        "hold": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', "BedSmart 1.0.7: status 1 finite/leased refresh, mode-specific release", 'L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP', "Jerome's power base 1.0.9: mode1 refresh until release, then50ms END"),
-        "hold_controls": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'L&P Adjustable Base 2.3.25: stream controls only; confirmed saves never hold', "Jerome's power base 1.0.9: selected-layout held widgets only; never saves"),
+        "hold": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'BedSmart 1.0.7: status 1 finite/leased refresh, mode-specific release', 'L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP', "Jerome's power base 1.0.9: mode1 refresh until release, then50ms END", 'Base Remote 1.0.1: source continuous state 1, 150/170/110 ms refresh until release'),
+        "hold_controls": ('avocado', 'coaster', 'fortywinks', 'milemont', 'superior', 'L&P Adjustable Base 2.3.25: stream controls only; confirmed saves never hold', "Jerome's power base 1.0.9: selected-layout held widgets only; never saves", 'Base Remote 1.0.1: per-gesture mode and getter context, state 0 release after 50 ms'),
     },
     "isleep": {"hold": ("kaidi",)},
     "ComfyProfile:komfyd": {"hold": ("komfyd084",)},
@@ -401,6 +401,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
     "beds/richmat_classic/jerome.py:<module>.JeromeController.execution": ("richmat_classic_apps",),
     "beds/richmat_classic/jerome.py:<module>.JeromeController": ("richmat_classic_apps",),
+    "beds/baseremote/controller.py:<module>.BaseRemoteController": ("richmat_classic_apps",),
+    "beds/baseremote/controller.py:<module>.BaseRemoteController.execution": ("richmat_classic_apps",),
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
     "beds/furnimove/controller.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove/controller.py:<module>.FurniMoveController.execution": ("furnimove",),

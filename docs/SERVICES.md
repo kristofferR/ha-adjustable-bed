@@ -27,6 +27,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`l2motion`](#l2-motion) | L2 Motion: settings | Change supported light colors or explicitly confirm wired or wireless synchronization. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Run full body massage, or a preset with the other base lowering its feet for 30 seconds. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
+| [`baseremote_settings`](#baseremote_settings) | Base Remote: color and receiver group | Set a light color or change a receiver-local Bluetooth group. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Set each targeted controller's clock to Home Assistant's local time. Every target is checked before any write. |
 | [`rename`](#rename) | Rename Bluetooth name | Write a new Bluetooth name to each targeted controller that supports it. Each app profile applies its own name rule to every target before any write. This does not rename the Home Assistant device. |
 | [`lower_to_flat`](#estimated-positions) | Lower to flat | Lower the selected motors for their full travel time plus a margin. This never sets the reference: confirm flat afterwards. |
@@ -347,6 +348,7 @@ they are not exposed through `hold_control`.
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The selected layout's available `richmat_classic_<node>` controls with hold metadata, including a route suffix where declared; saves have no held gesture | The layout's app refresh interval and fresh release, as listed in the guide; finite duration 0.1–60 seconds. Renewable holds use only the declared streaming controls |
+| [Base Remote](beds/richmat.md#base-remote) | Layout- and mode-scoped held controls; confirmed saves excluded | Name-specific 110, 150 or 170 ms refresh; captured release after 50 ms. |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
 | [Leggett Okin app profiles](beds/okin-nframe.md#leggett-okin-family) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide |
@@ -2389,3 +2391,27 @@ concurrent connections and an explicit `left` or `right` side. The selected
 base receives the preset; the other lowers its feet for 30 seconds and releases.
 Every participant is checked before the first write. STOP, replacement or a
 lost physical session cancels delayed work and drains the captured release.
+
+
+## baseremote_settings
+
+Base Remote receivers support `set_color`, `set_group` and `remove_group`.
+`set_color` needs `rgb_color` and a current LED capability reply. Ordinary
+power controls remain on the native light entity when the layout offers them.
+`set_group` needs a `group` of exactly four printable ASCII characters; removal
+needs no group name. The receiver must offer its local FFE0 group service.
+Group configuration visits selected physical targets sequentially, waits
+before disconnecting each link and has a twelve-second overall timeout.
+Delivery is not a receiver acknowledgement or proof of synchronization.
+This action supports normal device and paired-child targeting.
+
+```yaml
+action: adjustable_bed.baseremote_settings
+data:
+  device_id: YOUR_DEVICE_ID
+  operation: set_group
+  group: "1234"
+```
+
+Use [`set_alarm`](#set_alarm) for Base Remote wake alarms. Layout-owned massage
+and memory controls, light timeout and aromatherapy times are native entities.

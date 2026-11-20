@@ -201,6 +201,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     Some controls exist only for a reported model, layout or page, which no
     offline configuration reaches.
     """
+    from custom_components.adjustable_bed.beds.baseremote.controller import BaseRemoteController
     from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
     from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
@@ -314,6 +315,11 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                 model = load_catalog("jerome2").models[layout]
                 yield variant(controller, layout=layout, _model=model, _controls=model.controls,
                               _actions=actions(layout), _pairs=inverse_pairs(layout),
+                              _receive=ReceiveState(light_capable=True, aroma_capable=True))
+        elif isinstance(controller, BaseRemoteController):
+            for layout in ("D1RM", "E3RM"):
+                model = load_catalog(controller.app).models[layout]
+                yield variant(controller, layout=layout, _model=model, _controls=model.controls,
                               _receive=ReceiveState(light_capable=True, aroma_capable=True))
         elif isinstance(controller, ResourceBedController):
             model = load_catalog(controller.app).models["D1RM"]

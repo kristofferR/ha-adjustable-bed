@@ -1867,3 +1867,61 @@ def render_jerome_controls() -> str:
 
 
 BLOCKS.append((GUIDE, "jerome-controls", render_jerome_controls))
+
+
+def render_baseremote() -> str:
+    from custom_components.adjustable_bed.beds.baseremote import protocol as base_frames
+    from custom_components.adjustable_bed.beds.richmat.labels import resource_label
+    from custom_components.adjustable_bed.profiles.baseremote import EXCLUDED_LAYOUTS, MODE_LABELS
+
+    catalog = load_catalog("baseremote")
+    commands: dict[tuple[str, str, str, str, int, int], list[str]] = {}
+    for layout, model in catalog.models.items():
+        if layout in EXCLUDED_LAYOUTS:
+            continue
+        for c in model.controls:
+            if c.excluded_short and c.excluded_long or c.status not in (1, 2, 3):
+                continue
+            short = None if c.excluded_short else c.short
+            old = None if c.excluded_short else c.short_old
+            long = None if c.excluded_long else c.long
+            if not any((short, old, long)):
+                continue
+            resource = (c.resource_keys.get("press_long") if c.excluded_short else c.resource_keys.get("press_short") or c.resource_keys.get("press_short_old") or c.resource_keys.get("press_long")) or ""
+            key = (
+                "Set" if resource == "@string/k_set_old" else resource_label(resource.removeprefix("@string/")),
+                short or "", old or "", long or "", c.status, c.threshold_ms,
+            )
+            commands.setdefault(key, []).append(layout)
+    return _block(
+        _table(("Layouts", "Mode labels"), (
+            (", ".join(layout for layout in catalog.models if layout not in EXCLUDED_LAYOUTS and layout not in MODE_LABELS), "Default"),
+            *((layout, ", ".join(labels.values())) for layout, labels in MODE_LABELS.items()),
+        )),
+        _table(("Control", "Nordic operand", "Framed operand", "Long operand", "Gesture", "Layouts"), (
+            (label, f"`{old or short}`" if old or short else "none",
+             f"`{short}`" if short else "none", f"`{long}`" if long else "none",
+             f"state {status}; {threshold} ms threshold" if status == 3 else "held" if status == 1 else "once",
+             ", ".join(dict.fromkeys(layouts)))
+            for (label, short, old, long, status, threshold), layouts in commands.items()
+        )),
+        _table(("Settings", "Write", "Gate"), (
+            ("Startup", _hex(classic_frames.INITIALIZE), "Framed, 300 ms after notification setup"),
+            ("Alarm query", _hex(classic_frames.ALARM_QUERY), "Layout has alarm actions"),
+            ("Light query", _hex(classic_frames.LAMP_QUERY), "Every bed layout"),
+            ("Aromatherapy query", _hex(classic_frames.AROMA_QUERY), "Every bed layout"),
+            ("Default green", _hex(codec.rgb(0x98, 0xCB, 0)), "LED capability reply"),
+            ("Countdown, 1440 minutes, memory 1", " / ".join(_hex(f) for f in classic_frames.alarm(1440, 0x2E)), "Selected-layout alarm action"),
+            ("Light timeout", "0–300 seconds; zero keeps on", "LED capability reply"),
+            ("Aromatherapy times", "1–60 minutes, 1–60 minutes, 1–12 hours", "Aroma capability reply"),
+            ("Group removal", "`" + codec.local_group(None).hex(" ").upper() + "`", "FFE0/FFE2 local group service"),
+        )),
+        _table(("Alarm action", "Operand", "Massage combinations (both / head / feet)"), (
+            (label, f"`{code:02X}`", " / ".join(f"`{v:02X}`" for v in rise_frames.ALARM_COMBINATIONS[code]) if code in rise_frames.ALARM_COMBINATIONS else "none")
+            for code, label in base_frames.ALARM_ACTIONS.items()
+            if any(c.alarm_clock and int(c.alarm_clock, 16) == code for m in catalog.models.values() for c in m.controls)
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "baseremote", render_baseremote))

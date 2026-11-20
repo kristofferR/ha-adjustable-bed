@@ -4042,3 +4042,29 @@ jerome_bed:
           step: 1
           unit_of_measurement: ms
           mode: box
+
+baseremote_settings:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [set_color, set_group, remove_group]
+          translation_key: baseremote_operation
+    rgb_color:
+      selector:
+        color_rgb:
+    group:
+      selector:
+        text:
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side

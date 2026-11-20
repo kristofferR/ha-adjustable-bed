@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
+    from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
     from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
@@ -186,6 +187,7 @@ _EXPORT_MODULES = {
     'SertaMPRemoteController': 'serta_mp_remote',
     'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
     'ErgomotionAppController': 'ergomotion_app',
+    'BaseRemoteController': 'baseremote.controller',
     'RichmatClassicController': 'richmat_classic.controller',
     'Ergomotion4Controller': 'ergomotion4.controller',
     'RowControlController': 'row_control',
@@ -308,6 +310,7 @@ __all__ = [
     'SertaMPRemoteController',
     'OmazzAdjustoIIIController',
     'ErgomotionAppController',
+    'BaseRemoteController',
     'RichmatClassicController',
     'Ergomotion4Controller',
     'RowControlController',

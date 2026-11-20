@@ -965,6 +965,11 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
             ctx.coordinator, app=ctx.variant, device_name=ctx.device_name,
             capability_snapshot=ctx.stored_capabilities("richmat_classic_apps"),
         )
+    if ctx.variant == "baseremote":
+        await ctx.preload("baseremote.controller")
+        from ..baseremote.controller import BaseRemoteController
+
+        return BaseRemoteController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
     from ...profiles.richmat_resource_apps import APPS
 
     if ctx.variant == "bedsmart":

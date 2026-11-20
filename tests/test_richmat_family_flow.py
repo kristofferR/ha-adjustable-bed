@@ -57,6 +57,7 @@ APPS = [
     "acaa",
     "sta2",
     "zerogravity",
+    "baseremote",
     "remote",
 ]
 

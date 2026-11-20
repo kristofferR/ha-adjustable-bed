@@ -2294,7 +2294,7 @@ def _with_bed_defaults(
         ("wake_action", capability.wake_actions if bed_alarm else ()),
         ("sound", capability.sounds),
         ("massage_duration", capability.massage_durations),
-        ("massage_zone", capability.massage_zones),
+        ("massage_zone", capability.massage_zones if capability.default_massage_zone else ()),
     ):
         if name not in given and choices:
             defaults[name] = choices[0]
@@ -2890,6 +2890,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
 def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     """Import the family action modules, which import this one, in the import executor."""
+    from .beds.baseremote.services import register_services as register_baseremote_services
     from .beds.bedgear.services import async_register_bedgear_services
     from .beds.bedtech.services import register_services as register_bedtech_services
     from .beds.casper_base.services import async_register_casper_base_services
@@ -2972,6 +2973,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_richmat_classic_services,
         async_register_lp2_services,
         async_register_jerome_services,
+        register_baseremote_services,
         async_register_resource_bed_services,
         async_register_richmat_legacy_services,
         async_register_richmat_rise_services,

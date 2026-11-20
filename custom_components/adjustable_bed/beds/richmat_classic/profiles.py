@@ -24,6 +24,7 @@ LEGACY_KEY_PREFIX: Final = "cluster018_"
 LEGACY_APP_STATE_KEY_PREFIX: Final = "cluster018:"
 
 APP_NAMES = {
+    "baseremote": "Base Remote",
     "avocadoecobase": "Avocado Eco Base",
     "coastersleep": "CoasterSleep",
     "fortywinks": "Forty Winks",
@@ -155,11 +156,12 @@ def load_catalog(app: str) -> Catalog:
     if app not in APP_NAMES:
         raise ValueError("Choose a supported app")
     data = load(DATA_DIR, "resource_apps" if app in RESOURCE_APPS else app).record("models", "fields", "alarm_allowlist")
-    columns = _COLUMNS + (("excluded_short", "excluded_long") if app in RISE_APPS or app == "bedsmart" else ())
+    scoped = app in RISE_APPS or app in ("bedsmart", "baseremote")
+    columns = _COLUMNS + (("excluded_short", "excluded_long") if scoped else ())
     if tuple(column.text() for column in data["fields"].items()) != columns:
         data["fields"].fail(f"the control columns {_COLUMNS}")
     catalog = Catalog(
-        models={layout: _model(model, scoped=app in RISE_APPS or app == "bedsmart") for layout, model in data["models"].entries().items()},
+        models={layout: _model(model, scoped=scoped) for layout, model in data["models"].entries().items()},
         alarm_allowlist={
             key: value.text() for key, value in data["alarm_allowlist"].entries().items()
         },

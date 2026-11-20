@@ -2300,3 +2300,14 @@ def _bedsmart_frames() -> frozenset[str]:
 
 
 FROZEN_FRAMES["richmat_classic_bedsmart"] = _bedsmart_frames()
+
+
+def _baseremote_frames() -> frozenset[str]:
+    rows = json.loads(gzip.decompress((Path(__file__).parent / "fixtures/baseremote/commands.json.gz").read_bytes()))
+    return frozenset(row[5].lower() for row in rows if row[5]) | frozenset({
+        "6e", "6e01006edd", "6e02010071", "6e08010178", "6e0a000179", "6e1a000088",
+        "6e0cff9811", "6e0dcb0046", "6e05a00013", "6e06052ea7", "6e05000073", "6e06000074",
+    })
+
+
+FROZEN_FRAMES["richmat_classic_baseremote"] = _baseremote_frames()

@@ -3560,6 +3560,75 @@
       },
       "bedsmart_query": {
         "name": "Refresh bed features"
+      },
+      "baseremote_m0_motor_1_and_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_and_2_once_up": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_and_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_up": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_up_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_2_up_1_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_3_and_4_tilt_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_3_and_4_tilt_up": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_1_and_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_1_and_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_1_down": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_1_up": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_1_and_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_1_and_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_1_down": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_1_up": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_2_up": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5306,6 +5375,9 @@
       },
       "sealy_massage": {
         "name": "Massage"
+      },
+      "baseremote_switch": {
+        "name": "{action}"
       }
     },
     "binary_sensor": {
@@ -5919,6 +5991,18 @@
       },
       "jerome_massage_intensity": {
         "name": "Massage intensity"
+      },
+      "baseremote_lamp_timeout": {
+        "name": "Light timeout"
+      },
+      "baseremote_aroma_on_time": {
+        "name": "Aromatherapy continuous time"
+      },
+      "baseremote_aroma_interval": {
+        "name": "Aromatherapy intermittent time"
+      },
+      "baseremote_aroma_pause": {
+        "name": "Aromatherapy pause"
       }
     },
     "select": {
@@ -6562,6 +6646,15 @@
       },
       "bedsmart_head_foot": {
         "name": "Head or foot"
+      },
+      "baseremote_massage_timer": {
+        "name": "Massage timer",
+        "state": {
+          "off": "Off",
+          "15_minutes": "15 minutes",
+          "30_minutes": "30 minutes",
+          "45_minutes": "45 minutes"
+        }
       }
     },
     "climate": {
@@ -9608,6 +9701,28 @@
           "description": "Use the layout’s long-press gesture when it also offers a separate save button. Confirmation is required."
         }
       }
+    },
+    "baseremote_settings": {
+      "name": "Base Remote: color and receiver group",
+      "description": "Set a bed light color or change a local Bluetooth receiver group. Group writes disconnect after delivery; the receiver sends no acknowledgement.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "operation": {
+          "name": "Setting"
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "group": {
+          "name": "Group",
+          "description": "Exactly four printable characters."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
     }
   },
   "exceptions": {
@@ -10120,6 +10235,24 @@
     },
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "baseremote_layout": {
+      "message": "Choose a bed layout. Desk, manufacturing and test layouts are excluded."
+    },
+    "baseremote_control": {
+      "message": "Choose a control available on this bed layout and Bluetooth connection."
+    },
+    "baseremote_alarm": {
+      "message": "Choose an alarm action and massage combination offered by this bed layout."
+    },
+    "baseremote_group": {
+      "message": "Choose a group of four printable characters on a receiver that supports local Bluetooth groups."
+    },
+    "baseremote_group_timeout": {
+      "message": "The Bluetooth group operation timed out."
+    },
+    "baseremote_group_disconnect": {
+      "message": "The receiver link did not close after changing its Bluetooth group. Stop and disconnect it before continuing."
     }
   },
   "issues": {
@@ -10820,7 +10953,8 @@
         "lp2": "L&P Adjustable Base app",
         "bedsmart": "BedSmart / X-Series app",
         "bedtech_classic": "Bed Tech app",
-        "jerome2": "Jerome's power base app"
+        "jerome2": "Jerome's power base app",
+        "baseremote": "Base Remote app"
       }
     },
     "setup_start": {
@@ -12223,6 +12357,13 @@
         "memory_three": "Memory 3",
         "flat": "Flat",
         "voice_stop_request": "Voice stop request"
+      }
+    },
+    "baseremote_operation": {
+      "options": {
+        "set_color": "Set light color",
+        "set_group": "Set Bluetooth group",
+        "remove_group": "Remove Bluetooth group"
       }
     }
   }

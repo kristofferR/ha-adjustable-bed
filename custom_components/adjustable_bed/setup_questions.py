@@ -1031,7 +1031,7 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     if app == "lp2":
         codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
         codes.update(("RMCS", "TEST"))
-    if app in ("luunarise2", "powercool"):
+    if app in ("luunarise2", "powercool", "baseremote"):
         codes -= {"WFRM", "FWRM"}
     if app in APPS:
         codes -= APPS[app].excluded_layouts
@@ -1063,7 +1063,7 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
     excluded = _CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if data.get(CONF_PROTOCOL_VARIANT) == "powercool" else set())
-    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool"):
+    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool", "baseremote"):
         excluded = excluded | {"WFRM", "FWRM"}
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
         excluded = excluded | profile.excluded_layouts

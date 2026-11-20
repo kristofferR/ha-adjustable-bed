@@ -379,6 +379,14 @@ def _census(key: str) -> set[str]:
         frames.update(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in (0, 2, 3, 5))
         frames.update(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP)
         return {frame.hex() for frame in frames}
+    if key == "richmat_classic_baseremote":
+        # Base Remote has no desk, manufacturing or TEST command path.
+        return {frame.hex() for frame in (
+            classic.release("RAW"), classic.release("FRAMED"), classic.INITIALIZE,
+            classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY,
+            *classic.alarm(0, 0),
+            *(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP),
+        )}
     if key.removeprefix("richmat_classic_") in RESOURCE_APPS:
         # These bed-only apps do not expose the older apps' desk or aroma writers.
         # Parameterized alarm/RGB/timeout builders have their own literal harness.
