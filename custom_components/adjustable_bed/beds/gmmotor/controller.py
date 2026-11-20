@@ -247,9 +247,15 @@ class GmmotorController(BedController, GmmotorActions):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         specs: list[ControllerButtonSpec | None] = []
         timed = bool(self._massage_timer_controls)
+        listed: set[tuple[object, ...]] = set()
         for i, action in enumerate(self.profile.controls):
             if action.phone_only:
                 continue
+            # A control the app lists twice (DWRN's pillow) gets one button.
+            signature = (action.material.name, action.gesture, tuple(action.transitions))
+            if signature in listed:
+                continue
+            listed.add(signature)
             if timed and massage_timer_minutes(action.material.name) is not None:
                 continue  # The massage timer select sends these.
             control = f"gm_{i}"

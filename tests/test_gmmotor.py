@@ -309,3 +309,9 @@ def test_empty_slots_headings_and_empty_long_presses_have_no_button() -> None:
         for i, action in enumerate(ctrl.profile.controls):
             if f"gm_{i}_long" in keys:
                 assert action.codes("long") - {0} - action.codes("normal")
+
+
+def test_a_control_the_app_lists_twice_gets_one_button():
+    keys = [spec.key for spec in controller("DWRN").controller_button_specs]
+    assert {"gm_0", "gm_1"} <= set(keys)
+    assert not {"gm_2", "gm_3"} & set(keys)  # The same pillow up and down again.
