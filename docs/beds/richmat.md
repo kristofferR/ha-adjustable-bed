@@ -13526,6 +13526,9 @@ four-character layout matching the app. **Reconfigure** changes the app or
 layout later. Each physical bed in a combined pair keeps its own choices.
 Name matches offer the app as a choice; they do not establish a physical model.
 The manual aliases B6RU and ZR90 work without being automatic scan prefixes.
+ZRS0, ZRS1, ZRS2 and ZRS3 are menus: choose the matching destination layout
+during setup. If a layout correction cannot use a saved selection, that
+selection returns to the layout's defaults.
 Use the advanced third-service fallback only for a receiver whose GATT table
 requires it. The first existing fixed service owns both characteristics.
 

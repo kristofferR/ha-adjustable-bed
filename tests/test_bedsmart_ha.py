@@ -78,6 +78,57 @@ async def runtime(hass, mock_coordinator_connected, mock_bleak_client, clock):
     await coordinator.async_shutdown()
 
 
+async def test_layout_change_recovers_stale_selection_before_connecting(runtime):
+    coordinator, _client = runtime
+    controller = coordinator.capability_controller
+    assert isinstance(controller, BedSmartController)
+    with patch.object(
+        coordinator._app_state_store, "async_slot", new=AsyncMock(return_value={"mode": 1})
+    ):
+        await coordinator._async_restore_app_state(controller)
+        assert controller.persisted_app_state["mode"] == 0
+        assert await coordinator.async_connect()
+    assert coordinator.controller.persisted_app_state["mode"] == 0
+
+
+@pytest.mark.parametrize(
+    ("choice", "layout"),
+    [
+        ("ZRS0:B8TT", "B8TT"),
+        ("ZRS0:B9TT", "B9TT"),
+        ("ZRS1:ZRI0", "ZRI0"),
+        ("ZRS1:I4RM", "I4RM"),
+        ("ZRS1:I5RM", "I5RM"),
+        ("ZRS1:D7RM", "D7RM"),
+        ("ZRS2:ZR00", "ZR00"),
+        ("ZRS2:ZR01", "ZR01"),
+        ("ZRS3:APRM", "APRM"),
+        ("ZRS3:AQRM", "AQRM"),
+    ],
+)
+async def test_navigation_choice_saves_a_concrete_controllable_layout(hass, choice, layout):
+    flow = setup_flow(hass, "6BRM-bed")
+    await answer(flow, "bedsmart")
+    choices = _classic_layouts({const.CONF_PROTOCOL_VARIANT: "bedsmart"})
+    assert not {"ZRS0", "ZRS1", "ZRS2", "ZRS3"} & choices.keys()
+    assert choice in choices
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions({const.CONF_PRODUCT_TYPE: choice})
+    assert finish.await_count == 1
+    saved = finish.call_args.args[0]
+    assert saved[const.CONF_PRODUCT_TYPE] == layout
+    entry = MockConfigEntry(domain=const.DOMAIN, data=saved)
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    try:
+        await coordinator.async_prime_offline_controller()
+        controller = coordinator.capability_controller
+        assert isinstance(controller, BedSmartController)
+        assert any(s.key != "richmat_classic_release" for s in controller.controller_button_specs)
+    finally:
+        await coordinator.async_shutdown()
+
+
 async def test_named_bed_command_and_source_specific_stop_caller(hass, runtime):
     coordinator, client = runtime
     await hass.services.async_call(

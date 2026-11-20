@@ -197,6 +197,14 @@ async def test_e3_recall_and_immediate_confirmed_save_are_distinct(clock):
     assert all(not (s.requires_confirmation and s.hold) for s in c.controller_button_specs)
 
 
+@pytest.mark.parametrize("long", [False, True])
+async def test_app_local_preset_recall_and_save_use_their_own_layout(clock, long):
+    c, co = controller("A0RM")
+    node = next(b.node for b in c._controls if b.short == "58" and b.status == 3)
+    await c.execute_action(node, long=long)
+    assert packets(co) == ["6e010064d3" if long else "6e010058c7", "6e01006edd"]
+
+
 async def test_gvrm_null_getter_never_invents_foot_command(clock):
     c, co = controller("GVRM", "RAW")
     selector = next(s for s in c.controller_select_specs if s.key == "bedsmart_head_foot")

@@ -9552,7 +9552,7 @@
         },
         "command": {
           "name": "Bed command",
-          "description": "The app's named BED caller. Voice stop request sends its original massage-off operand before release."
+          "description": "Choose a bed control. Voice stop requests massage off before releasing movement."
         }
       }
     },

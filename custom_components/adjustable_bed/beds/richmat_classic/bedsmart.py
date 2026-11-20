@@ -140,11 +140,11 @@ class BedSmartController(Lp2Controller):
             or axis not in ("53", "54", "55")
             or type(head) is not bool
         ):
-            raise invalid("bedsmart_control")
+            raise ValueError("Invalid stored BedSmart selection")
         self._ui_mode, self._ui_flag, self._ui_head = mode, str(axis), head
         for name in ("known_light", "known_aroma"):
             if type(state.get(name, False)) is not bool:
-                raise invalid("bedsmart_control")
+                raise ValueError("Invalid stored BedSmart capability")
         self._known_light = state.get("known_light", False) is True
         self._known_aroma = state.get("known_aroma", False) is True
 

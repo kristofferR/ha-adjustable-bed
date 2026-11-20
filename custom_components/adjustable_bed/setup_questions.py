@@ -1020,9 +1020,10 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *LAYOUT_PICKER_CHOICES.get(app, {}),
     } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
     if app == "bedsmart":
-        from .profiles.bedsmart import ALIASES, EXCLUDED_LAYOUTS
+        from .profiles.bedsmart import ALIASES, EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
-        codes -= EXCLUDED_LAYOUTS | {k for k, v in ALIASES.items() if v in EXCLUDED_LAYOUTS}
+        unavailable = EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+        codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
         codes.add("TEST")
     if app == "lp2":
         codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
@@ -1064,9 +1065,9 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
         excluded = excluded | profile.excluded_layouts
     if data.get(CONF_PROTOCOL_VARIANT) == "bedsmart":
-        from .profiles.bedsmart import EXCLUDED_LAYOUTS
+        from .profiles.bedsmart import EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
-        excluded = (excluded - {"TEST"}) | EXCLUDED_LAYOUTS
+        excluded = (excluded - {"TEST"}) | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
     if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
         excluded = (excluded - {"RMCS", "TEST"}) | {"209A05", "6HRM", "QRRM", "ZRS3"}
     if data.get(CONF_PROTOCOL_VARIANT) == "jerome2":

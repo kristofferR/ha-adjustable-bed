@@ -562,6 +562,12 @@ LAYOUTS: Final = (
     "ZYRM",
     "ZZRM",
 )
+NAVIGATION_LAYOUTS: Final = {
+    "ZRS0": ("B8TT", "B9TT"),
+    "ZRS1": ("ZRI0", "I4RM", "I5RM", "D7RM"),
+    "ZRS2": ("ZR00", "ZR01"),
+    "ZRS3": ("APRM", "AQRM"),
+}
 EXCLUDED_LAYOUTS: Final = frozenset(("6HRM", "FWRM", "QRRM", "RMCS", "WFRM"))
 MODE_LABELS: Final = {
     "BTRM": ("Mode1", "Mode2", "Mode3"),
