@@ -555,6 +555,8 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
             deadline = max(now, tick_at) + (threshold + 2) * period_s + WRITE_TIMEOUT_S
         count = link.counters.get(action.screen, 0)
         completed = False
+        # Whether the request itself went out, not only the wake/release gesture.
+        requested = any(literal not in ("m", "n") for literal in phase.down)
         try:
             for literal in phase.down:
                 if not await self._send(link, literal, cancel, deadline if action.motion else None):
@@ -575,6 +577,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                     for literal in writes:
                         if not await self._send(link, literal, cancel, deadline):
                             return
+                        requested = requested or literal not in ("m", "n")
                     if program and writes:
                         completed = True
                         break
@@ -583,6 +586,9 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                         tick_at + period_s,
                         epoch + (floor((monotonic() - epoch) / period_s) + 1) * period_s,
                     )
+                if not requested and not cancel.is_set():
+                    # The window ended before the request's first refresh.
+                    note_frame_skipped()
             elif phase.down or phase.cleanup:
                 await _pause(max(0, deadline - monotonic()), cancel)
             if not program:

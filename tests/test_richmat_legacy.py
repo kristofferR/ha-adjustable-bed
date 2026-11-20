@@ -520,3 +520,40 @@ async def test_massage_timer_cut_off_after_the_wake_gesture_shows_nothing(monkey
     assert packet("A").hex() not in frames(c)
     shown = [u for call in c.handle_controller_state_updates.call_args_list for u in call.args]
     assert not any(u.key == "massage_timer" for u in shown)
+
+
+async def test_massage_timer_whose_window_ends_before_its_key_shows_nothing(clock, monkeypatch):
+    """A window that ends before BE's first timer refresh sent only the wake gesture."""
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+    )
+
+    ctrl, c = make("wsilver_legacy", "BE")
+    await ctrl.start_notify()
+
+    async def late(seconds, _event):
+        clock[0] += 5  # The first refresh comes after the press window.
+        return False
+
+    monkeypatch.setattr(bed, "_pause", late)
+    c.client.write_gatt_char.reset_mock()
+    c.handle_controller_state_updates.reset_mock()
+    context = CommandContext(
+        scheduler_token=object(),
+        cancel_event=c.cancel_command,
+        admitted_stop_epoch=0,
+        intent_id="timer",
+        kind=CommandKind.COMMAND,
+        group_id=None,
+        resources=frozenset({"*"}),
+    )
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        await ctrl.set_massage_timer(30)
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+    assert packet("A").hex() not in frames(c)
+    shown = [u for call in c.handle_controller_state_updates.call_args_list for u in call.args]
+    assert not any(u.key == "massage_timer" for u in shown)

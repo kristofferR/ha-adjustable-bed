@@ -557,6 +557,14 @@ async def test_moon_massage_timer_shows_the_sent_duration_until_the_bed_reports(
     assert states[bed.MASSAGE_TIMER[1]] == states[bed.MASSAGE_TIMER[2]] == "10 min"
 
 
+async def test_moon_timer_action_without_a_value_shows_the_duration_it_sent(clock):
+    moon_, c = make("SUTA-MOON")
+    await moon_.start_notify()
+    await moon_.execute_request(bed.Request("massage_timer_20", logical_side=1))
+    states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
+    assert states[bed.MASSAGE_TIMER[1]] == "20 min"
+
+
 async def test_overall_level_cut_off_between_zones_is_unknown(clock):
     """Stop between the head and foot writes leaves the overall level unknown."""
     from custom_components.adjustable_bed.command_scheduler import (

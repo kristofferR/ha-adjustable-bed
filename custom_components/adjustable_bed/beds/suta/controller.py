@@ -309,8 +309,6 @@ class SutaController(BedController):
         side = _SIDE_NAMES[payload[0]]
         if key in _BINARY_LABELS:
             return f"{side} {_BINARY_LABELS[key]}"
-        if key.startswith("massage_timer_"):
-            return f"{side} massage timer {key.removeprefix('massage_timer_')} min"
         if key.startswith("adaptive_"):
             _, mode, stiffness = key.split("_")
             return f"{side} adaptive mode {_ADAPTIVE_MODES.index(int(mode)) + 1}: {stiffness}"
@@ -817,6 +815,8 @@ class SutaController(BedController):
         link, cancel = self._live(), self._coordinator.cancel_command
         if request.action in BINARY and self.family in BINARY[request.action].controllers:
             side = request.logical_side
+            # The resolved payload's last byte is the value sent, also when the request names none.
+            prefix = self._binary_prefix(request)
             shown = next(
                 (
                     field
@@ -832,12 +832,12 @@ class SutaController(BedController):
                 if shown is None or side not in (1, 2) or self._link is not link or delivery is Delivery.NONE:
                     return
                 self.observations[f"side_{side}_{shown}"] = (
-                    request.value if delivery is Delivery.SENT else None
+                    prefix[-1] if delivery is Delivery.SENT else None
                 )
                 self._publish()
 
             with delivered(show):
-                sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
+                sent = await self._send(link, codec.from_prefix(prefix), cancel)
             if sent is not None and request.action == "automatic_adjustment_switch" and self._link is link:
                 # The bed does not echo this write; like the app's checkbox, show the sent value
                 # until the next full-state report replaces it.
