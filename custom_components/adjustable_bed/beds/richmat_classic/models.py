@@ -5,6 +5,9 @@ Generated outside this repository with ``beds/richmat_classic/data``; no generat
 
 from ...profiles.bedsmart import ALIASES as BEDSMART_ALIASES
 from ...profiles.bedsmart import LAYOUTS as BEDSMART_LAYOUTS
+from ...profiles.jerome2 import ALIASES as JEROME_ALIASES
+from ...profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED
+from ...profiles.jerome2 import LAYOUTS as JEROME_LAYOUTS
 from ...profiles.lp2 import ALIASES as LP2_ALIASES
 from ...profiles.lp2 import LAYOUTS as LP2_LAYOUTS
 from ...profiles.richmat_resource_apps import ALIASES, APPS, LAYOUTS
@@ -403,3 +406,7 @@ LAYOUT_PICKER_CHOICES["lp2"] = {"ZRS3:APRM": "APRM", "ZRS3:AQRM": "AQRM"}
 
 MODEL_CHOICES["bedsmart"] = BEDSMART_LAYOUTS
 MANUAL_ALIASES["bedsmart"] = {k: v for k, v in BEDSMART_ALIASES.items() if len(k) == 4}
+
+# Jerome's power base has its own complete, frozen resource domain.
+MODEL_CHOICES['jerome2'] = JEROME_LAYOUTS
+MANUAL_ALIASES['jerome2'] = {key: value for key, value in JEROME_ALIASES.items() if not key.startswith("L&P") and value not in JEROME_EXCLUDED}

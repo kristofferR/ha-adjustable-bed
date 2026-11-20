@@ -1920,6 +1920,8 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("bedsmart", "6BRM", "richmat_classic_apps_nordic"),
     ("lp2", "APRM", "richmat_classic_apps"),
     ("lp2", "6BRM", "richmat_classic_apps_nordic"),
+    ("jerome2", "6BRM", "richmat_classic_apps"),
+    ("jerome2", "DXRM", "richmat_classic_apps_nordic"),
     # Independent accepted Richmat resource apps, both GATT-selected wire formats.
     *((app, "6BRM", wire) for app in ("lady_americana", "acaa", "sta2", "zerogravity")
       for wire in ("richmat_classic_apps", "richmat_classic_apps_nordic")),

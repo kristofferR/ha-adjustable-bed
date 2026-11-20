@@ -1031,6 +1031,10 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         codes -= {"WFRM", "FWRM"}
     if app in APPS:
         codes -= APPS[app].excluded_layouts
+    if app == "jerome2":
+        from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
+
+        codes -= JEROME_EXCLUDED_LAYOUTS
     return {code: code for code in sorted(codes)}
 
 
@@ -1065,6 +1069,10 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         excluded = (excluded - {"TEST"}) | EXCLUDED_LAYOUTS
     if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
         excluded = (excluded - {"RMCS", "TEST"}) | {"209A05", "6HRM", "QRRM", "ZRS3"}
+    if data.get(CONF_PROTOCOL_VARIANT) == "jerome2":
+        from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
+
+        excluded = excluded | JEROME_EXCLUDED_LAYOUTS
     if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
@@ -2542,7 +2550,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
         },
         questions=(
-            Question(CONF_PRODUCT_TYPE, _classic_layouts),
+            Question(CONF_PRODUCT_TYPE, _classic_layouts, searchable=True),
             Question(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, default=False, advanced=True),
         ),
         normalize=_classic_normalize,

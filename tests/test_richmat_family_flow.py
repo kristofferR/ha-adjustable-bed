@@ -52,6 +52,7 @@ APPS = [
     "powercool",
     "lp2",
     "bedsmart",
+    "jerome2",
     "lady_americana",
     "acaa",
     "sta2",
