@@ -45,6 +45,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Bed Tech and Nisco: sleepers | Set the separate sleep sensor for one or two sleepers. |
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Press one of the selected BedTech model's buttons, on the sleeper side the app uses for it. Movement repeats for the configured number of pulses. |
 | [`bedgear`](#bedgear) | Bedgear: settings | Change Bedgear settings. Values show as unknown until the bed reports them. |
+| [`bedsmart`](#bedsmart) | BedSmart / X-Series: settings | Set lighting or aromatherapy, run a named bed command, or confirm a finite movement test. |
 | [`betterliving2_diagnostic_action`](#betterliving2_diagnostic_action) | BetterLiving2: settings | Refresh alarm or massage status. |
 | [`betterliving2_massage`](#betterliving2_massage) | BetterLiving2: run control | Set head and foot massage intensity. Zero turns a zone off. |
 | [`casper_base`](#casper_base) | Casper Base: settings | Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields. |
@@ -338,6 +339,7 @@ they are not exposed through `hold_control`.
 
 | Profile | Controls | Timing and release |
 |---------|----------|--------------------|
+| [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The selected layout's available `richmat_classic_<node>` controls with hold metadata, including a route suffix where declared; saves have no held gesture | The layout's app refresh interval and fresh release, as listed in the guide; finite duration 0.1–60 seconds. Renewable holds use only the declared streaming controls |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Selector-supported motor directions and app buttons with hold metadata | 100 ms refresh and that selector's STOP frame at release; duration 100–60000 ms. Motion-sensor actions end after five seconds without an added STOP. BOX25 voice position targets are one-shot. |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Model-specific axes, presets, memories, light and massage controls in the guide | 300 ms refresh, zero-mask release at +300/+600 ms. Maximum 30 seconds; memory recalls below 5 seconds, programming through `save_preset` |
 | [Leggett Okin app profiles](beds/okin-nframe.md#leggett-okin-family) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | See the guide |
@@ -456,6 +458,7 @@ data:
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
 | L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
+| BedSmart / X-Series | From the selected layout's alarm page; required to turn the alarm on | The layout's `massage` zones and combinations. Once, at the next occurrence: leave out `weekdays` and `slot` |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
@@ -530,6 +533,31 @@ selected bed before changing any.
 | `value` | Value | Brightness: 0-100. Massage: 1-60 minutes. Motion light: 1-30 minutes. |
 
 See [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) for the bed's controls.
+
+## BedSmart / X-Series
+
+<a id="bedsmart"></a>
+**`bedsmart`**: Set lighting or aromatherapy, run a named bed command, or confirm a finite movement test.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `device_id` | Bed | One or more configured BedSmart / X-Series devices. |
+| `side` | Side | `both`, `left` or `right` on a combined bed. Each physical target keeps its own layout and local mode. |
+| `operation` | Setting | `color`, `light_duration`, `aromatherapy`, `movement_test` or `bed_command`. |
+| `rgb_color` | Light color | Three channels from 0 to 255, required for `color`. |
+| `seconds` | Light duration (seconds) | 0 to 300, required for `light_duration`. |
+| `aroma_times` | Aromatherapy times | Three whole numbers: 1 to 60, 1 to 60 and 1 to 12, required for `aromatherapy`. |
+| `confirm` | Confirm movement test | Required for `movement_test`, available only on the TEST layout. |
+| `command` | Bed command | Required for `bed_command`: `head_up`, `head_down`, `foot_up`, `foot_down`, `tv`, `lounge`, `zero_gravity`, `anti_snore`, `memory_one`, `memory_two`, `memory_three`, `flat` or `voice_stop_request`. |
+| `duration_ms` | Movement duration (milliseconds) | 1 to 60000, default 1000, for repeating named bed commands. It does not change the finite movement-test sequence. |
+
+All targets are checked before writing. Lighting and aromatherapy require a
+support reply on the connection used for the write. The TEST movement sequence
+runs once and performs its release cleanup on cancellation. Use
+[`set_alarm`](#set_alarm) for the selected layout's wake actions and massage
+combinations. BedSmart has no clock or Bluetooth rename action.
+See the [BedSmart guide](beds/richmat.md#bedsmart--x-series) for layout controls,
+local selectors and timing. Hardware behavior has not been tested.
 
 ## Bed Tech
 

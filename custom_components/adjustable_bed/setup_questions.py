@@ -1019,6 +1019,12 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
     } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
+    if app == "bedsmart":
+        from .profiles.bedsmart import ALIASES, EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
+
+        unavailable = EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+        codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
+        codes.add("TEST")
     if app == "lp2":
         codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
         codes.update(("RMCS", "TEST"))
@@ -1027,9 +1033,9 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     if app in APPS:
         codes -= APPS[app].excluded_layouts
     if app == "jerome2":
-        from .profiles.jerome2 import EXCLUDED_LAYOUTS
+        from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
 
-        codes -= EXCLUDED_LAYOUTS
+        codes -= JEROME_EXCLUDED_LAYOUTS
     return {code: code for code in sorted(codes)}
 
 
@@ -1058,12 +1064,16 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         excluded = excluded | {"WFRM", "FWRM"}
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
         excluded = excluded | profile.excluded_layouts
+    if data.get(CONF_PROTOCOL_VARIANT) == "bedsmart":
+        from .profiles.bedsmart import EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
+
+        excluded = (excluded - {"TEST"}) | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
     if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
         excluded = (excluded - {"RMCS", "TEST"}) | {"209A05", "6HRM", "QRRM", "ZRS3"}
     if data.get(CONF_PROTOCOL_VARIANT) == "jerome2":
-        from .profiles.jerome2 import EXCLUDED_LAYOUTS
+        from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
 
-        excluded = excluded | EXCLUDED_LAYOUTS
+        excluded = excluded | JEROME_EXCLUDED_LAYOUTS
     if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}

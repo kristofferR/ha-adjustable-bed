@@ -104,6 +104,7 @@ _MOTORS: Final[dict[str, str]] = {
     "t-flat": "t_flat",
     "m3 and m4": "motors_3_4",
     "main motor": "main_motor",
+    "selected motor": "selected_motor",
     "storage lift": "storage_lift",
     "extra": "extra",
     "upper section": "upper_section",
