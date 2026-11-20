@@ -189,6 +189,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "casper_base": SideProfile("Casper Base product", variant_owned=True),
     "hush_base": SideProfile("Hush Base product", variant_owned=True),
     "luuna": SideProfile("Luuna + product", variant_owned=True),
+    "instant_comfort": SideProfile("Instant Comfort", variant_owned=True),
     "personal_comfort": SideProfile("Personal Comfort", variant_owned=True),
     "mline": SideProfile("M Line protocol and layout", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "suta": SideProfile("SUTA Smart Home name-selected layout"),

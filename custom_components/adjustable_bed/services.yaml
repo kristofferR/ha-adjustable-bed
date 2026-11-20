@@ -4042,3 +4042,31 @@ jerome_bed:
           step: 1
           unit_of_measurement: ms
           mode: box
+
+instant_comfort_firmness:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    sleeper:
+      required: true
+      selector:
+        select:
+          options:
+            - left
+            - right
+    firmness:
+      selector:
+        number:
+          min: 5
+          max: 50
+          step: 1
+    lumbar_firmness:
+      selector:
+        number:
+          min: 5
+          max: 50
+          step: 1

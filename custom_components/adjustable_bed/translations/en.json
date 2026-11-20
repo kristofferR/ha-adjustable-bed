@@ -5854,6 +5854,12 @@
       "suta_2_setpoint": {
         "name": "Right target temperature"
       },
+      "instant_comfort_left_lumbar_firmness": {
+        "name": "Left lumbar firmness"
+      },
+      "instant_comfort_right_lumbar_firmness": {
+        "name": "Right lumbar firmness"
+      },
       "personal_comfort_left_firmness": {
         "name": "Left firmness"
       },
@@ -9349,13 +9355,23 @@
         }
       }
     },
+    "instant_comfort_firmness": {
+      "name": "Instant Comfort: set firmness",
+      "description": "Set main or lumbar firmness for one sleeper. When both change, wait for the main adjustment to finish before sending the lumbar target.",
+      "fields": {
+        "device_id": {"name": "Air unit", "description": "Select configured Instant Comfort air units."},
+        "sleeper": {"name": "Sleeper", "description": "Left or right sleeper on the air unit."},
+        "firmness": {"name": "Main firmness", "description": "Main firmness target, a whole number from 5 to 50."},
+        "lumbar_firmness": {"name": "Lumbar firmness", "description": "Lumbar target, a whole number from 5 to 50. Requires four-channel ANM V5."}
+      }
+    },
     "personal_comfort_sequence": {
-      "name": "Personal Comfort: run sequence",
+      "name": "Personal Comfort / Instant Comfort: run sequence",
       "description": "Run full body massage, or a preset with the other base lowering its feet for 30 seconds.",
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "Select a Personal Comfort base or combined pair."
+          "description": "Select a Personal Comfort or Instant Comfort base or combined pair."
         },
         "operation": {
           "name": "Operation"
@@ -9885,7 +9901,7 @@
       "message": "This bed's alarms can only be turned off from Home Assistant. Set them in the bed's app."
     },
     "personal_comfort_sequence": {
-      "message": "This sequence needs supported Personal Comfort bases and current connections. For a peer-foot sequence, choose one side of a combined pair with both bases connected."
+      "message": "This sequence needs supported Personal Comfort or Instant Comfort bases and current connections. For a peer-foot sequence, choose one side of a combined pair with both bases connected."
     },
     "l2motion_control_unavailable": {
       "message": "This control is unavailable. Check the bed model, reported synchronization support and confirmation."

@@ -116,6 +116,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"KeesonProfile:betterliving2_p{wire}_{layout}": {"hold": ("BetterLiving2 1.3.0",), "hold_controls": ("BetterLiving2 1.3.0",)}
        for wire in (1, 2, 3) for layout in (2, 3)},
     **{f"EnsoProfile:{n}": {"hold": ("Enso Remote 2.3: immediate 100 ms refresh until zero release",)} for n in (2, 3, 4)},
+    **{f"InstantComfortProfile:{key}": {"hold": ("Instant Comfort 2.6.1",)}
+       for key in ("malouf", "reverie_v1", "reverie_v2")},
     **{f"PersonalComfortProfile:{key}": {"hold": ("Personal Comfort 2.6.1",)}
        for key in ("malouf", "reverie_v1", "reverie_v2")},
 
@@ -350,6 +352,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/keeson.py:<module>.BETTERLIVING2": tuple(
         f"KeesonProfile:betterliving2_p{wire}_{layout}" for wire in (1, 2, 3) for layout in (2, 3)),
     "profiles/ormatek.py:<module>.PROFILES": ("KeesonProfile:ormatek_okin15", "KeesonProfile:ormatek_okin24"),
+    "profiles/instant_comfort.py:<module>.MALOUF": ("InstantComfortProfile:malouf",),
+    "profiles/instant_comfort.py:<module>": ("InstantComfortProfile:reverie_v1", "InstantComfortProfile:reverie_v2"),
     "profiles/personal_comfort.py:<module>.MALOUF": ("PersonalComfortProfile:malouf",),
     "profiles/personal_comfort.py:<module>": ("PersonalComfortProfile:reverie_v1", "PersonalComfortProfile:reverie_v2"),
 

@@ -1474,6 +1474,9 @@ def default_scenario(bed_type: str) -> Scenario:
             "read:0000143d-0000-1000-8000-00805f9b34fb": "0102",
             "read:00001111-0000-1000-8000-00805f9b34fb": "000001020304",
         }
+    if bed_type == "instant_comfort":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="malouf",
+                        entry_data={const.CONF_PRODUCT_TYPE: "pf4"}, layout_id="personal_comfort")
     if bed_type == "personal_comfort":
         data[const.CONF_PRODUCT_TYPE] = "pf4"
         variant = "malouf"

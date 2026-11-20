@@ -142,6 +142,8 @@ async def factory_controllers() -> list[BedController]:
                     **default._coordinator.entry.data,
                     CONF_PROTOCOL_VARIANT: variant,
                 }
+                if bed_type == "instant_comfort":
+                    coordinator.entry.data["product_type"] = "two" if variant == "anm5" else "pf4"
                 coordinator.entry.options = {}
                 coordinator.entry.entry_id = f"{bed_type}-{variant}-{motor_count}"
                 coordinator.motor_count = motor_count
@@ -154,6 +156,11 @@ async def factory_controllers() -> list[BedController]:
                         device_name=coordinator.entry.data.get(CONF_BLE_DEVICE_NAME),
                     )
                 )
+    from custom_components.adjustable_bed.beds.instant_comfort.air import InstantComfortAir
+    from custom_components.adjustable_bed.profiles.instant_comfort import (
+        PROFILES as INSTANT_PROFILES,
+    )
+    controllers.append(InstantComfortAir(_FactoryCoordinator(), INSTANT_PROFILES["anm5"], "four"))
     # Both Comfy (komfyD and ComfyDS) product routes: the dual route adds the local side selector.
     for bed_type in ("komfyd", "comfyds"):
         controller = await _create_controller_for_bed_type(bed_type)

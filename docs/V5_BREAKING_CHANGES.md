@@ -389,6 +389,12 @@ Saatva app support is new in v5: select its Adjustable Base or Adjustable Base
 Plus model and installation during setup. Existing 4.4.2 BedTech and Richmat
 entries retain their own profiles. See [Saatva](beds/richmat.md#saatva).
 
+Instant Comfort is new in v5, compared with v4.4.2. Select its app in setup,
+then a concrete air-unit or base route. ANM V5's two/four-channel pressure
+layout is saved explicitly; four-channel units add lumbar firmness numbers.
+It uses the shared memory and base-sequence actions.
+
+
 These actions existed only in v5 betas and are gone. Older field names are not
 accepted.
 

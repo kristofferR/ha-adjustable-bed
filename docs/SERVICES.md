@@ -25,7 +25,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`timed_move`](#movement-and-memory) | Move motor for a time | Move a motor for a specified duration. |
 | [`hold_control`](#hold_control) | Hold control | Hold one control that the bed's app profile declares for a bounded duration, then send that profile's release sequence. Every target is checked before any bed moves; an unsupported control is rejected with the list of valid controls. |
 | [`l2motion`](#l2-motion) | L2 Motion: settings | Change supported light colors or explicitly confirm wired or wireless synchronization. |
-| [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Run full body massage, or a preset with the other base lowering its feet for 30 seconds. |
+| [`instant_comfort_firmness`](#instant_comfort_firmness) | Instant Comfort: set firmness | Set main and lumbar firmness for a sleeper, in order. |
+| [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort / Instant Comfort: run sequence | Run full body massage, or a preset with the other base lowering its feet for 30 seconds. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Set each targeted controller's clock to Home Assistant's local time. Every target is checked before any write. |
 | [`rename`](#rename) | Rename Bluetooth name | Write a new Bluetooth name to each targeted controller that supports it. Each app profile applies its own name rule to every target before any write. This does not rename the Home Assistant device. |
@@ -174,6 +175,9 @@ On split top, head actions follow the selected side; the foot motor and memory
 slots are shared. STOP ends refresh and does not cancel an already-running
 one-shot preset. Plus massage and light controls are buttons, with a 10/20 minute
 **Massage: Timer** select showing the last value sent.
+
+Instant Comfort Malouf and Reverie V2 bases support `goto_preset` and
+`save_preset` for slots 1 and 2. Reverie V1 and air units have no bed memory.
 
 The maximum memory slot depends on the bed; accepting numbers up to 8 does not
 create extra hardware memory. Named presets such as Flat or Zero G are exposed
@@ -2380,7 +2384,36 @@ Use the Light timer number for immediate timer changes and `set_alarm` for time
 and strength (`massage_intensity: 1` or `2`, or `enabled: false` for off).
 The [L2 Motion guide](beds/motomotion.md#l2-motion) describes the name gates.
 
+## instant_comfort_firmness
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `device_id` | Yes | One or more configured Instant Comfort air units. |
+| `sleeper` | Yes | `left` or `right`, the sleeper on the air unit. |
+| `firmness` | No | Main firmness, a whole number from 5 to 50. |
+| `lumbar_firmness` | No | Lumbar firmness, a whole number from 5 to 50, on a four-channel ANM V5. |
+
+ANM V5 must report the configured layout and be idle before a target is sent.
+Wait for an active adjustment to finish, or use `stop_all` before retrying.
+
+Supply at least one target. All requested targets are validated before the
+first adjustment. When both differ from the current values, main is sent
+first. Lumbar waits for matching-layout busy and idle replies after the main
+target is sent. If
+that transition does not arrive, the lumbar target is not sent. STOP or
+replacement cancels the pending target. Individual firmness numbers change one
+zone immediately. ANM V3 and RA accept only `firmness` and have no pump STOP.
+
 ## personal_comfort_sequence
+
+For Personal Comfort and Instant Comfort bases.
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `device_id` | Yes | One or more configured base devices. |
+| `operation` | Yes | `full_body_massage`, `flat_with_peer_foot` or `anti_snore_with_peer_foot`. |
+| `side` | No | `left`, `right` or `both`. Peer-foot sequences require one explicit side of a combined pair. |
+
 
 Select `full_body_massage` for head then foot massage 500 ms apart.
 `flat_with_peer_foot` and `anti_snore_with_peer_foot` require a combined pair,

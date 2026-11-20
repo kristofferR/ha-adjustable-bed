@@ -65,7 +65,7 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
         for entry in entries
         if entry.state is ConfigEntryState.LOADED
         and not is_paired(entry.data)
-        and not (entry.data.get(CONF_BED_TYPE) == "personal_comfort"
+        and not (entry.data.get(CONF_BED_TYPE) in {"personal_comfort", "instant_comfort"}
                  and (entry.data.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
                       or entry.data.get("product_type") == "none"))
         and not (entry.data.get(CONF_BED_TYPE) == "saatva"

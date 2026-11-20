@@ -433,7 +433,7 @@ _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {"saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
-     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic"}
+     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort"}
 )
 
 
@@ -2523,7 +2523,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     errors[CONF_BED_TYPE] = "remacro_model_not_in_app"
             if not errors:
                 self._select_family_route(bed_type, variant)
-                if variant is None and len(_setup_routes(bed_type)) >= 2:
+                if bed_type == "instant_comfort" or (variant is None and len(_setup_routes(bed_type)) >= 2):
                     return await self.async_step_reconfigure_route()
                 return await self._async_reconfigure_continue(exact=variant is not None)
         return self.async_show_form(
@@ -2542,7 +2542,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
         data = self._manual_data
         bed_type: str = data[CONF_BED_TYPE]
-        routes = _setup_routes(bed_type)
+        routes = _labelled_routes(bed_type) if bed_type == "instant_comfort" else _setup_routes(bed_type)
         current = data.get(CONF_PROTOCOL_VARIANT)
         if current not in routes:
             current = next(iter(routes))
@@ -3249,6 +3249,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 **candidate,
                 **(setup_profile_for(candidate) or profile).settled(candidate),
             }
+            next_profile = setup_profile_for(self._manual_data)
+            if (data.get(CONF_BED_TYPE) == "instant_comfort" and next_profile is not profile
+                    and next_profile is not None and next_profile.questions):
+                # Choose the route before constructing its concrete layout picker.
+                return await self.async_step_profile_questions()
             if self._recheck_answers:
                 # Answers that corrected a failed connection check are checked again.
                 self._recheck_answers = False
@@ -4812,7 +4817,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors["base"] = "octo_pairing_needs_connection"
             elif left_layout is None or right_layout is None:
                 errors["base"] = "pairing_needs_capabilities"
-            elif left_layout != right_layout:
+            elif left_layout != right_layout and not (
+                self._offline_safe_bed_type(left) == "instant_comfort"
+                and {**left_layout, "motor_keys": [key for key in left_layout["motor_keys"] if key != "pillow"]}
+                == {**right_layout, "motor_keys": [key for key in right_layout["motor_keys"] if key != "pillow"]}
+            ):
                 errors["base"] = "mismatched_motor_layouts"
             else:
                 name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"

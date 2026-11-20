@@ -141,6 +141,7 @@ bed has been tested on real hardware.
 | [Okin CST](docs/beds/okin-nframe.md#okin-cst) | [MFirm 900 - O app](docs/beds/okin-nframe.md#okin-cst), [Jordan's Sanctuary - O, Resident Adjustable Bed, Rize Aviada - O, POWER BOB ULTRA-O, Rize Contemporary III - O, Carefree, Rize Clarity II - O and Support 挺你 科技調整床 apps](docs/beds/okin-nframe.md#okin-cst), [Nectar Move](docs/beds/okin-nframe.md#okin-cst), [Rize Remedy II app](docs/beds/okin-nframe.md#rize-remedy-ii), [Okin CST controls without an app profile](docs/beds/okin-nframe.md#okin-cst) | Rize (Sanctuary, Aviada, Bob, Contempo, II Carefree, II Clarity), Resident, Mattress Firm 900-O, Power Bob, Nectar |
 | [OKIN Smart Sleep](docs/beds/smart-sleep.md) | OKIN Smart Sleep (P1 and P2 beds) | OKIN |
 | [Paramount](docs/beds/paramount.md) | [Bed Operation (ベッド操作)](docs/beds/paramount.md#bed-operation) | Paramount |
+| [Instant Comfort](docs/beds/personal-comfort.md#instant-comfort) | Instant Comfort (ANM / RA air firmness, Malouf / Reverie base) | Instant Comfort |
 | [Personal Comfort](docs/beds/personal-comfort.md) | Personal Comfort (air firmness, with a Malouf or Reverie base) | Personal Comfort |
 | [Power Bob Base](docs/beds/richmat.md#power-bob-base) | Power Bob Base Elite, Elite SH, Ultra and Ultra SH | Power Bob |
 | [Remacro](docs/beds/remacro.md) | [Slumberland, The Brick and Jerome's apps](docs/beds/remacro.md) | Slumberland, The Brick, Jerome's |

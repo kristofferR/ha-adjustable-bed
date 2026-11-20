@@ -34,6 +34,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 
 | Guide | Covers | Shared |
 |-------|--------|--------|
+| [Personal Comfort / Instant Comfort](beds/personal-comfort.md) | ANM and RA air units, Malouf and Reverie bases |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | The BedJet PowerLayer adjustable frame | |
 | [Casper Base](beds/casper-base.md) | The Casper Base app, sleep sensors and remote finder | |
 | [CheersSleep](beds/cheerssleep.md) | The CheersSleep app | |

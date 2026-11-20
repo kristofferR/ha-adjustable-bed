@@ -3171,6 +3171,12 @@
   "card_role": "estimate",
   "card_motor": "head"
  },
+ "number:instant_comfort_left_lumbar_firmness": {
+  "card_section": "firmness"
+ },
+ "number:instant_comfort_right_lumbar_firmness": {
+  "card_section": "firmness"
+ },
  "number:jerome_aroma_0": {
   "card_section": "utility"
  },
