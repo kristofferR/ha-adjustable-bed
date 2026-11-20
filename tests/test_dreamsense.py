@@ -515,7 +515,9 @@ async def test_observed_record_fence_is_checked_inside_paced_writer(hass):
     ctrl._last_write = asyncio.get_running_loop().time()
     task = asyncio.create_task(ctrl.delete_alarm(7, identity))
     await entered.wait()
-    ctrl._receive.alarm_revision += 1
+    ctrl._notification(
+        session, session.notify, bytearray(codec.record_20_len(5, 2, 1, (7, 249, 69, 7, 31, 0)))
+    )
     unblock.set()
     with raises_key("dreamsense_alarm_record"):
         await task
@@ -771,7 +773,7 @@ async def test_finite_hold_does_not_write_after_pacing_crosses_deadline(hass):
     assert written(c) == ["6e01002493", "6e01006edd"]
 
 
-async def test_overdue_first_tick_never_starts_a_finite_hold(hass):
+async def test_delayed_first_tick_sends_once_without_late_repeats(hass):
     from custom_components.adjustable_bed.beds.dreamsense import controller as module
 
     c, ctrl = await runtime(hass)
@@ -784,7 +786,79 @@ async def test_overdue_first_tick_never_starts_a_finite_hold(hass):
     ctrl._last_write = None
     with patch.object(module, "monotonic", side_effect=lambda: clock[0]):
         await c.async_execute_controller_command(lambda live: live.hold_control("HeadUp", 150))
-    assert written(c) == []
+    assert written(c) == ["6e01002493", "6e01006edd"]
+
+
+async def test_one_tick_finite_hold_sends_after_initial_timer_jitter(hass):
+    from custom_components.adjustable_bed.beds.dreamsense import controller as module
+
+    c, ctrl = await runtime(hass)
+    clock = [0.0]
+
+    async def advance(ms, _event=None):
+        clock[0] += ms / 1000 + 0.001
+
+    ctrl._wait = advance
+    ctrl._last_write = None
+    with patch.object(module, "monotonic", side_effect=lambda: clock[0]):
+        await c.async_execute_controller_command(lambda live: live.hold_control("HeadUp", 100))
+    assert written(c) == ["6e01002493", "6e01006edd"]
+
+
+@pytest.mark.parametrize("operation", ("update", "delete"))
+@pytest.mark.parametrize(
+    ("incoming_number", "incoming_minute", "allowed"),
+    ((8, 0, True), (7, 30, True), (7, 31, False)),
+)
+async def test_repeat_alarm_identity_ignores_other_records_but_fences_changes(
+    hass, operation, incoming_number, incoming_minute, allowed
+):
+    c, ctrl = await runtime(hass, "AFEG300")
+    session = ctrl._session
+    ctrl._notification(session, session.notify, bytearray.fromhex("6e09010078"))
+
+    def record(number, minute):
+        ctrl._notification(
+            session,
+            session.notify,
+            bytearray(codec.record_20_len(5, 2, 1, (number, 1, 69, 7, minute, 0))),
+        )
+
+    async def reply(_char, data, **_kwargs):
+        if data == p.alarm_list():
+            record(7, 30)
+
+    c.client.write_gatt_char.side_effect = reply
+    request = AlarmRequest(
+        enabled=True,
+        hour=7,
+        minute=30,
+        wake_action="zero_g",
+        slot=7,
+        reference_time=datetime(2026, 11, 20, tzinfo=UTC),
+    )
+    await ctrl.check_alarm(request)
+    identity = ctrl.alarm_record_identity(request)
+    assert identity is not None
+
+    async def paced_reply(_ms, _event=None):
+        record(incoming_number, incoming_minute)
+
+    ctrl._wait = paced_reply
+    ctrl._last_write = asyncio.get_running_loop().time()
+    if operation == "update":
+        command = ctrl.configure_alarm(replace(request, record_identity=identity))
+        expected = p.alarm_add(7, 1, 69, 7, 30)
+    else:
+        command = ctrl.delete_alarm(7, identity)
+        expected = p.alarm_delete(7)
+    if allowed:
+        await command
+        assert written(c) == [p.alarm_list().hex(), expected.hex()]
+    else:
+        with raises_key("dreamsense_alarm_record"):
+            await command
+        assert written(c) == [p.alarm_list().hex()]
 
 
 async def test_same_raw_created_selector_tracks_framed_and_raw_reconnects(hass):

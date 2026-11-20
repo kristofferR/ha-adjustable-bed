@@ -511,7 +511,9 @@ class DreamSenseController(BedController):
                                 packet,
                                 cancel,
                                 on_write=wrote,
-                                not_after=deadline if held and not leased else None,
+                                # The first source tick waits 100 ms, including
+                                # timer jitter. The deadline suppresses repeats.
+                                not_after=deadline if held and not leased and sent else None,
                             )
                             if not written:
                                 break
@@ -851,6 +853,7 @@ class DreamSenseController(BedController):
         with self._transaction():
             self._alarm_event.clear()
             self._receive.alarms.clear()
+            self._receive.alarm_record_revisions.clear()
             self._receive.alarm_revision += 1
             revision = self._receive.alarm_revision
             await self._send(p.alarm_list(), self._coordinator.cancel_command, own=own)
@@ -874,7 +877,7 @@ class DreamSenseController(BedController):
 
     def alarm_record_identity(self, alarm: AlarmRequest) -> tuple[int, int] | None:
         return (
-            (alarm.slot, self._receive.alarm_revision)
+            (alarm.slot, self._receive.alarm_record_revisions[alarm.slot])
             if alarm.slot in self._receive.alarms
             else None
         )
@@ -937,6 +940,7 @@ class DreamSenseController(BedController):
         if self._current(session) and self.profile.repeat and delivery is not Delivery.NONE:
             # A modifying command is not a readback, including on interruption.
             self._receive.alarms.clear()
+            self._receive.alarm_record_revisions.clear()
             self._receive.alarm_revision += 1
             self.forward_controller_state_updates(ALARMS({}))
 
@@ -947,7 +951,7 @@ class DreamSenseController(BedController):
         self._live()
         if not self.profile.repeat or not self._gate("clock") or number not in self._receive.alarms:
             raise invalid("dreamsense_alarm_record")
-        current = (number, self._receive.alarm_revision)
+        current = (number, self._receive.alarm_record_revisions[number])
         if identity is not None and identity != current:
             raise invalid("dreamsense_alarm_record")
         return current

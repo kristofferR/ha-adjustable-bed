@@ -9630,7 +9630,7 @@
       }
     },
     "dreamsense_light": {
-      "name": "Dream Sense lighting",
+      "name": "Dream Sense: lighting",
       "description": "Set the bed light color or duration after the bed reports lighting support.",
       "fields": {
         "device_id": {
@@ -9648,7 +9648,7 @@
       }
     },
     "dreamsense_delete_alarm": {
-      "name": "Delete Dream Sense alarm",
+      "name": "Dream Sense: delete alarm",
       "description": "Delete an existing repeat alarm from the current bed alarm list.",
       "fields": {
         "device_id": {

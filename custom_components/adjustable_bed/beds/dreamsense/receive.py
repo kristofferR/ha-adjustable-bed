@@ -32,6 +32,7 @@ class Receive:
     capabilities: set[str] = field(default_factory=set)
     alarms: dict[int, Alarm] = field(default_factory=dict)
     alarm_revision: int = 0
+    alarm_record_revisions: dict[int, int] = field(default_factory=dict)
     split: bool | None = None
     last_ack: str | None = None
 
@@ -83,7 +84,9 @@ class Receive:
             if len(frame) < 13:
                 return
             record = Alarm(*frame[6:12])
-            self.alarms[record.number] = record
             self.alarm_revision += 1
+            if self.alarms.get(record.number) != record:
+                self.alarms[record.number] = record
+                self.alarm_record_revisions[record.number] = self.alarm_revision
         elif domain == 0x0B and operation in (2, 3) and sub == 2 and len(frame) > 8:
             self.split = frame[7] != 2

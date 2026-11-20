@@ -51,8 +51,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`comfort_enhancement3_start_massage`](#comfort_enhancement3_start_massage) | Comfort Enhancement 3: start massage | Start a relative massage program. Values are app choices, not measured bed state. |
 | [`customatic_hold_memory`](#customatic_hold_memory) | Customatic: hold memory buttons | Hold a nonempty combination of the Clarity or Remedy memory-page actions. Program combinations can change stored positions. |
 | [`customatic_move_simultaneously`](#customatic_move_simultaneously) | Customatic: move motors together | Moves up to three motors together, then stops them. |
-| [`dreamsense_delete_alarm`](#dream-sense-bed) | Delete Dream Sense alarm | Delete an existing observed repeat-alarm record. |
-| [`dreamsense_light`](#dream-sense-bed) | Dream Sense lighting | Set supported bed RGB color and light duration. |
+| [`dreamsense_delete_alarm`](#dream-sense-bed) | Dream Sense: delete alarm | Delete an existing observed repeat-alarm record. |
+| [`dreamsense_light`](#dream-sense-bed) | Dream Sense: lighting | Set supported bed RGB color and light duration. |
 | [`fsm_relax_calibrate`](#fsm_relax_calibrate) | FSM Relax: calibrate | Calibrate the bed with its configured motor directions. Calibration is sent once; if Home Assistant reports an error, check the bed before you try again. |
 | [`floyd_action`](#floyd_action) | Floyd: settings | Moves to a preset, saves over a built-in preset, or links a bed to a room in the app. |
 | [`furnimove_action`](#furnimove_action) | FurniMove: press button | Presses one of the handset's buttons, optionally holding it. |
