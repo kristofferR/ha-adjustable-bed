@@ -402,6 +402,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_MLILY: _BuilderSpec("mlily"),
     "majestichome": _BuilderSpec("majestichome.controller"),
     BED_TYPE_OKIMIKI: _BuilderSpec("okimiki.controller"),
+    "dreamsense": _BuilderSpec("dreamsense.controller"),
     "saatva": _BuilderSpec("saatva"),
     BED_TYPE_BOBPOWERBASE: _BuilderSpec("bobpowerbase"),
     BED_TYPE_MLILY_REMOTE: _BuilderSpec("mlily_remote.controller"),

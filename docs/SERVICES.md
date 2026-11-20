@@ -24,6 +24,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`set_positions`](#movement-and-memory) | Move motors to positions | Move several motors to validated target positions in one ordered request. Every target is validated before movement starts. |
 | [`timed_move`](#movement-and-memory) | Move motor for a time | Move a motor for a specified duration. |
 | [`hold_control`](#hold_control) | Hold control | Hold one control that the bed's app profile declares for a bounded duration, then send that profile's release sequence. Every target is checked before any bed moves; an unsupported control is rejected with the list of valid controls. |
+| [`dreamsense_delete_alarm`](#dream-sense-bed) | Delete Dream Sense alarm | Delete an existing observed repeat-alarm record. |
+| [`dreamsense_light`](#dream-sense-bed) | Dream Sense lighting | Set supported bed RGB color and light duration. |
 | [`l2motion`](#l2-motion) | L2 Motion: settings | Change supported light colors or explicitly confirm wired or wireless synchronization. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Run full body massage, or a preset with the other base lowering its feet for 30 seconds. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
@@ -2388,3 +2390,22 @@ concurrent connections and an explicit `left` or `right` side. The selected
 base receives the preset; the other lowers its feet for 30 seconds and releases.
 Every participant is checked before the first write. STOP, replacement or a
 lost physical session cancels delayed work and drains the captured release.
+
+
+### Dream Sense Bed
+
+| Action | Dream Sense Bed behavior |
+|--------|-------------------------|
+| `hold_control` | Product direction buttons, such as `HeadUp`, repeat after the first 100 ms tick; `duration` is seconds. Release sends STOP on the owned connection and side. |
+| `sync_clock` | Synchronize the clock-enabled product's timezone and local calendar. |
+| `set_alarm` | Single alarms use the product's preset choices. Repeat products update or turn off an explicitly selected existing `slot` from the current alarm list. New record allocation is unavailable. |
+| `dreamsense_delete_alarm` | Delete an existing `alarm_number` from the current list; every target must already have that record. |
+| `dreamsense_light` | Set `rgb_color` (three values 0–255) and/or `seconds` (0–300, zero means always on). Current lighting support must be reported first. |
+
+Select **Dream Sense Bed** and its exact product in setup. Product controls and
+capability gates are listed in the [guide](beds/richmat.md#dream-sense-bed).
+Use the disabled-by-default **Refresh alarms** button to retrieve existing record
+numbers; the **Alarm response** diagnostic sensor includes those records. Lighting,
+clock, alarm, split-mode and vibration settings target the physical bed without a
+side. Ordinary controls follow the selected side only on products and links that
+encode it. No Bluetooth rename command is exposed by this app.

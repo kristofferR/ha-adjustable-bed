@@ -256,6 +256,8 @@ from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
+from .profiles.dreamsense import CHOICES as DREAMSENSE_CHOICES
+from .profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
@@ -328,6 +330,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MLILY: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY_REMOTE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -2772,6 +2775,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
     ),
     # The app's product sets every control, so its one row asks it.
+    "dreamsense": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, DREAMSENSE_CHOICES, searchable=True),),
+        derive=lambda data: {
+            CONF_PRODUCT_TYPE: str(data[CONF_PROTOCOL_VARIANT]),
+            CONF_HAS_MASSAGE: any(a.action.startswith("Massage") for a in DREAMSENSE_PROFILES[str(data[CONF_PROTOCOL_VARIANT])].controls),
+        },
+        title=lambda _data: "Dream Sense Bed",
+    ),
     "saatva": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
