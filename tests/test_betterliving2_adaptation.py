@@ -272,14 +272,15 @@ async def test_pre_dispatch_generation_yield_is_quiet_before_child_cancel(hass, 
         parent, children, device, _ = await native_pair(
             hass, stack, "alarm", "concurrent", stopped_side, events
         )
-        original_stop = parent._stop_children
+        target = children[stopped_side]
+        original_stop = target.async_stop_command
 
-        async def stop_children(targets):
+        async def stop_child():
             release.set()
             await asyncio.sleep(0)
-            return await original_stop(targets)
+            return await original_stop()
 
-        stack.enter_context(patch.object(parent, "_stop_children", stop_children))
+        stack.enter_context(patch.object(target, "async_stop_command", stop_child))
         stack.enter_context(patch.object(runtime.BetterLiving2Controller, "query_alarm", query))
         stack.enter_context(patch.object(Selection, "check", check))
         task = asyncio.create_task(call_app(hass, device, "alarm"))
