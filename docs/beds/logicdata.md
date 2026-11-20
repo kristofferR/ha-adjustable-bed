@@ -8,6 +8,9 @@
 > For the MOTIONrelax phone and tablet Android apps, use the separate
 > [LOGICDATA app profiles](jiecang.md#logicdata-app-family).
 
+For the native Android app `net.logicdata.mobile.sfapp`, choose
+[SILVERmotion Android](silvermotion.md). Its native custom-command envelope is a separate route.
+
 ## Known Models
 
 - Logicdata SimplicityFrame beds controlled by the SILVERmotion app

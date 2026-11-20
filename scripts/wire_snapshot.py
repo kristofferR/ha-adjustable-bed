@@ -1147,6 +1147,7 @@ class Coordinator:
         self.observed_ble_device_name = None
         self.motor_count = 2
         self.has_massage = True
+        self.is_shutting_down = False
         self.disable_angle_sensing = True
         self.malouf_layout = MALOUF_LAYOUT_AUTO
         self.malouf_memory_slots = MALOUF_MEMORY_SLOTS_AUTO
@@ -1197,6 +1198,9 @@ class Coordinator:
         return None
 
     async def async_write_app_state(self, *_: Any) -> None:
+        return None
+
+    async def async_note_control_access_succeeded(self) -> None:
         return None
 
     @contextlib.contextmanager
@@ -1437,6 +1441,8 @@ def default_scenario(bed_type: str) -> Scenario:
         # The exact name selects the panel: here panel One.
         data[const.CONF_BLE_DEVICE_NAME] = MOTOMOTION_NAMES[0]
         kwargs = {"device_name": MOTOMOTION_NAMES[0]}
+    if bed_type == "silvermotion":
+        data.update({const.CONF_PRODUCT_TYPE: "queen", const.CONF_HAS_MASSAGE: True})
     if bed_type == "cheerssleep":
         data[const.CONF_PRODUCT_TYPE] = "45"
     if bed_type == "smart_sleep":

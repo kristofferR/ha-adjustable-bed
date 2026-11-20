@@ -946,6 +946,11 @@ class DeviceCommandScheduler:
         return self._stop_epoch
 
     @property
+    def has_pending_stop(self) -> bool:
+        """Return whether the newest admitted STOP still owns its barrier."""
+        return not self._stop_barrier.is_set()
+
+    @property
     def recent_records(self) -> tuple[CommandRecord, ...]:
         """Return the bounded immutable terminal history."""
         return tuple(self._recent_records)

@@ -34,6 +34,7 @@ from .adapter import (
 )
 from .address_lock import async_get_connect_lock
 from .bed_traits import bed_traits
+from .beds.cancellation import settled
 from .beds.gmmotor.sessions import LIVE_ENABLED as GMMOTOR_LIVE_ENABLED
 from .beds.gmmotor.sessions import sleep_intent
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
@@ -213,6 +214,11 @@ class CoordinatorConnectionMixin:
         return self._client is not None and self._client.is_connected
 
     @property
+    def is_shutting_down(self: AdjustableBedCoordinator) -> bool:
+        """Whether the runtime has stopped admitting deferred controller work."""
+        return self._shutting_down
+
+    @property
     def is_connecting(self: AdjustableBedCoordinator) -> bool:
         """Return whether we are currently connecting to the bed."""
         return self._connecting
@@ -376,7 +382,7 @@ class CoordinatorConnectionMixin:
             yield
         finally:
             self._command_connection_holds -= 1
-            if not self._command_connection_holds and self.is_connected:
+            if not self._command_connection_holds and self.is_connected and not self._intentional_disconnect and not self._shutting_down:
                 self._reset_disconnect_timer()
 
     def _auto_reconnect_enabled(self: AdjustableBedCoordinator) -> bool:
@@ -1660,7 +1666,7 @@ class CoordinatorConnectionMixin:
                 # instead of staying "unknown" until the user moves it.
                 self._schedule_position_hydration()
 
-                if not bed_requires_pairing and self._has_unresolved_auth_failure():
+                if not bed_requires_pairing and controller.startup_verifies_control_access and self._has_unresolved_auth_failure():
                     # Controller startup ran on this unpaired link, so the GATT
                     # access that failed earlier works and its repair is resolved.
                     self._last_bond_evidence = None
@@ -2385,6 +2391,7 @@ class CoordinatorConnectionMixin:
                 await self._controller_state_refresh_task
             self._controller_state_refresh_task = None
         controller = self._controller
+        cancelled: asyncio.CancelledError | None = None
         if self._client is not None:
             # Intentional disconnects (manual, idle timeout, disconnect-after-command)
             # are routine for non-persistent beds; keep them at DEBUG so normal use
@@ -2414,6 +2421,8 @@ class CoordinatorConnectionMixin:
                 _LOGGER.debug("Successfully disconnected from %s", self._address)
             except BleakError as err:
                 _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
+            except asyncio.CancelledError as err:
+                cancelled = err
             finally:
                 self._intentional_disconnect = False
             # Bleak can raise or return while the OS link remains active. Keep
@@ -2423,6 +2432,18 @@ class CoordinatorConnectionMixin:
             if client.is_connected:
                 self._client = client
                 _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
+                async def restore_retained() -> None:
+                    if not self._shutting_down and controller is not None and self._controller is controller:
+                        try:
+                            await controller.async_resume_session()
+                        except Exception:
+                            _LOGGER.debug("Unable to resume retained BLE session", exc_info=True)
+                    if not self._shutting_down:
+                        self._reset_disconnect_timer()
+
+                await settled(restore_retained())
+                if cancelled is not None:
+                    raise cancelled
                 return False
             # Some Bleak backends do not emit the disconnect callback for an
             # intentional close. Preserve the same physical-session invalidation
@@ -2439,6 +2460,8 @@ class CoordinatorConnectionMixin:
             self._last_disconnected = datetime.now(UTC)
             self._notify_connection_state_change(False)
         self._schedule_pending_capability_reload()
+        if cancelled is not None:
+            raise cancelled
         return True
 
     def _reset_disconnect_timer(self: AdjustableBedCoordinator) -> None:

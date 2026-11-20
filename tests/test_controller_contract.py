@@ -227,6 +227,8 @@ async def _create_controller_for_bed_type(
     """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == const.BED_TYPE_SILVERMOTION:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "queen"
     if bed_type == const.BED_TYPE_BETTERLIVING2:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_PROTOCOL_VARIANT: variant or "p1"})
         return await create_controller(coordinator, bed_type, variant or "p1", client)
@@ -572,6 +574,8 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
     entries like BED_TYPE_DIAGNOSTIC that are absent from SUPPORTED_BED_TYPES.
     """
     coordinator = _FactoryCoordinator()
+    if bed_type == const.BED_TYPE_SILVERMOTION:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "queen"
     if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: "box1"})
     if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE, const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):

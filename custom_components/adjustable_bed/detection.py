@@ -144,6 +144,7 @@ from .const import (
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -471,6 +472,10 @@ def _check_manufacturer_data(
     # Logicdata: Company ID 1351 (0x0547)
     # Source: at.silvermotion app disassembly
     if MANUFACTURER_ID_LOGICDATA in manufacturer_data:
+        from .beds.silvermotion.discovery import scan_matches
+
+        if scan_matches(manufacturer_data):
+            return BED_TYPE_SILVERMOTION, 0.95, MANUFACTURER_ID_LOGICDATA
         return BED_TYPE_LOGICDATA, 0.95, MANUFACTURER_ID_LOGICDATA
 
     # Leggett & Platt Gen2 / LP Comfort Connect (control box 209-M001): advertises
@@ -721,6 +726,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_COMFORT_MOTION: "Comfort Motion and Lierda remotes",
     BED_TYPE_LIMOSS: "Limoss and Stawett remotes",
     BED_TYPE_LIMOSS_REMOTE: "Limoss Remote app",
+    BED_TYPE_SILVERMOTION: "SILVERmotion Android (LOGICDATA)",
     BED_TYPE_LOGICDATA: "Logicdata SimplicityFrame (SILVERmotion)",
     BED_TYPE_LOGICDATA_APP: "MOTIONrelax and Sleep Smart apps (LOGICDATA)",
     BED_TYPE_LOGICDATA_AIR_PUMP: "Logicdata Sleep Smart air mattress pump",

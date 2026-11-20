@@ -127,6 +127,7 @@ from .const import (
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -236,6 +237,11 @@ def require_logicdata_route(client: BleakClient, data: Mapping[str, Any]) -> Non
 
     SimplicityFrame writes its one characteristic; an app needs its own transport.
     """
+    if data[CONF_BED_TYPE] == BED_TYPE_SILVERMOTION:
+        from .beds.silvermotion.controller import require_transport
+
+        require_transport(client)
+        return
     if data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA_APP:
         from .beds.logicdata.app import require_app_transport
 
@@ -340,6 +346,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     ),
     BED_TYPE_JIECANG: _ControllerSpec("jiecang.controller", "JiecangController"),
     BED_TYPE_LIMOSS: _ControllerSpec("limoss.controller", "LimossController"),
+    BED_TYPE_SILVERMOTION: _ControllerSpec("silvermotion.controller", "SilvermotionController"),
     BED_TYPE_LOGICDATA: _ControllerSpec("logicdata.controller", "LogicdataController"),
     BED_TYPE_LOGICDATA_AIR_PUMP: _ControllerSpec(
         "logicdata.air_pump", "LogicdataAirPumpController"

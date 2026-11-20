@@ -708,6 +708,7 @@ BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Fl
 BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 # Sleep Smart Air Mattress pump: a separate BLE device on the shared ffe0 service.
 BED_TYPE_LOGICDATA_AIR_PUMP: Final = "logicdata_air_pump"
+BED_TYPE_SILVERMOTION: Final = "silvermotion"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_BEDSENSE: Final = "bedsense"
 BEDSENSE_VARIANTS: Final = {
@@ -934,6 +935,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RIZE,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_STARCODE_ABM5_4,
@@ -2842,7 +2844,9 @@ def supports_runtime_authentication_recovery(
     bed_type: str, protocol_variant: str | None = None
 ) -> bool:
     """Return whether an observed GATT auth failure should offer bond repair."""
-    return requires_pairing(bed_type, protocol_variant) or (
+    # SILVERmotion's app requests a bond, but only an observed auth failure
+    # warrants repair here; it does not opt into unconditional setup pairing.
+    return bed_type == BED_TYPE_SILVERMOTION or requires_pairing(bed_type, protocol_variant) or (
         bed_type == BED_TYPE_OKIN_CST and protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
     )
 
@@ -2853,10 +2857,11 @@ def requires_pairing_after_service_discovery(
     """Return True when GATT discovery must precede the BLE bond request.
 
     LP Control and Sleep Number connect and discover services before calling the Android
-    bonding API. BlueZ's usual ``pair=True`` path instead invokes
+    bonding API. SILVERmotion keeps that ordering for an explicit bond repair.
+    BlueZ's usual ``pair=True`` path instead invokes
     ``Device1.Pair`` without first making the ordinary unbonded GATT connection.
     """
-    if bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP):
+    if bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP, BED_TYPE_SILVERMOTION):
         return True
     return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 

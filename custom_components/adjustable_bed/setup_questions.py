@@ -100,6 +100,7 @@ from .const import (
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SERENITY,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -380,6 +381,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     # Logicdata pulse count still bounds each held movement.
     BED_TYPE_MALOUF_APP: _FIXED_LAYOUT,
     BED_TYPE_LOGICDATA_APP: _FIXED_LAYOUT,
+    BED_TYPE_SILVERMOTION: _FIXED_LAYOUT | {CONF_DISABLE_ANGLE_SENSING, CONF_PROTOCOL_VARIANT},
 }
 _OWNED_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_COMFORTFURNITURE): frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}),
@@ -715,6 +717,19 @@ def _logicdata_questions(
 
 
 _DECLARED: Final[dict[str, SetupProfile]] = {
+    BED_TYPE_SILVERMOTION: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_MOTOR_PULSE_DELAY_MS: 150,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+        },
+        questions=(
+            Question(CONF_PRODUCT_TYPE, {"queen": "Queen", "king": "King", "twin_xl": "Twin XL"}, "queen"),
+            Question(CONF_HAS_MASSAGE, default=True),
+        ),
+        title=lambda data: "SILVERmotion Android",
+    ),
     **dict.fromkeys(("smart_comfort_synargy", "smart_comfort_synergy"), SetupProfile(owns={
         CONF_MOTOR_COUNT: 3, CONF_HAS_MASSAGE: False,
         CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
