@@ -498,3 +498,42 @@ async def test_lifts_action_on_another_bed_names_the_beds_it_is_for(hass: HomeAs
             raises_key("action_for_other_beds", ServiceValidationError),
         ):
             await accessory_group.handle_group(call)
+
+
+async def test_stop_names_each_bed_that_did_not_stop(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.beds.starcode import accessory_group
+
+    main, *lifts = group(hass)
+    lifts[0].async_stop_command.side_effect = ConnectionError("out of range")
+    lifts[2].async_stop_command.side_effect = TimeoutError("no reply")
+    with raises_key("lifts_not_stopped") as raised:
+        await accessory_group._stop_configured_group(
+            hass, main.entry.entry_id, main.entry.data[CONF_STARCODE_LIFT_ENTRIES]
+        )
+    reasons = raised.value.translation_placeholders["reasons"]
+    assert reasons == f"{lifts[0].name}: out of range; {lifts[2].name}: no reply"
+    # Every bed was still told to stop.
+    assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))
+
+
+async def test_a_lift_set_up_as_another_bed_mid_action_says_so(hass: HomeAssistant) -> None:
+    main, *lifts = group(hass)
+    entered = asyncio.Event()
+    wait = asyncio.Event()
+
+    async def delay(seconds):
+        entered.set()
+        await wait.wait()
+
+    with patch(
+        "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", side_effect=delay
+    ):
+        running = asyncio.create_task(run_group(main, "flat"))
+        await entered.wait()
+        hass.config_entries.async_update_entry(
+            lifts[0].entry, data={**lifts[0].entry.data, CONF_BED_TYPE: "linak"}
+        )
+        wait.set()
+        with raises_key("lifts_not_configured", ServiceValidationError):
+            await running
+    assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))

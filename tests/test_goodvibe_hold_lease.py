@@ -116,10 +116,10 @@ def _hold(control: str, errors: list[str] | None = None) -> Callable[[Any], Awai
         try:
             # A leased hold_control runs to the stream ceiling, as the service runs it.
             await controller.hold_control(control, HOLD_CEILING_MS)
-        except ValueError as err:
+        except ServiceValidationError as err:
             if errors is None:
                 raise
-            errors.append(str(err))
+            errors.append(str(err.translation_key))
 
     return move
 
@@ -159,7 +159,7 @@ async def test_a_lease_never_drives_a_gesture_control(control: str) -> None:
         "goodvibe:selector-0004", _hold(control, errors), end_after_s=4, end="expire"
     )
 
-    assert errors == ["This control does not support renewable holds"]
+    assert errors == ["control_hold_renewal_not_supported"]
     assert wire.held == wire.after == ()
 
 
@@ -175,7 +175,7 @@ async def test_memory_mode_after_admission_refuses_the_lease_without_writing() -
         "goodvibe:selector-0004", move, end_after_s=1, end="expire", variant=MEMORY
     )
 
-    assert errors == ["This control does not support renewable holds"]
+    assert errors == ["control_hold_renewal_not_supported"]
     assert wire.held == wire.after == ()
 
 
