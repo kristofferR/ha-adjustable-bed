@@ -10,7 +10,7 @@ from homeassistant.util import dt as dt_util
 from ...codec import richmat as codec
 from . import protocol as p
 from .catalog import ACTIONS, ENUM_CODES, FOUR_COLORS, PALETTE, descriptors
-from .requests import OPERATIONS, Request
+from .requests import CLOCK_SYNC, OPERATIONS, Request
 
 if TYPE_CHECKING:
     from .controller import RichmatAppController
@@ -35,7 +35,7 @@ ALARM_OPERATIONS = {"single_alarm", "cancel_alarm", "repeat_alarm", "delete_alar
 
 def validate(c: RichmatAppController, r: Request) -> None:
     op = r.operation
-    if op not in OPERATIONS or op.startswith("sleep_"):
+    if op != CLOCK_SYNC and (op not in OPERATIONS or op.startswith("sleep_")):
         raise ValueError("Choose a main-bed Richmat app operation")
     if op.startswith("blanket_"):
         if not c.product["selectors"]["0xea47"]:
@@ -197,7 +197,7 @@ def validate(c: RichmatAppController, r: Request) -> None:
 async def execute(c: RichmatAppController, r: Request) -> None:
     op = r.operation
     frames: tuple[bytes, ...]
-    if op == "sync":
+    if op == CLOCK_SYNC:
         frames = p.sync_time(dt_util.now(), dt_util.now())
     elif op == "detection":
         frames = (

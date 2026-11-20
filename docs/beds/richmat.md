@@ -5306,15 +5306,15 @@ gates. Catalog declarations without a live control binding do not create bed ent
 | Protocol version 1 | deviceFunctionVersionOneCurrentMassageMode | `6E 9A A0 00 A8` |
 | Protocol version 1 | deviceFunctionVersionOneCurrentBedLightStatus | `6E 9A B0 00 B8` |
 
-Named operations: `sync`, `detection`, `toggle_alarm`, `sleep_sync`, `query`,
-`single_alarm`, `cancel_alarm`, `repeat_alarm`, `delete_alarm`, `light_timer`,
-`light_rgb`, `strip_rgb`, `strip_timer`, `strip_groove`, `strip_color_mode`,
-`strip_breathe`, `strip_power`, `therapy_light`, `therapy_sound`, `therapy_timer`,
-`music_source`, `white_noise`, `snore`, `get_off_bed`, `snore_intervention`,
-`blanket_power`, `blanket_mode`, `blanket_temperature`, `blanket_delay`,
-`blanket_mite`, `blanket_settings`, `blanket_sleep`, `usb`, `demo`, `sleep_time`,
-`sleep_part`, `sleep_realtime`, `sleep_report`, `sleep_snore`,
-`sleep_sensitivity`, `sleep_init`, `sleep_cancel`, `sleep_poll`.
+Named operations: `detection`, `toggle_alarm`, `query`, `single_alarm`,
+`cancel_alarm`, `repeat_alarm`, `delete_alarm`, `light_timer`, `light_rgb`,
+`strip_rgb`, `strip_timer`, `strip_groove`, `strip_color_mode`, `strip_breathe`,
+`strip_power`, `therapy_light`, `therapy_sound`, `therapy_timer`, `music_source`,
+`white_noise`, `snore`, `get_off_bed`, `snore_intervention`, `blanket_power`,
+`blanket_mode`, `blanket_temperature`, `blanket_delay`, `blanket_mite`,
+`blanket_settings`, `blanket_sleep`, `usb`, `demo`, `sleep_time`, `sleep_part`,
+`sleep_realtime`, `sleep_report`, `sleep_snore`, `sleep_sensitivity`,
+`sleep_init`, `sleep_cancel`, `sleep_poll`.
 <!-- /generated -->
 
 Product identities and their two menu branches remain separate even when their
@@ -6507,8 +6507,8 @@ no action accepts arbitrary packet bytes.
 
 - Lighting: timer, palette/RGB and opacity, groove/color/breathe modes, power,
   therapy timer/color/sound and the local-music source.
-- Alarms: single countdown, cancellation, explicit repeat slot, toggle, deletion,
-  list refresh and time synchronization. Weekdays are Monday 0 through Sunday 6;
+- Alarms: single countdown, cancellation, explicit repeat slot, toggle, deletion
+  and list refresh. Weekdays are Monday 0 through Sunday 6;
   7 means once. Full tables require an explicit slot and never emit Android's -1.
 - Blanket: power, mode, selected-zone temperature, main delay, mite removal, all
   six settings flags and each zone's sleep schedule. Flags are child lock,
@@ -6517,10 +6517,13 @@ no action accepts arbitrary packet bytes.
   delay and four stage temperatures. Schedule duration is validated together.
 - Detection start/stop, anti-snore/off-bed settings, USB and cancellable automatic
   demos. Demo steps use known app enum names, sustain seconds and delay seconds.
-- Separate sleep entry: `sleep_sync`, time/part/realtime queries, polling,
+- Separate sleep entry: time/part/realtime queries, polling,
   sensitivity query, automatic anti-snore query/setting, report session, init and
   local cancellation. `sleep_snore` uses value 0 for query and 1 for setting.
   There is no valid sensitivity setter in this artifact.
+- Clock: the bed and the separate sleep entry set their clock with
+  [Set bed clock](../SERVICES.md#sync_clock); the sleep entry also sets it on
+  every connection.
 
 #### Evidence
 

@@ -11763,10 +11763,8 @@
     },
     "richmat_app_operation": {
       "options": {
-        "sync": "Set bed clock",
         "detection": "Bed detection",
         "toggle_alarm": "Turn alarm on or off",
-        "sleep_sync": "Sync sleepers",
         "query": "Read current settings",
         "single_alarm": "One-time alarm",
         "cancel_alarm": "Cancel alarm",
