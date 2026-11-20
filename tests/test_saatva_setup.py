@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.pairing import (
     supports_single_address_pairing,
 )
 from custom_components.adjustable_bed.pairing_candidates import active_pairing_candidates
+from custom_components.adjustable_bed.profile_recommendations import recommend_profile
 from custom_components.adjustable_bed.profiles.saatva import CHOICES, SERVICE_UUID, WRITE_UUID
 from tests.test_saatva import runtime
 
@@ -143,12 +144,20 @@ async def test_nearby_write_uuid_receiver_is_selectable(hass, mock_bluetooth_ser
     assert selected["step_id"] == "bluetooth_confirm"
 
 
+@pytest.mark.parametrize(
+    "name,manufacturer",
+    [("BedTech", {}), ("QRRM157738", {19543: bytes.fromhex("54307651")})],
+)
 async def test_shared_hint_keeps_confident_receiver_setup_suggestion(
-    hass, mock_bluetooth_service_info
+    hass, mock_bluetooth_service_info, name, manufacturer
 ):
     info = copy(mock_bluetooth_service_info)
-    info.name, info.service_uuids, info.manufacturer_data = "BedTech", [SERVICE_UUID], {}
+    info.name, info.service_uuids, info.manufacturer_data = name, [SERVICE_UUID], manufacturer
     result = detect_bed_type_detailed(info)
     assert result.bed_type == "bedtech" and result.confidence >= 0.7
     assert "saatva" in result.ambiguous_types
     assert _confident_auto_detect(result) == "bedtech"
+    recommendation = recommend_profile({"bed_type": "richmat"}, info, {})
+    assert recommendation is not None and recommendation.suggested == "bedtech"
+    assert "saatva" not in recommendation.choices
+    assert recommend_profile({"bed_type": "saatva"}, info, {}) is None
