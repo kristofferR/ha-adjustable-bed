@@ -232,10 +232,12 @@ async def _stop_failures(
         if scope is not None:
             scope.active = False
         _GROUP_CLEANUP.reset(token)
+    # A member's STOP that was cancelled (its session was replaced) did not stop it either;
+    # cancelling this task still raises out of gather().
     return [
         (target.name, result)
         for target, result in zip(targets, results, strict=True)
-        if isinstance(result, Exception)
+        if isinstance(result, BaseException)
     ]
 
 
@@ -474,7 +476,10 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             # A lift set up as another bed meanwhile is the user's to fix: say so plainly.
             configured, other = group.split(ServiceValidationError)
             if configured is not None and other is None:
-                raise configured.exceptions[0] from group
+                first: BaseException = configured
+                while isinstance(first, BaseExceptionGroup):
+                    first = first.exceptions[0]
+                raise first from group
             raise
         completed = True
     finally:

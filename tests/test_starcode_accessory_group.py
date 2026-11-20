@@ -505,6 +505,7 @@ async def test_stop_names_each_bed_that_did_not_stop(hass: HomeAssistant) -> Non
 
     main, *lifts = group(hass)
     lifts[0].async_stop_command.side_effect = ConnectionError("out of range")
+    lifts[1].async_stop_command.side_effect = asyncio.CancelledError()
     lifts[2].async_stop_command.side_effect = TimeoutError()
     with raises_key("lifts_not_stopped") as raised:
         await accessory_group._stop_configured_group(
@@ -512,7 +513,11 @@ async def test_stop_names_each_bed_that_did_not_stop(hass: HomeAssistant) -> Non
         )
     reasons = raised.value.translation_placeholders["reasons"]
     # A failure without a message is named by its kind.
-    assert reasons == f"{lifts[0].name}: out of range; {lifts[2].name}: TimeoutError"
+    # A STOP cancelled with its replaced session did not stop that bed either.
+    assert reasons == (
+        f"{lifts[0].name}: out of range; {lifts[1].name}: CancelledError; "
+        f"{lifts[2].name}: TimeoutError"
+    )
     # Every bed was still told to stop.
     assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))
 
