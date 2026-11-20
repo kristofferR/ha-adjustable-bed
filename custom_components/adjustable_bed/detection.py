@@ -316,6 +316,7 @@ from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.okimiki import scan_matches as okimiki_scan_matches
 from .profiles.onlysnore import advertisement as onlysnore_advertisement
+from .profiles.saatva import SCAN_UUIDS as SAATVA_SCAN_UUIDS
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.sophie import accepts_name as accepts_sophie_name
 from .profiles.vmatbasic import manufacturer_payload_matches
@@ -660,6 +661,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app",
     BED_TYPE_MLILY: "MLILY Control app",
     BED_TYPE_OKIMIKI: "Okimiki app",
+    "saatva": "Saatva app",
     "bobpowerbase": "Power Bob Base app",
     BED_TYPE_MLILY_REMOTE: "MLILY Remote app",
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
@@ -907,7 +909,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {"majestichome", BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort"}
+    {"saatva", "majestichome", BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort"}
 ).union({BED_TYPE_BETTERLIVING2})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1577,6 +1579,14 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_MLINE:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLINE]))
             result.signals.append("name:mline_app_candidate")
+    if set(SAATVA_SCAN_UUIDS).intersection(uuid.lower() for uuid in service_info.service_uuids or ()) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult("saatva", 0.3, [*result.signals, "service:saatva_app_candidate"])
+        elif result.bed_type != "saatva":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "saatva"]))
+            result.signals.append("service:saatva_app_candidate")
     # Bob's shared scan words are an opt-in app choice, after established
     # receiver and app-name priorities, with the same exclusion boundary.
     if service_info.name and any(word in service_info.name for word in BOB_SCAN_KEYWORDS) and not any(
