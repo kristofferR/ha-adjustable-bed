@@ -486,6 +486,10 @@ class PairTopology(ABC):
     async def stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
         """Send STOP to every target, collecting individual failures."""
 
+    async def explicit_stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
+        """Deliver the user's STOP, separately from command-failure cleanup."""
+        return await self.stop_children(targets)
+
     async def stop_motor(
         self, targets: list[PairTarget], stop_fn: ChildCommand, resource: str
     ) -> dict[str, BaseException]:
@@ -1148,9 +1152,8 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
 class SequentialTwoLinkTopology(PairTopology):
     """Two receivers sharing one link lane: connect, operate, then disconnect.
 
-    Dropping the link halts that side's motors (verified dead-man model — the
-    bed only moves while a command stream arrives), so a disconnected side
-    needs no separate STOP.
+    Controllers own movement cleanup. Explicit STOP can reopen a released
+    receiver when its profile requires delivery after link loss.
     """
 
     def __init__(self, pair: PairedBedCoordinator) -> None:
@@ -1194,7 +1197,15 @@ class SequentialTwoLinkTopology(PairTopology):
     ) -> None:
         del cancel_running
         admission = self._admission
-        async with self.command_lock:
+        async with contextlib.AsyncExitStack() as lane:
+            # STOP reserves the transition lane first. Join the command lane
+            # through that same gate so a queued STOP cannot be overtaken.
+            # Release the gate before running: STOP must still preempt a cycle.
+            if any(self._reconnects_for_stop(child) for child in self._children.values()):
+                async with self._pair._connection_mode_transition_lock:
+                    await lane.enter_async_context(self.command_lock)
+            else:
+                await lane.enter_async_context(self.command_lock)
             # A STOP (or newer command) bumped one of OUR target sides while we
             # waited — drop this now-stale movement instead of starting it right
             # after the safety stop.
@@ -1216,10 +1227,9 @@ class SequentialTwoLinkTopology(PairTopology):
                     # Cancelling the child TASKS is not the same as a STOP write,
                     # so explicitly STOP the still-connected side(s) before
                     # propagating — otherwise a motor can be left running.
-                    # stop_children only targets a side that is still connected
-                    # (a disconnected side already halted on its link drop). It
-                    # never raises and we re-raise the cancellation regardless,
-                    # so this is best-effort cleanup.
+                    # stop_children targets connected sides; each controller
+                    # owns its release on a captured session. It never raises
+                    # and we re-raise cancellation, so this is best-effort cleanup.
                     await self._pair._stop_children(targets)
                     raise
             finally:
@@ -1238,7 +1248,7 @@ class SequentialTwoLinkTopology(PairTopology):
         side, run its op, then disconnect it before moving to the next.
 
         On failure the loop stops at the first failing side; every side that was
-        connected is disconnected, so nothing is left connected or moving.
+        connected is disconnected, so nothing is left connected.
 
         ``entry_cancel`` is the per-side cancel counter captured at command entry:
         a STOP (or newer command) bumps it, so before starting each side we re-check
@@ -1297,22 +1307,22 @@ class SequentialTwoLinkTopology(PairTopology):
             try:
                 await op(child)
             except asyncio.CancelledError:
-                # Release this side (halts it) before propagating the cancellation.
+                # Release this side before propagating the cancellation.
                 if not local_role:
                     await safe_disconnect(side, child)
                 raise
             except Exception as err:  # noqa: BLE001
                 op_error = err
 
-            # Disconnecting is BOTH the one-link guard and the halt for this side,
-            # so a disconnect failure is fatal: abort rather than connect the next
-            # side onto a possibly-still-live/moving link.
+            # Release the slot before opening the next side. A failed disconnect
+            # aborts the cycle; protocol cleanup belongs to the controller and
+            # link loss alone does not prove that every firmware halted motion.
             disconnected = local_role or await safe_disconnect(side, child)
             if op_error is not None or not disconnected:
                 if op_error is not None:
                     errors[side] = op_error
                 if not disconnected:
-                    # The release that halts the side failed too, so the link may
+                    # The connection release failed too, so the link may
                     # still be live: its own entry, beside the command's reason.
                     key = side if op_error is None else f"{side} (disconnect)"
                     errors[key] = failed("side_not_released", side=side)
@@ -1332,11 +1342,10 @@ class SequentialTwoLinkTopology(PairTopology):
         return ok
 
     async def stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
-        """STOP connected central receivers and ready local transports.
+        """Cleanup STOP for connected receivers and ready local transports.
 
-        A disconnected central side already halted on link drop, and stopping it
-        would reconnect it (``async_stop_command`` ensures a link), momentarily
-        creating the two-link state this topology avoids.
+        Reopening released sides is reserved for explicit STOP and its profile
+        policy, under the one-link guard.
         """
         return await stop_targets(
             [
@@ -1346,23 +1355,38 @@ class SequentialTwoLinkTopology(PairTopology):
             ]
         )
 
+    async def explicit_stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
+        if any(self._reconnects_for_stop(child) for _, child in targets):
+            for _, child in targets:
+                if child in self._admission.active_children:
+                    child.request_command_cancel()
+            async with self.command_lock:
+                return await self._stop_with_link_guard(targets, stop_targets)
+        return await self.stop_children(targets)
+
     async def stop_motor(
         self, targets: list[PairTarget], stop_fn: ChildCommand, resource: str
     ) -> dict[str, BaseException]:
-        """Stop one motor on connected sides only, never reconnecting one.
+        """Cancel cycling motion before delivering a motor STOP.
 
-        A side moves only inside a cycle, which releases its link once the
-        command ends, and the drop halts it. A cycling side's running command
-        is pre-empted instead: its own release goes out, then the cycle drops
-        the link. A STOP frame of its own would race that drop, or reopen the
-        second link this topology avoids. A connected side outside a cycle gets
-        the motor's stop; a disconnected one already halted.
+        Opted-in sides wait for the cycle to drain and reconnect under the
+        one-link guard. Other cycling sides keep their controller's own cleanup.
         """
         cycling = self._admission.active_children
         scope = command_resources("motor:*" if resource.startswith("motor:") else resource)
         for _, child in targets:
             if child in cycling:
                 child.request_command_cancel(resources=scope)
+        idle = [
+            (side, child) for side, child in targets
+            if child not in cycling or self._reconnects_for_stop(child)
+        ]
+        if any(self._reconnects_for_stop(child) for _, child in idle):
+            async def stop(items: list[PairTarget]) -> dict[str, BaseException]:
+                return await stop_motor_targets(items, stop_fn, resource)
+
+            async with self.command_lock:
+                return await self._stop_with_link_guard(idle, stop)
         return await stop_motor_targets(
             [
                 (side, child)
@@ -1373,6 +1397,30 @@ class SequentialTwoLinkTopology(PairTopology):
             stop_fn,
             resource,
         )
+
+    @staticmethod
+    def _reconnects_for_stop(child: BedChild) -> bool:
+        controller = child.capability_controller
+        return getattr(controller, "reconnect_for_explicit_stop", False) is True
+
+    async def _stop_with_link_guard(
+        self,
+        targets: list[PairTarget],
+        stop: Callable[[list[PairTarget]], Coroutine[Any, Any, dict[str, BaseException]]],
+    ) -> dict[str, BaseException]:
+        """Deliver explicit STOPs without assuming a released link halted motion."""
+        errors: dict[str, BaseException] = {}
+        for side, child in targets:
+            reconnect = self._reconnects_for_stop(child)
+            if not (reconnect or child.is_connected or ready_disconnected_transport(child)):
+                continue
+            if reconnect and not await self._release_other_sides(child):
+                errors[side] = failed("side_not_released", side="other")
+                continue
+            errors.update(await stop([(side, child)]))
+            if reconnect and not await safe_disconnect(side, child):
+                errors[f"{side} (disconnect)"] = failed("side_not_released", side=side)
+        return errors
 
     async def connect_children(self, *, started_local_sides: Collection[str] = ()) -> bool:
         """Verify each side once, then release it; commands reconnect on demand.

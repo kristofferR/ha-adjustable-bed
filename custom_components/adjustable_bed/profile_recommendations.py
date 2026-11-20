@@ -188,7 +188,9 @@ def _reported_recommendation(
     if (
         detected.bed_type != BED_TYPE_SLEEPYS_BOX25
         or detected.requires_characteristic_check
-        or set(detected.ambiguous_types or ()) - {BED_TYPE_STARCODE_ABM5_4} - _GMMOTOR_APP_HINTS
+        or set(detected.ambiguous_types or ())
+        - {BED_TYPE_STARCODE_ABM5_4, "sealy_posturematic"}
+        - _GMMOTOR_APP_HINTS
     ):
         return None
     # This key changes only for materially different evidence, not releases,

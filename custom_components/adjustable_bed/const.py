@@ -533,6 +533,7 @@ ZSERIES_VARIANTS: Final = {
 }
 # Bed types whose variant is a user choice with no automatic default.
 BED_TYPE_ENSO: Final = "enso"
+BED_TYPE_SEALY_POSTUREMATIC: Final = "sealy_posturematic"
 BED_TYPE_YAMADA: Final = "yamada"
 BED_TYPE_BETTERLIVING2: Final = "betterliving2"
 BED_TYPE_SOMOS: Final = "somos"
@@ -758,6 +759,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_ONLYSNORE,
     BED_TYPE_ENSO,
+    BED_TYPE_SEALY_POSTUREMATIC,
     BED_TYPE_YAMADA,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_BEDGEAR,
