@@ -252,9 +252,9 @@ CONNECTION_MODE_IDLE: Final = "idle"
 CONNECTION_MODE_ALWAYS: Final = "always"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
-# Global (not per-entry) toggle to suppress automatic Bluetooth discovery cards.
-# Stored separately via discovery_settings, surfaced as a checkbox in the options
-# flow. Manual "Add Integration" is unaffected.
+# The key a legacy per-entry copy of the integration-wide discovery switch used.
+# The switch lives in discovery_settings' own Store and is set from the "Add
+# Integration" menu; entries only drop this key (schema 5.2 and options saves).
 CONF_DISABLE_DISCOVERY: Final = "disable_discovery"
 CONF_BLE_DEVICE_NAME: Final = "ble_device_name"
 CONF_OCTO_PIN: Final = "octo_pin"

@@ -9980,6 +9980,9 @@
     "lifts_not_configured": {
       "message": "Set up the lifts in the main bed's settings first."
     },
+    "lifts_not_stopped": {
+      "message": "Not every bed of the group stopped. {reasons}"
+    },
     "prodigy_hold_mode_blocked": {
       "message": "Changing the button mode is turned off on this bed, because the command can reset it and erase its presets."
     },
