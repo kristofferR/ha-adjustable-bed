@@ -197,6 +197,7 @@ async def test_all_profile_controls_run_on_captured_gatt_and_expose_specs(clock,
         sent = {*action.down, *action.short, *(w for _, b in action.branches for w in b.writes)}
         assert bool(buttons) != (
             action.key in covered
+            or action.key in ctrl._massage_timer_controls.values()
             or action.label == "Tilt ZG selector (mode 2)"
             or sent <= {"m", "n"}
         ), action
@@ -443,3 +444,39 @@ def test_gesture_only_controls_and_zero_gravity_set():
     assert "All Off" in {s.name for s in ctrl.controller_button_specs}  # sends G
     ctrl, _ = make("sleep_evolution", "T3")
     assert {"Zero Gravity", "Save Zero Gravity"} <= {s.name for s in ctrl.controller_button_specs}
+
+
+@pytest.mark.parametrize("key", list(profiles()))
+async def test_massage_timer_keys_are_one_select_sending_the_same_frames(clock, key):
+    """Each replaced timer key's press sends exactly what the timer select sends."""
+    app, code = key.split(":")
+    ctrl, c = make(app, code)
+    keys = {
+        int(m["minutes"]): action.key
+        for action in ctrl.profile.actions
+        if (m := re.fullmatch(r"(?P<minutes>\d+)MIN", action.label))
+    }
+    if len(keys) < 2:
+        # A single duration keeps its button.
+        assert not ctrl.supports_massage_timer
+        return
+    assert ctrl._massage_timer_controls == keys
+    assert ctrl.massage_timer_options == sorted(keys)
+    assert not ctrl.massage_timer_can_turn_off and ctrl.auto_enable_massage
+    assert not {"richmat_legacy_" + k for k in keys.values()} & {
+        s.key for s in ctrl.controller_button_specs
+    }
+    for minutes, control in keys.items():
+        sent = []
+        for run in (
+            lambda b, k=control: bed._press(b, control=k),
+            lambda b, m=minutes: b.set_massage_timer(m),
+        ):
+            fresh, fc = make(app, code)
+            await fresh.start_notify()
+            fc.client.write_gatt_char.reset_mock()
+            await run(fresh)
+            sent.append(frames(fc))
+        assert sent[0] == sent[1] != []
+    with pytest.raises(ValueError):
+        await ctrl.set_massage_timer(45)
