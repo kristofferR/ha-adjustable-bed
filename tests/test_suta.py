@@ -386,8 +386,11 @@ def test_entity_labels_follow_the_app_buttons():
     moon_, _ = make("SUTA-MOON")
     labels = _labels(moon_)
     assert labels["suta_adaptive_14_soft_0203"] == "Right adaptive mode 5: soft"
-    assert labels["suta_massage_timer_10_010a"] == "Left massage timer 10 min"
-    assert not any(key.startswith("suta_massage_strength_") for key in labels)
+    assert not any(key.startswith(("suta_massage_strength_", "suta_massage_timer_")) for key in labels)
+    assert [s.key for s in moon_.controller_select_specs] == [
+        "suta_left_massage_timer",
+        "suta_right_massage_timer",
+    ]
     assert [s.key for s in moon_.controller_number_specs] == [
         "suta_left_massage_strength",
         "suta_right_massage_strength",
@@ -516,6 +519,42 @@ async def test_moon_massage_strength_shows_the_sent_level_until_the_bed_reports(
     callback(sender, bytearray.fromhex("5359970d000800020a0000020a01") + bytes((0, 0, 0)))
     states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
     assert states[bed.MASSAGE_STRENGTH[1]] == 2 and states[bed.MASSAGE_STRENGTH[2]] == 2
+
+
+@pytest.mark.parametrize("side", (1, 2))
+async def test_moon_massage_timer_selects_send_the_timer_buttons_frames(clock, side):
+    moon_, c = make("SUTA-MOON")
+    await moon_.start_notify()
+    select = next(
+        s for s in moon_.controller_select_specs
+        if s.key == f"suta_{('left', 'right')[side - 1]}_massage_timer"
+    )
+    assert select.options == ("10 min", "20 min", "30 min")
+    for minutes in (10, 20, 30):
+        c.client.write_gatt_char.reset_mock()
+        await select.select_fn(moon_, f"{minutes} min")
+        by_select = written(c)
+        c.client.write_gatt_char.reset_mock()
+        await bed._binary_action(moon_, action=f"massage_timer_{minutes}", payload=bytes((side, minutes)))
+        assert by_select == written(c) != []
+    # Only MOON has per-side massage timers.
+    b905, _ = make("SUTA-B905")
+    assert b905.controller_select_specs == ()
+
+
+async def test_moon_massage_timer_shows_the_sent_duration_until_the_bed_reports(clock):
+    moon_, c = make("SUTA-MOON")
+    await moon_.start_notify()
+    right = next(s for s in moon_.controller_select_specs if s.key == "suta_right_massage_timer")
+    c.handle_controller_state_updates.reset_mock()
+    await right.select_fn(moon_, "30 min")
+    states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
+    assert states[bed.MASSAGE_TIMER[2]] == "30 min" and states[bed.MASSAGE_TIMER[1]] is None
+    # The bed's full-state report replaces it: both sides at 10 minutes.
+    sender, callback = c.client.start_notify.call_args.args
+    callback(sender, bytearray.fromhex("5359970d000800020a0000020a01") + bytes((0, 0, 0)))
+    states = {u.key: u.value for u in c.handle_controller_state_updates.call_args.args}
+    assert states[bed.MASSAGE_TIMER[1]] == states[bed.MASSAGE_TIMER[2]] == "10 min"
 
 
 async def test_overall_level_cut_off_between_zones_is_unknown(clock):

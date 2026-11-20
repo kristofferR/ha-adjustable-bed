@@ -5931,6 +5931,12 @@
       "massage_timer": {
         "name": "Massage: Timer"
       },
+      "massage_left_timer": {
+        "name": "Left massage timer"
+      },
+      "massage_right_timer": {
+        "name": "Right massage timer"
+      },
       "light_timer": {
         "name": "Light Timer"
       },
