@@ -41,8 +41,6 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`generate_support_bundle`](#support-bundle) | Create support bundle | Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. The file lists up to 30 nearby Bluetooth devices with their names and addresses. |
 | [`agingplace_action`](#agingplace_action) | Aging in Place: run control | Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control. |
 | [`agingplace_set_setting`](#agingplace_set_setting) | Aging in Place: settings | Set light brightness, massage duration or motion light duration. |
-| [`richmat_mh_control`](#richmat_mh_control) | Bed Tech, Nisco and MLILY Supreme: run control | Run one of the selected app and model's controls, read one setting from the bed, or set the app mode used by later controls. |
-| [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Bed Tech and Nisco: sleepers | Set the separate sleep sensor for one or two sleepers. |
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Press one of the selected BedTech model's buttons, on the sleeper side the app uses for it. Movement repeats for the configured number of pulses. |
 | [`bedgear`](#bedgear) | Bedgear: settings | Change Bedgear settings. Values show as unknown until the bed reports them. |
 | [`betterliving2_diagnostic_action`](#betterliving2_diagnostic_action) | BetterLiving2: settings | Refresh alarm or massage status. |
@@ -63,6 +61,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`goodvibe`](#goodvibe) | Good Vibe Sleep: settings | Sets the alarm, light, massage and anti-snore options of a Good Vibe Sleep bed or its sleep sensor. |
 | [`hjbed`](#hjbed) | HJBed: settings | Sets the alarm, light and other options of an HJBed bed. The bed must report the feature first. |
 | [`hush_base`](#hush_base) | Hush Base: settings | Configure Hush Base bed or independent sleep sensor controls. |
+| [`jerome_bed`](#jerome_bed) | Jerome’s power base: control bed | Run an action from the selected bed layout. Preset saves and long-press controls require confirmation. |
 | [`jiecang_stop_wake`](#jiecang_stop_wake) | Jiecang: stop wake massage | Stop active wake massage without disabling the stored weekly clock alarm. |
 | [`jiecang_wake`](#jiecang_wake) | Jiecang: start wake routine | Move to a preset and start the selected wake massage levels immediately. |
 | [`comfy_control`](#comfy_control) | KomfyD and ComfyDS: settings | Moves the bed or runs its timer and lock buttons. |
@@ -104,6 +103,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Write the three aroma timing sliders of a Richmat MH app profile. |
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Write the LED or button-light page colour of a Richmat MH app profile. |
 | [`majestichome`](#majestichome) | Majestic Home: settings | Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock. |
+| [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run control | Run one of the selected app and model's controls, read one setting from the bed, or set the app mode used by later controls. |
+| [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`richmat_legacy`](#richmat_legacy) | SleepEvolution and W.Silver Products: run control | Run a control from the selected app and name prefix, as a press or a save. |
 | [`mlily_remote`](#mlily_remote) | MLILY Remote: settings | Set the MS600 countdown alarm, or run the MS300-SH anti-snore movement on the left side. Set the clock with Set bed clock. |
 | [`rize_program_preset`](#rize_program_preset) | Rize: set default preset | Store the current position as a default preset on one physical Rize bed. Select one side of a combined bed and explicitly confirm. |
@@ -350,6 +351,7 @@ they are not exposed through `hold_control`.
 | [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` repeat every 100 ms; the others are sent once. One zero frame 100 ms after the hold |
 | [Bed Tech](beds/richmat.md#bed-tech) | The selected model's declared `mh_XX` held controls, such as `mh_24` (head up) and `mh_25` (head down) on 5I. Confirmed save buttons have no held gesture | Model-declared refresh, normally 100 ms, then END after 120 ms; maximum 30 seconds. The separate intervention receiver has no movement holds |
 | [Enso Remote](beds/keeson.md#enso-remote) | `head_up`, `head_down` (back), `feet_up`, `feet_down`, plus `both_up`/`both_down` (2 motors), `lumbar_up`/`lumbar_down` (3 and 4 motors) and `tilt_up`/`tilt_down` (waist, 4 motors); `memory_A`, `memory_B`, `timer_memory_page`, and `massage_mode` on 3 motors | Key every 100 ms, then the zero-key release |
+| [Jerome's power base](beds/richmat.md#jeromes-power-base) | `jerome_`-prefixed held controls offered by the selected layout, such as `jerome_head_up`; saves are excluded | 0.1–60 seconds, refresh at the original Bluetooth name's 170/110/150 ms interval, then the captured mode's release after 50 ms |
 | [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | Key every 100 ms, then the zero key 100 ms later |
 | [AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) | Movement, preset, save and massage controls | Movement and memory refresh every 100 ms with immediate STOP. Flat runs 600 ms; save and reset run the six-second confirmation interval regardless of `duration`. Positive massage controls require observed active state. One physical address only |
 | [Adjustable Comfort M1X12](beds/starcode-m1x12.md) | Parts 1, 2, 4, 8, 16 and union movement, massage wave/intensity, plus explicit ELEVATE actions | 100 ms held refresh, 0.1–60 seconds, fresh STOP on release/cancellation. The native card invokes one bounded service window and routes STOP to the owning side |
@@ -453,6 +455,7 @@ data:
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
+| Jerome's power base | `none` and the selected layout's wake positions | `massage` with the layout's zones. Once, as a countdown to the time. Not on a Left or Right side of a one-address combined bed |
 | L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
@@ -1014,6 +1017,40 @@ Separate sleep-sensor operations are not offered.
 
 
 Use `adjustable_bed.hush_base` for Hush bed and independent sleep-module configuration. The [Hush guide](beds/hush-base.md#configuration-actions) lists the finite operations, profile gates and sensor partition domains; the [Richmat guide](beds/richmat.md#hush-base) has the packet formats.
+
+## Jerome's power base
+
+<a id="jerome_bed"></a>
+**`jerome_bed`**: Run an action from the selected bed layout. Preset saves and long-press controls require confirmation.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `action` | Action | Named control from the selected layout, or `light_color` / `aroma_settings`. |
+| `keep` | Keep moving | Continue a supported held control for `duration_ms`; saves cannot be held. |
+| `mode` | Operating mode | 0, 1 or 2 on layouts with three operating modes; use `side` for Left/Right layouts. Nonzero modes require a framed connection. |
+| `confirm` | Confirm action | Required for preset saves and long-press actions. |
+| `long_press` | Long press | Select the layout's explicit long gesture when it also offers a tap. |
+| `duration_ms` | Movement duration | 1–60000 ms for continuous controls; default 1000 ms. |
+| `rgb_color` | Light color | Three channel values from 0 to 255 for `light_color`; current-session light support required. |
+| `aroma_times` | Aroma times | Mode 2 and mode 3 times of 1–60 minutes, then the mode 3 pause of 1–12 hours; current-session aroma support required. |
+
+Run a named [Jerome's power base](beds/richmat.md#jeromes-power-base) layout action,
+such as `head_up`, `zero_gravity` or `save_m1`. The generated guide table lists
+each layout's actions. Set `confirm: true` for saves and long-only controls.
+`long_press: true` selects a layout's explicit long gesture when the same save
+is also available as a tap. Saves never accept `keep: true`.
+
+`keep: true` requests a supported continuous action for `duration_ms`
+(1 to 60000). Native held controls also support renewable holds. `mode` is
+available only on layouts with Mode 1, Mode 2 and Mode 3, and requires a framed
+connection for nonzero values. Use the shared `side` field for Left and Right
+combined-bed targets. All targets are checked before any command starts.
+
+Use `action: light_color` with `rgb_color: [255, 68, 68]` after the bed reports
+light support, or `action: aroma_settings` with `aroma_times: [1, 1, 2]` after
+aroma support. Aroma values are the mode 2 and mode 3 times in minutes (1 to 60),
+then the mode 3 pause in hours (1 to 12). The settings have immediate number entities too.
+Alarms use [`set_alarm`](#set_alarm), with choices owned by the selected layout.
 
 ## Jiecang
 
