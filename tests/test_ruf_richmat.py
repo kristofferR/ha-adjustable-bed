@@ -675,6 +675,10 @@ async def test_set_alarm_calendar_needs_an_explicit_wake_action(hass):
 
 def _timer_layout(kind: str, app: str, model: str):
     """A Richmat MH-family controller of one controller kind on a model's first page."""
+    if kind == "bedtech":
+        from tests.test_bedtech_classic import make as make_bedtech
+
+        return make_bedtech(model)
     if kind == "app":
         from tests.test_richmat_nisco_supreme import make as make_app
 
@@ -693,7 +697,7 @@ TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"]
 
 
 # Running every timer button and the select on all 4,104 Richmat MH-family
-# layout pages gives 7 groups by the frames and delays they send; one layout of
+# layout pages gives 8 groups by the frames and delays they send; one layout of
 # each group is pinned here. The frames are what the buttons sent.
 @pytest.mark.parametrize(
     ("kind", "app", "model", "sent", "stop_after"),
@@ -705,6 +709,7 @@ TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"]
         ("app", "nisco", "aerm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.15),
         ("app", "nisco", "mlrm", {10: TEN, 30: THIRTY}, 0.12),
         ("app", "nisco", "ygrm", {10: TEN, 20: TWENTY}, 0.12),
+        ("bedtech", "bedtech_classic", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
     ],
 )
 async def test_massage_timer_select_sends_what_its_buttons_sent(delays, kind, app, model, sent, stop_after):
