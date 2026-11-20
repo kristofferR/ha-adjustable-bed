@@ -267,7 +267,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_ADJUSTAMATTRESS: SideProfile("AdjustaMattress", variant_owned=True),
     BED_TYPE_ADJUSTABLE_BED: SideProfile("Adjustable bed", variant_owned=True),
     BED_TYPE_ADJUSTABLE_LUMBAR: SideProfile("Adjustable bed (Lumbar)", variant_owned=True),
-    BED_TYPE_SUPERIOR_SLEEP: SideProfile("Superior Sleep product", variant_owned=True, keys=frozenset({CONF_BLE_DEVICE_NAME})),
+    BED_TYPE_SUPERIOR_SLEEP: SideProfile("Superior Sleep product", variant_owned=True),
     BED_TYPE_RIZE_HOME: SideProfile("Rize Home product", variant_owned=True),
     BED_TYPE_OKIN_MOTIONBED: SideProfile("OKIN Motion Bed"),
     BED_TYPE_COMFORT_ENHANCEMENT3: SideProfile("Comfort Enhancement 3", variant_owned=True),

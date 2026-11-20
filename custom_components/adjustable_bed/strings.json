@@ -5110,16 +5110,16 @@
         "name": "Remaining massage time"
       },
       "superior_sleep_mode": {
-        "name": "Massage mode (app)"
+        "name": "Massage mode"
       },
       "superior_sleep_head_level": {
-        "name": "Head massage level (app)"
+        "name": "Head massage level"
       },
       "superior_sleep_foot_level": {
-        "name": "Foot massage level (app)"
+        "name": "Foot massage level"
       },
       "superior_sleep_alarm_hour": {
-        "name": "Alarm hour (app)"
+        "name": "Alarm hour"
       }
     },
     "light": {
@@ -5575,7 +5575,7 @@
         "name": "Light"
       },
       "superior_sleep_alarm_enabled": {
-        "name": "Alarm enabled (app)"
+        "name": "Alarm enabled"
       }
     },
     "number": {
