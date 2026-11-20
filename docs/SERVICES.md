@@ -416,7 +416,8 @@ with other profiles. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep,
 Galaxy, MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, Motion Bed (the
 motor or thermal module clock; on a hub, the clock of the module in use, so
 select the motor or heating module first), GM Control products with an alarm and OKIN
-SleepEase also set their clock here; their own actions no longer do. A bed whose
+SleepEase also set their clock here; their own actions no longer do. HJBed sets its
+clock here too; its `hjbed` action keeps the `sync` operation, which sends the same frames. A bed whose
 two sides share one receiver has its clock set once. Bed Tech uses this action
 for its typed alarm page, calendar models and separate intervention receiver.
 

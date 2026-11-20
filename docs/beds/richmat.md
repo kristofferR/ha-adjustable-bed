@@ -1701,7 +1701,7 @@ receiver, while generic motion frames select left 0 or right 1. Music stays left
 | `repeat` | `time`, `action`, `alarm_id` unless a slot is known free, `weekdays`, `enabled` | Repeat-alarm flag and clock acknowledgement |
 | `query`, `delete` | `alarm_id` for delete | Repeat-alarm gate |
 | `toggle` | observed `alarm_id`, `enabled` | Repeat-alarm gate |
-| `sync` | none | Clock synchronization used by the app's product menu |
+| `sync` | none | Clock synchronization used by the app's product menu; the **Set bed clock** action ([`sync_clock`](../SERVICES.md#sync_clock)) sends the same frames |
 | `light_timeout` | `seconds` | Light-page flag and light acknowledgement |
 | `light_color` | `rgb_color` | Same light-page gate |
 | `mode` | `mode: split_head` or `standard` | Normal layout, blue/green/orange only |

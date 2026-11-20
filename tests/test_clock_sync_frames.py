@@ -67,6 +67,33 @@ CASES = [
         id='bobpowerbase:elite:n1',
     ),
     pytest.param(
+        'hjbed',
+        {},
+        [
+            [93, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e0c20080201695735a5003f', 1, 0],
+            [193, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e0d20080301380102030405ee', 1, 0],
+        ],
+        id='hjbed',
+    ),
+    pytest.param(
+        'hjbed:props_write',
+        {},
+        [
+            [93, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e0c20080201695735a5003f', 1, 0],
+            [193, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e0d20080301380102030405ee', 1, 0],
+        ],
+        id='hjbed:props_write',
+    ),
+    pytest.param(
+        'hjbed:props_wwr',
+        {},
+        [
+            [93, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e0c20080201695735a5003f', 1, 0],
+            [193, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e0d20080301380102030405ee', 1, 0],
+        ],
+        id='hjbed:props_wwr',
+    ),
+    pytest.param(
         'goodvibe:selector-0004',
         {},
         [

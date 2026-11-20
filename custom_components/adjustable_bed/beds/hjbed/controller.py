@@ -857,6 +857,17 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             if not any(row.get("number") == number for row in self._state.alarms)
         )
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    def validate_clock_sync(self) -> None:
+        self.validate_hjbed_request(Request("sync"))
+
+    async def sync_clock(self) -> None:
+        # The hjbed action's sync operation (kept: it existed in 4.x) sends the same frames.
+        await self.async_execute_hjbed_request(Request("sync"))
+
     def validate_hjbed_request(self, request: Request) -> None:
         op = request.operation
         if op in ("single", "cancel_single", "repeat", "delete", "query", "toggle"):
