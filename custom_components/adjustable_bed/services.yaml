@@ -3920,3 +3920,71 @@ lp2:
         select:
           options: [both, left, right]
           translation_key: side
+
+bedsmart:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - color
+          - light_duration
+          - aromatherapy
+          - movement_test
+          - bed_command
+          translation_key: bedsmart_operation
+    rgb_color:
+      selector:
+        color_rgb: null
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: s
+          mode: box
+    aroma_times:
+      selector:
+        object: null
+    confirm:
+      selector:
+        boolean: null
+    duration_ms:
+      selector:
+        number:
+          min: 1
+          max: 60000
+          mode: box
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+          translation_key: side
+    command:
+      selector:
+        select:
+          options:
+          - head_up
+          - head_down
+          - foot_up
+          - foot_down
+          - tv
+          - lounge
+          - zero_gravity
+          - anti_snore
+          - memory_one
+          - memory_two
+          - memory_three
+          - flat
+          - voice_stop_request
+          translation_key: bedsmart_command

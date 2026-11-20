@@ -50,6 +50,7 @@ APPS = [
     "luunarise2",
     "powercool",
     "lp2",
+    "bedsmart",
     "lady_americana",
     "acaa",
     "sta2",
@@ -394,6 +395,7 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
     [
         ("Revive Control app · Richmat", const.BED_TYPE_RICHMAT_REVIVE),
         ("Forty Winks app · Richmat", const.BED_TYPE_RICHMAT_CLASSIC_APPS),
+        ("BedSmart / X-Series app · Richmat", const.BED_TYPE_RICHMAT_CLASSIC_APPS),
         ("MLILY Control app · Richmat", const.BED_TYPE_MLILY),
         ("Majestic Home app · Richmat", "majestichome"),
         ("MLILY Remote app · Richmat", const.BED_TYPE_MLILY_REMOTE),

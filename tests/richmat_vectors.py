@@ -2279,3 +2279,9 @@ FROZEN_FRAMES.update(_nisco_supreme_frames())
 FROZEN_FRAMES["richmat_classic_lp2"] = frozenset(json.loads(gzip.decompress(
     (Path(__file__).parent / "fixtures/lp2/outbound.json.gz").read_bytes()
 )))
+
+# BedSmart owns its frozen vectors independently of the other resource apps.
+FROZEN_FRAMES["richmat_classic_bedsmart"] = frozenset(
+    frame for row in json.loads((Path(__file__).parent / "fixtures/bedsmart/wire.json").read_text())
+    for frame in row["expected"].split()
+)

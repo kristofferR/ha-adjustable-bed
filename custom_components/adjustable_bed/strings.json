@@ -3551,6 +3551,9 @@
       },
       "enso_massage_mode": {
         "name": "Cycle massage mode"
+      },
+      "bedsmart_query": {
+        "name": "Refresh bed features"
       }
     },
     "cover": {
@@ -5844,6 +5847,21 @@
       },
       "massage_left_intensity": {
         "name": "Left massage intensity"
+      },
+      "bedsmart_lamp_seconds": {
+        "name": "Light timeout"
+      },
+      "bedsmart_massage_index": {
+        "name": "Massage timer setting"
+      },
+      "bedsmart_aroma_0": {
+        "name": "Aroma mode 2 startup"
+      },
+      "bedsmart_aroma_1": {
+        "name": "Aroma mode 3 startup"
+      },
+      "bedsmart_aroma_2": {
+        "name": "Aroma pause"
       }
     },
     "select": {
@@ -6472,6 +6490,15 @@
           "cinema": "Cinema",
           "entertainment": "Entertainment"
         }
+      },
+      "bedsmart_mode": {
+        "name": "Bed mode"
+      },
+      "bedsmart_axis": {
+        "name": "Selected motor"
+      },
+      "bedsmart_head_foot": {
+        "name": "Head or foot"
       }
     },
     "climate": {
@@ -9438,6 +9465,40 @@
           "name": "Bed side"
         }
       }
+    },
+    "bedsmart": {
+      "name": "BedSmart / X-Series: settings",
+      "description": "Change direct bed lighting and aroma settings, or run a finite bed command. Use Set alarm for wake-up alarms.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Setting"
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "seconds": {
+          "name": "Light duration (seconds)"
+        },
+        "aroma_times": {
+          "name": "Aromatherapy times"
+        },
+        "confirm": {
+          "name": "Confirm programming or saving"
+        },
+        "duration_ms": {
+          "name": "Movement duration (milliseconds)"
+        },
+        "side": {
+          "name": "Bed side"
+        },
+        "command": {
+          "name": "Bed command",
+          "description": "The app's named BED caller. Voice stop request sends its original massage-off operand before release."
+        }
+      }
     }
   },
   "exceptions": {
@@ -9890,6 +9951,15 @@
     },
     "enso_duration_invalid": {
       "message": "Choose a hold duration between 1 and 60000 milliseconds."
+    },
+    "bedsmart_layout": {
+      "message": "Choose a bed layout from BedSmart / X-Series."
+    },
+    "bedsmart_session": {
+      "message": "The BedSmart bed connection or configuration changed. Try the action again."
+    },
+    "bedsmart_control": {
+      "message": "Choose an available BedSmart bed control."
     }
   },
   "issues": {
@@ -10587,7 +10657,8 @@
         "okimiki": "Okimiki app",
         "luniosmart": "Lunio Smart+ app",
         "majestichome": "Majestic Home app",
-        "lp2": "L&P Adjustable Base app"
+        "lp2": "L&P Adjustable Base app",
+        "bedsmart": "BedSmart / X-Series app"
       }
     },
     "setup_start": {
@@ -11947,6 +12018,32 @@
       "options": {
         "head": "Head",
         "foot": "Foot"
+      }
+    },
+    "bedsmart_operation": {
+      "options": {
+        "color": "Light color",
+        "light_duration": "Light timeout",
+        "aromatherapy": "Aroma times",
+        "movement_test": "Movement test",
+        "bed_command": "Bed command"
+      }
+    },
+    "bedsmart_command": {
+      "options": {
+        "head_up": "Head up",
+        "head_down": "Head down",
+        "foot_up": "Foot up",
+        "foot_down": "Foot down",
+        "tv": "TV",
+        "lounge": "Lounge",
+        "zero_gravity": "Zero gravity",
+        "anti_snore": "Anti-snore",
+        "memory_one": "Memory 1",
+        "memory_two": "Memory 2",
+        "memory_three": "Memory 3",
+        "flat": "Flat",
+        "voice_stop_request": "Voice stop request"
       }
     }
   }

@@ -319,7 +319,7 @@ MLILY_REMOTE: Final = RichmatProfile(key="mlily_remote", transports=("n1", "w1",
 CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
 RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
-    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool", "lp2", *RESOURCE_APPS)
+    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool", "lp2", "bedsmart", *RESOURCE_APPS)
 }
 
 RICHMAT_CLASSIC["lp2"] = RichmatProfile(key="richmat_classic_lp2", transports=("w0", *CLASSIC_TRANSPORTS))

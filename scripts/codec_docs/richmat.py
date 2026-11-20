@@ -52,6 +52,7 @@ from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
 from scripts.codec_docs import _galaxy, _okimiki, _richmat_legacy, _richmat_mh_apps
+from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 
@@ -1730,3 +1731,6 @@ BLOCKS.append((GUIDE, "mlily-remote-commands", render_mlily_remote))
 
 
 BLOCKS += LP2_BLOCKS
+
+
+BLOCKS += BEDSMART_BLOCKS

@@ -170,19 +170,37 @@
       "local_name": "200I*"
     },
     {
+      "local_name": "200IV2*"
+    },
+    {
+      "local_name": "200U&I*"
+    },
+    {
       "local_name": "200U*"
     },
     {
       "local_name": "200i*"
     },
     {
+      "local_name": "200iv2*"
+    },
+    {
+      "local_name": "200u&i*"
+    },
+    {
       "local_name": "208A14*"
+    },
+    {
+      "local_name": "208a14*"
     },
     {
       "local_name": "209A*"
     },
     {
       "local_name": "209A05*"
+    },
+    {
+      "local_name": "209a05*"
     },
     {
       "local_name": "400I*"
@@ -207,6 +225,21 @@
     },
     {
       "local_name": "6HRM*"
+    },
+    {
+      "local_name": "6brm*"
+    },
+    {
+      "local_name": "6crm*"
+    },
+    {
+      "local_name": "6drm*"
+    },
+    {
+      "local_name": "6erm*"
+    },
+    {
+      "local_name": "6frm*"
     },
     {
       "local_name": "7IRM*"
@@ -781,6 +814,9 @@
     },
     {
       "local_name": "CNRN*"
+    },
+    {
+      "local_name": "COOL TOUCH*"
     },
     {
       "local_name": "COOL*"
@@ -1603,6 +1639,9 @@
     },
     {
       "local_name": "GURN*"
+    },
+    {
+      "local_name": "GVRM*"
     },
     {
       "local_name": "GVRN*"
@@ -2589,6 +2628,33 @@
     },
     {
       "local_name": "MPE_*"
+    },
+    {
+      "local_name": "MPE_HJ001*"
+    },
+    {
+      "local_name": "MPE_HJ002*"
+    },
+    {
+      "local_name": "MPE_HJ003*"
+    },
+    {
+      "local_name": "MPE_HJ005*"
+    },
+    {
+      "local_name": "MPE_HJ006*"
+    },
+    {
+      "local_name": "MPE_HJ008*"
+    },
+    {
+      "local_name": "MPE_HJ010*"
+    },
+    {
+      "local_name": "MPE_HJ011*"
+    },
+    {
+      "local_name": "MPE_HJ012*"
     },
     {
       "local_name": "MPRM*"
@@ -3872,6 +3938,147 @@
       "local_name": "ZZRM*"
     },
     {
+      "local_name": "a0rm*"
+    },
+    {
+      "local_name": "a1rm*"
+    },
+    {
+      "local_name": "a2rm*"
+    },
+    {
+      "local_name": "a3rm*"
+    },
+    {
+      "local_name": "a6rm*"
+    },
+    {
+      "local_name": "a7rm*"
+    },
+    {
+      "local_name": "a8rm*"
+    },
+    {
+      "local_name": "a9rm*"
+    },
+    {
+      "local_name": "aarm*"
+    },
+    {
+      "local_name": "abrm*"
+    },
+    {
+      "local_name": "acrm*"
+    },
+    {
+      "local_name": "adrm*"
+    },
+    {
+      "local_name": "aerm*"
+    },
+    {
+      "local_name": "afrm*"
+    },
+    {
+      "local_name": "agrm*"
+    },
+    {
+      "local_name": "ahrm*"
+    },
+    {
+      "local_name": "airm*"
+    },
+    {
+      "local_name": "ajrm*"
+    },
+    {
+      "local_name": "akrm*"
+    },
+    {
+      "local_name": "alrm*"
+    },
+    {
+      "local_name": "amrm*"
+    },
+    {
+      "local_name": "anrm*"
+    },
+    {
+      "local_name": "aorm*"
+    },
+    {
+      "local_name": "aprm*"
+    },
+    {
+      "local_name": "aqrm*"
+    },
+    {
+      "local_name": "arrm*"
+    },
+    {
+      "local_name": "asrm*"
+    },
+    {
+      "local_name": "atrm*"
+    },
+    {
+      "local_name": "aurm*"
+    },
+    {
+      "local_name": "avrm*"
+    },
+    {
+      "local_name": "awrm*"
+    },
+    {
+      "local_name": "axrm*"
+    },
+    {
+      "local_name": "ayrm*"
+    },
+    {
+      "local_name": "azrm*"
+    },
+    {
+      "local_name": "b0rm*"
+    },
+    {
+      "local_name": "b1rm*"
+    },
+    {
+      "local_name": "b2rm*"
+    },
+    {
+      "local_name": "b3rm*"
+    },
+    {
+      "local_name": "b4rm*"
+    },
+    {
+      "local_name": "b5rm*"
+    },
+    {
+      "local_name": "b6rm*"
+    },
+    {
+      "local_name": "b7rm*"
+    },
+    {
+      "local_name": "b8rm*"
+    },
+    {
+      "local_name": "b8tt*"
+    },
+    {
+      "local_name": "b9rm*"
+    },
+    {
+      "local_name": "b9tt*"
+    },
+    {
+      "local_name": "barm*"
+    },
+    {
       "local_name": "base-i4*",
       "connectable": true
     },
@@ -3880,10 +4087,640 @@
       "connectable": true
     },
     {
+      "local_name": "bbrm*"
+    },
+    {
+      "local_name": "bcrm*"
+    },
+    {
+      "local_name": "bdrm*"
+    },
+    {
+      "local_name": "berm*"
+    },
+    {
+      "local_name": "bfrm*"
+    },
+    {
+      "local_name": "bgrm*"
+    },
+    {
+      "local_name": "bhrm*"
+    },
+    {
+      "local_name": "birm*"
+    },
+    {
+      "local_name": "bjrm*"
+    },
+    {
+      "local_name": "bkrm*"
+    },
+    {
+      "local_name": "blrm*"
+    },
+    {
+      "local_name": "bmrm*"
+    },
+    {
+      "local_name": "bnrm*"
+    },
+    {
+      "local_name": "borm*"
+    },
+    {
+      "local_name": "bprm*"
+    },
+    {
+      "local_name": "bqrm*"
+    },
+    {
+      "local_name": "brrm*"
+    },
+    {
+      "local_name": "bsrm*"
+    },
+    {
+      "local_name": "btrm*"
+    },
+    {
+      "local_name": "burm*"
+    },
+    {
+      "local_name": "bvrm*"
+    },
+    {
+      "local_name": "bwrm*"
+    },
+    {
+      "local_name": "bxrm*"
+    },
+    {
+      "local_name": "byrm*"
+    },
+    {
+      "local_name": "bzrm*"
+    },
+    {
+      "local_name": "c0rm*"
+    },
+    {
+      "local_name": "c1rm*"
+    },
+    {
+      "local_name": "c2rm*"
+    },
+    {
+      "local_name": "c3rm*"
+    },
+    {
+      "local_name": "c4rm*"
+    },
+    {
+      "local_name": "c5rm*"
+    },
+    {
+      "local_name": "c6rm*"
+    },
+    {
+      "local_name": "c7rm*"
+    },
+    {
+      "local_name": "c8rm*"
+    },
+    {
+      "local_name": "c9rm*"
+    },
+    {
+      "local_name": "carm*"
+    },
+    {
+      "local_name": "cbrm*"
+    },
+    {
+      "local_name": "ccrm*"
+    },
+    {
+      "local_name": "cdrm*"
+    },
+    {
+      "local_name": "cerm*"
+    },
+    {
+      "local_name": "cgrm*"
+    },
+    {
+      "local_name": "chrm*"
+    },
+    {
+      "local_name": "cirm*"
+    },
+    {
+      "local_name": "cjrm*"
+    },
+    {
+      "local_name": "ckrm*"
+    },
+    {
+      "local_name": "clrm*"
+    },
+    {
+      "local_name": "cmrm*"
+    },
+    {
+      "local_name": "cnrm*"
+    },
+    {
+      "local_name": "cool touch*"
+    },
+    {
+      "local_name": "corm*"
+    },
+    {
+      "local_name": "cprm*"
+    },
+    {
+      "local_name": "cqrm*"
+    },
+    {
+      "local_name": "crrm*"
+    },
+    {
+      "local_name": "csrm*"
+    },
+    {
+      "local_name": "ctrm*"
+    },
+    {
+      "local_name": "curm*"
+    },
+    {
+      "local_name": "cvrm*"
+    },
+    {
+      "local_name": "cwrm*"
+    },
+    {
+      "local_name": "cxrm*"
+    },
+    {
+      "local_name": "cyrm*"
+    },
+    {
+      "local_name": "czrm*"
+    },
+    {
+      "local_name": "d0rm*"
+    },
+    {
+      "local_name": "d1rm*"
+    },
+    {
+      "local_name": "d2rm*"
+    },
+    {
+      "local_name": "d3rm*"
+    },
+    {
+      "local_name": "d4rm*"
+    },
+    {
+      "local_name": "d5rm*"
+    },
+    {
+      "local_name": "d6rm*"
+    },
+    {
+      "local_name": "d7rm*"
+    },
+    {
+      "local_name": "d8rm*"
+    },
+    {
+      "local_name": "d9rm*"
+    },
+    {
+      "local_name": "darm*"
+    },
+    {
+      "local_name": "dbrm*"
+    },
+    {
+      "local_name": "dcrm*"
+    },
+    {
+      "local_name": "ddrm*"
+    },
+    {
+      "local_name": "derm*"
+    },
+    {
+      "local_name": "dfrm*"
+    },
+    {
+      "local_name": "dgrm*"
+    },
+    {
+      "local_name": "dhrm*"
+    },
+    {
+      "local_name": "dirm*"
+    },
+    {
+      "local_name": "djrm*"
+    },
+    {
+      "local_name": "dkrm*"
+    },
+    {
+      "local_name": "dlrm*"
+    },
+    {
+      "local_name": "dmrm*"
+    },
+    {
+      "local_name": "dnrm*"
+    },
+    {
+      "local_name": "dprm*"
+    },
+    {
+      "local_name": "dqrm*"
+    },
+    {
+      "local_name": "drrm*"
+    },
+    {
+      "local_name": "dsrm*"
+    },
+    {
+      "local_name": "dtrm*"
+    },
+    {
+      "local_name": "durm*"
+    },
+    {
+      "local_name": "dvrm*"
+    },
+    {
+      "local_name": "dwrm*"
+    },
+    {
+      "local_name": "dxrm*"
+    },
+    {
+      "local_name": "dyrm*"
+    },
+    {
+      "local_name": "dzrm*"
+    },
+    {
+      "local_name": "e0rm*"
+    },
+    {
+      "local_name": "e1rm*"
+    },
+    {
+      "local_name": "e2rm*"
+    },
+    {
+      "local_name": "e3rm*"
+    },
+    {
+      "local_name": "e4rm*"
+    },
+    {
+      "local_name": "e5rm*"
+    },
+    {
+      "local_name": "e6rm*"
+    },
+    {
+      "local_name": "e7rm*"
+    },
+    {
+      "local_name": "e8rm*"
+    },
+    {
+      "local_name": "e9rm*"
+    },
+    {
+      "local_name": "ecrm*"
+    },
+    {
+      "local_name": "edrm*"
+    },
+    {
+      "local_name": "efrm*"
+    },
+    {
+      "local_name": "egrm*"
+    },
+    {
+      "local_name": "eirm*"
+    },
+    {
+      "local_name": "ejrm*"
+    },
+    {
+      "local_name": "ekrm*"
+    },
+    {
       "local_name": "elevate*"
     },
     {
+      "local_name": "emrm*"
+    },
+    {
+      "local_name": "enrm*"
+    },
+    {
+      "local_name": "eorm*"
+    },
+    {
+      "local_name": "eprm*"
+    },
+    {
+      "local_name": "eqrm*"
+    },
+    {
+      "local_name": "errm*"
+    },
+    {
+      "local_name": "esrm*"
+    },
+    {
+      "local_name": "etrm*"
+    },
+    {
+      "local_name": "eurm*"
+    },
+    {
+      "local_name": "evrm*"
+    },
+    {
+      "local_name": "ewrm*"
+    },
+    {
+      "local_name": "exrm*"
+    },
+    {
+      "local_name": "eyrm*"
+    },
+    {
+      "local_name": "ezrm*"
+    },
+    {
+      "local_name": "f0rm*"
+    },
+    {
+      "local_name": "f1rm*"
+    },
+    {
+      "local_name": "f2rm*"
+    },
+    {
+      "local_name": "f3rm*"
+    },
+    {
+      "local_name": "f4rm*"
+    },
+    {
+      "local_name": "f5rm*"
+    },
+    {
+      "local_name": "f6rm*"
+    },
+    {
+      "local_name": "f7rm*"
+    },
+    {
+      "local_name": "f8rm*"
+    },
+    {
+      "local_name": "f9rm*"
+    },
+    {
+      "local_name": "farm*"
+    },
+    {
+      "local_name": "fbrm*"
+    },
+    {
+      "local_name": "fc200*"
+    },
+    {
+      "local_name": "fcrm*"
+    },
+    {
+      "local_name": "fdrm*"
+    },
+    {
+      "local_name": "ferm*"
+    },
+    {
+      "local_name": "ffrm*"
+    },
+    {
+      "local_name": "fgrm*"
+    },
+    {
+      "local_name": "fhrm*"
+    },
+    {
+      "local_name": "firm*"
+    },
+    {
+      "local_name": "fjrm*"
+    },
+    {
+      "local_name": "fkrm*"
+    },
+    {
+      "local_name": "flrm*"
+    },
+    {
+      "local_name": "fmrm*"
+    },
+    {
+      "local_name": "fnrm*"
+    },
+    {
+      "local_name": "fprm*"
+    },
+    {
+      "local_name": "fqrm*"
+    },
+    {
+      "local_name": "frrm*"
+    },
+    {
+      "local_name": "fsrm*"
+    },
+    {
+      "local_name": "ftrm*"
+    },
+    {
+      "local_name": "furm*"
+    },
+    {
+      "local_name": "fvrm*"
+    },
+    {
+      "local_name": "fxrm*"
+    },
+    {
+      "local_name": "fyrm*"
+    },
+    {
+      "local_name": "fzrm*"
+    },
+    {
+      "local_name": "g2rm*"
+    },
+    {
+      "local_name": "g3rm*"
+    },
+    {
+      "local_name": "g4rm*"
+    },
+    {
+      "local_name": "g5rm*"
+    },
+    {
+      "local_name": "g6rm*"
+    },
+    {
+      "local_name": "g7rm*"
+    },
+    {
+      "local_name": "g8rm*"
+    },
+    {
+      "local_name": "g9rm*"
+    },
+    {
+      "local_name": "gmrm*"
+    },
+    {
+      "local_name": "gvrm*"
+    },
+    {
       "local_name": "hhc*"
+    },
+    {
+      "local_name": "i0rm*"
+    },
+    {
+      "local_name": "i1rm*"
+    },
+    {
+      "local_name": "i2rm*"
+    },
+    {
+      "local_name": "i3rm*"
+    },
+    {
+      "local_name": "i4rm*"
+    },
+    {
+      "local_name": "i5rm*"
+    },
+    {
+      "local_name": "i6rm*"
+    },
+    {
+      "local_name": "i7rm*"
+    },
+    {
+      "local_name": "i8rm*"
+    },
+    {
+      "local_name": "i9rm*"
+    },
+    {
+      "local_name": "iarm*"
+    },
+    {
+      "local_name": "ibrm*"
+    },
+    {
+      "local_name": "icrm*"
+    },
+    {
+      "local_name": "idrm*"
+    },
+    {
+      "local_name": "ierm*"
+    },
+    {
+      "local_name": "ifrm*"
+    },
+    {
+      "local_name": "igrm*"
+    },
+    {
+      "local_name": "ihrm*"
+    },
+    {
+      "local_name": "iirm*"
+    },
+    {
+      "local_name": "ijrm*"
+    },
+    {
+      "local_name": "ikrm*"
+    },
+    {
+      "local_name": "ilrm*"
+    },
+    {
+      "local_name": "imrm*"
+    },
+    {
+      "local_name": "inrm*"
+    },
+    {
+      "local_name": "iorm*"
+    },
+    {
+      "local_name": "iprm*"
+    },
+    {
+      "local_name": "iqrm*"
+    },
+    {
+      "local_name": "irrm*"
+    },
+    {
+      "local_name": "isrm*"
+    },
+    {
+      "local_name": "m3rm*"
+    },
+    {
+      "local_name": "m4rm*"
+    },
+    {
+      "local_name": "m5rm*"
+    },
+    {
+      "local_name": "m6rm*"
+    },
+    {
+      "local_name": "m7rm*"
+    },
+    {
+      "local_name": "m9rm*"
+    },
+    {
+      "local_name": "marm*"
+    },
+    {
+      "local_name": "mlrm*"
+    },
+    {
+      "local_name": "mmrm*"
     },
     {
       "local_name": "motob*"
@@ -3892,10 +4729,73 @@
       "local_name": "motos*"
     },
     {
+      "local_name": "mpe_hj001*"
+    },
+    {
+      "local_name": "mpe_hj002*"
+    },
+    {
+      "local_name": "mpe_hj003*"
+    },
+    {
+      "local_name": "mpe_hj005*"
+    },
+    {
+      "local_name": "mpe_hj006*"
+    },
+    {
+      "local_name": "mpe_hj008*"
+    },
+    {
+      "local_name": "mpe_hj010*"
+    },
+    {
+      "local_name": "mpe_hj011*"
+    },
+    {
+      "local_name": "mpe_hj012*"
+    },
+    {
+      "local_name": "mrrm*"
+    },
+    {
       "local_name": "my qms2*"
     },
     {
       "local_name": "n32 motionbed*"
+    },
+    {
+      "local_name": "o0rm*"
+    },
+    {
+      "local_name": "o1rm*"
+    },
+    {
+      "local_name": "o2rm*"
+    },
+    {
+      "local_name": "o3rm*"
+    },
+    {
+      "local_name": "o4rm*"
+    },
+    {
+      "local_name": "o5rm*"
+    },
+    {
+      "local_name": "o6rm*"
+    },
+    {
+      "local_name": "o7rm*"
+    },
+    {
+      "local_name": "o8rm*"
+    },
+    {
+      "local_name": "o9rm*"
+    },
+    {
+      "local_name": "oarm*"
     },
     {
       "local_name": "okin*"
@@ -3909,6 +4809,72 @@
     {
       "local_name": "okin-ble*",
       "connectable": true
+    },
+    {
+      "local_name": "omrm*"
+    },
+    {
+      "local_name": "onrm*"
+    },
+    {
+      "local_name": "oorm*"
+    },
+    {
+      "local_name": "oprm*"
+    },
+    {
+      "local_name": "oqrm*"
+    },
+    {
+      "local_name": "orrm*"
+    },
+    {
+      "local_name": "osrm*"
+    },
+    {
+      "local_name": "otrm*"
+    },
+    {
+      "local_name": "ourm*"
+    },
+    {
+      "local_name": "ovrm*"
+    },
+    {
+      "local_name": "owrm*"
+    },
+    {
+      "local_name": "oxrm*"
+    },
+    {
+      "local_name": "oyrm*"
+    },
+    {
+      "local_name": "ozrm*"
+    },
+    {
+      "local_name": "p0rm*"
+    },
+    {
+      "local_name": "p1rm*"
+    },
+    {
+      "local_name": "p2rm*"
+    },
+    {
+      "local_name": "p3rm*"
+    },
+    {
+      "local_name": "p4rm*"
+    },
+    {
+      "local_name": "p5rm*"
+    },
+    {
+      "local_name": "p6rm*"
+    },
+    {
+      "local_name": "p9rm*"
     },
     {
       "local_name": "qms-i06*"
@@ -3941,7 +4907,25 @@
       "local_name": "qms4*"
     },
     {
+      "local_name": "qrrm*"
+    },
+    {
+      "local_name": "r2rm*"
+    },
+    {
+      "local_name": "r5rm*"
+    },
+    {
+      "local_name": "r6rm*"
+    },
+    {
       "local_name": "s4-y-*"
+    },
+    {
+      "local_name": "s9rm*"
+    },
+    {
+      "local_name": "sarm*"
     },
     {
       "local_name": "sealymf*"
@@ -3955,6 +4939,765 @@
     },
     {
       "local_name": "star*"
+    },
+    {
+      "local_name": "t0rm*"
+    },
+    {
+      "local_name": "t1rm*"
+    },
+    {
+      "local_name": "t2rm*"
+    },
+    {
+      "local_name": "t3rm*"
+    },
+    {
+      "local_name": "t4rm*"
+    },
+    {
+      "local_name": "t5rm*"
+    },
+    {
+      "local_name": "t6rm*"
+    },
+    {
+      "local_name": "t7rm*"
+    },
+    {
+      "local_name": "t8rm*"
+    },
+    {
+      "local_name": "t9rm*"
+    },
+    {
+      "local_name": "tarm*"
+    },
+    {
+      "local_name": "tbrm*"
+    },
+    {
+      "local_name": "tcrm*"
+    },
+    {
+      "local_name": "tdrm*"
+    },
+    {
+      "local_name": "term*"
+    },
+    {
+      "local_name": "thrm*"
+    },
+    {
+      "local_name": "tlrm*"
+    },
+    {
+      "local_name": "twrm*"
+    },
+    {
+      "local_name": "tzrm*"
+    },
+    {
+      "local_name": "u0rm*"
+    },
+    {
+      "local_name": "u1rm*"
+    },
+    {
+      "local_name": "u2rm*"
+    },
+    {
+      "local_name": "u3rm*"
+    },
+    {
+      "local_name": "u4rm*"
+    },
+    {
+      "local_name": "u5rm*"
+    },
+    {
+      "local_name": "u6rm*"
+    },
+    {
+      "local_name": "u7rm*"
+    },
+    {
+      "local_name": "u8rm*"
+    },
+    {
+      "local_name": "u9rm*"
+    },
+    {
+      "local_name": "uarm*"
+    },
+    {
+      "local_name": "ubrm*"
+    },
+    {
+      "local_name": "ucrm*"
+    },
+    {
+      "local_name": "udrm*"
+    },
+    {
+      "local_name": "uerm*"
+    },
+    {
+      "local_name": "ufrm*"
+    },
+    {
+      "local_name": "ugrm*"
+    },
+    {
+      "local_name": "uhrm*"
+    },
+    {
+      "local_name": "uirm*"
+    },
+    {
+      "local_name": "ujrm*"
+    },
+    {
+      "local_name": "ukrm*"
+    },
+    {
+      "local_name": "ulrm*"
+    },
+    {
+      "local_name": "umrm*"
+    },
+    {
+      "local_name": "unrm*"
+    },
+    {
+      "local_name": "uorm*"
+    },
+    {
+      "local_name": "uprm*"
+    },
+    {
+      "local_name": "uqrm*"
+    },
+    {
+      "local_name": "urrm*"
+    },
+    {
+      "local_name": "utrm*"
+    },
+    {
+      "local_name": "uurm*"
+    },
+    {
+      "local_name": "uvrm*"
+    },
+    {
+      "local_name": "uwrm*"
+    },
+    {
+      "local_name": "uxrm*"
+    },
+    {
+      "local_name": "uyrm*"
+    },
+    {
+      "local_name": "uzrm*"
+    },
+    {
+      "local_name": "v0rm*"
+    },
+    {
+      "local_name": "v1rm*"
+    },
+    {
+      "local_name": "v2rm*"
+    },
+    {
+      "local_name": "v3rm*"
+    },
+    {
+      "local_name": "v4rm*"
+    },
+    {
+      "local_name": "v5rm*"
+    },
+    {
+      "local_name": "v6rm*"
+    },
+    {
+      "local_name": "v7rm*"
+    },
+    {
+      "local_name": "v8rm*"
+    },
+    {
+      "local_name": "v9rm*"
+    },
+    {
+      "local_name": "varm*"
+    },
+    {
+      "local_name": "vbrm*"
+    },
+    {
+      "local_name": "vcrm*"
+    },
+    {
+      "local_name": "vdrm*"
+    },
+    {
+      "local_name": "verm*"
+    },
+    {
+      "local_name": "vfrm*"
+    },
+    {
+      "local_name": "vgrm*"
+    },
+    {
+      "local_name": "vhrm*"
+    },
+    {
+      "local_name": "virm*"
+    },
+    {
+      "local_name": "vjrm*"
+    },
+    {
+      "local_name": "vkrm*"
+    },
+    {
+      "local_name": "vlrm*"
+    },
+    {
+      "local_name": "vmrm*"
+    },
+    {
+      "local_name": "vnrm*"
+    },
+    {
+      "local_name": "vorm*"
+    },
+    {
+      "local_name": "vprm*"
+    },
+    {
+      "local_name": "vqrm*"
+    },
+    {
+      "local_name": "vrrm*"
+    },
+    {
+      "local_name": "vsrm*"
+    },
+    {
+      "local_name": "vtrm*"
+    },
+    {
+      "local_name": "vurm*"
+    },
+    {
+      "local_name": "vvrm*"
+    },
+    {
+      "local_name": "vwrm*"
+    },
+    {
+      "local_name": "vxrm*"
+    },
+    {
+      "local_name": "vyrm*"
+    },
+    {
+      "local_name": "vzrm*"
+    },
+    {
+      "local_name": "w0rm*"
+    },
+    {
+      "local_name": "w1rm*"
+    },
+    {
+      "local_name": "w2rm*"
+    },
+    {
+      "local_name": "w3rm*"
+    },
+    {
+      "local_name": "w4rm*"
+    },
+    {
+      "local_name": "w5rm*"
+    },
+    {
+      "local_name": "w6rm*"
+    },
+    {
+      "local_name": "w7rm*"
+    },
+    {
+      "local_name": "w8rm*"
+    },
+    {
+      "local_name": "w9rm*"
+    },
+    {
+      "local_name": "warm*"
+    },
+    {
+      "local_name": "wbrm*"
+    },
+    {
+      "local_name": "wcrm*"
+    },
+    {
+      "local_name": "wdrm*"
+    },
+    {
+      "local_name": "werm*"
+    },
+    {
+      "local_name": "wgrm*"
+    },
+    {
+      "local_name": "whrm*"
+    },
+    {
+      "local_name": "wirm*"
+    },
+    {
+      "local_name": "wjrm*"
+    },
+    {
+      "local_name": "wkrm*"
+    },
+    {
+      "local_name": "wlrm*"
+    },
+    {
+      "local_name": "wmrm*"
+    },
+    {
+      "local_name": "wnrm*"
+    },
+    {
+      "local_name": "worm*"
+    },
+    {
+      "local_name": "wprm*"
+    },
+    {
+      "local_name": "wqrm*"
+    },
+    {
+      "local_name": "wrrm*"
+    },
+    {
+      "local_name": "wsrm*"
+    },
+    {
+      "local_name": "wtrm*"
+    },
+    {
+      "local_name": "wurm*"
+    },
+    {
+      "local_name": "wvrm*"
+    },
+    {
+      "local_name": "wwrm*"
+    },
+    {
+      "local_name": "wxrm*"
+    },
+    {
+      "local_name": "wyrm*"
+    },
+    {
+      "local_name": "wzrm*"
+    },
+    {
+      "local_name": "x0rm*"
+    },
+    {
+      "local_name": "x1rm*"
+    },
+    {
+      "local_name": "x2rm*"
+    },
+    {
+      "local_name": "x4rm*"
+    },
+    {
+      "local_name": "x5rm*"
+    },
+    {
+      "local_name": "x6rm*"
+    },
+    {
+      "local_name": "x7rm*"
+    },
+    {
+      "local_name": "x8rm*"
+    },
+    {
+      "local_name": "x9rm*"
+    },
+    {
+      "local_name": "xarm*"
+    },
+    {
+      "local_name": "xbrm*"
+    },
+    {
+      "local_name": "xcrm*"
+    },
+    {
+      "local_name": "xdrm*"
+    },
+    {
+      "local_name": "xerm*"
+    },
+    {
+      "local_name": "xfrm*"
+    },
+    {
+      "local_name": "xgrm*"
+    },
+    {
+      "local_name": "xhrm*"
+    },
+    {
+      "local_name": "xirm*"
+    },
+    {
+      "local_name": "xjrm*"
+    },
+    {
+      "local_name": "xkrm*"
+    },
+    {
+      "local_name": "xlrm*"
+    },
+    {
+      "local_name": "xmrm*"
+    },
+    {
+      "local_name": "xnrm*"
+    },
+    {
+      "local_name": "xorm*"
+    },
+    {
+      "local_name": "xprm*"
+    },
+    {
+      "local_name": "xqrm*"
+    },
+    {
+      "local_name": "xrrm*"
+    },
+    {
+      "local_name": "xsrm*"
+    },
+    {
+      "local_name": "xtrm*"
+    },
+    {
+      "local_name": "xurm*"
+    },
+    {
+      "local_name": "xvrm*"
+    },
+    {
+      "local_name": "xwrm*"
+    },
+    {
+      "local_name": "xxrm*"
+    },
+    {
+      "local_name": "xyrm*"
+    },
+    {
+      "local_name": "xzrm*"
+    },
+    {
+      "local_name": "y0rm*"
+    },
+    {
+      "local_name": "y1rm*"
+    },
+    {
+      "local_name": "y2rm*"
+    },
+    {
+      "local_name": "y3rm*"
+    },
+    {
+      "local_name": "y4rm*"
+    },
+    {
+      "local_name": "y5rm*"
+    },
+    {
+      "local_name": "y6rm*"
+    },
+    {
+      "local_name": "y7rm*"
+    },
+    {
+      "local_name": "y8rm*"
+    },
+    {
+      "local_name": "y9rm*"
+    },
+    {
+      "local_name": "yarm*"
+    },
+    {
+      "local_name": "ybrm*"
+    },
+    {
+      "local_name": "ycrm*"
+    },
+    {
+      "local_name": "ydrm*"
+    },
+    {
+      "local_name": "yerm*"
+    },
+    {
+      "local_name": "yfrm*"
+    },
+    {
+      "local_name": "ygrm*"
+    },
+    {
+      "local_name": "yhrm*"
+    },
+    {
+      "local_name": "yirm*"
+    },
+    {
+      "local_name": "yjrm*"
+    },
+    {
+      "local_name": "ykrm*"
+    },
+    {
+      "local_name": "ymrm*"
+    },
+    {
+      "local_name": "ynrm*"
+    },
+    {
+      "local_name": "yorm*"
+    },
+    {
+      "local_name": "yprm*"
+    },
+    {
+      "local_name": "yqrm*"
+    },
+    {
+      "local_name": "yrrm*"
+    },
+    {
+      "local_name": "ysrm*"
+    },
+    {
+      "local_name": "ytrm*"
+    },
+    {
+      "local_name": "yurm*"
+    },
+    {
+      "local_name": "yvrm*"
+    },
+    {
+      "local_name": "ywrm*"
+    },
+    {
+      "local_name": "yxrm*"
+    },
+    {
+      "local_name": "yyrm*"
+    },
+    {
+      "local_name": "yzrm*"
+    },
+    {
+      "local_name": "z0rm*"
+    },
+    {
+      "local_name": "z1rm*"
+    },
+    {
+      "local_name": "z2rm*"
+    },
+    {
+      "local_name": "z3rm*"
+    },
+    {
+      "local_name": "z4rm*"
+    },
+    {
+      "local_name": "z5rm*"
+    },
+    {
+      "local_name": "z6rm*"
+    },
+    {
+      "local_name": "z7rm*"
+    },
+    {
+      "local_name": "z8rm*"
+    },
+    {
+      "local_name": "z9rm*"
+    },
+    {
+      "local_name": "zarm*"
+    },
+    {
+      "local_name": "zbrm*"
+    },
+    {
+      "local_name": "zcrm*"
+    },
+    {
+      "local_name": "zdrm*"
+    },
+    {
+      "local_name": "zerm*"
+    },
+    {
+      "local_name": "zfrm*"
+    },
+    {
+      "local_name": "zgrm*"
+    },
+    {
+      "local_name": "zhrm*"
+    },
+    {
+      "local_name": "zirm*"
+    },
+    {
+      "local_name": "zjrm*"
+    },
+    {
+      "local_name": "zkrm*"
+    },
+    {
+      "local_name": "zlrm*"
+    },
+    {
+      "local_name": "zmrm*"
+    },
+    {
+      "local_name": "znrm*"
+    },
+    {
+      "local_name": "zorm*"
+    },
+    {
+      "local_name": "zprm*"
+    },
+    {
+      "local_name": "zqrm*"
+    },
+    {
+      "local_name": "zr00*"
+    },
+    {
+      "local_name": "zr01*"
+    },
+    {
+      "local_name": "zr10*"
+    },
+    {
+      "local_name": "zr11*"
+    },
+    {
+      "local_name": "zr12*"
+    },
+    {
+      "local_name": "zr20*"
+    },
+    {
+      "local_name": "zr21*"
+    },
+    {
+      "local_name": "zr30*"
+    },
+    {
+      "local_name": "zr40*"
+    },
+    {
+      "local_name": "zr50*"
+    },
+    {
+      "local_name": "zr51*"
+    },
+    {
+      "local_name": "zr60*"
+    },
+    {
+      "local_name": "zr70*"
+    },
+    {
+      "local_name": "zr80*"
+    },
+    {
+      "local_name": "zra0*"
+    },
+    {
+      "local_name": "zra1*"
+    },
+    {
+      "local_name": "zra2*"
+    },
+    {
+      "local_name": "zri0*"
+    },
+    {
+      "local_name": "zrrm*"
+    },
+    {
+      "local_name": "zrs0*"
+    },
+    {
+      "local_name": "zrs1*"
+    },
+    {
+      "local_name": "zrs2*"
+    },
+    {
+      "local_name": "zrs3*"
+    },
+    {
+      "local_name": "zsrm*"
+    },
+    {
+      "local_name": "ztrm*"
+    },
+    {
+      "local_name": "zurm*"
+    },
+    {
+      "local_name": "zvrm*"
+    },
+    {
+      "local_name": "zwrm*"
+    },
+    {
+      "local_name": "zxrm*"
+    },
+    {
+      "local_name": "zyrm*"
+    },
+    {
+      "local_name": "zzrm*"
     }
   ],
   "categories": [

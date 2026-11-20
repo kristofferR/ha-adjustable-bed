@@ -476,6 +476,9 @@
   "card_role": "up",
   "card_motor": "bedsense_waist"
  },
+ "button:bedsmart_query": {
+  "card_section": "utility"
+ },
  "button:betterliving2_all_sections_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -3092,6 +3095,21 @@
   "card_section": "motors",
   "card_motor": "back_right"
  },
+ "number:bedsmart_aroma_0": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_aroma_1": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_aroma_2": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_lamp_seconds": {
+  "card_section": "utility"
+ },
+ "number:bedsmart_massage_index": {
+  "card_section": "utility"
+ },
  "number:betterliving2_massage_feet": {
   "card_section": "massage"
  },
@@ -3441,6 +3459,15 @@
   "card_section": "utility"
  },
  "select:adjustamattress_strength_setting": {
+  "card_section": "utility"
+ },
+ "select:bedsmart_axis": {
+  "card_section": "utility"
+ },
+ "select:bedsmart_head_foot": {
+  "card_section": "utility"
+ },
+ "select:bedsmart_mode": {
   "card_section": "utility"
  },
  "select:comfy_timer_selection": {

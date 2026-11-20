@@ -364,6 +364,11 @@ Other action changes:
 
 ### If you ran a v5 beta
 
+BedSmart / X-Series is available in the Richmat app question. Reconfigure an
+existing entry to select it and its exact layout. Its controls, local selectors,
+optional feature replies and shared alarm action follow that app's own catalog;
+physical behavior still needs testing. See the [BedSmart guide](beds/richmat.md#bedsmart--x-series).
+
 These actions existed only in v5 betas and are gone. Older field names are not
 accepted.
 
