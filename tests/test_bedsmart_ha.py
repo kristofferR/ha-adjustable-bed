@@ -404,3 +404,24 @@ async def test_native_stop_after_idle_setting_change_keeps_physical_session(runt
     await coordinator.async_stop_command()
     assert coordinator.controller is original
     assert [call.args[1].hex() for call in client.write_gatt_char.await_args_list] == ["6e01006edd"]
+
+
+async def test_command_format_survives_a_restart_before_the_first_connection(hass, runtime):
+    coordinator, _client = runtime
+    offline = coordinator.capability_controller
+    assert isinstance(offline, BedSmartController)
+    assert not offline.controller_entity_discovery_complete
+    assert not any(s.key.endswith("_framed") for s in offline.controller_button_specs)
+    assert await coordinator.async_connect()
+    await coordinator._app_state_store.async_save()
+    await coordinator.async_shutdown()
+
+    restarted = AdjustableBedCoordinator(hass, coordinator.entry)
+    await restarted.async_prime_offline_controller()
+    controller = restarted.capability_controller
+    assert isinstance(controller, BedSmartController)
+    assert controller.controller_entity_discovery_complete
+    keys = {s.key for s in controller.controller_button_specs}
+    assert "richmat_classic_1_framed" in keys
+    assert not any(key.endswith("_raw") for key in keys)
+    await restarted.async_shutdown()

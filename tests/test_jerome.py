@@ -782,6 +782,8 @@ async def test_gvrm_visible_roles_and_wire_admission_agree(clock, wire):
     assert {"tv", "lounge", "zero_gravity", "flat", "toggle_underbed_light"} <= ctrl._actions.keys()
     assert not {"save_m1", "save_m2", "m1", "m2"} & ctrl._actions.keys()
     keys = {s.key for s in ctrl.controller_button_specs}
+    # Jerome's own action table: no per-format copies, unlike L&P and BedSmart.
+    assert not any(key.endswith(("_raw", "_framed")) for key in keys)
     if wire == "RAW":
         assert "jerome_lounge" in keys
         ctrl.validate_action("lounge", keep=True)
