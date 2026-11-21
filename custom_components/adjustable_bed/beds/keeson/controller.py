@@ -168,7 +168,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         self._variant = variant
         self.profile: KeesonProfile = profiles.resolve(
             variant,
-            device_name or getattr(coordinator, "name", None),
+            device_name or coordinator.name,
             ksbt_service=variant == KEESON_VARIANT_PURPLE and self._has_ksbt_service(),
             betterliving=betterliving_presets,
             cb1322=cb1322_presets,
@@ -503,9 +503,9 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
     def _json_device_identifier(self) -> str:
         """Return the device identifier used by the JSON/A00A protocol."""
         for candidate in (
-            getattr(self._coordinator, "name", None),
+            self._coordinator.name,
             getattr(self.client, "address", None),
-            getattr(self._coordinator, "address", None),
+            self._coordinator.address,
         ):
             if candidate:
                 return str(candidate)

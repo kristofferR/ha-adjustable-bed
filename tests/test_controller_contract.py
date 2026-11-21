@@ -100,6 +100,8 @@ class _FactoryCoordinator(SimpleNamespace):
         super().__init__(
             capability_controller=None,
             starcode_app_retained_state=None,
+            furnimove_widget_state=(False, None, None),
+            rize_home_source="button",
             hass=SimpleNamespace(
                 data={},
                 async_add_import_executor_job=_RecordingImportExecutor(),

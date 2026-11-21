@@ -29,6 +29,7 @@ def bed(product="remedy_iii"):
     coordinator = MagicMock()
     coordinator.cancel_command = asyncio.Event()
     coordinator.motor_pulse_count = 3
+    coordinator.rize_home_source = "button"
     coordinator.motor_count = 4  # Generic settings must not alter either product.
     client = coordinator.client
     client.is_connected = True
