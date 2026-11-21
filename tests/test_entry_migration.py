@@ -13,8 +13,10 @@ from custom_components.adjustable_bed import (
     migrate_v5_3_data,
     migrate_v5_6_entry,
 )
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_DIAGNOSTIC,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KEESON,
@@ -33,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
+    CONF_PREFERRED_ADAPTER,
     CONF_PROFILE_ID,
     CONF_PROFILE_MIGRATION,
     CONF_PROTOCOL_VARIANT,
@@ -124,7 +127,8 @@ async def test_paired_sides_and_their_originals_are_migrated(hass: HomeAssistant
     assert child[KEY_ORIGIN_DATA][CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
 
 
-async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
+async def test_other_entries_keep_their_settings(hass: HomeAssistant) -> None:
+    """Only the settings 4.x ran with by default are saved; nothing else changes."""
     data = {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:03",
         CONF_NAME: "Bed",
@@ -142,7 +146,88 @@ async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
         CONF_BED_TYPE: BED_TYPE_LINAK,
         CONF_PROTOCOL_VARIANT: "auto",
     }
-    assert migrated == data
+    assert migrated == {
+        **data,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE,
+    }
+
+
+@pytest.mark.parametrize(
+    ("saved", "mode"),
+    [
+        # 1.4.6 to 2.5.3 set up a diagnostic device without a handoff; 4.x kept
+        # its link, where v5's default for the bed type hands it back.
+        ({}, CONNECTION_MODE_IDLE),
+        ({"disconnect_after_command": True}, CONNECTION_MODE_RELEASE),
+    ],
+)
+async def test_a_4x_entry_keeps_the_connection_it_ran_with(
+    hass: HomeAssistant, saved: dict, mode: str
+) -> None:
+    # The data 2.5.3 stored for a diagnostic device, as 4.4.2 left it.
+    data = {
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:0C",
+        CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
+        CONF_NAME: "Unknown bed",
+        CONF_MOTOR_COUNT: 0,
+        CONF_HAS_MASSAGE: False,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_PREFERRED_ADAPTER: "auto",
+        **saved,
+    }
+    entry = _entry(hass, data, minor_version=3)
+
+    await async_migrate_entry(hass, entry)
+
+    assert entry.data[CONF_CONNECTION_MODE] == mode
+
+
+async def test_a_4x_pair_keeps_what_each_side_ran_with(hass: HomeAssistant) -> None:
+    """Sides and originals that saved neither setting stay connected and do not read positions."""
+    original = {
+        CONF_NAME: "Bed",
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        CONF_MOTOR_COUNT: 2,
+        CONF_HAS_MASSAGE: False,
+        CONF_PREFERRED_ADAPTER: "auto",
+        "idle_disconnect_seconds": 40,
+    }
+    # The pair 4.4.2's pairing flow built from two such entries.
+    children = [
+        {
+            **original,
+            CONF_ADDRESS: address,
+            CONF_SIDE: side,
+            "absorbed_entry_id": f"entry_{side}",
+            "origin_unique_id": address,
+            KEY_ORIGIN_DATA: {**original, CONF_ADDRESS: address},
+            KEY_ORIGIN_OPTIONS: {},
+        }
+        for side, address in (("left", "AA:BB:CC:DD:EE:0D"), ("right", "AA:BB:CC:DD:EE:0E"))
+    ]
+    entry = _entry(
+        hass,
+        {
+            CONF_PAIR_ID: "pair_2",
+            "pair_mode": "separate_address",
+            "pair_schema_version": 1,
+            CONF_BED_TYPE: BED_TYPE_LINAK,
+            CONF_NAME: "Pair",
+            "pair_member_addresses": ["AA:BB:CC:DD:EE:0D", "AA:BB:CC:DD:EE:0E"],
+            CONF_PAIR_CHILDREN: children,
+        },
+        minor_version=3,
+    )
+
+    await async_migrate_entry(hass, entry)
+
+    for child in entry.data[CONF_PAIR_CHILDREN]:
+        side = effective_child_data(entry.data, child[CONF_SIDE], entry.options)
+        assert side[CONF_CONNECTION_MODE] == CONNECTION_MODE_IDLE
+        assert not reads_positions(side)
+        assert child[KEY_ORIGIN_DATA][CONF_CONNECTION_MODE] == CONNECTION_MODE_IDLE
+        assert not reads_positions(child[KEY_ORIGIN_DATA])
 
 
 async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssistant) -> None:
@@ -181,7 +266,12 @@ async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssista
     migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
     assert CONF_DISABLE_DISCOVERY not in migrated_left
     assert migrated_left["later_key"] == 1
-    assert migrated_left[KEY_ORIGIN_DATA] == {CONF_BED_TYPE: BED_TYPE_LINAK}
+    assert migrated_left[KEY_ORIGIN_DATA] == {
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        # What the original ran with on 4.x, which saved neither.
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE,
+    }
     assert migrated_left[KEY_ORIGIN_OPTIONS] == {"later_key": 2}
     assert migrated_right[KEY_ORIGIN_OPTIONS] == {}
     record = entry.data[CONF_PROFILE_MIGRATION]
@@ -597,7 +687,9 @@ async def test_schema_5_5_writes_each_octo_side_and_its_original(hass: HomeAssis
          {CONF_CONNECTION_MODE: CONNECTION_MODE_RELEASE}),
         ({"disconnect_after_command": False, "idle_disconnect_seconds": 60},
          {CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE, "idle_disconnect_seconds": 60}),
-        # A Linak hands its link back by default, which a 0 timeout never overrode.
+        # A v5 beta ran an entry without a saved handoff with its bed type's
+        # default, and a Linak hands its link back, which a 0 timeout never
+        # overrode. 4.x entries save 4.x's own default (no handoff) first.
         ({"idle_disconnect_seconds": 0}, {}),
         # Nothing chosen: the bed type's default still applies.
         ({"idle_disconnect_seconds": 40}, {"idle_disconnect_seconds": 40}),

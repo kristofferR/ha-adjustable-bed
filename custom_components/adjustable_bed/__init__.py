@@ -282,6 +282,43 @@ def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:
     return migrated
 
 
+# What 4.x ran with when an entry had not saved the setting. v5 falls back to
+# each bed type's own default instead, so a 4.x entry saves 4.x's value first.
+_V4_RUNTIME_DEFAULTS: Final[dict[str, bool]] = {
+    "disconnect_after_command": False,
+    CONF_DISABLE_ANGLE_SENSING: True,
+}
+
+
+def migrate_v4_runtime_defaults(
+    data: Mapping[str, Any], options: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
+    """Return 4.x entry data with the values 4.x ran with saved where it had none.
+
+    A paired side read the pair's data and options, so they are filled once for
+    both sides; an original entry a pair restores on unpair is filled on its own.
+    Diagnostic entries from 1.4.6 to 2.5.3, for example, saved no handoff.
+    """
+    migrated = dict(data)
+    for key, value in _V4_RUNTIME_DEFAULTS.items():
+        if key not in migrated and key not in (options or {}):
+            migrated[key] = value
+    if isinstance(children := migrated.get(CONF_PAIR_CHILDREN), list):
+        migrated[CONF_PAIR_CHILDREN] = [
+            {
+                **child,
+                KEY_ORIGIN_DATA: migrate_v4_runtime_defaults(
+                    child[KEY_ORIGIN_DATA],
+                    origin if isinstance(origin := child.get(KEY_ORIGIN_OPTIONS), Mapping) else None,
+                ),
+            }
+            if isinstance(child, Mapping) and isinstance(child.get(KEY_ORIGIN_DATA), Mapping)
+            else child
+            for child in children
+        ]
+    return migrated
+
+
 def _with_migration_record(
     data: dict[str, Any], *, from_version: int, from_minor_version: int, **fields: Any
 ) -> dict[str, Any]:
@@ -871,10 +908,11 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if entry.version == 4:
         # v4 -> v5.1: store the profile id each entry and paired side runs, and a
         # record of where it came from. The saved bed type, variant and app keys
-        # are not touched. Schema 5 entries cannot load on 4.x; restoring a Home
+        # are not touched; a connection or position setting 4.x ran with by
+        # default is saved. Schema 5 entries cannot load on 4.x; restoring a Home
         # Assistant backup is the only way back.
         data = migrate_v5_data(
-            entry.data,
+            migrate_v4_runtime_defaults(entry.data, entry.options),
             entry.options,
             from_version=original_version[0],
             from_minor_version=original_version[1],
