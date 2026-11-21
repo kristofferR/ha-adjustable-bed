@@ -169,7 +169,9 @@ class SophieController(SolaceController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
-            ControllerStateSensorSpec(key, key, state, icon)
+            ControllerStateSensorSpec(
+                key, key, state, icon, entity_registry_enabled_default=True, entity_category=None
+            )
             for key, state, icon in (
                 ("sophie_head_level", HEAD_LEVEL, "mdi:massage"),
                 ("sophie_foot_level", FOOT_LEVEL, "mdi:massage"),
@@ -193,6 +195,8 @@ class SophieController(SolaceController):
                     ALARM_MASSAGE,
                     ALARM_RING,
                 ),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
             *(
                 ControllerStateBinarySensorSpec(

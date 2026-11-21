@@ -719,14 +719,23 @@ class RufRichmatController(RichmatMhController):
                     "mdi:alarm",
                     attribute_keys=(CALENDAR_ALARMS,),
                     card=CARD_UTILITY,
-                    entity_registry_enabled_default=False,
+                    entity_registry_enabled_default=True,
+                    entity_category=None,
                 )
             )
         if self._normal_ready:
             for side in ("left", "right"):
                 key = _mattress_alarm_key(side)
                 specs.append(
-                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY, entity_registry_enabled_default=False)
+                    ControllerStateSensorSpec(
+                        key,
+                        key,
+                        key,
+                        "mdi:alarm",
+                        card=CARD_UTILITY,
+                        entity_registry_enabled_default=True,
+                        entity_category=None,
+                    )
                 )
         return tuple(specs)
 

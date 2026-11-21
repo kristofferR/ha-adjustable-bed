@@ -394,7 +394,14 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         if self.is_l2motion:
             return tuple(
-                ControllerStateSensorSpec(str(key), translation, key, icon)
+                ControllerStateSensorSpec(
+                    str(key),
+                    translation,
+                    key,
+                    icon,
+                    entity_registry_enabled_default=key is ALARM,
+                    entity_category=None,
+                )
                 for key, translation, icon in (
                     (ALARM, "bedgear_alarm", "mdi:alarm"),
                     (STRENGTH, "bedgear_alarm_strength", "mdi:vibrate"),
@@ -433,13 +440,15 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
                         ALARM,
                         "mdi:alarm",
                         entity_registry_enabled_default=True,
+                        entity_category=None,
                     ),
                     ControllerStateSensorSpec(
                         "bedgear_alarm_strength",
                         "bedgear_alarm_strength",
                         STRENGTH,
                         "mdi:vibrate",
-                        entity_registry_enabled_default=True,
+                        entity_registry_enabled_default=False,
+                        entity_category=None,
                     ),
                 )
             )

@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmError
@@ -557,7 +558,13 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 card=CARD_MASSAGE,
             ),
             ControllerSwitchSpec(
-                "onlysnore_privacy", "onlysnore_privacy", setting("privacy"), keys.PRIVACY, "on"
+                "onlysnore_privacy",
+                "onlysnore_privacy",
+                setting("privacy"),
+                keys.PRIVACY,
+                "on",
+                "mdi:shield-lock-outline",
+                entity_category=EntityCategory.CONFIG,
             ),
             ControllerSwitchSpec(
                 "onlysnore_detection",
@@ -822,6 +829,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                     keys.ALARM_SOFT[i],
                 ),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             )
             for i in range(self._alarm_count)
         )

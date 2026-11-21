@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Final, Literal, cast
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 
 from ...app_session import app_session
 from ...card import CARD_MASSAGE
@@ -1056,12 +1057,15 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 str(key),
                 str(key).removesuffix("_left").removesuffix("_right"),
                 key,
-                "mdi:information-outline",
+                "mdi:vibrate",
+                # Massage levels are dashboard state.
+                entity_registry_enabled_default=level,
+                entity_category=None if level else EntityCategory.DIAGNOSTIC,
             )
-            for key in (
-                (keys.HEAD, keys.FOOT, keys.MODE)
+            for key, level in (
+                ((keys.HEAD, True), (keys.FOOT, True), (keys.MODE, False))
                 if self.model.massage
-                else (keys.MODE,)
+                else ((keys.MODE, False),)
                 if self.model.sonic
                 else ()
             )

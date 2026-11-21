@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...codec import sleepiq as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written, note_write_not_counted
@@ -595,6 +596,7 @@ class SleepNumberController(BedController, SleepNumberActions):
                     {"sleepiq_privacy_state": "paused" if enabled else "active"},
                 )(ctrl),
                 PRIVACY,
+                entity_category=EntityCategory.CONFIG,
             )
         ]
         if self.supports_sleep_number_setting:

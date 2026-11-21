@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -355,10 +356,10 @@ _AUDIO_SOUNDS: Final = {
 # Preset-selected flags, raw readbacks, calibration samples and module inventory
 # details stay in diagnostics.
 _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
-    # Massage levels only mirror the step buttons; the bed takes no direct level.
-    ("upper_massage", False, ()),
-    ("lower_massage", False, ()),
-    ("massage_wave", False, ()),
+    # Massage levels the bed reports; it takes no direct level.
+    ("upper_massage", True, ()),
+    ("lower_massage", True, ()),
+    ("massage_wave", True, ()),
     # The massage and light timer selects and the brightness number show those,
     # so the bed's raw light timer stays in diagnostics.
     ("audio_volume", False, ()),
@@ -382,6 +383,18 @@ _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
         ),
     ),
 )
+# Readings only the home, motor and hub screens report.
+_MOTOR_REPORTS: Final = frozenset({"upper_massage", "lower_massage", "massage_wave", "alarm_enabled"})
+# Massage state for the dashboard rather than diagnostics.
+_MASSAGE_LEVELS: Final = frozenset(
+    {"upper_massage", "lower_massage", "massage_wave", "air_upper_gear", "air_lower_gear"}
+)
+_BINARY_ICONS: Final = {
+    "sync_enabled": "mdi:link-variant",
+    "thermal_low_water": None,
+    "thermal_timer_enabled": "mdi:timer-outline",
+    "alarm_enabled": "mdi:alarm",
+}
 # The switches show the night light, smart sleep, module light and massage and
 # adaptive air settings; the climate timer keeps its schedule as attributes.
 _BINARY_SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
@@ -394,7 +407,7 @@ _BINARY_SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
     ),
     (
         "alarm_enabled",
-        False,
+        True,
         (
             "alarm_hour", "alarm_minute", "alarm_weekdays", "alarm_repeat", "alarm_mode",
             "alarm_massage", "alarm_sound", "alarm_music",
@@ -798,6 +811,11 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             self._remembered_module = module
 
     @property
+    def _reports_motor_state(self) -> bool:
+        """Air-only and climate-only apps never report motor massage or the alarm."""
+        return self.selection.surface not in ("air", "thermal")
+
+    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
             massage_timer_sensor_spec(
@@ -806,9 +824,12 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             if name == "air_timer"
             else ControllerStateSensorSpec(
                 key="motion_bed_" + name, translation_key="motion_bed_" + name,
-                state_key=_field_key(name), icon="mdi:bed-outline",
+                state_key=_field_key(name),
+                icon="mdi:vibrate" if name in _MASSAGE_LEVELS else "mdi:bed-outline",
                 attribute_keys=tuple(_field_key(item) for item in attributes),
-                entity_registry_enabled_default=enabled,
+                entity_registry_enabled_default=enabled
+                and (name not in _MOTOR_REPORTS or self._reports_motor_state),
+                entity_category=None if name in _MASSAGE_LEVELS else EntityCategory.DIAGNOSTIC,
             )
             for name, enabled, attributes in _SENSORS
         )
@@ -819,9 +840,11 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             ControllerStateBinarySensorSpec(
                 key="motion_bed_" + name, translation_key="motion_bed_" + name,
                 state_key=_field_key(name),
-                icon=None if name == "thermal_low_water" else "mdi:bed-outline",
+                icon=_BINARY_ICONS.get(name, "mdi:bed-outline"),
                 attribute_keys=tuple(_field_key(item) for item in attributes),
-                entity_registry_enabled_default=enabled,
+                entity_registry_enabled_default=enabled
+                and (name not in _MOTOR_REPORTS or self._reports_motor_state),
+                entity_category=None if name == "alarm_enabled" else EntityCategory.DIAGNOSTIC,
                 # Low water: the climate module needs refilling.
                 device_class=(
                     BinarySensorDeviceClass.PROBLEM if name == "thermal_low_water" else None

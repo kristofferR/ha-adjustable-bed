@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Final
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
-from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -279,10 +278,10 @@ class BetterLiving2Controller(KeesonController):
                 str(key),
                 key,
                 "mdi:vibrate",
-                entity_registry_enabled_default=zone in {"head", "feet"},
+                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE if zone in {"head", "feet"} else CARD_HIDDEN,
-                # The head and foot levels are massage state for the dashboard.
-                entity_category=None if zone in {"head", "feet"} else EntityCategory.DIAGNOSTIC,
+                # Massage state for the dashboard.
+                entity_category=None,
             )
             for zone, key in LEVELS.items()
             if self.wire != "P1"

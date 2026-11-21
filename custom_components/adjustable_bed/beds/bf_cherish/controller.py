@@ -796,5 +796,6 @@ class BfCherishController(ProfileExecution[keeson_profiles.KeesonProfile], BedCo
                     ALARM_SOURCE,
                 ),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )

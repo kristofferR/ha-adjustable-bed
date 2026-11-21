@@ -454,14 +454,15 @@ class SymphonySleepController(KeesonController):
               if self.supports_massage else ()),
             ControllerStateSensorSpec("symphony_alarm_time", "symphony_alarm_time", ALARM_TIME, "mdi:alarm",
                                       attribute_keys=(ALARM_ENABLED, ALARM_WAKE), card=CARD_UTILITY,
-                                      entity_registry_enabled_default=True),
+                                      entity_registry_enabled_default=True, entity_category=None),
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (ControllerStateBinarySensorSpec("symphony_alarm_enabled", "symphony_alarm_enabled",
                                                 ALARM_ENABLED, "mdi:alarm", card=CARD_UTILITY,
-                                                entity_registry_enabled_default=True),)
+                                                entity_registry_enabled_default=True,
+                                                entity_category=None),)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self._link is None:

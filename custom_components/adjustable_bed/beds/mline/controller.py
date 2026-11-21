@@ -11,6 +11,7 @@ from uuid import uuid4
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 from homeassistant.util.json import JsonValueType
 
@@ -708,6 +709,7 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
                 icon,
                 # The alarm mode is the bed's raw mode and day mask.
                 entity_registry_enabled_default=key not in (state.ANTI_ANGLE, state.ALARM_MODE),
+                entity_category=None if key in (state.ALARM, state.ALARM_MODE) else EntityCategory.DIAGNOSTIC,
             )
             for key, icon in fields
         )
