@@ -536,7 +536,7 @@ name. Detection is limited to names beginning with the values below, plus
 - Two numbered memories ([Memory](#memory)). Programming sends the "while
   selected" branch when the slot is reported selected. Sweet Night's own Memory 2
   short press duplicates Memory 1; the integration sends the distinct Memory 2
-  frame proven by HomeKobo and MotionFlex.
+  frame that HomeKobo and MotionFlex send.
 - Home routes: head, foot and wave massage steps, stop and timers; K1 also has the
   four cycle modes ([Massage](#massage)). K2 shares the hip cycle frame with
   lumbar, so the cycle buttons are withheld there.
@@ -569,8 +569,8 @@ See [Timing](#timing). Presets are single writes without STOP.
 
 #### Evidence
 
-MotionFlex, HomeKobo and Sweet Night send only their frozen frames; Legacy S4-Y
-and Unverified send exactly the pre-v5 controller's frames. Useful
+Based on MotionFlex, HomeKobo and Sweet Night; Legacy S4-Y and Unverified send
+the pre-v5 controller's frames. Useful
 captures after release: one movement start and STOP per route, the five startup
 status replies, Flat and one named preset per route, and Sweet Night's Memory 2
 short press.
@@ -651,7 +651,7 @@ prove the hardware executed it.
 
 #### Evidence
 
-Woosa Sleep sends only its frozen frames. Useful captures after release: leg down versus Flat, the
+Based on Woosa Sleep. Useful captures after release: leg down versus Flat, the
 four preset save and recall paths, brightness, clock and alarm, and runtime GATT
 properties.
 
@@ -685,7 +685,7 @@ select the layout. The first matching rule wins:
   to the last one. It writes without response when that property exists,
   otherwise with response.
 - The type 3 waist label reads HIP while pressed in the app; HA keeps the idle
-  label. Visible axes do not establish a physical motor count.
+  label. The axes shown do not tell how many motors the bed has.
 
 ##### Home Assistant setup
 
@@ -712,7 +712,7 @@ lists the layouts that expose it.
   the layout's timers, and its Off sends the cancel frame; choosing the running
   timer again keeps it. Step counters clamp at 0-3 (wave 0-4) but every tap
   writes.
-- Light durations only, as the **Light Timer** select: there is no proven off,
+- Light durations only, as the **Light Timer** select: there is no off,
   brightness or colour command.
 - Memory indicators are queried on every connection; there is no refresh button.
 
@@ -1079,8 +1079,8 @@ accepts.
 
 #### Evidence
 
-Motion Bed sends only its frozen frames. Its Wi-Fi provisioning and cloud
-controls are out of scope.
+Based on Motion Bed. Its Wi-Fi provisioning and cloud controls are not
+supported.
 
 ### Sophie
 
@@ -1123,7 +1123,7 @@ the matching **… position saved** binary sensors. Home Assistant exposes confi
 instead of delayed Android long-press callbacks that can survive cancellation.
 
 Massage has head and foot minus/plus, wave minus/plus and three timers. Selecting
-an already selected massage timer sends the reachable timer deselect/stop frame.
+an already selected massage timer sends the app's timer deselect/stop frame.
 The minus/plus labels describe app intent; physical stepping still needs testing.
 Brightness uses the shared literal levels after a brightness reply; the
 brightness query is part of every connection's startup. Light timers are receiver commands;
