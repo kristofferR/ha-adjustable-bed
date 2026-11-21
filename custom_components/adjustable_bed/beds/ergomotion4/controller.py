@@ -301,6 +301,8 @@ class Ergomotion4Controller(AppController):
                 hold=ControllerHoldSpec(a.key, 0, 0) if a.held else None,
             )
             for a in self._actions()
+            # Where the light reports its state, the light entity switches it.
+            if not (self.supports_light_state_feedback and a is self._light_action())
         ]
         # Shared alarm dismissal is not gated by a selected product.
         specs.append(
@@ -545,9 +547,18 @@ class Ergomotion4Controller(AppController):
         return self.product.rgb
 
     @property
+    def _toggle_light_reports(self) -> bool:
+        """A non-RGB light toggle on a style whose status frames carry the light."""
+        return (
+            not self.product.rgb
+            and (self.product.style in ("M16", "M19") or self._dynamic)
+            and self._light_action() is not None
+        )
+
+    @property
     def supports_light_toggle_control(self) -> bool:
-        # Exact product-labelled toggles are already in controller_button_specs.
-        return False
+        # Other products keep their product-labelled toggle button.
+        return self._toggle_light_reports
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -556,14 +567,14 @@ class Ergomotion4Controller(AppController):
 
     @property
     def supports_light_state_feedback(self) -> bool:
-        return self.product.rgb
+        return self.product.rgb or self._toggle_light_reports
 
     @property
     def supports_explicit_light_on_control(self) -> bool:
         return self.product.rgb
 
-    async def lights_toggle(self) -> None:
-        action = next(
+    def _light_action(self) -> Action | None:
+        return next(
             (
                 a
                 for a in self._actions()
@@ -571,6 +582,9 @@ class Ergomotion4Controller(AppController):
             ),
             None,
         )
+
+    async def lights_toggle(self) -> None:
+        action = self._light_action()
         if action is None:
             raise ValueError("The selected product has no light toggle")
         await self._run_action(action.key)
@@ -650,6 +664,8 @@ class Ergomotion4Controller(AppController):
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        if self.supports_light_state_feedback:
+            return ()  # The light shows it.
         return (
             ControllerStateBinarySensorSpec(
                 "ergomotion4_light",

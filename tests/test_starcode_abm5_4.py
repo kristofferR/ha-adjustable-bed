@@ -843,3 +843,22 @@ async def test_old_operation_finally_cannot_stop_a_newer_operation():
         build_frame("BOX25", "headUp")
     ]
     assert c._active_release is None
+
+
+async def test_native_floor_power_shows_what_it_sent():
+    # No feedback: the light shows each sent on or off, also from the brightness step.
+    c = make_controller("BOX3633", device="BOX3633")
+    loop = asyncio.get_running_loop()
+    for second, action in enumerate(
+        (c.lights_off, c.lights_on, lambda: c._light_step(-1), c.lights_on), start=1
+    ):
+        c._level = 1
+        with patch.object(loop, "time", return_value=second):
+            await action()
+    shown = [
+        update.value
+        for call in c._coordinator.handle_controller_state_updates.call_args_list
+        for update in call.args
+        if update.key == UNDER_BED_LIGHTS_ON
+    ]
+    assert shown == [False, True, False, True]

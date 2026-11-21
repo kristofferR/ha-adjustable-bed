@@ -52,6 +52,7 @@ from ..execution import (
 )
 from ..position_estimate import notify_release_failed
 from ..position_seek import PositionSeekPolicy
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .cancellation import settled
 from .entity_specs import (
     POSITION_UNIT_DEGREES,
@@ -71,6 +72,9 @@ from .gatt_write import GattWriter
 from .lifecycle import CapabilitySnapshotPolicy, ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
+
+# Host-side bound for a toggle-only light's first report on a fresh link.
+LIGHT_REPORT_WAIT_SECONDS: Final = 2.0
 
 CONTROLLER_GESTURE_RELEASE: ContextVar[bool] = ContextVar("controller_gesture_release", default=False)
 
@@ -2222,7 +2226,7 @@ class BedController(GattWriter):
         Raises:
             NotImplementedError: If the bed doesn't have controllable lights
         """
-        raise NotImplementedError("Light control not supported on this bed")
+        await self._toggle_light_to(True)
 
     async def lights_off(self) -> None:
         """Turn off under-bed lights.
@@ -2230,7 +2234,34 @@ class BedController(GattWriter):
         Raises:
             NotImplementedError: If the bed doesn't have controllable lights
         """
-        raise NotImplementedError("Light control not supported on this bed")
+        await self._toggle_light_to(False)
+
+    async def _toggle_light_to(self, on: bool) -> None:
+        """Switch a toggle-only light by the state the bed reports.
+
+        Serves a bed that declares ``supports_light_state_feedback`` and
+        publishes ``UNDER_BED_LIGHTS_ON``.
+        """
+        if not (self.supports_light_state_feedback and self.supports_light_toggle_control):
+            raise NotImplementedError("Light control not supported on this bed")
+        state = self._coordinator.controller_state
+        if state.get(UNDER_BED_LIGHTS_ON) is None:
+            # A fresh link has no report yet: ask once, then wait briefly for it.
+            await self.async_refresh_diagnostics()
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + LIGHT_REPORT_WAIT_SECONDS
+            while state.get(UNDER_BED_LIGHTS_ON) is None and loop.time() < deadline:
+                if self._coordinator.cancel_command.is_set():
+                    return
+                await asyncio.sleep(0.05)
+        reported = state.get(UNDER_BED_LIGHTS_ON)
+        if reported is None:
+            raise invalid("light_state_unknown")
+        if reported is not on:
+            # Until the bed reports again the light shows what was sent, so a
+            # second request in between does not toggle it back.
+            with self.sent_state(UNDER_BED_LIGHTS_ON(on)):
+                await self.lights_toggle()
 
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights.
