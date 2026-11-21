@@ -80,7 +80,7 @@ async def test_an_mcr_service_is_confirmed_and_asks_no_side(hass):
     [
         # The row chose nothing to keep.
         (const.BED_TYPE_SLEEP_NUMBER, ["fuzion", "mcr"]),
-        (const.BED_TYPE_SLEEP_NUMBER_MCR, ["fuzion", "mcr", "keep_detected"]),
+        (const.BED_TYPE_SLEEP_NUMBER_MCR, ["fuzion", "mcr", "keep"]),
     ],
 )
 async def test_an_unknown_service_is_asked(hass, incoming, options):

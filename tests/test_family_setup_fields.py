@@ -323,11 +323,7 @@ async def _family_routes(hass, row: str) -> dict[str, dict[str, Any]]:
             path = paths.pop()
             result = await _run(hass, row, path, 3)
             if "choices" in result:
-                paths.extend(
-                    [*path, choice]
-                    for choice in result["choices"]
-                    if choice not in ("keep", "keep_detected")
-                )
+                paths.extend([*path, choice] for choice in result["choices"] if choice != "keep")
             elif result["saved"] is not None:
                 routes.setdefault(_route(result["saved"]), result["saved"])
     # The Sleep Smart pump is its own device, never a route a bed changes to.
@@ -375,11 +371,7 @@ async def _reconfigure_routes(hass, entry: MockConfigEntry) -> set[str]:
                 break
             if answered == len(path):
                 marker = next(m for m in fields if m.schema == key)
-                paths.extend(
-                    [*path, c]
-                    for c in _options(fields[marker])
-                    if c not in ("keep", "keep_detected")
-                )
+                paths.extend([*path, c] for c in _options(fields[marker]) if c != "keep")
                 break
             answers = {**_answers(result, 0), key: path[answered]}
             answered += 1

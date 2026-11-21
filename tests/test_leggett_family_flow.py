@@ -61,9 +61,9 @@ async def test_detected_receiver_asks_the_app_and_keep_pairs_the_detected_route(
     result = await flow.async_step_leggett_family()
     options = result["data_schema"].schema["choice"].config["options"]
     assert options[:4] == ["prodigy_ce", "prodigy2", "prodigy2l", "useries"]
-    assert options[-1] == "keep_detected"
+    assert options[-1] == "keep"
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
-        kept = await flow.async_step_leggett_family({"choice": "keep_detected"})
+        kept = await flow.async_step_leggett_family({"choice": "keep"})
         assert kept["step_id"] == "keep_detected"
         await flow.async_step_keep_continue()
     pairing.assert_awaited_once()

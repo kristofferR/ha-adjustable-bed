@@ -55,7 +55,7 @@ async def test_each_family_row_asks_its_declared_answers(hass, family: AppFamily
     result = await getattr(flow, f"async_step_{family.step}")()
     assert result["step_id"] == family.step
     # Only a family that always offers Keep offers it on the bare row.
-    keep = ["keep_detected"] if family.offers_keep is keep_always else []
+    keep = ["keep"] if family.offers_keep is keep_always else []
     offered = _offered(result, family)
     if len(offered) > 12:
         # A long question is sorted by its shown labels; the answers are the same.

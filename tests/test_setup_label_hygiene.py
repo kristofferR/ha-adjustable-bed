@@ -175,18 +175,6 @@ def test_errors_in_configure_name_what_users_see() -> None:
     assert not [path for path, text in _strings("options") if ".error." in path and jargon.search(text)]
 
 
-def test_one_wording_keeps_the_current_setup() -> None:
-    from custom_components.adjustable_bed.app_families import KEEP_DETECTED_LABEL, KEEP_LABEL
-
-    for key, label in (("keep", KEEP_LABEL), ("keep_detected", KEEP_DETECTED_LABEL)):
-        keeps = {
-            name: options[key]
-            for name, selector in STRINGS["selector"].items()
-            if key in (options := selector.get("options", {}))
-        }
-        assert set(keeps.values()) == {label}
-
-
 def test_app_and_brand_rows_name_no_protocol() -> None:
     from custom_components.adjustable_bed.config_flow import _bed_type_selector, _family_rows
 

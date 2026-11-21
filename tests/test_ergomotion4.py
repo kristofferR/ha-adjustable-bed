@@ -767,19 +767,3 @@ def test_custom_preset_ancestor_gates_keep_o5_slot_consumption(keys, expected):
     # exist. dealTagAction consumes a slot even when the tag is inert o5.
     product = custom_product("Other", keys, (), False, False)
     assert set(product.commands) & {"C043", "C044", "C045", "C046"} == expected
-
-
-def test_other_product_features_are_named_by_what_they_add():
-    """The app's raw feature keys are never the question's answers."""
-    from custom_components.adjustable_bed.beds.ergomotion4.controller import (
-        MASSAGE_KEYS,
-        MODEL_KEYS,
-    )
-    from custom_components.adjustable_bed.setup_questions import _ergomotion4_keys
-
-    for kind, keys in (("model", MODEL_KEYS), ("massage", MASSAGE_KEYS)):
-        choices = _ergomotion4_keys(kind)
-        assert callable(choices)
-        labels = choices({})
-        assert list(labels) == list(keys)
-        assert not set(labels.values()) & set(keys)

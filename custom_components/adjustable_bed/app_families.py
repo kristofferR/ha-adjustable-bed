@@ -242,10 +242,9 @@ class Answer:
 
 
 KEEP: Final = Answer(bed_type="", keep=True)
-# The one wording every question uses for keeping the current route: the saved
-# one in Reconfigure, the detected one in setup, where nothing is saved yet.
-KEEP_LABEL: Final = "Keep the current setup"
-KEEP_DETECTED_LABEL: Final = "Keep the detected controls"
+# The one wording every family question uses for keeping its route: the
+# detected one on a new bed, the saved one in Reconfigure.
+KEEP_LABEL: Final = "Keep the detected or saved controls"
 
 
 @dataclass(frozen=True, slots=True)
@@ -344,6 +343,7 @@ class AppFamily:
     # for a family with too many apps to name in its row.
     lists_members: bool = False
     form: Form = Form.KEYS
+    keep_label: str = "keep"
     offers_keep: Callable[[Visit], bool] = keep_when_guided
     # How setup continues after Keep.
     keep_then: Then = Then.CONTINUE
@@ -397,7 +397,7 @@ class AppFamily:
         """Return this visit's answers, with Keep last when it is offered."""
         answers = dict(self.offer(visit) if self.offer is not None else self.answers)
         if self.offers_keep(visit) and "keep" not in answers:
-            answers["keep" if visit.guided else "keep_detected"] = KEEP
+            answers["keep"] = KEEP
         return answers
 
     def saved_id(self, incoming: str, answer: Answer) -> Answer:
@@ -666,6 +666,7 @@ VIBRADORM_FAMILY: Final = AppFamily(
     routes=frozenset({BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}),
     picks_route=False,
     form=Form.DROPDOWN,
+    keep_label=KEEP_LABEL,
     offers_keep=lambda visit: visit.guided and not _on_legacy_vibradorm(visit),
     offer=_vibradorm_answers,
     profile_key=CONF_VIBRADORM_APP_PROFILE,
@@ -881,6 +882,7 @@ OKIN_FAMILY: Final = AppFamily(
     # route, so an existing entry keeps Configure.
     also=frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_CST}),
     form=Form.LABELLED,
+    keep_label=KEEP_LABEL,
     # A FurniMove row or gateway chose no handset, so there is nothing to keep.
     offers_keep=keep_unless_row,
     offer=_okin_answers,

@@ -69,8 +69,6 @@ from .app_families import (
     JENSEN_FAMILY,
     JIECANG_FAMILY,
     JORDANS_FAMILY,
-    KEEP_DETECTED_LABEL,
-    KEEP_LABEL,
     KEESON_FAMILY,
     LEGGETT_FAMILY,
     LIMOSS_FAMILY,
@@ -1105,8 +1103,7 @@ def _offer_another_app(schema: vol.Schema) -> vol.Schema:
                     value=_ANOTHER_APP, label="Another app or remote: search every app"
                 )
             )
-            keep = next((key for key in ("keep", "keep_detected") if key in values), None)
-            options.insert(values.index(keep) if keep is not None else len(options), another)
+            options.insert(values.index("keep") if "keep" in values else len(options), another)
             fields[marker] = SelectSelector(
                 SelectSelectorConfig(**{**selector.config, "options": options})
             )
@@ -1390,23 +1387,6 @@ def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, s
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
-
-
-def _may_hold_bond(data: Mapping[str, Any]) -> bool:
-    """Return whether a bed pairs, or either of its sides has a recorded bond.
-
-    A bed that never pairs has no bond to remove, unless one was recorded anyway.
-    """
-    for side in (data, *iter_children(data)):
-        bed_type = side.get(CONF_BED_TYPE) or data.get(CONF_BED_TYPE)
-        variant = side.get(CONF_PROTOCOL_VARIANT, data.get(CONF_PROTOCOL_VARIANT))
-        if (
-            side.get(CONF_BLE_BOND_ESTABLISHED)
-            or side.get(CONF_BLE_BOND_CONTEXT)
-            or (isinstance(bed_type, str) and requires_pairing(bed_type, variant))
-        ):
-            return True
-    return False
 
 
 def _svane_fixed_settings(variant: str) -> dict[str, Any]:
@@ -3148,12 +3128,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else [
                 SelectOptionDict(
                     value=key,
-                    label=offered[key].label
-                    or (
-                        (KEEP_LABEL if visit.guided else KEEP_DETECTED_LABEL)
-                        if offered[key].keep
-                        else key
-                    ),
+                    label=offered[key].label or (family.keep_label if offered[key].keep else key),
                 )
                 for key in keys
             ]
@@ -3382,8 +3357,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # confirmation of a result the user never saw.
         self._verify_form_shown: bool = False
         self._octo_pin_form_shown: bool = False
-        # PINs the bed refused in this flow (an empty PIN it said it needs).
-        self._octo_refused_pins: set[str] = set()
         # The result step whose guided-change check failed; the failure form
         # hands its Try again or Keep back to it.
         self._migration_failed_from: Literal["verify_connection", "pairing_result"] | None = None
@@ -7121,8 +7094,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Finish after PIN acceptance, or let the user correct and retry.
 
         A check that could not reach a verdict (a sleeping or out-of-range bed)
-        also offers to finish without it. Only a PIN the bed itself refused
-        blocks setup, and such a PIN is never saved.
+        also offers to finish without it; a PIN the bed refused blocks setup.
         """
         assert self._pending_entry is not None
         result = self.operation.result
@@ -7132,8 +7104,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if isinstance(report, CapabilityReport) and report.octo_pin_status is not None
             else OctoPinStatus.INCONCLUSIVE
         )
-        if status in (OctoPinStatus.REQUIRED, OctoPinStatus.REJECTED):
-            self._octo_refused_pins.add(self._pending_entry.get(CONF_OCTO_PIN, ""))
         errors: dict[str, str] = {}
         if user_input is not None and self._octo_pin_form_shown:
             title = self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed")
@@ -7150,8 +7120,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             if not is_valid_octo_pin(pin):
                 errors[CONF_OCTO_PIN] = "invalid_pin"
-            elif finish and pin in self._octo_refused_pins:
-                errors[CONF_OCTO_PIN] = "octo_pin_rejected"
             elif finish:
                 self._pending_entry[CONF_OCTO_PIN] = pin
                 if self._migration is not None:
@@ -7168,8 +7136,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         schema: dict[vol.Marker, Any] = {}
         if not status.allows_setup:
             errors.setdefault("base", f"octo_pin_{status.value}")
+            # A suggestion, not a default: a PIN the user clears must stay cleared.
             schema[
-                vol.Optional(CONF_OCTO_PIN, default=self._pending_entry.get(CONF_OCTO_PIN, ""))
+                vol.Optional(
+                    CONF_OCTO_PIN,
+                    description={"suggested_value": self._pending_entry.get(CONF_OCTO_PIN, "")},
+                )
             ] = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
         if status is OctoPinStatus.INCONCLUSIVE:
             schema[vol.Required("action", default="retry")] = SelectSelector(
@@ -7645,13 +7617,23 @@ class AdjustableBedOptionsFlow(
         ):
             menu_options.append("pair_sides")
         menu_options.extend(self.estimate_menu_options())
-        if (
+        # A bed that never pairs has no bond to remove, unless one was recorded.
+        may_hold_bond = any(
+            side.get(CONF_BLE_BOND_ESTABLISHED)
+            or side.get(CONF_BLE_BOND_CONTEXT)
+            or requires_pairing(
+                side.get(CONF_BED_TYPE) or data.get(CONF_BED_TYPE) or "",
+                side.get(CONF_PROTOCOL_VARIANT, data.get(CONF_PROTOCOL_VARIANT)),
+            )
+            for side in (data, *iter_children(data))
+        )
+        if may_hold_bond and (
             data.get(CONF_ADDRESS)
             or (
                 data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS
                 and bool(iter_children(data))
             )
-        ) and _may_hold_bond(data):
+        ):
             menu_options.append("remove_bond")
         return self.async_show_menu(step_id="init", menu_options=menu_options)
 
@@ -7829,7 +7811,7 @@ class AdjustableBedOptionsFlow(
         return self.async_show_form(
             step_id=f"{side}_settings",
             data_schema=vol.Schema(schema),
-            errors=errors,
+            errors=_errors_on_shown_fields(errors, schema),
             description_placeholders={"name": child.get(CONF_NAME, side.title())},
         )
 

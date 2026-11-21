@@ -124,9 +124,9 @@ legacy app entry or a Richmat entry on the L&P QRRM remote, so they can move
 to that family's other routes.
 
 1. Choose the app you use, then the layout or remote the app shows. The
-   question's keep answer, **Keep the current setup**, leaves the entry exactly
-   as it is. When you add a bed, the same answer reads **Keep the detected
-   controls** and keeps the route detection chose.
+   question's keep answer, **Keep the detected or saved controls**, leaves the
+   entry exactly as it is; when you add a bed it keeps the route detection
+   chose.
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
    Home Assistant releases its connection and checks the chosen setup. The
    check screen lists its steps. Nothing is saved yet.
@@ -688,10 +688,10 @@ Standard OCTO PIN exchange.
 - Use the PIN set in the OCTO Smart Control app; it is not the OS Bluetooth pairing code.
 - If your bed works without a PIN, leave this field empty
 
-Standard OCTO setup verifies PIN acceptance without moving the bed. Setup finishes
-only when the PIN is accepted or the controller confirms no PIN is required.
-An inconclusive check leaves the entry unsaved and can be retried; it does not
-mean the PIN is wrong. After a PIN lock challenge, the integration retries the
+Standard OCTO setup verifies PIN acceptance without moving the bed. A PIN the
+bed requires or rejects must be entered or corrected first. An inconclusive
+check can be retried, or setup can finish without it; it does not mean the PIN
+is wrong. After a PIN lock challenge, the integration retries the
 configured PIN once after one second. It does not use a periodic PIN timer. See
 [OCTO Smart Control](beds/octo.md#pin-control).
 

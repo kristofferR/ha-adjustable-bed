@@ -199,9 +199,10 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
    **Check again**. The ordinary capability check also allows finishing setup
    without a successful probe.
 
-   **Standard Octo is different:** its PIN check must report **accepted** or
-   **not required** before the entry is saved. A required, rejected, or
-   inconclusive PIN check offers a retry. This check does not move the bed.
+   **Standard Octo is different:** a PIN the bed says is required or rejected
+   must be entered or corrected before the entry is saved. An inconclusive
+   check offers **Check again** or **Finish setup anyway**. This check does not
+   move the bed.
    Star2 keeps its separate setup behavior. See [Octo setup](beds/octo.md#pin-verification-during-setup).
 
 For a split bed with independent controllers, add and verify each side first,

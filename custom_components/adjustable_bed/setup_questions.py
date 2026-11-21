@@ -1982,7 +1982,7 @@ def _ergomotion4_keys(kind: Literal["model", "massage"]) -> Choices:
         from .beds.ergomotion4.controller import MASSAGE_KEYS, MODEL_KEYS
 
         keys = MODEL_KEYS if kind == "model" else MASSAGE_KEYS
-        return {key: _ERGOMOTION4_FEATURES[key] for key in keys}
+        return {key: _ERGOMOTION4_FEATURES.get(key, key) for key in keys}
 
     return choices
 

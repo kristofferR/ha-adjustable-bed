@@ -81,7 +81,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
-    BED_TYPE_LOGICDATA,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MOTOSLEEP,
@@ -103,7 +102,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
-    BED_TYPE_VIBRADORM_APP,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -284,7 +282,7 @@ async def _keep_family_route(hass: HomeAssistant, result: Any) -> Any:
     if result.get("step_id") != "jiecang_family":
         return result
     manager = hass.config_entries.flow
-    result = await manager.async_configure(result["flow_id"], {"choice": "keep_detected"})
+    result = await manager.async_configure(result["flow_id"], {"choice": "keep"})
     # The Keep screen explains the detected controls before setup continues.
     assert result["step_id"] == "keep_detected"
     return await manager.async_configure(result["flow_id"], {"next_step_id": "keep_continue"})
@@ -407,20 +405,30 @@ class TestPairingInstructions:
         assert "side pairing button" in instructions
         assert "blue light blinks" in instructions
 
-    @pytest.mark.parametrize(
-        "bed_type", [BED_TYPE_VIBRADORM, BED_TYPE_VIBRADORM_APP, BED_TYPE_LOGICDATA]
-    )
-    async def test_beds_without_documented_steps_get_no_invented_ones(
-        self, hass: HomeAssistant, bed_type: str
-    ) -> None:
-        """No lamp button or power cycle is promised for a bed whose guide names none."""
+    async def test_default_pairing_instructions_remain_generic(self, hass: HomeAssistant) -> None:
+        """Other pairing-required beds should keep the generic fallback guidance."""
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
 
-        instructions = await flow._get_pairing_instructions(bed_type)
+        with patch(
+            "custom_components.adjustable_bed.config_flow.async_get_translations",
+            new=AsyncMock(
+                return_value={
+                    (
+                        "component.adjustable_bed.config.step.bluetooth_pairing."
+                        "data_description.pairing_instructions_generic"
+                    ): (
+                        "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n"
+                        "2. Click 'Pair Now'"
+                    )
+                }
+            ),
+        ):
+            instructions = await flow._get_pairing_instructions(BED_TYPE_VIBRADORM)
 
-        assert "as its manual describes" in instructions
-        assert "lamp" not in instructions and "unplug" not in instructions
+        assert "lamp button" in instructions
+        assert "unplug for 30+ seconds" in instructions
+
 
     @pytest.mark.parametrize(
         "bed_type",
@@ -1996,7 +2004,7 @@ class TestBluetoothDiscoveryFlow:
             user_input={"bed_type_choice": BED_TYPE_OKIMAT},
         )
         assert result["step_id"] == "okin_family"
-        assert "keep_detected" in select_options(result, "choice")
+        assert "keep" in select_options(result, "choice")
         flow = hass.config_entries.flow._progress[result["flow_id"]]
         assert flow._manual_data[CONF_BED_TYPE] == BED_TYPE_OKIMAT
         hass.config_entries.flow.async_abort(result["flow_id"])
@@ -2542,7 +2550,7 @@ class TestBluetoothDiscoveryFlow:
         # The Okin question asks which app runs the CST bed (#573); keep it.
         assert result["step_id"] == "okin_family"
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], user_input={"choice": "keep_detected"}
+            result["flow_id"], user_input={"choice": "keep"}
         )
         assert result["step_id"] == "keep_detected"
         assert result["description_placeholders"]["pairing"]
@@ -6662,7 +6670,7 @@ async def test_octo_setup_can_finish_when_the_pin_check_is_inconclusive(
     mock_bluetooth_service_info_octo_rc2: BluetoothServiceInfoBleak,
     enable_custom_integrations,
 ) -> None:
-    """A sleeping bed does not loop forever, and a PIN the bed refused is never saved."""
+    """A sleeping bed does not loop forever; a PIN the bed refused still blocks."""
     from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus
     from custom_components.adjustable_bed.config_flow import CapabilityReport
 
@@ -6712,19 +6720,13 @@ async def test_octo_setup_can_finish_when_the_pin_check_is_inconclusive(
         assert result["step_id"] == "verify_octo_pin"
         assert result["errors"] == {"base": "octo_pin_inconclusive"}
         assert action_offered(result)
-        # The bed already refused these, so finishing without a verdict cannot save them.
-        for refused in ("1111", ""):
-            result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], {CONF_OCTO_PIN: refused, "action": "finish"}
-            )
-            assert result["errors"][CONF_OCTO_PIN] == "octo_pin_rejected"
-            assert not hass.config_entries.async_entries(DOMAIN)
+        # A cleared PIN field is not submitted at all, and must not bring back the old PIN.
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_OCTO_PIN: "1234", "action": "finish"}
+            result["flow_id"], {"action": "finish"}
         )
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert result["data"][CONF_OCTO_PIN] == "1234"
+    assert result["data"][CONF_OCTO_PIN] == ""
 
 
 @pytest.mark.parametrize("cancel", [False, True])

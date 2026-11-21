@@ -49,9 +49,9 @@ async def test_qms_bed_asks_the_app_and_keep_saves_the_name_route(hass):
     flow = setup_flow(hass)
     result = await flow.async_step_solace_family()
     options = result["data_schema"].schema["choice"].config["options"]
-    assert options == ["name_route", "sophie", "woosa", "motion_bed", "bedsense", "keep_detected"]
+    assert options == ["name_route", "sophie", "woosa", "motion_bed", "bedsense", "keep"]
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        kept = await flow.async_step_solace_family({"choice": "keep_detected"})
+        kept = await flow.async_step_solace_family({"choice": "keep"})
         assert kept["step_id"] == "keep_detected"
         await flow.async_step_keep_continue()
     assert finish.call_args.args[0][const.CONF_PROTOCOL_VARIANT] == const.VARIANT_AUTO

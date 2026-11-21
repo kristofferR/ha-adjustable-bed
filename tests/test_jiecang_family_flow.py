@@ -82,12 +82,12 @@ async def test_detected_legacy_route_can_be_kept_without_a_new_question(hass):
     flow = setup_flow(hass, const.BED_TYPE_COMFORT_MOTION)
     result = await flow.async_step_jiecang_family()
     options = result["data_schema"].schema["choice"].config["options"]
-    assert options[-1] == "keep_detected"
+    assert options[-1] == "keep"
     assert result["description_placeholders"]["current"] == bed_type_label(
         const.BED_TYPE_COMFORT_MOTION
     )
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        kept = await flow.async_step_jiecang_family({"choice": "keep_detected"})
+        kept = await flow.async_step_jiecang_family({"choice": "keep"})
         assert kept["step_id"] == "keep_detected"
         await flow.async_step_keep_continue()
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == const.BED_TYPE_COMFORT_MOTION

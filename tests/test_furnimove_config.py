@@ -49,7 +49,7 @@ async def test_bluetooth_confirm_uses_the_selected_app_fields(hass, chosen):
     # The Okin question asks which app; the detected receiver is its Keep.
     assert result["step_id"] == "okin_family"
     result = await flow.async_step_okin_family(
-        {"choice": "furnimove" if chosen == BED_TYPE_FURNIMOVE else "keep_detected"}
+        {"choice": "furnimove" if chosen == BED_TYPE_FURNIMOVE else "keep"}
     )
     if result["step_id"] == "keep_detected":
         # Keep says what it sets up first.

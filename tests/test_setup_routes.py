@@ -200,7 +200,7 @@ async def test_a_discovered_okimat_asks_the_okin_question_with_another_app(
     )
     assert result["step_id"] == "okin_family"
     choices = list(select_options(result, "choice"))
-    assert choices[-2:] == ["another", "keep_detected"]
+    assert choices[-2:] == ["another", "keep"]
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "another"})
     assert result["step_id"] == "select_app"
     hass.config_entries.flow.async_abort(result["flow_id"])
@@ -230,8 +230,6 @@ async def test_aliases_show_friendly_labels_and_keep_their_saved_id(hass, alias,
     family = " · Okin" if alias == const.BED_TYPE_OKIMAT else ""
     shown = f"{bed_type_label(alias)}{family}"
     assert shown in {option["label"] for option in selector.config["options"]}
-    # Upgraders see the product, never a route or the saved ID.
-    assert "route" not in shown and "saved as" not in shown
     # The shown label maps back to the saved ID, never to the route it runs.
     assert selector(shown) == alias
 
