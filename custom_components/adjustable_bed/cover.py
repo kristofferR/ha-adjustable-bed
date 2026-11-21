@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant
 
 from .bed_traits import bed_traits
 from .beds.entity_specs import ControllerMotorHoldSpec
-from .beds.octo.runtime import octo_controller
+from .beds.octo.runtime import octo_controller, octo_controls_locked
 from .card import motor_card
 from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
@@ -313,9 +313,9 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     @property
     def available(self) -> bool:
         """Hide Octo motor controls while the live PIN gate is locked."""
-        controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
-        return super().available and (octo is None or octo.normal_controls_available)
+        return super().available and not octo_controls_locked(
+            self._coordinator.capability_controller
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

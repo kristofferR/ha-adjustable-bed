@@ -356,7 +356,7 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return climate-specific metadata."""
-        attrs: dict[str, Any] = {}
+        attrs = self._base_attributes()
         side = self.entity_description.side or self._coordinator.controller_state.get(
             SLEEP_NUMBER_SIDE
         )

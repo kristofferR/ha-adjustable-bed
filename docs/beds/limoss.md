@@ -337,8 +337,11 @@ the Limoss Remote key tables match an independent fixture.
 - The reported motor count takes precedence over the configured one, clamped to
   2–4.
 - Memory presets are software-based: save copies the latest raw positions into a
-  local slot; recall sends one set-position command per stored motor. Recall is
-  offered once a slot is saved. The capability reply sets the slot count.
+  local slot; recall sends one set-position command per stored motor. Saved
+  slots are stored in Home Assistant, so they survive reconnects and restarts.
+  The capability reply sets the slot count, and each slot has a recall button.
+  Recalling a slot nothing was saved to reports an error and moves nothing.
+  Saving before the bed has reported its position reports an error too.
 
 #### Timing
 
