@@ -5,7 +5,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.richmat_legacy import controller as bed
@@ -15,7 +14,6 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.services import async_register_services
-from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_casper_base import char
 
@@ -142,20 +140,23 @@ async def test_renewable_motion_expires_but_programming_never_renews(runtime):
     record = c._command_scheduler.recent_records[-1]
     assert record.kind is CommandKind.HOLD and record.outcome is CommandOutcome.EXPIRED
     client.write_gatt_char.reset_mock()
-    with raises_key("hold_renewal_not_supported", ServiceValidationError):
-        await hass.services.async_call(
-            DOMAIN,
-            "hold_control",
-            {
-                "device_id": "bed",
-                "control": "h26_lounge",
-                "duration": 0.75,
-                "hold_owner": "card",
-                "hold_generation": 2,
-            },
-            blocking=True,
-        )
-    assert values(client) == []
+    await hass.services.async_call(
+        DOMAIN,
+        "hold_control",
+        {
+            "device_id": "bed",
+            "control": "h26_lounge",
+            "duration": 0.75,
+            "hold_owner": "card",
+            "hold_generation": 2,
+        },
+        blocking=True,
+    )
+    # A preset is held as a finger holds it, never leased, and its own
+    # release ends it once renewals stop.
+    assert values(client) == ["2e", "2e", "2e", "6e"]
+    assert c._command_scheduler.recent_records[-1].kind is CommandKind.COMMAND
+    client.write_gatt_char.reset_mock()
     await hass.services.async_call(
         DOMAIN,
         "richmat_legacy",
