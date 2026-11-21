@@ -3618,7 +3618,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         return "remacro_model_not_in_app" if problem == "not_in_app" else None
 
-    def _async_abort_diagnostic_browser(
+    async def _async_abort_diagnostic_browser(
         self,
         *,
         address: str,
@@ -3627,19 +3627,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         connectable: bool | None,
     ) -> ConfigFlowResult:
         """Finish the BLE browser flow without creating a config entry."""
-        if connectable is True:
-            connectable_text = "Yes"
-        elif connectable is False:
-            connectable_text = "No (scanner says non-connectable)"
+        if connectable is None:
+            connectable_text = ""
         else:
-            connectable_text = "Unknown"
-
+            key = "connectable" if connectable else "not_connectable_note"
+            connectable_text = await self._get_config_translation(
+                f"step.diagnostic.data.{key}",
+                "Home Assistant can connect to it."
+                if connectable
+                else "The adapter or proxy that found it cannot connect to it.",
+            )
         return self.async_abort(
             reason="diagnostic_browser_ready",
             description_placeholders={
-                "name": name or "Unknown",
+                "name": name
+                or await self._get_config_translation("step.diagnostic.data.unknown_name", "Unnamed"),
                 "address": address,
-                "source": source or "unknown",
+                "source": source or "-",
                 "connectable": connectable_text,
             },
         )
@@ -5096,25 +5100,52 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
         retrying_suffix = await self._get_retrying_option_suffix()
-        devices = {}
-        for address, info in sorted_devices:
-            label = f"{info.name or 'Unknown'} ({address})"
-            if getattr(info, "connectable", True) is False:
-                label += " [scanner says non-connectable]"
-            devices[address] = label
+        devices = await self._async_device_rows("manual", sorted_devices)
         for address, (entry, info) in sorted_retrying_devices:
-            devices[f"{CONFIGURED_RETRY_PREFIX}{address}"] = self._format_retrying_option_label(
-                address,
-                entry,
-                info,
-                suffix=retrying_suffix,
+            devices.append(
+                SelectOptionDict(
+                    value=f"{CONFIGURED_RETRY_PREFIX}{address}",
+                    label=self._format_retrying_option_label(
+                        address,
+                        entry,
+                        info,
+                        suffix=retrying_suffix,
+                    ),
+                )
             )
-        devices["manual_entry"] = "Enter address manually"
+        devices.append(
+            SelectOptionDict(
+                value="manual_entry",
+                label=await self._get_config_translation(
+                    "step.manual.data.manual_entry", "Enter the address yourself"
+                ),
+            )
+        )
 
         return self.async_show_form(
             step_id="manual",
-            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): _SearchableSelect(devices)}),
         )
+
+    async def _async_device_rows(
+        self, step_id: str, devices: Iterable[tuple[str, BluetoothServiceInfoBleak]]
+    ) -> list[SelectOptionDict]:
+        """Return a device list's rows: detected beds first, named with their family."""
+        unknown = await self._get_config_translation(f"step.{step_id}.data.unknown_name", "Unnamed")
+        not_connectable = await self._get_config_translation(
+            f"step.{step_id}.data.not_connectable", "cannot connect"
+        )
+        rows: list[tuple[bool, SelectOptionDict]] = []
+        for address, info in devices:
+            label = f"{info.name or unknown} ({address})"
+            detected = detect_bed_type(info) is not None
+            if detected:
+                label += f" · {_family_name(info)}"
+            if getattr(info, "connectable", True) is False:
+                label += f" ({not_connectable})"
+            rows.append((not detected, SelectOptionDict(value=address, label=label)))
+        # Stable: each group keeps the order it was given in.
+        return [row for _later, row in sorted(rows, key=lambda row: row[0])]
 
     async def async_step_manual_entry(
         self, user_input: dict[str, Any] | None = None
@@ -7172,7 +7203,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
             _LOGGER.info("User selected device from BLE browser: %s", address)
             discovery_info = self._all_ble_devices[address]
-            return self._async_abort_diagnostic_browser(
+            return await self._async_abort_diagnostic_browser(
                 address=discovery_info.address.upper(),
                 name=discovery_info.name,
                 source=getattr(discovery_info, "source", None),
@@ -7212,17 +7243,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._all_ble_devices.items(),
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
-        devices = {}
-        for address, info in sorted_devices:
-            label = f"{info.name or 'Unknown'} ({address})"
-            if getattr(info, "connectable", True) is False:
-                label += " [scanner says non-connectable]"
-            devices[address] = label
-        devices["manual"] = "Enter address manually"
+        devices = await self._async_device_rows("diagnostic", sorted_devices)
+        devices.append(
+            SelectOptionDict(
+                value="manual",
+                label=await self._get_config_translation(
+                    "step.diagnostic.data.manual", "Enter the address yourself"
+                ),
+            )
+        )
 
         return self.async_show_form(
             step_id="diagnostic",
-            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): _SearchableSelect(devices)}),
         )
 
     async def async_step_diagnostic_manual(
@@ -7242,7 +7275,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     address,
                     allow_non_connectable=True,
                 )
-                return self._async_abort_diagnostic_browser(
+                return await self._async_abort_diagnostic_browser(
                     address=address,
                     name=user_input.get(CONF_NAME) or getattr(service_info, "name", None),
                     source=getattr(service_info, "source", None),
@@ -7254,7 +7287,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_ADDRESS): str,
-                    vol.Optional(CONF_NAME, default="Unknown BLE Device"): str,
+                    vol.Optional(CONF_NAME): str,
                 }
             ),
             errors=errors,

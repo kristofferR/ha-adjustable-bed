@@ -107,9 +107,12 @@
       },
       "manual": {
         "title": "Choose the Bluetooth device",
-        "description": "Choose the bed from the list, or enter its address.",
+        "description": "Choose the bed from the list, or enter its address yourself. Beds Home Assistant recognized come first, with the brand or app it recognized. Type part of a name or address to search.",
         "data": {
-          "address": "Device"
+          "address": "Device",
+          "manual_entry": "Enter the address yourself",
+          "unknown_name": "Unnamed",
+          "not_connectable": "cannot connect"
         }
       },
       "manual_entry": {
@@ -205,9 +208,14 @@
       },
       "diagnostic": {
         "title": "Browse unsupported Bluetooth devices",
-        "description": "Select any visible Bluetooth device to inspect its MAC address and scanner details. Then run the `adjustable_bed.generate_support_bundle` action with that address.",
+        "description": "Choose any visible Bluetooth device to see its address and which adapter or proxy found it. You can then capture its data for a support request.",
         "data": {
-          "address": "Device"
+          "address": "Device",
+          "manual": "Enter the address yourself",
+          "unknown_name": "Unnamed",
+          "not_connectable": "cannot connect",
+          "connectable": "Home Assistant can connect to it.",
+          "not_connectable_note": "The adapter or proxy that found it cannot connect to it."
         }
       },
       "diagnostic_manual": {
@@ -771,7 +779,7 @@
       "configured_retrying": "**{name}** is already configured at `{address}`, but Home Assistant is still retrying its previous setup.\n\nUse **Generate Support Bundle** for the existing device entry, or run `adjustable_bed.generate_support_bundle` with `target_address: {address}`. Then reload or reconfigure the existing entry instead of adding it again.",
       "not_supported": "Device is not supported. The required Bluetooth service was not found.",
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
-      "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
+      "diagnostic_browser_ready": "**{name}** ({address})\n\nFound by: {source}. {connectable}\n\nTo capture its data for a support request, open **Developer tools > Actions**, choose **Adjustable Bed: Create support bundle**, and enter `{address}` as the **Target address**.",
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
       "migration_entry_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
       "migration_kept": "Your current setup was kept. You won't be asked again for this setup unless a new app becomes available for it.",

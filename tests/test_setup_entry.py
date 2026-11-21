@@ -36,9 +36,9 @@ async def app_question(hass):
     return result
 
 
-def app_rows(result) -> dict[str, str]:
-    """The app question's rows, label to choice."""
-    return result["data_schema"].schema[const.CONF_BED_TYPE].rows()
+def app_rows(result, field: str = const.CONF_BED_TYPE) -> dict[str, str]:
+    """A searchable question's rows, label to choice: the app question's by default."""
+    return result["data_schema"].schema[field].rows()
 
 
 async def test_the_start_screen_offers_the_app_first_routes(hass, enable_custom_integrations):
@@ -547,3 +547,29 @@ async def test_bedjet_powerlayer_from_the_app_question_finishes(hass, enable_cus
             )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_BEDJET_POWERLAYER
+
+
+async def test_the_device_list_puts_recognized_beds_first(
+    hass, enable_custom_integrations, mock_bluetooth_service_info,
+    mock_bluetooth_service_info_unknown,
+):
+    """Every nearby device is listed, but the recognized bed leads, named by its family."""
+    mock_bluetooth_service_info_unknown.name = "Aardvark speaker"
+    mock_bluetooth_service_info_unknown.connectable = False
+    devices = [mock_bluetooth_service_info_unknown, mock_bluetooth_service_info]
+    result = await start(hass, devices)
+    with patch(PATCH_DISCOVERED, return_value=devices):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_ADDRESS: "manual"}
+        )
+    assert result["step_id"] == "manual"
+    rows = app_rows(result, CONF_ADDRESS)
+    labels = list(rows)
+    assert labels[0].endswith(" · Linak")
+    assert labels[1] == "Aardvark speaker (11:22:33:44:55:66) (cannot connect)"
+    assert labels[-1] == _STRINGS["config"]["step"]["manual"]["data"]["manual_entry"]
+    # A row is submitted by its label and selects its device.
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_ADDRESS: labels[1]}
+    )
+    assert result["step_id"] == "select_app"
