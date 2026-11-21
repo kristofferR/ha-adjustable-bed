@@ -354,16 +354,20 @@ async def test_repeat_service_never_allocates_from_an_unproven_list(hass, alarm_
     c._client.write_gatt_char.assert_not_awaited()
 
 
-@pytest.mark.parametrize("edit", (False, True), ids=("explicit-id", "observed-record"))
-async def test_repeat_service_keeps_the_explicit_slot_when_cache_changes(hass, alarm_service, edit):
+# The action form sends a date and time without a zone; it is Home Assistant's local time.
+@pytest.mark.parametrize(
+    "when",
+    (datetime(2026, 11, 11, 7, 15, tzinfo=UTC), "2026-11-11 07:15:00", None),
+    ids=("explicit-id", "form-time", "observed-record"),
+)
+async def test_repeat_service_keeps_the_explicit_slot_when_cache_changes(hass, alarm_service, when):
     c = alarm_service
     obj = c.controller
     action = obj.product.alarms[0]
     code = obj.catalog.actions[action].short
     record = (3, 0, 7, 15, code, 0x81)
-    data = {"alarm_record": record} if edit else {
-        "alarm_id": 3, "action": action, "datetime": datetime(2026, 11, 11, 7, 15, tzinfo=UTC),
-        "weekdays": [0],
+    data = {"alarm_record": record} if when is None else {
+        "alarm_id": 3, "action": action, "datetime": when, "weekdays": [0],
     }
     original_plan = Request.plan
 

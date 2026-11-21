@@ -3541,11 +3541,12 @@ alarm/press records are rejected instead of indexing beyond their payload.
 
 #### Services
 
-`adjustable_bed.luuna` offers `alarm`, `alarm_cancel`, `light_rgb`, `light_seconds`,
-`light_warm`, `light_cold`, `light_off`, `sleep_name` and `time_sync`. Generic
-memory and movement actions use the same profile and command serialization.
+`adjustable_bed.luuna` offers `light_rgb`, `light_seconds`, `light_warm`,
+`light_cold`, `light_off` and `sleep_name`. `set_alarm` sets and cancels the
+alarm and `sync_clock` sets the clock (`time_sync`). Generic memory and movement
+actions use the same profile and command serialization.
 
-Alarms use one selected preset from that product's alarm list and a local hour
+Alarms use one wake action from that product's alarm list and a local hour
 and minute. The countdown ignores seconds; the current minute wraps to tomorrow.
 Both save and cancel write the low frame first, then the high/action frame.
 There is no weekday or repeating schedule on this live alarm path.
@@ -9214,8 +9215,12 @@ Layout-bound movement, combined movement, recall/save, massage, USB, fan, lock
 and light-labelled controls retain the selected app's gesture and visibility
 gates. Lock and vibration targets remain unknown. No motor position, battery,
 model identity or general command acknowledgment is reported by these apps.
-Settings provide alarm countdowns and combinations, RGB, lamp timers and the
-D1RM/D9RM/Y6RM timer utilities. A lamp capability reply reveals a timer number
+Settings provide RGB, lamp timers and the D1RM/D9RM/Y6RM timer utilities.
+`set_alarm` sets the alarm countdown: one of the layout's positions as
+`wake_action` (the wake modes are `wake_mode_1` and `wake_mode_2`, flat sleep
+`flat_sleep`), optional `massage` with a zone, or `none` with `massage` for
+massage alone. A position and massage pair the app has no alarm code for is
+refused. A lamp capability reply reveals a timer number
 entity without a reload. Its value is a local requested setting, not readback.
 
 Power Cool's explicit TEST layout offers a finite 14-step motor diagnostic
@@ -10211,14 +10216,16 @@ or alarm-time feedback.
 
 #### Services
 
-`adjustable_bed.richmat_resource_bed` exposes `query`, `alarm`, `cancel_alarm`,
-`rgb`, `lamp_timeout`, `massage_timer` and `bed_command`. The status entity lists
-available alarm action names in layout order. Choose one bed preset and optional
-massage actions. The action validates every target before execution, and STOP
-fences later writes on every target even while another target is awaiting BLE.
+`adjustable_bed.richmat_resource_bed` exposes `query`, `rgb`, `lamp_timeout`,
+`massage_timer` and `bed_command`. The action validates every target before
+execution, and STOP fences later writes on every target even while another
+target is awaiting BLE.
 
-An alarm time selects its next local occurrence, with unset/equal time meaning
-the next day. Only the layout-owned combinations are accepted. Light timeout
+`set_alarm` sets and cancels the alarm: one of the layout's positions as
+`wake_action`, optional `massage` with a zone (`both`, `head` or `feet`), or
+`none` with `massage` for massage alone. The status entity lists the layout's
+alarm actions. An alarm time selects its next local occurrence, with an equal
+time meaning the next day. Only the layout-owned combinations are accepted. Light timeout
 requests are 0–300 seconds, with zero labelled keep on. The D1RM massage slider
 uses its actual 0–5 callback mapping. Requested values are labelled as requests,
 not device readback. Other layout actions use their named buttons and the

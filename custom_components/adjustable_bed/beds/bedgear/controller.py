@@ -297,7 +297,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
     def alarm_capability(self) -> AlarmCapability | None:
         return (
             AlarmCapability(massage_intensities=2, cancel_running=True)
-            if self.is_l2motion and self.profile.alarm
+            if self.profile.alarm
             else None
         )
 
@@ -1047,19 +1047,10 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             if op == "light_timer":
                 frame = codec.ascii_command(319, request.minutes)
             else:
-                hour, minute = (
-                    request.time.split(":")
-                    if request.time is not None
-                    else self._alarm[:2]
-                    if self._alarm
-                    else ("", "")
-                )
-                strength = (
-                    request.strength if request.strength is not None else self._observed_strength
-                )
-                assert strength is not None
+                assert request.time is not None and request.strength is not None
+                hour, minute = request.time.split(":")
                 frame = codec.decimal_fields(
-                    hour + minute + "00", ("0017", "0118", "0219")[strength]
+                    hour + minute + "00", ("0017", "0118", "0219")[request.strength]
                 )
             await self._send(self._letter("z"), link, cancel)
             if await self._wait(0.05, cancel):
@@ -1091,19 +1082,10 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             raise ValueError("Panel E snore save has no release recall; use the held snore preset")
         if op == "rgb" and request.rgb is None:
             raise ValueError("RGB needs three color channels")
-        if op == "alarm" and request.strength is None and self._observed_strength is None:
-            raise ValueError("Set an alarm strength or receive its current strength first")
         if not allowed.get(op, False):
             raise ValueError("Bedgear control unavailable, unconfirmed, or received state missing")
-        if (
-            op == "alarm"
-            and request.time is None
-            and (
-                self._alarm is None
-                or any(not x.isascii() or not x.isdecimal() for x in self._alarm[:2])
-            )
-        ):
-            raise ValueError("Set an alarm time or receive its current time first")
+        if op == "alarm" and (request.time is None or request.strength is None):
+            raise ValueError("Set an alarm time and strength")
 
 
 @dataclass(frozen=True, kw_only=True)

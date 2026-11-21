@@ -547,7 +547,7 @@ bedgear:
       required: true
       selector:
         select:
-          options: [rgb, light_timer, alarm, sync_mode, toggle_sync, save_snore, save_memory]
+          options: [rgb, light_timer, sync_mode, toggle_sync, save_snore, save_memory]
           translation_key: bedgear_operation
     rgb:
       selector:
@@ -569,17 +569,6 @@ bedgear:
           step: 1
           unit_of_measurement: min
           mode: box
-    time:
-      example: 07:30
-      selector:
-        text:
-    strength:
-      selector:
-        number:
-          min: 0
-          max: 2
-          step: 1
-          mode: slider
     wired:
       default: false
       selector:
@@ -1717,8 +1706,7 @@ luuna:
       required: true
       selector:
         select:
-          options: [alarm, alarm_cancel, light_rgb, light_seconds, light_off, light_warm, light_cold,
-            sleep_name, time_sync]
+          options: [light_rgb, light_seconds, light_off, light_warm, light_cold, sleep_name]
           translation_key: luuna_operation
     value:
       selector:
@@ -1729,23 +1717,6 @@ luuna:
     rgb_color:
       selector:
         color_rgb:
-    hour:
-      selector:
-        number:
-          min: 0
-          max: 23
-          mode: box
-    minute:
-      selector:
-        number:
-          min: 0
-          max: 59
-          mode: box
-    mode:
-      selector:
-        select:
-          options: [tv, zero_g, anti_snore, memory_1, memory_2]
-          translation_key: luuna_mode
     side:
       selector:
         select:
@@ -2672,19 +2643,13 @@ richmat_resource_bed:
       required: true
       selector:
         select:
-          options: [query, alarm, cancel_alarm, rgb, lamp_timeout, massage_timer, bed_command]
+          options: [query, rgb, lamp_timeout, massage_timer, bed_command]
           translation_key: richmat_resource_bed_operation
     side:
       selector:
         select:
           options: [both, left, right]
           translation_key: side
-    actions:
-      selector:
-        object:
-    time:
-      selector:
-        time:
     rgb_color:
       selector:
         color_rgb:
@@ -2731,15 +2696,9 @@ richmat_rise:
       required: true
       selector:
         select:
-          options: [query, alarm, cancel_alarm, rgb, lamp_timer, massage_timer, massage_popup, diagnostic_cycle,
+          options: [query, rgb, lamp_timer, massage_timer, massage_popup, diagnostic_cycle,
             program_schedule]
           translation_key: richmat_rise_operation
-    actions:
-      selector:
-        object:
-    time:
-      selector:
-        time:
     rgb_color:
       selector:
         color_rgb:

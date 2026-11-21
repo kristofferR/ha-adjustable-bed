@@ -25,6 +25,7 @@ from collections.abc import (
     Sequence,
 )
 from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, Final, cast
 
@@ -261,6 +262,12 @@ HOLD_LEASE_FIELDS = {
 SIDE_FIELD = {vol.Optional(ATTR_SIDE): vol.In([SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])}
 # One or more target devices, for actions that act on every selected bed.
 DEVICE_IDS = vol.All(cv.ensure_list, vol.Length(min=1))
+
+
+def local_datetime(value: object) -> datetime:
+    """A date and time; one without a zone, as the action form sends it, is local time."""
+    when = cv.datetime(value)
+    return when if when.tzinfo else when.replace(tzinfo=dt_util.get_default_time_zone())
 
 
 def _resolve_sided_target(

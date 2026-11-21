@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import replace
+from datetime import time
 from functools import partial
 from math import ceil
 from time import monotonic
@@ -15,6 +16,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_UTILITY
 from ...command_scheduler import current_command_context, note_frame_written
 from ...const import CONF_MOTOR_PULSE_COUNT, CONF_RICHMAT_CLASSIC_THIRD_SERVICE
@@ -34,6 +36,8 @@ from .protocol import (
     QUERY_SPACING_MS,
     SETTINGS_SPACING_MS,
     alarm,
+    alarm_capability,
+    alarm_choices,
     alarm_delay,
     control,
     massage_timer,
@@ -387,6 +391,22 @@ class ResourceBedController(RichmatClassicController):
                 key = f"{name}_{duplicate}"
             actions[key] = code
         return actions
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        return alarm_capability(self._alarm_actions())
+
+    def _alarm_request(self, alarm: AlarmRequest) -> p.Request:
+        if not alarm.enabled:
+            return p.Request("cancel_alarm")
+        actions = alarm_choices(self._alarm_actions(), alarm)
+        return p.Request("alarm", actions=actions, when=time(alarm.hour, alarm.minute))
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_request(self._alarm_request(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.execute_request(self._alarm_request(alarm))
 
     def validate_request(self, request: p.Request, *, live: bool = True) -> None:
         op = request.operation

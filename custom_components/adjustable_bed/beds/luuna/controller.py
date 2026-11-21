@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.luuna import (
@@ -23,7 +24,7 @@ from ...profiles.luuna import (
 )
 from ..builder import BuildContext
 from ..casper_base.controller import CasperBaseController
-from ..casper_base.protocol import Event, Request, alarm_countdown
+from ..casper_base.protocol import ALARM_MODES, Event, Request, alarm_countdown
 from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec
 from .protocol import decode
 
@@ -207,6 +208,36 @@ class LuunaController(CasperBaseController):
     move_back_stop = stop_all
     move_legs_stop = stop_all
     move_feet_stop = stop_all
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        modes = {self.action_catalog[i][0] for i in self.product[4]}
+        wake_actions = tuple(key for key, mode in ALARM_MODES.items() if mode in modes)
+        # Checked live: the bed announces its alarm page on each connection.
+        return AlarmCapability(
+            wake_actions=wake_actions, requires_wake_action=True, live_check=True
+        )
+
+    @staticmethod
+    def _alarm_request(alarm: AlarmRequest) -> Request:
+        if not alarm.enabled:
+            return Request("alarm_cancel")
+        return Request(
+            "alarm", hour=alarm.hour, minute=alarm.minute, mode=ALARM_MODES[alarm.wake_action]
+        )
+
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        await self.async_prepare_request(self._alarm_request(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.async_execute_casper_base_request(self._alarm_request(alarm))
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    async def sync_clock(self) -> None:
+        await self.async_execute_casper_base_request(Request("time_sync"))
 
     def validate_casper_base_request(self, request: Request) -> None:
         if request.operation not in (

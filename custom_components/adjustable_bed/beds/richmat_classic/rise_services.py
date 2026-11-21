@@ -27,7 +27,7 @@ from ..base import BedController
 from . import rise
 
 OPERATIONS = (
-    "query", "alarm", "cancel_alarm", "rgb", "lamp_timer", "massage_timer",
+    "query", "rgb", "lamp_timer", "massage_timer",
     "massage_popup", "diagnostic_cycle", "program_schedule",
 )
 INTEGER = vol.All(vol.Coerce(int), vol.Range(min=0, max=2147483647))
@@ -44,8 +44,6 @@ SCHEDULE = vol.Schema({
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(OPERATIONS),
-    vol.Optional("actions"): vol.All(cv.ensure_list, [cv.string], vol.Coerce(tuple)),
-    vol.Optional("time"): cv.time,
     vol.Optional("rgb_color"): vol.All(vol.ExactSequence((cv.byte, cv.byte, cv.byte)), vol.Coerce(tuple)),
     vol.Optional("seconds"): vol.All(cv.positive_int, vol.Range(max=300)),
     vol.Optional("timer_save", default=False): cv.boolean,
@@ -62,8 +60,7 @@ async def handle_richmat_rise(call: ServiceCall) -> None:
 
     schedule = rise.Schedule(**call.data["schedule"]) if "schedule" in call.data else None
     request = rise.Request(
-        cast(rise.Operation, call.data["operation"]), actions=call.data.get("actions", ()),
-        when=call.data.get("time"), color=call.data.get("rgb_color"),
+        cast(rise.Operation, call.data["operation"]), color=call.data.get("rgb_color"),
         seconds=call.data.get("seconds"), timer_save=call.data["timer_save"],
         progress=call.data.get("progress"), popup=call.data.get("popup"), schedule=schedule,
     )
