@@ -6,16 +6,16 @@
 
 ## Known Models
 
-- Casper Base **PRO** and **MAX**, selected explicitly through
+- Casper Base **PRO** and **MAX**, chosen in setup with
   **Casper Base app (select product)**.
-- 37 other command-bearing records accepted by this app's stored-product
-  decoder, labelled **stored profile** in the product selector: NUP210, NUP300,
+- 37 more products from the app's saved product list, labelled **stored
+  profile** in the product selector: NUP210, NUP300,
   NUP355B, NUP503B, NXC210, NXC300, NXC303, NXC310, NXC450, NXC455B, NXC513M,
   TTB01, NSF550, BAFD200, BAFD300, NLP200, NLP300, NEB300, NEF450, NXZ200,
   NJ200, AFD200, AFD300, NXC450G, Base Plus, CORE, ENHANCED, PREMIER, L400,
   L400SH, L500, L200, L300, L300SH, S175, S375, S575.
-  - Their presence does not establish availability in a fresh Casper Base
-    installation or support by another app.
+  - A fresh Casper Base app may not offer them, and other apps' beds with the
+    same names may work differently.
   - The two empty placeholders expose no bed controls.
 - Separate entries for the app's other devices: MM sleep sensors (names
   starting `RM-`), SXB sleep sensors (names starting `HJ-`) and the RCRM
@@ -27,11 +27,9 @@
 |----------|-----|------------|
 | ✅ | [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (version code 10800) | `com.richmat.casperbase` |
 
-- This profile follows the independently accepted `com.richmat.casperbase`
-  1.0.8 artifact.
-- BLE behavior is checked against the app. Physical motor effects, firmware
-  compatibility, ATT behavior and sensor accuracy remain unverified. Real users
-  can supply captures.
+This support is not yet tested on a real bed: how the motors move, firmware
+differences and sensor accuracy are unconfirmed. If you own one, a
+[support report](../GETTING_HELP.md) helps.
 
 ## Features
 
@@ -42,10 +40,10 @@
 | Presets | ✅ (TV, Lounge, Anti-snore, Zero-G; recall and save) | ✅ (same) |
 | Memory Presets | ✅ (1 slot, recall and save) | ✅ (1 slot, recall and save) |
 | Massage | ✅ (head/foot intensity, mode change, all off; 10/20/30-minute timers as the **Massage: Timer** select) | ✅ (same; different all-off opcode) |
-| Lights | ✅ (Light Board button) | ✅ (Light Board and Bed Light buttons; ordinary light page once the capability reply confirms it) |
+| Lights | ✅ (Light Board button) | ✅ (Light Board and Bed Light buttons; a light control once the bed reports one) |
 | RGB, music, alarms, sensor menu | ❌ | ❌ |
-| Position Feedback | ❌ (raw motor-number diagnostics only, not calibrated angles) | ❌ (same) |
-| Single-address Left/Right | ❌ (stored L400SH and L300SH only) | ❌ (same) |
+| Position Feedback | ❌ (raw motor values in diagnostics only) | ❌ (same) |
+| Left and right sides on one address | ❌ (only the stored L400SH and L300SH) | ❌ (same) |
 
 - Stored profiles define their own motors, presets, memory slots, massage,
   light, RGB, music, alarm, fan/heating and sensor-menu sets in
@@ -53,7 +51,7 @@
   each product is a profile in
   [`profiles/casper.py`](../../custom_components/adjustable_bed/profiles/casper.py)
   over the [Richmat codec](richmat.md#casper-base).
-- Fresh PRO/MAX do not gain music, sensor menus or repeating alarms from a reply.
+- PRO and MAX never show music, sensor menus or repeating alarms.
 
 ### Controls
 
@@ -63,12 +61,11 @@
 - All named buttons appear in the card's utility section.
 - PRO has back, legs and lumbar. MAX adds pillow control and uses different
   lumbar and pillow opcodes.
-- Raw motor-number responses are available as diagnostics; they are not
-  calibrated angle or position controls.
+- Raw motor values appear in diagnostics only; they are not angles or
+  positions.
 - Save buttons explicitly request programming; the app's three-second gesture
   does not require holding a Home Assistant button.
-- Actions with no programming opcode have no save button, avoiding the app's
-  unsafe zero-opcode long-press fallback.
+- Actions the bed cannot save have no save button.
 
 ## Protocol Details
 
@@ -113,7 +110,7 @@ Use `adjustable_bed.casper_base` with a `device_id` and `operation`.
 - The service validates every selected physical target before any command.
 - A feature must be present in the product and, where applicable, confirmed by
   the capability reply.
-- Fresh PRO/MAX do not gain music, sensor menus or repeating alarms from a reply.
+- PRO and MAX never show music, sensor menus or repeating alarms.
 - The [Richmat guide](richmat.md#casper-and-hush-family) lists the frame each
   operation sends.
 

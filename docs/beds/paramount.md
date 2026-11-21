@@ -7,8 +7,7 @@
 ## Known Models
 
 - Paramount receivers used by Bed Operation (ベッド操作).
-- The receiver reports its controls. The five switch layouts are capability
-  combinations, not a catalog of verified physical models.
+- The receiver reports which controls it has, and you get those.
 - Display-panel and touch-panel onboarding use the same wire format.
 
 ## Apps
@@ -21,14 +20,14 @@
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ Head, legs, height and linked motion, gated by receiver bits |
-| Held Control | ✅ Reply-driven refresh, bounded by HA's hold lease |
-| Concurrent Push | ✅ Literal app action, no inferred independent-motor composition |
-| Position Feedback | ✅ Head/leg degrees, height cm, raw tilt |
+| Motor Control | ✅ Head, legs, height and linked motion, as the receiver reports them |
+| Held Control | ✅ Hold to move |
+| Concurrent Push | ✅ The app's button of that name |
+| Position Feedback | ✅ Head/leg degrees, height in cm, tilt |
 | Memory Presets | ✅ Two slots, when reported; recall and save |
-| Bed Settings | ✅ Speed, physical-switch prohibition and call-button prohibition |
-| Local Movement Settings | ✅ Per-axis enable and limits, hold or 1–4 second taps |
-| Device Information | ✅ Capabilities, raw device fields, binary serial, reply RSSI |
+| Bed Settings | ✅ Speed, lock the bed switches, lock the call button |
+| Local Movement Settings | ✅ Per-motor on/off and limits; hold to move or 1–4 second taps |
+| Device Information | ✅ What the receiver supports, serial number, signal strength |
 | Massage / Lights | ❌ |
 | Dedicated Flat / Zero-G / TV | ❌ |
 

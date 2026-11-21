@@ -7,10 +7,16 @@ for values. Use this layout for new guides and keep it when you update one.
 A wire format shared by several apps or bed types gets one [codec guide](#codec-guides)
 instead of one guide per app. [Jiecang](beds/jiecang.md) is the reference.
 
-Guides state results in reference form. Evidence, dispositions, tracker IDs,
-hashes and audit wording stay out of them: discovery ledgers stay machine-local
-with the APK Protocol Audit report, and the implementation PR states their
-totals and exclusions.
+A guide has two readers. The Status line and the Known Models, Apps and Features
+sections are written for the bed's owner: plain words about what they get, which
+controls appear and any limit they will notice ("Massage: on, off and three
+levels; no timer"), not how that was established. The protocol, command and
+profile sections are for contributors and may be technical.
+
+Guides state results, not how they were reached. Evidence, dispositions, tracker
+IDs, hashes and audit wording stay out of them: discovery ledgers stay
+machine-local with the APK Protocol Audit report, and the implementation PR
+states their totals and exclusions.
 
 ## Skeleton
 
@@ -159,10 +165,10 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
   an explicit choice. "Choosing a profile" only says which route detection
   suggests.
 - A family member lists only what differs from its family section.
-- **Evidence** names the app and version and states the result in reference
-  form, for example "Comfort Motion sends only its frozen frames". Tracker IDs,
-  hashes, dispositions, counts and reachability arguments stay in the
-  machine-local ledger. Never link a ledger file.
+- **Evidence** names the app and version the profile is based on, for example
+  "Based on Comfort Motion 2.2.1". Tracker IDs, hashes, dispositions, counts and
+  reachability arguments stay in the machine-local ledger. Never link a ledger
+  file.
 
 ## Rules
 
