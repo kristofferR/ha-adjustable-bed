@@ -140,7 +140,7 @@ _RESOURCE_WORDS: Final[dict[str, str]] = {
     "msg": "massage",
     "msg1": "massage 1",
     "msg2": "massage 2",
-    "ubl": "underbed light",
+    "ubl": "under-bed light",
     "zg": "Zero Gravity",
     "zg2": "Zero Gravity 2",
     "tv": "TV",
@@ -170,10 +170,22 @@ _RESOURCE_WORDS: Final[dict[str, str]] = {
 }
 
 
+# Resources whose words alone mislead: the remote's Set key arms programming and
+# saves nothing itself; the later "massage off" keys repeat the first.
+_RESOURCE_NAMES: Final[dict[str, str]] = {
+    "com_set_old": "Program",
+    "k_set_old": "Program",
+    "com_msg_off2": "Massage off",
+    "com_msg_off3": "Massage off",
+}
+
+
 def resource_label(name: str) -> str:
     """Name an app control from its Android string resource, e.g. ``com_m1_set``."""
     if name.startswith("Control "):
         return "Button " + name.removeprefix("Control ")
+    if (named := _RESOURCE_NAMES.get(name)) is not None:
+        return named
     words = name.replace("_", " ").split()
     save = any(w in ("set", "save") for w in words)
     out: list[str] = []
@@ -201,6 +213,7 @@ def resource_label(name: str) -> str:
     for proper in ("Zero gravity", "Anti-snore"):
         label = label.replace(proper.lower(), proper)
     label = label.replace("Zero gravity", "Zero Gravity").replace("zero gravity", "Zero Gravity")
+    label = re.sub(r"^Massage (\d+) min$", r"Massage timer \1 minutes", label)
     if save and not label.startswith(("M", "TV", "Zero Gravity", "Anti-snore")):
         label = label[:1].lower() + label[1:]
     return f"Save {label}" if save else label
@@ -389,10 +402,10 @@ _PRESET_NAMES: Final[dict[str, tuple[str, ...]]] = {
         "snoring intervention", "snore intervention", "snoring intervention anti snore",
         "text snore intercept", "anti ronquidos",
     ),
-    "TV": ("tv",),
-    "Lounge": ("lounge",),
-    "Yoga": ("yoga", "xiaofeiyan"),
-    "Reading": ("read", "reading"),
+    "TV": ("tv", "tv position"),
+    "Lounge": ("lounge", "lounge position"),
+    "Yoga": ("yoga", "yoga position", "xiaofeiyan"),
+    "Reading": ("read", "reading", "reading position"),
     "Movie": ("movie", "movie watching", "movie viewing"),
     "Relieving stress": ("relieving stress", "erlieving stress"),
     "Flat 2": ("flat 2",),
@@ -410,10 +423,13 @@ _PRESET_NAMES: Final[dict[str, tuple[str, ...]]] = {
     "Sleeping": ("sleeping",),
     "Sleep": ("sleep",),
     "Timed flat": ("timing levelling",),
+    "Factory reset": ("factory reset",),
     "Head up foot down": ("head up foot down",),
     "Head down foot up": ("head down foot up",),
     "Head up foot up": ("head up foot up",),
 }
+# The presets every app knows, which name one position only.
+SHARED_PRESETS: Final = frozenset({"Zero gravity", "Zero gravity 2", "Anti-snore", "TV", "Lounge", "Yoga", "Reading"})
 _PRESET_ALIASES: Final = {alias: name for name, aliases in _PRESET_NAMES.items() for alias in aliases}
 # Words some catalogs append to a preset's label: its recall or save role, or
 # an extraction note.
@@ -439,3 +455,94 @@ def preset_name(label: str, *, slot: int | None = None) -> str:
     if (name := _PRESET_ALIASES.get(text.lower())) is not None:
         return name
     return screen_label(text)
+
+
+# The Richmat app names its actions by enum. These read as the MH family's names
+# for the same controls; every other enum reads well as ``function_label`` gives it.
+_APP_NAMES: Final[dict[str, str]] = {
+    "RelieveZeroGravitySetting": "Factory reset",
+    "MassageModeChange": "Massage mode",
+    "MassageModeAllOff": "Massage off",
+    "MassageModeAllOn": "Massage on",
+    "MassageModePulse": "Pulse massage",
+    "MassageModeWave": "Wave massage",
+    "MassageModeConstant": "Constant massage",
+    "MassageModeWaveFirstMode": "Wave massage 1",
+    "MassageModeWaveSecondMode": "Wave massage 2",
+    "MassageModeWaveThirdMode": "Wave massage 3",
+    "Massage1OpenOrClose": "Head massage on/off",
+    "Massage2OpenOrClose": "Foot massage on/off",
+    "MassageHeadOff": "Head massage off",
+    "MassageFootOff": "Foot massage off",
+    "MassageHeadInstensFirstMode": "Head massage level 1",
+    "MassageHeadInstensSecondMode": "Head massage level 2",
+    "MassageHeadInstensThirdMode": "Head massage level 3",
+    "MassageFootInstensFirstMode": "Foot massage level 1",
+    "MassageFootInstensSecondMode": "Foot massage level 2",
+    "MassageFootInstensThirdMode": "Foot massage level 3",
+    "MassageInstensityFirstGear": "Massage intensity 1",
+    "MassageInstensitySecondGear": "Massage intensity 2",
+    "MassageInstensityThirdGear": "Massage intensity 3",
+    "MassageLumbarInstensityStrengthen": "Lumbar massage intensity up",
+    "Massage15MinuteUpAndDown": "Motion massage 15 minutes",
+    "Massage30MinuteUpAndDown": "Motion massage 30 minutes",
+    "Massage15MinuteSpineGuard": "Spine guard massage 15 minutes",
+    "MotorAndMassageAllOff": "Motor and massage off",
+    "MotorReset2": "Flat 2",
+    "BedLight": "Light",
+    "BedLightClose": "Light off",
+    "MusicBlueToothSwitch": "Bluetooth music on/off",
+    "MusicPausePlay": "Music play/pause",
+    "MusicNextSong": "Next music track",
+    "MusicPreviousSong": "Previous music track",
+    "AdjustVolume": "Music volume",
+    "MusicCut": "Music switch",
+    "MusicSwitchSoundTrack": "USB music mode",
+    "MassageFanInstensityStrengthen": "Fan 1 intensity up",
+    "Fan1InstensityStrengthen": "Head fan intensity up",
+    "Fan2InstensityStrengthen": "Foot fan intensity up",
+    "FanAllOff": "Fan off",
+    "FanChangeMode": "Fan mode",
+    "FanForwardAndBackwardChange": "Fan forward/reverse",
+    "FanTimer2Hour": "Fan timer 2 hours",
+    "FanTimer3Hour": "Fan timer 3 hours",
+    "FanTimer5Hour": "Fan timer 5 hours",
+    "HeatingSwitch": "Heat on/off",
+    "HeatingOff": "Heat off",
+    "HeatingLowGear": "Heat low",
+    "HeatingMiddleGear": "Heat medium",
+    "HeatingHighGear": "Heat high",
+    "Heating30Min": "Heat timer 30 minutes",
+    "Heating60Min": "Heat timer 60 minutes",
+    "SwingModeSwitch": "Swing mode",
+    "SwingOnAndOff": "Swing on/off",
+    "AntiPinchSensitivityModeChange": "Anti-pinch sensitivity",
+}
+# Enums the catalog names without saying what they do.
+_APP_UNCLEAR: Final = frozenset({"MusicCut", "RelieveSnoreSetting"})
+
+
+def richmat_app_name(enum: str, label: str) -> tuple[str, bool]:
+    """Name a Richmat app action, and say whether the catalog establishes it.
+
+    The enum says what the action is; a fixed timer takes the duration the
+    product's own label shows ("2h" on a 10-minute enum). A label naming another
+    feature than the enum keeps its own words and is not established.
+    """
+    short = enum
+    for prefix in _PREFIXES:
+        short = short.removeprefix(prefix)
+    if (minutes := re.fullmatch(r"Massage(\d+)MinuteTimer", short)) is not None:
+        words = _words(label)
+        duration = re.search(r"(\d+) (minutes|hours)", " ".join(words))
+        return f"Massage timer {duration[0] if duration else f'{minutes[1]} minutes'}", True
+    name = _APP_NAMES.get(short) or function_label(enum)
+    words = _words(label)
+    own = _feature_of(_words(name))
+    if (shown := _feature_of(words)) is not None and shown != own and own is not None:
+        return screen_label(" ".join(_words(label, fillers=True))), False
+    # A toggle label on an on or off action: the product's own button.
+    toggle = [w for w in words if w not in _FEATURE_WORDS.get(own or "", ())] == ["on/off"]
+    if toggle and re.search(r"(?<!/)\b(?:on|off)$", name):
+        return re.sub(r"(?<!/)\b(?:on|off)$", "on/off", name), True
+    return name, short not in _APP_UNCLEAR

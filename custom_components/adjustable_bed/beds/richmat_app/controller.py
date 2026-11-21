@@ -20,7 +20,7 @@ from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button, unique_buttons
+from ..catalog_buttons import Kind, catalog_button, own_label, save_name, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -29,7 +29,13 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..richmat.labels import function_label, screen_label
+from ..richmat.labels import (
+    SHARED_PRESETS,
+    function_label,
+    preset_name,
+    richmat_app_name,
+    screen_label,
+)
 from ..richmat.transport import select_app_link
 from . import protocol as p
 from .catalog import (
@@ -548,7 +554,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
     async def press(self, detail: str, *, save: bool = False, duration_ms: int = 1000) -> None:
         if detail not in self._allowed():
             raise ValueError("This control is unavailable in the current product/protocol layout")
-        if save and not any(row[0] == detail and row[1] for row in self.route["presets"]):
+        if save and not self._saves(detail):
             raise ValueError("This preset has no save control")
         if (
             not save
@@ -675,6 +681,12 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             raise ValueError("This product has no such memory slot")
         await self.press(detail, save=True)
 
+    def _saves(self, detail: str) -> bool:
+        """Whether a preset tile saves: the app flags it and the action has a long-press code."""
+        return bool(ACTIONS[detail]["long"]) and any(
+            row[0] == detail and row[1] for row in self.route["presets"]
+        )
+
     def controller_button_available(self, key: str) -> bool:
         return key == "richmat_app_release" or any(
             spec.key == key for spec in self.controller_button_specs
@@ -686,23 +698,39 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         motors = {str(d) for m in self.route["motors"] for d in m[1:3]}
         selector = "0xdd2d" if self.version == 1 else "0x1230d"
         for detail in sorted(self._allowed() - motors):
+            preset = any(row[0] == detail for row in self.route["presets"])
             label = self._detail_label(
-                detail,
-                selector
-                if any(row[0] == detail for row in self.route["presets"])
-                else ("0xf761" if self.version == 1 else "0xeea5"),
+                detail, selector if preset else ("0xf761" if self.version == 1 else "0xeea5")
             )
+            enum = ACTIONS[detail]["enum"]
             meaning = action_name(ACTIONS[detail])
-            rows.append(
-                catalog_button(
-                    "richmat_app_" + detail, label, partial(_press, detail=detail), meaning=meaning
-                )
+            clear = True
+            if preset:
+                name = preset_name(label)
+                if name in SHARED_PRESETS and name != preset_name(meaning):
+                    # The tile shows another preset's name: the action says which it is.
+                    name = preset_name(meaning)
+            else:
+                name, clear = richmat_app_name(enum, label)
+            reset = enum == "deviceFunctionItemRelieveZeroGravitySetting" or not clear
+            spec = catalog_button(
+                "richmat_app_" + detail,
+                name,
+                partial(_press, detail=detail),
+                meaning=meaning,
+                # Resetting a setting the catalog does not explain asks first.
+                requires_confirmation=reset,
+                enabled=not reset,
             )
-            if any(row[0] == detail and row[1] for row in self.route["presets"]):
+            rows.append(spec if clear or spec is None else own_label(spec))
+            if spec is not None and self._saves(detail):
+                shared = spec.translation_key or ""
                 rows.append(
                     catalog_button(
                         "richmat_app_save_" + detail,
-                        "Save " + label,
+                        save_name(shared.removeprefix("preset_"))
+                        if shared.startswith("preset_") and not shared.startswith("preset_memory_")
+                        else "Save " + name,
                         partial(_press, detail=detail, save=True),
                         kind=Kind.SAVE,
                         meaning="Save " + meaning,

@@ -345,6 +345,7 @@ _PRESETS: Final[dict[int, tuple[str, frozenset[str]]]] = {
     0xF0: ("yoga", frozenset({"yoga", "yoga mode"})),
 }
 FLAT_CODE: Final = 0x31
+FACTORY_RESET_CODE: Final = 0x62
 LIGHT_TOGGLE_CODE: Final = 0x3C
 # Motor-page icons carry no text; name them after their app command keys.
 _BUTTON_GROUP_NAMES: Final = {
@@ -931,7 +932,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 kind=_TAP_KINDS.get(tap.translation_key),
                 icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
                 # A factory reset forgets every saved position.
-                requires_confirmation=tap.name == "Factory Reset",
+                requires_confirmation=tap.code == FACTORY_RESET_CODE,
                 enabled=tap.clear,
             )
             # A control the catalogs do not explain keeps the app's words, never a shared name.
