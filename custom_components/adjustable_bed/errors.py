@@ -9,9 +9,12 @@ translation up. These builders are the only place an error message is written.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+from bleak.exc import BleakError
 from homeassistant.exceptions import (
     ConfigEntryError,
     ConfigEntryNotReady,
@@ -43,6 +46,40 @@ def keyed(key: str, **placeholders: object) -> tuple[str, dict[str, Any]]:
         "translation_key": key,
         "translation_placeholders": values,
     }
+
+
+class BedNotConnectedError(HomeAssistantError, ConnectionError):
+    """The bed could not be reached, or its link was lost.
+
+    Still a ``ConnectionError``, so code that handles a lost link keeps doing so.
+    """
+
+    def __init__(self) -> None:
+        message, keywords = keyed("bed_not_connected")
+        super().__init__(message, **keywords)
+
+
+class BedCommandFailedError(HomeAssistantError, BleakError):
+    """A Bluetooth error that ended a command, shown with the integration's wording.
+
+    Still a ``BleakError``, so code that handles one keeps doing so. The message
+    keeps the original error's text.
+    """
+
+    def __init__(self, error: BleakError) -> None:
+        message, keywords = keyed("bluetooth_command_failed", error=error)
+        super().__init__(message, **keywords)
+
+
+@contextmanager
+def bluetooth_errors_translated() -> Iterator[None]:
+    """Raise a Bluetooth error that ends a command as ``BedCommandFailedError``."""
+    try:
+        yield
+    except HomeAssistantError:
+        raise
+    except BleakError as err:
+        raise BedCommandFailedError(err) from err
 
 
 def invalid(key: str, **placeholders: object) -> ServiceValidationError:

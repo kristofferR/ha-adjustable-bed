@@ -88,6 +88,7 @@ from .detection import (
 )
 from .diagnostic_payloads import new_connection_attempt_details
 from .position_estimate import notify_connection_lost as notify_position_estimate_connection_lost
+from .runtime_data import DomainKey, domain_registry
 from .support_proxy_logs import capture_proxy_logs
 from .unsupported import delete_pairing_required_issue
 
@@ -105,6 +106,12 @@ _COMMAND_BURST_GRACE_SECONDS = 1.0
 _PAIRING_RELEASE_RESTORE_TIMEOUT = 5.0
 # Delay before recovering a link the bed or adapter dropped.
 _AUTO_RECONNECT_DELAY_SECONDS = 5.0
+# A bed that asks for recovery is retried half as often after each failure,
+# down to once in this many seconds, until it connects or a command arrives.
+_RECOVERY_RETRY_MAX_SECONDS = 300.0
+# Outages already reported, by entry and bed. Every setup retry builds a new
+# coordinator, so the record lives beside them.
+_REPORTED_OUTAGES: DomainKey[set[tuple[str, str]]] = DomainKey("reported_outages")
 
 
 class ConnectionSettings(TypedDict):
@@ -508,6 +515,8 @@ class CoordinatorConnectionMixin:
         cancelled at the window's end and connected again from scratch.
         """
         self._command_link_generation += 1
+        # Someone wants the bed now: retry a recovery soon again.
+        self._recovery_retry_delay = _AUTO_RECONNECT_DELAY_SECONDS
         window = self._recovery_connect_window
         if window is not None and not window.expired():
             window.reschedule(None)
@@ -1667,7 +1676,10 @@ class CoordinatorConnectionMixin:
                 await self.async_clear_obsolete_pairing_state()
 
                 # Ready for commands: the next outage warns again.
-                self._connect_failure_logged = False
+                domain_registry(self.hass, _REPORTED_OUTAGES, set).discard(
+                    (self.entry.entry_id, self._address)
+                )
+                self._recovery_retry_delay = _AUTO_RECONNECT_DELAY_SECONDS
                 self._link_ready = True
                 return True
 
@@ -1850,10 +1862,12 @@ class CoordinatorConnectionMixin:
         # previously published "idle" would linger until some later event.
         self._last_disconnect_reason = "connect_failed"
         self._notify_connection_state_change(False)
-        # Warn once per outage; repeats while the bed stays unreachable are
-        # expected and go to debug.
+        # Warn once per outage, across setup retries too; repeats while the
+        # bed stays unreachable are expected and go to debug.
+        reported = domain_registry(self.hass, _REPORTED_OUTAGES, set)
+        outage = (self.entry.entry_id, self._address)
         _LOGGER.log(
-            logging.DEBUG if self._connect_failure_logged else logging.WARNING,
+            logging.DEBUG if outage in reported else logging.WARNING,
             "Could not connect to %s after %d attempts (%.1fs, last error: %s). "
             "Check that the bed has power, close any phone app connected to it, "
             "and check that its Bluetooth adapter or proxy is online%s",
@@ -1863,7 +1877,7 @@ class CoordinatorConnectionMixin:
             self._last_connection_error or "not found",
             f" (Bluetooth reachability: {reason})" if reason else "",
         )
-        self._connect_failure_logged = True
+        reported.add(outage)
         self._schedule_pending_capability_reload()
         return False
 
@@ -2100,8 +2114,10 @@ class CoordinatorConnectionMixin:
                 and controller.requests_connection_recovery is True
                 and self._reconnect_timer is None
             ):
+                delay = self._recovery_retry_delay
+                self._recovery_retry_delay = min(delay * 2, _RECOVERY_RETRY_MAX_SECONDS)
                 self._reconnect_timer = self.hass.loop.call_later(
-                    _AUTO_RECONNECT_DELAY_SECONDS, self._schedule_auto_reconnect
+                    delay, self._schedule_auto_reconnect
                 )
 
     async def _async_connect_within_window(
