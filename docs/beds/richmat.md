@@ -1958,7 +1958,7 @@ package-local catalog. A compiled layout is not hardware confirmation.
 2. Choose the four-character layout the app shows. The list is the chosen app's
    own; choose the layout explicitly even when the Bluetooth name looks like one.
    Four-character app aliases resolve to their package-local layouts, and the
-   diagnostic TEST and RMCS layouts are excluded.
+   factory-test TEST and RMCS layouts are excluded.
 3. Forty Winks and Superior `ZRS6` is a layout picker: choose `ZRS6:CORN` or
    `ZRS6:CPRN` to use the `CORN` or `CPRN` controls. The picker itself sends no
    bed command.
@@ -7001,23 +7001,6 @@ restarts. Before that, only the controls both formats share are listed.
 | `2F` | `A6` | `A7` | `A8` |
 | `30` | `A9` | `AA` | `AB` |
 
-| Movement-test phase | Operand | Run, seconds | Rest, seconds |
-|---|---|---|---|
-| 1 | `24` | 10 | 5 |
-| 2 | `3F` | 10 | 5 |
-| 3 | `40` | 12 | 5 |
-| 4 | `25` | 12 | 5 |
-| 5 | `26` | 10 | 5 |
-| 6 | `41` | 10 | 5 |
-| 7 | `42` | 12 | 5 |
-| 8 | `27` | 12 | 5 |
-| 9 | `29` | 10 | 5 |
-| 10 | `3F` | 10 | 5 |
-| 11 | `40` | 12 | 5 |
-| 12 | `41` | 10 | 5 |
-| 13 | `42` | 12 | 5 |
-| 14 | `2A` | 12 | 5 |
-
 | Control | Press status | Framed short, mode 0 | Raw short | Long operand | Long threshold, ms |
 |---|---|---|---|---|---|
 | Adjust volume | 2 | `6E0100B726` | `B7` | none |  |
@@ -7808,8 +7791,7 @@ Framed initialization waits 300 ms after notification registration. Layouts
 with alarm actions query the alarm capability, followed by light and aroma
 queries, with 500 ms gaps. Alarm frames are 300 ms apart. Aroma settings
 are 150 ms apart, and fan settings are 300 ms apart. RGB is one write
-containing both color frames. Motor programs use chunks of at most 20 bytes,
-10 ms apart, without a STOP or acknowledgement.
+containing both color frames.
 
 #### Notifications
 
@@ -7822,12 +7804,10 @@ height and range values stay in diagnostics; they are not bed motor angles.
 
 Use `set_alarm` for the selected layout's wake actions and supported preset/massage
 combinations. The layout owns each selectable massage zone. Use `lp2` for color,
-light duration (0–300 seconds), aromatherapy, fans, explicit control gestures
-and RMCS movement programs. The head fan sends duration then intensity.
+light duration (0–300 seconds), aromatherapy, fans and explicit control
+gestures. The head fan sends duration then intensity.
 The foot fan sends its intensity twice and does not transmit a duration.
-Programming requires the RMCS layout and explicit confirmation. Program
-values are limited to 0–65535. The TEST layout offers one explicitly confirmed
-movement-test cycle, which can be stopped at any time. Generic `richmat_classic` actions provide
+Generic `richmat_classic` actions provide
 layout-bound massage popups, timer controls and table operations.
 
 #### Evidence
@@ -9218,12 +9198,6 @@ Settings provide alarm countdowns and combinations, RGB, lamp timers and the
 D1RM/D9RM/Y6RM timer utilities. A lamp capability reply reveals a timer number
 entity without a reload. Its value is a local requested setting, not readback.
 
-Power Cool's explicit TEST layout offers a finite 14-step motor diagnostic
-cycle. Its RMCS layout programs a 12-record motor schedule. Select these layouts
-deliberately and use `adjustable_bed.richmat_rise`. RMCS has no proven readback,
-abort, commit or acknowledgment command. Radio selection is a field in the
-program; the phone still sends it over BLE.
-
 #### Detection / Setup
 
 Search for **Luuna Rise** or **Power Cool Sleep System** in the Richmat app
@@ -9764,23 +9738,6 @@ proven long lock-labelled gestures remain available.
 | ZRS1 | none | none | none | 2 | zri0 | 3000 | visible |
 
  </details>
-
-| Power Cool TEST opcode | Refresh seconds | Rest seconds |
-|---|---|---|
-| `24` | 10 | 5 |
-| `3F` | 10 | 5 |
-| `40` | 12 | 5 |
-| `25` | 12 | 5 |
-| `26` | 10 | 5 |
-| `41` | 10 | 5 |
-| `42` | 12 | 5 |
-| `27` | 12 | 5 |
-| `29` | 10 | 5 |
-| `3F` | 10 | 5 |
-| `40` | 12 | 5 |
-| `41` | 10 | 5 |
-| `42` | 12 | 5 |
-| `2A` | 12 | 5 |
 <!-- /generated -->
 
 #### Position Feedback / Notifications
@@ -9803,11 +9760,8 @@ zero has distinct slider (`FFFF`) and Save (`0000`) encodings with unverified
 physical meaning. Y6RM's app timer labels differ from its resource names, so
 they are retained as app choices rather than asserted firmware durations.
 
-Power Cool RMCS sends its 89-byte selected program in 20-byte chunks, 10 ms
-apart, without adding a STOP. TEST uses the generated run/rest sequence and
-the admitted route's release. Diagnostic movement participates in HA's movement
-scheduler and cancellation. Ordinary holds use renewable leases where the
-selected gesture actually refreshes until release.
+Ordinary holds use renewable leases where the selected gesture actually
+refreshes until release.
 
 #### Notes
 
@@ -14449,23 +14403,6 @@ is listed only for the bed's own format, once that is known.
 | ZXRM | 3, 4, 5, 6, 7, 8 | 0 |
 | ZYRM | 4, 5, 6, 8, 10, 12, 13, 15, 16, 18 | 0 |
 | ZZRM | 1, 2, 3, 4, 5, 6 | 0 |
-
-| Movement-test phase | Operand | Run, seconds | Rest, seconds |
-|---|---|---|---|
-| 1 | 24 | 10 | 5 |
-| 2 | 3F | 10 | 5 |
-| 3 | 40 | 12 | 5 |
-| 4 | 25 | 12 | 5 |
-| 5 | 26 | 10 | 5 |
-| 6 | 41 | 10 | 5 |
-| 7 | 42 | 12 | 5 |
-| 8 | 27 | 12 | 5 |
-| 9 | 29 | 10 | 5 |
-| 10 | 3F | 10 | 5 |
-| 11 | 40 | 12 | 5 |
-| 12 | 41 | 10 | 5 |
-| 13 | 42 | 12 | 5 |
-| 14 | 2A | 12 | 5 |
 <!-- /generated -->
 
 #### Timing
@@ -14476,7 +14413,6 @@ Release waits 50 ms after continuous movement, or 150 ms after a tap. The
 original session and mode own cleanup, including cancellation. Catalog, address
 or transport changes cannot inherit an old release. Timing and idle changes
 still permit STOP on the same retained physical session.
-The movement test makes one finite traversal of the generated sequence.
 
 #### Notifications
 
@@ -14495,7 +14431,7 @@ Use `adjustable_bed.set_alarm` for layout-owned wake actions and massage
 combinations. It sends a relative-minute alarm in two writes, 300 ms apart.
 Use **Refresh bed features** to issue settings queries. The
 [`adjustable_bed.bedsmart`](../SERVICES.md#bedsmart) action offers RGB color, light timeout, aroma times,
-a confirmed finite movement test and the app's named BED commands. It
+and the app's named BED commands. It
 preflights all selected beds before writing. Alarm and feature controls never
 expand a layout from a shared UUID. There is no clock synchronization command.
 

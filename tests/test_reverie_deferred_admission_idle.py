@@ -107,7 +107,6 @@ async def test_later_deferred_target_respects_stop_before_dispatch(
         if stop:
             clients[1].write_gatt_char.assert_not_awaited()
             assert later.controller._routine_timer is None
-            assert later.controller._diagnostic_timer is None
             await hass.services.async_call(
                 DOMAIN, action, {"device_id": ["later"], **data}, blocking=True
             )

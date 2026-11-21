@@ -14,7 +14,6 @@ from custom_components.adjustable_bed.codec import richmat
 from custom_components.adjustable_bed.profiles.bedsmart import (
     ALARM_COMBINATIONS,
     ALIASES,
-    DIAGNOSTIC_CYCLE,
     EXCLUDED_LAYOUTS,
     MODE_LABELS,
 )
@@ -118,13 +117,6 @@ def render() -> str:
                 )
                 for layout, model in catalog.models.items()
                 if layout not in EXCLUDED_LAYOUTS
-            ),
-        ),
-        _table(
-            ("Movement-test phase", "Operand", "Run, seconds", "Rest, seconds"),
-            (
-                (str(i), f"{code:02X}", str(seconds), "5")
-                for i, (code, seconds) in enumerate(DIAGNOSTIC_CYCLE, 1)
             ),
         ),
     )

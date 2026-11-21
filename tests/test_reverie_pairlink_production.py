@@ -38,7 +38,6 @@ from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
 )
 from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkRuntime,
-    PairlinkSendSnapshot,
 )
 from custom_components.adjustable_bed.beds.reverie.services import (
     SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT,
@@ -1136,87 +1135,6 @@ async def test_local_hold_release_stays_with_captured_peer_after_primary_drift(
 
     release = expected_frame(dashboard_payload(3, 0))
     assert _recv(primary_socket) == release
-    with pytest.raises(BlockingIOError):
-        _recv(backup_socket)
-
-    primary_socket.close()
-    backup_socket.close()
-    await async_unload_entry(hass, entry)
-
-
-async def test_local_diagnostic_cleanup_stays_with_captured_peer_after_primary_drift(
-    hass: HomeAssistant,
-    monkeypatch: pytest.MonkeyPatch,
-    enable_custom_integrations: None,
-) -> None:
-    pytest.importorskip("cryptography")
-    del enable_custom_integrations
-    bus = FakeBlueZBus()
-    entry = _entry()
-    coordinator = await _local_setup(hass, monkeypatch, entry, bus)
-    controller = coordinator.controller
-    runtime = controller._runtime
-
-    primary_socket = await _subscribe_peer(bus, _PEER_PATH)
-    await _send_peer_write(bus, _PEER_PATH, _login_packet(_PRIMARY_SESSION_KEY))
-    _recv(primary_socket)
-    await _send_peer_write(bus, _PEER_PATH, b"\x02\x31\x08")
-    assert _recv(primary_socket) == b"\x01\x20"
-    await hass.async_block_till_done()
-    await asyncio.sleep(0)
-    await hass.async_block_till_done()
-    _drain_socket(primary_socket)
-
-    captured = controller._capture_current_send_snapshot()
-
-    def expected_frame(
-        command: bytes, *, snapshot: PairlinkSendSnapshot
-    ) -> bytes:
-        assert snapshot.device_key is not None
-        return encrypt_user_frame(
-            build_user_frame(
-                command,
-                destination=PAIRLINK_BROADCAST_ADDRESS,
-                channel=32,
-                own_virtual_address=snapshot.own_virtual_address,
-            ),
-            event_key=snapshot.event_key,
-            device_key=snapshot.device_key,
-        )
-
-    await controller.async_start_diagnostic()
-    assert _recv(primary_socket) == expected_frame(
-        dashboard_payload(79, 20), snapshot=captured
-    )
-    assert _recv(primary_socket) == expected_frame(
-        dashboard_payload(92, 0), snapshot=captured
-    )
-    generation = controller._diagnostic_generation
-
-    backup_address = "22:33:44:55:66:77"
-    backup_path = _peer_path("hci3", backup_address)
-    bus.managed_objects[backup_path] = _device(backup_address)
-    backup_socket = await _subscribe_peer(bus, backup_path)
-    await _send_peer_write(bus, backup_path, b"\x01\x00" + bytes(4))
-    assert _recv(backup_socket) == b"\x02\x00" + bytes(4) + _PASSWORD
-    await _send_peer_write(bus, backup_path, b"\x02\x31\x08")
-    assert _recv(backup_socket) == b"\x01\x20"
-    assert runtime.primary_mac == backup_address
-    _drain_socket(primary_socket)
-    _drain_socket(backup_socket)
-
-    diagnostic_timer = controller._diagnostic_timer
-    assert diagnostic_timer is not None
-    diagnostic_timer.cancel()
-    controller._enqueue_diagnostic_stop(captured, generation)
-    await hass.async_block_till_done()
-    release_snapshot = runtime.prepare_release_snapshot(captured)
-    assert _recv(primary_socket) == expected_frame(
-        dashboard_payload(72, 0), snapshot=release_snapshot
-    )
-    assert _recv(primary_socket) == expected_frame(
-        dashboard_payload(93, 0), snapshot=release_snapshot
-    )
     with pytest.raises(BlockingIOError):
         _recv(backup_socket)
 

@@ -28,10 +28,9 @@ from ...const import (
 )
 from ...controller_state import StateKey
 from ...errors import failed, invalid
-from ...profiles.bedsmart import ALARM_COMBINATIONS, DIAGNOSTIC_CYCLE, EXCLUDED_LAYOUTS, MODE_LABELS
+from ...profiles.bedsmart import ALARM_COMBINATIONS, EXCLUDED_LAYOUTS, MODE_LABELS
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
 from ..cancellation import cancellable, settled
-from ..catalog_buttons import catalog_button
 from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec, ControllerSelectSpec
 from .caller import Selection
 from .controller import RichmatClassicController
@@ -52,7 +51,6 @@ from .protocol import (
 from .receive import MalformedFrame, ReceiveState
 from .requests import Request
 from .resource_protocol import BED_COMMANDS
-from .rise import Schedule
 from .transport import Transport, select
 
 if TYPE_CHECKING:
@@ -628,16 +626,6 @@ class BedSmartController(Lp2Controller):
                 scheduler_resource="configuration",
             )
         )
-        if self.layout == "TEST":
-            spec = catalog_button(
-                "bedsmart_test",
-                "Movement test",
-                lambda c: require_controller(c, BedSmartController).diagnostic_cycle(),
-                enabled=False,
-                requires_confirmation=True,
-            )
-            if spec is not None:
-                specs.append(spec)
         return tuple(specs)
 
     def _light_gesture(self, wire: Wire) -> Gesture | None:
@@ -687,42 +675,7 @@ class BedSmartController(Lp2Controller):
     def controller_button_available(self, key: str) -> bool:
         if key == "bedsmart_query":
             return True
-        if key == "bedsmart_test":
-            return self.layout == "TEST"
         return super().controller_button_available(key)
-
-    async def diagnostic_cycle(self) -> None:
-        # One finite traversal of the source sequence, never its endless loop.
-        with self._transaction() as session:
-            cancel = self._coordinator.cancel_command
-            for index, (code, seconds) in enumerate(DIAGNOSTIC_CYCLE):
-                if cancel.is_set():
-                    note_frame_skipped()
-                    return
-                deadline = monotonic() + seconds
-                try:
-                    try:
-                        while not cancel.is_set() and monotonic() < deadline:
-                            await self.write_command(control(bytes((code,)), session.wire))
-                            if not await self._wait_pending(
-                                min(
-                                    self._worker.tick_ms,
-                                    max(0, ceil((deadline - monotonic()) * 1000)),
-                                ),
-                                cancel,
-                                pending=monotonic() < deadline or index + 1 < len(DIAGNOSTIC_CYCLE),
-                            ):
-                                return
-                    finally:
-                        await self._release()
-                except asyncio.CancelledError:
-                    if monotonic() < deadline or index + 1 < len(DIAGNOSTIC_CYCLE):
-                        note_frame_skipped()
-                    raise
-                if not await self._wait_pending(
-                    5000, cancel, pending=index + 1 < len(DIAGNOSTIC_CYCLE)
-                ):
-                    return
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -904,6 +857,3 @@ class BedSmartController(Lp2Controller):
         if combined is None or combined[(0x5D, 0x4C, 0x4E).index(massage)] is None:
             raise invalid("bedsmart_control")
         return combined[(0x5D, 0x4C, 0x4E).index(massage)]
-
-    async def program_schedule(self, schedule: Schedule) -> None:
-        raise invalid("bedsmart_control")

@@ -1,4 +1,4 @@
-# Okin N-frame
+# Okin and DewertOkin
 
 **Status:** Partly tested: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 
@@ -3663,8 +3663,8 @@ succeeds. This does not change pairing policy for other CST profiles.
 
 - Manual selection may be needed since the service UUID is shared with other Okin protocols.
 - The shared UUID and the official apps' common `OKIN-*` name filter do not
-  distinguish the nine product layouts. Select the matching **Protocol variant**
-  in the integration options. `Auto` preserves the MF900 profile for existing
+  distinguish the nine product layouts. Choose the matching app or product in
+  the Okin question, in setup or in **Reconfigure**. Automatic preserves the MF900 profile for existing
   entries.
 - Do not choose CST solely because diagnostics show both the CSS and Nordic DFU
   services. That connected GATT signature is also exposed by RF ECO BT stair
@@ -3700,7 +3700,7 @@ the product profile is therefore required for safe zoned massage controls.
 
 ###### Nectar Move profile
 
-Choose **Nectar Move** in setup or the Protocol variant options. No shared OKIN
+Choose **Nectar Move** in the Okin question, in setup or in Reconfigure. No shared OKIN
 name, UUID, or Device Information result selects it. The profile is opt-in and
 keeps the other CST application profiles unchanged.
 
