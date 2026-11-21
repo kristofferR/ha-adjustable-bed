@@ -153,16 +153,17 @@ from the profile data.
 
 ### Home Assistant setup
 
-Choosing **Keeson**, **Ergomotion**, **Serta Motion Perfect**, **Okin FFE** or
-**Cool Base app**, or a bed detected as one of them, asks which app or remote you
-use. Shared names and Bluetooth services never decide it.
+Choosing **Member's Mark, Purple, Sleep Harmony and Juna Sleep apps, some
+Ergomotion Sync beds · Keeson**, **Ergomotion remote · Keeson**, **Serta Motion
+Perfect · Keeson** or **Cool Base app · Keeson**, an Okin 13 or 15 series
+receiver, or a bed detected as one of them, asks which app or remote you use. Shared names and Bluetooth services never decide it.
 
 | Answer | Then | Route |
 |---|---|---|
 | Sleep Harmony app | | [Sleep Harmony](#sleep-harmony-variant) |
 | Restonic BT app | The remote style the app's settings chose | [Restonic BT](#restonic-bt-profiles) A or B |
 | Ergomotion, Ergomotion 4.0 or Serta MP Remote app | The app, then its own app step | [Keeson layout apps](#keeson-layout-app-family), [Ergomotion 4.0](#ergomotion-40) |
-| Avanti, AMERICANSTAR, Bedsense Bases, INNOVA, MaxCoil Una or Dynasty app | The app, then its 2M, 3M or 4M screen, which sets the motor count | [ORE apps](#ore-comfort-bed-profiles), [INNOVA](#innova-profile) |
+| Avanti, AMERICANSTAR, Bedsense Bases, ComfortFurniture, INNOVA, MaxCoil Una or Dynasty app | The app, then its 2M, 3M or 4M screen, which sets the motor count | [ORE apps](#ore-comfort-bed-profiles), [INNOVA](#innova-profile) |
 | Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app | The app | [Adjustable Lite](#adjustable-lite-profile), [Simon Li, Heal Every Night and OKIN-Seating](#simon-li-heal-every-night-and-okin-seating-profiles) |
 | Purple Smart Base, Member's Mark or Linx / Juna Sleep | Which of them | [Purple](#purple-variant), [Base](#base-basei4i5), [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health) |
 | Cool Base app (with fan) | | [Cool Base](#cool-base) |
@@ -175,7 +176,8 @@ that names an app, a remote route or a Restonic remote style answers both.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
-The same question appears, with **Keep** leaving the entry as it is. A Keeson
+The same question appears, with **Keep the detected or saved controls** leaving
+the entry as it is. A Keeson
 route has no endpoint or bond to check: the controllers fall back across their
 write roles, as Configure's switch did. A review lists the added and removed
 controls before **Apply this change** saves it, keeping stored app state for a
@@ -960,8 +962,8 @@ keeps the phone app out meanwhile.
 
 #### TEMPUR-Ergo ProSmart Air / ActiveBreeze
 
-For beds operated with **Tempur Sleeptracker-AI**, select
-[Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)](sleeptracker.md).
+For beds operated with the Tempur Sleeptracker-AI app, select
+**Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)** (see [its guide](sleeptracker.md)).
 That profile provides the app's named presets, ActiveBreeze heat/cool controls
 and premium 28 Hz / 40 Hz massage. Adjustable Lite is not the Tempur app profile.
 
@@ -989,8 +991,8 @@ be confirmed on hardware.
 #### Setup
 
 Answer **Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app** in the
-[Keeson question](#home-assistant-setup), then pick **Simon Li app (Keeson)**,
-**Heal Every Night app (Keeson)** or **OKIN-Seating app (Keeson)**. The choice is
+[Keeson question](#home-assistant-setup), then pick **Simon Li app**,
+**Heal Every Night app** or **OKIN-Seating app**. The choice is
 saved as protocol variant `simon_li`, `heal_every_night` or `okin_seating`.
 Detection: none. None of the apps filters its scan or reads a model, so Home
 Assistant never picks one for you. Each app controls one
@@ -1129,9 +1131,9 @@ Heal massage and light semantics, and the GATT layout.
 
 #### Setup
 
-Answer **Avanti, AMERICANSTAR, Bedsense Bases, INNOVA, MaxCoil Una or Dynasty
-app** in the [Keeson question](#home-assistant-setup), then pick **INNOVA app
-(Keeson)**; it is saved as protocol variant `innova`. Detection: none. The app
+Answer **Avanti, AMERICANSTAR, Bedsense Bases, ComfortFurniture, INNOVA, MaxCoil
+Una or Dynasty app** in the [Keeson question](#home-assistant-setup), then pick **INNOVA
+app**; it is saved as protocol variant `innova`. Detection: none. The app
 scans without any name or service rule, so Auto never chooses it; `ORE-` names
 stay on the Base profile. Setup asks the screen picked in the app, which sets the
 motor count: 2 (2M), 3 (3M) or 4 (4M). For a two-address pair, split the pair before changing
@@ -1570,7 +1572,7 @@ all three layouts, four recall/save destinations, massage and discrete light.
 
 #### Setup
 
-Choose **OKIN Comfort Bed app (Keeson)** and the screen selected in the app.
+Choose **OKIN Comfort Bed app · Keeson** and the screen selected in the app.
 The screen owns motor count independently of Bluetooth name. Massage is always
 available, refresh timing is fixed and angle sensing is disabled. These fields
 are set by the profile; its screen and app selection belong to each physical
@@ -1641,7 +1643,7 @@ equivalence between apps.
 
 - Select the app by name in the bed-type list and use the Bluetooth address of
   the bed. Shared services, names and manufacturer data never select an app.
-- Choose the layout your app shows in **App controls** (**App layout**, stored
+- Choose the layout your app shows in **App product, model or layout** (stored
   as `product_type`). A layout is a UI choice, not proof of motor count or model.
 - Each side of a two-address pair keeps its own app settings. Target the native
   child device, or the paired action's `side`; conflicting child and side
@@ -1658,7 +1660,7 @@ Choose the exact app in the bed-type picker: [Tempur Curve](#tempur-curve),
 Shared Bluetooth names, UUIDs and manufacturer data do not identify these apps.
 Select the bed address manually when automatic discovery cannot disambiguate it.
 
-**App controls** asks for the layout shown by the app. Q-Plus defaults to M2;
+**App product, model or layout** asks for the layout shown by the app. Q-Plus defaults to M2;
 Ergomotion and TEMPUR AU default to B2; Omazz uses its RemoteB layout.
 The layout fixes the available actions and source timing. It does not prove
 physical motor count. The pulse count bounds a normal held-action button press;
@@ -2293,8 +2295,9 @@ frames of other families and keep it.
 
 **Status:** Not yet tested
 
-Choose **Glideaway Motion / Montion app** and the model selected in the Android
-app (the archive label misspells Motion as "Montion"). It is separate from the
+Choose the Glideaway Motion app row for the model selected in the Android
+app, such as **Glideaway Motion app (MOTION 400, GM-A4Z)** (the archive label
+misspells Motion as "Montion"). It is separate from the
 legacy **Okin ORE (A5 5A)** profile; existing legacy entries are not migrated,
 because the app uses different bytes and does not prove which hardware an
 existing entry controls. Hardware is unverified.
@@ -3043,8 +3046,8 @@ available as entities in Home Assistant.
 
 #### Detection / Setup
 
-- Choose **BF (com.BF app, three motors)** or **Cherish
-  (com.okin.ore.cherish app)** in manual setup.
+- Choose **BF app** (`com.BF`, three motors) or **Cherish app**
+  (`com.okin.ore.cherish`) in manual setup.
 - Select the Bluetooth address used by that app.
 - Neither app provides an advertisement signature that can safely select its
   profile. Shared FFE9/FFE4 characteristics do not identify either product.
@@ -3320,7 +3323,7 @@ when the characteristic offers it, otherwise write with response.
 
 #### Detection / Setup
 
-1. Choose **Comfort Enhancements app (choose MC2/MC3/MC4/MC5)** manually.
+1. Choose **Comfort Enhancements app** manually, then MC2, MC3, MC4 or MC5.
 2. Select the screen used in the Android app.
 
 - Shared Bluetooth names and services do not identify this app or its layout.
@@ -3564,8 +3567,7 @@ was found.
 ##### Ergomotion 4.0 detection and setup
 
 1. Answer **Ergomotion, Ergomotion 4.0 or Serta MP Remote app** in the
-   [Keeson question](#home-assistant-setup), then pick **Ergomotion 4.0 app
-   (explicit product)**.
+   [Keeson question](#home-assistant-setup), then pick **Ergomotion 4.0 app**.
 2. Select the exact product/layout shown by the app. Shared UUIDs and names
    never pick this profile or its product automatically.
 3. To control one P1 receiver's split sides, open **Configure** and choose
@@ -3663,7 +3665,7 @@ in the app's current popup. EZI MAID is an alias of M30. A trailing space in
 
 ###### Ergomotion 4.0 Home Assistant setup
 
-Choose **Ergomotion 4.0 app (explicit product)** and the exact product shown in
+Choose **Ergomotion 4.0 app** and the exact product shown in
 the app. This is separate from the older Ergomotion app's B1/B2/C1/D1 layouts.
 The [product guide](#ergomotion-40-products) lists all built-in choices and
 the 21 catalog products. Other catalog product accepts that product's
@@ -4228,8 +4230,8 @@ models P3 and P4 send [Okin N-frames](okin-nframe.md#framing-and-checksum), desc
 
 - Receivers driven by the AdjustaMattress app, in four BLE models (P1 to P4)
   and seven product layouts (L0 to L6). See [Setup and layout](#adjustamattress-setup-and-layout).
-- Selected only through the explicit **AdjustaMattress app (seven product
-  layouts)** bed type. Shared services and a familiar name do not identify this
+- Selected only through the explicit **AdjustaMattress app** bed type, with
+  seven product layouts. Shared services and a familiar name do not identify this
   app, so select it manually.
 - Independent of the Adjustable bed (Lumbar), SmartBed and other OKIN app
   profiles.
@@ -4678,7 +4680,7 @@ Based on AdjustaMattress 1.6.0 (`com.okin.adjustamattress`).
 
 #### Setup
 
-Choose **ComfortBaseForBluetooth / ComfortBase BLE**, then the product shown in the app. Product selection sets the axes and massage controls; it is never a wire selector. Detection: none. The app scans all BLE devices without name, service or manufacturer filters, so shared Keeson discovery cannot identify this app. No PIN, authentication or initial command is required.
+Choose **ComfortBaseForBluetooth app** (ComfortBase BLE), then the product shown in the app. Product selection sets the axes and massage controls; it is never a wire selector. Detection: none. The app scans all BLE devices without name, service or manufacturer filters, so shared Keeson discovery cannot identify this app. No PIN, authentication or initial command is required.
 
 The write role is FFE9 under FFE5, and notification role FFE4 under FFE0. Home Assistant subscribes and waits for subscription success before admitting commands. The live characteristic properties determine the supported write mode. Android's writeType and CCCD enable fields are runtime platform values, not literals embedded in the APK.
 
@@ -4808,7 +4810,7 @@ types store their own defaults and are left unchanged.
 
 #### Setup
 
-Choose **OkinComfortBed II / Okin Comfortbed II N (Jalon app)** and the actuator layout
+Choose **OkinComfortBed II N app** and the actuator layout
 shown by the app. The two three-actuator layouts differ: one adds neck, the other
 lumbar. This choice is independent of the transport. The light and massage controls
 are always present; no position, battery, or capability feedback is reported.
@@ -4975,7 +4977,7 @@ P1 clock fallback, massage interpretation and bed-local alarms.
 
 #### Setup
 
-Choose **OkinComfortBed Ⅱ (Jalon app, com.ore.jalon.neworebeding_android)**.
+Choose **OkinComfortBed II app** (`com.ore.jalon.neworebeding_android`).
 Detection: none. The app scans all devices without a name, service or manufacturer
 advertisement filter. Select the address manually, then the physical layout.
 The similarly named ORE and Okin apps are separate setup choices.
@@ -5279,8 +5281,8 @@ All five models and fifteen dispatch outcomes are implemented; physical checks s
 
 #### Setup
 
-Choose **BetterLiving / BetterLiving2 app**, then the **P1**, **P2** or **P3
-control box** and **2 motors: back and feet** or **3 motors: back, feet and all
+Choose **BetterLiving / BetterLiving2 app**, then **P1 control box**, **P2 control
+box** or **P3 control box** and **2 motors: back and feet** or **3 motors: back, feet and all
 sections**, the app's two- or three-motor screen. Reconfigure asks the same
 questions. These are independent choices, kept per side when combining two
 physical beds.
@@ -5460,8 +5462,8 @@ tested.
 Both versions have two motors, no massage and no position reading. On a bed with
 two receivers, choose the version for each side.
 
-Choose **アシステック / ASSISTEC / Yamada** and explicitly select **P1** or
-**P2**. Setup, Configure and restored entries retain this choice independently
+Choose **アシステック / ASSISTEC / Yamada app** and explicitly select **P1 control
+box** or **P2 control box**. Setup, Configure and restored entries retain this choice independently
 for each side of a two-address pair. There is no single-address side selector.
 
 The app scans names starting with `okin-ble` or `smartbed`, ignoring case.
@@ -5598,9 +5600,10 @@ yet tested on hardware.
 
 #### Setup and models
 
-Choose **OrmatekTechnoSmart**, then **Techno Smart New** or **Techno Smart Lite**.
-Choose **Okin** for the app's `okin` Bluetooth-name prefix and **SmartBed** for
-its `smartbed` prefix (case-insensitive). These are explicit app choices;
+Choose **OrmatekTechnoSmart app**, then **Techno Smart New** or **Techno Smart Lite**.
+Choose **Bluetooth name starts with Okin** for the app's `okin` Bluetooth-name
+prefix and **Bluetooth name starts with SmartBed** for its `smartbed` prefix
+(case-insensitive). These are explicit app choices;
 shared names and services do not select this app automatically. New and Lite
 are independent of the Bluetooth services and packet format. These selector
 combinations are not a list of confirmed hardware models.
@@ -5864,14 +5867,14 @@ Based on Somos 1.0.0 (`cn.com.somos`).
 
 #### Setup
 
-1. Choose **Ultramatic app (ORE)**. Setup never picks it automatically.
+1. Choose **Ultramatic app · Keeson**. Setup never picks it automatically.
 2. Choose the 2-, 3- or 4-motor screen your bed uses in the app.
 
 The bed's connection decides between the two versions (P1 and P2) by itself.
 Massage and light are part of the bed controls, and **Read bed position** stays
 off. Configure keeps the layout with its bed side.
 
-Choose **Ultramatic app (ORE)** and the actual 2-, 3- or 4-motor screen.
+Choose **Ultramatic app · Keeson** and the actual 2-, 3- or 4-motor screen.
 The layout belongs to each physical receiver in a paired bed. Detection: none;
 this app accepts any nonempty device name and supplies no safe advertisement filter.
 The live GATT table selects P1 if any FFF0 service exists, otherwise P2. FF20
@@ -6056,7 +6059,7 @@ and reply semantics still need testing on hardware.
 
 #### Setup
 
-Choose **Aging in Place / Dawn House**. Discovery accepts case-sensitive names
+Choose **Aging in Place / Dawn House app**. Discovery accepts case-sensitive names
 containing `KSWF07S` or `KSWF19S`, without requiring an advertised service UUID.
 The exact selected Bluetooth identity supplies JSON `dvid`; it is neither the
 editable HA title, MAC address nor a side selector. A missing stored identity

@@ -46,7 +46,7 @@ The first screen lists the discovered beds, each named with its family, then:
 
 A discovered bed asks first which app or remote controls it, from its detected
 family: that family's own question, or the detected bed type's rows. **Another
-app or remote** opens the full app list for the same bed. The family question's
+app or remote: search every app** opens the full app list for the same bed. The family question's
 **Keep the detected or saved controls** answer saves the detected route, after a screen that says its controls
 are generic, whether it needs pairing, and that **Reconfigure** can choose the
 app later; its **Back** returns to the question. Detection never picks an app by
@@ -166,7 +166,7 @@ another profile works better.
 or bed type preselected; an ambiguous match starts from your current selection so
 you can check your app, physical remote and product. For a bed in a family with a
 [guided change](#changing-the-bed-type-app-or-layout-of-an-existing-bed), the
-family's question opens, and its **Another app or remote** answer reaches every
+family's question opens, and its **Another app or remote: search every app** answer reaches every
 other bed type. Applying a change there confirms the review; choosing the current
 setup again, or the question's keep answer, keeps the current profile. Closing it
 leaves the notice open. A review about a Richmat remote setting alone opens
@@ -454,7 +454,7 @@ an existing bed changes only in
 
 The older Okin controllers (Okin Handle, 7-Byte, Nordic, CB24, CB35, FFE,
 64-Bit and ORE) are not rows of the app list: a discovered bed shows its
-detected controller, the brand list under **My app isn't listed** lists them,
+detected controller, the brand list under **My app isn't listed, or I don't know** lists them,
 and Reconfigure's bed-type list keeps them by name.
 
 | Bed type | Choices covered by its guide |
@@ -532,7 +532,7 @@ reports. Other settings, including temperature programs, use the
 
 Okimat beds use different handset codes that decide the available controls.
 Setup reaches them through the Okin row's question: **No app: Okimat or OKIN
-handset code**, then the code printed on the handset. The table below gives
+handset code (requires pairing)**, then the code printed on the handset. The table below gives
 common examples; the setup selector contains the complete handset list. For
 beds controlled by the FurniMove app, including RF ECO BT receivers, answer
 **FurniMove / OKIN Smart Remote app** for the separate
@@ -630,7 +630,7 @@ beds, Reconfigure that bed, then combine them again.
 | Motion Bed | [Layout and saved app settings](beds/ff_frame.md#motion-bed), and the bed's exact Bluetooth name. |
 | MotoMotion | [The exact Bluetooth name](beds/motomotion.md#motomotion), which selects the panel and its feature flags; preserve its case. |
 | Nerum | See the [setup steps](beds/nerum.md#detection--setup). |
-| Nisco / MLILY Supreme | Select the app, then its model, or **Automatic** from the Bluetooth name. MLILY Supreme also offers six short model names and a normal-mattress option. Add the separate HJ_Bed sleep receiver for sleep sensing. Which side the app sends to is set with the `richmat_mh_control` action. See [Nisco](beds/richmat.md#nisco) and [MLILY Supreme](beds/richmat.md#mlily-supreme). |
+| Nisco / MLILY Supreme | Select the app, then its model, or **Automatic (recommended)** from the Bluetooth name. MLILY Supreme also offers six short model names and a normal-mattress option. Add the separate HJ_Bed sleep receiver for sleep sensing. Which side the app sends to is set with the `richmat_mh_control` action. See [Nisco](beds/richmat.md#nisco) and [MLILY Supreme](beds/richmat.md#mlily-supreme). |
 | Okimiki | See the [setup steps](beds/richmat.md#okimiki). |
 | OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/okin-nframe.md#okin-sleepease): choose the model the app shows; the bed's advertisement decides the control box type. Each bed of a combined pair keeps its own settings. |
 | OKIN Smart Sleep | See the [setup steps](beds/smart-sleep.md#setup). |
@@ -640,7 +640,7 @@ beds, Reconfigure that bed, then combine them again.
 | Remacro | [One question for Slumberland, The Brick or Jerome's](beds/remacro.md#home-assistant-setup), offering the apps that list the model the bed advertises, or all three when none does. Reconfigure changes the app, and checks that it lists the bed's model. |
 | Resident Adjustable Base | See the [setup steps](beds/okin-nframe.md#resident-adjustable-base). |
 | Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Reconfigure lists both receivers. |
-| Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or **Automatic** from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps), [Luuna Rise / Power Cool Sleep System](beds/richmat.md#luuna-rise--power-cool), [Lady Americana / ACAA / STA Homecare / Zero Gravity](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family) and [Jerome's power base](beds/richmat.md#jeromes-power-base) the app's layout code. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Reconfigure changes the app and lists each one by name, so an entry can switch apps or opt in to RMControl and out of it; Configure changes the app's own settings. |
+| Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or **Automatic (recommended)** from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps), [Luuna Rise / Power Cool Sleep System](beds/richmat.md#luuna-rise--power-cool), [Lady Americana / ACAA / STA Homecare / Zero Gravity](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family) and [Jerome's power base](beds/richmat.md#jeromes-power-base) the app's layout code. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Reconfigure changes the app and lists each one by name, so an entry can switch apps or opt in to RMControl and out of it; Configure changes the app's own settings. |
 | Richmat app | See the [setup steps](beds/richmat.md#richmat-420). |
 | Rize Beds | See the [setup steps](beds/kaidi.md#rize-beds). |
 | Rize Remedy II | See the [setup steps](beds/okin-nframe.md#rize-remedy-ii). |
@@ -654,7 +654,7 @@ beds, Reconfigure that bed, then combine them again.
 | Sophie | See the [setup steps](beds/ff_frame.md#sophie). |
 | StarCode apps | One question for the app, then its own settings. Reconfigure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): control box and connection type, under **Advanced**. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
 | Sealy Posturematic | [Element, Ascent or Apex](beds/okin-5a.md#sealy-posturematic-app), stored per physical side. |
-| Superior sleep | Choose **SS350** or **SS650**, then the exact **Bluetooth device name**. A case-sensitive `BLE` prefix selects the 1000 route; other named beds use Nordic UART. Each side of a two-receiver pair owns its own product/name. See [Superior sleep](beds/okin-nframe.md#superior-sleep-ss350--ss650). |
+| Superior sleep | Choose **SS350** or **SS650**, then the **Exact Bluetooth name**. A case-sensitive `BLE` prefix selects the 1000 route; other named beds use Nordic UART. Each side of a two-receiver pair owns its own product/name. See [Superior sleep](beds/okin-nframe.md#superior-sleep-ss350--ss650). |
 | Symphony Sleep Sense | [Symphony setup](beds/okin-soundwave.md#symphony-sleep-sense): choose the product the app shows. Split-Head and KGD-SHQ/SHK beds offer Left and Right controls; each bed of a combined pair keeps its own app choices. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app for ProSmart / ProSmart Air and ActiveBreeze, then the layout the app shows. The processor's own fields are under **Advanced**. Motors and massage follow the layout; the bed does not report its position. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister), [VMAT](beds/vibradorm.md#vmat), [V-MAT Basic](beds/vibradorm.md#v-mat-basic): app, exact remote or product, and offered light settings. |
@@ -662,7 +662,7 @@ beds, Reconfigure that bed, then combine them again.
 
 ### Super Colchones products
 
-Choose **Super Colchones app (AFEG302, AFEG350)**, then **AFEG302** or **AFEG350**.
+Choose **Super Colchones app (AFEG302, AFEG350) · Richmat**, then **AFEG302** or **AFEG350**.
 Choose the product printed on your bed; Bluetooth discovery cannot identify it.
 The product determines the available movement and massage controls.
 See [Super Colchones](beds/richmat.md#super-colchones) for controls and save behavior.
@@ -739,9 +739,10 @@ Richmat beds have different feature sets based on the remote model. Selecting yo
 **Note:** The remote code is usually printed on the back of your physical remote.
 A bed that advertises as `QRRM` does not identify its remote, so check the
 label. The HJH89 remote, for example, prints `GGRM` beside a QR code that
-encodes the same code; select **GGRM / HJH89** for it.
+encodes the same code; select **GGRM / HJH89 (Head, Feet, Pillow, Lumbar, M1,
+ZG, Anti-snore, Lights, Massage)** for it.
 For an L&P bed that advertises as `QRRM` and has Flat, Zero G, Custom 1, and
-Custom 2 buttons, select **L&P QRRM**. Current L&P and Richmat apps also require
+Custom 2 buttons, select **L&P QRRM (Head, Feet, Flat, Zero G, Custom 1/2)**. Current L&P and Richmat apps also require
 a physical remote or product selection for QRRM devices. The BLE name and GATT
 services do not identify that profile, so the integration cannot select it
 safely on its own.

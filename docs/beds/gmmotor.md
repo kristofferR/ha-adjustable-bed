@@ -71,12 +71,12 @@ without retry. Product and sleep sessions share one native-write mutex within HA
 
 ## Detection / Setup
 
-1. Choose **GM Control**, then the exact product code and its app side. A matching
+1. Choose **GM Control app**, then the exact product code and its app side. A matching
    raw Bluetooth name supplies a suggestion; it cannot resolve a remote picker.
 2. For an app remote picker or QR code, select its resulting concrete product.
    `QRRM` itself is not a final controller profile.
-3. Choose **GM Control MM sleep module** or **GM Control SXB sleep module** for an
-   independent module. Never select a sensor mode from the bed's transport UUID.
+3. Choose **GM Control sleep module (name starts with RM-)** (MM) or **GM Control
+   sleep module (name starts with HJ-)** (SXB) for an independent module. Never select a sensor mode from the bed's transport UUID.
 
 The app's name filter is a case-sensitive substring test, with uppercase product
 selection and explicit aliases afterward. HA background matchers require a
@@ -98,7 +98,7 @@ replies are still obtained separately for each connection.
 
 ### Home Assistant setup
 
-Choose **GM Control**, its exact product/configuration and the app bed side.
+Choose **GM Control app**, its exact product/configuration and the app bed side.
 Standard and split-head catalogs remain distinct. Remote pickers and QR codes
 require the resulting concrete product; shared services cannot select it.
 Product-owned controls use their exact labels and gestures, without generic

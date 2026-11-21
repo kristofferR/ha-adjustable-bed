@@ -4,7 +4,7 @@
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-Select **AdjustableM5X5 app** in setup if you use AdjustableM5X5 1.2.3
+Select **AdjustableM5X5 app: CB25, F23 or kneading bed** in the StarCode question if you use AdjustableM5X5 1.2.3
 (`com.starcode.abm5_5`). The generic BOX25 route keeps the behavior of the other
 apps. ELEVATE lifts use the [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate)
 bed type, which joins this app's lift groups.
@@ -120,7 +120,7 @@ to support [beds reported working in the app](https://github.com/kristofferR/ha-
 
 ### Home Assistant setup
 
-Choose the **StarCode apps** row, then **AdjustableM5X5 app**, and enter the exact Bluetooth name, preserving case. An app picked from the **StarCode apps** brand list, or offered for a Star-named receiver, opens its own questions directly. Confirm CB25, F23 or kneading. ELEVATE lifts use the [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) bed type instead. The specific F23/kneading prefixes take precedence over generic `STAR25`; shared Nordic UART identifiers alone cannot choose an app. The exact optional manufacturer read selects the command dialect when connecting.
+Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps · StarCode** row, then **AdjustableM5X5 app: CB25, F23 or kneading bed**, and enter the exact Bluetooth name, preserving case. An app offered for a Star-named receiver opens its own questions directly. Confirm CB25, F23 or kneading. ELEVATE lifts use the [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) bed type instead. The specific F23/kneading prefixes take precedence over generic `STAR25`; shared Nordic UART identifiers alone cannot choose an app. The exact optional manufacturer read selects the command dialect when connecting.
 
 On the main entry, select up to **three other configured AdjustableM5X5 or DewertOkin ELEVATE entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. The three bed classes and ELEVATE can occupy either slot; an ELEVATE main selects its lifts in its own options. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
 

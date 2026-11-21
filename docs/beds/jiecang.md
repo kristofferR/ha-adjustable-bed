@@ -88,23 +88,24 @@ profiles are explicit choices.
 
 ### Home Assistant setup
 
-The bed-type list has one **Jiecang: ERGOBALANCE, Dream Motion, Dream Motion HD
-and Comfort Motion apps, Glide and Lierda remotes** choice. Setup then asks which
+The bed-type list has one **ERGOBALANCE, Dream Motion, Dream Motion HD and
+Comfort Motion apps, Glide and Lierda remotes · Jiecang** choice. Setup then asks which
 app or remote you use; the bed's name and services never decide it.
 
 1. Choose the app on your phone: **ERGOBALANCE app (Dreamask)**, **Dream Motion
    app**, **Dream Motion HD app** or **Comfort Motion app**. Then choose the layout
-   the app shows and whether the bed has a light. The transport stays **Auto**
+   the app shows and whether the bed has a light. The transport stays **Automatic (recommended)**
    unless you open **Advanced**.
 2. Without an app, choose the remote's legacy controls: **No app: Glide or Comfort
-   Motion remote** (`jiecang`) or **No app: Comfort Motion / Lierda remote**
+   Motion remote** (`jiecang`) or **No app: Comfort Motion remote with a Lierda receiver**
    (`comfort_motion`), then the motor count. See the [legacy route](#legacy-route).
 3. When detection found a legacy bed, **Keep the detected or saved controls**
    saves the detected legacy route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
-The same question appears, with **Keep** leaving the entry as it is. Choosing an
+The same question appears, with **Keep the detected or saved controls** leaving
+the entry as it is. Choosing an
 app checks the bed's Bluetooth services with the app's own transport selection
 before anything is saved; a bed without that app's services keeps its setup.
 Choosing a legacy route needs no check. A review lists the added and removed
@@ -993,9 +994,10 @@ configurations retain their previous behavior.
 
 #### Setup
 
-1. Select **LOGICDATA: SILVERmotion (SimplicityFrame), MOTIONrelax phone and
-   tablet, and Sleep Smart Air Mattress apps** in the bed-type list, or
-   **LOGICDATA** under the brands. Searching for SILVERmotion, MOTIONrelax or Sleep
+1. Select **SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and
+   Sleep Smart Air Mattress apps · LOGICDATA** in the bed-type list, or
+   **LOGICDATA: SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and
+   Sleep Smart Air Mattress apps** under the brands. Searching for SILVERmotion, MOTIONrelax or Sleep
    Smart finds the same row.
 2. Choose the app: the MOTIONrelax phone or tablet app, or the Sleep Smart Air
    Mattress app's bed base. SILVERmotion runs the [SimplicityFrame](logicdata.md)
@@ -1014,7 +1016,7 @@ configurations retain their previous behavior.
   issue opens the Reconfigure question with **LOGICDATA app: MOTIONrelax, or the
   Sleep Smart Air Mattress bed base** as one more answer; that answer continues
   with these questions and the LOGICDATA transport check. The issue stays open
-  until a change is saved or you choose **Keep**.
+  until a change is saved or you choose **Keep the detected or saved controls**.
 
 - Detection: none. The Bluetooth service alone cannot identify those choices; the
   `ff12` and `fe60` services are shared with other Jiecang/Lierda-based apps, and

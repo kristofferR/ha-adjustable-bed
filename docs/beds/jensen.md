@@ -28,7 +28,7 @@ drives three bed families:
 
 ## Home Assistant setup
 
-Choose **Jensen / Svane** in the bed-type list (a detected JMC400 box is shown
+Choose **Jensen Adjustable Sleep app (JMC400 and LinOn beds) and Svane Remote app · Jensen / Svane** in the bed-type list (a detected JMC400 box is shown
 there too), then answer which app and bed you use: the Jensen Adjustable Sleep
 app with a JMC400 bed (this page; it then asks the PIN, motor count, whether
 massage motors are fitted and whether to read positions) or with a

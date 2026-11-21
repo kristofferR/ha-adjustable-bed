@@ -87,8 +87,10 @@ name.
 
 ## Profiles and model variants
 
-Choose **Auto (Bed Control or Bed Connect app)** unless the bed was controlled by the old Linak
-Performance Series app. Auto and explicit Bed Control use the modern profile and
+Leave **Automatic (recommended)**, or choose **Bed Control or Bed Connect app**, unless
+the bed was controlled by the old Linak Performance Series app; then choose
+**Performance Series app (older bases)** under **Advanced: bed model or remote**.
+Auto and explicit Bed Control use the modern profile and
 discover its model after connection. Performance Series must be selected
 explicitly because its advertisement does not identify it safely.
 

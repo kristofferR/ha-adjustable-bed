@@ -172,7 +172,7 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 4. **Choose the app, then the settings**
    - **App or remote**: A discovered bed asks which app or remote controls it,
-     from its detected family, with **Another app or remote** for the full
+     from its detected family, with **Another app or remote: search every app** for the full
      list. The full list is searchable: type part of your app, brand or
      controller name. The app then asks its own questions; see
      [Initial Setup](CONFIGURATION.md#initial-setup)
