@@ -836,7 +836,9 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             ):
                 await self.press(detail)
         finally:
-            self._show_timer()
+            if self.command_side is None:
+                # The selector's own view; each side of a pair reads its own key.
+                self._show_timer()
 
     def _show_timer(self) -> None:
         """Show the selected side's timer, or both sides' when they agree."""
