@@ -307,6 +307,7 @@ from .discovery_hints import (
     FirstPass,
     first_pass,
 )
+from .discovery_hints._hints import ManufacturerHint, NameHint
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
@@ -347,9 +348,10 @@ MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 # Case-insensitive via re.IGNORECASE
 RICHMAT_CODE_PATTERN = re.compile(r"^([a-z0-9]{2}r[mn]|zr[a-z0-9]{2})", re.IGNORECASE)
 # Beds advertise the code in upper case (UaRM is the one catalog code with a
-# lower-case letter). Read without regard to case, words such as "Firmware",
-# "Warm" or "Terminal" would look like codes.
-_RICHMAT_ADVERTISED_CODE = re.compile(r"^(?:[A-Z0-9]{2}R[MN]|ZR[A-Z0-9]{2}|UaRM)")
+# lower-case letter), followed by a serial number or a separator, never a
+# letter. Otherwise words such as "Firmware", "WARMUP" or "TERMINAL" would
+# look like codes.
+_RICHMAT_ADVERTISED_CODE = re.compile(r"^(?:[A-Z0-9]{2}R[MN]|ZR[A-Z0-9]{2}|UaRM)(?![A-Za-z])")
 
 KEESON_FALLBACK_SERVICE_UUIDS: frozenset[str] = frozenset(
     service_uuid.lower() for service_uuid, _ in KEESON_FALLBACK_GATT_PAIRS
@@ -543,16 +545,41 @@ def _is_malouf_new_okin_smartbed_signature(
 SOLACE_NAME_PATTERN = re.compile(r"^s4-y-\d+-[a-z0-9]+$", re.IGNORECASE)
 
 
+def _is_standard_service(uuid: str) -> bool:
+    """Return whether a UUID is an assigned 0x18xx service, such as Battery or HID.
+
+    Watches, trackers, scales and mice advertise these beside a shared service.
+    """
+    return uuid.startswith("000018") and uuid.endswith("-0000-1000-8000-00805f9b34fb")
+
+
 def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
     """Check if device has only generic/shared UUIDs (or no UUIDs).
 
-    Returns True if the device should be subject to name-based exclusion checks.
-    Returns False if the device has a unique bed-specific UUID that should
-    take priority over name patterns.
+    Standard Bluetooth services are neutral. Returns True if the device should
+    be subject to name-based exclusion checks, False if it has a unique
+    bed-specific UUID that should take priority over name patterns.
     """
-    if not service_uuids:
-        return True
-    return all(uuid in GENERIC_SHARED_SERVICE_UUIDS for uuid in service_uuids)
+    return all(
+        uuid in GENERIC_SHARED_SERVICE_UUIDS
+        for uuid in service_uuids
+        if not _is_standard_service(uuid)
+    )
+
+
+def _rests_on_shared_service(
+    service_uuids: list[str], first: FirstPass, result: DetectionResult
+) -> bool:
+    """Return whether only a shared service, no name or maker record, led to a bed type."""
+    return (
+        any(not _is_standard_service(uuid) for uuid in service_uuids)
+        and _has_only_generic_uuids(service_uuids)
+        and not any(isinstance(hint, NameHint | ManufacturerHint) for hint in first.hints)
+        and not any(
+            signal.startswith(("name:", "manufacturer", "mac:", "product:"))
+            for signal in result.signals
+        )
+    )
 
 
 # Display names for bed types shown in the UI selector
@@ -1387,9 +1414,25 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
 
 
 def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
-    """Offer Good Vibe Sleep without changing an existing receiver/app choice."""
+    """Detect a bed type with its confidence, signals and alternative app candidates.
+
+    A shared service alone never identifies a bed: a device with nothing else
+    needs a name, which the non-bed exclusions have checked, and is uncertain.
+    """
     # The first pass matches the declared discovery hints, as the manifest does.
     first = first_pass(service_info)
+    result = _app_candidates(service_info, first)
+    service_uuids = [str(uuid).lower() for uuid in service_info.service_uuids or ()]
+    if result.bed_type is not None and _rests_on_shared_service(service_uuids, first, result):
+        if is_mac_like_name(service_info.name):
+            return DetectionResult(None, 0.0, ["shared_service:no_name"])
+        result.confidence = min(result.confidence, 0.5)
+        result.signals.append("shared_service:no_name_match")
+    return result
+
+
+def _app_candidates(service_info: BluetoothServiceInfoBleak, first: FirstPass) -> DetectionResult:
+    """Offer Good Vibe Sleep without changing an existing receiver/app choice."""
     result = _detect_bed_type_with_app_candidates(service_info, first)
     # The current Linx scan filter is a case-sensitive substring, not a model
     # or service selector. Preserve existing receiver detection as an alternative.
@@ -1631,6 +1674,24 @@ def _detect_bed_type_with_app_candidates(
 ) -> DetectionResult:
     """Keep existing receiver detection while offering an explicit app candidate."""
     result = _detect_bed_type_detailed(service_info, first=first)
+    # The Casper Base sensor classifier uses case-sensitive startsWith. Its
+    # names never outrank a bed's own service or the non-bed exclusions, and
+    # where another sleep module shares the name the user chooses.
+    casper = next(
+        (key for key in (BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB) if first.name(key)),
+        None,
+    )
+    if casper is not None and result.confidence < 0.7 and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        shared = any(
+            isinstance(hint, NameHint) and hint.bed_types - {casper} for hint in first.hints
+        )
+        if result.bed_type is None:
+            result.bed_type, result.confidence = casper, 0.3 if shared else 0.9
+        elif result.bed_type != casper:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), casper]))
+        result.signals.append("name:casper_base_sleep_sensor")
     if first.name("super_colchones") and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
@@ -1824,17 +1885,8 @@ def _detect_bed_type_detailed(
     # Handle devices that report None for service_uuids
     raw_uuids = service_info.service_uuids
     service_uuids = [str(uuid).lower() for uuid in raw_uuids] if raw_uuids else []
-    # The Casper Base sensor classifier uses case-sensitive startsWith; its bed
-    # product codes and the shared service UUID cannot select an app layout.
     if first is None:
         first = first_pass(service_info)
-    casper_mm = first.name(BED_TYPE_CASPER_SLEEP_MM)
-    if casper_mm or first.name(BED_TYPE_CASPER_SLEEP_SXB):
-        return DetectionResult(
-            bed_type=BED_TYPE_CASPER_SLEEP_MM if casper_mm else BED_TYPE_CASPER_SLEEP_SXB,
-            confidence=0.9,
-            signals=["name:casper_base_sleep_sensor"],
-        )
     if first.service("paramount"):
         return DetectionResult("paramount", 1.0, ["service:paramount_session"])
     device_name = (service_info.name or "").lower()
@@ -2629,7 +2681,7 @@ def _detect_bed_type_detailed(
         # appears, because Okimat, CST, 64-bit, and Leggett Okin can share it.
         if any(pattern in device_name for pattern in OKIMAT_NAME_ONLY_PATTERNS):
             signals.append("name:okin_receiver")
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "OKIN receiver name '%s' at %s uses shared Okin UUID. "
                 "Prompting for protocol because this can be Okimat, CST, or another Okin variant.",
                 service_info.name,
@@ -2663,7 +2715,7 @@ def _detect_bed_type_detailed(
         # be classic Okimat 6-byte devices or Nectar-style 7-byte bases.
         if any(device_name.startswith(pattern) for pattern in OKIN_GENERIC_NAME_PATTERNS):
             signals.append("name:okin_generic")
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "Generic OKIN device name '%s' at %s uses shared Okin UUID. "
                 "Prompting for protocol because this can be Okimat, Nectar, or another Okin variant.",
                 service_info.name,
@@ -2686,7 +2738,7 @@ def _detect_bed_type_detailed(
 
         # Fallback: default to Okimat with warning about ambiguity
         # This UUID is shared by Okimat, Leggett Okin, OKIN 64-bit, and OKIN CST
-        _LOGGER.warning(
+        _LOGGER.debug(
             "Okin UUID detected but device name '%s' at %s doesn't match known patterns. "
             "Defaulting to Okimat. Change to Nectar, Leggett & Platt, OKIN 64-bit, or OKIN CST in settings if needed.",
             service_info.name,

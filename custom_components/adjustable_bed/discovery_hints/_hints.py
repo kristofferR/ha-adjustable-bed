@@ -158,6 +158,12 @@ def services(
     )
 
 
+# App scan prefixes that common non-bed devices also advertise ("TEST-ESP32",
+# "SLEEPACE", "1520 printer"). They never offer a bed on their own; the apps
+# that scan for them stay selectable by hand.
+TOO_BROAD: frozenset[str] = frozenset({"TEST", "SLEEP", "1320", "1520"})
+
+
 def names(
     *patterns: str,
     bed_types: Iterable[str],
@@ -165,9 +171,15 @@ def names(
     anywhere: bool = False,
     connectable: bool | None = None,
 ) -> NameHint:
-    """A name hint over one or more patterns that share their bed types and case."""
+    """A name hint over one or more patterns that share their bed types and case.
+
+    Patterns in ``TOO_BROAD`` are left out.
+    """
+    kept = tuple(pattern for pattern in patterns if pattern not in TOO_BROAD)
+    if not kept:
+        raise ValueError(f"name hints need a pattern discovery may use: {patterns}")
     return NameHint(
-        patterns=patterns,
+        patterns=kept,
         bed_types=_bed_types(bed_types),
         case=case,
         anywhere=anywhere,

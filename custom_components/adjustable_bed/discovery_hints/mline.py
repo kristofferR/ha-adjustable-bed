@@ -2,6 +2,5 @@
 
 from ._hints import SMARTBED, Case, names
 
-HINTS = (names("SLEEP", bed_types={"mline"}, anywhere=True),
-         names("OKIN", bed_types={"mline"}, case=Case.FOLD, anywhere=True),
+HINTS = (names("OKIN", bed_types={"mline"}, case=Case.FOLD, anywhere=True),
          names(*SMARTBED, bed_types={"mline"}, anywhere=True, connectable=True))
