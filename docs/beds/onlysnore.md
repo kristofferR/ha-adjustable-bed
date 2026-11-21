@@ -6,8 +6,8 @@
 
 ## Known Models
 
-The app's model labels are in the generated parameter table below. They do not
-establish physical motor counts or packet-level side addressing.
+The app's model names are in the parameter table below. A model name does not
+tell how many motors your bed has.
 
 ## Apps
 
@@ -20,13 +20,13 @@ establish physical motor counts or packet-level side addressing.
 | Feature | Supported |
 |---|---|
 | Motor control | Head/back, foot/legs, lumbar, headrest and hips, as labelled by the app |
-| Position feedback | No motor angle/position data |
+| Position feedback | ❌ |
 | Presets | Flat, reading, TV, zero gravity, anti-snore, M1 and M2 |
 | Save | Six non-flat presets |
-| Massage | Massage switch (state from the reported timer option), wave, timer and head/foot strength cycles |
-| Lights | One light action; no proven discrete on/off or feedback |
-| Local settings | Privacy and snore detection switches, anti-snore intervention select and bounded level tests |
-| Alarms | One or three, according to BED configuration |
+| Massage | Massage switch (on while the bed reports a massage timer), wave, timer and head/foot strength steps |
+| Lights | One light button; no separate on and off, state not shown |
+| Local settings | Privacy and snore detection switches, anti-snore intervention select and level tests |
+| Alarms | One or three, depending on the bed |
 
 ## Choosing a profile
 

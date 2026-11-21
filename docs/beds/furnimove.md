@@ -6,15 +6,15 @@
 
 ## Known Models
 
-- OKIN receivers used with the FurniMove app, selected by the exact handset ID
+- OKIN receivers used with the FurniMove app, selected by the handset ID
   shown in the app (see [Captured layouts](#captured-layouts))
 - Handset families in the catalog: RF-TOPLINE, RF-TOUCH, RF-TOUCHLINE, RF-STYLE,
   RF-LITE / RF-LITELINE, RF-FLASHLINE, RF-ECO+, RFS-ELLIPSE, RF HS-Elegance,
   "REMOTE CONTROL 2,4GHz ECO", and the RF1058 DOT handsets
 - RF ECO BT receivers (Device Information model `RF eco BT`, part 88802); see
   [Connection](#connection)
-- RF ECO BT, P1103 and shared OKIN UUIDs identify a receiver or transport, not
-  its number of motors or command layout
+- The receiver type (RF ECO BT, P1103 or another OKIN receiver) does not tell how
+  many motors the bed has or which buttons it uses; pick your handset ID in setup
 
 ## Apps
 
@@ -23,26 +23,23 @@
 | ✅ | [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) **2.2.0 (19)** | `com.okin.okinsmartcomfort` |
 
 Smart Comfort Pro **1.0.5 (7)**, package `com.okin.seating.smartcomfort`, is a
-separate standalone seating app. All three product routes control chairs or
-sofas; no bed route was found. Its seating motion, memory, Home, lock,
-inspection, base-light, cup-holder and scene controls are outside this
-integration's scope. It is not an alias for the supported FurniMove / OKIN Smart
-Remote package `com.okin.okinsmartcomfort` described here.
+separate app for chairs and sofas and is not supported. It is not the FurniMove /
+OKIN Smart Remote app (`com.okin.okinsmartcomfort`) described here.
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ (per handset table: `M1` Head, `M2` Back, `M3` Legs, `M4` Feet) |
-| Position Feedback | ❌ (the app reports no motor positions; no position or angle sliders) |
-| Memory Presets | ✅ (per handset table, up to 4 slots; save-memory per ordered slot) |
-| Named presets and utility buttons | ✅ (every reachable non-actuator row, e.g. Flat, QuietSleep, Snore) |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (up to 4 slots, as your handset has them; recall and save) |
+| Named presets and utility buttons | ✅ (your handset's other buttons, e.g. Flat, QuietSleep, Snore) |
 | Massage | ✅ (handsets with massage rows: intensity, zones, programs 1-3 and Wave) |
-| Under-bed light (UBL) | ✅ (toggle button plus reported binary state) |
-| Sync / Child Lock | ✅ (command buttons plus reported booleans) |
+| Under-bed light (UBL) | ✅ (toggle button and its on/off state) |
+| Sync / Child Lock | ✅ (buttons and their on/off state) |
 | Simultaneous movement | ✅ (`adjustable_bed.furnimove_move_simultaneously`) |
 | Rename | ✅ (`adjustable_bed.rename`) |
-| Bonding | ⚠️ (advisory background bond request; never required) |
+| Pairing | Optional; Home Assistant may ask some receivers to pair in the background |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 100 ms refresh, then the handset's release) |
 
 ## Protocol Details

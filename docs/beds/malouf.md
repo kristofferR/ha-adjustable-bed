@@ -22,7 +22,7 @@ sends the Keeson E6 frame and is described at the end.
 These are retail brands, not protocol identifiers. **Lucid L600 is not one
 protocol.** Confirmed L600 devices include:
 
-| Advertising/GATT evidence | Integration protocol | Packet format |
+| What the bed advertises | Integration protocol | Packet format |
 |---------------------------|----------------------|---------------|
 | `Smartbed237...`, Nordic UART, OKIN manufacturer ID 89 / `DOT` payload | OKIN CB24 | 7 bytes |
 | `OKIN-BLE...`, `BTCB` payload, connected FFE5/FFE9 | Malouf Legacy OKIN | 9 bytes |
@@ -30,13 +30,13 @@ protocol.** Confirmed L600 devices include:
 The integration uses those BLE signals and connected services. It does not map
 the string `L600` to either protocol.
 
-The app profiles ship 16 model constructors; see [Models](#models).
+The apps know 16 models; see [Models](#models).
 
 ## Apps
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
-| ✅ | [Malouf Base](https://play.google.com/store/apps/details?id=com.malouf.bedbase) 2.4.3 | `com.malouf.bedbase` | [Malouf Base](#malouf-base), and the evidence for [NEW_OKIN](#new_okin) |
+| ✅ | [Malouf Base](https://play.google.com/store/apps/details?id=com.malouf.bedbase) 2.4.3 | `com.malouf.bedbase` | [Malouf Base](#malouf-base) and [NEW_OKIN](#new_okin) |
 | ✅ | [Lucid Base](https://play.google.com/store/apps/details?id=com.lucid.bedbase) 1.3.3 | `com.lucid.bedbase` | [Lucid Base](#lucid-base) |
 
 ## Features
@@ -45,12 +45,12 @@ The app profiles ship 16 model constructors; see [Models](#models).
 |---------|----------|-------------------------------|
 | Motor Control | ✅ Back, legs; tilt, lumbar and Hi-Lo by layout | ✅ Back/legs, supported combined movement, tilt/lumbar, Altitude head/full tilt, per model |
 | Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
-| Position Feedback | ❌ | ❌ (the apps provide no motor-position feedback) |
+| Position Feedback | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Anti-Snore, TV, Lounge | ✅ Flat, plus the model's Zero-G, TV, Anti-Snore and Lounge |
 | Memory Presets | ✅ Save and recall, 1 or 2 slots by layout | ⚠️ Zero to two slots, per model |
 | Massage | ✅ Head and foot up/down, timer step, off | ✅ Head, foot, wave; direct 10/20/30-minute timers (Richmat) or timer step (OKIN) |
-| Under-bed Lights | ✅ Toggle | ✅ Native toggle; on/off need known feedback |
-| Clock and Alarms | ❌ | ⚠️ OKIN transports, alarm-capable models |
+| Under-bed Lights | ✅ Toggle | ✅ Toggle; separate on and off once the bed reports the light state |
+| Clock and Alarms | ❌ | ⚠️ Models with alarms on the OKIN connection |
 | Single-address Pairing | ❌ | ❌ |
 
 ## Choosing a profile

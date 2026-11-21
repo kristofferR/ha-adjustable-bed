@@ -27,9 +27,9 @@ Both apps also drive LinonPI beds, with frames of their own: the
 |---------|-------------------------|--------------|
 | Motor control | ✅ head and foot, together in one frame | ✅ head and feet, together in one frame |
 | Hold until release | ✅ renewable, then STOP once | ✅ renewable, then STOP |
-| Position feedback | ✅ percentages from measured anchors | ❌ opaque bytes as diagnostics |
+| Position feedback | ✅ percentages | ❌ (raw values in diagnostics only) |
 | Go to position | ✅ | ✅ memory recall only |
-| Flat | ✅ | ✅ as the unnamed Svane position |
+| Flat | ✅ | ❌ (the **Svane Position** button may move to Flat; not yet known) |
 | Memory | ✅ 1 device slot on box type 4, otherwise 4 stored by Home Assistant | ✅ 2 stored by Home Assistant (Read, TV) |
 | Massage | ✅ head, foot and wave, levels 0-10 | ❌ |
 | Light | ✅ levels 0-10 | ✅ 5-100 in steps of five |
