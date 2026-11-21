@@ -352,6 +352,7 @@ _BUTTON_GROUP_NAMES: Final = {
     "FLAT": "Flat",
     "UBL1": "Light",
     "UBL2": "Light off",
+    "LOCK": "Smart set lock on/off",
     "SYNC": "Sync",
     "UBL": "Light",
     "BTN_LED": "Button light off",
@@ -794,7 +795,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             elif (named := _BUTTON_GROUP_NAMES.get(c.group) or _MOTOR_BUTTONS.get(c.code)) is not None:
                 taps.append(Tap(key, named, c.code, "richmat_mh_action"))
             elif c.code in MH_CODES:
-                taps.append(Tap(key, *richmat_mh_name(c.code, c.label), c.code, "richmat_mh_action"))
+                name, clear = richmat_mh_name(c.code, c.label)
+                taps.append(Tap(key, name, c.code, "richmat_mh_action", clear))
             elif c.kind == "save" or re.search(r"\s(?:set|save)$", c.label, re.IGNORECASE):
                 taps.append(Tap(key, f"Save {preset_name(c.label)}", c.code, "richmat_mh_save"))
             else:
