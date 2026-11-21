@@ -128,11 +128,9 @@ def target(hass: HomeAssistant, model: str):
 
 @pytest.mark.parametrize("model", ["ergo", "activebreeze_large"])
 @pytest.mark.parametrize("restricted", [False, True])
-async def test_safety_light_uses_app_button_without_an_inferred_assumed_light(
-    hass, model, restricted
-):
+async def test_safety_light_is_one_light_that_sends_the_app_toggle(hass, model, restricted):
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.light import _light_entities_for
+    from custom_components.adjustable_bed.light import AdjustableBedOnOffLight, _light_entities_for
 
     runtime, controller = target(hass, model)
     runtime.device_info = {}
@@ -141,11 +139,11 @@ async def test_safety_light_uses_app_button_without_an_inferred_assumed_light(
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
     controller._restricted = restricted
     controller._control = AsyncMock()
-    buttons = {entity.translation_key: entity for entity in _button_entities_for(hass, runtime)}
-    assert "sleeptracker_light_toggle" in buttons
-    assert "toggle_light" not in buttons
-    assert _light_entities_for(hass, runtime) == []
-    await buttons["sleeptracker_light_toggle"].async_press()
+    buttons = {entity.translation_key for entity in _button_entities_for(hass, runtime)}
+    assert not buttons & {"sleeptracker_light_toggle", "toggle_light"}
+    [light] = _light_entities_for(hass, runtime)
+    assert isinstance(light, AdjustableBedOnOffLight)
+    await light.async_toggle()
     controller._control.assert_awaited_once()
 
 
@@ -260,7 +258,7 @@ async def test_wave_entities_keep_shared_settings_across_reconnect_and_restart(h
     }
     assert restarted.controller_state["sleeptracker_wave_frequency"] == "88"
     assert restarted.controller_state["sleeptracker_wave_minutes"] == 45
-    assert "sleeptracker_light_on" not in restarted.controller_state
+    assert "under_bed_lights_on" not in restarted.controller_state
 
     for address, model in (
         ("AA:BB:CC:01:02:04", "ergo_prosmart"),
@@ -294,7 +292,7 @@ async def test_invalid_saved_wave_settings_reset_without_restoring_remote_state(
     await write_app_state(runtime, invalid, "19")
     await runtime.async_prime_offline_controller()
     assert await stored_app_state(runtime) == {"wave_frequency": 52, "wave_minutes": 30}
-    assert "sleeptracker_light_on" not in runtime.controller_state
+    assert "under_bed_lights_on" not in runtime.controller_state
 
 
 async def invoke(hass, targets, service, data):
@@ -519,9 +517,6 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     assert controller.async_execute_sleeptracker_request.call_args.args[0].massage_action == "28Hz"
     # Reported strength is the head massage select's state, not a separate sensor.
     strength = selects["sleeptracker_massage_head_level"]
-    light = AdjustableBedControllerStateBinarySensor(
-        runtime, controller.controller_state_binary_sensor_specs[0]
-    )
     wind_down = AdjustableBedControllerStateBinarySensor(
         runtime,
         next(
@@ -530,12 +525,14 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
             if s.key == "sleeptracker_wind_down_running"
         ),
     )
-    assert strength.current_option is None and light.is_on is None
+    assert strength.current_option is None
+    assert runtime.controller_state.get("under_bed_lights_on") is None
     assert wind_down.is_on is None
     controller._update_status(
         {"body": {"snapshots": [{"head": {"massage": {"strength": 4}}, "safetyLightOn": True}]}}
     )
-    assert strength.current_option == "1" and light.is_on is True
+    assert strength.current_option == "1"
+    assert runtime.controller_state.get("under_bed_lights_on") is True
     assert numbers["sleeptracker_left_level"].native_value is None
     controller._update_status({"details": {"body": {"snapshots": [{"windDownMode": 2}]}}})
     assert wind_down.is_on is True
@@ -555,5 +552,6 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     assert wind_down.is_on is False
     controller.on_disconnect()
     # The processor drops the link after each command; keep what it last reported.
-    assert strength.current_option == "off" and light.is_on is False
+    assert strength.current_option == "off"
+    assert runtime.controller_state.get("under_bed_lights_on") is False
     assert wind_down.is_on is False

@@ -313,7 +313,7 @@ async def test_wind_down_transaction_ignores_unconsumed_later_scalar(
         key: target.states[key]
         for key in (
             "sleeptracker_massage_pattern",
-            "sleeptracker_light_on",
+            "under_bed_lights_on",
             "sleeptracker_massage_head_strength",
             "sleeptracker_left_level",
         )
@@ -620,7 +620,7 @@ async def test_hold_ending_mid_reply_keeps_session_and_reported_state() -> None:
         "sleeptracker_massage_pattern_option",
         "sleeptracker_massage_head_level",
         "sleeptracker_massage_foot_level",
-        "sleeptracker_light_on",
+        "under_bed_lights_on",
     ):
         assert target.states[key] == reported[key]
     await target.bed.stop_notify()

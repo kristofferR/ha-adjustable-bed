@@ -141,7 +141,9 @@ async def test_light_exposure_is_toggle_and_unpublished_initial_boolean() -> Non
     controller = await fast_controller()
     assert controller.supports_lights and controller.supports_light_toggle_control
     assert not controller.supports_discrete_light_control
-    assert not controller.supports_light_state_feedback
+    # The light shows the reported UBL state; the initial False is not a report.
+    assert controller.supports_light_state_feedback
+    assert "under_bed_lights_on" not in controller._coordinator.controller_state
     assert not any(
         entry.args[0] == "furnimove_ubl"
         for entry in controller._coordinator.handle_controller_state_update.call_args_list
@@ -357,6 +359,7 @@ def test_initial_off_feedback_publishes_once_and_invalid_packets_remain_unknown(
     controller._parse_feedback(feedback)
     assert controller._coordinator.controller_state == {
         "furnimove_ubl": False,
+        "under_bed_lights_on": False,
         "furnimove_sync": False,
         "furnimove_child_lock": False,
     }

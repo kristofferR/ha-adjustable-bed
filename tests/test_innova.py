@@ -25,7 +25,6 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.innova import (
     HELD_CONTROLS,
-    STATE_LIGHT,
     STATE_MASSAGE_TIMER,
     InnovaController,
     innova_rename_frame,
@@ -56,6 +55,8 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
 from custom_components.adjustable_bed.profiles.keeson import INNOVA, encode
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.error_helpers import raises_key
 
 Action = Callable[[Any], Awaitable[None]]
 ZERO = "e5fe160000000006"
@@ -449,8 +450,19 @@ async def test_innova_capabilities(coordinator):
     ]
     with pytest.raises(NotImplementedError):
         await controller.program_memory(1)
-    with pytest.raises(NotImplementedError):
+
+
+async def test_light_on_and_off_toggle_only_when_the_reported_state_differs(
+    coordinator, mock_bleak_client: MagicMock, no_sleep
+):
+    controller = _innova(coordinator)
+    with raises_key("light_state_unknown", ServiceValidationError):
         await controller.lights_on()
+    controller._on_notification(MagicMock(), bytearray(_status(16, 0x40, 0x02)))
+    await controller.lights_on()
+    assert _written(mock_bleak_client) == []
+    await controller.lights_off()
+    assert _written(mock_bleak_client) == ["e5fe160000020004"]
 
 
 def test_rename_frames_match_the_report():
@@ -485,18 +497,18 @@ def _status(length: int, flags: int, timer: int) -> bytes:
 def test_parser_branches(length):
     # Report fixtures V-NOTIFY-16 / V-NOTIFY-19: lamp bit set, timer enum 1.
     assert parse_innova_status(_status(length, 0x40, 0x01)) == [
-        STATE_LIGHT(True),
+        UNDER_BED_LIGHTS_ON(True),
         STATE_MASSAGE_TIMER(10),
     ]
     assert parse_innova_status(_status(length, 0x00, 0xFF)) == [
-        STATE_LIGHT(False),
+        UNDER_BED_LIGHTS_ON(False),
         STATE_MASSAGE_TIMER(0),
     ]
     assert STATE_MASSAGE_TIMER(30) in parse_innova_status(_status(length, 0x00, 0x03))
-    assert parse_innova_status(_status(length, 0x40, 0x07)) == [STATE_LIGHT(True)]
+    assert parse_innova_status(_status(length, 0x40, 0x07)) == [UNDER_BED_LIGHTS_ON(True)]
     assert parse_innova_status(_status(length, 0x60, 0x01)) is None
     assert parse_innova_status(_status(length, 0x9F, 0x02)) == [
-        STATE_LIGHT(False),
+        UNDER_BED_LIGHTS_ON(False),
         STATE_MASSAGE_TIMER(20),
     ]
 
@@ -511,12 +523,12 @@ async def test_notifications_publish_and_clear(coordinator, mock_bleak_client: M
     await controller.start_notify(None)
     assert mock_bleak_client.start_notify.await_args.args[0].uuid == KEESON_BASE_NOTIFY_CHAR_UUID
     controller._on_notification(MagicMock(), bytearray(_status(16, 0x40, 0x02)))
-    assert coordinator.controller_state[STATE_LIGHT] is True
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
     assert coordinator.controller_state[STATE_MASSAGE_TIMER] == 20
     controller._on_notification(MagicMock(), bytearray(_status(19, 0x20, 0x01)))
     assert coordinator.controller_state[STATE_MASSAGE_TIMER] == 20
     controller.invalidate_diagnostics()
-    assert coordinator.controller_state[STATE_LIGHT] is None
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is None
     assert coordinator.controller_state[STATE_MASSAGE_TIMER] is None
 
 
@@ -638,7 +650,6 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     for key in (
         "innova_massage_level",
         "innova_massage_timer_hold",
-        "toggle_light",
         "massage_head_up",
         "massage_foot_down",
         "massage_mode_step",
@@ -649,7 +660,9 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
         assert exists("button", key), key
     for key in ("program_memory_1", "massage_all_off", "massage_all_toggle", "preset_anti_snore"):
         assert not exists("button", key), key
-    assert exists("binary_sensor", STATE_LIGHT)
+    # The bed reports its lamp: one light, no toggle button or reading.
+    assert exists("light", "under_bed_lights")
+    assert not exists("button", "toggle_light")
     assert exists("sensor", STATE_MASSAGE_TIMER)
 
     await _reload(
@@ -665,7 +678,6 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     assert exists("select", "massage_timer")
     assert exists("number", "controller_number_ore_comfort_massage_wave")
     assert exists("light", "under_bed_lights")
-    assert not exists("binary_sensor", STATE_LIGHT)
     assert not exists("sensor", STATE_MASSAGE_TIMER)
 
     await _reload(
@@ -676,7 +688,6 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ADJUSTABLE_LITE})
     assert not exists("cover", "back_legs")
     assert not exists("button", "innova_massage_level")
-    assert not exists("binary_sensor", STATE_LIGHT)
     assert not exists("sensor", STATE_MASSAGE_TIMER)
 
     assert await hass.config_entries.async_unload(entry.entry_id)
@@ -944,9 +955,7 @@ async def test_disconnect_keeps_app_state_and_clears_reported_state(
     innova_coordinator = hass.data[DOMAIN][innova.entry_id]
     innova_coordinator.controller._on_notification(MagicMock(), bytearray(_status(16, 0x40, 0x02)))
     await hass.async_block_till_done()
-    light = registry.async_get_entity_id(
-        "binary_sensor", DOMAIN, f"AA:BB:CC:DD:EE:92_{STATE_LIGHT}"
-    )
+    light = registry.async_get_entity_id("light", DOMAIN, "AA:BB:CC:DD:EE:92_under_bed_lights")
     timer = registry.async_get_entity_id(
         "sensor", DOMAIN, f"AA:BB:CC:DD:EE:92_{STATE_MASSAGE_TIMER}"
     )
