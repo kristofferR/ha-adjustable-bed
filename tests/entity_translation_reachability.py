@@ -230,6 +230,8 @@ SPEC_PLATFORMS = {
     "ControllerSwitchSpec": ("switch", 1),
     "ControllerStateSensorSpec": ("sensor", 1),
     "ControllerStateBinarySensorSpec": ("binary_sensor", 1),
+    # Shared builders, with the same positional arguments as their spec.
+    "massage_timer_sensor_spec": ("sensor", 1),
 }
 
 

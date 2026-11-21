@@ -371,7 +371,7 @@ def sleep_flag_binary_sensor_spec(
 def massage_timer_sensor_spec(
     key: str,
     translation_key: str,
-    state_key: StateKey[int | None],
+    state_key: AnyStateKey,
     *,
     unit: Literal["min", "s"] = "min",
     card: CardPlacement = CARD_HIDDEN,

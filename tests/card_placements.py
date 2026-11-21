@@ -18,6 +18,7 @@ import copy
 import json
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import fields, replace
+from inspect import signature
 from itertools import chain
 from pathlib import Path
 from typing import NamedTuple, cast
@@ -465,6 +466,13 @@ def _domain(cls: type[Entity]) -> str:
     raise TypeError(cls.__name__)
 
 
+def _default_card(declare: Callable[..., object]) -> CardPlacement:
+    """The card a spec class or a shared spec builder places its entity in by default."""
+    if isinstance(declare, type):
+        return cast(CardPlacement, next(f.default for f in fields(declare) if f.name == "card"))
+    return signature(declare).parameters["card"].default
+
+
 def literal_spec_placements() -> dict[str, dict[str, str | int]]:
     """Return the placement of every spec a bed states with a literal key.
 
@@ -472,7 +480,7 @@ def literal_spec_placements() -> dict[str, dict[str, str | int]]:
     placement that is not a plain card expression is left to the live specs.
     """
     from custom_components.adjustable_bed import card
-    from custom_components.adjustable_bed.beds import base
+    from custom_components.adjustable_bed.beds import base, entity_specs
 
     namespace = vars(card)
     result: dict[str, dict[str, str | int]] = {}
@@ -501,9 +509,7 @@ def literal_spec_placements() -> dict[str, dict[str, str | int]]:
                     placement = (
                         eval(ast.unparse(expressions[0]), dict(namespace))
                         if expressions
-                        else next(
-                            f.default for f in fields(getattr(base, name)) if f.name == "card"
-                        )
+                        else _default_card(getattr(entity_specs, name, None) or getattr(base, name))
                     )
                 except NameError:
                     continue
