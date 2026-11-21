@@ -778,6 +778,8 @@ def test_other_product_features_are_named_by_what_they_add():
     from custom_components.adjustable_bed.setup_questions import _ergomotion4_keys
 
     for kind, keys in (("model", MODEL_KEYS), ("massage", MASSAGE_KEYS)):
-        labels = _ergomotion4_keys(kind)({})
+        choices = _ergomotion4_keys(kind)
+        assert callable(choices)
+        labels = choices({})
         assert list(labels) == list(keys)
         assert not set(labels.values()) & set(keys)
