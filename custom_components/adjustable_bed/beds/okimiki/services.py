@@ -81,7 +81,7 @@ class Request:
                 raise ValueError("This control has no save action")
         elif op.startswith("light_"):
             if not controller.menu_available("light"):
-                raise ValueError("The connected bed has not reported light support")
+                raise ValueError("The bed has not reported light settings. Reconnect the bed and try again")
             if op == "light_duration" and (
                 type(self.seconds) is not int or not 0 <= self.seconds <= 900
             ):
@@ -91,15 +91,15 @@ class Request:
                 or len(self.rgb) != 3
                 or any(type(v) is not int or not 0 <= v <= 255 for v in self.rgb)
             ):
-                raise ValueError("Choose three RGB byte channels")
+                raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
         elif op == "sync":
             if controller.model.alarm == "none":
                 raise ValueError("This product has no clock")
         else:
             if not controller.menu_available("alarm"):
-                raise ValueError("The connected bed has not reported alarm support")
+                raise ValueError("The bed has not reported alarm settings. Reconnect the bed and try again")
             if (op in ("single", "cancel_single")) != (controller.model.alarm == "single"):
-                raise ValueError("Choose the alarm action for this product")
+                raise ValueError("Choose the alarm operation this bed model offers")
             if self.mode is not None and (
                 self.mode not in MODES
                 or controller.model.alarm == "single"
@@ -107,18 +107,18 @@ class Request:
             ):
                 raise ValueError("Choose an alarm mode offered by this product")
             if op == "single" and (self.when is None or self.when.utcoffset() is None):
-                raise ValueError("Choose a timezone-aware alarm time")
+                raise ValueError("Enter the alarm time with its time zone")
             if op == "repeat":
                 if self.alarm_id is None:
-                    raise ValueError("Choose an explicit alarm ID from 1 to 7")
+                    raise ValueError("Choose an alarm number from 1 to 7")
                 if self.record is None and (self.when is None or self.mode is None):
                     raise ValueError("A new alarm needs a time and mode")
                 if self.when is not None and self.when.utcoffset() is None:
-                    raise ValueError("Choose a timezone-aware alarm time")
+                    raise ValueError("Enter the alarm time with its time zone")
             if self.alarm_id is not None and not 1 <= self.alarm_id <= 7:
-                raise ValueError("Choose alarm ID 1 to 7")
+                raise ValueError("Choose an alarm number from 1 to 7")
             if op in ("enable", "delete") and self.alarm_id is None:
-                raise ValueError("Choose an observed alarm ID")
+                raise ValueError("Choose the number of an alarm in the alarm list")
             if op == "enable" and self.enabled is None:
                 raise ValueError("Choose whether this alarm is enabled")
             if self.days is not None and any(
@@ -130,7 +130,7 @@ class Request:
                     (row for row in reversed(controller._alarms) if row.id == self.record.id), None
                 )
                 if self.record.id in controller._stale_alarm_ids or current != self.record:
-                    raise ValueError("Query a fresh record before changing this alarm again")
+                    raise ValueError("Read the alarm list again before changing this alarm")
             if (
                 op == "repeat"
                 and self.record is None
@@ -139,7 +139,7 @@ class Request:
                     or any(row.id == self.alarm_id for row in controller._alarms)
                 )
             ):
-                raise ValueError("Query a fresh record before changing this alarm")
+                raise ValueError("Read the alarm list again before changing this alarm")
 
     def plan(self, controller: OkimikiController) -> Request:
         """Keep the actual returned reserved byte and physical receiver's record."""
@@ -149,7 +149,7 @@ class Request:
                 (row for row in reversed(controller._alarms) if row.id == self.alarm_id), None
             )
             if record is None and self.operation != "repeat":
-                raise ValueError("Query this bed's alarms before editing or deleting one")
+                raise ValueError("Read the bed's alarm list before changing or deleting an alarm")
             if record is not None:
                 request = replace(self, record=record)
         request.validate(controller)
@@ -289,7 +289,7 @@ async def handle_okimiki(call: ServiceCall) -> None:
             and (product is None or product == controller.product_key)
             for _, _, child, address, product in physical_routes
         ):
-            raise ValueError("The physical Okimiki owner changed after admission")
+            raise ValueError("The bed's connection changed while the action was starting. Try again")
 
     def validate(controller: OkimikiController) -> None:
         check_owner(controller)
@@ -311,7 +311,7 @@ async def handle_okimiki(call: ServiceCall) -> None:
         def check_session() -> None:
             check_owner(controller)
             if controller._current_link() is not link:
-                raise ValueError("The Okimiki session changed while waiting for support")
+                raise ValueError("The bed's connection changed while the action was starting. Try again")
 
         def observed_record() -> p.Alarm | None:
             return next(
@@ -348,11 +348,11 @@ async def handle_okimiki(call: ServiceCall) -> None:
                         controller._menus_changed.clear()
                         await controller._menus_changed.wait()
                     if expected_record is not None and observed_record() != expected_record:
-                        raise ValueError("The Okimiki alarm record changed after validation")
+                        raise ValueError("The alarm changed on the bed while the action was starting. Read the alarm list and try again")
                 check_session()
         except TimeoutError:
             raise ValueError(
-                "The bed did not report current Okimiki support or alarm data"
+                "The bed did not report its settings in time. Try again"
             ) from None
 
     prepared = await _preflight_capability(
@@ -406,7 +406,7 @@ async def handle_okimiki(call: ServiceCall) -> None:
             )
             for other_key, other in plans.items()
         ):
-            raise ValueError("The physical Okimiki controller changed after validation")
+            raise ValueError("The bed's connection changed while the action was starting. Try again")
         key = (controller._address.upper(), controller.product_key)
         plan = plans.get(key)
         if live_validation and len(physical_targets) == 1:
@@ -414,22 +414,22 @@ async def handle_okimiki(call: ServiceCall) -> None:
             validate(controller)
             plan = plans.get(key)
         if plan is None or plan.owner is not controller._coordinator:
-            raise ValueError("The physical Okimiki controller changed after validation")
+            raise ValueError("The bed's connection changed while the action was starting. Try again")
         changed_link = plan.link is not None and controller._link is not plan.link
         if changed_link and (not live_validation or plan.request.record is not None):
             if key not in sequential_handoffs or plan.request.record is None:
-                raise ValueError("The physical Okimiki controller changed after validation")
+                raise ValueError("The bed's connection changed while the action was starting. Try again")
             await wait_for_capability(controller, plan.request.record)
             # Rebuild only from this live receiver's matching immutable tuple.
             rebuilt = request.plan(controller)
             if rebuilt.record != plan.request.record:
-                raise ValueError("The Okimiki alarm record changed after validation")
+                raise ValueError("The alarm changed on the bed while the action was starting. Read the alarm list and try again")
             await controller.execute_request(rebuilt)
             return
         if live_validation:
             await wait_for_capability(controller)
         if not live_validation and controller._link is not plan.link and plan.link is not None:
-            raise ValueError("The physical Okimiki controller changed after validation")
+            raise ValueError("The bed's connection changed while the action was starting. Try again")
         # Caller-only settings can cross a sequential pair's link switch;
         # execute_request rechecks the new session's menus and alarm slots.
         await controller.execute_request(plan.request)

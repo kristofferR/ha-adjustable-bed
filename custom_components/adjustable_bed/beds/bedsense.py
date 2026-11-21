@@ -314,7 +314,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
     async def set_massage_timer(self, minutes: int) -> None:
         """Choosing the running timer keeps it; the app's button would cancel it."""
         if minutes and minutes not in self.massage_timer_options:
-            raise ValueError("Choose a massage timer this layout offers")
+            raise ValueError("Choose a massage timer this bed model offers")
         if minutes and minutes == self._session.timer:
             return
         await self.execute_action(_MASSAGE_TIMERS[minutes] if minutes else "massage_timer_cancel")
@@ -329,7 +329,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
 
     async def set_light_timer(self, timer_option: str) -> None:
         if timer_option not in self.light_timer_options:
-            raise ValueError("Choose a light timer this layout offers")
+            raise ValueError("Choose a light timer this bed model offers")
         await self.execute_action(_LIGHT_TIMERS[timer_option])
 
     @property
@@ -521,7 +521,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
             return
         action = ACTIONS.get(key)
         if action is None or self.layout not in action.variants:
-            raise ValueError(f"BedSense action unavailable for this layout: {key}")
+            raise ValueError(f"This bed model does not offer {key}")
         if key.endswith(("_up", "_down")) and not key.startswith("massage_"):
             count, delay = self.motor_pulse_settings()
             # This is HA's requested hold duration, NOT a protocol repeat cadence.
@@ -581,7 +581,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
     def validate_memory_recall(self, memory_num: int) -> None:
         super().validate_memory_recall(memory_num)
         if memory_num in (1, 2) and not self._saved[memory_num]:
-            raise ValueError("Save this BedSense memory before recalling it")
+            raise ValueError("Save this memory position before recalling it")
 
     async def preset_memory(self, memory_num: int) -> None:
         self.validate_memory_recall(memory_num)
@@ -606,7 +606,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
 
     async def preset_anti_snore(self) -> None:
         if not self.supports_preset_anti_snore:
-            raise ValueError("This layout has Flat Bed instead of Anti Snore")
+            raise ValueError("This bed model has Flat instead of Anti-snore")
         await self.preset_memory(5)
 
     async def move_back_up(self) -> None:

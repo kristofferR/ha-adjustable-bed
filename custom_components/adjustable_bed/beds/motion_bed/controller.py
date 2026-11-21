@@ -1238,18 +1238,18 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                                   duration: float = 1, confirmed: bool = False) -> None:
         action = ACTION_BY_KEY.get(key)
         if action is None or action.owner not in self._active_owners():
-            raise ValueError("Action is unavailable in the selected Motion Bed profile")
+            raise ValueError("This bed model does not offer that action")
         if not 0 < duration <= 10:
-            raise ValueError("Motion Bed bounded movement duration must be 0–10 seconds")
+            raise ValueError("Choose a duration of up to 10 seconds")
         if action.kind in ("program", "persistent") and not confirmed:
-            raise ValueError("Confirm this persistent Motion Bed configuration change")
+            raise ValueError("This changes a setting stored on the bed. Turn on Confirm to go ahead")
         selected = action.select(self._state, self.selection.alternate_identity, branch=branch)
         if not self._has_audio and any(
             SOURCE_COMMANDS[source_id].startswith(bytes.fromhex("FFFFFFFF0100130B"))
             or SOURCE_COMMANDS[source_id].startswith(bytes.fromhex("FFFFFFFF0100140B"))
             for source_id in selected
         ):
-            raise ValueError("This physical target has not reported audio support")
+            raise ValueError("The bed has not reported a speaker. Reconnect it and try again")
 
     async def async_execute_motion_bed_action(self, key: str, *, branch: str = "app",
                                              duration: float = 1, confirmed: bool = False) -> None:
@@ -1412,25 +1412,25 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         if surface == "hub":
             available.add("module")
         if request.name not in available:
-            raise ValueError("Configuration is unavailable in this Motion Bed profile/module")
+            raise ValueError("This bed model does not offer that setting")
         if request.name == "clock":
             thermal = request.context == "thermal"
             if thermal:
                 if not (surface == "thermal" or (surface == "hub" and self._module_present("thermal"))):
-                    raise ValueError("Thermal clock requires the thermal module/profile")
+                    raise ValueError("Only the heating module has this clock")
             elif not (surface in ("home", "motor") or (surface == "hub" and self._module_present("motor"))):
-                raise ValueError("P1 clock requires a motor/home profile")
+                raise ValueError("Only the bed's motor module has this clock")
         if request.name == "alarm":
             if request.alarm_audio != self._has_audio:
-                raise ValueError("Alarm audio must match this physical target's reported audio capability")
+                raise ValueError("This bed cannot play that alarm sound. Choose another sound")
             if surface == "home" and request.alarm_switch is not None:
-                raise ValueError("Home alarms use the enabled flag, not the modular first-alarm switch")
+                raise ValueError("Turn this alarm on or off with its Enabled setting")
             if request.alarm_switch == 0 and self._state.alarm_flag is not None:
-                raise ValueError("Uninitialized alarm switch is unavailable after alarm state arrives")
+                raise ValueError("Turn this alarm on or off with its Enabled setting")
         if request.name == "audio" and not self._has_audio:
-            raise ValueError("This physical target has not reported audio support")
+            raise ValueError("The bed has not reported a speaker. Reconnect it and try again")
         if request.persistent and not request.confirmed:
-            raise ValueError("Confirm this persistent Motion Bed configuration change")
+            raise ValueError("This changes a setting stored on the bed. Turn on Confirm to go ahead")
 
     async def async_execute_motion_bed_write(self, request: MotionBedWrite) -> None:
         self.validate_motion_bed_write(request)

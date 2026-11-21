@@ -128,7 +128,7 @@ def profile_from_name(name: str) -> str | None:
 
 def _app(controller: BedController) -> StarcodeM5X5Controller:
     if not isinstance(controller, StarcodeM5X5Controller):
-        raise ValueError("This action requires the AdjustableM5X5 app profile")
+        raise ValueError("This action works only on Adjustable M5X5 beds")
     return controller
 
 

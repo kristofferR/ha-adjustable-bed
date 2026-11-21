@@ -957,10 +957,10 @@ class RufRichmatController(RichmatMhController):
                 raise ValueError("Choose an alarm position from this model's alarm list")
         if request.family == "mattress" and not self._normal_ready:
             raise ValueError(
-                "Select the normal mattress variant and obtain its powered initialization first"
+                "This alarm needs the normal mattress model. Choose it in Reconfigure, then wait until the bed has started up"
             )
         if request.family == "calendar" and not self._calendar_page():
-            raise ValueError("This model has not reported its calendar alarm capability")
+            raise ValueError("The bed has not reported an alarm yet. Reconnect it and try again")
 
     async def ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         from homeassistant.util import dt as dt_util

@@ -258,7 +258,7 @@ async def test_product_session_init_and_pairing_contract(product):
         else [b"\x00\xb0"] * 3
     )
     if not p1:
-        with pytest.raises(ValueError, match="side selector"), ctrl.side_scope("left"):
+        with pytest.raises(ValueError, match="has no sides"), ctrl.side_scope("left"):
             ctrl._frame(1)
 
 
@@ -413,7 +413,7 @@ async def test_meditation_product_and_name_gates(product, name, expected):
     assert packets(coord)[-4].hex() == "040208000000"
     coord.observed_ble_device_name = "unrelated"
     if product != "20th Anniversary":
-        with pytest.raises(ValueError, match="do not admit"):
+        with pytest.raises(ValueError, match="no meditation mode"):
             await ctrl._run_action("meditation_start")
 
 

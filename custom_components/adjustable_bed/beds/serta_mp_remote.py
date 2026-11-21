@@ -186,7 +186,7 @@ class SertaMPRemoteController(AppController):
             or not 0 <= foot <= 45
             for head, foot in memories
         ):
-            raise ValueError("Four local memory targets require head 0..60 and foot 0..45 degrees")
+            raise ValueError("Choose head angles from 0 to 60 degrees and foot angles from 0 to 45 degrees for all four memory positions")
         self._memories = tuple(memories)
         self._angles = (0, 0)
         self._memory_target: tuple[int, int] | None = None
@@ -341,7 +341,7 @@ class SertaMPRemoteController(AppController):
             raise ValueError("MP Remote has head/back and foot/legs pulse targets only")
         table = HEAD_TABLE if motor == "back" else FOOT_TABLE
         if type(position) is not int or not 0 <= position < len(table):
-            raise ValueError("Angle target outside app calibration table")
+            raise ValueError("Choose an angle this bed can reach")
         await self.write_command(
             codec.position_target(
                 table[position] if motor == "back" else 0x8000,
@@ -375,7 +375,7 @@ class SertaMPRemoteController(AppController):
 
     def on_disconnect(self) -> None:
         self._local_release_stop = None
-        for setter in getattr(self, "_setters", ()):
+        for setter in self._setters:
             setter.cancel()
         self._setters = []
         self._memory_active = False

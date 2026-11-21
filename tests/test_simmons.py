@@ -318,7 +318,7 @@ async def test_memory_recall_and_inclined_buttons_are_taps():
 
 async def test_hold_control_rejects_controls_outside_the_layout():
     controller = make_controller()
-    with pytest.raises(ValueError, match="layout"):
+    with pytest.raises(ValueError, match="does not offer that control"):
         await controller.hold_control("inclined_left", 500)
 
 

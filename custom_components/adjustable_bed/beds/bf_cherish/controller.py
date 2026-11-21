@@ -311,7 +311,7 @@ class BfCherishController(ProfileExecution[keeson_profiles.KeesonProfile], BedCo
         if self.cherish:
             allowed = allowed - {"head_up", "head_down"} | {"both_up", "both_down"}
         if control not in allowed:
-            raise ValueError("This app does not expose that motor")
+            raise ValueError("This bed has no such motor")
         self._target()
         if self._coordinator.cancel_command.is_set():
             return
@@ -695,7 +695,7 @@ class BfCherishController(ProfileExecution[keeson_profiles.KeesonProfile], BedCo
         foot_level: int = 0,
     ) -> None:
         if weekdays or head_level or foot_level:
-            raise ValueError("These apps have no selectable recurrence or massage alarm fields")
+            raise ValueError("This bed's alarm has no weekdays or massage levels. Remove them and try again")
         now = dt_util.now()
         frame = alarm_frame(
             self.cherish, now, enabled=enabled, hour=hour, minute=minute, memory=preset

@@ -155,10 +155,10 @@ class MlilyRemoteController(CasperBaseController):
         side = self.command_side
         if side in ("left", "right"):
             if link.legacy or self.layout != "double":
-                raise ValueError("The Nordic route has no physical side selector")
+                raise ValueError("This bed has no sides. Leave out the side")
             return int(side == "right")
         if side == "both":
-            raise ValueError("MLILY Remote has no both-side opcode; target one child side")
+            raise ValueError("Target the left or right side, not both")
         return 0
 
     async def _write(
@@ -222,7 +222,7 @@ class MlilyRemoteController(CasperBaseController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or duration_ms < 100:
-            raise ValueError("Choose an available MLILY Remote movement held for at least 100 ms")
+            raise ValueError("Choose a movement this bed offers and a duration of at least 0.1 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -433,9 +433,9 @@ class MlilyRemoteController(CasperBaseController):
             raise ValueError("Unsupported MLILY Remote operation")
         if request.operation == "anti_snore":
             if not PROFILES[self.model].phone_snore:
-                raise ValueError("The default-left intervention belongs to MS300-SH")
+                raise ValueError("Only the MS300-SH model has this snore setting")
             if self.command_side in ("right", "both"):
-                raise ValueError("The default-left intervention requires the left owner")
+                raise ValueError("This snore setting belongs to the left side. Target the left side")
         if request.operation in ("alarm", "alarm_cancel") and not self.alarm_modes:
             raise ValueError("This product has no alarm mode choices")
         if request.operation == "alarm" and (

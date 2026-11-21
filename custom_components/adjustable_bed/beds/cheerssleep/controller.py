@@ -364,7 +364,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             or direction not in ("up", "down")
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose an exposed CheersSleep actuator and bounded duration")
+            raise ValueError("Choose a motor this bed offers and a duration of up to 30 seconds")
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -558,14 +558,14 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         if not self.model.rgb:
             raise NotImplementedError("This model has no RGB controls")
         if any(not 0 <= v <= 255 for v in rgb_color):
-            raise ValueError("Choose an RGB-capable CheersSleep model and RGB 0..255")
+            raise ValueError("This bed model has no color light, or a color value is outside 0 to 255")
         await self._tap(codec.setting(5, *rgb_color), codec.setting(0xAA))
 
     async def set_light_level(self, level: int) -> None:
         if not self.model.rgb:
             raise NotImplementedError("This model has no brightness control")
         if not 0 <= level <= 100:
-            raise ValueError("Choose RGB brightness 0..100")
+            raise ValueError("Choose a brightness from 0 to 100")
         await self._tap(codec.setting(10, level), codec.setting(0xAA))
 
     async def massage_action(self, action: str, value: int = 0) -> None:
@@ -629,9 +629,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 1 <= duration_ms <= 30000:
-            raise ValueError("Choose an exposed CheersSleep held control")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
         if self.model.format == "p1" and duration_ms > 10000:
-            raise ValueError("Legacy latched holds are limited to 10 seconds")
+            raise ValueError("This bed holds a control for at most 10 seconds. Choose a shorter duration")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -751,16 +751,16 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
 
     async def set_sonic_level(self, value: int) -> None:
         if not self.model.sonic or not 0 <= value <= 100:
-            raise ValueError("Choose a sonic level0..100 on an I/HI model")
+            raise ValueError("Choose a sound level from 0 to 100. Only the I and HI models have sound")
         await self._tap(codec.setting(11, 3, value), codec.setting(0xAA))
 
     def validate_request(self, request: Request) -> None:
         op = request.operation
         if request.sleeper is not None:
             if op != "seven_motion" or request.sleeper not in ("left", "right"):
-                raise ValueError("The auxiliary sleeper selector belongs to Seven motion")
+                raise ValueError("Only the Seven Motion model has a second sleeper setting")
             if self.command_side in ("left", "right") and self.command_side != request.sleeper:
-                raise ValueError("The auxiliary sleeper conflicts with the targeted child side")
+                raise ValueError("The sleeper you chose is on the other side of the bed. Target that side instead")
         if op in ("position_light_toggle", "color_light_toggle"):
             if (
                 self.model.format != "p2"
@@ -768,10 +768,10 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 or op == "color_light_toggle"
                 and not self.model.rgb
             ):
-                raise ValueError("Choose a model with that light consumer")
+                raise ValueError("This bed model has no such light")
         elif op in ("query", "query_shared"):
             if self.model.format != "p2" or not self.model.light:
-                raise ValueError("P2 queries require a P2 model")
+                raise ValueError("This bed model cannot report that")
         elif op in (
             "rgb_preview",
             "rgb2_preview",
@@ -789,37 +789,37 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             "newten_save",
         ):
             if self.model.format != "p1":
-                raise ValueError("These conditional exported screens use legacy P1")
+                raise ValueError("This bed model does not offer that")
             if op.endswith("motion") and (
                 request.axis not in app.P1_AXES
                 or not 1 <= request.position <= 4
                 or not 1 <= request.duration_ms <= 10000
             ):
-                raise ValueError("Choose a legacy axis, position1..4 and duration1..10000ms")
+                raise ValueError("Choose a motor, a position from 1 to 4 and a duration of up to 10000 milliseconds")
             if op.endswith(("recall", "save")) and request.value not in (1, 2):
-                raise ValueError("Choose memory1 or2")
+                raise ValueError("Choose memory position 1 or 2")
             if op in ("snore_setting", "out_of_bed_setting") and request.value not in (0, 1):
-                raise ValueError("Choose0 or1")
+                raise ValueError("Choose 0 or 1")
             if op == "yb_massage" and (
                 request.value not in (1, 2, 3) or request.duration_ms not in app.YB_TIMERS
             ):
-                raise ValueError("Yb uses speed1..3 and timer parameter300 or900 only")
+                raise ValueError("Choose a speed from 1 to 3 and a timer of 300 or 900")
             if op.endswith("commit") and not 10 <= request.value <= 120:
-                raise ValueError("Choose the app delay setting10..120 (firmware units unproven)")
+                raise ValueError("Choose a delay from 10 to 120")
             if any(not 0 <= v <= 255 for v in (*request.rgb, request.brightness)):
-                raise ValueError("RGB and brightness must be0..255")
+                raise ValueError("Enter red, green, blue and brightness values from 0 to 255")
         elif op.startswith("massage_"):
             if (
                 not self.model.massage
                 or op[8:] not in ("head", "foot", "mode")
                 or not 0 <= request.value <= 4
             ):
-                raise ValueError("Choose a conventional massage control")
+                raise ValueError("Choose a massage control this bed offers")
             if self.model.format == "p2" and request.value:
-                raise ValueError("P2 conventional massage exposes cycles, not absolute levels")
+                raise ValueError("This bed steps through massage settings and cannot set a level directly. Leave the value empty or set it to 0 to step to the next setting")
         elif op == "sonic_level":
             if not self.model.sonic or not 0 <= request.value <= 100:
-                raise ValueError("Choose an I/HI sonic level0..100")
+                raise ValueError("Choose a sound level from 0 to 100")
         elif op in ("sonic_switch", "sonic_increase", "sonic_decrease"):
             self.validate_hold_control(op, request.duration_ms)
         elif op in app.SONIC:

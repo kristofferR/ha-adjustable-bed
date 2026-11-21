@@ -56,16 +56,16 @@ async def handle_app_command(call: ServiceCall) -> None:
             models = {controller.model for controller in controllers}
             if len(models) != 1 or not all(controller.app_model for controller in controllers):
                 raise ValueError(
-                    "BedTech app routing requires the same explicit model on every receiver"
+                    "Set the same bed model on every receiver in Reconfigure, then try again"
                 )
             selected = app_side(controllers[0].model, sleeper, action)
             if target_side != SIDE_BOTH and selected != target_side:
                 raise ValueError(
-                    "The app sleeper selector conflicts with the targeted child device"
+                    "The sleeper you chose is on the other side of the bed. Target that side instead"
                 )
             if not isinstance(coordinator, PairedBedCoordinator):
                 if not controllers[0].supports_single_address_pairing and selected == "right":
-                    raise ValueError("The second sleeper needs a paired second receiver")
+                    raise ValueError("The second sleeper needs a second receiver. Combine both receivers into one bed first")
                 selected = SIDE_BOTH
             logical = app_side(controllers[0].model, sleeper, action)
             for child in _command_targets(coordinator, selected):

@@ -208,7 +208,7 @@ class SymphonySleepController(KeesonController):
         try:
             self._live()
         except (ConnectionError, BleakError) as err:
-            raise ValueError(str(err)) from err
+            raise ValueError("Reconnect the bed, then set its clock again") from err
 
     async def _send(self, link: _Link, command: bytes, cancel: asyncio.Event) -> None:
         def check_session() -> None:
@@ -372,7 +372,7 @@ class SymphonySleepController(KeesonController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or type(duration_ms) is not int or not 1 <= duration_ms <= 30000:
-            raise ValueError("Choose an available Symphony Sleep control and 1–30000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)

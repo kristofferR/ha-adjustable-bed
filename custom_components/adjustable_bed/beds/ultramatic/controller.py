@@ -388,7 +388,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
             or not isinstance(duration_ms, int)
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Hold duration must be an integer from 1 to 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def _hold(self, action: str, duration_ms: int) -> None:
         link, side = self._live(), self._side()
@@ -505,7 +505,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
 
     async def save_preset(self, preset: str) -> None:
         if preset not in SAVE_PRESETS:
-            raise ValueError("Only ZG, ANTI, M1 and M2 have the app's save gesture")
+            raise ValueError("Only Zero G, Anti-snore, Memory 1 and Memory 2 can be saved")
         await self._hold(preset, app.SAVE_HOLD_MS)
 
     async def reset_memory(self) -> None:
@@ -555,7 +555,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
     def validate_plan(self, plan: AlarmPlan) -> None:
         self._live(plan.link)
         if self._side() != plan.side:
-            raise ValueError("Ultramatic alarm side changed after validation")
+            raise ValueError("The bed's connection changed while the action was starting. Try again")
 
     async def set_alarm(
         self, plan: AlarmPlan, *, validate: Callable[[], None] | None = None

@@ -56,7 +56,7 @@ class RichmatMHAppSleepController(RufRichmatSleepController):
 
     def validate_direct_user_mode(self, option: str) -> None:
         if self.app != "nisco" or option not in ("single", "double"):
-            raise ValueError("The direct user-mode caller is established only for Nisco")
+            raise ValueError("Only the Nisco model offers this sleep mode")
 
     async def direct_user_mode(self, option: str) -> None:
         self.validate_direct_user_mode(option)

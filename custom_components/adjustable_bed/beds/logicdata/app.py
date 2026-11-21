@@ -601,7 +601,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
     async def rename_device(self, name: str) -> None:
         rename_transport = self._rename_transport
         if rename_transport is None:
-            raise NotImplementedError("The selected transport has no rename characteristic")
+            raise NotImplementedError("This bed cannot be renamed")
         await self._schedule(
             profiles.rename_schedule(self.profile, rename_transport, name),
             uuid=TRANSPORTS[rename_transport].name_uuid,
@@ -633,7 +633,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
         if any(isinstance(day, bool) or day not in range(7) for day in weekdays):
             raise ValueError("Alarm weekdays must use Monday=0 through Sunday=6")
         if preset not in ("flat", "zero_g", "anti_snore", "memory_1", "memory_2"):
-            raise ValueError("Alarm preset is unsupported")
+            raise ValueError("Choose a wake action this bed offers")
         packet = codec.alarm(
             enabled,
             tuple(day in weekdays for day in range(7)),

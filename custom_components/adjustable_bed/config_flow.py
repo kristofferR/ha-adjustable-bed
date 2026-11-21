@@ -3768,7 +3768,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         controller = coordinator.capability_controller
         if controller is None:
             return None
-        specs = list(getattr(controller, "motor_control_specs", ()))
+        specs = list(controller.motor_control_specs)
         configured_motor_count = entry.options.get(
             CONF_MOTOR_COUNT,
             entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
@@ -3781,10 +3781,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return {
             "motor_count": int(configured_motor_count),
             "motor_keys": sorted(spec.key for spec in specs),
-            "discrete_motor_control": bool(
-                getattr(controller, "has_discrete_motor_control", False)
-            ),
-            "supports_motor_control": bool(getattr(controller, "supports_motor_control", False)),
+            "discrete_motor_control": controller.has_discrete_motor_control,
+            "supports_motor_control": controller.supports_motor_control,
         }
 
     def _is_absorbed_pair_member(self, address: str) -> bool:

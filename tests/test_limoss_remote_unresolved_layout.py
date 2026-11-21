@@ -54,11 +54,11 @@ async def test_missing_product_unknown_cache_supports_offline_entities_and_diagn
         isinstance(button, AdjustableBedButton) and button.entity_description.memory_slot
         for button in _button_entities_for(hass, coordinator)
     )
-    with pytest.raises(ValueError, match="not rendered"):
+    with pytest.raises(ValueError, match="does not offer that control"):
         await controller.hold_control("motor_1_up", 100)
-    with pytest.raises(ValueError, match="Saving requires"):
+    with pytest.raises(ValueError, match="not reported its motors"):
         await controller.program_memory(1)
-    with pytest.raises(ValueError, match="Recalling requires"):
+    with pytest.raises(ValueError, match="not reported its motors"):
         controller.validate_memory_recall(1)
     from unittest.mock import AsyncMock
 

@@ -66,8 +66,6 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
         # Auto is the documented default layout only after the user selects
         # this app. Shared smartbed names never infer the app or product.
         self.profile = p.PROFILES["remedy_iii" if variant == "auto" else variant]
-        retained = getattr(coordinator, "rize_home_source", "button")
-        coordinator.rize_home_source = "speak" if retained == "speak" else "button"
         self._link: _Link | None = None
         self._notifying = False
         self._timer = 0
@@ -644,7 +642,7 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
             or not isinstance(duration_ms, int)
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Hold duration must be an integer from 1 to 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -801,12 +799,12 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
 
     async def preset_memory(self, memory_num: int) -> None:
         if memory_num != 1:
-            raise ValueError("Rize Home MEMORY is slot 1, not the artifact method number m5")
+            raise ValueError("This bed has only memory position 1")
         await self.action("memory")
 
     async def program_memory(self, memory_num: int) -> None:
         if memory_num != 1:
-            raise ValueError("Rize Home has one MEMORY action")
+            raise ValueError("This bed has only memory position 1")
         await self.program_preset("memory")
 
     async def lights_toggle(self) -> None:

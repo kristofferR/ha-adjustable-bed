@@ -144,7 +144,7 @@ def color_action(color: int, brightness: int) -> bytes:
 def rename(name: str) -> bytes:
     name = name.strip("".join(chr(value) for value in range(33)))
     if len(name.encode("utf-16-le")) // 2 > 10:
-        raise ValueError("Name must contain at most ten UTF-16 units after trimming")
+        raise ValueError("Use a name of at most 10 characters. Emoji count as two")
     return name.encode("utf-8")
 
 

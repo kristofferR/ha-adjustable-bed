@@ -64,7 +64,7 @@ so the name does not tell which app's controls your bed needs.
 ## Choosing a profile
 
 - **Solace** (bed type `solace`, variant `auto`) picks the narrowest route its
-  Bluetooth name proves (see [Solace name routes](#solace-name-routes)). For
+  Bluetooth name allows (see [Solace name routes](#solace-name-routes)). For
   beds that use the Woosa Sleep app, answer **Woosa Sleep app** (variant
   `woosa`) in the [Solace question](#home-assistant-setup).
 - **BedSense** (bed type `bedsense`) is an explicit choice; its layout comes from

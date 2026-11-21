@@ -498,13 +498,13 @@ class GmmotorSleepController(BedController, GmmotorActions):
             "sensor_sensitivity",
             "sensor_stop",
         ):
-            raise ValueError("This action requires a GM Control bed, not a sleep module")
+            raise ValueError("This action works on the bed, not on the sleep sensor")
         if request.operation == "sensor_sensitivity" and not self._sxb:
-            raise ValueError("Sensitivity query is unavailable in the normal sleep branch")
+            raise ValueError("This sleep sensor cannot report its sensitivity")
         if request.operation == "sensor_part" and request.value not in (
             (11, 12, 13) if self._sxb else (1, 2)
         ):
-            raise ValueError("Select a part setting admitted by this sleep module's app page")
+            raise ValueError("Choose a part setting this sleep sensor offers")
 
     def _stop_live(self) -> None:
         self._generation += 1  # Queued realtime polls must not write after this.

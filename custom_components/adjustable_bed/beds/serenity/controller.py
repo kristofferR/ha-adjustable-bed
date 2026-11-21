@@ -742,7 +742,7 @@ class ZSeriesController(OkinBeddingAppController):
                 "Could not read the manufacturer string that enables Z-Series alarms; try again"
             )
         if not state:
-            raise ValueError("This controller's manufacturer string does not enable app alarms")
+            raise ValueError("This bed's controller has no alarm")
 
     async def _query_alarm(self) -> None:
         # Query runs 200 ms after the tap; it writes 300 and 600 ms after that.
@@ -775,7 +775,7 @@ class ZSeriesController(OkinBeddingAppController):
         """
         await self._require_alarm()
         if weekdays or head_level or foot_level:
-            raise ValueError("Z-Series alarms have no weekday or massage-level fields")
+            raise ValueError("This bed's alarm has no weekdays or massage levels. Remove them and try again")
         now = dt_util.now()
         frame = alarm_frame(
             enabled=enabled,
