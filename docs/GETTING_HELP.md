@@ -192,7 +192,7 @@ app, and capture error so we can track the request and identify what is missing.
 
 You don't need to configure anything first: the support bundle action works directly on any BLE device your Home Assistant can see:
 
-1. **Find your bed's MAC address:** go to **Settings > Devices & services > Add Integration > Adjustable Bed**, choose **"Browse unsupported BLE devices"**, and select your bed from the list (or pick **"Enter address manually"** if you already know the address). The wizard shows the device's MAC address and scanner details; note the address. This step only inspects the device; it doesn't add anything.
+1. **Find your bed's MAC address:** go to **Settings > Devices & services > Add Integration > Adjustable Bed**, choose **"Browse unsupported Bluetooth devices"**, and select your bed from the list (or pick **"Enter address manually"** if you already know the address). The wizard shows the device's MAC address and scanner details; note the address. This step only inspects the device; it doesn't add anything.
 2. Go to **Developer Tools** → **Actions** → `adjustable_bed.generate_support_bundle`
 3. Leave the **Device** field empty and enter the MAC address in **Target Address**
 4. Click **Perform action**, then operate your physical remote during the capture (120 seconds by default) so the bundle records useful traffic
@@ -226,7 +226,7 @@ Let us know if you can:
 | Scenario | Recommended Tool |
 |----------|------------------|
 | Troubleshooting a configured bed | Support bundle or diagnostics download |
-| Finding your bed's MAC address | **"Browse unsupported BLE devices"** in the add-integration wizard |
+| Finding your bed's MAC address | **"Browse unsupported Bluetooth devices"** in the add-integration wizard |
 | Identifying bed type/service UUIDs | `generate_support_bundle` with `target_address` |
 | New bed support - capture what app sends | Android Bluetooth HCI snoop log (see below) |
 | Device not visible to HA at all | nRF Connect to verify it exists |

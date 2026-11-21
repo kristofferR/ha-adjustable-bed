@@ -35,12 +35,13 @@ The first screen lists the discovered beds, each named with its family, then:
   Casper Base and Comfort Enhancements have one row each, which then asks the
   exact product or layout. Its last answer,
   **My app isn't listed, or I don't know**, asks which brand is on the bed:
-  each family, named with its apps, then opens its own question, and **Not
-  sure** runs diagnostics.
+  every row of the bed-type list named brand first, where a family's row
+  opens its own question. **Not sure, or not listed** offers the detected
+  controls when you picked the device first, and otherwise runs diagnostics.
   You then pick the Bluetooth device, or type its address.
 - **Pick any Bluetooth device** lets you choose any device first, then asks the
   same app question. A confidently detected bed suggests its own row.
-- **Scan again for beds** and **Browse unsupported BLE devices**, and
+- **Scan again for beds** and **Browse unsupported Bluetooth devices**, and
   **Combine two beds into one (Dual Bed)** when two beds are set up.
 
 A discovered bed asks first which app or remote controls it, from its detected
@@ -70,7 +71,8 @@ you chose:
 Some apps need a choice no advertisement can make, such as the model in the
 Glideaway Motion app. Each bed guide's setup section says what to pick.
 
-**Okin ORE (older remotes)** keeps older ORE setups working. Beds you control
+**Older ORE remote**, under **Okin (other receivers)** in the brand list, keeps
+older ORE setups working. Beds you control
 with the Dynasty Bases, MaxCoil Una, Bedsense Bases, Avanti Bases,
 AMERICANSTAR or INNOVA app use [that app's row](beds/keeson.md#ore-comfort-bed-profiles)
 instead. Home Assistant does not discover ORE beds automatically, because their
@@ -182,7 +184,7 @@ side changes automatically. See the
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
 | **Number of motors** | Profile-dependent | 2 | Number of controllable motor sections when the profile uses a generic count |
-| **Has massage feature** | On/Off | Off | Enable massage controls if your bed supports it |
+| **Massage controls** | On/Off | Off | Enable massage controls if your bed supports it |
 | **Bluetooth adapter** | Automatic / a specific adapter or proxy | Automatic | Which Bluetooth adapter or proxy to use |
 
 Some app profiles add settings that several apps share. Each has one name and
@@ -191,8 +193,8 @@ label wherever it appears:
 | Setting | Offered by | Description |
 |---------|------------|-------------|
 | **Enable light controls** (`has_light`) | Logicdata and Jiecang bed apps (default on), FSM Relax and Limoss Remote (default off) | Expose the app's light controls |
-| **Bed or chair** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
-| **Reverse motor channel 1–4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
+| **App product, model or layout** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
+| **Reverse motor 1** to **Reverse motor 4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
 | **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, MotoMotion, AdjustableM5X5, Adjustable Comfort M1X12 | The unchanged advertised name that identifies the app profile |
 
 Entries that stored `logicdata_app_has_light` or `jiecang_app_has_light` are
@@ -223,7 +225,7 @@ settings because BLE command framing does not reveal the physical remote layout:
 
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
-| **Malouf/Lucid actuator layout** | Back + legs; add head tilt; add lumbar; four motor; Hi-Lo | Automatic | Controls which motor entities are exposed |
+| **Malouf/Lucid motor layout** | Back + legs; add head tilt; add lumbar; four motor; Hi-Lo | Automatic | Controls which motor entities are exposed |
 | **Malouf/Lucid memory positions** | Automatic, 1, 2 | Automatic | Must match the memory buttons on the physical remote |
 
 Automatic uses back + legs for a two-motor entry, head tilt for a three-motor entry,
@@ -276,7 +278,7 @@ feedback or change which commands a bed supports.
 | **Maximum back angle (degrees)** | Greater than 0, up to 180° | 68° | Back/head range for controllers reporting angles |
 | **Maximum legs angle (degrees)** | Greater than 0, up to 180° | 45° | Legs/feet range for controllers reporting angles |
 
-A form shows only the settings the bed uses. **Has massage feature** is left
+A form shows only the settings the bed uses. **Massage controls** is left
 out for beds with no massage commands or that turn massage on themselves; the
 maximum angles are left out where the frame's travel is fixed (for example
 Paramount, Serta MP Remote, SBI and BedJet); a motor count with only one
@@ -773,7 +775,7 @@ Increase **Movement per tap**. Start with +10 and test.
 
 - **Richmat beds:** Select your remote code in **Configure**
 - **Other beds:** Verify motor count matches your bed's actual motors
-- **Massage not showing:** Turn on **Has massage feature** in **Configure**, where it is offered
+- **Massage not showing:** Turn on **Massage controls** in **Configure**, where it is offered
 
 ---
 
