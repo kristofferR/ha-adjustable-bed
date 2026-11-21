@@ -867,14 +867,14 @@ def bed_type_label(bed_type: str | None) -> str:
     return _COMPATIBILITY_LABELS.get(bed_type, bed_type)
 
 
-# Each compatibility ID gets its own label, naming the route it runs, so a label
-# always maps back to exactly one saved ID.
+# Each compatibility ID, saved by an older version, gets its own label naming
+# the product, so a label always maps back to exactly one saved ID.
 _COMPATIBILITY_LABELS: Final[dict[str, str]] = {
-    "okimat": "Okimat (Okin UUID route, requires pairing)",
-    "dewertokin": "DewertOkin (Okin Handle route)",
-    "nectar": "Nectar (Okin 7-Byte route)",
-    "mattressfirm": "Mattress Firm 900 (Okin Nordic route)",
-    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt (route chosen by its saved variant)",
+    "okimat": "Okimat bed (older setup)",
+    "dewertokin": "DewertOkin bed (older setup)",
+    "nectar": "Nectar bed (older setup)",
+    "mattressfirm": "Mattress Firm 900 bed (older setup)",
+    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt bed (older setup)",
 }
 
 

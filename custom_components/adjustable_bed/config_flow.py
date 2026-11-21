@@ -983,9 +983,6 @@ def _bed_type_selector(
                 ),
             )
         )["label"]
-        if show_saved_id and label != bed_type:
-            # Configure names the saved ID beside its friendly label.
-            label = f"{label} (saved as {bed_type})"
         options.insert(0, SelectOptionDict(value=default, label=label))
     # Configure still accepts a family's route by its ID, as a suggested profile
     # submits it; the picker itself shows only the family row.
