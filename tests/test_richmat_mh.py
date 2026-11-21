@@ -752,6 +752,10 @@ async def test_waist_page_state_selects_and_frames() -> None:
     assert (state["richmat_mh_waist_both_alarm"], state["richmat_mh_waist_both_alarm_repeat"],
             state["richmat_mh_waist_both_alarm_intensity"]) == ("06:30", "daily", 3)
     selects = {s.key: s for s in controller.controller_select_specs}
+    # The mode never turns the heat on, so the heat, pressure and duration selects are
+    # plain controls, as they were in 4.x.
+    heat = selects["richmat_mh_waist_left_heat"]
+    assert heat.entity_category is None and heat.entity_registry_enabled_default
     await selects["richmat_mh_waist_both_pressure"].select_fn(controller, "level_2")
     await selects["richmat_mh_waist_both_heat"].select_fn(controller, "8_hours")
     await selects["richmat_mh_waist_mode"].select_fn(controller, "both_relax")

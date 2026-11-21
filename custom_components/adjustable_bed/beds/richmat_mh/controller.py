@@ -1092,10 +1092,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                             select_fn=lambda ctrl, option, s=side, f=field: _invoke(
                                 ctrl, "set_waist_setting", s, f, option
                             ),
+                            # The mode never turns the heat on: these are the waist controls too.
                             card=CARD_MASSAGE,
-                            # The waist mode is the dashboard control; per-side settings are there to enable.
-                            entity_category=EntityCategory.CONFIG,
-                            entity_registry_enabled_default=False,
                         )
                     )
         return tuple(specs)
