@@ -588,8 +588,8 @@ Existing entries keep their selection until you change it. Beds added before
 app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 For a combined bed with two addresses, settings belong to each physical bed.
 Each receiver's own app settings, such as its motor count, massage or light
-settings, are under **Configure > Change left receiver settings** or **Change
-right receiver settings**. To change a receiver's bed type or app, separate the
+settings, are under **Configure > Change left side settings** or **Change
+right side settings**. To change a receiver's bed type or app, separate the
 beds, Reconfigure that bed, then combine them again.
 
 | Bed or brand | Model and remote settings |
@@ -847,8 +847,8 @@ a successful connection first to discover their capabilities. One-motor OCTO
 TV/bed lifts remain standalone. Combined controls use capabilities shared by both
 sides; side-specific controls retain each side's own features.
 
-For two receivers, open **Configure > Change left receiver settings** or
-**Change right receiver settings** to adjust its adapter, Bluetooth connection, Movement per tap and its own app's
+For two receivers, open **Configure > Change left side settings** or
+**Change right side settings** to adjust its adapter, Bluetooth connection, Movement per tap and its own app's
 settings.
 These changes apply only to the selected receiver, without separating the bed. **Change settings**
 retains the shared form; changed values there apply to both receivers.

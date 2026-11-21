@@ -2258,12 +2258,12 @@ def _parse_settings(
         try:
             seconds = int(float(submitted[CONF_IDLE_DISCONNECT_SECONDS]))
         except ValueError, TypeError:
-            errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_number"
+            errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_idle_seconds"
         else:
             if 1 <= seconds <= MAX_IDLE_DISCONNECT_SECONDS:
                 values[CONF_IDLE_DISCONNECT_SECONDS] = seconds
             else:
-                errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_number"
+                errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_idle_seconds"
     for key, default in _ANGLE_LIMITS.items():
         if key not in submitted:
             continue
