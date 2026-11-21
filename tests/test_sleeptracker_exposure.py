@@ -557,3 +557,17 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     # The processor drops the link after each command; keep what it last reported.
     assert strength.current_option == "off" and light.is_on is False
     assert wind_down.is_on is False
+
+
+def test_the_reported_side_is_asked_by_name():
+    """The processor's side is a named choice, not an ordinal to type."""
+    from custom_components.adjustable_bed.const import (
+        BED_TYPE_SLEEPTRACKER,
+        CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+    )
+    from custom_components.adjustable_bed.setup_questions import setup_profile
+
+    profile = setup_profile(BED_TYPE_SLEEPTRACKER)
+    assert profile is not None
+    side = next(q for q in profile.questions if q.key == CONF_SLEEPTRACKER_SNAPSHOT_SIDE)
+    assert side.options({}, None) == {0: "Left side", 1: "Right side", 2: "Whole bed", 3: "Other"}

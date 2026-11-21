@@ -2255,10 +2255,17 @@ def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {} if profile is not None and profile.key != "MattressControllerDrawerFragment" else {CONF_BLE_DEVICE_NAME: "suta_name"}
 
 
-def _cheerssleep_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+def _cheerssleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
     from .beds.cheerssleep.catalog import MODELS
-    # Several app screens share a model name; the key tells them apart.
-    return {str(key): f"{model.label} ({key})" for key, model in MODELS.items()}
+
+    # Two app entries share a model name and every setting, so the list shows
+    # the name once; a saved entry keeps its own.
+    saved = str(data.get(CONF_PRODUCT_TYPE, ""))
+    by_label: dict[str, str] = {}
+    for key, model in MODELS.items():
+        if model.label not in by_label or str(key) == saved:
+            by_label[model.label] = str(key)
+    return {key: label for label, key in by_label.items()}
 
 
 def _cheerssleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
@@ -3090,8 +3097,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_SLEEPTRACKER_UNIT, default=0, validator=_INT32, advanced=True),
             Question(
                 CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+                {0: "Left side", 1: "Right side", 2: "Whole bed", 3: "Other"},
                 default=0,
-                validator=vol.All(int, vol.Range(min=0, max=3)),
                 advanced=True,
             ),
             Question(CONF_SLEEPTRACKER_RESTRICTED, default=False, advanced=True),
