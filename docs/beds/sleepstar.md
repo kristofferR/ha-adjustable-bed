@@ -221,7 +221,7 @@ Both forms below are accepted:
 
 - Identical notifications inside 200 ms are ignored, matching the app.
 - Sleep/environment/config/report responses are retained in controller state as
-  hex so support bundles preserve unmodified protocol evidence. The integration
+  hex so support bundles keep the raw protocol data. The integration
   does not guess the physical meaning of values that the analyzed app leaves
   model-dependent.
 

@@ -173,8 +173,8 @@ async def handle_motion_bed_configuration(call: ServiceCall) -> None:
 
 
 def async_register_motion_bed_services(hass: HomeAssistant) -> None:
-    from ...services import CONF_DEVICE_ID, SIDE_FIELD
-    common = {vol.Required(CONF_DEVICE_ID): cv.ensure_list, **SIDE_FIELD,
+    from ...services import CONF_DEVICE_ID, DEVICE_IDS, SIDE_FIELD
+    common = {vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD,
               vol.Optional("confirmed", default=False): bool}
     required = vol.Required
     optional = vol.Optional

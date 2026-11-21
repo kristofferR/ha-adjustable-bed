@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from math import ceil, floor, trunc
+from math import trunc
 from typing import Final
 
 from ...codec import richmat as codec
@@ -47,10 +47,6 @@ def light_seconds(seconds: int) -> bytes:
     )
 
 
-def color_byte(component: float) -> int:
-    return (floor(component * 255 + 0.5) if component >= 0 else ceil(component * 255 - 0.5)) & 255
-
-
 def sync_time(now: datetime, zone: datetime) -> tuple[bytes, bytes]:
     """The source takes the first eight padded epoch hex digits, including overflow."""
     offset = zone.utcoffset()
@@ -74,11 +70,6 @@ def countdown(minutes: int, opcode: int) -> tuple[bytes, bytes]:
     return codec.frame(0x6E, 5, minutes & 255, 0), codec.frame(
         0x6E, 6, trunc(minutes / 256), opcode
     )
-
-
-def next_alarm_id(records: tuple[Alarm, ...]) -> int:
-    """The app's allocator, including its serialized FF exhaustion quirk."""
-    return next((n for n in range(1, 8) if all(row.id != n for row in records)), -1)
 
 
 def repeat_mask(days: tuple[int, ...], enabled: bool) -> int:

@@ -67,7 +67,8 @@ async def test_later_deferred_target_respects_stop_before_dispatch(
     clients[0].write_gatt_char = blocked_write
     clients[1].write_gatt_char.reset_mock()
 
-    def resolve(_hass, devices, _side):
+    def resolve(_hass, devices, _side, *, problems=None):
+        # Every device resolves, so a STOP has no problem to record.
         selected = {"first": first, "later": later}
         return ([(selected[device], "both") for device in devices], [])
 

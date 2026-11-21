@@ -251,7 +251,7 @@ class BedJetPowerLayerController(ProfileExecution[PowerLayerProfile], BedControl
             self._notify_callback("back", head_angle)
             self._notify_callback("legs", foot_angle)
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read the status characteristic directly."""
         client = self.client
         if client is None or not client.is_connected:

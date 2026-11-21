@@ -468,7 +468,7 @@ class AdjustableLumbarController(
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():

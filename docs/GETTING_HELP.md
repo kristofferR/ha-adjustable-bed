@@ -169,8 +169,7 @@ Both files follow the same rules:
   rate, breathing, in bed, snoring and sleep reports; other nearby devices, and
   log lines that mention them.
 - **Shortened:** every Bluetooth address keeps only its first three bytes, the
-  manufacturer prefix. The rest of your bed's address is also starred out where
-  its name, advertisement or messages contain it.
+  manufacturer prefix.
 - **Included:** your bed's advertised name and advertisement, its services and
   characteristics, the messages it sent during the capture and the commands Home
   Assistant sent, your Home Assistant and integration versions, your time zone,

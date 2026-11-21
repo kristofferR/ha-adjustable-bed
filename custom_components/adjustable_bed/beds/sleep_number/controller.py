@@ -94,8 +94,6 @@ _BAMKEY_RESPONSE_TIMEOUT = 7.128
 _BAMKEY_BLOB_PREAMBLE = b"fUzIoN"
 _BAMKEY_BLOB_HEADER_LENGTH = len(_BAMKEY_BLOB_PREAMBLE) + 4
 _BAMKEY_BLOB_MIN_LENGTH = _BAMKEY_BLOB_HEADER_LENGTH + 4
-# Bounds memory only: responses are short text.
-_BAMKEY_BLOB_MAX_LENGTH = 1024 * 1024
 # Time-to-live for the cached bed presence result. Multiple binary sensors
 # (legacy + per-side) all poll independently via Home Assistant's entity
 # update cycle, but `read_bed_presence` already refreshes both sides in one
@@ -904,7 +902,7 @@ class SleepNumberController(BedController, SleepNumberActions):
             and self._system_config.get(f"{side or self._side}_{actuator}_actuator", "yes") == "yes"
         )
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Convert direct-position values to Sleep Number's 0-100 native range."""
         return max(_SLEEP_NUMBER_MIN_POSITION, min(_SLEEP_NUMBER_MAX_POSITION, round(angle)))
 
@@ -1054,7 +1052,7 @@ class SleepNumberController(BedController, SleepNumberActions):
         except BleakError:
             _LOGGER.debug("Failed to stop Sleep Number notifications", exc_info=True)
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read actuator positions, preserving explicit logical-side ownership."""
         await self._read_positions_for_side(self._side)
 
@@ -2447,10 +2445,7 @@ class SleepNumberController(BedController, SleepNumberActions):
                 if not buffer.startswith(_BAMKEY_BLOB_PREAMBLE):
                     raise ValueError("Sleep Number response is missing the Fuzion preamble")
                 total = struct.unpack("<I", buffer[6:10])[0]
-                if (
-                    not _BAMKEY_BLOB_MIN_LENGTH <= total <= _BAMKEY_BLOB_MAX_LENGTH
-                    or len(buffer) > total
-                ):
+                if total < _BAMKEY_BLOB_MIN_LENGTH or len(buffer) > total:
                     raise ValueError("Sleep Number response has an invalid blob length")
                 if len(buffer) == total:
                     return self._parse_bamkey_blob(bytes(buffer))

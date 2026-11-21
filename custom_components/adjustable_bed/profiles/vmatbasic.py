@@ -205,20 +205,3 @@ def manufacturer_payload_matches(payload: bytes) -> bool:
         and payload[2] & 15 == 1
         and payload[3] & 15 == 1
     )
-
-
-def first_manufacturer_matches(advertisement: bytes) -> bool:
-    """Preserve first-manufacturer precedence while rejecting malformed AD."""
-    offset = 0
-    while offset < len(advertisement):
-        length = advertisement[offset]
-        if length == 0:
-            return False
-        end = offset + 1 + length
-        if length < 1 or end > len(advertisement):
-            return False
-        if advertisement[offset + 1] == 0xFF:
-            # The source requires eight manufacturer bytes, including company.
-            return manufacturer_payload_matches(advertisement[offset + 4 : end])
-        offset = end
-    return False

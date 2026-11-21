@@ -251,15 +251,6 @@ _FAULTS = {
 }
 
 
-def k4_short_recall_selected(state: MotionBedState, action: str) -> bool:
-    """Preserve the app's short-UP cross-field reads, distinct from long save."""
-    if action in ("left_tv", "right_tv", "left_zero_gravity"):
-        return state.left_tv
-    if action == "right_zero_gravity":
-        return state.right_tv
-    raise ValueError("Unknown K4 split preset")
-
-
 def _selected(state: MotionBedState, name: str, value: bool) -> MotionBedState:
     return replace(state, **{name: value})
 

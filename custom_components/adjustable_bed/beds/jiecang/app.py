@@ -778,7 +778,7 @@ def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
         controller = ComfortMotionController(link, layout=layout, transport=transport)
     else:
         controller = JiecangAppController(link, profile=profile, layout=layout, transport=transport)
-    controller._select_transport()  # noqa: SLF001 - the controller's own selection
+    controller._select_transport()
 
 
 async def build_controller(ctx: BuildContext) -> BedController:

@@ -325,12 +325,6 @@ def build_thermal_gear(index: int) -> bytes:
     return with_crc(bytes.fromhex("FFFFFFFFFE1000") + bytes((command, 0, 0, gear, 0, 0, 0xAA)))
 
 
-def build_thermal_timer_enabled(enabled: bool) -> bytes:
-    if not isinstance(enabled, bool):
-        raise ValueError("enabled must be Boolean")
-    return with_crc(bytes.fromhex("FFFFFFFFFE1000030000") + bytes((enabled, 0, 0, 0xAA)))
-
-
 def build_audio_track(track: int, *, preview: bool = False) -> bytes:
     _integer(track, 1, 5, "track")
     if not isinstance(preview, bool):

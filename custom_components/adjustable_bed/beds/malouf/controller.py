@@ -18,8 +18,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
 from ...codec import malouf as malouf_codec
 from ...const import (
     CONF_MALOUF_LAYOUT,
@@ -303,16 +301,11 @@ class MaloufNewOkinController(ProfileExecution[MaloufRouteProfile], BedControlle
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Repeat a movement frame at the pulse settings, then always send STOP."""
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             pulse_count, pulse_delay = self.motor_pulse_settings()
             # A leased hold (#483) refreshes until its lease ends.
             pulse_count = self.leased_hold_refreshes(pulse_delay) or pulse_count
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
-        finally:
-            try:
-                await self._send_stop()
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     async def _move(self, action: str) -> None:
         await self._move_with_stop(self._frame(action))
@@ -390,11 +383,8 @@ class MaloufNewOkinController(ProfileExecution[MaloufRouteProfile], BedControlle
     async def _send_preset(self, action: str) -> None:
         """Send a preset frame as the profile's recall, then STOP."""
         recall = self.profile.recall
-        await self.write_command(self._frame(action), repeat_count=recall.repeats)
-        try:
-            await self._send_stop()
-        except BleakError, ConnectionError:
-            _LOGGER.debug("Failed to send STOP after preset", exc_info=True)
+        async with self.releasing(self._send_stop):
+            await self.write_command(self._frame(action), repeat_count=recall.repeats)
 
     async def preset_flat(self) -> None:
         await self._send_preset("flat")
@@ -414,21 +404,17 @@ class MaloufNewOkinController(ProfileExecution[MaloufRouteProfile], BedControlle
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
-            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         if (action := f"memory_{memory_num}") not in self.profile.words:
-            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         await self._send_preset(action)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory with the official app's hold-to-save stream."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
-            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         if memory_num not in self.profile.save_words.slots:
-            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         word = self.profile.save_words.word(memory_num, self._coordinator.ble_device_name)
         save = self.profile.save
         # The APK schedules the first write after one interval. Its final
@@ -574,21 +560,17 @@ class MaloufLegacyOkinController(ProfileExecution[keeson_profiles.KeesonProfile]
     async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         command = self._build_command(command_value)
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             pulse_delay = self._coordinator.motor_pulse_delay_ms
             # A leased hold (#483) refreshes until its lease ends.
             pulse_count = (
                 self.leased_hold_refreshes(pulse_delay) or self._coordinator.motor_pulse_count
             )
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(MaloufCommands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -728,8 +710,7 @@ class MaloufLegacyOkinController(ProfileExecution[keeson_profiles.KeesonProfile]
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
-            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         commands = {
             1: MaloufCommands.MEMORY_1,
             2: MaloufCommands.MEMORY_2,
@@ -737,17 +718,15 @@ class MaloufLegacyOkinController(ProfileExecution[keeson_profiles.KeesonProfile]
         if command := commands.get(memory_num):
             await self._send_preset(command)
         else:
-            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory using the official app's 85 x 150 ms hold sequence."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
-            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         command_value = _save_memory_command(memory_num, self._coordinator.ble_device_name)
         if command_value is None:
-            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         # Match the APK's delayed first write and exact repeat count. The APK's
         # trailing "stopCommand" is a dead string, not a STOP transmission.
         await asyncio.sleep(0.15)

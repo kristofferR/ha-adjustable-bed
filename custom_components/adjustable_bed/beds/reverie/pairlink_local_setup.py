@@ -270,7 +270,7 @@ async def async_setup_pairlink_local_entry(
         release_pairlink_local_profile_lease(hass, entry.entry_id, adapter)
         try:
             await coordinator.async_shutdown()
-        except Exception:  # noqa: BLE001 - preserve the concrete setup failure
+        except Exception:
             _LOGGER.exception("Pairlink peripheral cleanup failed during setup")
         if isinstance(err, asyncio.CancelledError):
             raise

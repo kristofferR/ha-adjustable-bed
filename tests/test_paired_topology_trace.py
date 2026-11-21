@@ -360,7 +360,7 @@ class Run:
                 raise
             except PairedSideError as err:
                 self.trace.add("caller", name, "PairedSideError", sorted(err.side_errors))
-            except Exception as err:  # noqa: BLE001 - outcomes are trace data
+            except Exception as err:
                 self.trace.add("caller", name, type(err).__name__)
             else:
                 self.trace.add("caller", name, "ok")

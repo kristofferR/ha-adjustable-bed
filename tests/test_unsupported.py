@@ -101,7 +101,7 @@ def test_misidentified_report_never_publishes_the_device_identity() -> None:
     """The public issue has a neutral title and only the address prefix (PRIV-7)."""
     device_info = UnsupportedDeviceInfo(
         address="AA:BB:CC:DD:EE:FF",
-        name="Anna's phone DDEEFF",
+        name="Anna's phone",
         service_uuids=[],
         manufacturer_data={0x004C: bytes.fromhex("0102ffeedd")},
     )
@@ -113,5 +113,3 @@ def test_misidentified_report_never_publishes_the_device_identity() -> None:
     details = query["details"][0]
     assert "AA:BB:CC:**:**:**" in details
     assert "DD:EE:FF" not in details
-    assert "DDEEFF" not in details
-    assert "ffeedd" not in details

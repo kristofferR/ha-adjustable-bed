@@ -1383,7 +1383,7 @@ class SleepysEliteAppController(BedController):
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("Sleepy's Elite app routes do not save memory slots")
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         if ("queryPosition", self.selector) in ROUTES:
             await self.send("queryPosition")
 
@@ -1419,11 +1419,11 @@ def require_selector_route(client: object, selector: str) -> None:
     change checks exactly what the runtime will require.
     """
     route = ROUTES[("keepConnect", selector)]
-    SleepysEliteAppController._characteristic(  # noqa: SLF001 - the controller's own lookup
+    SleepysEliteAppController._characteristic(
         client, route.write_service, route.write_characteristic
     )
     service_uuid, characteristic_uuid = route.notify_target.split("/", 1)
-    SleepysEliteAppController._characteristic(  # noqa: SLF001
+    SleepysEliteAppController._characteristic(
         client, service_uuid, characteristic_uuid
     )
 

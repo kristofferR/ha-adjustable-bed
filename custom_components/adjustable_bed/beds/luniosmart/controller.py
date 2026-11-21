@@ -334,7 +334,7 @@ async def _settle(task: asyncio.Task[None]) -> None:
             await asyncio.shield(task)
         except asyncio.CancelledError:
             cancelled = True
-        except Exception:  # noqa: BLE001 - result below preserves the actual failure.
+        except Exception:
             break
     task.result()
     if cancelled:

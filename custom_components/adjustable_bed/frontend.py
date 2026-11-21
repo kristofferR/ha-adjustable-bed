@@ -181,7 +181,7 @@ async def _async_add_frontend_module(
     """Add the module when Home Assistant's frontend is ready."""
     try:
         add_extra_js_url(hass, card_url)
-    except Exception:  # noqa: BLE001 - the durable resource may still load it
+    except Exception:
         _LOGGER.warning(
             "Could not add the Adjustable Bed frontend module hook; the "
             "Lovelace resource will still be attempted",
@@ -198,7 +198,7 @@ async def _async_add_lovelace_resource(
     """Persist the module when Home Assistant's Lovelace data is ready."""
     try:
         await _async_register_lovelace_resource(hass, card_url)
-    except Exception:  # noqa: BLE001 - the frontend module hook is independent
+    except Exception:
         _LOGGER.warning(
             "Could not register the Adjustable Bed card as a Lovelace resource; "
             "the frontend module hook will still be attempted",
@@ -240,7 +240,7 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         # Register the exact static route first, then the loader's fallback for
         # older content paths. Keep the resource URL stable across upgrades.
         hass.http.register_view(CardLoaderView(card_url))
-    except Exception:  # noqa: BLE001 - never let the card break setup
+    except Exception:
         _LOGGER.warning(
             "Could not serve the Adjustable Bed Lovelace card; bed control is "
             "unaffected",

@@ -183,13 +183,11 @@ def test_formatter_rejects_unsafe_domain_not_firmware_capacity(field, value):
         codec.schedule_step(**inputs)
 
 
-def test_delay_truncation_date_normalization_and_full_schedule():
+def test_delay_truncation_and_full_schedule():
     now = datetime(2026, 12, 31, 23, 59, 59, 750000, tzinfo=UTC)
     assert apex.delay_ticks(now - timedelta(microseconds=999999), now) == 0
     assert apex.delay_ticks(now - timedelta(seconds=1), now) == -10
     assert apex.delay_ticks(now + timedelta(seconds=60, microseconds=999999), now) == 600
-    assert apex.selected_time(now, 0, 0, True) == datetime(2027, 1, 1, tzinfo=UTC)
-    assert apex.selected_time(now, 0, 0, False) == datetime(2026, 12, 31, tzinfo=UTC)
     frames = apex.wake_frames(3, 1, 600, massage=True, light=True, preset="M1")
     assert [f.hex() for f in frames] == [
         "0b0d0100000002580000000005",
@@ -629,8 +627,7 @@ def test_elapsed_delay_uses_instants_across_clock_change():
 
     zone = ZoneInfo("Europe/Oslo")
     now = datetime(2027, 3, 28, 1, 30, tzinfo=zone)
-    selected = apex.selected_time(now, 2, 30, False)
-    assert selected.hour == 3
+    selected = datetime(2027, 3, 28, 3, 30, tzinfo=zone)
     assert apex.delay_ticks(selected, now) == 36000
 
 
@@ -684,7 +681,9 @@ async def test_two_address_card_release_stays_on_original_side(hass):
         patches.enter_context(
             patch(
                 "custom_components.adjustable_bed.services._resolve_sided_targets",
-                side_effect=lambda _hass, _ids, side=None: ([(paired, side or "both")], []),
+                side_effect=lambda _hass, _ids, side=None, *, problems=None: (
+                    [(paired, side or "both")], []
+                ),
             )
         )
         await async_register_services(hass)

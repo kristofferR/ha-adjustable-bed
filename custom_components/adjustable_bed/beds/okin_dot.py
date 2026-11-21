@@ -145,7 +145,7 @@ class OkinDotController(OkinUuidController):
     async def stop_notify(self) -> None:
         """Nothing to stop; notifications are never started."""
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Position reads are not available on DOT boxes."""
 
 

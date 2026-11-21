@@ -477,7 +477,7 @@ async def _async_translation(hass: HomeAssistant, category: str, key: str, defau
     """
     try:
         translations = await async_get_translations(hass, hass.config.language, category, {DOMAIN})
-    except Exception:  # noqa: BLE001 - a missing translation must not block a flow
+    except Exception:
         return default
     return translations.get(f"component.{DOMAIN}.{category}.{key}", default)
 
@@ -488,7 +488,7 @@ async def _async_selector_labels(hass: HomeAssistant, selector: str) -> dict[str
         translations = await async_get_translations(
             hass, hass.config.language, "selector", {DOMAIN}
         )
-    except Exception:  # noqa: BLE001 - a missing translation must not block a flow
+    except Exception:
         return {}
     prefix = f"component.{DOMAIN}.selector.{selector}.options."
     return {
@@ -2912,7 +2912,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ):
             # The previous bed type's own settings must not steer pairing, the
             # check or the saved entry, such as a VMAT app's bond and timeout.
-            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(
                 data, data[CONF_BED_TYPE]
             )
         if self._migration is not None and grants_one_connection_per_pairing_window(
@@ -3198,7 +3198,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._select_family_route(answer.bed_type, answer.variant)
         if changed and family.clears_other_profiles:
             # A new app starts without the old one's own settings, as in Configure.
-            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, answer.bed_type)  # noqa: SLF001
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, answer.bed_type)
         for key, value in answer.data.items():
             if value is REMOVED:
                 data.pop(key, None)
@@ -3459,7 +3459,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 prediction,
                 pairing_required=bool(bed_type and requires_pairing(bed_type, protocol_variant)),
             )
-        except Exception:  # noqa: BLE001 - never block setup on a preview
+        except Exception:
             _LOGGER.debug("Could not describe the connection path for %s", address, exc_info=True)
             return ""
 
@@ -3916,7 +3916,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 confidence=detection_result.confidence,
                 signals=detection_result.signals,
             )
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             _LOGGER.warning(
                 "Failed to record auto-detection for %s: %s",
                 device_info.address,
@@ -5732,7 +5732,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 outcome=OperationOutcome.PAIRING_NOT_SUPPORTED,
                 detail=str(err) or err.__class__.__name__,
             )
-        except Exception as err:  # noqa: BLE001 - classified below
+        except Exception as err:
             _LOGGER.warning("Pairing failed for %s: %s", address, err)
             return OperationResult(
                 outcome=_classify_connection_failure(err),
@@ -6318,7 +6318,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         # The backend cannot pair at all; an unauthenticated
                         # read would misreport this as stale proxy keys.
                         raise
-                    except Exception as err:  # noqa: BLE001 - verify before judging the RPC
+                    except Exception as err:
                         pair_error = err
                         _LOGGER.warning(
                             "Pairing %s raised (%s); verifying whether a bond was made",
@@ -6383,13 +6383,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
                         try:
                             await async_close_vmat_setup(client)
-                        except Exception:  # noqa: BLE001 - always disconnect the setup-owned client
+                        except Exception:
                             _LOGGER.debug("VMAT setup close failed", exc_info=True)
                 finally:
                     pending_failure = sys.exception()
                     try:
                         await client.disconnect()
-                    except Exception:  # noqa: BLE001 - cleanup must not mask the result
+                    except Exception:
                         if (
                             (vmat_profile or self._migration is not None)
                             and client.is_connected
@@ -6429,7 +6429,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             from homeassistant.components.bluetooth import async_scanner_count
 
             return async_scanner_count(self.hass, connectable=True) > 0
-        except Exception:  # noqa: BLE001 - absence of scanners must not break setup
+        except Exception:
             return False
 
     async def _async_create_selected_app_entry(
@@ -6443,7 +6443,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if data.get(CONF_BED_TYPE) != self._migration.data.get(CONF_BED_TYPE):
                 # The running bed type's own settings must not steer the final
                 # one, such as a VMAT app's connection timeout.
-                AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+                AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(
                     data, data[CONF_BED_TYPE]
                 )
             self._pending_entry = data
@@ -6906,7 +6906,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         _report(SetupAction.DISCONNECTING)
                         try:
                             await client.disconnect()
-                        except Exception:  # noqa: BLE001 - generic probes are best-effort
+                        except Exception:
                             if migration_check is not None and client.is_connected:
                                 raise
                         else:
@@ -6923,7 +6923,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         finally:
                             if migration_check is not None and client.is_connected:
                                 self.async_retain_failed_setup_client(client, address)
-        except Exception as err:  # noqa: BLE001 - probe is best-effort
+        except Exception as err:
             if migration_check is not None:
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
@@ -7316,7 +7316,7 @@ def _pairlink_settings_schema(
             for item in pairlink_host_adapter_inventory(hass)
             if item.transport == "local" and item.active
         ]
-    except Exception:  # noqa: BLE001 - setup revalidates current inventory
+    except Exception:
         local_sources = []
 
     current_source = current_data.get(CONF_PAIRLINK_HOST_SOURCE)
@@ -7845,7 +7845,7 @@ class AdjustableBedOptionsFlow(
                     return
                 try:
                     await async_unpair_entry(self.hass, entry)
-                except Exception:  # noqa: BLE001 - task must report transaction failure
+                except Exception:
                     _LOGGER.exception("Could not unpair config entry %s", entry_id)
 
             # The options flow belongs to the entry being removed. Schedule the
@@ -7947,7 +7947,7 @@ class AdjustableBedOptionsFlow(
                     self.hass.config_entries.async_update_entry(entry, data=paired_data)
                     if not await self.hass.config_entries.async_setup(entry.entry_id):
                         raise RuntimeError("paired entry setup failed")
-                except Exception:  # noqa: BLE001 - restore the working standalone entry
+                except Exception:
                     self.hass.config_entries.async_update_entry(
                         entry,
                         data=original_data,
@@ -7997,7 +7997,7 @@ class AdjustableBedOptionsFlow(
                     resource="configuration",
                     read_positions_after_operation=False,
                 )
-        except Exception as err:  # noqa: BLE001 - report, the user can retry
+        except Exception as err:
             _LOGGER.debug("Side support check for %s failed: %s", self.config_entry.title, err)
         if supported is None:
             # A command preempted during preparation returns without running.
@@ -8849,7 +8849,7 @@ class AdjustableBedOptionsFlow(
         try:
             async with coordinator.async_transport_operation("unpair"):
                 return await self._async_remove_and_apply(record)
-        except Exception as err:  # noqa: BLE001 - report, do not remove blindly
+        except Exception as err:
             _LOGGER.warning("Could not remove the bond for %s: %s", self.config_entry.title, err)
             return OperationResult(
                 outcome=OperationOutcome.UNPAIR_FAILED,

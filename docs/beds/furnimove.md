@@ -93,9 +93,8 @@ sets no explicit Android write type.
 - Choose **FurniMove / OKIN Smart Remote** and select the exact handset ID used
   in the FurniMove app, matching the physical remote. There is no automatic
   handset choice.
-- Issue #633 establishes use of FurniMove; #556's receiver label alone does not
-  establish its app. For another app, select that app's documented integration
-  profile.
+- The owner in #633 uses FurniMove; #556's receiver label alone does not tell
+  which app it uses. For another app, select that app's integration profile.
 - Motor count, massage availability and action ordering come from the selected
   table.
 - An unknown/missing handset ID still prevents setup. An unavailable ID requires
@@ -127,7 +126,7 @@ This catalog is also the keycode source for the 86 handsets that the
 [Okin UUID](okin-nframe.md#okimat) and [Okin DOT](okin-nframe.md#okin-dot) bed types list. Their
 earlier backend capture matched it byte for byte, including memory-save
 timing, so those bed types now derive the keycodes from here. Shared keycodes
-do not establish the same bonding or feedback requirements. Explicit FurniMove
+do not mean the same bonding or feedback requirements. Explicit FurniMove
 setup offers every captured handset, including `82417`:
 
 | Handsets | New setups use | Why |
@@ -168,7 +167,7 @@ FurniMove connections and setup verification wait for live GATT service
 discovery before starting subscriptions. A cached BlueZ service collection can
 otherwise arrive before its characteristic objects exist, producing
 `org.freedesktop.DBus.Error.UnknownObject` on reads and notifications. This fixes
-the race observed in #633, but does not establish the cause of a link that
+the race observed in #633, but does not explain a link that
 disconnects before service discovery completes.
 
 ### Home Assistant setup
@@ -192,7 +191,7 @@ FurniMove handset. For a bed using another app, choose that app through
 After upgrading, every legacy **RF ECO BT single actuator** entry without an
 explicit staircase confirmation receives a fixable warning under **Settings →
 System → Repairs**, even if connection fails. A saved count of one motor does
-not establish the product. The repair offers these choices:
+not identify the product. The repair offers these choices:
 
 - **FurniMove adjustable bed:** choose the exact handset layout, restoring the
   selected axes. Every captured FurniMove handset is listed.
@@ -240,9 +239,9 @@ repair on the next setup.
 - Memory slots preserve all ordered `memory` rows; arbitrary `memory-preset`
   labels remain separate named buttons. Save-memory uses the requested ordered
   slot.
-- All reachable non-actuator rows also have named buttons, with indexed keys
-  that distinguish duplicate labels. Diagnostics list every captured row and the
-  reachable row indexes.
+- Every other handset row the app uses also has a named button, with indexed
+  keys that distinguish duplicate labels. Diagnostics list every captured row and
+  the indexes in use.
 - Actions use the shared command lock and all-target validation; paired sides
   retain their own profiles. An ordered row must have the same action name and
   category on every target. If it differs, select one device or physical side
@@ -403,8 +402,8 @@ keep advertising after a disconnect but refuse or time out reconnects
 
 ## Captured layouts
 
-The setup selector contains every row below. Axes reflect reachable named
-commands; action and memory counts preserve captured ordering and aliases.
+The setup selector contains every row below. Axes reflect the named commands
+the app uses; action and memory counts preserve captured ordering and aliases.
 
 | ID | Description | Axes | Rows | Memory | Massage | Source |
 |----|-------------|------|------|--------|---------|--------|

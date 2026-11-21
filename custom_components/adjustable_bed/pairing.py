@@ -536,17 +536,6 @@ def octo_snapshot_from_descriptor(
     return dict(octo) if isinstance(octo, Mapping) else None
 
 
-def pair_layout_from_descriptor(
-    descriptor: Mapping[str, Any] | None,
-) -> dict[str, Any] | None:
-    """Return the persisted generic motor-layout snapshot for one side."""
-    if not descriptor:
-        return None
-    caps = descriptor.get("capabilities") or {}
-    layout = caps.get(PAIR_LAYOUT_CAPABILITY_KEY)
-    return dict(layout) if isinstance(layout, Mapping) else None
-
-
 def single_data_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
     """Reconstruct standalone entry data from a paired child descriptor.
 

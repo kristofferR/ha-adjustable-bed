@@ -99,11 +99,6 @@ def rename(name: str) -> bytes:
     return data
 
 
-def matches_scan_record(raw: bytes) -> bool:
-    """Preserve the app predicate; HA's parsed advertisements cannot reconstruct it."""
-    return len(raw) >= 9 and (raw[7] == 0xB0 or raw[8] == 0xFF) and raw[6] in (0xB0, 0xFF)
-
-
 @dataclass(frozen=True)
 class SystemState:
     code: int

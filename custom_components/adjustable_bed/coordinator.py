@@ -1261,7 +1261,7 @@ class AdjustableBedCoordinator(
             # Auto-detected variant: needs a live client to resolve. Leave the
             # offline controller unset (this side behaves as today until connect).
             self._offline_controller = None
-        except Exception:  # noqa: BLE001 - capability priming must never block setup
+        except Exception:
             _LOGGER.debug(
                 "Offline capability-controller mint failed for %s",
                 self._name,

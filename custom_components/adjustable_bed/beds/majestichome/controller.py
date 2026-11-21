@@ -191,7 +191,7 @@ class MajesticHomeController(GoodVibeController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - propagate the settled result below.
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():

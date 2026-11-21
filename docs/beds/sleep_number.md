@@ -82,7 +82,7 @@ pair a connection whose bond is still usable.
 **Transport and bonding:**
 
 - Recovery tracks the adapter or Bluetooth proxy that actually carried the
-  connection. Pairing on the Home Assistant host does not establish a bond on a
+  connection. Pairing on the Home Assistant host does not create a bond on a
   separate ESPHome proxy. Use the integration's pairing repair for the active
   transport and close the phone app before connecting.
 - If the bed isn't discoverable, hold the side button until the indicator
@@ -109,7 +109,7 @@ pair a connection whose bond is still usable.
 - **#574:** the September 22 captures show that the ESPHome proxy completed
   pairing and retained a bond, while the subsequent Auth read returned zero
   bytes. Other GATT reads worked. That identifies the failed step but does not
-  establish why the bed returned an empty Auth value.
+  show why the bed returned an empty Auth value.
 - **#660:** support bundles from the same bed show four different handle layouts
   for the Fuzion service across ten days: same characteristics, different order.
   After a power outage, the ESPHome proxy kept serving the table it had cached
@@ -127,8 +127,8 @@ pair a connection whose bond is still usable.
   not require a separate diagnostic HA build or manual debug-log download. The
   standard ESPHome API cannot report stored bond keys or link-security details;
   those fields require proxy firmware support.
-- The runtime recovery correction does not establish successful Climate 360
-  hardware operation.
+- The runtime recovery correction is not yet confirmed to work on Climate 360
+  hardware.
 
 ### MCR
 

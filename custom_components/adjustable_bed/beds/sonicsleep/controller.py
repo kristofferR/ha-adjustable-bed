@@ -313,7 +313,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - propagated by result below.
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():
