@@ -9,7 +9,7 @@ route, four Jiecang app profiles and three LOGICDATA app profiles.
 This guide covers the codec first, then one section per profile. See
 [Protocol codecs and app profiles](../design/protocol-codecs.md) for the architecture.
 
-The accepted MOTIONrelax phone and tablet apps and the bed side of the Sleep Smart
+The MOTIONrelax phone and tablet apps and the bed side of the Sleep Smart
 Air Mattress app use the `logicdata_app` bed type
 ([LOGICDATA app family](#logicdata-app-family)). Existing working Jiecang
 configurations keep the legacy route.
@@ -28,10 +28,10 @@ Brands using Jiecang actuators:
   the Sleep Smart Air Mattress app
 - Jiecang-branded controllers
 
-The Comfort Motion app has no model, Bluetooth name, manufacturer or RSSI filter.
-The ERGOBALANCE, Dream Motion and Dream Motion HD apps share Bluetooth services,
-so a service UUID cannot say which app's layout or release behavior applies
-(see [Choosing a profile](#choosing-a-profile)).
+The Comfort Motion app works with any of these beds; it does not check the model
+or Bluetooth name. The ERGOBALANCE, Dream Motion and Dream Motion HD apps look
+the same over Bluetooth, so pick the app you use in setup (see
+[Choosing a profile](#choosing-a-profile)).
 
 ## Apps
 
@@ -50,16 +50,16 @@ so a service UUID cannot say which app's layout or release behavior applies
 
 | Feature | Legacy route | Comfort Motion | ERGOBALANCE / Dream Motion | Dream Motion HD |
 |---------|--------------|----------------|----------------------------|-----------------|
-| Motor Control | ✅ (back and legs) | ✅ (movement and release; 2/3/4-motor layouts; the two-motor layout also exposes combined back/legs) | ✅ (determined by the selected layout) | ✅ (determined by the selected layout) |
-| Hold Until Release | ❌ (finite pulses) | ❌ (finite pulses; report PARTIAL) | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
-| Position Feedback | ❌ | ❌ (no motor angle, percentage or movement completion) | ❌ (actuator-status packets are not motor position feedback; no position sliders or angle sensors) | ❌ (same) |
+| Motor Control | ✅ (back and legs) | ✅ (2/3/4-motor layouts; the two-motor layout also moves back and legs together) | ✅ (by the layout you pick) | ✅ (by the layout you pick) |
+| Hold Until Release | ❌ (finite pulses) | ❌ (finite pulses) | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Anti-Snore | ✅ Flat, Zero-G, Anti-Snore | ✅ Flat, Zero-G, Anti-Snore; Yoga when the bed reports it | ✅ same |
-| Memory Presets | ✅ (3 slots, recall and program) | ✅ (two recalls, two saves) | ✅ (2 slots, separate recall and save) | ✅ (2 slots, different payload) |
-| Massage | ✅ (back/leg, 0-10 levels) | ✅ (independent back and foot levels 0-3, mode cycling, stop; no massage mode number) | ✅ (Off and levels 1-3 per layout zone, mode, stop) | ✅ (same) |
-| Lights | ✅ (toggle) | ✅ (toggle, with reported light state) | ✅ (toggle; RGB, brightness, timeout and automatic under-bed lighting when reported) | ✅ (same, with its own capability gates) |
-| Alarm | ❌ | ❌ (no BLE alarm programming) | ✅ (`adjustable_bed.set_alarm`) | ✅ |
+| Memory Presets | ✅ (3 slots, recall and save) | ✅ (2 slots, recall and save) | ✅ (2 slots, recall and save) | ✅ (2 slots, recall and save) |
+| Massage | ✅ (back/leg, 0-10 levels) | ✅ (back and foot levels 0-3, mode cycling, stop; current mode not shown) | ✅ (Off and levels 1-3 per layout zone, mode, stop) | ✅ (same) |
+| Lights | ✅ (toggle) | ✅ (toggle, with its state) | ✅ (toggle; RGB, brightness, timeout and automatic under-bed lighting when the bed reports them) | ✅ (same) |
+| Alarm | ❌ | ❌ | ✅ (`adjustable_bed.set_alarm`) | ✅ |
 | Wake Routine | ❌ | ✅ (`adjustable_bed.jiecang_wake`) | ✅ (`adjustable_bed.jiecang_wake`) | ✅ |
-| Clock | ❌ | ❌ (no clock-setting command) | ✅ (answered on the bed's clock request) | ✅ |
+| Clock | ❌ | ❌ | ✅ (set when the bed asks for it) | ✅ |
 | Bluetooth Rename | ❌ | ✅ (G1 only) | ✅ (G1 or G3) | ✅ (G1 or G3) |
 
 The LOGICDATA app profiles:
@@ -68,16 +68,16 @@ The LOGICDATA app profiles:
 |---------|----------------------------|-------------------|
 | Motor Control | ✅ (per layout) | ✅ Back, legs, both |
 | Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
-| Position Feedback | ❌ (neither app reports motor positions) | ❌ |
+| Position Feedback | ❌ | ❌ |
 | Presets | ✅ P1: Flat, Zero-G, Anti-Snore. P2: Flat | ✅ Flat, Zero Gravity, Anti-Snore (hold-only) |
 | Memory Presets | ✅ (2 slots, recall and save, both families) | ✅ (1 slot) |
 | Held Presets | ✅ P2: `adjustable_bed.logicdata_hold_preset` | ✅ Every preset and memory 1 |
 | Massage | ✅ P1 only: Off and levels 1–3 per zone, mode, stop | ✅ (Off and levels 1–3 per zone, stop, mode, **Massage mode** sensor) |
-| Lights | ✅ (toggle with notification readback; no brightness or RGB) | ✅ (under-bed toggle) |
-| Clock | ✅ Phone app (both families); ❌ tablet | ✅ (answers clock requests) |
+| Lights | ✅ (toggle, with its state; no brightness or RGB) | ✅ (under-bed toggle) |
+| Clock | ✅ Phone app (both families); ❌ tablet | ✅ (set when the bed asks for it) |
 | Alarm | ✅ Phone app with P1; ❌ tablet | ❌ |
 | Factory Reset | ❌ | ⚠️ (disabled by default) |
-| Bluetooth Rename | ✅ (T1 or T3) | ✅ (T1 or T3 name role) |
+| Bluetooth Rename | ✅ (T1 or T3) | ✅ (T1 or T3) |
 
 Enable massage and light controls only when fitted.
 
