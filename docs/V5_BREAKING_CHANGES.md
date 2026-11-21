@@ -29,7 +29,9 @@ Changes between betas are in each beta's
 
 ## Before you upgrade
 
-**v5 requires Home Assistant 2026.11.0 or newer** (4.x needs 2026.9.0).
+**v5 requires Home Assistant 2026.11.0 or newer** (4.x needs 2026.9.0). On an
+older Home Assistant, v5 does not load, and the log's "Setup failed" line names
+the version it needs.
 
 1. Update Home Assistant to 2026.11.0 or newer and check that it runs.
 2. Create a full backup under **Settings > System > Backups**. Keep it until
@@ -54,9 +56,10 @@ once Home Assistant runs 2026.11.
 
 1. **Repairs.** Open **Settings > System > Repairs**. When an entity changed
    type and an automation or script still references the old entity, the bed
-   gets a repair that lists them. Templates and dashboards are not checked,
-   so look through those yourself. Some beds get one question about the app
-   they use.
+   gets a repair that lists them. Another repair lists the automations and
+   scripts that still call a removed action, field or option, with what to
+   use instead. Templates and dashboards are not checked, so look through
+   those yourself. Some beds get one question about the app they use.
 2. **Alarm automations.** The per-bed alarm actions are one action,
    [`adjustable_bed.set_alarm`](SERVICES.md#set_alarm), with new field names.
    See [Actions and automations](#actions-and-automations).
@@ -91,9 +94,9 @@ the migration changed, under `profile_migration`.
 |-------------|----|
 | **Position update mode** (`position_mode`) | Removed. When a command asks for a position read afterwards, it happens as with the default "Speed": in the background while the link stays open, and before the link is released with **Release right after each command**. No read is made when **Read bed position** is off or another command is waiting |
 | **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: by default a 25 s connect timeout (shorter on a few beds whose app uses one), 3 and 6 s backoff and a 1 s pause after connecting |
-| **Disconnect after each command** and **Idle disconnect timeout** (including its `0`, "keep connected") | One **Bluetooth connection** setting: **Release right after each command** (was Disconnect after each command on), **Stay connected for a while** with **Seconds to stay connected** (was off, with its timeout), or **Always stay connected** (was a timeout of `0` with Disconnect after each command off). Hidden for beds that always keep their link. What changed in how a dropped link is handled is under [Connection](#connection) |
+| **Disconnect after each command** and **Idle disconnect timeout** (including its `0`, "keep connected") | One **Bluetooth connection** setting: **Release right after each command** (was Disconnect after each command on), **Stay connected for a while** with **Seconds to stay connected** (was off, with its timeout), or **Always stay connected** (was a timeout of `0` with Disconnect after each command off). An entry that never saved Disconnect after each command keeps 4.x's behavior: off. Hidden for beds that always keep their link. What changed in how a dropped link is handled is under [Connection](#connection) |
 | LP Comfort Connect (Leggett & Platt Gen2, and Leggett & Platt on Automatic) kept its link permanently | Follows **Bluetooth connection** and stays connected for a while by default. If a reconnect stalls, it keeps the link until you disconnect it or Home Assistant restarts. Choose **Always stay connected** for the old behavior |
-| **Disable angle sensing** | **Read bed position**, on by default and shown only for beds that report a position. A saved choice equal to the bed's default is dropped, so the bed's default applies |
+| **Disable angle sensing** | **Read bed position**, on by default and shown only for beds that report a position. A saved choice equal to the bed's default is dropped, so the bed's default applies. An entry that never saved a choice keeps 4.x's behavior: the position is not read |
 | **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, usually 1 to 100; a few beds allow more), hidden for beds that never repeat a tap. The delay is no longer shown; each bed uses its own, and a saved delay still applies |
 | **Stop discovering new Bluetooth devices**, in each bed's Configure | **Add Integration > Adjustable Bed > Find new beds automatically** |
 | **Bed type** and **Protocol variant** in Configure | **Reconfigure**, for every bed. The protocol variant is now called **Bed model or remote** |
@@ -180,7 +183,8 @@ Every other saved setting, bed type and ID loads unchanged.
   diagnostics and support bundles.
 - **Entities that change type keep your settings.** When an entity becomes
   another kind (a switch that became a light, a text sensor that became a
-  binary sensor, a select that became a switch or number), the new entity
+  binary sensor, a select or button that became a switch, a select that
+  became a number), the new entity
   takes the old object ID where it is free (`switch.bed_under_bed_lights`
   becomes `light.bed_under_bed_lights`) and the name, icon, area, labels,
   categories, aliases and disabled or hidden state you gave the old one. When
@@ -200,6 +204,27 @@ Every other saved setting, bed type and ID loads unchanged.
 - **No device shows one name twice**, and a paired bed's Left, Right and Both
   entities are named from their devices, as Home Assistant 2026.11 does, so
   the card no longer shows doubled names such as "Bed Left Back".
+
+### Entities that change type
+
+These entities keep their object ID and your settings when their type
+changes, and a repair lists the automations and scripts that still use the
+old entity. Other entities that changed type or were replaced, such as an
+on and off button pair that became one switch, start as new entities:
+[Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists them.
+
+| Bed or app | 4.x type | v5 entity |
+|------------|----------|-----------|
+| Every bed with an on/off under-bed light, except Octo | `switch` | **Under Bed Lights** `light` |
+| Casper, Hush, Good Vibe and Richmat sleep sensors | `sensor` | **Left in bed**, **Right in bed**, **Left body movement**, **Right body movement**, **Left snoring**, **Right snoring** `binary_sensor` |
+| StarCode AdjustableM5X4 | `sensor` | **Massage** `binary_sensor` |
+| Heal Every Night (OKIN apps) | `select` | **Reversed installation**, **Reverse actuator 1**, **Reverse actuator 2** `switch` |
+| Pairlink | `select` | **Massage rhythm** `switch` |
+| DoubleSleep (OKIN SleepEase) | `select` | **Child lock** `switch` |
+| AdjustaMattress | `select` | **Alarm**, **Intelligent anti-snore** `switch` |
+| AdjustaMattress | `button` | **Sleep mode** `switch` |
+| AdjustaMattress | `select` | **Massage: Head Intensity**, **Massage: Foot Intensity**, **Massage: Wave Intensity** `number` |
+| Motion Bed app | `button` | **Night light**, **Smart sleep** `switch` |
 
 ### One shape per control
 
@@ -274,7 +299,10 @@ on every entity that tells the dashboard card where it belongs.
 
 ## Actions and automations
 
-Update scripts and automations that call these actions. The
+Update scripts and automations that call these actions. A repair lists the
+automations and scripts that still call a removed action, or a field or option
+removed below, with what to use instead; it is checked again at every start
+and goes away once none does. Templates are not checked. The
 [Actions and Automations](SERVICES.md) guide describes every current action.
 
 | 4.x action | Use now |
@@ -410,8 +438,9 @@ sensors with the same object ID where it is free, and its
 intervention selects are the **Left snore intervention** and **Right snore
 intervention** switches.
 
-Galaxy and MLILY (`operation: sync`) and SonicSleep (`operation: sync_clock`)
-set their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
+Galaxy and MLILY (`operation: sync`), SonicSleep (`operation: sync_clock`) and
+the Richmat app beds (`richmat_app` `operation: sync` and `sleep_sync`) set
+their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
 the betas changed their entities too (clock buttons, timer selects, switches
 and sleep readings, as described under [Entities](#entities)); each beta's
 release notes list them.
@@ -585,10 +614,10 @@ described under [One shape per control](#one-shape-per-control).
 | SIMMONS | "Sync Clock" button | Clock: the **Set bed clock** action |
 | Sleeptracker | Massage pattern and strength sensors (the selects show them) | |
 | Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons (the light entity drives the light) | Motion sensor on/off buttons: **Motion sensor** switch. Massage timer code select and cycle massage timer button: **Massage: Timer** select (10, 20, 30 min; same entity ID). BOX25 Massage on and Massage off buttons: **Massage** switch. Axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
-| StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time and brightness sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
-| StarCode AdjustableM5X4 | 19 raw field sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor: **Massage** binary sensor |
+| StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time, brightness and RGB-mode sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
+| StarCode AdjustableM5X4 | Raw app field, automatic-white and floor light sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor: **Massage** binary sensor |
 | StarCode AdjustableM5X5 | Raw time, brightness, RGB-mode and motor part 4-6 sensors, motor-stopped, light-on, firmware-read and kneading-demo binary sensors | |
-| SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor, the "Sync clock" button | Lock and unlock: a **Lock** switch with a new entity ID. Head and foot massage off, 1, 2 and 3 buttons and Massage level 0 to 3 buttons: **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Intensity** numbers (0-3). MOON left and right massage strength 1, 2 and 3 buttons: **Left massage intensity** and **Right massage intensity** numbers (1-3). MOON left and right massage timer 10, 20 and 30 minute buttons: **Left massage timer** and **Right massage timer** selects (durations only). Clock: the **Set bed clock** action |
+| SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor, the "Controller Sync" switch, the "Sync clock" button | Lock and unlock: a **Lock** switch with a new entity ID. Head and foot massage off, 1, 2 and 3 buttons and Massage level 0 to 3 buttons: **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Intensity** numbers (0-3). MOON left and right massage strength 1, 2 and 3 buttons: **Left massage intensity** and **Right massage intensity** numbers (1-3). MOON left and right massage timer 10, 20 and 30 minute buttons: **Left massage timer** and **Right massage timer** selects (durations only). Clock: the **Set bed clock** action |
 | Svane | Head, feet and position byte sensors | |
 | V-MAT Basic | ED motor status binary sensor | |
 

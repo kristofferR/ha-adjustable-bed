@@ -64,12 +64,25 @@ RETYPES: Final[tuple[Retype, ...]] = (
             ),
         ),
     ),
+    # A massage state that was a text sensor.
+    Retype(
+        "sensor", "starcode_abm5_4_massage_on", "binary_sensor", "starcode_abm5_4_massage_active"
+    ),
     # Two-option settings that became switches.
     *(
         Retype(
             "select", f"controller_select_okin_app_{s}", "switch", f"controller_switch_okin_app_{s}"
         )
         for s in ("installation", "actuator_1", "actuator_2")
+    ),
+    *(
+        Retype("select", f"controller_select_{old}", "switch", f"controller_switch_{new}")
+        for old, new in (
+            ("reverie_pairlink_massage_rhythm", "reverie_pairlink_massage_rhythm"),
+            ("doublesleep_child_lock", "doublesleep_child_lock"),
+            ("adjustamattress_snore_control", "adjustamattress_snore_control"),
+            ("adjustamattress_alarm_commit", "adjustamattress_alarm"),
+        )
     ),
     # Toggle buttons whose state the bed reports.
     Retype(
@@ -81,6 +94,7 @@ RETYPES: Final[tuple[Retype, ...]] = (
     Retype(
         "button", "motion_bed_sleepmian", "switch", "controller_switch_motion_bed_sleep_enabled"
     ),
+    Retype("button", "adjustamattress_sleep", "switch", "controller_switch_adjustamattress_sleep"),
     # Massage level selects that became numbers.
     *(
         Retype(
