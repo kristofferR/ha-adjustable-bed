@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
+from .beds.cancellation import settled
 from .const import (
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
@@ -677,12 +678,7 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
         # Removing the pair is the commit point. Home Assistant deletes its
         # remaining rows only after the removal hook, so a cancelled caller
         # must not cut the removal short and leave them orphaned.
-        removal_task = hass.async_create_task(hass.config_entries.async_remove(entry.entry_id))
-        try:
-            removal = await asyncio.shield(removal_task)
-        except asyncio.CancelledError:
-            await removal_task
-            raise
+        removal = await settled(hass.config_entries.async_remove(entry.entry_id))
         ownership.finish(hass)
         if removal.get("require_restart"):
             _LOGGER.warning(

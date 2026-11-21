@@ -869,8 +869,10 @@ class TestPairedSetup:
         with patch.object(integration, "async_remove_entry", slow_remove):
             unpair = hass.async_create_task(async_unpair_entry(hass, entry))
             await in_hook.wait()
-            unpair.cancel()
-            await asyncio.sleep(0)
+            # Cancelled twice while the removal is still running.
+            for _ in range(2):
+                unpair.cancel()
+                await asyncio.sleep(0)
             release.set()
             with pytest.raises(asyncio.CancelledError):
                 await unpair
