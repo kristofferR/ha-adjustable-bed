@@ -1,5 +1,5 @@
 // Drives the real card state machine for the Python pointer-to-wire test.
-import { heldButtonMotor, MotorHold, movementHold, type HoldTimers } from "../hold";
+import { heldButtonMotor, MotorHold, movementLease, type HoldTimers } from "../hold";
 import type { HassEntityAttributes, HomeAssistant } from "../types";
 
 export function pointerTrace(attributes: HassEntityAttributes, releaseAt: number) {
@@ -46,7 +46,7 @@ export function pointerTrace(attributes: HassEntityAttributes, releaseAt: number
   if (!motor) throw new Error("Missing admitted hold/release metadata");
   const hold = new MotorHold({
     pulse: () => { throw new Error("Held control must use hold_control"); },
-    holdControl: (m, direction) => movementHold(hass, m, direction),
+    lease: (m, direction, lease) => movementLease(hass, m, direction, lease),
     stopCover: () => { throw new Error("Button hold must retain its release actor"); },
     stopBed: (entityId) => { void hass.callService("button", "press", { entity_id: entityId }); },
   }, timers);

@@ -268,10 +268,12 @@ export function bedEntitiesForDevice(
   const presetSaves: { key: string; id: string }[] = [];
 
   for (const entry of deviceEntries) {
-    if (entry.hidden) continue;
     const id = entry.entity_id;
     const place = placementOf(hass, id);
     if (!place || place.section === "hidden") continue;
+    // Hiding the Stop declutters dashboards; the card still needs it to stop
+    // what it moves.
+    if (entry.hidden && !(place.section === "motors" && place.role === "stop")) continue;
     // Paired side devices name their side, so keys never carry it; a trailing
     // side word belongs to the control's own name (Simmons "Inclined left").
     if (selectedSide && entitySide(hass, id) !== selectedSide) continue;

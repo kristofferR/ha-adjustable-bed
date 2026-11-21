@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.beds.suta import controller as bed
 from custom_components.adjustable_bed.beds.suta import services as suta_services
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.codec import suta as codec
+from custom_components.adjustable_bed.command_scheduler import CommandKind
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -264,15 +265,22 @@ async def test_renewable_timed_motor_uses_declared_native_hold_control(hass, run
     assert written(client) == [codec.text("AT+CTRL=BOTH BACK UP")] + [codec.text("AT+CTRL=BOTH STOP")] * 2
 
 
-async def test_countdown_cannot_be_renewed_into_programming(hass, runtime):
+async def test_a_renewed_countdown_is_the_plain_held_gesture(hass, runtime):
+    """A renewal request never leases a countdown: it holds it as a finger does."""
     target, client, _ = runtime
-    with raises_key("hold_renewal_not_supported", ServiceValidationError):
-        await hass.services.async_call(
-            const.DOMAIN, "hold_control",
-            {"device_id": "bed", "control": "both_set_tv", "duration": 1,
-             "hold_owner": "card", "hold_generation": 2}, blocking=True,
-        )
-    assert not written(client)
+    await hass.services.async_call(
+        const.DOMAIN, "hold_control",
+        {"device_id": "bed", "control": "both_set_tv", "duration": 1,
+         "hold_owner": "card", "hold_generation": 2}, blocking=True,
+    )
+    renewed = written(client)
+    assert all(r.kind is not CommandKind.HOLD for r in target._command_scheduler.recent_records)
+    client.write_gatt_char.reset_mock()
+    await hass.services.async_call(
+        const.DOMAIN, "hold_control",
+        {"device_id": "bed", "control": "both_set_tv", "duration": 30}, blocking=True,
+    )
+    assert renewed == written(client)
 
 
 async def test_massage_level_entity_refreshes_on_each_local_zone_change(hass, runtime):
