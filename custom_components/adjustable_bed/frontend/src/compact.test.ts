@@ -213,3 +213,16 @@ test("a named preset save sits with the presets but is never a quick action", ()
   expect(compactActionOptions(hass, left).some((a) => a.entityId === id)).toBe(false);
   expect(compactActions(hass, left).some((a) => a.entityId === id)).toBe(false);
 });
+
+test("a 4.x quick action saved without its side word still resolves", () => {
+  const hass = fixture();
+  for (const key of ["simmons_inclined_left", "simmons_inclined_right", "simmons_inclined_middle"]) {
+    const id = `button.left_${key}`;
+    hass.entities[id] = { entity_id: id, translation_key: key, device_id: "left", platform: "adjustable_bed" };
+    publish(hass, id, { card_section: "presets" });
+  }
+  const left = bedEntitiesForDevice(hass, "left");
+  // 4.4.2 stored "simmons_inclined" for both outer positions and meant the last one.
+  expect(compactActions(hass, left, ["simmons_inclined", "simmons_inclined_middle"]).map((a) => a.entityId))
+    .toEqual(["button.left_simmons_inclined_right", "button.left_simmons_inclined_middle"]);
+});

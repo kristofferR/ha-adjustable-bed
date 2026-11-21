@@ -89,7 +89,7 @@ test.each(["Enter", " "])("real utility tile retains right STOP for %p keyboard 
       const button = tile(f.card._utility(bedEntitiesForDevice(f.hass, "right-child")));
       handler(button, "keydown")(new KeyEvent(key));
       expect(f.calls[0]).toEqual({ domain: "adjustable_bed", service: "hold_control", data: {
-        device_id: ["right-child"], control: "mx_memory1", duration: 60, side: "right",
+        device_id: ["right-child"], control: "mx_memory1", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "right",
       } });
       handler(button, "keyup")(new KeyEvent(key, "keyup"));
       expect(f.calls[1]).toEqual({ domain: "button", service: "press", data: { entity_id: "button.right_stop" } });
@@ -265,7 +265,7 @@ for (const mode of ["native", "legacy", "via"] as const) {
     handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
     // No extra UI release timer: MX's 300/600/900-ms query schedule is backend-owned.
     expect(f.calls).toEqual([
-      { domain: "adjustable_bed", service: "hold_control", data: { device_id: [mode === "legacy" ? "opaque-root" : "opaque-right"], side: "right", control: action === "mx" ? "mx_memory1" : "head_target_up", duration: 60 } },
+      { domain: "adjustable_bed", service: "hold_control", data: { device_id: [mode === "legacy" ? "opaque-root" : "opaque-right"], side: "right", control: action === "mx" ? "mx_memory1" : "head_target_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number) } },
       { domain: "button", service: "press", data: { entity_id: "button.left_stop" } },
       { domain: "button", service: "press", data: { entity_id: "button.right_stop" } },
     ]);

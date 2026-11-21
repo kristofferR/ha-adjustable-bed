@@ -208,9 +208,12 @@ and saved positions. Their actions (`estimate_save_position`,
 `timed_move` and `hold_control` accept two optional fields, `hold_owner` and
 `hold_generation`, that turn the call into a renewable hold on beds whose app
 is known to hold a key until release, by streaming it or by one start frame
-and a STOP. Other beds, and controls a bed's app does not hold this way (such
-as Good Vibe Sleep's short, long and short-and-long presses), reject the fields
-before anything moves, and a call without them behaves exactly as before.
+and a STOP. `timed_move` on other beds rejects the fields before anything
+moves. `hold_control` accepts them on every other held control too, such as
+Good Vibe Sleep's short, long and short-and-long presses: the control runs
+exactly as it does without them, for at most 30 seconds, and when renewals
+stop it ends as a STOP ends it, with the control's own release. A call without
+the fields behaves exactly as before.
 
 | Field | Meaning |
 |-------|---------|
@@ -228,6 +231,8 @@ A generation ends when its lease expires, when STOP or a replacement move
 interrupts it, when the link drops, or when the integration unloads. Calls
 naming an ended generation, an older generation, or a different motion under
 the same generation are refused, so a late renewal can never restart motion.
+On a control without a declared hold, a renewal of the press that just ended
+is answered without moving anything instead.
 Nothing is replayed after a reconnect or restart. One hold never streams
 longer than 30 seconds in total, however often it is renewed. Latched beds
 (Solace, BedSense, Reverie, Kaidi, iSleep and Remacro) keep moving
@@ -236,12 +241,13 @@ in total. A renewable
 hold targets one bed or combined bed per call; on a combined bed both sides must
 declare the same hold mode, and one renewal renews both sides.
 
-The dashboard card uses this for every press on a bed that supports it: one
+The dashboard card uses this for every held control, and for every press on a
+bed that supports a renewable motor hold: one
 call starts the hold, the card renews it every 250 ms with a 750 ms lease, and
 releasing the control stops renewing and sends STOP. Hiding the page or
 removing the card ends the hold the same way; if that STOP is lost, the bed
-still stops when the lease runs out. Entities that can be held this way carry
-a `hold_lease_mode` attribute (`stream` or `latched`), and `hold_lease_motor`
+still stops when the lease runs out. Entities whose bed declares such a hold
+carry a `hold_lease_mode` attribute (`stream` or `latched`), and `hold_lease_motor`
 names the `timed_move` motor where there is one. A combined control on a paired
 bed carries them only when both sides declare the same mode.
 

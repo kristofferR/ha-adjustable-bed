@@ -15,6 +15,7 @@ import contextlib
 import dataclasses
 import logging
 import math
+from collections import OrderedDict
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -57,6 +58,8 @@ from .beds.base import BedController, controller_as
 from .beds.entity_specs import POSITION_UNIT_DEGREES, POSITION_UNIT_PERCENT
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
+    CommandContext,
+    CommandOutcome,
     HoldClaim,
     HoldLease,
     StaleHoldLease,
@@ -2061,6 +2064,16 @@ async def handle_hold_control(call: ServiceCall) -> None:
             raise invalid(
                 "control_hold_renewal_not_supported",
             )
+        if route is None and _windowed_press(targets, lease, control):
+            await _async_hold_window(
+                call.hass,
+                targets,
+                lease,
+                lambda window: _hold_targets(
+                    targets, control, HOLD_CEILING_MS, admissions=admissions, window=window
+                ),
+            )
+            return
         held = lease
         await _async_with_hold_lease(
             targets,
@@ -2088,6 +2101,139 @@ async def handle_hold_control(call: ServiceCall) -> None:
         await _hold_vmatbasic_floor(targets, control, duration_ms)
     else:
         await _hold_targets(targets, control, duration_ms, admissions=admissions)
+
+
+def _declares_hold(targets: list[tuple[BedTarget, str]], control: str) -> bool:
+    """Whether every executing target declares a renewable hold on ``control``."""
+    controllers = [
+        target.capability_controller
+        for coordinator, side in targets
+        for target in _command_targets(coordinator, side)
+    ]
+    return bool(controllers) and all(
+        controller is not None and controller.execution.hold_for(control) is not None
+        for controller in controllers
+    )
+
+
+@dataclass(slots=True)
+class _HoldWindow:
+    """One press's hold of a control, and the route its renewals follow."""
+
+    control: str
+    generation: int
+    deadline: float
+    windowed: bool = True
+    ended: bool = False
+    expired: bool = False
+    # The commands this press started, one per physical side.
+    commands: list[CommandContext] = field(default_factory=list)
+
+    @property
+    def lapsed(self) -> bool:
+        """Whether renewals stopped, even before the deadline keeper notices."""
+        return self.expired or asyncio.get_running_loop().time() >= self.deadline
+
+
+# Presses by (target, side, owner). Ended ones are remembered, bounded, so a
+# late renewal of an ended press never starts motion again.
+_HOLD_WINDOWS: OrderedDict[tuple[int, str, str], _HoldWindow] = OrderedDict()
+_ENDED_HOLD_WINDOWS_KEPT = 64
+
+
+def _remember_press(key: tuple[int, str, str], press: _HoldWindow) -> None:
+    _HOLD_WINDOWS[key] = press
+    _HOLD_WINDOWS.move_to_end(key)
+    ended = [k for k, w in _HOLD_WINDOWS.items() if w.ended]
+    for stale in ended[: max(0, len(ended) - _ENDED_HOLD_WINDOWS_KEPT)]:
+        del _HOLD_WINDOWS[stale]
+
+
+def _windowed_press(
+    targets: list[tuple[BedTarget, str]], lease: HoldLease, control: str
+) -> bool:
+    """Route a press once, so its renewals follow it when capabilities change.
+
+    A press of a control the bed declares no renewable hold for takes a window;
+    the rest take the scheduler lease. A Good Vibe memory save, for one, makes
+    its control a sustained press the moment it lands.
+    """
+    if len(targets) != 1:
+        return not _declares_hold(targets, control)
+    coordinator, side = targets[0]
+    key = (id(coordinator), side, lease.owner)
+    press = _HOLD_WINDOWS.get(key)
+    if press is not None and press.generation >= lease.generation:
+        return press.windowed
+    if _declares_hold(targets, control):
+        _remember_press(key, _HoldWindow(control, lease.generation, math.inf, windowed=False, ended=True))
+        return False
+    return True
+
+
+async def _async_hold_window(
+    hass: HomeAssistant,
+    targets: list[tuple[BedTarget, str]],
+    lease: HoldLease,
+    run: Callable[[_HoldWindow], Awaitable[None]],
+) -> None:
+    """Hold a control that declares no renewable hold until its renewals stop.
+
+    The hold is the bounded one ``hold_control`` always runs, so the bed gets
+    the same frames. A renewal (same owner, generation and control) only moves
+    the deadline and writes nothing. When the deadline passes, the commands
+    this press started are cancelled as a STOP cancels them, so each runs its
+    release, and nothing else is touched; one not yet started never starts.
+    """
+    if len(targets) != 1:
+        raise invalid("hold_one_bed")
+    coordinator, side = targets[0]
+    key = (id(coordinator), side, lease.owner)
+    now = asyncio.get_running_loop().time()
+    window = _HOLD_WINDOWS.get(key)
+    if window is not None and window.generation >= lease.generation:
+        if window.generation > lease.generation or window.control != lease.action:
+            raise invalid("hold_ended")
+        # A renewal in flight when the hold ended moves nothing.
+        if not window.ended:
+            window.deadline = now + lease.duration_s
+        return
+    window = _HoldWindow(lease.action, lease.generation, now + lease.duration_s)
+    _remember_press(key, window)
+    # A dropped caller (a closed dashboard) must not take the deadline with it.
+    task = hass.async_create_background_task(
+        _run_hold_window(window, run), "adjustable_bed hold window"
+    )
+    await asyncio.shield(task)
+
+
+async def _run_hold_window(
+    window: _HoldWindow, run: Callable[[_HoldWindow], Awaitable[None]]
+) -> None:
+    loop = asyncio.get_running_loop()
+    hold = asyncio.ensure_future(run(window))
+    try:
+        while not hold.done():
+            remaining = window.deadline - loop.time()
+            if remaining <= 0:
+                _LOGGER.debug("Held %s stopped renewing; ending its hold", window.control)
+                window.expired = True
+                for context in window.commands:
+                    # Ended as a STOP ends it, so a pair takes it as cleanup;
+                    # a command already cancelled keeps its own reason.
+                    if not context.cancel_event.is_set():
+                        context.request_cancel(CommandOutcome.STOPPED)
+                break
+            await asyncio.wait((hold,), timeout=remaining)
+        await asyncio.wait((hold,))
+        if not hold.cancelled():
+            hold.result()
+    except asyncio.CancelledError:
+        # Shutdown or unload: the hold must not outlive its deadline keeper.
+        hold.cancel()
+        raise
+    finally:
+        window.ended = True
 
 
 def _require_held_control(
@@ -2121,6 +2267,7 @@ async def _hold_targets(
     *,
     lease: HoldLease | None = None,
     admissions: Sequence[_CommandAdmission] | None = None,
+    window: _HoldWindow | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     bounded_catalog = lease is None and all(
@@ -2156,6 +2303,12 @@ async def _hold_targets(
         # Automatic link-slot fallback may have changed topology after admission.
         if not bounded_catalog:
             _require_hold_topology(targets)
+        if window is not None:
+            # Renewals stopped before this command began: start nothing.
+            if window.lapsed:
+                return
+            if (context := current_command_context()) is not None:
+                window.commands.append(context)
         await controller.hold_control(
             control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
         )
@@ -2164,6 +2317,9 @@ async def _hold_targets(
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            if window is not None and window.lapsed:
+                # Renewals stopped during preflight: never replace another command.
+                break
             if isinstance(coordinator, SingleAddressPairedCoordinator) and any(
                 _plan_key(target) in shared_receivers
                 for target in _command_targets(coordinator, side)
