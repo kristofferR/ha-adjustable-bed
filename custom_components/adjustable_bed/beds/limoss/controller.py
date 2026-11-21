@@ -229,7 +229,9 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
             memory_count = main_and_memory & 0x0F
 
             self._reported_motor_count = motor_count if motor_count > 0 else None
-            self._memory_slot_count = memory_count
+            if memory_count != self._memory_slot_count:
+                self._memory_slot_count = memory_count
+                self._coordinator.save_app_state(self)
             self._vibration_count = vibration_count
 
             _LOGGER.info(
@@ -412,11 +414,15 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
 
     @property
     def persisted_app_state(self) -> dict[str, Any]:
-        """Saved memories, which outlive this controller and every reconnect."""
+        """Saved memories and the reported slot count, which outlive every reconnect.
+
+        A link whose capability reply never arrives still knows the slots.
+        """
         return {
+            "memory_slots": self._memory_slot_count,
             "memory": {
                 str(slot): dict(positions) for slot, positions in self._memory_positions.items()
-            }
+            },
         }
 
     @property
@@ -426,8 +432,11 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
 
     def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:
         memory = state.get("memory", {})
+        slots = state.get("memory_slots", 0)
         if not isinstance(memory, dict):
             raise TypeError("Stored Limoss memories are not a mapping")
+        if type(slots) is not int or not 0 <= slots <= 0x0F:
+            raise ValueError("Invalid stored Limoss memory slot count")
         restored: dict[int, dict[str, int]] = {}
         for slot, positions in memory.items():
             if not isinstance(slot, str) or not slot.isdigit() or not isinstance(positions, dict):
@@ -439,6 +448,8 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
                 raise ValueError("Invalid stored Limoss memory position")
             restored[int(slot)] = dict(positions)
         self._memory_positions = restored
+        # A capability reply on this link replaces it.
+        self._memory_slot_count = slots
 
     def validate_memory_recall(self, memory_num: int) -> None:
         """Refuse a slot nothing was saved to before any side moves."""

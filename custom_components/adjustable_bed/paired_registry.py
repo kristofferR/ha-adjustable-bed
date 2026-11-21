@@ -543,7 +543,10 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
     try:
         # A pair that never loaded on this version still has its per-entry
         # estimates; the beds must find them in their own stores.
-        await async_migrate_entry_store(hass, entry.entry_id, estimate_bed_keys(entry.data))
+        if not await async_migrate_entry_store(
+            hass, entry.entry_id, estimate_bed_keys(entry.data)
+        ):
+            raise failed("pair_change_failed", reason="Could not move the estimated positions")
         for child in children:
             device = dr.async_get(hass).async_get_child_device_by_identifier(
                 (DOMAIN, child.get(CONF_ADDRESS, "")), entry.entry_id,

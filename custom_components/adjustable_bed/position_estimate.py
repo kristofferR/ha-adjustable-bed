@@ -414,6 +414,9 @@ class PositionEstimates:
             address: Store(hass, STORAGE_VERSION, storage_key(address)) for address in self.beds
         }
         self.positions: list[SavedPosition] = []
+        # Positions given a new id at load, by new id: the address and id their
+        # button was stored under, so the button can follow.
+        self.renamed_ids: dict[str, tuple[str, str]] = {}
         self._listeners: list[Callable[[], None]] = []
 
     @property
@@ -455,11 +458,11 @@ class PositionEstimates:
                         if isinstance(item, dict)
                         else None
                     )
-                    rewritten |= part is None or self._add_position_part(part)
+                    rewritten |= part is None or self._add_position_part(part, bed.address)
         if rewritten:
             self._save()
 
-    def _add_position_part(self, part: SavedPosition) -> bool:
+    def _add_position_part(self, part: SavedPosition, address: str) -> bool:
         """Add one bed's part of a saved position; True when its stored form changes.
 
         Parts with the same id, name and button are one position stored by each
@@ -479,7 +482,8 @@ class PositionEstimates:
         ):
             same.targets.update(part.targets)
             return False
-        part.id = uuid4().hex[:12]
+        self.renamed_ids[(new_id := uuid4().hex[:12])] = (address, part.id)
+        part.id = new_id
         self.positions.append(part)
         return True
 
@@ -579,7 +583,8 @@ class PositionEstimates:
         self, position: SavedPosition, name: str, *, button: bool | None = None
     ) -> None:
         clean = _position_name(name)
-        if any(
+        # Combined beds may already share a name; keeping it is no clash.
+        if clean.casefold() != position.name.casefold() and any(
             item is not position and item.name.casefold() == clean.casefold()
             for item in self.positions
         ):
@@ -626,17 +631,18 @@ def estimate_bed_keys(entry_data: Mapping[str, Any]) -> dict[str, str]:
 
 async def async_migrate_entry_store(
     hass: HomeAssistant, entry_id: str, addresses: Mapping[str, str]
-) -> None:
+) -> bool:
     """Move a first-beta per-entry store into the stores of its beds, then remove it.
 
     ``addresses`` maps the bed keys saved positions use to addresses. Values
     already in a bed's store win, so a repeated migration never loses data. The
-    old store stays until every bed's store reads back as written.
+    old store stays until every bed's store reads back as written; False
+    means it is still there.
     """
     legacy: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, entry_storage_key(entry_id))
     data = await legacy.async_load()
     if data is None:
-        return
+        return True
     parts: dict[str, dict[str, Any]] = {}
     stored_beds = data.get("beds") if isinstance(data, dict) else None
     if isinstance(stored_beds, dict):
@@ -666,8 +672,9 @@ async def async_migrate_entry_store(
         # Home Assistant logs a failed write without raising.
         if await Store(hass, STORAGE_VERSION, storage_key(address)).async_load() != written:
             _LOGGER.warning("Could not move estimated positions of %s; will retry", address)
-            return
+            return False
     await legacy.async_remove()
+    return True
 
 
 def _position_name(name: str) -> str:

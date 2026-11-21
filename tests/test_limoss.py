@@ -185,6 +185,10 @@ class TestLimossController:
         await rebuilt.program_memory(2)
         await coordinator.async_disconnect()
         coordinator.capability_controller.validate_memory_recall(2)
+        # A link whose capability reply never arrives still knows the slots.
+        await coordinator.async_connect()
+        await coordinator.async_disconnect()
+        coordinator.capability_controller.validate_memory_recall(2)
 
     async def test_read_positions_queries_each_motor(
         self,

@@ -348,6 +348,87 @@ async def test_first_beta_store_moves_to_each_bed(
     }
 
 
+async def test_combined_beds_keep_their_own_parts_and_ids(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Parts merge only when they are one position; a clashing id is replaced and remembered."""
+
+    def store(address: str, *parts: dict[str, Any]) -> None:
+        hass_storage[pe.storage_key(address)] = {
+            "version": pe.STORAGE_VERSION,
+            "key": pe.storage_key(address),
+            "data": {"motors": {}, "positions": list(parts)},
+        }
+
+    store(
+        LEFT,
+        {"id": "both", "name": "TV", "button": True, "targets": {"back": 10.0}},
+        {"id": "x", "name": "Reading", "button": True, "targets": {"back": 20.0}},
+    )
+    store(
+        RIGHT,
+        {"id": "both", "name": "TV", "button": True, "targets": {"back": 30.0}},
+        {"id": "x", "name": "Read", "button": False, "targets": {"back": 40.0}},
+        {"id": "y", "name": "Reading", "button": True, "targets": {"back": 50.0}},
+    )
+    manager = await pe.async_setup_position_estimates(
+        hass, "entry", ((LEFT, "left"), (RIGHT, "right"))
+    )
+
+    tv, reading, read, right_reading = manager.positions
+    assert tv.targets == {"left": {"back": 10.0}, "right": {"back": 30.0}}
+    assert (reading.id, reading.targets) == ("x", {"left": {"back": 20.0}})
+    assert (read.name, read.targets) == ("Read", {"right": {"back": 40.0}})
+    assert read.id != "x" and manager.renamed_ids == {read.id: (RIGHT, "x")}
+    assert right_reading.id == "y"
+    # The same name on both sides: a side tells them apart; keeping a name is no clash.
+    assert manager.position("Reading", {"right"}) is right_reading
+    manager.rename_position(reading, "Reading", button=False)
+    assert reading.button is False
+
+
+async def test_each_bed_button_follows_its_own_part(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Combined rows keep their bed's address and stored id, also after a new id."""
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.position_estimate_entities import (
+        _async_adopt_position_buttons,
+    )
+
+    for address, name in ((LEFT, "Reading"), (RIGHT, "Read")):
+        hass_storage[pe.storage_key(address)] = {
+            "version": pe.STORAGE_VERSION,
+            "key": pe.storage_key(address),
+            "data": {
+                "motors": {},
+                "positions": [{"id": "x", "name": name, "button": True, "targets": {"back": 1.0}}],
+            },
+        }
+    entry = MockConfigEntry(domain=DOMAIN, entry_id="entry")
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    rows = {
+        address: registry.async_get_or_create(
+            "button", DOMAIN, f"{address}_saved_position_x", config_entry=entry
+        ).entity_id
+        for address in (LEFT, RIGHT)
+    }
+    manager = await pe.async_setup_position_estimates(
+        hass, "entry", ((LEFT, "left"), (RIGHT, "right"))
+    )
+    pair = SimpleNamespace(device_info={}, entity_unique_id=lambda key: f"pair_{key}")
+
+    _async_adopt_position_buttons(hass, entry, pair, manager)  # type: ignore[arg-type]
+
+    read = manager.positions[1]
+    left_row, right_row = registry.async_get(rows[LEFT]), registry.async_get(rows[RIGHT])
+    assert left_row is not None and left_row.unique_id == "pair_saved_position_x"
+    assert right_row is not None and right_row.unique_id == f"pair_saved_position_{read.id}"
+
+
 async def test_saved_positions_lifecycle(hass: HomeAssistant, clock: Clock) -> None:
     manager = await calibrated(hass)
     bed = manager.beds[LEFT]
