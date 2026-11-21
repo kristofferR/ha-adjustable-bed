@@ -238,6 +238,10 @@ async def test_a_4x_pair_keeps_what_each_side_ran_with(hass: HomeAssistant) -> N
 
     await async_migrate_entry(hass, entry)
 
+    # 4.4.2 kept these on the sides only, so the pair's own form shows no value
+    # neither side ran with.
+    assert CONF_CONNECTION_MODE not in entry.data
+    assert CONF_DISABLE_ANGLE_SENSING not in entry.data
     for child in entry.data[CONF_PAIR_CHILDREN]:
         side = effective_child_data(entry.data, child[CONF_SIDE], entry.options)
         assert side[CONF_CONNECTION_MODE] == CONNECTION_MODE_IDLE
