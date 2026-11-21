@@ -52,6 +52,7 @@ from custom_components.adjustable_bed.const import (
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_PRODUCT_ID,
@@ -69,6 +70,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KEESON_KSBT_CHAR_UUID,
@@ -1150,6 +1152,8 @@ class TestMigration:
         migrated.pop(CONF_PROFILE_REVIEW_PENDING, None)
         assert migrated.pop(CONF_PROFILE_ID) == bed_type
         assert migrated.pop(CONF_PROFILE_MIGRATION)["from_version"] == 3
+        # The connection 4.x ran the entry with, which it had not saved.
+        assert migrated.pop(CONF_CONNECTION_MODE) == CONNECTION_MODE_IDLE
         # Schema 5.6 drops an angle-sensing value equal to the bed type's default.
         if CONF_DISABLE_ANGLE_SENSING not in migrated:
             before.pop(CONF_DISABLE_ANGLE_SENSING)
