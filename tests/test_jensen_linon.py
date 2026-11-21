@@ -307,6 +307,10 @@ async def test_bluetooth_setup_stores_the_app_profile(
 
     # A discovered Svane controller's first question is the Jensen / Svane one.
     result = await flow.async_step_bluetooth_confirm()
+    if name == "Adjustable Bed":
+        # Too generic a name to confirm the shared service: the user picks first.
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await flow.async_step_bluetooth_disambiguate({"bed_type_choice": "svane"})
     assert result["step_id"] == "jensen_family"
     choice = next(marker for marker in result["data_schema"].schema if marker == "choice")
     if variant == VARIANT_AUTO:
