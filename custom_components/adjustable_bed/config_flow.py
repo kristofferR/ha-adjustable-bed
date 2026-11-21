@@ -880,6 +880,22 @@ def _route_section(bed_type: str | None, default: str) -> section | None:
     )
 
 
+def _errors_on_shown_fields(
+    errors: Mapping[str, str], schema: Mapping[Any, Any]
+) -> dict[str, str]:
+    """Move an error on a field the form does not show to the form's own error.
+
+    Home Assistant draws an error only under a field it shows, so an error on a
+    hidden one would leave Save redrawing the form with nothing to read.
+    """
+    shown = {str(marker) for marker in schema} | {"base"}
+    moved = {key: error for key, error in errors.items() if key in shown}
+    for key, error in errors.items():
+        if key not in shown:
+            moved.setdefault("base", error)
+    return moved
+
+
 def _variant_errors_to_base(errors: dict[str, str]) -> dict[str, str]:
     """Show a route error on a form that has no route field."""
     if (error := errors.pop(CONF_PROTOCOL_VARIANT, None)) is not None:
@@ -8239,7 +8255,9 @@ class AdjustableBedOptionsFlow(
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
-                    errors={CONF_PROTOCOL_VARIANT: remacro_error},
+                    errors=_errors_on_shown_fields(
+                        {CONF_PROTOCOL_VARIANT: remacro_error}, schema_dict
+                    ),
                 )
             if variants:
                 user_input[CONF_PROTOCOL_VARIANT] = requested_variant
@@ -8300,7 +8318,9 @@ class AdjustableBedOptionsFlow(
                 app_data = declared.staged(before, answers)
                 if app_errors := declared.errors(app_data, context):
                     return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors=_errors_on_shown_fields(app_errors, schema_dict),
                     )
                 # The answers, and whatever normalizing corrected, are saved.
                 for key in answers.keys() - app_data.keys():
