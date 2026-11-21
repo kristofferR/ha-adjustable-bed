@@ -95,7 +95,6 @@ CALLBACK_FUNCTION_LOCK: Final = "84"  # CmdKey.LOCK, the smart set lock
 CALLBACK_FUNCTION_SNORE: Final = "21"  # EPack.SNORE function
 DATA_TABLE_LEN: Final = 32
 BUFFER_RESET_LEN: Final = 100
-MAX_BUFFER_LEN: Final = 256
 
 # Fixed opcodes the app writes outside the per-model catalog.
 BTN_LED_OFF_CODE: Final = 0x75  # Button-light page OFF (k_ubl_off, press_once)
@@ -358,11 +357,6 @@ class Classifier:
         hex_text = data.hex()
         if hex_text.startswith(("6e", "5e")) and len(self.buffer) > BUFFER_RESET_LEN:
             self.buffer = ""
-        if len(self.buffer) + len(hex_text) > MAX_BUFFER_LEN:
-            # Bounds memory only: the longest frame is far shorter.
-            self.buffer = ""
-            if len(hex_text) > MAX_BUFFER_LEN:
-                return self.events
         self.buffer += hex_text
         buf = self.buffer
         if buf == RX_VERSION1:

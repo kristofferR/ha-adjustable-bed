@@ -417,8 +417,7 @@ def test_secrets_redacted_in_captures_and_structured_diagnostics():
         redact_data({"authCode": secret, "authToken": secret, "token": secret, "password": secret})
     )
     bundle = redact_bundle(
-        {"name": "Processor", "address": "AA:BB:CC:01:02:03", "authToken": secret},
-        addresses=["AA:BB:CC:01:02:03"],
+        {"name": "Processor", "address": "AA:BB:CC:01:02:03", "authToken": secret}
     )
     assert secret not in json.dumps(bundle)
     assert bundle["name"] == "Processor" and bundle["address"] == "AA:BB:CC:**:**:**"

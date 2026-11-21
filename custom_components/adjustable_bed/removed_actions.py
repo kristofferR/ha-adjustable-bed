@@ -67,6 +67,7 @@ def _actions(actions: str, use: str | None) -> tuple[Removal, ...]:
 
 
 # What 4.4.2 or a v5 beta offered and v5 no longer accepts, from the upgrade guide.
+# A later removal may add a row so callers get a repair; it is not required.
 REMOVALS: Final[tuple[Removal, ...]] = (
     *_actions(
         "bf_cherish_set_alarm comfort_enhancements_set_alarm configure_alarm_schedule "

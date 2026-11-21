@@ -63,16 +63,11 @@ class UnsupportedDeviceInfo:
         """Format GitHub issue details for a device wrongly auto-detected as a bed.
 
         The issue is public and the device is often someone's phone, so the
-        address keeps only its manufacturer prefix, also where the name or the
-        manufacturer data carries the rest of it.
+        address keeps only its manufacturer prefix.
         """
-
-        def safe(text: str) -> str:
-            return redact_text(text, [self.address])
-
         if self.manufacturer_data:
             mfr_str = "\n".join(
-                f"  - `{hex(k)}`: `{safe(v.hex())}`" for k, v in self.manufacturer_data.items()
+                f"  - `{hex(k)}`: `{v.hex()}`" for k, v in self.manufacturer_data.items()
             )
         else:
             mfr_str = "  None"
@@ -83,7 +78,7 @@ class UnsupportedDeviceInfo:
             uuid_str = "  None"
 
         signal_str = (
-            "\n".join(f"  - `{safe(signal)}`" for signal in signals) if signals else "  None"
+            "\n".join(f"  - `{redact_text(signal)}`" for signal in signals) if signals else "  None"
         )
         confidence_pct = round(confidence * 100)
 
@@ -97,8 +92,8 @@ all, or it is a different brand/model.
 |----------|-------|
 | Detected as | `{detected_bed_type or "unknown"}` |
 | Confidence | {confidence_pct}% |
-| Address | `{safe(self.address)}` |
-| Name | `{safe(self.name) if self.name else "Unknown"}` |
+| Address | `{redact_text(self.address)}` |
+| Name | `{redact_text(self.name) if self.name else "Unknown"}` |
 | RSSI | {self.rssi or "N/A"} |
 | Integration version | `{integration_version or "unknown"}` |
 | Home Assistant | `{ha_version or "unknown"}` |
