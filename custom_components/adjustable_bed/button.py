@@ -19,7 +19,7 @@ from .beds.base import CONTROLLER_GESTURE_RELEASE, controller_as, require_contro
 from .beds.entity_specs import ProductButtonSpec
 from .beds.family_actions import MotionBedModuleActions, SolaceAudioActions, YogaPresetActions
 from .beds.limoss.remote_state import LIMOSS_REMOTE_MEMORY_NAMES
-from .beds.octo.runtime import octo_controller
+from .beds.octo.runtime import octo_controller, octo_controls_locked
 from .beds.remacro.discovery import remacro_side_lacks_global_stop
 from .card import (
     CARD_HIDDEN,
@@ -1222,15 +1222,11 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
     @property
     def available(self) -> bool:
         """Hide Octo's normal controls while its live PIN gate is locked."""
-        controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
-        if octo is not None and self.entity_description.key not in {
-            "stop",
-            "connect",
-            "disconnect",
-        }:
-            return super().available and octo.normal_controls_available
-        return super().available
+        if self.entity_description.key in {"stop", "connect", "disconnect"}:
+            return super().available
+        return super().available and not octo_controls_locked(
+            self._coordinator.capability_controller
+        )
 
     @property
     def name(self) -> str | UndefinedType | None:
@@ -1543,17 +1539,16 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         if isinstance(coordinator, SingleAddressPairedCoordinator):
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        _follow_side_pin_locks(self, self._coordinator)
+
     @property
     def available(self) -> bool:
         """Hide combined actions when a Standard Octo side is PIN-locked."""
-        if self.entity_description.key == "stop":
-            return True
-        for child in self._coordinator.children.values():
-            controller = child.capability_controller
-            octo = octo_controller(controller)
-            if octo is not None and not octo.normal_controls_available:
-                return False
-        return True
+        return self.entity_description.key == "stop" or not _paired_controls_locked(
+            self._coordinator
+        )
 
     async def async_press(self) -> None:
         """Run the action on both sides."""
@@ -1671,6 +1666,7 @@ class PairedBedCombinedMotorButton(RenamesInPlace, PlacedInCard, ButtonEntity):
                 lambda _connected: self.async_write_ha_state()
             )
         )
+        _follow_side_pin_locks(self, self._coordinator)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -1708,8 +1704,8 @@ class PairedBedCombinedMotorButton(RenamesInPlace, PlacedInCard, ButtonEntity):
 
     @property
     def available(self) -> bool:
-        """Always available (the bed reconnects on demand)."""
-        return True
+        """Available unless a side is PIN-locked (the bed reconnects on demand)."""
+        return not _paired_controls_locked(self._coordinator)
 
     async def async_press(self) -> None:
         """Move this motor on both sides."""
@@ -1749,6 +1745,23 @@ class PairedBedCombinedMotorButton(RenamesInPlace, PlacedInCard, ButtonEntity):
             cancel_running=True,
             resource=self._resource,
         )
+
+
+def _paired_controls_locked(coordinator: PairedBedCoordinator) -> bool:
+    return octo_controls_locked(
+        *(child.capability_controller for child in coordinator.children.values())
+    )
+
+
+def _follow_side_pin_locks(entity: ButtonEntity, coordinator: PairedBedCoordinator) -> None:
+    """Refresh a combined button when an OCTO side reports a PIN lock change."""
+    for child in coordinator.children.values():
+        if child.bed_type == BED_TYPE_OCTO:
+            entity.async_on_remove(
+                child.register_controller_state_callback(
+                    lambda _state: entity.async_write_ha_state()
+                )
+            )
 
 
 def _paired_hold_lease_attributes(

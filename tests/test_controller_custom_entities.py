@@ -579,6 +579,7 @@ async def test_controller_switch_forgets_assumed_state_when_the_link_drops(hass)
         await assumed.async_turn_on()
         on_connection(True)
         assert assumed.is_on is True
+        runtime.last_disconnect_reason = "unexpected"
         on_connection(False)
     assert assumed.is_on is None
 

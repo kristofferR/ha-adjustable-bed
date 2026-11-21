@@ -41,23 +41,21 @@ async def octo_bed(
     request: pytest.FixtureRequest,
 ) -> MockConfigEntry:
     """An OCTO bed with calibrated back and legs and a stored 40% back estimate."""
-    hass_storage[pe.storage_key(ENTRY_ID)] = {
+    hass_storage[pe.storage_key(ADDRESS)] = {
         "version": pe.STORAGE_VERSION,
-        "key": pe.storage_key(ENTRY_ID),
+        "key": pe.storage_key(ADDRESS),
         "data": {
-            "beds": {
-                ADDRESS: {
-                    "back": {"up_s": 20.0, "down_s": 10.0, "percent": 40.0},
-                    "legs": {"up_s": 10.0, "down_s": 8.0, "percent": 0.0},
-                    "head": {"up_s": None, "down_s": None},
-                }
+            "motors": {
+                "back": {"up_s": 20.0, "down_s": 10.0, "percent": 40.0},
+                "legs": {"up_s": 10.0, "down_s": 8.0, "percent": 0.0},
+                "head": {"up_s": None, "down_s": None},
             },
             "positions": [],
         },
     }
     motor_count = getattr(request, "param", 2)
     if motor_count == 1:
-        hass_storage[pe.storage_key(ENTRY_ID)]["data"]["beds"][ADDRESS] = {
+        hass_storage[pe.storage_key(ADDRESS)]["data"]["motors"] = {
             "tv_lift": {"up_s": 20.0, "down_s": 10.0, "percent": 40.0}
         }
     entry = MockConfigEntry(
