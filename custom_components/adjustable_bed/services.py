@@ -36,7 +36,10 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.service import async_get_device_and_config_entry
+from homeassistant.helpers.service import (
+    async_get_device_and_config_entry,
+    async_register_admin_service,
+)
 from homeassistant.util import dt as dt_util
 
 from .alarm import (
@@ -2851,12 +2854,8 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         target = _get_support_bundle_target_from_device(hass, selected_device_id)
         if target is not None:
             address, coordinator, entry = target
-            device_name = coordinator.name if coordinator is not None else entry.title
-            _LOGGER.info(
-                "Generating support bundle for configured device %s at %s",
-                device_name,
-                address,
-            )
+            # By address only: the device name is typed text the bundle leaves out.
+            _LOGGER.info("Generating support bundle for configured device at %s", address)
         else:
             raise _missing_device_error(selected_device_id)
     else:
@@ -3335,7 +3334,9 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_sync_clock,
         schema=vol.Schema({vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD}),
     )
-    hass.services.async_register(
+    # Admin only: it captures any address and writes a file anyone can download.
+    async_register_admin_service(
+        hass,
         DOMAIN,
         SERVICE_GENERATE_SUPPORT_BUNDLE,
         handle_generate_support_bundle,

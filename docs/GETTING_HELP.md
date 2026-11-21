@@ -134,9 +134,9 @@ The support bundle includes:
 - The profile id the entry and each paired side run, and the record of the schema 5 migration from 4.x
 - Connection status, BLE adapter/proxy health, and connection attempt details
 - ESPHome proxy firmware, API version, pairing capability, availability, and free BLE connection slots when Home Assistant exposes them
-- Live Bluetooth logs from ESPHome proxies that can see the bed, when their API and firmware logging settings allow capture
+- Live Bluetooth logs from ESPHome proxies that can see the bed, when their API and firmware logging settings allow capture, without lines about other nearby devices
 - BLE advertisements by source, detection reasoning, and GATT/descriptor details
-- Up to 30 ranked nearby BLE devices, including their names and addresses
+- Up to 30 nearby devices that could be beds, ranked; every other nearby device is only counted
 - A structured pairing assessment that detects stale saved bond state and adapter mismatches
 - Captured notifications and buffered command trace
 - Up to 500 recent in-memory integration/Bluetooth log entries from before capture and 500 from its end, including debug logs collected automatically during capture, plus evidence warnings when logs or a command reproduction are missing
@@ -156,11 +156,33 @@ firmware configuration change. Standard ESPHome API logs do not expose the
 proxy's stored bond keys or link security state. Set `include_logs: false` to
 omit both HA and proxy logs.
 
-**Privacy note:** PINs and Sleep Number session IDs are redacted. MAC addresses, device names, and other BLE identifiers are preserved since they are essential for debugging.
+### What the files share
 
-Review the bundle before posting it publicly. The download link is usable for up
-to one hour and expires on restart; the JSON file remains in the HA configuration
-directory. See [download-link details](TROUBLESHOOTING.md#support-bundle-download-links).
+GitHub issues are public: anyone can read a file you attach. Before you attach a
+support bundle or a diagnostics download, open it in a text editor and remove
+anything you do not want to share.
+
+Both files follow the same rules:
+
+- **Left out:** PINs, passwords and session keys; names you typed, such as the
+  entry's name and memory names; health and presence readings such as heart
+  rate, breathing, in bed, snoring and sleep reports; other nearby devices, and
+  log lines that mention them.
+- **Shortened:** every Bluetooth address keeps only its first three bytes, the
+  manufacturer prefix. The rest of your bed's address is also starred out where
+  its name, advertisement or messages contain it.
+- **Included:** your bed's advertised name and advertisement, its services and
+  characteristics, the messages it sent during the capture and the commands Home
+  Assistant sent, your Home Assistant and integration versions, your time zone,
+  and the names of your Bluetooth adapters and ESPHome proxies.
+
+Captured messages are raw bytes from the bed. On a bed that measures sleep, they
+can contain readings, so remove them if you do not want to share them.
+
+Only an administrator can run the action. Its download link is usable for up
+to one hour and expires on restart; the JSON file stays in the Home Assistant
+configuration directory until five newer bundles replace it. See
+[download-link details](TROUBLESHOOTING.md#support-bundle-download-links).
 
 ### Alternative: Download Diagnostics
 
@@ -168,7 +190,8 @@ If you prefer to gather information separately:
 
 1. Go to **Settings > Devices & services > Adjustable Bed**
 2. In the entry's three-dots menu, choose **Download diagnostics**
-3. Attach the downloaded JSON file to your issue
+3. Open the file, remove anything you do not want to share (see
+   [what the files share](#what-the-files-share)), then attach it to your issue
 
 ### Debug Logging
 
@@ -178,7 +201,10 @@ If you prefer to gather information separately:
 4. Return to the same menu → **Disable debug logging**
 5. Your browser will automatically download the log file
 
-This captures only the relevant logs for this integration, making it easier to diagnose issues.
+The download is Home Assistant's log, not only this integration's lines, and it
+is not redacted. Keep only the lines that mention `adjustable_bed` or Bluetooth,
+and remove anything you do not want to share before you attach it to a public
+issue.
 
 ---
 
@@ -197,7 +223,8 @@ You don't need to configure anything first: the support bundle action works dire
 3. Leave the **Device** field empty and enter the MAC address in **Target Address**
 4. Click **Perform action**, then operate your physical remote during the capture (120 seconds by default) so the bundle records useful traffic
 5. A notification will appear with a **download link**; click it to save the file. The same JSON file is also written to your Home Assistant config folder as `adjustable_bed_support_bundle_*.json`.
-6. Attach the JSON file to your issue
+6. Open the file, remove anything you do not want to share (see
+   [what the files share](#what-the-files-share)), then attach it to your issue
 
 **Alternative: add the bed as a diagnostic device:** if you'd rather have a persistent entry (for example, to re-run captures easily), open the same wizard, choose **"Pick any Bluetooth device"**, select your bed, and choose **"Unsupported bed (diagnostics only)"** as its app or remote. You can then run `generate_support_bundle` with that device selected in the **Device** field. "Unsupported bed (diagnostics only)" appears in the app question, which a discovered bed reaches through **"Another app or remote"**. The brand list, reached through **"My app isn't listed, or I don't know"**, does not offer it; its **"Not sure"** answer opens the diagnostics browser instead.
 
