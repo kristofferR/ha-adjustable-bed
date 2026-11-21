@@ -5340,6 +5340,9 @@
       },
       "superior_sleep_motion": {
         "name": "Under-bed motion activation"
+      },
+      "superior_sleep_massage": {
+        "name": "Massage"
       }
     },
     "binary_sensor": {
@@ -6610,7 +6613,7 @@
         }
       },
       "dreamsense_selected_side": {
-        "name": "Selected side",
+        "name": "Controlled side",
         "state": {
           "left": "Left",
           "right": "Right"
@@ -11772,10 +11775,8 @@
     },
     "richmat_app_operation": {
       "options": {
-        "sync": "Set bed clock",
         "detection": "Bed detection",
         "toggle_alarm": "Turn alarm on or off",
-        "sleep_sync": "Sync sleepers",
         "query": "Read current settings",
         "single_alarm": "One-time alarm",
         "cancel_alarm": "Cancel alarm",

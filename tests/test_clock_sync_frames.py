@@ -76,6 +76,23 @@ CASES = [
         id='hjbed',
     ),
     pytest.param(
+        'richmat_app',
+        {},
+        [
+            [93, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e200c080201695735a5003f', 1, 0],
+            [193, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e200d080301380102030405ee', 1, 0],
+        ],
+        id='richmat_app',
+    ),
+    pytest.param(
+        'richmat_app_sleep',
+        {},
+        [
+            [100, '00000002-3c17-d293-8e48-14fe2e4da212', True, '000301003e0000110343554437007b226964223a332c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d', 1, 0],
+        ],
+        id='richmat_app_sleep',
+    ),
+    pytest.param(
         'goodvibe:selector-0004',
         {},
         [

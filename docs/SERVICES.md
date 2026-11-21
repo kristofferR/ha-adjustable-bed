@@ -423,7 +423,8 @@ Galaxy, MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm,
 motor or thermal module clock; on a hub, the clock of the module in use, so
 select the motor or heating module first), GM Control products with an alarm and OKIN
 SleepEase also set their clock here; their own actions no longer do. HJBed sets its
-clock here too; its `hjbed` action keeps the `sync` operation, which sends the same frames. A bed whose
+clock here too; its `hjbed` action keeps the `sync` operation, which sends the same frames. Richmat app
+beds and their separate sleep entry set their clock here; the `richmat_app` action no longer does. A bed whose
 two sides share one receiver has its clock set once. Bed Tech uses this action
 for its typed alarm page, calendar models and separate intervention receiver. Dream Sense Bed sets the clock-enabled product’s timezone and local calendar here.
 
