@@ -98,7 +98,8 @@ opts in through `ExecutionCapabilities.hold`, or per held control through its
   runs its release, and no other command is touched. A press keeps the route it
   started with, so its renewals never become a scheduler lease if the
   controller's capabilities change mid-press. A renewal of an ended press moves
-  nothing, and an older generation is refused.
+  nothing, and an older generation is refused. The bed's runtime keeps these presses, so a
+  reloaded bed starts with none.
 
 ## Merged stream for concurrent motors
 

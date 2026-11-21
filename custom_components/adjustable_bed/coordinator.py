@@ -58,6 +58,7 @@ from .command_scheduler import (
     DeviceCommandScheduler,
     HoldClaim,
     HoldLease,
+    HoldWindows,
     StreamDriver,
     StreamMember,
     command_frames_not_counted,
@@ -478,6 +479,8 @@ class AdjustableBedCoordinator(
         self._command_lock = asyncio.Lock()  # Separate lock for command serialization
         self._command_connection_holds = 0
         self._command_scheduler = DeviceCommandScheduler(self._address.replace(":", "_"))
+        # Held-control presses live and die with this runtime: a reload starts clean.
+        self.hold_windows = HoldWindows()
         self._connecting: bool = False  # Track if we're actively connecting
         self._intentional_disconnect: bool = (
             False  # Track intentional disconnects to skip auto-reconnect

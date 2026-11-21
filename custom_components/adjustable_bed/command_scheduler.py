@@ -125,6 +125,50 @@ class HoldLease:
             raise ValueError("A hold lease must last a positive duration")
 
 
+@dataclass(slots=True)
+class HoldWindow:
+    """One press's hold of a control, and the route its renewals follow."""
+
+    control: str
+    generation: int
+    deadline: float
+    windowed: bool = True
+    ended: bool = False
+    expired: bool = False
+    # The commands this press started, one per physical side.
+    commands: list[CommandContext] = field(default_factory=list)
+
+    @property
+    def lapsed(self) -> bool:
+        """Whether renewals stopped, even before the deadline keeper notices."""
+        return self.expired or asyncio.get_running_loop().time() >= self.deadline
+
+
+class HoldWindows:
+    """One bed's presses by (side, owner), kept by the runtime they describe.
+
+    Ended presses are remembered, bounded, so a late renewal of an ended press
+    never starts motion again. A reloaded bed gets a new runtime and starts empty.
+    """
+
+    __slots__ = ("_presses",)
+    ENDED_KEPT: Final = 64
+
+    def __init__(self) -> None:
+        self._presses: OrderedDict[tuple[str, str], HoldWindow] = OrderedDict()
+
+    def get(self, side: str, owner: str) -> HoldWindow | None:
+        return self._presses.get((side, owner))
+
+    def remember(self, side: str, owner: str, press: HoldWindow) -> None:
+        key = (side, owner)
+        self._presses[key] = press
+        self._presses.move_to_end(key)
+        ended = [k for k, w in self._presses.items() if w.ended]
+        for stale in ended[: max(0, len(ended) - self.ENDED_KEPT)]:
+            del self._presses[stale]
+
+
 @dataclass(slots=True, eq=False)
 class _LeaseRecord:
     """Scheduler-side state of one owner's lease on one resource set."""
