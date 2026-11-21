@@ -77,7 +77,6 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     [
         {},
         {const.CONF_PRODUCT_TYPE: "unknown"},
-        {const.CONF_PRODUCT_TYPE: "bed", const.CONF_LIMOSS_REMOTE_THEME: "made_up"},
     ],
 )
 async def test_invalid_profile_never_finishes_setup(hass, invalid):
@@ -125,14 +124,12 @@ async def test_enabling_local_features_saves_options_without_ble(hass):
         {
             const.CONF_HAS_LIGHT: True,
             const.CONF_HAS_MASSAGE: True,
-            const.CONF_LIMOSS_REMOTE_THEME: "bed_clear",
             const.CONF_REVERSE_MOTORS[0]: True,
         }
     )
     assert result["type"] == "create_entry"
     assert entry.data[const.CONF_HAS_LIGHT] is True
     assert entry.data[const.CONF_HAS_MASSAGE] is True
-    assert entry.data[const.CONF_LIMOSS_REMOTE_THEME] == "bed_clear"
     assert entry.data[const.CONF_REVERSE_MOTORS[0]] is True
 
 

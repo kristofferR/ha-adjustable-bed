@@ -145,7 +145,6 @@ from .const import (
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_SOFA_ACU_NO,
-    CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
@@ -250,7 +249,6 @@ from .const import (
 )
 from .import_executor import async_import_modules
 from .profiles import jiecang as jiecang_profiles
-from .profiles import limoss as limoss_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
@@ -1622,10 +1620,6 @@ def _richmat_mh_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {CONF_PROTOCOL_VARIANT: f"richmat_mh_{problem}"} if problem else {}
 
 
-def _limoss_remote_themes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    return {theme: theme for theme in limoss_profiles.REMOTE_THEMES}
-
-
 def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .config_flow import _limoss_remote_errors as errors
 
@@ -2743,8 +2737,9 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_SLEEP_NUMBER_MCR: _asking(
         BED_TYPE_SLEEP_NUMBER_MCR, questions=_angle_sensing(BED_TYPE_SLEEP_NUMBER_MCR)
     ),
-    # The Limoss Remote app's bed or chair, its local light and massage choices,
-    # reversals and artwork theme. The connected device supplies the key layout.
+    # The Limoss Remote app's bed or chair, its local light and massage choices
+    # and reversals. The connected device supplies the key layout. The app's
+    # artwork theme changes no control, so it is not asked; a saved one stays.
     BED_TYPE_LIMOSS_REMOTE: _asking(
         BED_TYPE_LIMOSS_REMOTE,
         owns={
@@ -2760,7 +2755,6 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_HAS_LIGHT, default=HAS_LIGHT_DEFAULTS[BED_TYPE_LIMOSS_REMOTE]),
             Question(CONF_HAS_MASSAGE, default=False),
             *(Question(key, default=False) for key in CONF_REVERSE_MOTORS),
-            Question(CONF_LIMOSS_REMOTE_THEME, _limoss_remote_themes, OPTIONAL),
         ),
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},

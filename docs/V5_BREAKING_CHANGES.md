@@ -99,6 +99,7 @@ the migration changed, under `profile_migration`.
 | **Bed type** and **Protocol variant** in Configure | **Reconfigure**, for every bed. The protocol variant is now called **Bed model or remote** |
 | **Has massage feature**, maximum angles and a motor count with one choice, shown for beds that ignore them | Hidden |
 | A bed added through **Pick any Bluetooth device** saved the scanner that found it as its adapter | Saves **Automatic**, like a discovered bed |
+| **App artwork theme** (Limoss Remote) | Removed. It changed no control. A saved theme is kept and still shows in diagnostics |
 | A combined bed's saved pair connection mode (`pair_connection_mode`) | Removed. A combined bed with two Bluetooth addresses starts with both links and switches between the two beds one at a time only when the adapter cannot hold both |
 
 Three layouts with no massage showed massage buttons in 4.x when Massage was
