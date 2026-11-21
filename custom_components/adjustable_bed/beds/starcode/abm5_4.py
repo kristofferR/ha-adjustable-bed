@@ -29,7 +29,7 @@ from ...const import (
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
 )
-from ...controller_state import AnyStateKey, StateKey
+from ...controller_state import AnyStateKey, StateKey, StateUpdate
 from ...profiles.okin_nframe import (
     STARCODE_ABM5_4_FLAT_HOLD_MS,
     STARCODE_ABM5_4_PROFILES,
@@ -806,9 +806,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             return
         level = min(6, self._level + 1) if direction > 0 else self._level - 1
         if level <= 0:
-            # The assumed on/off light shows the off this step sends.
-            off = (UNDER_BED_LIGHTS_ON(False),) if self._native_light_power_buttons else ()
-            with self.sent_state(*off):
+            with self.sent_state(*self._assumed_light(False)):
                 await self._once("turnoffUnderbedLighting")
         else:
             if self.command_selector not in _POSITIVE_SELECTORS:
@@ -819,14 +817,18 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         self._operation_generation += 1
         await self._send(build_frame(self.command_selector, "stop"), asyncio.Event())
 
+    def _assumed_light(self, on: bool) -> tuple[StateUpdate, ...]:
+        """What the assumed on/off light shows; a reporting bed shows only its reports."""
+        return (UNDER_BED_LIGHTS_ON(on),) if self._native_light_power_buttons else ()
+
     async def lights_on(self) -> None:
         if self._accept_light_action():
-            with self.sent_state(UNDER_BED_LIGHTS_ON(True)):
+            with self.sent_state(*self._assumed_light(True)):
                 await self._once("turnonUnderbedLighting")
 
     async def lights_off(self) -> None:
         if self._accept_light_action():
-            with self.sent_state(UNDER_BED_LIGHTS_ON(False)):
+            with self.sent_state(*self._assumed_light(False)):
                 await self._once("turnoffUnderbedLighting")
 
     async def lights_toggle(self) -> None:
