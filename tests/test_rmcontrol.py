@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -148,15 +150,23 @@ async def test_exact_conflicting_occurrence_has_separate_button() -> None:
         assert ctrl.write_command.call_args_list[0].args[0][3] == action.short_opcode
     specs = ctrl.controller_button_specs
     assert len({spec.key for spec in specs}) == len(specs)
-    assert all(not spec.entity_registry_enabled_default for spec in specs)
+    # Neither copy is the bed's own memory 1 recall, so each keeps a button.
+    assert sum("itemmemoryposition1_" in spec.key and spec.key.endswith("_short") for spec in specs) == 2
 
 
 async def test_product_button_callback_uses_selected_occurrence() -> None:
     ctrl = controller()
     ctrl.write_command = AsyncMock()
-    spec = next(spec for spec in ctrl.controller_button_specs if "pillowup" in spec.key)
+    # The bed's own pillow cover sends this product's pillow control.
+    assert not any("pillowup" in spec.key for spec in ctrl.controller_button_specs)
+    spec = next(spec for spec in ctrl.controller_button_specs if spec.key.endswith("_long"))
+    action = next(
+        a
+        for a in ctrl.product_profile.actions
+        if spec.key.endswith(f"{a.action.removeprefix('deviceFunction')}_{a.occurrence}_long".lower())
+    )
     await spec.press_fn(ctrl)
-    assert ctrl.write_command.call_args_list[0].args[0][3] == 0x3F
+    assert ctrl.write_command.call_args_list[0].args[0][3] == action.long_opcode
 
 
 async def test_fixed_queue_spacing_and_cancelled_write_cleanup() -> None:
@@ -613,8 +623,8 @@ async def test_zone_strength_actions_use_intensity_controls(code: str, paired: b
         ]
     else:
         names = [spec.name for spec in ctrl.controller_button_specs]
-        assert any("Massage Head Instensity Strengthen" in name for name in names)
-        assert any("Massage Foot Instensity Strengthen" in name for name in names)
+        assert "Massage head intensity up" in names
+        assert "Massage foot intensity up" in names
 
 
 def _products() -> list[str]:
@@ -653,7 +663,7 @@ async def test_massage_timer_buttons_are_one_select_sending_the_same_frames(nord
         removed = 0
         for action in timers:
             key = (
-                f"rmcontrol_{action.getter.removeprefix('get _ ')}_"
+                f"product_action_rmcontrol_{action.getter.removeprefix('get _ ')}_"
                 f"{action.action.removeprefix('deviceFunction')}_{action.occurrence}_short"
             ).lower()
             if key in keys:
@@ -676,3 +686,104 @@ async def test_massage_timer_buttons_are_one_select_sending_the_same_frames(nord
         with pytest.raises(ValueError):
             await ctrl.set_massage_timer(15)
     assert checked
+
+
+def test_product_buttons_skip_what_the_bed_entities_send_and_keep_unique_ids() -> None:
+    ctrl = controller("A4RN")
+    keys = {s.key for s in ctrl.controller_button_specs}
+    # The TV preset entity sends the main page's TV; its save is a confirmed button.
+    assert not any(k.endswith("itemtvposition_1_short") for k in keys)
+    save = next(s for s in ctrl.controller_button_specs if s.name == "Save TV position")
+    assert save.key == "product_action_rmcontrol_detailspagedisplaylist_itemtvposition_5_long"
+    assert save.requires_confirmation and save.entity_registry_enabled_default
+    names = [s.name for s in ctrl.controller_button_specs]
+    assert len(names) == len(set(names))
+
+
+def _standard_commands(ctrl: RmcontrolController) -> list[Callable[[], Awaitable[None]]]:
+    """The commands the bed's own entities send, under the gates their platforms read."""
+    commands: list[Callable[[], Awaitable[None]]] = []
+    for spec in ctrl.motor_control_specs:
+        commands += [getattr(ctrl, f"move_{spec.key}_up"), getattr(ctrl, f"move_{spec.key}_down")]
+    for preset in ("flat", "zero_g", "anti_snore", "tv", "lounge"):
+        if getattr(ctrl, f"supports_preset_{preset}"):
+            commands.append(getattr(ctrl, f"preset_{preset}"))
+    for slot in range(1, ctrl.memory_slot_count + 1):
+        commands.append(lambda n=slot: ctrl.preset_memory(n))
+        if ctrl.is_memory_slot_programmable(slot):
+            commands.append(lambda n=slot: ctrl.program_memory(n))
+    if ctrl.supports_discrete_light_control:
+        commands += [ctrl.lights_on, ctrl.lights_off]
+    elif ctrl.supports_light_toggle_control:
+        commands.append(ctrl.lights_toggle)
+    for supported, command in (
+        (ctrl.supports_massage_toggle_control, ctrl.massage_toggle),
+        (ctrl.supports_massage_off_control, ctrl.massage_off),
+        (ctrl.supports_massage_mode_step_control, ctrl.massage_mode_step),
+    ):
+        if supported:
+            commands.append(command)
+    if ctrl.supports_head_massage_intensity_step_control:
+        commands += [ctrl.massage_head_up, ctrl.massage_head_down]
+    if ctrl.supports_foot_massage_intensity_step_control:
+        commands += [ctrl.massage_foot_up, ctrl.massage_foot_down]
+    if ctrl.supports_synchro:
+        commands += [lambda: ctrl.set_synchro(True), lambda: ctrl.set_synchro(False)]
+    commands += [lambda m=m: ctrl.set_massage_timer(m) for m in ctrl.massage_timer_options]
+    return commands
+
+
+@pytest.mark.parametrize("nordic", [False, True])
+async def test_a_control_without_a_button_sends_what_a_listed_entity_sends(nordic: bool) -> None:
+    """Every app control is reachable: a press without a button of its own sends
+    the same frames, repeats, delays and STOP as an entity that is listed."""
+
+    async def sent(ctrl: RmcontrolController, command: Awaitable[None]) -> tuple[object, ...]:
+        mock = cast(AsyncMock, ctrl.write_command)
+        mock.reset_mock()
+        await command
+        return tuple(
+            (call.args, tuple(sorted((k, v) for k, v in call.kwargs.items() if k != "cancel_event")))
+            for call in mock.call_args_list
+        )
+
+    told_apart = 0
+    for code in _products():
+        ctrl = controller(code, nordic=nordic)
+        ctrl.write_command = AsyncMock()
+        specs = ctrl.controller_button_specs
+        listed = {await sent(ctrl, spec.press_fn(ctrl)) for spec in specs}
+        listed |= {await sent(ctrl, command()) for command in _standard_commands(ctrl)}
+        for action in ctrl.product_profile.actions:
+            if action.action.startswith(("deviceFunctionItemTitle", "deviceFunctionSofa")):
+                continue
+            for long_press in (False, True):
+                try:
+                    frames = await sent(
+                        ctrl,
+                        ctrl.async_execute_product_action(
+                            action.action,
+                            getter=action.getter,
+                            occurrence=action.occurrence,
+                            long_press=long_press,
+                        ),
+                    )
+                except ValueError:
+                    continue  # Not a gesture this control has, or not a bed command.
+                assert frames in listed, (code, action, long_press)
+        told_apart += sum(not spec.entity_registry_enabled_default for spec in specs)
+    assert told_apart
+
+
+def test_a_copy_sending_another_command_keeps_a_disabled_button_told_apart() -> None:
+    ctrl = controller("B4RM", nordic=False)
+    specs = {s.key: s for s in ctrl.controller_button_specs}
+    # The main page holds All motors up until STOP; the motor list taps it once.
+    held = specs["product_action_rmcontrol_detailspagedisplaylist_itemallmotorup_5_short"]
+    assert held.translation_key == "all_motors_up" and held.entity_registry_enabled_default
+    tap = specs["product_action_rmcontrol_motorlist_itemallmotorup_4_short"]
+    assert tap.translation_placeholders == {"action": "All motor up (short press)"}
+    assert not tap.entity_registry_enabled_default
+    # No light entity sends N2RM's light on, so its button stays.
+    keys = {s.key for s in controller("N2RM").controller_button_specs}
+    assert "product_action_rmcontrol_richmatalarmlist_itembedlighton_2_short" in keys

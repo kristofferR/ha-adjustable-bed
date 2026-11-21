@@ -232,6 +232,8 @@ LATE_CLOCK_SYNC = frozenset(
         "MlilyRemoteController",
         "MotionBedController",
         "OkimikiController",
+        "RichmatAppController",
+        "SleepController",
         "SonicSleepController",
         "SutaController",
     }

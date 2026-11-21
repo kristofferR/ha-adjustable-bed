@@ -648,7 +648,13 @@ class DreamSenseController(BedController):
         if self._has_sync_pair:
             result.append(
                 ControllerSwitchSpec(
-                    "dreamsense_sync", "synchronization", _sync, SYNC, assumed_state=True
+                    "dreamsense_sync",
+                    "synchronization",
+                    _sync,
+                    SYNC,
+                    assumed_state=True,
+                    # A setting, as on the other beds with Sync on and Sync off.
+                    entity_registry_enabled_default=False,
                 )
             )
         if self.profile.split:

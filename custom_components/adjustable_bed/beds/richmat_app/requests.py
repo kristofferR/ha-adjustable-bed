@@ -7,11 +7,14 @@ from datetime import datetime
 
 from .protocol import BlanketSleep
 
+# Clock settings of the bed and of the sleep link. The shared sync_clock action
+# sends them; they are not operations of the richmat_app action.
+CLOCK_SYNC = "sync"
+SLEEP_CLOCK_SYNC = "sleep_sync"
+
 OPERATIONS = (
-    "sync",
     "detection",
     "toggle_alarm",
-    "sleep_sync",
     "query",
     "single_alarm",
     "cancel_alarm",
