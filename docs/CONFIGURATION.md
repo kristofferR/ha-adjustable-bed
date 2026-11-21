@@ -214,7 +214,7 @@ connecting; diagnostics record the actual adapter or proxy used.
 | 3 | Head + Back + Legs |
 | 4 | Head + Back + Legs + Feet |
 
-Standard OCTO reads its motor count from the bed. Its **OCTO motor count**
+Standard OCTO reads its motor count from the bed. Its **Octo motor count**
 setting defaults to **Automatic** and can be set to one to four motors.
 
 For other beds that show **Number of motors**, count the distinct moving sections

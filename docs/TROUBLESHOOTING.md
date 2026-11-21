@@ -290,8 +290,8 @@ Configure the PIN in the integration's options.
 
 **Solutions:**
 1. **Verify features:** Check if your bed actually has the feature (massage, lights, etc.)
-2. **Update motor layout:** Standard OCTO uses its advertised motor count in Auto; choose an explicit OCTO override only when the receiver's advertised layout needs correction. Other profiles use the Motor Count setting when available.
-3. **Enable massage:** If bed has massage, enable it in integration options
+2. **Update motor layout:** Standard OCTO reads its motor count from the bed; set **Octo motor count** in **Configure** only when that count is wrong. Other beds use **Number of motors** where it is offered.
+3. **Enable massage:** If the bed has massage, turn on **Massage controls** in **Configure**, where it is offered
 
 ### Commands are slow or delayed
 

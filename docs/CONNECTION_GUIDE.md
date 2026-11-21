@@ -212,7 +212,7 @@ then use [Combine two beds into one](CONFIGURATION.md#two-independent-frames).
 
 After setup, you can adjust additional settings via **Settings > Devices & services > Adjustable Bed > Configure** (gear icon), then **Change settings**:
 
-- **Bed type, app or route** - Change it with
+- The app, model or remote is not here: change it with
   [Reconfigure](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
   in the entry's three-dots menu if the detected one is wrong
 - **Movement per tap** - How far a tap moves
