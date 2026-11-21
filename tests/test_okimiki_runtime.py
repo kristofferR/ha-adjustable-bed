@@ -189,6 +189,12 @@ async def test_all_target_preflight_rejects_before_first_settings_write(hass, ru
             {"alarm_id": 1, "datetime": "2026-11-18T07:30:00+00:00", "mode": "lounge"},
             bed.p.Alarm(1, 0, 7, 30, 0x59, 1).frame().hex(),
         ),
+        # The action form sends a date and time without a zone: local time.
+        (
+            "repeat",
+            {"alarm_id": 1, "datetime": "2026-11-18 07:30:00", "mode": "lounge"},
+            bed.p.Alarm(1, 0, 7, 30, 0x59, 1).frame().hex(),
+        ),
         (
             "repeat",
             {"alarm_id": 1, "datetime": "2026-11-18T07:30:00+00:00", "mode": "lounge",

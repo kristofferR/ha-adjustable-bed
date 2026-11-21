@@ -25851,7 +25851,8 @@
 "button:luuna_antisnoring": {"status":"ok","writes":[[100,"d44bc439",false,"6e010046b5",1,0]]},
 "button:luuna_antisnoring_save": {"status":"ok","writes":[[100,"d44bc439",false,"6e010069d8",1,0]]},
 "button:luuna_zerogravity": {"status":"ok","writes":[[100,"d44bc439",false,"6e010045b4",1,0]]},
-"button:luuna_zerogravity_save": {"status":"ok","writes":[[100,"d44bc439",false,"6e010066d5",1,0]]}
+"button:luuna_zerogravity_save": {"status":"ok","writes":[[100,"d44bc439",false,"6e010066d5",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e200d080301380102030412fb",1,0]]}
 }},
 "majestichome": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
