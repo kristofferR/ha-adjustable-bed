@@ -9,6 +9,10 @@ from dataclasses import dataclass
 from ...profiles.motomotion import name_character
 from .protocol import decimal
 
+# A real frame is a few dozen decimal tokens. This only bounds memory when a
+# device streams without ever sending the closing carriage return.
+MAX_BUFFER_BYTES = 4096
+
 
 @dataclass(frozen=True)
 class Comfort:
@@ -41,6 +45,8 @@ class State:
         try:
             end = self.buffer.index(13, 1)
         except ValueError:
+            if len(self.buffer) > MAX_BUFFER_BYTES:
+                self.buffer.clear()
             return
         body = bytes(self.buffer[1:end])
         self.buffer.clear()  # Source discards coalesced suffix, before parsing.

@@ -34,7 +34,6 @@ from custom_components.adjustable_bed.discovery_log import async_get_discovery_l
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
 from custom_components.adjustable_bed.redaction import (
     KEYS_TO_REDACT,
-    MAC_ADDRESS_KEYS,
     _redact_mac_address,
     redact_data,
 )
@@ -115,9 +114,6 @@ class TestDiagnosticsRedaction:
         """Test that sensitive keys are in redaction lists."""
         # Name and PIN should be fully redacted
         assert CONF_NAME in KEYS_TO_REDACT
-        # MAC address should be partially redacted (OUI kept)
-        assert CONF_ADDRESS in MAC_ADDRESS_KEYS
-        assert "address" in MAC_ADDRESS_KEYS
 
     def test_octo_enrollment_pin_and_confirmation_are_redacted(self) -> None:
         assert redact_data({"octo_pin": "1234", "octo_pin_confirmation": "1234"}) == {

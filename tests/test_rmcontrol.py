@@ -787,3 +787,20 @@ def test_a_copy_sending_another_command_keeps_a_disabled_button_told_apart() -> 
     # No light entity sends N2RM's light on, so its button stays.
     keys = {s.key for s in controller("N2RM").controller_button_specs}
     assert "product_action_rmcontrol_richmatalarmlist_itembedlighton_2_short" in keys
+
+
+def test_diagnostics_leave_out_in_bed_and_sleep_status() -> None:
+    """The stop-music flag is derived from both, so it stays out too (PRIV-2)."""
+    ctrl = controller()
+    ctrl._reported_state.update(
+        {
+            "rmcontrol_anti_snore_in_bed_status": 1,
+            "rmcontrol_anti_snore_sleep_status": 1,
+            "rmcontrol_anti_snore_stop_music": True,
+            "rmcontrol_anti_snore_intervention_count": 3,
+        }
+    )
+
+    state = ctrl.protocol_diagnostics["state"]
+
+    assert state == {"rmcontrol_anti_snore_intervention_count": 3}

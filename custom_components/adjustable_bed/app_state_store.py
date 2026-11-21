@@ -205,6 +205,17 @@ class AppStateStore:
         return dict(self._data or {})
 
 
+def jensen_memory_store_key(address: str) -> str:
+    """Jensen keeps app-stored memory positions in one file per bed."""
+    return f"{DOMAIN}.jensen_memory.{address.replace(':', '_').lower()}"
+
+
+def pairlink_sdk_store_key(entry_id: str, address: str | None = None) -> str:
+    """A Pairlink entry's SDK metadata file; each side of a pair keeps its own."""
+    suffix = f".{address.upper().replace('-', ':')}" if address is not None else ""
+    return f"{DOMAIN}.pairlink_sdk.{entry_id}{suffix}"
+
+
 def _registry(hass: HomeAssistant) -> dict[str, AppStateStore]:
     return domain_registry(hass, _REGISTRY_KEY, dict)
 
@@ -232,3 +243,4 @@ async def async_remove_app_states(hass: HomeAssistant, addresses: Iterable[str])
     for address in addresses:
         store = registry.pop(address.upper(), None) or AppStateStore(hass, address)
         await store.async_remove(keep_slots=(PROFILE_DECISIONS_SLOT,))
+        await Store(hass, 1, jensen_memory_store_key(address)).async_remove()
