@@ -231,18 +231,6 @@ def register_services(hass: HomeAssistant) -> None:
 
         await _dispatch(call, validate, execute)
 
-    async def preset(call: ServiceCall) -> None:
-        from ...profiles.symphony import preset as preset_frame
-
-        def validate(value: SymphonyController) -> None:
-            value.validate_command()
-            preset_frame(value.app, call.data["preset"], 1, save=call.data["save"])
-
-        async def execute(value: SymphonyController) -> None:
-            await value.recall(call.data["preset"], save=call.data["save"])
-
-        await _dispatch(call, validate, execute)
-
     base = {vol.Required("device_id"): DEVICE_IDS, **SIDE_FIELD}
     hass.services.async_register(
         DOMAIN,
@@ -267,20 +255,6 @@ def register_services(hass: HomeAssistant) -> None:
                 vol.Optional("axis", default="head"): vol.In(("head", "elevation")),
                 vol.Optional("strength", default=1): vol.All(vol.Coerce(int), vol.In((1, 2, 3, 6))),
                 vol.Optional("demo", default=False): cv.boolean,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        "symphony_preset",
-        preset,
-        schema=vol.Schema(
-            {
-                **base,
-                vol.Required("preset"): vol.In(
-                    ("zero_g", "flat", "memory_1", "memory_2", "reading", "tv", "anti_snore")
-                ),
-                vol.Optional("save", default=False): cv.boolean,
             }
         ),
     )

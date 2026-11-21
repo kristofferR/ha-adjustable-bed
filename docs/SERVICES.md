@@ -81,7 +81,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_rise`](#richmat_rise) | Luuna Rise and Power Cool: settings | Sets the light and massage timer of a Luuna Rise or Power Cool bed. Set its alarm with Set alarm. Light settings need the bed to report them first. |
 | [`mline_command`](#mline_command) | M Line: settings | Sets sleep privacy or anti-snore, reads the current settings or alarm, or downloads sleep history. |
 | [`mlily`](#mlily) | MLILY: settings | Sets the alarm, light, massage and anti-snore options of an MLILY bed, or reads and sets its separate sleep sensor. |
-| [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the names; for the modular TL products, the bed's diagnostics do. Saving, clearing, resetting and changing modules need confirmation. |
+| [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the common names; the bed's diagnostics list every name it accepts. Saving, clearing, resetting and changing modules need confirmation. |
 | [`motion_bed_air_setting`](#motion_bed_air_setting) | Motion Bed: air settings | Reads or saves the air strength and optional timer of one air mode. |
 | [`motion_bed_audio`](#motion_bed_audio) | Motion Bed: audio | Select a track, preview a track, or set volume on a target that reports audio support. |
 | [`motion_bed_calibration`](#motion_bed_calibration) | Motion Bed: calibrate sleep sensing | Save the app’s flat and side calibration readings. Confirm before changing calibration. |
@@ -126,7 +126,6 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`starcode_move_lifts`](#starcode_move_lifts) | StarCode: move lifts | Moves the lifts set up on one main bed. Flat lowers the main bed first and the lifts a moment later; Stop stops them all. |
 | [`svane_release_axis`](#svane_release_axis) | Svane: release motor | Stop one motor while the other keeps moving. |
 | [`symphony_anti_snore`](#symphony_anti_snore) | Symphony: anti-snore | Turns anti-snore on or off for the head or the elevation, or runs a demonstration. Some beds take strengths 1, 3 and 6; others take 1, 2 and 3. |
-| [`symphony_preset`](#symphony_preset) | Symphony: preset | Moves to a preset, or saves the current position to it on beds that can save presets. |
 | [`symphony_set_light`](#symphony_set_light) | Symphony: set light | Sets the light color and brightness together. ES700 and SS800 only. |
 
 # General actions
@@ -1152,7 +1151,7 @@ buttons work as in the app. See the [KomfyD and ComfyDS guide](beds/kaidi.md#kom
 | `intensity` | Intensity (%) | For Set fan: 0 to 100 percent in steps of 20. |
 | `duration` | Fan duration | For Set fan: duration choice 0 to 6, required for either fan. Only the head fan uses it. |
 | `confirm` | Confirm programming or saving | Required for a control's long press or save. |
-| `control` | Control | For Run control: the control's number in your bed's remote layout, from the layout's list in the Richmat guide. |
+| `control` | Control | For Run control: the control's number in your bed's remote layout, from the layout's list in the Richmat guide. A number that cannot send the chosen press on your bed is refused. |
 | `mode` | Control mode | For Run control: the layout's control mode, 0 to 2, one your layout offers. Default 0. |
 | `long` | Long press | For Run control: send the control's long press. Needs Confirm. |
 | `held` | Continuous movement | For Run control: hold the control for the movement duration. Controls that repeat on their own, such as motor movement, run for the duration without it. |
@@ -1508,12 +1507,12 @@ anti-snore movement runs on the left.
 ## Motion Bed
 
 <a id="motion_bed_action"></a>
-**`motion_bed_action`**: Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the names; for the modular TL products, the bed's diagnostics do. Saving, clearing, resetting and changing modules need confirmation.
+**`motion_bed_action`**: Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the common names; the bed's diagnostics list every name it accepts. Saving, clearing, resetting and changing modules need confirmation.
 
 | Field | Name | Meaning |
 |-------|------|---------|
 | `confirmed` | Confirm stored change | Required for saving, clearing, resetting and changing modules. |
-| `action` | Action | Name of the control to run, from the Motion Bed guide. For the modular TL products, the bed's diagnostics list the names. |
+| `action` | Action | Name of the control to run. The Motion Bed guide lists the common names; the bed's diagnostics list every name it accepts. |
 | `branch` | Preset step | For a preset you can program: recall it, save the current position to it, or clear it. Default recall. One of `app`, `save` or `clear`. |
 | `duration` | Duration | How long a movement control runs, 0.01 to 10 seconds. Default 1. |
 
@@ -2329,14 +2328,6 @@ describes the bed's other buttons and entities.
 | `axis` | Moves | Which part of the bed anti-snore moves: the head or the elevation. Default head. One of `head` or `elevation`. |
 | `strength` | Strength | Strength level. Some beds take 1, 3 and 6 (low, medium, high); others take 1, 2 and 3. A level your bed does not take is refused. Default 1. One of `1` (Low), `2` (Level 2), `3` (Level 3: medium or high, depending on the bed) or `6` (High). |
 | `demo` | Run demonstration | Run the anti-snore movement once to show it. Default off. |
-
-<a id="symphony_preset"></a>
-**`symphony_preset`**: Moves to a preset, or saves the current position to it on beds that can save presets.
-
-| Field | Name | Meaning |
-|-------|------|---------|
-| `preset` | Preset | The preset to move to or save. Only your bed's presets work. One of `zero_g` (Zero gravity), `flat`, `memory_1`, `memory_2`, `reading`, `tv` or `anti_snore` (Anti-snore). |
-| `save` | Save current position | Save where the bed is now to the preset instead of moving to it. Default off. |
 
 <a id="symphony_set_light"></a>
 **`symphony_set_light`**: Sets the light color and brightness together. ES700 and SS800 only.
