@@ -71,11 +71,21 @@ name.
 
 ### Bonding and authentication
 
-- All three analyzed BLE applications proactively request Android/OS bonding.
-- Physical testing with two Advanced controllers proves that their GATT control
-  works without a bond, so the integration does not force pairing.
-- A short post-connect readiness retry handles the controllers' transient
-  `Insufficient authentication` window instead.
+- All three analyzed BLE applications bond with the controller through
+  Android/OS pairing before they use it. Bed Control's help text has the user
+  unplug the bed for 60 seconds to make it ready to connect.
+- Physical testing with two Advanced controllers shows that every read, write
+  and subscription is refused with `Insufficient authentication` until the link
+  is encrypted.
+- Through an ESPHome Bluetooth proxy the integration asks the proxy to encrypt
+  the link right after connecting, which takes 0.2 to 0.3 seconds with the bond
+  the proxy holds. A proxy that is not asked encrypts only when the controller
+  requests it: about two seconds after a connect, about ten seconds after a
+  disconnect when the reconnect is quick, and never while the under-bed light
+  is on. That last case left the bed refusing all control until it was
+  power-cycled.
+- On other adapters the integration does not request pairing. A post-connect
+  readiness retry waits until the link is encrypted.
 - There is no application PIN, passkey, challenge, token or protocol encryption.
 
 ## Detection
@@ -307,9 +317,10 @@ Reference notifications are exactly four little-endian bytes:
 
 ### Connection readiness and retries
 
-- A fresh connection can take around 12 seconds to accept control writes through
-  a Bluetooth proxy. The integration retries the safe STOP probe for up to 15
-  seconds per readiness request, including after interrupted startup.
+- Through an ESPHome proxy the link is encrypted on connect and accepts control
+  on the first probe. When the proxy cannot encrypt it, and on other adapters,
+  the integration retries the safe STOP probe for up to 15 seconds per readiness
+  request, including after interrupted startup.
 - Cancellation does not mark the session ready unless a write was acknowledged,
   and deferred subscriptions resume on the next command.
 - Queued commands remain serialized and STOP invalidates older pending movement.
@@ -385,7 +396,7 @@ byte-level command tables above remain exhaustive.
 
 | Feature | Home Assistant |
 |---------|----------------|
-| Bed Control discovery, optional app bonding and GATT session | Unbonded-compatible coordinator connection with readiness retry |
+| Bed Control discovery, app bonding and GATT session | Coordinator connection; an ESPHome proxy encrypts the link on connect, other adapters use the readiness retry |
 | STANDARD/TD3/ADVANCED/alarm capability selection | Live service/mask discovery with persisted snapshot |
 | Individual, all-section and all 40 two-section movements | Covers, preset buttons and simultaneous-move service |
 | STOP/release and 100 ms held-command lifecycle | Guaranteed cleanup on completion, failure and cancellation |

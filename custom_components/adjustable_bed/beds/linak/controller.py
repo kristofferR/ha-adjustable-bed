@@ -143,7 +143,8 @@ class _AxisKeys:
 # Live proxy connections can need more than six seconds before accepting writes.
 LINAK_CONTROL_READY_TIMEOUT_S = 15.0
 LINAK_CONTROL_READY_RETRY_DELAY_S = 0.75
-# An ESP32 proxy encrypts a bonded link in well under a second.
+# A proxy that holds the bond encrypts in 0.2 to 0.3 seconds. A slower or failed
+# request falls back to the readiness retry.
 LINAK_LINK_ENCRYPTION_TIMEOUT_S = 5.0
 LINAK_PROTOCOL_READ_TIMEOUT_S = 0.75
 # Some controllers never answer the mask read over a proxy (issue #714). Without
@@ -744,10 +745,13 @@ class LinakController(BedController):
     async def _async_encrypt_proxy_link(self) -> None:
         """Have an ESPHome proxy encrypt the link instead of waiting for the bed.
 
-        The controller refuses every read and write until the link is
-        encrypted. A phone or a BlueZ adapter encrypts a bonded link itself. An
-        ESP32 proxy only does it when the bed asks, and the bed asks late after
-        a quick reconnect and not at all while its under-bed light is on.
+        The controller refuses every read, write and subscription until the
+        link is encrypted. An ESP32 proxy holding the bond encrypts only when
+        the controller asks. Measured on two Advanced controllers, it asks about
+        two seconds after a connect, about ten seconds after a disconnect when
+        the reconnect is quick, and not at all while its under-bed light is on.
+        Asked directly, the proxy encrypts in 0.2 to 0.3 seconds in every case.
+        Other adapters keep the readiness retry.
         """
         client = self.client
         if self._link_encryption_requested or client is None or not client.is_connected:
@@ -761,13 +765,13 @@ class LinakController(BedController):
             async with asyncio.timeout(LINAK_LINK_ENCRYPTION_TIMEOUT_S):
                 await client.pair()
         except (BleakError, TimeoutError, NotImplementedError, TypeError) as err:
-            # The bed may still ask for encryption itself; the readiness
-            # retry covers that.
+            # The controller may still ask for encryption itself, which the
+            # readiness retry waits for.
             _LOGGER.debug(
                 "Proxy did not encrypt the link to %s after %.2fs: %s",
                 self._coordinator.address,
                 monotonic() - started,
-                err or type(err).__name__,
+                str(err) or type(err).__name__,
             )
             return
         _LOGGER.debug(
@@ -778,6 +782,7 @@ class LinakController(BedController):
 
     async def async_discover_capabilities(self) -> None:
         """Resolve Standard, TD3, and Advanced from services and mask byte 0."""
+        # The controller refuses the mask read below on an unencrypted link.
         await self._async_encrypt_proxy_link()
         if self._profile is LinakProfile.PERFORMANCE:
             self._capability_discovery_deferred = False
