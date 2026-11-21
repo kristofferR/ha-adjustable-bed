@@ -694,3 +694,15 @@ async def test_dot_write_notification_property_does_not_subscribe(monkeypatch) -
         feedback,
     ]
     assert controller.client.write_gatt_char.call_args.args == (dot_write, b"\x00\xb0")
+
+
+def test_a_new_link_shows_the_light_only_from_its_own_report() -> None:
+    controller = make_controller()
+    state = controller._coordinator.controller_state
+    controller._parse_feedback(generic(0x00020000))
+    assert state["under_bed_lights_on"] is True
+    controller._clear_session()
+    assert state["under_bed_lights_on"] is None
+    # The same reading as the last link still counts as this link's report.
+    controller._parse_feedback(generic(0x00020000))
+    assert state["under_bed_lights_on"] is True
