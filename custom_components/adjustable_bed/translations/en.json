@@ -10706,6 +10706,14 @@
     "retyped_entities": {
       "title": "Update automations for {bed}",
       "description": "Some of {bed}'s controls changed type or options in this version. These automations and scripts still use them the old way:\n\n{entities}\n\nEdit each one to use the new entity or its new options. An under-bed light is now a light, so use the light actions instead of the switch actions. Then ignore this message."
+    },
+    "removed_actions": {
+      "title": "Update automations that use removed bed actions",
+      "description": "These automations and scripts call Adjustable Bed actions, fields or options that this version no longer has, so those steps fail when they run:\n\n{calls}\n\nAfter an arrow is what to use instead. For a line without one, select **Learn more** to see what replaces it. Edit each automation and script; this message goes away when Home Assistant next starts without finding one."
+    },
+    "upgraded": {
+      "title": "Adjustable Bed was updated to v{version}",
+      "description": "Version {version} changes some of the entities, actions and settings you used before. Select **Learn more** to see what changed and what to check now. Then ignore this message."
     }
   },
   "selector": {
