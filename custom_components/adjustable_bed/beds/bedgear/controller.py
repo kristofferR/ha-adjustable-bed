@@ -297,7 +297,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
     def alarm_capability(self) -> AlarmCapability | None:
         return (
             AlarmCapability(massage_intensities=2, cancel_running=True)
-            if self.is_l2motion and self.profile.alarm
+            if self.profile.alarm
             else None
         )
 
@@ -330,13 +330,21 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         self.validate_alarm(alarm)
+        # Turning the alarm off keeps the time the bed reported, as the app does.
+        keep = not alarm.enabled and self._reported_alarm_time is not None
         await self.configure(
             Request(
                 operation="alarm",
-                time=f"{alarm.hour:02d}:{alarm.minute:02d}",
+                time=None if keep else f"{alarm.hour:02d}:{alarm.minute:02d}",
                 strength=alarm.massage_intensity if alarm.enabled else 0,
             )
         )
+
+    @property
+    def _reported_alarm_time(self) -> tuple[str, str] | None:
+        if self._alarm is None or not all(x.isascii() and x.isdecimal() for x in self._alarm[:2]):
+            return None
+        return self._alarm[0], self._alarm[1]
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -1056,19 +1064,15 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             if op == "light_timer":
                 frame = codec.ascii_command(319, request.minutes)
             else:
-                hour, minute = (
-                    request.time.split(":")
-                    if request.time is not None
-                    else self._alarm[:2]
-                    if self._alarm
-                    else ("", "")
-                )
-                strength = (
-                    request.strength if request.strength is not None else self._observed_strength
-                )
-                assert strength is not None
+                assert request.strength is not None
+                reported = self._reported_alarm_time
+                if request.time is not None:
+                    hour, minute = request.time.split(":")
+                else:
+                    assert reported is not None
+                    hour, minute = reported
                 frame = codec.decimal_fields(
-                    hour + minute + "00", ("0017", "0118", "0219")[strength]
+                    hour + minute + "00", ("0017", "0118", "0219")[request.strength]
                 )
             await self._send(self._letter("z"), link, cancel)
             if await self._wait(0.05, cancel):
@@ -1100,19 +1104,12 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             raise ValueError("This bed cannot save the snore position this way. Hold the snore preset instead")
         if op == "rgb" and request.rgb is None:
             raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
-        if op == "alarm" and request.strength is None and self._observed_strength is None:
-            raise ValueError("Enter an alarm strength, or wait until the bed reports its current one")
         if not allowed.get(op, False):
             raise ValueError("This control or memory position is not available on this bed, or the bed has not reported its state yet. A clock sync change also needs its confirmation turned on")
-        if (
-            op == "alarm"
-            and request.time is None
-            and (
-                self._alarm is None
-                or any(not x.isascii() or not x.isdecimal() for x in self._alarm[:2])
-            )
+        if op == "alarm" and (
+            request.strength is None or request.time is None and self._reported_alarm_time is None
         ):
-            raise ValueError("Enter an alarm time, or wait until the bed reports its current one")
+            raise ValueError("Set an alarm time and strength")
 
 
 @dataclass(frozen=True, kw_only=True)

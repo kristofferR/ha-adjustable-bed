@@ -18,7 +18,6 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.keeson.controller import (
-    STATE_ADJUSTABLE_LITE_LIGHT,
     STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
     STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,
     KeesonController,
@@ -39,6 +38,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.error_helpers import raises_key
 
 KSBT01C = "KSBT01C000015046"
@@ -219,9 +219,9 @@ def test_parser_branch_vectors(length, raw, light_byte, light, indicator):
         assert ksbt01c is None
         assert ksbt03c is None
         return
-    assert ksbt01c == [STATE_ADJUSTABLE_LITE_LIGHT(light)]
+    assert ksbt01c == [UNDER_BED_LIGHTS_ON(light)]
     assert ksbt03c == [
-        STATE_ADJUSTABLE_LITE_LIGHT(light),
+        UNDER_BED_LIGHTS_ON(light),
         STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW(raw),
         STATE_ADJUSTABLE_LITE_MASSAGE_TIMER(indicator),
     ]
@@ -240,15 +240,15 @@ async def test_notifications_publish_state_and_session_end_clears_it(
     payload[3:5] = (900).to_bytes(2, "big")
     payload[12] = 1
     controller._on_notification(MagicMock(), payload)
-    assert coordinator.controller_state[STATE_ADJUSTABLE_LITE_LIGHT] is True
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
     assert coordinator.controller_state[STATE_ADJUSTABLE_LITE_MASSAGE_TIMER] == 20
     assert coordinator.controller_state[STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW] == 900
 
     controller._on_notification(MagicMock(), bytearray(12))
-    assert coordinator.controller_state[STATE_ADJUSTABLE_LITE_LIGHT] is True
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
 
     controller.invalidate_diagnostics()
-    assert coordinator.controller_state[STATE_ADJUSTABLE_LITE_LIGHT] is None
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is None
     assert coordinator.controller_state[STATE_ADJUSTABLE_LITE_MASSAGE_TIMER] is None
 
 
@@ -268,7 +268,7 @@ async def test_ksbt01c_remote_ignores_timer_bytes(coordinator):
     payload = bytearray(13)
     payload[3:5] = (1500).to_bytes(2, "big")
     controller._on_notification(MagicMock(), payload)
-    assert coordinator.controller_state[STATE_ADJUSTABLE_LITE_LIGHT] is False
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is False
     assert STATE_ADJUSTABLE_LITE_MASSAGE_TIMER not in coordinator.controller_state
 
 
@@ -304,9 +304,9 @@ async def test_remote_capabilities(coordinator):
         assert not controller.supports_head_massage_toggle_control
         assert not controller.supports_foot_massage_toggle_control
         assert not controller.supports_massage_off_control
-        assert [spec.key for spec in controller.controller_state_binary_sensor_specs] == [
-            STATE_ADJUSTABLE_LITE_LIGHT
-        ]
+        # The polled bulb is the light's state, not a separate reading.
+        assert controller.supports_light_state_feedback
+        assert controller.controller_state_binary_sensor_specs == ()
         assert [spec.key for spec in controller.controller_state_sensor_specs] == (
             [STATE_ADJUSTABLE_LITE_MASSAGE_TIMER] if ksbt03c else []
         )
@@ -429,7 +429,6 @@ async def test_setup_exposes_only_the_app_surface(
         "preset_memory_1",
         "preset_memory_2",
         "preset_memory_3",
-        "toggle_light",
         "massage_head_up",
         "massage_head_down",
         "massage_foot_up",
@@ -448,7 +447,8 @@ async def test_setup_exposes_only_the_app_surface(
         "massage_all_off",
     ):
         assert not exists("button", key), key
-    assert exists("binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert exists("light", "under_bed_lights")
+    assert not exists("button", "toggle_light")
     assert exists("sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER)
 
     assert await hass.config_entries.async_unload(entry.entry_id)
@@ -525,7 +525,7 @@ async def test_switching_to_the_profile_removes_generic_ksbt_entities(
         ("button", "preset_tv"),
     ):
         assert not _exists(hass, address, platform, key), key
-    assert _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert _exists(hass, address, "light", "under_bed_lights")
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
 
@@ -541,12 +541,11 @@ async def test_switching_away_from_the_profile_removes_its_state_entities(
     entry = _keeson_entry(hass, address, KSBT03C, KEESON_VARIANT_ADJUSTABLE_LITE, 2)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert _exists(hass, address, "light", "under_bed_lights")
     assert _exists(hass, address, "sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER)
 
     await _switch_variant(hass, entry, KEESON_VARIANT_KSBT)
 
-    assert not _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
     assert not _exists(hass, address, "sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER)
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
@@ -564,7 +563,7 @@ async def test_other_bed_types_remove_adjustable_lite_state_entities(
     registry = er.async_get(hass)
     address = mock_config_entry.data[CONF_ADDRESS]
     for platform, key in (
-        ("binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT),
+        ("binary_sensor", "adjustable_lite_light"),
         ("sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER),
     ):
         registry.async_get_or_create(
@@ -574,7 +573,7 @@ async def test_other_bed_types_remove_adjustable_lite_state_entities(
     assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
 
-    assert not _exists(hass, address, "binary_sensor", STATE_ADJUSTABLE_LITE_LIGHT)
+    assert not _exists(hass, address, "binary_sensor", "adjustable_lite_light")
     assert not _exists(hass, address, "sensor", STATE_ADJUSTABLE_LITE_MASSAGE_TIMER)
     assert await hass.config_entries.async_unload(mock_config_entry.entry_id)
     await hass.async_block_till_done()

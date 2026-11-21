@@ -3249,12 +3249,6 @@
       "bedgear_combined_down": {
         "name": "Head and foot down"
       },
-      "starcode_abm5_4_light_on": {
-        "name": "Turn floor light on"
-      },
-      "starcode_abm5_4_light_off": {
-        "name": "Turn floor light off"
-      },
       "isleep_pattern_off": {
         "name": "Massage pattern off"
       },
@@ -5442,12 +5436,6 @@
       "starcode_sonic_active": {
         "name": "Sonic active"
       },
-      "adjustable_lite_light": {
-        "name": "Light"
-      },
-      "innova_light": {
-        "name": "Light"
-      },
       "richmat_mh_smart_light_lock": {
         "name": "Smart light lock"
       },
@@ -5538,9 +5526,6 @@
       "cheerssleep_right_asleep": {
         "name": "Right asleep"
       },
-      "nerum_light": {
-        "name": "Light"
-      },
       "nerum_massage": {
         "name": "Massage running"
       },
@@ -5582,12 +5567,6 @@
       },
       "body_movement_right": {
         "name": "Right body movement"
-      },
-      "under_bed_light_state": {
-        "name": "Under-bed light state"
-      },
-      "enso_light": {
-        "name": "Light"
       },
       "superior_sleep_alarm_enabled": {
         "name": "Alarm enabled"
@@ -7168,14 +7147,6 @@
           "name": "Light shutdown timer",
           "description": "For Light timer: turns the light off after this many minutes, from 0 (never) to 1439."
         },
-        "time": {
-          "name": "Alarm time",
-          "description": "For Set alarm: the time as HH:MM. Leave unset to keep the time the bed reported."
-        },
-        "strength": {
-          "name": "Alarm strength",
-          "description": "For Set alarm: 0 turns the alarm off, 1 or 2 sets its strength. Leave unset to keep the strength the bed reported."
-        },
         "wired": {
           "name": "Wired synchronization",
           "description": "For Sync mode: on if the two bases are connected with a cable, off for wireless."
@@ -8092,7 +8063,7 @@
     },
     "luuna": {
       "name": "Luuna: settings",
-      "description": "Sets the light, the one-time alarm and the clock of a Luuna bed, or reads the name of its sleep sensor. Only the options your bed reports can run.",
+      "description": "Sets the light of a Luuna bed, or reads the name of its sleep sensor. Set its alarm with Set alarm and its clock with Set bed clock. Only the options your bed reports can run.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -8109,18 +8080,6 @@
         "rgb_color": {
           "name": "Light color",
           "description": "Color for Light color."
-        },
-        "hour": {
-          "name": "Alarm hour",
-          "description": "Hour the alarm goes off, 0 to 23."
-        },
-        "minute": {
-          "name": "Alarm minute",
-          "description": "Minute the alarm goes off, 0 to 59."
-        },
-        "mode": {
-          "name": "Alarm preset",
-          "description": "Position the bed moves to when the alarm goes off. Only your product's alarm positions are accepted."
         },
         "side": {
           "name": "Side",
@@ -8870,7 +8829,7 @@
     },
     "richmat_resource_bed": {
       "name": "Lady Americana and partner beds: settings",
-      "description": "Sets the alarm, light and massage timer of a Lady Americana or partner bed, or presses a bed button. Read the current settings before changing the light.",
+      "description": "Sets the light and massage timer of a Lady Americana or partner bed, or presses a bed button. Set its alarm with Set alarm. Read the current settings before changing the light.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -8883,14 +8842,6 @@
         "side": {
           "name": "Side",
           "description": "Which side of a combined bed to use. Leave unset for the whole bed, or the side of the device you selected."
-        },
-        "actions": {
-          "name": "Alarm actions",
-          "description": "For One-time alarm: one position and optional massage, from zero_gravity, anti_snore, memory_one, memory_two, tv, lounge, massage_all, massage_head and massage_foot, as your layout offers them. The bed's status sensor lists them."
-        },
-        "time": {
-          "name": "Alarm time",
-          "description": "For One-time alarm: the time it goes off, at its next occurrence, in whole minutes. Leave unset for 24 hours from now."
         },
         "rgb_color": {
           "name": "Light color",
@@ -8916,7 +8867,7 @@
     },
     "richmat_rise": {
       "name": "Luuna Rise and Power Cool: settings",
-      "description": "Sets the alarm, light and massage timer of a Luuna Rise or Power Cool bed. Alarm and light settings need the bed to report them first.",
+      "description": "Sets the light and massage timer of a Luuna Rise or Power Cool bed. Set its alarm with Set alarm. Light settings need the bed to report them first.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -8925,14 +8876,6 @@
         "operation": {
           "name": "Operation",
           "description": "What to set or read."
-        },
-        "actions": {
-          "name": "Alarm actions",
-          "description": "For One-time alarm: alarm actions listed in the bed's diagnostics, such as node_1. The first bed action and the massage choices decide what the alarm does."
-        },
-        "time": {
-          "name": "Alarm time",
-          "description": "For One-time alarm: the time it goes off, at its next occurrence, in whole minutes. Leave unset for 24 hours from now."
         },
         "rgb_color": {
           "name": "Light color",
@@ -11923,8 +11866,6 @@
     "richmat_rise_operation": {
       "options": {
         "query": "Read current settings",
-        "alarm": "One-time alarm",
-        "cancel_alarm": "Cancel alarm",
         "rgb": "Light color",
         "lamp_timer": "Lamp timer",
         "massage_timer": "Massage timer",
@@ -12075,24 +12016,12 @@
     },
     "luuna_operation": {
       "options": {
-        "alarm": "One-time alarm",
-        "alarm_cancel": "Cancel alarm",
         "light_rgb": "Light color",
         "light_seconds": "Light timer",
         "light_off": "Light off",
         "light_warm": "Warm light",
         "light_cold": "Cool light",
-        "sleep_name": "Sleeper name",
-        "time_sync": "Set bed clock"
-      }
-    },
-    "luuna_mode": {
-      "options": {
-        "tv": "TV",
-        "zero_g": "Zero gravity",
-        "anti_snore": "Anti-snore",
-        "memory_1": "Memory 1",
-        "memory_2": "Memory 2"
+        "sleep_name": "Sleeper name"
       }
     },
     "mlily_operation": {
@@ -12219,7 +12148,6 @@
       "options": {
         "rgb": "Light color",
         "light_timer": "Light timer",
-        "alarm": "Set alarm",
         "sync_mode": "Sync mode",
         "toggle_sync": "Turn sync on or off",
         "save_snore": "Save anti-snore position",
@@ -12229,8 +12157,6 @@
     "richmat_resource_bed_operation": {
       "options": {
         "query": "Read current settings",
-        "alarm": "One-time alarm",
-        "cancel_alarm": "Cancel alarm",
         "rgb": "Light color",
         "lamp_timeout": "Lamp timer",
         "massage_timer": "Massage timer",

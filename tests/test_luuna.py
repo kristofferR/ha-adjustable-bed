@@ -209,6 +209,34 @@ async def test_capability_gates_alarm_order_light_and_forbidden_operations():
     assert "light_available" not in other.events
 
 
+async def test_alarm_and_clock_through_the_shared_actions(hass, monkeypatch):
+    from homeassistant.util import dt as dt_util
+
+    from tests.alarm_helpers import call_set_alarm
+
+    now = dt_util.now().replace(hour=10, minute=0, second=0, microsecond=0)
+    monkeypatch.setattr(dt_util, "now", lambda: now)
+    ctrl, c = make("riseprolight")
+    await ctrl.start_notify()
+    ctrl._on_notification(MagicMock(), bytearray.fromhex("6e09010078"))
+    c.client.write_gatt_char.reset_mock()
+    await ctrl.async_execute_casper_base_request(
+        Request("alarm", mode="ZeroGravity", hour=10, minute=30)
+    )
+    app = frames(c)
+    c.client.write_gatt_char.reset_mock()
+    await call_set_alarm(
+        hass, ctrl, {"enabled": True, "time": "10:30:00", "wake_action": "zero_g"}
+    )
+    assert frames(c) == app
+    c.client.write_gatt_char.reset_mock()
+    await call_set_alarm(hass, ctrl, {"enabled": False})
+    assert frames(c) == ["6e05000073", "6e06000074"]
+    c.client.write_gatt_char.reset_mock()
+    await ctrl.sync_clock()
+    assert frames(c) == [codec.calendar(now, build=codec.record_20_len).hex()]
+
+
 async def test_disconnect_cancels_pending_write_and_stale_notification():
     ctrl, c = make()
     await ctrl.start_notify()
@@ -298,7 +326,6 @@ def live_runtime(hass, product="riseprolight", address="AA:BB:CC:DD:EE:FF"):
     ("operation", "expected"),
     [
         ("light_warm", "6e0cff80f96e0d460acb"),
-        ("alarm_cancel", "6e06000074"),
     ],
 )
 async def test_service_reconnects_idle_controller_and_requires_fresh_reply(

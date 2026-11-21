@@ -24,10 +24,8 @@ from .resource_protocol import BED_COMMANDS, Operation, Request
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(
-        ("query", "alarm", "cancel_alarm", "rgb", "lamp_timeout", "massage_timer", "bed_command")
+        ("query", "rgb", "lamp_timeout", "massage_timer", "bed_command")
     ),
-    vol.Optional("actions"): vol.All(cv.ensure_list, [cv.string], vol.Coerce(tuple)),
-    vol.Optional("time"): cv.time,
     vol.Optional("rgb_color"): vol.All(
         vol.ExactSequence((cv.byte, cv.byte, cv.byte)), vol.Coerce(tuple)
     ),
@@ -62,8 +60,6 @@ async def handle_resource_bed(call: ServiceCall) -> None:
 
     request = Request(
         cast(Operation, call.data["operation"]),
-        actions=call.data.get("actions", ()),
-        when=call.data.get("time"),
         color=call.data.get("rgb_color"),
         seconds=call.data.get("seconds"),
         progress=call.data.get("progress"),

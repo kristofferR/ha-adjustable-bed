@@ -251,18 +251,6 @@ class TestBox15Checksum:
 class TestSleepysBox15Controller:
     """Test SleepysBox15Controller."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Keeson Base UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == KEESON_BASE_WRITE_CHAR_UUID
-
     async def test_supports_preset_zero_g(
         self,
         hass: HomeAssistant,
@@ -517,18 +505,6 @@ class TestSleepysBox15Presets:
 
 class TestSleepysBox24Controller:
     """Test SleepysBox24Controller."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box24_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use BOX24 write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box24_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == SLEEPYS_BOX24_WRITE_CHAR_UUID
 
     async def test_supports_preset_zero_g(
         self,

@@ -12,6 +12,7 @@ dev = [
     "pytest-asyncio>=0.23.5",
     "pytest-homeassistant[bluetooth]",
     "pytest-split>=0.10.0",
+    "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.5.0",
     "aioesphomeapi>=42.0.0",
 ]
@@ -29,6 +30,8 @@ asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["."]
 # Let Home Assistant install its httpx alias before respx is imported.
 addopts = "-p no:respx -n auto --dist loadgroup"
+# Fail a hung test, with its stack, long before the CI job's own timeout.
+timeout = 300
 markers = [
     "integration: marks tests as integration tests (require full HA setup)",
     "real_connect_delays: keep the connection profile's retry and settle delays in tests",

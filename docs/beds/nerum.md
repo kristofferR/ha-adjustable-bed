@@ -24,7 +24,7 @@ Nerum app profiles, with Bluetooth names beginning `okin` or `smartbed`
 | Memory Presets | P1: M1; P2/P3: M1 and M2 |
 | Saving memory positions | ❌ |
 | Massage | ❌ No massage controls; P1 and P2 show the massage state the bed reports |
-| Lights | Toggle light button; P1 light state sensor |
+| Lights | P1: a light that shows its state; P2 and P3: Toggle light button |
 | Clock and alarms | P2/P3: sets the bed clock; three alarms |
 | Paired beds | Two beds with their own Bluetooth addresses can be paired; one address cannot be split into sides |
 
@@ -182,9 +182,11 @@ for reference, but no massage controls are created.
 
 ### Lights
 
-**Toggle light** sends the held light key; the app's on and off buttons send
-the same bytes. It does not provide discrete on/off, brightness or color. P1
-reports the light state as the **Light** binary sensor.
+The light key is held like the app's; the app's on and off buttons send the
+same bytes. It does not provide discrete on/off, brightness or color. P1
+reports the light state, so P1 has an **Under Bed Lights** light that shows it
+and sends the light key when the reported state differs from the one asked
+for. P2 and P3 report nothing and keep the **Toggle light** button.
 
 ### Alarms
 

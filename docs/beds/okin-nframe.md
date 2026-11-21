@@ -3038,7 +3038,7 @@ Choose the **StarCode apps** row, then **AdjustableM5X4 app**. Star names offer 
 | Presets | ✅ Flat, TV, Lounge, Zero Gravity, Anti-Snore |
 | Memory Presets | ✅ Memory A only (recall/save); named TV/Lounge/Zero Gravity saves and reset |
 | Massage | ✅ Toggle; relative head/foot intensity, wave and 10/20/30-minute timer behind the observed massage-on gate |
-| Floor light | ✅ Toggle, plus/minus, raw 1–6 brightness where available; feedback light and stateless on/off buttons per selector |
+| Floor light | ✅ Toggle, plus/minus, raw 1–6 brightness where available; feedback light, or an on/off light with assumed state where the app has on and off buttons |
 | Automatic white | ✅ (U8/9-consumed field 47 while connected) |
 | Paired beds | ✅ Two-address pairs; no one-address left/right selector |
 
@@ -3160,10 +3160,11 @@ to every route.
   transport subscribes. It remains unknown until a valid native callback (or
   same-address retained Home state), and commands do not optimistically change
   it.
-- Other profiles expose the native toggle button. Non-feedback C7/8/9
-  additionally expose stateless native on/off buttons with distinct accepted
-  frames. C0/1/2/3/4/5/6 on/off builders coincide, so no discrete power switch
-  or assumed on/off state is inferred.
+- Non-feedback C7/8/9 have distinct accepted on and off frames, so their floor
+  light is an on/off light with assumed state instead of a toggle button.
+  Other profiles expose the native toggle button. C0/1/2/3/4/5/6 on/off
+  builders coincide, so no discrete power switch or assumed on/off state is
+  inferred.
 - Brightness is a raw integer, not measured percent, lux or a calibrated
   hardware level. Zero selects the off action rather than a raw-zero slider
   frame.
@@ -3189,8 +3190,8 @@ to every route.
 - The `starcode_abm5_4_use_detected_profile` button cancels and cleans up the
   current owner's work before adopting D into C/U. It retains own-address state
   and invalidates old callbacks.
-- Changing positive controls, the feedback light or the stateless native
-  power-button catalog defers a capability reload until the owned connection is
+- Changing positive controls, the feedback light or the native on/off light
+  defers a capability reload until the owned connection is
   released; unchanged catalogs do not trigger reload loops.
 - Each paired child persists its own selectors and rebuilds under the parent
   registry guard.
@@ -3335,9 +3336,9 @@ fixed entity catalog.
 - BOX1220/BOX3633 transports do not reclassify C.
 - UART transports can restore offline when either possible manufacturer result
   keeps the same complete catalog: positive controls, feedback light and
-  stateless power buttons. C7/8/9 qualify; C3 qualifies only with a consuming
+  native on/off light. C7/8/9 qualify; C3 qualifies only with a consuming
   U8/9. A nonconsuming U with C3 must finish live classification because C8/9
-  would add power buttons.
+  would add the on/off light.
 - UART with another C must connect and finish classification before its
   complete catalog is known. U remains independent.
 - Offline capabilities do not create observed feedback or permission for

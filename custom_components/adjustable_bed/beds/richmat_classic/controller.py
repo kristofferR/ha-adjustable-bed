@@ -9,6 +9,7 @@ import asyncio
 import math
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, replace
+from datetime import time
 from functools import partial
 from typing import TYPE_CHECKING, Final
 
@@ -16,6 +17,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_HIDDEN, CARD_UTILITY
 from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import (
@@ -60,6 +62,8 @@ from .protocol import (
     Wire,
     Worker,
     alarm,
+    alarm_capability,
+    alarm_choices,
     alarm_delay,
     aroma,
     control,
@@ -819,6 +823,28 @@ class RichmatClassicController(BedController):
         elif op == "desk_reset":
             self._receive.error_confirmation_pending = False
         self._publish()
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        # The other classic apps keep their alarm in their own action.
+        capability = alarm_capability(self._alarm_actions()) if self.app in RISE_APPS else None
+        # The bed reports its alarm page on each connection.
+        return replace(capability, live_check=True) if capability else None
+
+    def _rise_alarm(self, alarm: AlarmRequest) -> rise.Request:
+        if not alarm.enabled:
+            return rise.Request("cancel_alarm")
+        actions = alarm_choices(self._alarm_actions(), alarm)
+        return rise.Request("alarm", actions=actions, when=time(alarm.hour, alarm.minute))
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_richmat_rise_request(self._rise_alarm(alarm), live=False)
+
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_richmat_rise_request(self._rise_alarm(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.async_execute_richmat_rise_request(self._rise_alarm(alarm))
 
     def validate_richmat_rise_request(self, request: rise.Request, *, live: bool = True) -> None:
         if self.app not in RISE_APPS:

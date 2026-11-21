@@ -35,7 +35,7 @@ OKIN Smart Remote app (`com.okin.okinsmartcomfort`) described here.
 | Memory Presets | ✅ (up to 4 slots, as your handset has them; recall and save) |
 | Named presets and utility buttons | ✅ (your handset's other buttons, e.g. Flat, QuietSleep, Snore) |
 | Massage | ✅ (handsets with massage rows: intensity, zones, programs 1-3 and Wave) |
-| Under-bed light (UBL) | ✅ (toggle button and its on/off state) |
+| Under-bed light (UBL) | ✅ (a light that shows its on/off state) |
 | Sync / Child Lock | ✅ (buttons and their on/off state) |
 | Simultaneous movement | ✅ (`adjustable_bed.furnimove_move_simultaneously`) |
 | Rename | ✅ (`adjustable_bed.rename`) |

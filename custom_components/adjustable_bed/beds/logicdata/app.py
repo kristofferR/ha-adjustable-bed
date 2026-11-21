@@ -18,7 +18,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
-from ...card import CARD_LIGHTING, CARD_MASSAGE
+from ...card import CARD_MASSAGE
 from ...codec import jiecang as codec
 from ...const import (
     BED_TYPE_LOGICDATA_APP,
@@ -48,7 +48,6 @@ from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
@@ -214,6 +213,13 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
         return self.supports_lights
 
     @property
+    def supports_light_state_feedback(self) -> bool:
+        return self.supports_lights
+
+    def on_disconnect(self) -> None:
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
+
+    @property
     def supports_device_rename(self) -> bool:
         return self._rename_transport is not None
 
@@ -274,22 +280,6 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
                 cancel_movement=False,
                 diagnostic=True,
                 card=CARD_MASSAGE,
-            ),
-        )
-
-    @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        if not self.supports_lights:
-            return ()
-        return (
-            ControllerStateBinarySensorSpec(
-                key="under_bed_lights",
-                # The light the bed reports, beside the opt-in assumed light entity.
-                translation_key="under_bed_light_state",
-                state_key=UNDER_BED_LIGHTS_ON,
-                icon="mdi:lightbulb",
-                entity_registry_enabled_default=True,
-                card=CARD_LIGHTING,
             ),
         )
 

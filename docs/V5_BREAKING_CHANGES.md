@@ -220,6 +220,7 @@ on and off button pair that became one switch, start as new entities:
 | Bed or app | 4.x type | v5 entity |
 |------------|----------|-----------|
 | Every bed with an on/off under-bed light, except Octo | `switch` | **Under Bed Lights** `light` |
+| INNOVA, Keeson Adjustable Lite, Logicdata app and FurniMove light readings | `binary_sensor` | **Under Bed Lights** `light` |
 | Casper, Hush, Good Vibe and Richmat sleep sensors | `sensor` | **Left in bed**, **Right in bed**, **Left body movement**, **Right body movement**, **Left snoring**, **Right snoring** `binary_sensor` |
 | StarCode AdjustableM5X4 | `sensor` | **Massage** `binary_sensor` |
 | Heal Every Night (OKIN apps) | `select` | **Reversed installation**, **Reverse actuator 1**, **Reverse actuator 2** `switch` |
@@ -237,7 +238,10 @@ The same control now looks the same on every bed:
 - **Under-bed lights.** Every on/off under-bed light is a `light` entity
   (**Under Bed Lights**), on every bed except Octo, whose light depends on its
   PIN session and its own light timer. A bed that cannot report the light's
-  state shows it as assumed, as the switch did.
+  state shows it as assumed, as the switch did. A bed that reports its light
+  now has one enabled light that shows that state and switches the light, in
+  place of the light reading, the toggle button and the optional estimated
+  light.
 - **On and off pairs are switches.** A pair of on and off buttons, or a
   two-choice select, for one setting is one switch. A switch whose bed never
   reports the setting shows what was last sent, and separate on and off
@@ -471,7 +475,12 @@ RMCS layout loads without controls until you choose its layout in Configure.
 
 Galaxy and MLILY (`operation: sync`), SonicSleep (`operation: sync_clock`) and
 the Richmat app beds (`richmat_app` `operation: sync` and `sleep_sync`) set
-their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
+their clock with `sync_clock` now, like Good Vibe Sleep. Bedgear (`bedgear`
+`operation: alarm`), Luuna + (`luuna` `operation: alarm` and `alarm_cancel`),
+and the Lady Americana and partner beds and Luuna Rise and Power Cool
+(`richmat_resource_bed` and `richmat_rise` `operation: alarm` and
+`cancel_alarm`) set their alarm with `set_alarm` now, and Luuna + sets its
+clock with `sync_clock` (`operation: time_sync`). Beds added during
 the betas changed their entities too (clock buttons, timer selects, switches
 and sleep readings, as described under [Entities](#entities)); each beta's
 release notes list them.
@@ -626,17 +635,21 @@ described under [One shape per control](#one-shape-per-control).
 | Comfort Enhancements | Cycle massage timer button (the timer select already sets it) | |
 | Customatic Z-Series | | App "Toggle light": **Toggle Light** |
 | DoubleSleep (OKIN SleepEase) | Four flag binary sensors, parser-error, privacy, massage running and sonic running sensors, "Sync clock" and "Refresh clock" buttons | Child lock select and privacy buttons: **Child lock** and **Privacy** switches. Massage and sonic on/off buttons: **Massage** and **Sonic massage** switches. The app's "Stop all" is **Stop movement** (**Stop All** stops the bed). Clock: the **Set bed clock** action |
+| Ergomotion 4.0 | | Where the light reports its state (RGB, M16, M19 and custom products): light reading and "Light toggle" button: **Under Bed Lights** light |
 | eShine (E6000) | | Massage 10, 20 and 30 minute buttons: **Massage: Timer** select, with Off |
 | eShine OKIN | Alarm refresh and "Sync bed clock" buttons | Clock: the **Set bed clock** action |
 | FSM Relax | 11 count, acknowledgement, calibration, information and raw motor sensors | |
-| FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
+| FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | Light reading and **Toggle Light** button: **Under Bed Lights** light |
 | GM Control | "None", "Logo" and "Title …" buttons from empty app slots and menu headings that send no command; "(long press)" buttons whose long press writes only what the short press writes; a control the app lists twice (the second Pillow up and Pillow down on DWRN) | A preset's or memory's long press that sends its save: the **Save …** button (same entity ID). Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only), on products with more than one duration |
 | GM Control sleep module | Time and Query part buttons (the clock is set on every connection; the `gmmotor` action still queries the part) | Start and stop live data buttons: **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
 | Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save: the **Save …** button. Massage 10, 20 and 30 minute buttons and the "Massage timer" select: **Massage: Timer** select (with Off where the app has a countdown off; the select keeps its entity ID). "Light duration (seconds)" select: **Light Timer** select (same entity ID). Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both |
 | Good Vibe, Casper and Hush sleep sensors | | In-bed, snoring and movement text sensors: **In bed**, **Snoring** and **Body movement** binary sensors, with the same object ID; heart and breathing rate sensors take the shared names and keep their IDs |
 | Heal Every Night (OKIN apps) | | Installation and actuator direction selects: **Reversed installation**, **Reverse actuator 1** and **Reverse actuator 2** switches |
 | HJBed | | Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both. Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only) |
+| INNOVA | | Light reading and **Toggle Light** button: **Under Bed Lights** light |
+| Keeson Adjustable Lite | | Light reading and **Toggle Light** button: **Under Bed Lights** light |
 | Keeson app layouts (TEMPUR AU, Tempur Curve, Ergomotion, Q-Plus, Serta MP Remote, Omazz, ROW Control, Ergo Slim) | | The app's Flat button: **Flat** |
+| Logicdata app | | Light reading and **Toggle Light** button: **Under Bed Lights** light |
 | Limoss Remote | Repeated motor channel buttons, capability count, calibration reply and raw position sensors | Covers are named **Motor 1** to **Motor 4** |
 | Motion Bed app | 83 state sensors (preset-selected flags, raw positions, calibration samples, day and month report arrays, module and pressure readings), alarm-sound preview buttons, massage timer and brightness sensors, five mirror binary sensors | Alarm, climate timer, fault and sleep report details: attributes of their sensors. Massage timer, light timer and brightness 0-10 buttons: **Massage: Timer** and **Light Timer** selects and the **Light brightness** number. Night light, smart sleep, module light, module massage, climate timer and adaptive air toggles or on/off pairs: switches |
 | OKIN bedding apps (Jordan's Serenity and Tranquil, Customatic Z-Series) | Status, timer and save-event code sensors | |
@@ -649,6 +662,7 @@ described under [One shape per control](#one-shape-per-control).
 | SIMMONS | "Sync Clock" button | Clock: the **Set bed clock** action |
 | Sleeptracker | Massage pattern and strength sensors (the selects show them) | |
 | Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons (the light entity drives the light) | Motion sensor on/off buttons: **Motion sensor** switch. Massage timer code select and cycle massage timer button: **Massage: Timer** select (10, 20, 30 min; same entity ID). BOX25 Massage on and Massage off buttons: **Massage** switch. Axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
+| StarCode ABM5-4 | **Toggle Light** button where the app has on and off buttons | Light on and off buttons: **Under Bed Lights** light, enabled |
 | StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time, brightness and RGB-mode sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
 | StarCode AdjustableM5X4 | Raw app field, automatic-white and floor light sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor: **Massage** binary sensor |
 | StarCode AdjustableM5X5 | Raw time, brightness, RGB-mode and motor part 4-6 sensors, motor-stopped, light-on, firmware-read and kneading-demo binary sensors | |
