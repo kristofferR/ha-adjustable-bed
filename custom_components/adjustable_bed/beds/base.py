@@ -11,18 +11,22 @@ import asyncio
 import logging
 from abc import abstractmethod
 from collections.abc import (
+    AsyncIterator,
     Callable,
+    Coroutine,
     Iterator,
     Mapping,
     Sequence,
 )
-from contextlib import AbstractContextManager, contextmanager
+from contextlib import AbstractContextManager, asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak import BleakClient
 
 if TYPE_CHECKING:
+    from homeassistant.exceptions import ServiceValidationError
+
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
 
@@ -46,8 +50,10 @@ from ..execution import (
     ExecutionCapabilities,
     ExecutionProfile,
 )
+from ..position_estimate import notify_release_failed
 from ..position_seek import PositionSeekPolicy
 from ..state_keys import UNDER_BED_LIGHTS_ON
+from .cancellation import settled
 from .entity_specs import (
     POSITION_UNIT_DEGREES,
     ControllerButtonSpec,
@@ -510,14 +516,14 @@ class BedController(GattWriter):
         """
         self._notify_callback = callback
 
-    async def async_discover_capabilities(self) -> None:  # noqa: B027
+    async def async_discover_capabilities(self) -> None:
         """Resolve connect-time capabilities before entity platforms are loaded."""
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return discovered capabilities safe to persist across connections."""
         return None
 
-    def on_disconnect(self) -> None:  # noqa: B027
+    def on_disconnect(self) -> None:
         """Invalidate connection-owned work immediately when the BLE link drops."""
 
     async def stop_notify(self) -> None:
@@ -528,7 +534,7 @@ class BedController(GattWriter):
         """
         self._notify_callback = None
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: B027
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data from all motor position characteristics.
 
         Default implementation is a no-op for beds without position feedback.
@@ -556,12 +562,42 @@ class BedController(GattWriter):
             self._coordinator.motor_pulse_delay_ms,
         )
 
-    def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:  # noqa: B027
+    def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:
         """Validate controller-specific timed limits before any target moves."""
 
     def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
         """Plan repeats including the immediate first write."""
         return max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)
+
+    def not_supported(self, feature: str) -> ServiceValidationError:
+        """The error for a request this bed cannot carry out, such as "memory preset 3"."""
+        return invalid("feature_not_supported", device_name=self._coordinator.name, feature=feature)
+
+    @asynccontextmanager
+    async def releasing(
+        self, release: Callable[[], Coroutine[Any, Any, object]]
+    ) -> AsyncIterator[None]:
+        """Run the movement in the block, then always ``release`` it.
+
+        A failed release raises, unless the movement already failed: its own
+        error then wins and the release failure is logged. Either way the
+        position estimate stops trusting the movement. The release finishes
+        even when the caller is cancelled again meanwhile.
+        """
+        try:
+            yield
+        except BaseException:
+            try:
+                await settled(release())
+            except Exception:
+                notify_release_failed(self._coordinator)
+                _LOGGER.warning("Could not stop the bed after a failed movement", exc_info=True)
+            raise
+        try:
+            await settled(release())
+        except Exception:
+            notify_release_failed(self._coordinator)
+            raise
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command with guaranteed STOP at end.
@@ -599,7 +635,7 @@ class BedController(GattWriter):
         finally:
             await self._send_stop()
 
-    async def read_non_notifying_positions(self) -> None:  # noqa: B027
+    async def read_non_notifying_positions(self) -> None:
         """Read positions only for motors that don't support notifications.
 
         Used for efficient polling during movement - only reads motors that
@@ -609,10 +645,10 @@ class BedController(GattWriter):
         some motors support notifications and others don't.
         """
 
-    async def prepare_for_position_read(self) -> None:  # noqa: B027 - optional hook, not abstract
+    async def prepare_for_position_read(self) -> None:
         """Do controller-specific setup before an initial or passive position read."""
 
-    async def prepare_for_movement(self) -> None:  # noqa: B027 - optional hook, not abstract
+    async def prepare_for_movement(self) -> None:
         """Complete controller setup before an externally timed movement starts."""
 
     # Direct position control (optional)
@@ -1146,10 +1182,10 @@ class BedController(GattWriter):
         does not identify it (a handset, a model selection, an alias-free profile)."""
         return None
 
-    def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:  # noqa: B027
+    def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:
         """Apply stored app-local state; raise ValueError or TypeError if invalid."""
 
-    def on_app_state_replaced(self) -> None:  # noqa: B027
+    def on_app_state_replaced(self) -> None:
         """Retire local callbacks when another controller takes this app-state slot."""
 
     @property
@@ -1162,10 +1198,10 @@ class BedController(GattWriter):
         """Whether a user-started background session needs recovery after link loss."""
         return False
 
-    def on_connection_release(self, reason: str) -> None:  # noqa: B027
+    def on_connection_release(self, reason: str) -> None:
         """End explicit user/session intent before releasing connection resources."""
 
-    def on_gesture_release(self) -> None:  # noqa: B027
+    def on_gesture_release(self) -> None:
         """Mark the current admitted gesture as released before STOP invalidates it."""
 
     @property
@@ -2699,7 +2735,7 @@ class BedController(GattWriter):
         """
         await session.async_start_notify()
 
-    async def async_after_connect(self, session: ControllerSession) -> None:  # noqa: B027
+    async def async_after_connect(self, session: ControllerSession) -> None:
         """Hydrate connect-time state after background schedules are refreshed."""
 
     async def async_read_device_info(self, session: ControllerSession) -> bool:
@@ -2710,13 +2746,13 @@ class BedController(GattWriter):
         """
         return False
 
-    async def async_refresh_auth(self) -> None:  # noqa: B027
+    async def async_refresh_auth(self) -> None:
         """Re-authenticate a reused link before a command."""
 
-    async def async_resume_session(self) -> None:  # noqa: B027
+    async def async_resume_session(self) -> None:
         """Re-arm authentication and keepalive on a link that stayed connected."""
 
-    async def stop_keepalive(self) -> None:  # noqa: B027
+    async def stop_keepalive(self) -> None:
         """Stop session-owned keepalive work before the link is released."""
 
     @property
