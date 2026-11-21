@@ -70,18 +70,21 @@ def _label(action: Action) -> str:
 
 
 def _long_saves(action: Action) -> bool | None:
-    """Whether a long press saves the control's position; None if it adds no command.
+    """Whether a long press saves the control's position; None if it sends nothing
+    the short press does not.
 
     In this app's vocabulary a preset's or memory's own long operand saves it
-    (``66`` saves zero gravity, ``2B`` memory 1). A zero operand is no command,
-    and one the short press also sends adds nothing.
+    (``66`` saves zero gravity, ``2B`` memory 1). A zero operand saves nothing.
     """
-    long, normal = action.codes("long") - {0}, action.codes("normal")
-    if not long or long <= normal:
+    long, normal = action.codes("long"), action.codes("normal")
+    if long <= normal:
         return None
     control = classify(_label(action))
     return (
-        control is not None and control.kind in (Kind.PRESET, Kind.MEMORY) and not long & normal
+        control is not None
+        and control.kind in (Kind.PRESET, Kind.MEMORY)
+        and 0 not in long
+        and not long & normal
     )
 
 
