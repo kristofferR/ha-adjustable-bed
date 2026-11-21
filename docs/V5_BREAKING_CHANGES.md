@@ -487,6 +487,9 @@ the betas changed their entities too (clock buttons, timer selects, switches
 and sleep readings, as described under [Entities](#entities)); each beta's
 release notes list them.
 
+`symphony_preset`, added in beta 8, is gone. Use the Symphony bed's preset,
+memory and save buttons instead.
+
 `sleep_number_command` no longer offers `reset_articulation_presets`; reset
 saved positions with the **Reset saved positions** button, which the card asks
 about before it runs.
