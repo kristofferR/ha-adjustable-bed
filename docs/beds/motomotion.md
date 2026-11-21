@@ -758,7 +758,8 @@ an acknowledgement for a particular command. Other known response lengths are
 | `save_snore` | Panel E only, sends save without a release recall. Use the separate held anti-snore preset to recall. |
 
 Set the alarm with `set_alarm`: `time`, `enabled` and optional
-`massage_intensity` 1 or 2 (the alarm strength); disabling sends strength 0.
+`massage_intensity` 1 or 2 (the alarm strength); disabling sends strength 0
+with the time the bed reported, when it has reported one.
 The alarm gate is name character 11 `E`. There is no weekday or repeat
 parameter.
 
@@ -936,7 +937,7 @@ is established. There is no command acknowledgement correlation.
 #### Services
 
 Use `set_alarm` with time, `enabled` and optional `massage_intensity` 1 or 2.
-Disabling maps to strength 0. The alarm gate is name character 11 `E`; weekdays,
+Disabling maps to strength 0, with the time the bed reported when it has one. The alarm gate is name character 11 `E`; weekdays,
 extra slots, wake actions, dates and timezone settings are unsupported.
 
 `l2motion` sets RGB color/brightness or synchronization mode. Changing wired or

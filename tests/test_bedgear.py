@@ -337,6 +337,20 @@ async def test_alarm_through_the_shared_action(runtime, clock, fields, expected)
     assert writes(co) == [b"$z", expected]
 
 
+async def test_alarm_off_keeps_the_reported_time(runtime, clock):
+    hass, co = runtime
+    bed = await install(co, name(mode="E"))
+    tokens = ["00000"] * 75
+    tokens[11:13], tokens[14] = ["00007", "00030"], "2"
+    notification(bed, tokens)
+    await hass.services.async_call(
+        const.DOMAIN, "set_alarm", {"device_id": ["bed"], "enabled": False}, blocking=True
+    )
+    from custom_components.adjustable_bed.codec.motomotion import decimal_fields
+
+    assert writes(co) == [b"$z", decimal_fields("000070003000", "0017")]
+
+
 async def test_m_wrapping_and_suppressed_query_through_real_service(runtime, clock):
     hass, co = runtime
     await install(co, name(mode="M"))
