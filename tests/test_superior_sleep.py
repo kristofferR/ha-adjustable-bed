@@ -691,3 +691,17 @@ async def test_massage_on_and_off_are_one_switch_sending_the_old_buttons_frames(
         assert sent[0] == sent[1] and p.FRAMES[action] in sent[0]
         c.on_disconnect()
         assert coord.controller_state[s.MASSAGE] is None
+
+
+async def test_spoken_massage_on_and_off_move_the_massage_switch():
+    c, coord, client = controller()
+    with virtual_clock():
+        await c.async_discover_capabilities()
+        for on, action in ((True, "massage_on"), (False, "massage_off")):
+            client.write_gatt_char.reset_mock()
+            await c.action(action, speech=True)
+            # The speech route's own burst, unchanged.
+            assert {bytes(call.args[1]) for call in client.write_gatt_char.await_args_list} == {
+                p.FRAMES[action]
+            }
+            assert coord.controller_state[s.MASSAGE] is on
