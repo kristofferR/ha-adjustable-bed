@@ -29,7 +29,7 @@ from ..entity_specs import (
 from ..richmat.labels import function_label
 from .catalog_types import Phase
 from .notifications import Event, Value, common, desk21, extra
-from .profiles import Action, load_profile
+from .profiles import Action, command_name, load_profile
 from .protocol import (
     FrameBuffer,
     MalformedNotification,
@@ -65,8 +65,16 @@ _REMAINDER_TIMEOUT = 0.5
 _CAPABILITY_TIMEOUT = 5.0
 
 
+def _name(action: Action) -> str:
+    """The control's catalog name; an empty app slot sending one command takes its name."""
+    name = action.material.name
+    if name == "deviceFunctionItemNone" and len(sent := action.codes("normal") - {0}) == 1:
+        name = command_name(next(iter(sent))) or name
+    return name
+
+
 def _label(action: Action) -> str:
-    return function_label(action.material.name.replace("VersionOne", ""))
+    return function_label(_name(action).replace("VersionOne", ""))
 
 
 def _long_saves(action: Action) -> bool | None:
@@ -259,7 +267,7 @@ class GmmotorController(BedController, GmmotorActions):
             if signature in listed:
                 continue
             listed.add(signature)
-            if timed and massage_timer_minutes(action.material.name) is not None:
+            if timed and massage_timer_minutes(_name(action)) is not None:
                 continue  # The massage timer select sends these.
             control = f"gm_{i}"
             label = _label(action)

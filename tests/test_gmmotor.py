@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.catalog_buttons import massage_timer_minutes
 from custom_components.adjustable_bed.beds.gmmotor.controller import GmmotorController
 from custom_components.adjustable_bed.beds.gmmotor.notifications import Event
 from custom_components.adjustable_bed.beds.gmmotor.requests import Request
@@ -301,8 +300,8 @@ async def test_product_buttons_take_the_catalog_shape_and_send_what_they_sent() 
 
 
 async def test_a_control_without_a_button_sends_what_a_listed_control_sends() -> None:
-    """Every app control that has no button of its own, other than an empty slot
-    or heading, writes the same frames as a listed control or timer option.
+    """Every app control without a button of its own writes what a listed button
+    or timer option writes, or, as an empty slot or heading, no command at all.
 
     A long press waits for its hold before writing; only the writes are compared.
     """
@@ -315,44 +314,39 @@ async def test_a_control_without_a_button_sends_what_a_listed_control_sends() ->
         await press(ctrl)
         return tuple(call.args for call in ctrl.write_command.call_args_list)
 
-    # Empty slots and headings: never a control, as for RMControl.
-    slots = (
-        "deviceFunctionItemNone",
-        "deviceFunctionItemTitle",
-        "deviceFunctionItemLogo",
-        "deviceFunctionItemMlilyMenu",
-    )
-    removed = 0
+    removed = slots = 0
     for profile in profile_choices():
         ctrl = controller(profile)
         specs = ctrl.controller_button_specs
         keys = {spec.key for spec in specs}
-        presses = [
+        missing = [
             (f"gm_{i}{suffix}", action)
             for i, action in enumerate(ctrl.profile.controls)
             if not action.phone_only
             for suffix in ("", "_long")
-            if not suffix or action.gesture in (3, 4) and "long" in action.phases
-        ]
-        missing = [
-            (key, action)
-            for key, action in presses
-            if key not in keys
-            and not action.material.name.startswith(slots)
-            and not (ctrl.supports_massage_timer and massage_timer_minutes(action.material.name))
+            if (not suffix or action.gesture in (3, 4) and "long" in action.phases)
+            and f"gm_{i}{suffix}" not in keys
         ]
         if not missing:
             continue
         listed = {await writes(profile, spec.press_fn) for spec in specs}
+        listed |= {
+            await writes(profile, lambda c, m=minutes: c.set_massage_timer(m))
+            for minutes in (ctrl.massage_timer_options if ctrl.supports_massage_timer else ())
+        }
         for key, action in missing:
             # The duration each button pressed with before.
             duration = 3000 if key.endswith("_long") or action.gesture == 2 else 0
             duration = 1000 if action.gesture == 1 else duration
             control = key.removesuffix("_long")
             sent = await writes(profile, lambda c, k=control, d=duration: c.hold_control(k, d))
-            assert sent in listed, (profile, key)
+            if sent not in listed:
+                # An empty slot or heading: a zero command and its STOP, nothing else.
+                assert {frame[0][3] for frame in sent} <= {0x00, 0x6E}, (profile, key, sent)
+                slots += 1
+                continue
             removed += 1
-    assert removed
+    assert removed and slots
 
 
 def test_a_control_the_app_lists_twice_gets_one_button():

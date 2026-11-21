@@ -29,6 +29,14 @@ def material(index: int) -> Material:
     return Material(*MATERIALS[index][:6])
 
 
+@lru_cache(maxsize=64)
+def command_name(code: int) -> str | None:
+    """The catalog's own name for a command byte, from the material that sends it."""
+    from .catalog import MATERIALS
+
+    return next((row[0] for row in MATERIALS if row[1] == code and row[3] is None), None)
+
+
 @dataclass(frozen=True, slots=True)
 class Action:
     """One exact app control, including its state-dependent captured material."""

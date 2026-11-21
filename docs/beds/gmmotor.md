@@ -120,7 +120,8 @@ holds for sustain actions and separate buttons for finite short/long callbacks.
 A preset's or memory's own long operand saves it, so that long press is its
 **Save …** button. Another long operand is a disabled "(long press)" button; a
 long press that writes only what its short press writes has no button. Empty
-app slots and menu headings have none either, and a control the app lists twice
+app slots and menu headings that send no command have none either; an empty
+slot that sends one takes that command's name. A control the app lists twice
 has one button. The `hold_control` action
 accepts the button's `held_control` identifier and a bounded duration.
 
