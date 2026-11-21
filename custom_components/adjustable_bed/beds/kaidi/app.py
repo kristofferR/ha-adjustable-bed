@@ -449,7 +449,7 @@ class KaidiAppController(BedController):
         if axis == "all":
             return "new_all" if self.profile.product == 142 else "all"
         if axis not in self.profile.axes:
-            raise ValueError(f"Kaidi app product {self.profile.product} has no {axis} control")
+            raise ValueError(f"This bed model has no {axis} control")
         if axis == "back" and self.profile.product in (129, 130, 143):
             return "head"
         return axis
@@ -591,7 +591,7 @@ class KaidiAppController(BedController):
             or type(level) is not int
             or not 0 <= level <= 100
         ):
-            raise ValueError("Invalid Kaidi app massage zone or strength (0-100)")
+            raise ValueError("Choose a massage zone this bed offers and a strength from 0 to 100")
         await self._action(f"{zone}_strength", parameter=level)
         for affected in self._affected_lanes:
             self._strengths[affected][zone] = level
@@ -599,7 +599,7 @@ class KaidiAppController(BedController):
 
     async def set_pattern(self, pattern: int) -> None:
         if type(pattern) is not int or pattern not in (0, 1, 2, 3):
-            raise ValueError("Kaidi app pattern is 0-3")
+            raise ValueError("Choose a massage pattern from 0 to 3")
         lane = self._lane
         selected = 0 if self._patterns[lane] == pattern else pattern
         await self._action(f"pattern_{selected}" if selected else "pattern_cancel")
@@ -612,7 +612,7 @@ class KaidiAppController(BedController):
 
     async def set_massage_timer(self, minutes: int) -> None:
         if type(minutes) is not int or minutes not in (0, *self.massage_timer_options):
-            raise ValueError("Invalid Kaidi app massage timer")
+            raise ValueError("Choose a massage timer this bed offers")
         lane = self._lane
         selected = 0 if minutes == self._timers[lane] else minutes
         action = (

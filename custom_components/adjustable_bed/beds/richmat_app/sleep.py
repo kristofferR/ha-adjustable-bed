@@ -527,15 +527,15 @@ class SleepController(BedController):
             "sleep_sensitivity",
             "sleep_init",
         ):
-            raise ValueError("This MM session does not implement that HJ command")
+            raise ValueError("This sleep sensor does not offer that operation")
         if self.variant == "old_hj" and r.operation == "sleep_snore" and r.value:
-            raise ValueError("Old HJ setter is a removed-code branch; query using value zero")
+            raise ValueError("This sleep sensor can only report this setting. Use value 0 to read it")
         if r.operation == "sleep_part" and r.value not in (0, 11, 12, 13):
             raise ValueError("Choose query (0), off (11), automatic (12), or on (13)")
         if r.operation == "sleep_report" and (
             r.when is None or r.part not in (11, 12, 13) or r.report_type not in (1, 2)
         ):
-            raise ValueError("Report session requires a date, part and day/month type")
+            raise ValueError("Enter a date, a part and a day or month report type")
 
     async def execute_request(self, r: Request) -> None:
         self.validate_request(r)

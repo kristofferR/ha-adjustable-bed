@@ -411,7 +411,7 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
 
     async def preset_yoga(self) -> None:
         if not self.supports_preset_yoga:
-            raise ValueError("Yoga requires the bed's reported capability")
+            raise ValueError("The bed has not reported that it offers yoga. Reconnect it and try again")
         await self._preset("yoga")
 
     # Massage
@@ -434,7 +434,7 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in self.massage_intensity_zones:
-            raise ValueError("Massage zone unavailable for this layout")
+            raise ValueError("This bed model has no such massage zone")
         target = _ZONES[zone]
         command = massage_command(self.profile, self._layout, target, level)
         if is_bilateral(self._layout):
@@ -639,17 +639,17 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
 
     async def rename_device(self, name: str) -> None:
         if self.client is None or not self._name_uuid:
-            raise ValueError("Selected transport has no name characteristic")
+            raise ValueError("This bed cannot be renamed")
         payload = self._name_rule.encode(name)
         if self._transport == "g1":
             command = payload
         elif self._transport == "g3":
             command = codec.g3_name(payload)
         else:
-            raise ValueError("The selected transport has no name characteristic")
+            raise ValueError("This bed cannot be renamed")
         characteristic = self.client.services.get_characteristic(self._name_uuid)
         if characteristic is None:
-            raise ValueError("Name characteristic unavailable")
+            raise ValueError("This bed cannot be renamed")
         response = "write" in characteristic.properties
         for offset in (0, 500):
             if await self._pause(offset, self._coordinator.cancel_command):
@@ -705,7 +705,7 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
             raise ValueError("Weekdays must be distinct Monday=0 through Sunday=6")
         wake = self._wake_preset(preset)
         if wake == "yoga" and not self.supports_preset_yoga:
-            raise ValueError("Yoga requires the bed's reported capability")
+            raise ValueError("The bed has not reported that it offers yoga. Reconnect it and try again")
         selected = tuple(day in weekdays for day in range(7))
         await self.write_command(
             codec.alarm(enabled, selected, hour, minute, wake, head_level, foot_level)

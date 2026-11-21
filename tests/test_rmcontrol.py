@@ -130,7 +130,7 @@ def test_native_controls_still_reject_conflicting_main_page_occurrences() -> Non
 async def test_local_items_never_become_ble_packets() -> None:
     ctrl = controller("E3RM")
     ctrl.write_command = AsyncMock()
-    with pytest.raises(ValueError, match="local UI"):
+    with pytest.raises(ValueError, match="cannot be used from Home Assistant"):
         await ctrl.async_execute_product_action("deviceFunctionItemMemory")
     ctrl.write_command.assert_not_called()
 

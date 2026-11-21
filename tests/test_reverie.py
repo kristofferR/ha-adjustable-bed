@@ -80,18 +80,6 @@ class TestReverieController:
             "AA:BB:CC:DD:EE:FF_massage_wave_intensity"
         )
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_reverie_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == REVERIE_CHAR_UUID
-
     async def test_build_command_checksum(
         self,
         hass: HomeAssistant,

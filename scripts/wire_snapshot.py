@@ -1160,7 +1160,8 @@ class Coordinator:
         self.controller_state: dict[str, Any] = {}
         self.capability_controller = None
         self.starcode_app_retained_state = None
-        self.furnimove_widget_state = None
+        self.furnimove_widget_state = (False, None, None)
+        self.rize_home_source = "button"
         self.okin_cb = None
         self.client: Any = None
         self.controller: Any = None
@@ -1223,7 +1224,7 @@ class Coordinator:
     remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
     remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
-    remember_sleep_number_mcr_client_id = _ignore
+    remember_sleep_number_mcr_client_id = remember_richmat_mh_snapshot = _ignore
     _ble_bond_established = False
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore

@@ -162,6 +162,7 @@ class TestJensenController:
         hass: HomeAssistant,
         mock_jensen_config_entry_data: dict,
         mock_coordinator_connected,
+        _shorten_mocked_config_timeout: None,
     ):
         """Test custom PIN from config entry."""
         mock_jensen_config_entry_data[CONF_JENSEN_PIN] = "1234"

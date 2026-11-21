@@ -371,7 +371,7 @@ async def test_preset_presence_selects_dashboard_branch(
 
 
 async def test_favourite_requires_reported_memory_and_flat_is_direct(controller) -> None:
-    with pytest.raises(ValueError, match="reported"):
+    with pytest.raises(ValueError, match="saved Favourite"):
         await controller.preset_memory(1)
     controller._parse_notification(bytes.fromhex("FFFFFFFF0306000A"))
     with patch("custom_components.adjustable_bed.beds.woosa.asyncio.sleep", new_callable=AsyncMock):

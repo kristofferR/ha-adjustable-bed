@@ -105,10 +105,10 @@ def _utf16_units(text: str) -> int:
 def validate_innova_name(name: str) -> str:
     """Apply the Options editor: maxLength 14 UTF-16 units, then trim, non-empty."""
     if _utf16_units(name) > RENAME_MAX_UNITS:
-        raise ValueError("The INNOVA app limits names to 14 characters")
+        raise ValueError("Use a name of at most 14 characters. Emoji count as two")
     trimmed = _java_trim(name)
     if not trimmed:
-        raise ValueError("The INNOVA app requires a non-empty name")
+        raise ValueError("Enter a name")
     return trimmed
 
 
@@ -334,7 +334,7 @@ class InnovaController(KeesonController):
         if control not in controls:
             raise ValueError(f"The INNOVA {self._layout}M screen has no held control {control}")
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= 60000:
-            raise ValueError("Hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
         if self._coordinator.cancel_command.is_set():
             return
         await self._hold(controls[control], repeat_count=-(-duration_ms // self._hold_interval_ms))

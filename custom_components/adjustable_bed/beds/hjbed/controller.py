@@ -606,7 +606,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
 
     def _side(self) -> int:
         if self.command_side not in (None, "left", "right"):
-            raise ValueError("HJBed frames select left or right; choose one side")
+            raise ValueError("Choose the left or right side")
         return 1 if self.command_side == "right" else 0
 
     @property
@@ -815,7 +815,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             or not 1 <= duration_ms <= 60000
         ):
             raise ValueError(
-                "Choose an available HJBed hold control and duration from 1 to 60000 ms"
+                "Choose a control this bed offers and a duration of up to 60 seconds"
             )
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
@@ -919,14 +919,14 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
         if op in ("single", "cancel_single", "repeat", "delete", "query", "toggle"):
             if not self._eligible("alarm"):
                 raise ValueError(
-                    "This product requires its alarm eligibility and clock acknowledgement"
+                    "The bed has not reported its alarm settings yet. Reconnect it and try again"
                 )
             if (op in ("single", "cancel_single")) == self.product.repeat:
                 raise ValueError("Choose the single or repeating alarm operation for this product")
         if op in ("single", "repeat"):
             self._alarm_action(request.action)
             if request.when is None or request.when.second or request.when.microsecond:
-                raise ValueError("Setting an HJBed alarm requires a time with minute precision")
+                raise ValueError("Enter an alarm time in whole minutes")
         if op in ("delete", "toggle"):
             if type(request.alarm_id) is not int or not 1 <= request.alarm_id <= 7:
                 raise ValueError("Choose an alarm number from 1 to 7")
@@ -942,21 +942,21 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             if request.alarm_id is None and all(
                 any(row.get("number") == i for row in self._state.alarms) for i in range(1, 8)
             ):
-                raise ValueError("All seven HJBed alarm slots are occupied")
+                raise ValueError("All seven alarms are in use. Delete one, or choose the alarm number to replace")
             if request.alarm_id is None and not self._available_alarm_slots():
                 raise ValueError(
-                    "Choose an explicit alarm_id; unobserved slots are not known to be free. "
-                    "Automatic allocation can reuse a slot deleted in this connection."
+                    "Choose an alarm number. The bed has not reported its full alarm list, "
+                    "so a free alarm cannot be picked for you"
                 )
         if op in ("light_timeout", "light_color") and not self._eligible("light"):
             raise ValueError(
-                "This product requires its light-page eligibility and light acknowledgement"
+                "The bed has not reported its light settings yet. Reconnect it and try again"
             )
         if op == "light_timeout":
             minimum, maximum = (1800, 28800) if self.product.object == "98fcd1" else (0, 900)
             if type(request.seconds) is not int or not minimum <= request.seconds <= maximum:
                 raise ValueError(
-                    f"Choose an HJBed light timeout from {minimum} to {maximum} seconds"
+                    f"Choose a light timeout from {minimum} to {maximum} seconds"
                 )
         if op == "light_color":
             if (
@@ -968,10 +968,10 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
         if op == "mode":
             if self.product.object not in ("98fd91", "98fd31", "98fcd1") or self._motion:
                 raise ValueError(
-                    "Control mode belongs to the Normal layout for blue, green or orange"
+                    "Only the Normal model with a blue, green or orange remote has a control mode"
                 )
             if request.mode not in ("split_head", "standard"):
-                raise ValueError("Choose split_head or standard")
+                raise ValueError("Choose split head or standard")
         if type(request.enabled) is not bool:
             raise ValueError("enabled must be a boolean")
 

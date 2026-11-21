@@ -473,7 +473,7 @@ async def test_legacy_alarm_combines_position_and_massage(sleeps) -> None:
         ({"position": "yoga", "massage": []}, "not on this model"),
         ({"position": None, "massage": []}, "position or a massage"),
         ({"position": "memory_1", "massage": ["heat"]}, "distinct options"),
-        ({"position": "head_massage", "massage": ["foot_massage"]}, "sends nothing"),
+        ({"position": "head_massage", "massage": ["foot_massage"]}, "no alarm for that position"),
     ],
 )
 async def test_alarm_requests_the_app_cannot_send_are_rejected(kwargs, message) -> None:

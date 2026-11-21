@@ -20,10 +20,18 @@ from custom_components.adjustable_bed.beds.limoss.remote_state import (
 from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
 from custom_components.adjustable_bed.profiles.limoss import REMOTE_CHANNELS as HELD_COMMANDS
+from tests.hold_lease_wire import virtual_clock
 from tests.limoss_vectors import REMOTE_LAYOUTS as RENDERED_LAYOUTS
 from tests.limoss_vectors import WIRE_FRAMES
 
 NATIVE_FRAMES = WIRE_FRAMES["limoss_remote"]
+
+
+@pytest.fixture(autouse=True)
+async def virtual_time():
+    """Run the remote's write pacing and reply deadlines on the harness clock."""
+    with virtual_clock():
+        yield
 
 
 def make_controller(
@@ -643,7 +651,7 @@ async def test_changed_motor_layout_rejects_stale_memory_before_any_write():
 
     c = make_controller(system=0x12)
     c.memories.slots[8] = LimossRemoteMemory("Old four-motor layout", ((0, -1), (3, 1)))
-    with pytest.raises(ValueError, match="different reported motor layout"):
+    with pytest.raises(ValueError, match="different motor setup"):
         await c.hold_memory(8, 100)
     c.client.write_gatt_char.assert_not_called()
     assert c.sequence.value == 0

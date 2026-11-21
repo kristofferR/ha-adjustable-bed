@@ -439,7 +439,7 @@ class OrmatekController(KeesonController):
             or isinstance(duration_ms, bool)
             or not 100 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a movement and a duration from 100 to 30000 milliseconds")
+            raise ValueError("Choose a movement and a duration from 0.1 to 30 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)

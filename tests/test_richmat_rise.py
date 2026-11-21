@@ -354,7 +354,7 @@ async def test_retained_e3rm_entity_follows_mem_and_replacement_controller(
             runtime.controller.validate_hold_control("richmat_classic_1", 60000)
         else:
             assert not keys
-            with pytest.raises(ValueError, match="available held control"):
+            with pytest.raises(ValueError, match="control this bed offers"):
                 runtime.controller.validate_hold_control("richmat_classic_1", 60000)
 
     assert_card_route(not initially_armed)

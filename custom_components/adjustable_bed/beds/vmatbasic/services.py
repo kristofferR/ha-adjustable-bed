@@ -47,7 +47,7 @@ async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> 
     try:
         packet = rename(name)
         if len(packet) > 20:
-            raise ValueError("Encoded name exceeds the safe twenty-byte write payload")
+            raise ValueError("This name is too long. Use a shorter name")
     except (ValueError, UnicodeError) as error:
         raise rejected(error) from error
     _single_receiver(targets)

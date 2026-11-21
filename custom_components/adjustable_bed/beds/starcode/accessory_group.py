@@ -112,7 +112,7 @@ def validate_lift_entries(
             raise ValueError("The main and each lift must be distinct")
         entry = hass.config_entries.async_get_entry(entry_id)
         if entry is None or entry.domain != DOMAIN:
-            raise ValueError("Each lift must use an AdjustableM5X5 bedding profile or ELEVATE")
+            raise ValueError("Each lift must be set up as an Adjustable M5X5 bed or an ELEVATE lift")
         if is_m1x12_main:
             if entry.data.get(CONF_BED_TYPE) != BED_TYPE_STAR_ELEVATE:
                 raise ValueError("M1X12 groups can include only ELEVATE accessories")
@@ -121,7 +121,7 @@ def validate_lift_entries(
                     "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE first"
                 )
         elif not _is_m5x5_group_member(entry.data):
-            raise ValueError("Each lift must use an AdjustableM5X5 bedding profile or ELEVATE")
+            raise ValueError("Each lift must be set up as an Adjustable M5X5 bed or an ELEVATE lift")
         address = str(entry.data.get(CONF_ADDRESS, "")).upper()
         if not address or address in addresses:
             raise ValueError("Each group member must have a distinct Bluetooth address")

@@ -357,7 +357,7 @@ class RmcontrolController(RichmatController):
         if selected is None:
             raise ValueError("Action is absent or ambiguous for this RMControl product")
         if not _is_transport_action(selected):
-            raise ValueError("This app item is a local UI action or excluded non-bed control")
+            raise ValueError("This button cannot be used from Home Assistant")
         if long_press and selected.operate not in ("longPress", "shortAndLongPress"):
             raise ValueError("This product action has no long-press gesture")
         if not long_press and selected.operate == "longPress":
@@ -763,12 +763,12 @@ class RmcontrolController(RichmatController):
 
     async def preset_memory(self, memory_num: int) -> None:
         if not 1 <= memory_num <= self.memory_slot_count:
-            raise ValueError("Unsupported RMControl memory slot")
+            raise ValueError("This bed has no such memory position")
         await self._execute(f"MemoryPosition{memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         if not self.is_memory_slot_programmable(memory_num):
-            raise ValueError("This RMControl memory slot is not programmable")
+            raise ValueError("This memory position cannot be saved")
         await self._execute(f"MemoryPosition{memory_num}", long_press=True)
 
     async def lights_toggle(self) -> None:

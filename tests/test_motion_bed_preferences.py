@@ -49,7 +49,7 @@ async def test_reported_audio_preference_survives_reconnect_and_restart_without_
         target.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
         target.controller._state = replace(target.controller._state, audio_available=False)
         target.controller._handle_notification(b"unrelated")
-        with pytest.raises(ValueError, match="audio support"):
+        with pytest.raises(ValueError, match="reported a speaker"):
             target.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
         assert await stored_app_state(target, key) == {"audio_available": False}
 
@@ -63,7 +63,7 @@ async def test_audio_preference_isolated_by_physical_target_and_explicit_profile
     other = coordinator(hass, **change)
     await other._async_restore_app_state(other.controller)
     assert other.controller.persisted_app_state == {"audio_available": False}
-    with pytest.raises(ValueError, match="audio support"):
+    with pytest.raises(ValueError, match="reported a speaker"):
         other.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
 
 

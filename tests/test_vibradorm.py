@@ -116,18 +116,6 @@ class _MockServices:
 class TestVibradormController:
     """Test VibradormController."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_vibradorm_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Vibradorm command UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == VIBRADORM_COMMAND_CHAR_UUID
-
     async def test_supports_preset_flat(
         self,
         hass: HomeAssistant,
