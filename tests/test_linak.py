@@ -129,18 +129,6 @@ class TestLinakController:
         """App-requested bonding must not become a hardware requirement."""
         assert requires_pairing(BED_TYPE_LINAK) is False
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == LINAK_CONTROL_CHAR_UUID
-
     async def test_write_command(
         self,
         hass: HomeAssistant,

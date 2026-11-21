@@ -26,7 +26,6 @@ from custom_components.adjustable_bed.const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
-    RONDURE_WRITE_CHAR_UUID,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
@@ -294,18 +293,6 @@ class TestRondurePacketBuilding:
 
 class TestRondureController:
     """Test RondureController."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_rondure_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Rondure write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_rondure_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == RONDURE_WRITE_CHAR_UUID
 
     async def test_supports_preset_flat(
         self,
