@@ -27,7 +27,7 @@ from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from tests.hold_lease_wire import virtual_clock
 from tests.test_betterliving2_delivery import startup
-from tests.test_betterliving2_review import observed, ready
+from tests.test_betterliving2_holds_and_sides import observed, ready
 from tests.test_betterliving2_runtime import bed, pair, writes
 from tests.test_entity_sweep import async_setup_platforms_and_sweep
 

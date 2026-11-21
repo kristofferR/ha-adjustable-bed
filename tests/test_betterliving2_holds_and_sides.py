@@ -1,4 +1,4 @@
-"""Source-prepared sole-review corrections; public HA paths, virtual BLE only."""
+"""BetterLiving2 holds, startup replies and both-side ownership; public HA paths, virtual BLE only."""
 
 from __future__ import annotations
 
