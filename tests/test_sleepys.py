@@ -9,6 +9,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
@@ -1379,7 +1380,7 @@ class TestSleepysBox25Controller:
         ):
             await controller.preset_flat()
 
-        assert mock_write.await_count == 2
+        # Calls after these two are the background position read after connect.
         # 1) StarCode flat key, repeated to arm the preset.
         arm_call = mock_write.call_args_list[0]
         assert arm_call.args[0] == Box25Commands.STAR_PRESET_FLAT
@@ -1389,6 +1390,39 @@ class TestSleepysBox25Controller:
         commit_call = mock_write.call_args_list[1]
         assert commit_call.args[0] == Box25Commands.STAR_PRESET_TERMINATOR
         assert isinstance(commit_call.kwargs["cancel_event"], asyncio.Event)
+
+    async def test_preset_fails_when_its_commit_write_fails(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Without the terminator the bed never moves, so the preset must fail."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        commit_failed = BleakError("commit lost")
+
+        with (
+            patch.object(
+                controller, "write_command", AsyncMock(side_effect=[None, commit_failed])
+            ),
+            patch("custom_components.adjustable_bed.beds.sleepys.box25.asyncio.sleep", AsyncMock()),
+            pytest.raises(BleakError) as raised,
+        ):
+            await controller.preset_flat()
+        assert raised.value is commit_failed
+
+        # A failed arm write stays the error the user sees.
+        arm_failed = BleakError("arm lost")
+        with (
+            patch.object(
+                controller, "write_command", AsyncMock(side_effect=[arm_failed, commit_failed])
+            ),
+            pytest.raises(BleakError) as raised,
+        ):
+            await controller.preset_flat()
+        assert raised.value is arm_failed
 
     async def test_named_and_memory_presets_use_starcode_frames(
         self,
