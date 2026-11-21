@@ -24240,7 +24240,7 @@
 "preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"6e010059c8",100,307],[30400,"d44bc439",true,"6e01006edd",1,0]]}
 }},
 "limoss": {
-"info": {"bed_type": "limoss", "controller": "LimossController", "module": "limoss.controller", "pulse": [12, 80]},
+"info": {"bed_type": "limoss", "controller": "LimossController", "gaps": ["memory_program_1"], "module": "limoss.controller", "pulse": [12, 80]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000ffe1","notify","",1,0],[0,"0000ffe1",true,"dd8fd94cb634c825cd35",1,0],[2007,"0000ffe1",true,"dd85d4246682a9116662",1,0],[2044,"0000ffe1",true,"dd8e8a4ad4561b09a633",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"0000ffe1",true,"dd55fc40cbf10f911de7",12,87],[964,"0000ffe1",true,"ddb239615e3cfd94f74b",1,0]]},
@@ -24257,8 +24257,8 @@
 "feet_stop": {"status":"ok","writes":[[0,"0000ffe1",true,"dd803f8efaa2c4479566",1,0]]},
 "stop_all": {"status":"ok","writes":[[0,"0000ffe1",true,"dd0e8de81c039e4b066e",1,0]]},
 "preset_flat": {"status":"ok","writes":[[0,"0000ffe1",true,"ddc71526178e22b03b91",12,87],[964,"0000ffe1",true,"ddacf585474bdfc31f56",1,0]]},
-"memory_recall_1": {"status":"no_writes"},
-"memory_program_1": {"status":"no_writes"},
+"memory_recall_1": {"error":"ValueError","status":"error","writes":[]},
+"memory_program_1": {"error":"ServiceValidationError","status":"error","writes":[]},
 "lights_toggle": {"status":"ok","writes":[[0,"0000ffe1",true,"dd7e42d93b09b6265ef4",1,0]]},
 "massage_toggle": {"status":"ok","writes":[[0,"0000ffe1",true,"dd168dbce3d92fd0c0b7",1,0]]},
 "cover:back_open": {"status":"ok","writes":[[0,"0000ffe1",true,"dddc18572e2d9a2a75bc",12,87],[964,"0000ffe1",true,"dde2c8411e4fb8084035",1,0]]},
@@ -24274,7 +24274,7 @@
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"dd56ff3d14fc84f19c90",4,87],[348,"0000ffe1",true,"dd30f8bb39a44f4cbff7",1,0],[355,"0000ffe1",true,"dd4e646c6e865a894618",1,0]]}
 }},
 "limoss:props_write": {
-"info": {"bed_type": "limoss", "controller": "LimossController", "module": "limoss.controller", "pulse": [12, 80]},
+"info": {"bed_type": "limoss", "controller": "LimossController", "gaps": ["memory_program_1"], "module": "limoss.controller", "pulse": [12, 80]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000ffe1","notify","",1,0],[0,"0000ffe1",true,"dd8fd94cb634c825cd35",1,0],[2007,"0000ffe1",true,"dd85d4246682a9116662",1,0],[2044,"0000ffe1",true,"dd8e8a4ad4561b09a633",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"0000ffe1",true,"dd55fc40cbf10f911de7",12,87],[964,"0000ffe1",true,"ddb239615e3cfd94f74b",1,0]]},
@@ -24291,8 +24291,8 @@
 "feet_stop": {"status":"ok","writes":[[0,"0000ffe1",true,"dd803f8efaa2c4479566",1,0]]},
 "stop_all": {"status":"ok","writes":[[0,"0000ffe1",true,"dd0e8de81c039e4b066e",1,0]]},
 "preset_flat": {"status":"ok","writes":[[0,"0000ffe1",true,"ddc71526178e22b03b91",12,87],[964,"0000ffe1",true,"ddacf585474bdfc31f56",1,0]]},
-"memory_recall_1": {"status":"no_writes"},
-"memory_program_1": {"status":"no_writes"},
+"memory_recall_1": {"error":"ValueError","status":"error","writes":[]},
+"memory_program_1": {"error":"ServiceValidationError","status":"error","writes":[]},
 "lights_toggle": {"status":"ok","writes":[[0,"0000ffe1",true,"dd7e42d93b09b6265ef4",1,0]]},
 "massage_toggle": {"status":"ok","writes":[[0,"0000ffe1",true,"dd168dbce3d92fd0c0b7",1,0]]},
 "cover:back_open": {"status":"ok","writes":[[0,"0000ffe1",true,"dddc18572e2d9a2a75bc",12,87],[964,"0000ffe1",true,"dde2c8411e4fb8084035",1,0]]},
@@ -24308,7 +24308,7 @@
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"dd56ff3d14fc84f19c90",4,87],[348,"0000ffe1",true,"dd30f8bb39a44f4cbff7",1,0],[355,"0000ffe1",true,"dd4e646c6e865a894618",1,0]]}
 }},
 "limoss:props_wwr": {
-"info": {"bed_type": "limoss", "controller": "LimossController", "module": "limoss.controller", "pulse": [12, 80]},
+"info": {"bed_type": "limoss", "controller": "LimossController", "gaps": ["memory_program_1"], "module": "limoss.controller", "pulse": [12, 80]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000ffe1","notify","",1,0],[0,"0000ffe1",false,"dd8fd94cb634c825cd35",1,0],[2007,"0000ffe1",false,"dd85d4246682a9116662",1,0],[2044,"0000ffe1",false,"dd8e8a4ad4561b09a633",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"0000ffe1",false,"dd55fc40cbf10f911de7",12,87],[964,"0000ffe1",false,"ddb239615e3cfd94f74b",1,0]]},
@@ -24325,8 +24325,8 @@
 "feet_stop": {"status":"ok","writes":[[0,"0000ffe1",false,"dd803f8efaa2c4479566",1,0]]},
 "stop_all": {"status":"ok","writes":[[0,"0000ffe1",false,"dd0e8de81c039e4b066e",1,0]]},
 "preset_flat": {"status":"ok","writes":[[0,"0000ffe1",false,"ddc71526178e22b03b91",12,87],[964,"0000ffe1",false,"ddacf585474bdfc31f56",1,0]]},
-"memory_recall_1": {"status":"no_writes"},
-"memory_program_1": {"status":"no_writes"},
+"memory_recall_1": {"error":"ValueError","status":"error","writes":[]},
+"memory_program_1": {"error":"ServiceValidationError","status":"error","writes":[]},
 "lights_toggle": {"status":"ok","writes":[[0,"0000ffe1",false,"dd7e42d93b09b6265ef4",1,0]]},
 "massage_toggle": {"status":"ok","writes":[[0,"0000ffe1",false,"dd168dbce3d92fd0c0b7",1,0]]},
 "cover:back_open": {"status":"ok","writes":[[0,"0000ffe1",false,"dddc18572e2d9a2a75bc",12,87],[964,"0000ffe1",false,"dde2c8411e4fb8084035",1,0]]},

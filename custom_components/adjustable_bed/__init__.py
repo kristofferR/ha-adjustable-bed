@@ -1819,10 +1819,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     Home Assistant removes the entry's Repairs issues itself: each one is linked
     to the entry that raised it.
     """
-    await async_remove_position_estimates(hass, entry.entry_id)
     async_forget_removed_entities(hass, entry.entry_id)
     # Unpair and combine restore other entries for the same beds first, so only
-    # addresses nobody else owns lose their app state.
+    # addresses nobody else owns lose their app state and estimates.
     owned = {
         owned_address
         for other in hass.config_entries.async_entries(DOMAIN)
@@ -1831,6 +1830,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     }
     addresses = set(_entry_addresses(entry))
     unowned = addresses - owned
+    await async_remove_position_estimates(hass, entry.entry_id, entry.data, unowned)
     # A combine that never absorbed its beds still raised their Remacro warnings
     # as its own. Give each back to the entry that still runs the bed before
     # Home Assistant removes the issues linked to this one.

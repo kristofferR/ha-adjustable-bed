@@ -37,6 +37,7 @@ from .command_scheduler import (
     CommandKind,
     HoldClaim,
     HoldLease,
+    HoldWindows,
     command_resources,
 )
 from .const import (
@@ -135,6 +136,8 @@ class PairedBedCoordinator:
         # fallback is disconnecting those same children before switching modes.
         self._connection_mode_transition_lock = asyncio.Lock()
         self._admission = PairAdmission()
+        # Held-control presses live and die with this runtime: a reload starts clean.
+        self.hold_windows = HoldWindows()
         self._lanes, self._sequential = self._build_topologies()
         self._connection_mode = raw_mode
         self._connection_state_callbacks: set[Callable[[bool], None]] = set()
@@ -699,6 +702,7 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         self._single_side = side
         self._single_hydration_owner = hydration_owner
         self._single_position_data: dict[str, float] = {}
+        self.hold_windows = HoldWindows()
         self._single_position_callbacks: set[Callable[[dict[str, float]], None]] = set()
         self._single_unregister_position_callback: Callable[[], None] | None = None
         # CB24 shares axes; Sleep Number reports explicitly side-owned axes.

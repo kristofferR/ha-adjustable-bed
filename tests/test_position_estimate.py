@@ -275,7 +275,7 @@ async def test_restart_restores_an_unconfirmed_estimate(
 ) -> None:
     manager = await calibrated(hass)
     await pe.track_motor_command(hass, "back", "up", moving(clock, 8.4))(controller(hass, LEFT))
-    await manager._store.async_save(manager._data_to_save())
+    await manager._stores[LEFT].async_save(manager._stored(manager.beds[LEFT]))
     pe._registry(hass).clear()
 
     restored = await pe.async_setup_position_estimates(hass, "entry", ((LEFT, None),))
@@ -302,6 +302,161 @@ async def test_entry_reload_keeps_confirmation(hass: HomeAssistant) -> None:
     hass.data[DOMAIN].pop(pe._SESSION_KEY)
     restarted = await pe.async_setup_position_estimates(hass, "entry", ((LEFT, None),))
     assert restarted.beds[LEFT].state("back") is EstimateState.UNCONFIRMED
+
+
+async def test_first_beta_store_moves_to_each_bed(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """A per-entry store from the first v5 betas is split per bed without loss."""
+    legacy = pe.entry_storage_key("entry")
+    hass_storage[legacy] = {
+        "version": 1,
+        "key": legacy,
+        "data": {
+            "beds": {
+                LEFT: {"back": {"up_s": 20.0, "down_s": 10.0, "percent": 30.0}},
+                RIGHT: {"legs": {"up_s": 10.0, "down_s": 8.0, "percent": 50.0}},
+            },
+            "positions": [
+                {
+                    "id": "reading",
+                    "name": "Reading",
+                    "button": True,
+                    "targets": {"left": {"back": 30.0}, "right": {"legs": 50.0}},
+                },
+                {"id": "tv", "name": "TV", "button": False, "targets": {"right": {"legs": 10.0}}},
+            ],
+        },
+    }
+
+    manager = await pe.async_setup_position_estimates(
+        hass, "entry", ((LEFT, "left"), (RIGHT, "right"))
+    )
+
+    assert legacy not in hass_storage
+    assert manager.beds[LEFT].motors["back"].percent == 30.0
+    assert manager.beds[RIGHT].motors["legs"].up_s == 10.0
+    assert [(p.id, p.name, p.button, p.targets) for p in manager.positions] == [
+        ("reading", "Reading", True, {"left": {"back": 30.0}, "right": {"legs": 50.0}}),
+        ("tv", "TV", False, {"right": {"legs": 10.0}}),
+    ]
+    assert hass_storage[pe.storage_key(RIGHT)]["data"]["positions"][1] == {
+        "id": "tv",
+        "name": "TV",
+        "button": False,
+        "targets": {"legs": 10.0},
+    }
+
+
+async def test_combined_beds_keep_their_own_parts_and_ids(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Parts merge only when they are one position; a clashing id is replaced and remembered."""
+
+    def store(address: str, *parts: dict[str, Any]) -> None:
+        hass_storage[pe.storage_key(address)] = {
+            "version": pe.STORAGE_VERSION,
+            "key": pe.storage_key(address),
+            "data": {"motors": {}, "positions": list(parts)},
+        }
+
+    store(
+        LEFT,
+        {"id": "both", "name": "TV", "button": True, "targets": {"back": 10.0}},
+        {"id": "x", "name": "Reading", "button": True, "targets": {"back": 20.0}},
+    )
+    store(
+        RIGHT,
+        {"id": "both", "name": "TV", "button": True, "targets": {"back": 30.0}},
+        {"id": "x", "name": "Read", "button": False, "targets": {"back": 40.0}},
+        {"id": "y", "name": "Reading", "button": True, "targets": {"back": 50.0}},
+    )
+    manager = await pe.async_setup_position_estimates(
+        hass, "entry", ((LEFT, "left"), (RIGHT, "right"))
+    )
+
+    tv, reading, read, right_reading = manager.positions
+    assert tv.targets == {"left": {"back": 10.0}, "right": {"back": 30.0}}
+    assert (reading.id, reading.targets) == ("x", {"left": {"back": 20.0}})
+    assert (read.name, read.targets) == ("Read", {"right": {"back": 40.0}})
+    assert read.id != "x" and manager.renamed_ids == {read.id: (RIGHT, "x")}
+    # Until a change saves it, a later load (a retried setup) derives the same id.
+    pe._registry(hass).clear()
+    again = await pe.async_setup_position_estimates(
+        hass, "entry", ((LEFT, "left"), (RIGHT, "right"))
+    )
+    assert again.renamed_ids == {read.id: (RIGHT, "x")}
+    assert right_reading.id == "y"
+    # The same name on both sides: a side tells them apart; keeping a name is no clash.
+    assert manager.position("Reading", {"right"}) is right_reading
+    manager.rename_position(reading, "Reading", button=False)
+    assert reading.button is False
+
+
+async def test_each_bed_button_follows_its_own_part(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Combined rows keep their bed's address and stored id, also after a new id."""
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.position_estimate_entities import (
+        _async_adopt_position_buttons,
+    )
+
+    for address, name in ((LEFT, "Reading"), (RIGHT, "Read")):
+        hass_storage[pe.storage_key(address)] = {
+            "version": pe.STORAGE_VERSION,
+            "key": pe.storage_key(address),
+            "data": {
+                "motors": {},
+                "positions": [{"id": "x", "name": name, "button": True, "targets": {"back": 1.0}}],
+            },
+        }
+    entry = MockConfigEntry(domain=DOMAIN, entry_id="entry")
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    rows = {
+        address: registry.async_get_or_create(
+            "button", DOMAIN, f"{address}_saved_position_x", config_entry=entry
+        ).entity_id
+        for address in (LEFT, RIGHT)
+    }
+    manager = await pe.async_setup_position_estimates(
+        hass, "entry", ((LEFT, "left"), (RIGHT, "right"))
+    )
+    pair = SimpleNamespace(device_info={}, entity_unique_id=lambda key: f"pair_{key}")
+
+    _async_adopt_position_buttons(hass, entry, pair, manager)  # type: ignore[arg-type]
+
+    read = manager.positions[1]
+    left_row, right_row = registry.async_get(rows[LEFT]), registry.async_get(rows[RIGHT])
+    assert left_row is not None and left_row.unique_id == "pair_saved_position_x"
+    assert right_row is not None and right_row.unique_id == f"pair_saved_position_{read.id}"
+
+
+async def test_one_side_positions_name_the_id_each_bed_stores(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """A separating pair finds each one-side position's bed and stored id, also a renamed one."""
+    for address, name in ((LEFT, "Reading"), (RIGHT, "Read")):
+        hass_storage[pe.storage_key(address)] = {
+            "version": pe.STORAGE_VERSION,
+            "key": pe.storage_key(address),
+            "data": {
+                "motors": {},
+                "positions": [{"id": "x", "name": name, "button": True, "targets": {"back": 1.0}}],
+            },
+        }
+    beds = ((LEFT, "left"), (RIGHT, "right"))
+    renamed = next(
+        iter((await pe.async_setup_position_estimates(hass, "entry", beds)).renamed_ids)
+    )
+
+    assert await pe.async_one_side_positions(hass, "entry", beds) == {
+        "x": (LEFT, "x"),
+        renamed: (RIGHT, "x"),
+    }
 
 
 async def test_saved_positions_lifecycle(hass: HomeAssistant, clock: Clock) -> None:
@@ -345,6 +500,22 @@ async def test_recall_moves_each_motor_for_its_calculated_time(
     await pe.async_recall_position(hass, manager, position)
     assert moves == [("back", "up", 6000), ("legs", "down", 2000)]
     assert bed.motors["back"].percent == pytest.approx(30.0)
+
+
+async def test_a_move_too_short_to_time_counts_as_arrived(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """5% of a one-second motor is below the shortest move: nothing moves, no error."""
+    manager = await calibrated(hass)
+    bed = manager.beds[LEFT]
+    bed.configure({"back": (pe.MIN_TRAVEL_S, pe.MIN_TRAVEL_S)})
+    bed.set_reference()
+    hass.data[DOMAIN]["entry"] = object()
+    timed_move = AsyncMock()
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+
+    assert await pe.async_move_bed(hass, manager, bed, {"back": 5.0})
+    timed_move.assert_not_awaited()
 
 
 async def test_recall_reports_a_stopped_move_and_skips_the_rest(
