@@ -341,7 +341,7 @@ async def test_a_replacement_the_controller_still_expects_keeps_its_line(
     async_carry_over_retyped_entities(hass, entry, _runtime())
     await hass.async_block_till_done()
     light = ("light", f"{ADDRESS}_under_bed_lights")
-    ledger = EntityLedger(hass, entry, _runtime())
+    ledger = EntityLedger(hass, entry, SimpleNamespace())
     ledger.platforms_forwarded(["light"])
     ledger.platform_finished("light")
     issues = ir.async_get(hass)

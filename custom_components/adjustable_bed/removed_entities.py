@@ -17,7 +17,6 @@ from typing import Final, TypedDict
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.start import async_at_started
@@ -64,18 +63,12 @@ def async_remove_entities(
 ) -> None:
     """Remove rows nothing builds any more, remembering the enabled ones."""
     registry = er.async_get(hass)
-    devices = dr.async_get(hass)
     removed: list[_Removed] = []
     for row in rows:
         # A disabled entity did nothing in an automation before either.
         if row.disabled_by is None:
-            name = row.name or row.original_name
-            device = devices.async_get(row.device_id) if row.device_id else None
-            if row.has_entity_name and device is not None:
-                name = " ".join(filter(None, (device.name_by_user or device.name, name)))
-            removed.append(
-                {"entity_id": row.entity_id, "name": name or row.entity_id, "registry_id": row.id}
-            )
+            name = er.async_get_full_entity_name(hass, row) or row.entity_id
+            removed.append({"entity_id": row.entity_id, "name": name, "registry_id": row.id})
         registry.async_remove(row.entity_id)
     if removed and (state := hass.data.get(_STORE)) is not None:
         state[1].setdefault(entry.entry_id, []).extend(removed)
@@ -101,7 +94,8 @@ def async_report_removed_entities(hass: HomeAssistant, entry: ConfigEntry) -> No
         registry = er.async_get(hass)
         lines: list[str] = []
         kept: list[_Removed] = []
-        for record in state[1].pop(entry.entry_id, []):
+        records = state[1].pop(entry.entry_id, [])
+        for record in records:
             # An entity built again under its old ID is not removed any more.
             if registry.async_is_registered(record["entity_id"]):
                 continue
@@ -112,7 +106,8 @@ def async_report_removed_entities(hass: HomeAssistant, entry: ConfigEntry) -> No
                 )
         if kept:
             state[1][entry.entry_id] = kept
-        _async_save(hass)
+        if kept != records:
+            _async_save(hass)
         issue_id = ISSUE_PREFIX + entry.entry_id
         if not lines:
             ir.async_delete_issue(hass, DOMAIN, issue_id)

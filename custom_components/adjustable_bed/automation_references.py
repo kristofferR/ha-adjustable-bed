@@ -28,15 +28,22 @@ def automation_configs(hass: HomeAssistant) -> Iterator[tuple[str, object]]:
 
 
 def _names(config: object, references: Collection[str]) -> bool:
-    """Whether a config names one of the references in any of its values."""
-    if isinstance(config, str):
-        # An entity_id field may list several IDs in one string.
-        return any(part.strip().lower() in references for part in config.split(","))
+    """Whether a config's entity_id fields name one of the references."""
     if isinstance(config, Mapping):
-        return any(_names(value, references) for value in config.values())
+        return any(
+            _listed(value, references) if key == "entity_id" else _names(value, references)
+            for key, value in config.items()
+        )
     if isinstance(config, list | tuple):
         return any(_names(value, references) for value in config)
     return False
+
+
+def _listed(value: object, references: Collection[str]) -> bool:
+    if isinstance(value, str):
+        # One string may list several IDs.
+        return any(part.strip().lower() in references for part in value.split(","))
+    return isinstance(value, list | tuple) and any(_listed(item, references) for item in value)
 
 
 def entity_users(hass: HomeAssistant, references: Collection[str]) -> set[str]:
