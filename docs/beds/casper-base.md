@@ -7,7 +7,7 @@
 ## Known Models
 
 - Casper Base **PRO** and **MAX**, chosen in setup with
-  **Casper Base app (select product)**.
+  **Casper Base app**.
 - 37 more products from the app's saved product list, labelled **stored
   profile** in the product selector: NUP210, NUP300,
   NUP355B, NUP503B, NXC210, NXC300, NXC303, NXC310, NXC450, NXC455B, NXC513M,
@@ -76,7 +76,7 @@ setup, every frame this route sends, the notifications and the timing.
 
 ## Detection / Setup
 
-- Select **Casper Base app (select product)** during setup, then choose **PRO**
+- Select **Casper Base app** during setup, then choose **PRO**
   or **MAX**.
 - Select the actual product rather than inferring it from a shared service or
   the HLRM/JXRM strings.
@@ -161,8 +161,8 @@ For a detector supplied by another HA integration, call `snore_detector` with
 
 ## Separate sleep sensors and remote finder
 
-Add sensors as separate entries: **Casper Base sleep sensor (RM- / MM)** or
-**Casper Base sleep sensor (HJ- / SXB)**.
+Add sensors as separate entries: **Casper Base sleep sensor (name starts with RM-)**
+(MM) or **Casper Base sleep sensor (name starts with HJ-)** (SXB).
 
 - Discovery classification is case-sensitive `RM-` or `HJ-` at the start of
   the name. Scanning substrings and classification are separate rules.
@@ -218,7 +218,7 @@ Builders in
 
 ### Remote finder
 
-- For the RCRM handset, add **Casper Base remote finder (RCRM handset)** and
+- For the RCRM handset, add **Casper Base remote finder** and
   use `remote_find` (or Connect).
 - This only establishes the connection, with no ExitLimit, setup query or
   invented locator packet.

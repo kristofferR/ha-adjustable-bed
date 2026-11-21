@@ -159,7 +159,7 @@ codecs cannot produce this app's frames.
 
 #### Setup
 
-Choose **Snore Monitor** in manual setup and select the model the app shows.
+Choose **Snore Monitor app** in manual setup and select the model the app shows.
 Discovery needs a name starting with `SLEEP_V` (any case), manufacturer
 company 89, and manufacturer data that holds the bed's address reversed.
 The model comes from byte 6 of that data. Wi-Fi setup is not supported. Reconfigure and

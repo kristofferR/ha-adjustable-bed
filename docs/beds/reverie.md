@@ -69,8 +69,9 @@ the model you pick in setup.
 The integration discovers Protocol 108 from its GATT service and Protocol 110
 from the Nightstand service.
 
-The bed-type list has one **Reverie: Nightstand app, Protocol 110 and Protocol
-108 receivers** row, and the **Reverie** brand opens the same question. The
+The bed-type list has one **Reverie Nightstand and Reverie apps · Reverie** row,
+and the brand list's **Reverie: Reverie Nightstand and Reverie apps** row opens
+the same question. The
 receiver's advertised service decides the route, never the app or the name:
 
 | Advertised service | Route |

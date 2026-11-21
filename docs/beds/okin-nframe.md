@@ -172,22 +172,22 @@ Sleepy's Elite, AdjustableM5X4 and eShine are explicit app choices.
 
 ### Home Assistant setup
 
-The bed-type list has one **Okin: FurniMove / OKIN Smart Remote app, Okimat,
-Lucid, DOT and RF ECO BT remotes** row for the [Okimat](#okimat),
+The bed-type list has one **FurniMove / OKIN Smart Remote app, Okimat, Lucid,
+DOT and RF ECO BT remotes · Okin** row for the [Okimat](#okimat),
 [Okin DOT](#okin-dot), [RF ECO BT stair lift](#rf-eco-bt-stair-lift) and
 [FurniMove](furnimove.md) routes. Setup then asks which app or remote you use;
 the receiver's name, label and services never decide it, and you don't need an
 RF remote to answer.
 
 1. **FurniMove / OKIN Smart Remote app:** choose the handset ID the app uses.
-2. **No app: Okimat or OKIN handset code:** choose the code printed on the
-   handset, the motor count, whether massage motors are fitted and whether to
-   read positions. Requires Bluetooth pairing.
+2. **No app: Okimat or OKIN handset code (requires pairing):** choose the code
+   printed on the handset, the motor count, whether massage motors are fitted
+   and whether to read positions.
 3. **No app: DOT remote (RF34 or RF6707):** choose the remote code, the motor
    count and whether massage motors are fitted. The RF1058 handsets belong to
    the FurniMove answer.
-4. **No app: single-actuator staircase, RF ECO BT:** confirms the staircase.
-   Requires Bluetooth pairing.
+4. **No app: single-actuator staircase, RF ECO BT (requires pairing):** confirms
+   the staircase.
 5. The apps the [app review](../CONFIGURATION.md#profile-recommendations) lists
    for a detected Okimat route, such as Jordan's Serenity or Adjustable bed
    (Lumbar), switch to that app's profile.
@@ -203,7 +203,8 @@ can also move to another Okin route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
-The same question appears, with **Keep** leaving the entry as it is. Before the
+The same question appears, with **Keep the detected or saved controls**
+leaving the entry as it is. Before the
 review, each Okin route is checked for the command endpoint its controller
 writes, and the Okimat and staircase routes also check the bond; a bed without
 them keeps its setup. A saved `okimat` entry keeps that ID when its code
@@ -1058,7 +1059,7 @@ builders.
 
 - Bed types `okimat` and `okin_uuid` select this profile; they are aliases with
   identical frames.
-- Choose **No app: Okimat or OKIN handset code**, then the handset's remote
+- Choose **No app: Okimat or OKIN handset code (requires pairing)**, then the handset's remote
   code (see [Home Assistant setup](#home-assistant-setup)). The code is
   printed on the back of the handset. If an exact code is not offered, use a
   captured code only when its button layout and keycodes have been verified for
@@ -1339,8 +1340,8 @@ emergency lowering.
 
 #### Setup
 
-Use manual setup, select the **Okin** row and answer **No app: single-actuator
-staircase, RF ECO BT** (bed type `okin_rf_eco_bt`). Detection: none from
+Use manual setup, select the **FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes · Okin** row and answer **No app: single-actuator
+staircase, RF ECO BT (requires pairing)** (bed type `okin_rf_eco_bt`). Detection: none from
 advertisements.
 
 - Choose it only for a single moving actuator. RF ECO BT is also the receiver
@@ -1428,7 +1429,7 @@ app or hardware report.
 
 The three apps share one frame, transport and timing; each is its own bed type.
 The Clarity and Remedy packages publish their apps as **Rize Clarity** and
-**Rize Remedy**, and setup lists those names too.
+**Rize Remedy**, and setup's row names them too.
 
 | Profile | Package | Motors | Memory page | Light |
 |---|---|---|---|---|
@@ -1438,8 +1439,9 @@ The Clarity and Remedy packages publish their apps as **Rize Clarity** and
 
 #### Setup
 
-Choose the **Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps** row
-(or the **Customatic apps** brand), then the app supplied with the bed: Clarity,
+Choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps · Customatic** row
+(or the brand list's **Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize
+Remedy) and Z-Series apps** row), then the app supplied with the bed: Clarity,
 Jerome's C, Remedy, or Z-Series with its model. Detection: none. For an existing
 bed, use the entry's **Reconfigure**; a change first checks the new app's
 command characteristic, and **Configure** no longer changes the app.
@@ -1467,11 +1469,12 @@ command characteristic, and **Configure** no longer changes the app.
 | Clarity app (Rize Clarity): back and legs, memory page and light | [Clarity](#customatic-clarity) |
 | Jerome's C app: back and legs, no memory page or light | [Jerome's](#customatic-jeromes) |
 | Remedy app (Rize Remedy): back, legs and lumbar, memory page and light | [Remedy](#customatic-remedy) |
-| Z-Series app with the Z-230 or Z-280 model | [Z-Series](#customatic-z-series), that model's page |
+| Z-Series app with the Z-230 model | [Z-Series](#customatic-z-series), that model's page |
+| Z-Series app with the Z-280 model | [Z-Series](#customatic-z-series), that model's page |
 
 The Jordan's row asks the same way between [Serenity](#jordans-serenity) and
 [Tranquil](#jordans-tranquil). An app's own row in the app question, such as
-Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
+Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)); **Keep the detected or saved controls** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
 characteristic; Z-Series, Serenity and Tranquil check their command and
 notification characteristics.
 
@@ -1633,7 +1636,7 @@ Adds the lumbar motor. Flat sends the Flat word once.
   "leggett", "l&p" or "lp bed" tell these beds from Okimat and Nectar beds on the
   same service UUID.
 - Choose the bed's app in the [L&P question](leggett-platt.md#home-assistant-setup);
-  each app selects its own profile. The default remains **Prodigy CE / Prodigy 4**,
+  each app selects its own profile. The default remains **Prodigy CE (Prodigy 4) app: back, feet, pillow and lumbar**,
   preserving existing configurations, and an existing entry changes it through
   **Reconfigure**. Device names
   and shared service UUIDs do not tell the physical actuator layout.
@@ -2019,7 +2022,7 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
 ##### Detection / Setup
 
 - If the code printed on your remote is **97450, 97544 or 98035**, choose the
-  **Okin** row and answer **No app: DOT remote (RF34 or RF6707)** in the
+  **FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes · Okin** row and answer **No app: DOT remote (RF34 or RF6707)** in the
   [Okin question](#home-assistant-setup), then pick that code. Okin DOT is not
   a row of its own. An existing entry changes its code through
   **Reconfigure**; Configure refuses a route or code change in the Okin family.
@@ -3025,7 +3028,7 @@ manufacturer result; C is not a transport-readiness barrier.
 
 ##### Home Assistant setup
 
-Choose the **StarCode apps** row, then **AdjustableM5X4 app**. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings.
+Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps · StarCode** row, then **AdjustableM5X4 app**. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings.
 
 #### Controls
 
@@ -3396,8 +3399,8 @@ expose. The [E6000 app profile](richmat.md#eshine) uses a different app and cont
 
 #### Setup
 
-Select **eShine app** and the same E2000, E3000/E3100 or E5000 selector used in
-the app. Choose the product explicitly: the name and service do not identify the
+Select **eShine app (E2000)**, **eShine app (E3000 / E3100)** or **eShine app
+(E5000)**, the same selector used in the app. Choose the product explicitly: the name and service do not identify the
 model. The app accepts a case-sensitive `Smartbed` substring anywhere in a device
 name. `Smartbed` advertisements offer an app candidate; they never select the
 product. Identical names at different addresses remain separate devices.
@@ -3578,12 +3581,12 @@ Based on eShine 1.1.8 (`com.okin.eshine`).
 
 ##### Choosing the app
 
-Choose the **Okin CST** row, whose label names each app, or choose **Okin CST**
-when discovery asks which Okin protocol the bed uses. Setup then asks the
+Choose the **Rize and Jordan's apps (and other Okin apps) · Okin** row, or the
+same name when discovery asks which Okin protocol the bed uses. Setup then asks the
 [Okin question](#home-assistant-setup) with the CST apps first, for example
-**Resident Adjustable Bed app (Rize Resident)**, because **Auto** keeps the
+**Resident Adjustable Bed app (Rize Resident)**, because **Keep the detected or saved controls** keeps the
 MF900 profile rather than detecting the product. The Nectar Move app has its
-own **Nectar Move** row, which answers the question itself.
+own **Nectar Move · Okin** row, which answers the question itself.
 
 ##### Protocol Details
 
@@ -3927,7 +3930,8 @@ secondary field (both big-endian), then four zero bytes
 
 ##### Detection / Setup
 
-- Select **Jordan's Serenity** manually. Shared OKIN advertisements or GATT UUIDs
+- Select **Serenity and Tranquil apps · Jordan's** manually and answer **Jordan's
+  Serenity app**. Shared OKIN advertisements or GATT UUIDs
   do not identify this app.
 - Initial app discovery scans without a service filter and accepts names whose
   lowercase form starts with `okin`. This shared prefix cannot select Serenity.
@@ -3939,7 +3943,7 @@ secondary field (both big-endian), then four zero bytes
 
 ##### Home Assistant setup
 
-Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Serenity app**, for the profile based on `com.okin.bedding.serenity` 1.0.1 (2). Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app has two named axes, the additional selectors and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Serenity app**, for the profile based on `com.okin.bedding.serenity` 1.0.1 (2). Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app has two named axes, the additional selectors and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -4199,7 +4203,8 @@ policy.
 
 ##### Detection / Setup
 
-- Select **Jordan's Tranquil app** manually. Shared OKIN names and GATT UUIDs do
+- Select **Serenity and Tranquil apps · Jordan's** manually and answer **Jordan's
+  Tranquil app**. Shared OKIN names and GATT UUIDs do
   not identify this app.
 - The app always shows its Z280 remote and massage pages; the stored model
   choice is ignored.
@@ -4208,7 +4213,7 @@ policy.
 
 ##### Home Assistant setup
 
-Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Tranquil app**, for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Tranquil app**, for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -4400,8 +4405,9 @@ HA prefers acknowledged writes when `write` is advertised, otherwise
 
 ##### Detection / Setup
 
-- Choose the **Customatic** row and answer **Z-Series app with the Z-230
-  model** or **Z-280 model** in the [Customatic question](#customatic-family).
+- Choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and
+  Z-Series apps · Customatic** row and answer **Z-Series app with the Z-230
+  model** or **Z-Series app with the Z-280 model** in the [Customatic question](#customatic-family).
   The Z-Series apps are not rows of their own.
 - Pick the model you chose on the app's selection screen; it is stored as
   protocol variant `z230` or `z280`, which has no automatic choice.
@@ -4411,7 +4417,7 @@ HA prefers acknowledged writes when `write` is advertised, otherwise
 
 ##### Home Assistant setup
 
-For `com.okin.bedding.glory` 1.0.4 (5), choose the **Customatic** row, then **Z-Series app with the Z-230 model** or **Z-280 model** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable and also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
+For `com.okin.bedding.glory` 1.0.4 (5), choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps · Customatic** row, then **Z-Series app with the Z-230 model** or **Z-Series app with the Z-280 model** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable and also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
 
 #### Controls
 
@@ -5066,7 +5072,7 @@ Based on Adjustable bed (Lumbar) 1.2.2.
 
 #### Setup
 
-Choose **Rize Home app (Remedy III / Contempo IV)**, then select the product.
+Choose **Rize Home app**, then select the product, **Remedy III** or **Contempo IV**.
 **Reconfigure** can change this selection later. A shared `smartbed` name is only an
 app candidate, never an automatic product or protocol identification. Rize Beds
 (Kaidi), the older Rize CST apps and Resident Adjustable Base are separate routes.
@@ -5219,7 +5225,7 @@ the direct BLE bed product boundary.
 
 #### Setup
 
-Choose **OKIN Motion Bed app (com.okin.motionbed)** explicitly and select the
+Choose **OKIN Motion Bed app** (`com.okin.motionbed`) explicitly and select the
 bed's MAC. Detection: none. The app scans without name, service or manufacturer
 filters. Shared advertisements do not identify this app. Home Assistant retains
 MAC ownership and checks fresh Bluetooth reachability; rescanning never retargets
@@ -5321,7 +5327,7 @@ properties, reconnect ordering and what the notifications mean.
 
 #### Setup
 
-Choose **N32 Motion Bed app (com.okin.simmonskorea)** explicitly. The app
+Choose **N32 Motion Bed app** (`com.okin.simmonskorea`) explicitly. The app
 accepts nonempty platform names beginning with `smartbed` or `n32 motionbed`,
 ignoring case. These shared names offer an app choice, and the Nordic UART
 service alone does not identify this app. Confident receiver detection wins.
@@ -5448,7 +5454,7 @@ The layout is fixed: two motors and massage, with **Read bed position** off.
 each one and combine them; each keeps its own app. Left and Right controls on
 one receiver are not supported.
 
-Choose **Resident Adjustable Base app (com.okin.resident.release)**. Shared
+Choose **Resident Adjustable Base app** (`com.okin.resident.release`). Shared
 Okin service and name matches offer it as a candidate alongside existing
 receivers. Accepted name prefixes also offer a low-confidence candidate when
 no service UUID is advertised; the connection check validates the exact GATT
@@ -5716,7 +5722,7 @@ the corrected unequal wake-type/side alarm cases. Hardware still needs testing.
 #### Setup
 
 Choose **Superior sleep app (SS350 / SS650)**, then the app's exact product,
-**SS350** or **SS650**. **Bluetooth device name** selects the transport:
+**SS350** or **SS650**. **Exact Bluetooth name** selects the transport:
 a case-sensitive `BLE` prefix uses the `ble` route below; every other nonempty
 name uses `nordic`. The app accepts any named device, so an unrelated name must
 be selected manually. Shared `Smartbed`/`BLE` names offer only a weak candidate when the matching
@@ -6065,7 +6071,7 @@ persistence need testing by owners.
 The remote decides every control. On a bed with two receivers, each side keeps
 its own remote.
 
-Choose **Comfort Enhancement 3 / Comfort Plus3** under Okin, then choose one of
+Choose **Comfort Enhancement 3 / Comfort Plus3 app**, then choose one of
 its remote indices or enter its exact printed code. The manual-code card is a
 setup route, not another hardware profile. Codes are case-sensitive; unknown
 codes and the app's pending-selection sentinels cannot enable controls.

@@ -90,7 +90,7 @@ sets no explicit Android write type.
 
 ### Choosing the layout
 
-- Choose **FurniMove / OKIN Smart Remote** and select the exact handset ID used
+- Choose **FurniMove / OKIN Smart Remote app** and select the exact handset ID used
   in the FurniMove app, matching the physical remote. There is no automatic
   handset choice.
 - The owner in #633 uses FurniMove; #556's receiver label alone does not tell
@@ -142,7 +142,7 @@ below.
 
 > [!NOTE]
 > For the FurniMove app showing handset **82417**, choose **FurniMove / OKIN
-> Smart Remote → 82417: RF TOPLINE SI/BK/BK/07**. This table exposes Back and
+> Smart Remote app**, then **82417: RF-TOPLINE SI/BK/BK/07**. This table exposes Back and
 > Legs, with no massage or memory slots. `90167: RF1058` is a different layout
 > and is not a fallback for this receiver. Correct an existing entry through its
 > **Reconfigure** (see
@@ -172,7 +172,7 @@ disconnects before service discovery completes.
 
 ### Home Assistant setup
 
-Select the **Okin** row, answer **FurniMove / OKIN Smart Remote app** (see the
+Select the **FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes · Okin** row, answer **FurniMove / OKIN Smart Remote app** (see the
 [Okin question](okin-nframe.md#home-assistant-setup)), then choose the exact
 handset ID used by the app. The catalog includes all 87 captured production IDs and three
 shipped local/offline IDs. Motor count, massage capability and ordered commands
@@ -199,7 +199,7 @@ not identify the product. The repair offers these choices:
 - **Keep the current setup:** dismiss the repair without changing any
   setting. A full OKIMAT bed saved as RF ECO BT is promoted at runtime (#406);
   choose its printed handset code through **Reconfigure**, under **No app:
-  Okimat or OKIN handset code**.
+  Okimat or OKIN handset code (requires pairing)**.
 
 A FurniMove entry without a captured handset gets the first two choices.
 
@@ -212,7 +212,7 @@ An **Okin CST** entry whose drive reports an `OKIMAT` Device Information model
 (for example `OKIMAT 4 IPS`, #555) receives a fixable warning after it connects.
 Older versions chose CST for these drives from shared CSS and Nordic DFU
 services. The repair offers **Switch to Okimat** (the route a new setup uses),
-**Switch to FurniMove** with a captured handset, or **Keep Okin CST**. A remote
+**Switch to FurniMove** with a captured handset, or **Keep the current setup**. A remote
 code missing from DewertOkin's catalog, such as #555's `90569`, cannot be
 selected; the handset list ends with **Switch to Okimat** for that case.
 

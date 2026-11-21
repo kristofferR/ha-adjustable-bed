@@ -4,7 +4,7 @@
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-The **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** selection
+The **Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)** selection
 controls the bed directly over Bluetooth, as Tempur Sleeptracker-AI
 `com.fullpower.applications.horizon` **3.6.2 (262)** does.
 
@@ -78,13 +78,13 @@ controls the bed directly over Bluetooth, as Tempur Sleeptracker-AI
 
 ## Select the processor
 
-Choose **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for
+Choose **Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)** for
 TEMPUR-Ergo ProSmart Air / ActiveBreeze beds operated with that app. It provides
 the app's TV and Anti-Snore presets, ActiveBreeze climate and premium massage
 controls. Adjustable Lite was a compatibility selection for the reported bed;
 its Tempur-specific massage and preset workarounds are removed.
 
-- Select the **Sleeptracker processor's actual Bluetooth endpoint**. The app
+- Select the Sleeptracker processor's own Bluetooth address. The app
   uses framed JSON there, while the reported KSSF05C / MC232SC entries expose
   UART. Add the verified processor as a separate entry. Do not change those
   UART addresses to this profile solely because they belong to the same bed.

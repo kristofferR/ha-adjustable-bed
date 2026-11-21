@@ -171,10 +171,10 @@ notifications and report no positions.
 
 #### Setup
 
-Choose **MotoMotion app (exact Bluetooth name)** in the bed-type list; searching for MotoMotion finds it. The next question asks the exact Bluetooth local name, filled in from the advertisement when there is one. Configure asks the same name and checks it the same way. The Home Assistant display name never selects a panel. Discovery offers a candidate without overriding another app's confident match. Shared service UUIDs alone do not select this app.
+Choose **MotoMotion app** in the bed-type list; searching for MotoMotion finds it. The next question asks the exact Bluetooth local name, filled in from the advertisement when there is one. Configure asks the same name and checks it the same way. The Home Assistant display name never selects a panel. Discovery offers a candidate without overriding another app's confident match. Shared service UUIDs alone do not select this app.
 
 - `BT201` selects binary music first. Otherwise zero-based name index 9 selects `1`, `2`, `3`, `5`, `6`, `7`, `8`, `9`, `A`, `D`, `E`, `G`, `H`, or `J`. `MM` at indices 9 and 10 selects ASCII music. Other selectors use the One panel.
-- Home Assistant's automatic name index requires three literal leading characters, so its name-only hints are `SOFA*`, `BT201*` and `MOTO*`. Names with another prefix can still reach discovery through advertised service hints, or through **Show all BLE devices** and manual setup. The app's case-sensitive substring rules and exact Bluetooth name remain the profile inputs; a shared service does not select the MotoMotion app automatically.
+- Home Assistant's automatic name index requires three literal leading characters, so its name-only hints are `SOFA*`, `BT201*` and `MOTO*`. Names with another prefix can still reach discovery through advertised service hints, or through **Pick any Bluetooth device** and manual setup. The app's case-sensitive substring rules and exact Bluetooth name remain the profile inputs; a shared service does not select the MotoMotion app automatically.
 
 Name lengths and zero-based indices follow the app’s UTF-16 code units. A supplementary Unicode character occupies two units in both profile selection and receive routing.
 
@@ -784,11 +784,11 @@ qualify those behaviors with timestamps, GATT details and physical observations.
 
 #### Setup
 
-Choose **L2 Motion** for beds controlled by Leon's L2Motion app. Setup and
+Choose **L2 Motion app** for beds controlled by Leon's L2Motion app. Setup and
 Reconfigure ask for the bed's exact Bluetooth name, which decides the controls;
 there are no motor or massage questions. A combined bed keeps each side's name.
 
-Choose **L2 Motion** and enter the original Bluetooth name exactly, including case.
+Choose **L2 Motion app** and enter the original Bluetooth name exactly, including case.
 Names contain `HHC` and have exactly fourteen UTF-16 units. Display renames do not
 change the layout. Matching names are app candidates; choose the app actually used
 with the bed. Each physical side keeps its own name when combining two entries.

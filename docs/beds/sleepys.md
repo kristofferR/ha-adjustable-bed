@@ -37,7 +37,7 @@ BOX15 sends the nine-byte E6 frame of the [Keeson codec](keeson.md#controller-pr
 
 ### Explicit Sleepy's Elite app profile
 
-Answer **MFRM Sleepy's Elite app** in the [setup question](#home-assistant-setup)
+Answer **MFRM Sleepy's Elite app: the control box it lists** in the [setup question](#home-assistant-setup)
 when the bed is operated with the `com.okin.bedding.sleepy` app. This is a separate, app-findable profile. It is
 never inferred from a shared BLE service or transport, and it does not replace
 the existing BOX15, BOX24, or BOX25 integrations above. For a paired bed, choose
@@ -140,17 +140,18 @@ physical behavior has not been verified on a bed.
 
 ## Home Assistant setup
 
-The bed-type list has one **Sleepy's Elite: MFRM Sleepy's Elite app, BOX15,
-BOX24 and BOX25 receivers** row, and the **Sleepy's** brand opens the same
+The bed-type list has one **MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25
+receivers · Sleepy's Elite** row, and the brand list's **Sleepy's Elite: MFRM
+Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers** row opens the same
 question. The BOX15, BOX24 and BOX25 routes are answers of that question, not
 rows of their own. Setup asks which app or receiver runs the bed:
 
 | Answer | Route |
 |---|---|
 | MFRM Sleepy's Elite app: the control box it lists | The [explicit app profile](#explicit-sleepys-elite-app-profile), then the control box the app shows |
-| BOX25 receiver on the Nordic UART service | [BOX25](#box25-protocol-nordic-uart), then the motor count, massage, whether to read positions and, under **Advanced**, the packet dialect (Auto reads Device Information) |
-| BOX24 receiver on the OKIN 64-bit service | [BOX24](#box24-protocol-7-byte-packets), then the motor count |
-| BOX15 receiver on the FFE5 service | [BOX15](#box15-protocol-9-byte-packets-with-checksum), then the motor count |
+| No app: control box labelled BOX25 | [BOX25](#box25-protocol-nordic-uart) on the Nordic UART service, then the motor count, massage, whether to read positions and, under **Advanced**, the packet dialect (Auto reads Device Information) |
+| No app: control box labelled BOX24 | [BOX24](#box24-protocol-7-byte-packets) on the OKIN 64-bit service, then the motor count |
+| No app: control box labelled BOX15 | [BOX15](#box15-protocol-9-byte-packets-with-checksum) on the FFE5 service, then the motor count |
 | An app the profile review suggests | That app's own setup, for example [Adjustable bed (Lumbar)](okin-nframe.md#adjustable-bed-lumbar) on a BOX25 receiver |
 | Keep the detected or saved controls | The detected route and its questions |
 
@@ -161,7 +162,7 @@ chose the row yourself, because no route was detected.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
-**Keep** leaves the entry as it is. A change first checks the link: the app's
+**Keep the detected or saved controls** leaves the entry as it is. A change first checks the link: the app's
 control box needs its setup and response characteristics, and each receiver
 route needs the one characteristic it writes. A review then lists the added and
 removed controls before **Apply this change** saves it. **Configure** keeps

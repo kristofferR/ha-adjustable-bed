@@ -234,7 +234,7 @@ needed.
 
 #### Setup
 
-Choose **Linx**, **Linx 2.5 Q**, the BLE transport and the exact Bluetooth name. A name observed on the live BLE link takes precedence
+Choose **Linx app**, **Linx 2.5 Q (model 9)**, the BLE transport and the exact Bluetooth name. A name observed on the live BLE link takes precedence
 over the saved name for command identity.
 New app sessions default to this model and A00A. UART and the two mixed-state
 routes are explicit restored
@@ -300,7 +300,7 @@ belong to the physical receiver, including in a two-address pair.
 
 #### Setup
 
-Choose **Orbes BR 40+ Slim Q VAVE Linx**. Transport and name remain independent
+Choose **Linx app**, then **Orbes BR 40+ Slim Q VAVE Linx (model 10)**. Transport and name remain independent
 questions, as described for Quest.
 
 #### Controls
