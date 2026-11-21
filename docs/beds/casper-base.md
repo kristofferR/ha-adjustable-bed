@@ -98,8 +98,8 @@ setup, every frame this route sends, the notifications and the timing.
 ### Home Assistant setup
 
 Choose the explicit **Casper Base app** profile and its PRO/MAX product. Other
-stored-product choices come from this app's saved product list; they do not
-mean another app's bed works the same way. The product owns the motor layout and accessory controls.
+stored-product choices are further products the app recognizes when it restores
+a saved profile; they do not mean another app's bed works the same way. The product owns the motor layout and accessory controls.
 Configure two-address paired sides separately. Sleep sensors and the RCRM handset
 use separate entries.
 
