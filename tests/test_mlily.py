@@ -264,7 +264,7 @@ async def test_menus_require_current_product_and_reply(hass):
     c = runtime(hass, "l3rm")
     obj = c.controller
     request = Request("single", action=obj.product.alarms[0], when=datetime(2026,11,11,7,tzinfo=UTC))
-    with pytest.raises(ValueError, match="alarm menu"):
+    with pytest.raises(ValueError, match="has no alarms"):
         request.validate(obj)
     obj._normal.feed(bytes.fromhex("6e09010078"))
     request.validate(obj)
@@ -298,7 +298,7 @@ async def test_repeat_record_dedup_first_id_escalation_and_safe_full_list(hass):
     edited.validate(obj)
     assert edited.frames(obj)[0][6:10] == bytes((1,0,8,0))
     obj.choices.events["repeat_alarm_records"] = [[n,0,7,0,69,1] for n in range(1,8)]
-    with pytest.raises(ValueError, match="Choose alarm_id or alarm_record"):
+    with pytest.raises(ValueError, match="Choose an alarm number or enter an alarm record"):
         Request("repeat", action=obj.product.alarms[0], when=datetime.now(UTC)).plan(obj)
 
 
@@ -341,11 +341,11 @@ async def test_repeat_service_never_allocates_from_an_unproven_list(hass, alarm_
         obj._link = Link(old.client, old.tx, old.rx, old.legacy)
         obj._normal.feed(bytes.fromhex("6e09010078"))
     request = Request("repeat", action=obj.product.alarms[0], when=datetime(2026, 11, 11, 7, tzinfo=UTC))
-    with pytest.raises(ValueError, match="Choose alarm_id or alarm_record"):
+    with pytest.raises(ValueError, match="Choose an alarm number or enter an alarm record"):
         request.plan(obj)
-    with pytest.raises(ValueError, match="Choose alarm_id or alarm_record"):
+    with pytest.raises(ValueError, match="Choose an alarm number or enter an alarm record"):
         await obj.async_execute_goodvibe_request(request)
-    with pytest.raises(ServiceValidationError, match="Choose alarm_id or alarm_record"):
+    with pytest.raises(ServiceValidationError, match="Choose an alarm number or enter an alarm record"):
         await hass.services.async_call(
             DOMAIN, "mlily",
             {"device_id": "bed", "operation": "repeat", "action": request.action,

@@ -173,7 +173,7 @@ def validate_furnimove_name(name: str) -> None:
     """Validate the app's trimmed-copy UTF-16 limit without altering wire text."""
     trimmed = name.strip(" \t\n\r\f\v")
     if not trimmed or len(trimmed.encode("utf-16-le", errors="surrogatepass")) // 2 > 18:
-        raise ValueError("FurniMove name must contain 1–18 UTF-16 units after trimming")
+        raise ValueError("Use a name of 1 to 18 characters. Emoji count as two")
 
 
 def _action_callback(row_index: int) -> MotorCommandCallable:
@@ -689,7 +689,7 @@ class FurniMoveController(BedController):
             or first_axis not in self.simultaneous_movement_axes
             or second_axis not in self.simultaneous_movement_axes
         ):
-            raise ValueError("Select two different axes present in the handset table")
+            raise ValueError("Choose two different motors this remote has")
         self._require(_AXES[first_axis] + ("Out" if first_up else "In"))
         self._require(_AXES[second_axis] + ("Out" if second_up else "In"))
 
@@ -1139,7 +1139,7 @@ class FurniMoveController(BedController):
         if not self.supports_massage or isinstance(program, bool) or program not in (1, 2, 3, 4):
             raise ValueError("FurniMove massage program must be 1–4")
         if program not in self._massage_programs:
-            raise ValueError("Massage program is absent from the selected handset")
+            raise ValueError("This remote has no such massage program")
 
     async def set_furnimove_massage_program(self, program: int) -> None:
         self.validate_furnimove_massage_program(program)
@@ -1262,28 +1262,28 @@ class FurniMoveController(BedController):
         self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
     ) -> tuple[str, str]:
         if isinstance(row_index, bool) or not 0 <= row_index < len(self.profile.actions):
-            raise ValueError("Unknown FurniMove action row")
+            raise ValueError("This remote has no such button")
         row = self.profile.actions[row_index]
         self._validate_duration(duration_ms)
         if consumer not in ("app", "widget"):
             raise ValueError("Unknown FurniMove consumer")
         if consumer == "widget":
             if row.action not in _WIDGET or duration_ms is not None:
-                raise ValueError("Widget action uses the exact whitelist and fixed duration")
+                raise ValueError("This button runs for a fixed time. Leave out the duration")
         elif not self._reachable(row):
-            raise ValueError("This row has no direct reachable app action")
+            raise ValueError("This button cannot be run from Home Assistant")
         elif (
             duration_ms is not None
             and row.type not in ("actuator", "actuator-init", "memory", "memory-preset")
             and row.action not in _MAIN_NAMES
         ):
-            raise ValueError("This consumer uses its captured duration")
+            raise ValueError("This button runs for a fixed time. Leave out the duration")
         if (
             row.action in {"Sync", "ChildLock", "SwitchToPH", "SwitchToPR"}
             and row.duration_ms > 0
             and row.frequency_ms <= 0
         ):
-            raise ValueError("The captured timer cannot be safely executed")
+            raise ValueError("This button's timer cannot be run from Home Assistant")
         return row.action, row.type
 
     async def async_execute_furnimove_action(
@@ -1368,7 +1368,7 @@ class FurniMoveController(BedController):
         self.validate_furnimove_rename(name)
         characteristic = self._rf_name or self._gap_name
         if characteristic is None:
-            raise ValueError("No FurniMove rename characteristic was discovered")
+            raise ValueError("This receiver cannot be renamed")
         await self._write_gatt_with_retry(
             characteristic.uuid,
             name.encode("utf-8"),

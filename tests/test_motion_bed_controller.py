@@ -562,7 +562,7 @@ async def test_persistent_write_confirmation_and_profile_validation_precede_traf
         await rig.controller.async_execute_motion_bed_write(request)
     rig.client.write_gatt_char.assert_not_awaited()
     unsupported = MotionBedWrite("thermal_schedule", (STOP,), "thermal_schedule")
-    with pytest.raises(ValueError, match="unavailable"):
+    with pytest.raises(ValueError, match="does not offer"):
         await rig.controller.async_execute_motion_bed_write(unsupported)
     rig.client.write_gatt_char.assert_not_awaited()
 

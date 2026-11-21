@@ -191,7 +191,7 @@ async def test_capability_gates_alarm_order_light_and_forbidden_operations():
     await ctrl.start_notify()
     alarm = Request("alarm", mode="ZeroGravity", hour=10, minute=30)
     for request in (alarm, Request("light_rgb")):
-        with pytest.raises(ValueError, match="page unavailable"):
+        with pytest.raises(ValueError, match="has no|not available on this bed"):
             ctrl.validate_casper_base_request(request)
     for raw in ("6e09010078", "6e0e00037f"):
         ctrl._on_notification(MagicMock(), bytearray.fromhex(raw))
@@ -450,7 +450,7 @@ async def test_luuna_service_preflight_blocks_all_targets_and_has_finite_operati
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(a, "both"), (b, "both")], []),
         ),
-        pytest.raises(ServiceValidationError, match="light page unavailable"),
+        pytest.raises(ServiceValidationError, match="light operation is not available"),
     ):
         await hass.services.async_call(
             "adjustable_bed",

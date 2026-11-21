@@ -157,7 +157,7 @@ async def test_real_connect_startup_public_alarm_query_and_reconnect(hass, runti
     assert current is not live
     assert not current._receive.light_capable
     live._notification(old, old.notify, bytearray.fromhex("6e0e00037f"))
-    with pytest.raises(ServiceValidationError, match="LED"):
+    with pytest.raises(ServiceValidationError, match="reported a light"):
         await invoke(hass, "lamp_timeout", seconds=300)
 
 

@@ -159,7 +159,7 @@ class FloydController(KaidiController):
             if self._room_id is None:
                 self._try_resolve_room_id_from_ha()
             if not self._room_id:
-                raise ValueError("Assign this unassigned bed to a BLE room with floyd_action first")
+                raise ValueError("This bed has no room yet. Assign it a room first")
             await self._ensure_notify_started()
             self._join_event.clear()
             self._join_status = None
@@ -197,9 +197,9 @@ class FloydController(KaidiController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in FLOYD.holds or not 1 <= duration_ms <= 30000:
-            raise ValueError("Choose a Floyd held control and a duration of 1 to 30000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
         if self._battery_mode and control.endswith("_up"):
-            raise ValueError("Floyd reports battery mode; raising is disabled")
+            raise ValueError("The bed is running on battery, so it cannot raise. Connect it to power and try again")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -230,12 +230,12 @@ class FloydController(KaidiController):
             raise ValueError("Unknown Floyd internal preset selector")
         if action in {"save_zero_g", "save_anti_snore", "assign_room", "confirm_add"}:
             if not confirm or internal_side != "first":
-                raise ValueError("Configuration requires confirm: true and internal_side: first")
+                raise ValueError("Set Preset page to First and turn on Confirm configuration write")
         elif action not in FLOYD.presets[internal_side]:
             raise ValueError("Unknown Floyd action")
         if action == "assign_room":
             if room_id is None or not 1 <= room_id <= 0xFFFFFFFF:
-                raise ValueError("Choose a nonzero 32-bit BLE room ID")
+                raise ValueError("Enter a room ID other than 0")
             payload = self._manufacturer_data.get(0xFFFF)
             advertisement = extract_kaidi_advertisement({0xFFFF: payload}) if payload else None
             if self._room_id not in (None, 0) or not (
@@ -243,9 +243,9 @@ class FloydController(KaidiController):
                 and advertisement is not None
                 and (advertisement.adv_type == 9 or advertisement.room_id == 0)
             ):
-                raise ValueError("Room assignment requires an advertisement proving an unassigned bed")
+                raise ValueError("Only a bed that has no room and is ready to join can be assigned one. Make sure the bed is waiting to join, then try again")
         elif room_id is not None:
-            raise ValueError("room_id is only valid for assign_room")
+            raise ValueError("Enter a room ID only for the assign room action")
 
     async def floyd_action(
         self, action: str, internal_side: str, confirm: bool, room_id: int | None,

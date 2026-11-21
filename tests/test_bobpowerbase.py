@@ -325,12 +325,12 @@ async def test_light_capability_range_color_and_connection_scoped_state(hass, fa
     c = runtime(hass)
     obj = c.controller
     assert not obj.menu_available("light")
-    with pytest.raises(ValueError, match="light menu"):
+    with pytest.raises(ValueError, match="no light settings"):
         Request("light_duration", seconds=0).validate(obj)
     obj._normal.feed(bytes.fromhex("6e0e00037f"))
     assert obj.menu_available("light")
     assert obj.light_timer_options == ["Always On", *(f"{minute} min" for minute in range(1, 16))]
-    with pytest.raises(ValueError, match="durations"):
+    with pytest.raises(ValueError, match="light duration"):
         Request("light_duration", seconds=960).validate(obj)
     await obj.async_execute_goodvibe_request(Request("light_duration", seconds=0))
     await obj.async_execute_goodvibe_request(Request("light_color", rgb=(16, 32, 48)))

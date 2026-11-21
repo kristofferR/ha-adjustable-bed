@@ -1645,8 +1645,8 @@ equivalence between apps.
   as `product_type`). A layout is a UI choice, not proof of motor count or model.
 - Each side of a two-address pair keeps its own app settings. Target the native
   child device, or the paired action's `side`; conflicting child and side
-  requests are rejected. No one-address pairing or left/right mapping is
-  inferred.
+  requests are rejected. There is no one-address pairing or left/right
+  mapping.
 
 ##### Home Assistant setup
 
@@ -4822,8 +4822,8 @@ authentication command, pairing write, or keepalive. HA owns retries and idle
 handoff, independently for each physical receiver. New setups keep the link
 between commands because massage controls depend on its notification state.
 
-The app normally connects to one receiver. It proves no single-address side
-selector or concurrent motor composition. HA may combine two independently
+The app normally connects to one receiver. It has no single-address side
+selector, and it never combines separate motor commands. HA may combine two independently
 configured addresses; each keeps its own layout, profile, parser and state.
 
 #### Controls
@@ -4989,7 +4989,7 @@ TX is FFE9 under service FFE5; notifications are FFE4 under service FFE0
 (all Bluetooth base UUIDs). Commands require the current session's writable TX
 characteristic. ATT response mode follows live GATT properties: acknowledged
 writes when available, otherwise write without response. The APK does not set
-or prove a fixed write type. HA serializes writes and subscribes through Bleak.
+or require a fixed write type. HA serializes writes and subscribes through Bleak.
 
 #### Controls
 
@@ -5466,7 +5466,7 @@ for each side of a two-address pair. There is no single-address side selector.
 
 The app scans names starting with `okin-ble` or `smartbed`, ignoring case.
 These shared names suggest the app without identifying it. `ASSISTEC` is a display
-replacement, not a scan prefix. No additional product aliases are inferred.
+replacement, not a scan prefix. There are no other product aliases.
 The app selects P2 when bytes 0/1/2/4 of the first manufacturer map **value** are
 59/41/4D/02 (hex). Company ID and byte 3 do not participate. Android concatenates
 manufacturer AD segments differently from HA's parsed map; do not concatenate

@@ -675,7 +675,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Choose an available Bedgear control and 1..60000 ms duration")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     def on_gesture_release(self) -> None:
         self._gesture_up = True
@@ -1092,11 +1092,11 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             "save_memory": 1 <= request.slot <= self.memory_slot_count,
         }
         if op == "save_snore" and request.recall_on_release:
-            raise ValueError("Panel E snore save has no release recall; use the held snore preset")
+            raise ValueError("This bed cannot save the snore position this way. Hold the snore preset instead")
         if op == "rgb" and request.rgb is None:
-            raise ValueError("RGB needs three color channels")
+            raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
         if not allowed.get(op, False):
-            raise ValueError("Bedgear control unavailable, unconfirmed, or received state missing")
+            raise ValueError("This control or memory position is not available on this bed, or the bed has not reported its state yet. A clock sync change also needs its confirmation turned on")
         if op == "alarm" and (
             request.strength is None or request.time is None and self._reported_alarm_time is None
         ):

@@ -198,7 +198,7 @@ class GmmotorController(BedController, GmmotorActions):
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         action = self._control(control)
         if type(duration_ms) is not int or not 0 <= duration_ms <= 60000:
-            raise ValueError("GM Control holds must be between 0 and 60000ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
         phase = "long" if action.gesture in (2, 3, 4) and duration_ms >= 3000 else "normal"
         if action.gesture == 2 and duration_ms < 3000:
             return  # The source releases a long-only control without sending.
@@ -528,33 +528,33 @@ class GmmotorController(BedController, GmmotorActions):
         """Preflight product/input gates without trusting a cached session's ACKs."""
         op = request.operation
         if op.startswith(("sensor_", "desk_")):
-            raise ValueError("This action requires an independent GM Control sleep module")
+            raise ValueError("This action belongs to the separate desk or sleep sensor. Target that device instead")
         if op == "massage_timer" and (
             not self.profile.massage_timer or request.value not in range(4)
         ):
-            raise ValueError("This product has no matching bottom massage timer choice")
+            raise ValueError("Choose a massage timer this bed offers")
         if op in ("alarm", "alarm_at", "repeat_alarm") and request.mode not in dict(
             self.profile.alarm_choices
         ):
-            raise ValueError("Alarm action is absent from this exact product's alarm catalog")
+            raise ValueError("Choose an alarm action this bed offers")
         if op.startswith("repeat_") and not self.profile.repeat_alarm:
-            raise ValueError("Selected product does not admit repeat alarms")
+            raise ValueError("This bed model has no repeating alarms")
         if op in ("alarm", "alarm_at", "alarm_cancel") and self.profile.repeat_alarm:
-            raise ValueError("This product opens the repeat-alarm page instead of a countdown")
+            raise ValueError("This bed model sets alarms with the repeating alarm operation")
         if (
             op in ("alarm", "alarm_at", "alarm_cancel", "clock_sync")
             and not self.profile.alarm_choices
         ):
-            raise ValueError("Selected product has no alarm catalog")
+            raise ValueError("This bed model has no alarms")
         if op.startswith("light_") and not self.profile.has_light:
-            raise ValueError("Light menu is not admitted by this product")
+            raise ValueError("This bed model has no light settings")
         if op == "light_timeout" and request.value > 900:
-            raise ValueError("Light timeout is outside the source's 0 to 900 second slider")
+            raise ValueError("Choose a light timeout from 0 to 900 seconds")
         if op == "light_color" and self.profile.eight_colors:
             from .profiles import EIGHT_COLORS
 
             if request.rgb not in EIGHT_COLORS:
-                raise ValueError("Choose a color from this product's eight-color palette")
+                raise ValueError("Choose one of the eight light colors this bed offers")
         if op.startswith("snore_") and self.profile.key not in (
             "HNRN",
             "HQRN",
@@ -565,13 +565,13 @@ class GmmotorController(BedController, GmmotorActions):
         ):
             # isShowSleepSnoreSettingWidget (0x817ec4) selects this page by
             # product. Its status listener updates the switch after admission.
-            raise ValueError("This exact product has no anti-snore settings page")
+            raise ValueError("This bed model has no anti-snore settings")
         if (op == "snore_time" and request.value not in range(5, 31)) or (
             op == "snore_count" and request.value not in range(1, 31)
         ):
-            raise ValueError("Anti-snore value is outside the source slider range")
+            raise ValueError("Choose an anti-snore value this bed offers")
         if op == "sleep_name" and self.profile.sleep_kind != "ble":
-            raise ValueError("This selected product does not admit a BLE sleep module")
+            raise ValueError("This bed model has no sleep sensor")
 
     async def async_execute_gmmotor_request(self, request: Request) -> None:
         self.validate_gmmotor_request(request)

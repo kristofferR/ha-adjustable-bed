@@ -291,7 +291,7 @@ mapping):
 | 142 | `BED_TYPE_SINGLE5` | ISleep | 5 | Back, waist, lights, Book, Leisure |
 | 143 | `BED_TYPE_DOUBLE_NEW` | ISleep | n/a (basic) | None |
 
-IDs `140` and `141` are not in those app versions and are not inferred from
+IDs `140` and `141` are not in those app versions and are not guessed from
 neighboring values. Other IDs use the narrow fallback below or require an
 explicit variant. Unknown products retain the basic head + foot layout.
 
@@ -1067,7 +1067,7 @@ handler also reads that record on 129/131 while normal controls stay first.
 GATT discovery locates the write/notify characteristics across all services.
 The Android default write requests a response. Bleak owns CCCD subscription,
 including indications where exposed. No phone-server UUID or bond/PIN route
-is inferred. HA owns scanning, adapter/proxy selection, reconnect and unload.
+is used. HA owns scanning, adapter/proxy selection, reconnect and unload.
 The parser keeps signed room/node addresses and only maps the ping's zero to
 -2; direct helpers serialize -2 as zero. Ordinary touch commands require a
 positive destination or -2; direct memory/lock/query helpers accept other

@@ -380,7 +380,7 @@ async def test_cancelled_startup_does_not_mark_partial_initialization_ready():
 @pytest.mark.parametrize("side", ["right", "both"])
 def test_direct_intervention_rejects_non_left_controller_scope(side):
     controller, _ = make("ms300_sh", layout="double")
-    with controller.side_scope(side), pytest.raises(ValueError, match="left owner"):
+    with controller.side_scope(side), pytest.raises(ValueError, match="left side"):
         controller.validate_casper_base_request(Request("anti_snore"))
 
 

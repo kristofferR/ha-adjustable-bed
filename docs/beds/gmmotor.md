@@ -102,7 +102,7 @@ Choose **GM Control**, its exact product/configuration and the app bed side.
 Standard and split-head catalogs remain distinct. Remote pickers and QR codes
 require the resulting concrete product; shared services cannot select it.
 Product-owned controls use their exact labels and gestures, without generic
-motor-count or inferred-axis settings. FWRM/WFRM select a dedicated desk route.
+motor-count or axis settings. FWRM/WFRM select a dedicated desk route.
 
 **GM Control MM sleep module** and **GM Control SXB sleep module** are separate
 Bluetooth entries. Each physical address owns its session, and a paired bed

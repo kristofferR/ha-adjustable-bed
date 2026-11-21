@@ -266,7 +266,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
             or direction not in ("up", "down")
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose an app actuator, direction and duration up to 30 seconds")
+            raise ValueError("Choose a motor this bed offers, a direction and a duration of up to 30 seconds")
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -336,7 +336,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
     async def save(self, name: str) -> None:
         self._admit()
         if not self.supports_memory_programming or name not in codec.PRESETS or name == "flat":
-            raise ValueError("Only P2's six non-flat presets have a proven SAVE")
+            raise ValueError("This bed model cannot save that preset")
         await self.write_command(codec.preset(self.profile.key, name, save=True), admit=True)
 
     async def program_memory(self, memory_num: int) -> None:
@@ -397,7 +397,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a supported held control and duration up to 30 seconds")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
         self._admit()
 
     async def hold_control(self, control: str, duration_ms: int) -> None:

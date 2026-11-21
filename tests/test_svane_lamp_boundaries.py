@@ -83,7 +83,7 @@ async def test_public_hold_rejects_nonstep_session_before_mutation_or_io(
     controller.session.light_on = True
     before = dict(coordinator.entry.data)
     virtual_hold(monkeypatch, controller)
-    with pytest.raises(ServiceValidationError, match='steps of five'):
+    with pytest.raises(ServiceValidationError, match='steps of 5'):
         await hold(hass, coordinator)
     assert controller.session.intensity == initial and controller.session.light_step == step
     assert coordinator.entry.data == before

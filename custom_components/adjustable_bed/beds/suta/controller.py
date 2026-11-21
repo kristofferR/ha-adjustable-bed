@@ -229,7 +229,7 @@ class SutaController(BedController):
 
     def validate_memory_recall(self, memory_num: int) -> None:
         if f"mode_both_m{memory_num}" not in self.profile.commands:
-            raise ValueError("This SUTA layout does not expose that memory recall")
+            raise ValueError("This bed model has no such memory position")
 
     @property
     def supports_preset_flat(self) -> bool:
@@ -275,7 +275,7 @@ class SutaController(BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or isinstance(duration_ms, bool) or not 1 <= duration_ms <= 60000:
-            raise ValueError("Choose a SUTA layout control and duration from 1 to 60000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         return self._coordinator.motor_pulse_count, self.profile.refresh_ms or 150
@@ -427,7 +427,7 @@ class SutaController(BedController):
         key = _MASSAGE_STEPS.get(zone)
         command = self.commands.get(key) if key is not None else None
         if key is None or command is None or not 0 <= level < len(command.suffixes):
-            raise ValueError("This SUTA layout has no such massage level")
+            raise ValueError("This bed model has no such massage level")
         # The command shows the level it sent.
         await self.action(key, command.suffixes[level])
 
@@ -769,29 +769,29 @@ class SutaController(BedController):
 
     def validate_request(self, request: Request, *, live: bool = True) -> None:
         if request.action not in BINARY and (request.logical_side is not None or request.value is not None):
-            raise ValueError("ASCII SUTA commands have no logical-side or numeric selector")
+            raise ValueError("This command has no side or value. Leave them out")
         if request.action in ("snore_cycle", "massage_off") and request.suffix:
-            raise ValueError("This compound SUTA action has no text suffix")
+            raise ValueError("This action takes no value. Leave it out")
         if request.action in ("snore_cycle", "massage_off"):
             required = () if request.action == "snore_cycle" else ("mass_head_dt", "mass_foot_dt")
             if not self.commands or self.family != "P1" or not all(key in self.profile.commands for key in required):
-                raise ValueError("This SUTA layout does not expose that compound action")
+                raise ValueError("This bed model does not offer that action")
             return
         if request.action in BINARY and self.family in BINARY[request.action].controllers:
             prefix = self._binary_prefix(request)
             if live and request.action.startswith("adaptive_") and not request.action.endswith("_soft"):
                 current = self.observations.get(f"side_{request.logical_side}_adaptive")
                 if current not in (4, 5, 6, 7, 14) or current != prefix[3]:
-                    raise ValueError("Receive the current MOON adaptive mode before changing its stiffness")
+                    raise ValueError("Wait until the bed reports its adaptive mode, then change the firmness")
             return
         command = self.commands.get(request.action)
         if command is None:
-            raise ValueError("This SUTA layout does not expose that command")
+            raise ValueError("This bed model does not offer that command")
         clock_suffix = command.kind == "clock" and len(request.suffix) == 10 and request.suffix.isdecimal()
         if command.suffixes and request.suffix not in command.suffixes or not command.suffixes and request.suffix and not clock_suffix:
-            raise ValueError("Choose a proven SUTA command parameter")
+            raise ValueError("Choose a value this command offers")
         if request.logical_side is not None or request.value is not None:
-            raise ValueError("ASCII SUTA commands have no logical-side or numeric selector")
+            raise ValueError("This command has no side or value. Leave them out")
         if live and command.kind == "lv":
             if not any(self._cycles.get(zone, "00") != "00" for zone in ("mass_head_dt", "mass_foot_dt")):
                 raise ValueError("Enable that massage zone before choosing its level")
@@ -811,7 +811,7 @@ class SutaController(BedController):
         if request.value is not None:
             options = tuple(p for p in options if p[-1] == request.value)
         if len(options) != 1:
-            raise ValueError("Choose a proven SUTA value for that action")
+            raise ValueError("Choose a value this action offers")
         return options[0]
 
     async def execute_request(self, request: Request) -> None:
@@ -1014,7 +1014,7 @@ class SutaController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         if not self.is_memory_slot_programmable(memory_num):
-            raise ValueError("This SUTA layout does not program that memory")
+            raise ValueError("This bed model cannot save that memory position")
         await self.action(f"set_mode_both_m{memory_num}")
 
     async def lights_on(self) -> None:

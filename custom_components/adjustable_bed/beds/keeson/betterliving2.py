@@ -118,7 +118,7 @@ class BetterLiving2Controller(KeesonController):
     def __init__(self, coordinator: AdjustableBedCoordinator, *, variant: str, layout: str) -> None:
         key = f"{variant}_{layout}"
         if key not in BETTERLIVING2:
-            raise ValueError("Choose a BetterLiving2 P1/P2/P3 route and 2/3-motor layout")
+            raise ValueError("Choose the bed model and motor layout in Reconfigure")
         super().__init__(coordinator, variant=BETTERLIVING2[key].key)
         self.wire: app.Protocol = "P1" if variant == "p1" else "P2" if variant == "p2" else "P3"
         self.layout = layout
@@ -658,7 +658,7 @@ class BetterLiving2Controller(KeesonController):
             return
         axes = {"head": "back", "feet": "feet"}
         if motor not in axes:
-            raise ValueError("BetterLiving2 has no separately proven third axis")
+            raise ValueError("This bed has no third motor")
         interval = app.LAYOUTS[self.layout].refresh_ms
         await self.hold_control(
             f"{axes[motor]}_{'up' if direction else 'down'}",
@@ -677,7 +677,7 @@ class BetterLiving2Controller(KeesonController):
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Choose a proven BetterLiving2 control and a 1..60000ms hold")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -763,22 +763,22 @@ class BetterLiving2Controller(KeesonController):
             or not isinstance(level, (int, float))
             or int(level) != level
         ):
-            raise ValueError("Choose a P1 massage field and integer level")
+            raise ValueError("Choose a massage zone and a whole-number level")
         value = int(level)
         if zone == "timer":
             if value not in app.P1_TIMER_INPUTS:
-                raise ValueError("P1 timer input must be -1, 0, 1 or 2")
+                raise ValueError("Choose a massage timer this bed offers")
             word = app.P1_TIMER_BASE + value
         else:
             if not 0 <= value <= 3:
-                raise ValueError("P1 massage level must be 0..3")
+                raise ValueError("Choose a massage level from 0 to 3")
             word = app.P1_MASSAGE_BASES[zone] + value
         with self.sent_state(LEVELS[zone](value)):
             await self.tap(word)
 
     async def massage_pair(self, head: int, feet: int) -> None:
         if self.wire != "P1" or any(type(v) is not int or not 0 <= v <= 3 for v in (head, feet)):
-            raise ValueError("P1 head and feet massage levels must be 0..3")
+            raise ValueError("Choose head and feet massage levels from 0 to 3")
         link = self._live()
         for index, (zone, value) in enumerate((("head", head), ("feet", feet))):
             self._live(link)
@@ -888,7 +888,7 @@ class BetterLiving2Controller(KeesonController):
             or plan.variant != self.wire.lower()
             or plan.layout != self.layout
         ):
-            raise ValueError("BetterLiving2 physical owner/profile changed after validation")
+            raise ValueError("The bed's connection changed while the action was starting. Try again")
         link = self._live(plan.link)
         started = asyncio.get_running_loop().time()
         delivery, finished = Delivery.NONE, False

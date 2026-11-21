@@ -96,7 +96,7 @@ async def test_child_target_cannot_expand_to_other_receiver(hass):
     left, lbed = target("bt3000")
     right, rbed = target("bt3000")
     parent = pair(left, right)
-    with pytest.raises(ServiceValidationError, match="conflicts"):
+    with pytest.raises(ServiceValidationError, match="other side"):
         await call(hass, [(parent, SIDE_LEFT)], "footUp", 4)
     lbed.write_command.assert_not_awaited()
     rbed.write_command.assert_not_awaited()
@@ -144,6 +144,6 @@ async def test_later_target_stop_during_preflight_prevents_its_dispatch(hass):
 
 async def test_connection_test_cannot_move_first_head_from_a_right_request(hass):
     child, bed = target("bt3000fh")
-    with pytest.raises(ServiceValidationError, match="first head"):
+    with pytest.raises(ServiceValidationError, match="left head"):
         await call(hass, [(child, SIDE_BOTH)], "connectionTest", 5)
     bed.write_command.assert_not_awaited()

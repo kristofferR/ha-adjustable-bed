@@ -210,7 +210,7 @@ async def test_goto_preset_later_unsaved_multi_slot_prevents_earlier_jmc_write(h
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
-        pytest.raises(ServiceValidationError, match="save this local slot"),
+        pytest.raises(ServiceValidationError, match="Save this memory position"),
     ):
         await hass.services.async_call(
             DOMAIN, "goto_preset", {"device_id": ["one", "two"], "preset": slot}, blocking=True
@@ -255,7 +255,7 @@ async def test_goto_preset_later_empty_axis_rejects_every_target(hass, saved):
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
-        pytest.raises(ServiceValidationError, match="nonempty raw axes"),
+        pytest.raises(ServiceValidationError, match="not saved completely"),
     ):
         await hass.services.async_call(
             DOMAIN, "goto_preset", {"device_id": ["one", "two"], "preset": 1}, blocking=True

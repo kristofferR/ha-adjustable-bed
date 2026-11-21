@@ -569,7 +569,7 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
         if control not in self.held_control_options:
             raise ValueError(f"Unsupported M1X12 held control: {control}")
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= MAX_HOLD_MS:
-            raise ValueError("M1X12 held controls require 100 ms to 60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         client = self._coordinator.client
@@ -1117,12 +1117,12 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
         elif memory_num in (1, 2):
             await self.app_action(f"memory_{memory_num}")
         else:
-            raise ValueError("M1X12 recall memory accepts 1, 2 or raw MemoryType 8")
+            raise ValueError("Choose memory position 1 or 2")
 
     async def program_memory(self, memory_num: int) -> None:
         actions = {1: "save_memory_1", 2: "save_memory_2"}
         if memory_num not in actions:
-            raise ValueError("M1X12 programming supports memory slots 1 and 2")
+            raise ValueError("Choose memory position 1 or 2")
         await self.app_action(actions[memory_num])
 
     async def massage_head_up(self) -> None:
@@ -1240,7 +1240,7 @@ class StarElevateM1X12Controller(StarElevateController):
         if control not in self.held_control_options:
             raise ValueError(f"Unsupported M1X12 ELEVATE held control: {control}")
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= MAX_HOLD_MS:
-            raise ValueError("M1X12 ELEVATE holds require 100 ms to 60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

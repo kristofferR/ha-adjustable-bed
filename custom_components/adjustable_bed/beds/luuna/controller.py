@@ -258,7 +258,7 @@ class LuunaController(CasperBaseController):
             raise ValueError("Choose 0, 300, 600 or 900 seconds")
         if request.operation in ("light_warm", "light_cold"):
             if not 0 <= request.value <= 100:
-                raise ValueError("Brightness must be 0-100 percent")
+                raise ValueError("Choose a brightness from 0 to 100 percent")
             super().validate_casper_base_request(replace(request, operation="light_rgb"))
             return
         super().validate_casper_base_request(request)

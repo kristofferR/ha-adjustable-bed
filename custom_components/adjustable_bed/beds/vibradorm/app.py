@@ -1030,7 +1030,7 @@ class VibradormAppController(BedController):
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options:
-            raise ValueError("Control is not reachable in this app profile")
+            raise ValueError("This bed model does not offer that control")
         _integer(duration_ms, 100, 60000, "Hold duration")
         event = self._coordinator.cancel_command
         deadline = asyncio.get_running_loop().time() + duration_ms / 1000
@@ -1117,7 +1117,7 @@ class VibradormAppController(BedController):
     async def program_memory(self, memory_num: int) -> None:
         _integer(memory_num, 1, self.memory_slot_count, "Memory slot")
         if not self.supports_memory_programming:
-            raise ValueError("Basic profiles have no memory programming route")
+            raise ValueError("This bed model cannot save memory positions")
         headers = [self._header(STORE) for _ in range(4)]
         self._consume_toggle()  # Source applies the fifth toggle to the wrong receiver.
         try:
@@ -1146,7 +1146,7 @@ class VibradormAppController(BedController):
 
     async def set_pending_floor_timer(self, value: float) -> None:
         if not self.profile.floor_light:
-            raise ValueError("This profile has no floor-light route")
+            raise ValueError("This bed model has no floor light")
         self._timer_minutes = _integer(value, 1, 60, "Pending floor timer")
         self._publish_floor()
 
@@ -1181,7 +1181,7 @@ class VibradormAppController(BedController):
 
     async def _floor(self, level: int, *, toggle: bool = False) -> None:
         if not self.profile.floor_light:
-            raise ValueError("This profile has no floor-light route")
+            raise ValueError("This bed model has no floor light")
         if self._coordinator.cancel_command.is_set():
             return
         if toggle:
@@ -1238,7 +1238,7 @@ class VibradormAppController(BedController):
 
     async def _mood(self, parameters: bytes, key: str, value: str | int) -> None:
         if not self.profile.rgb:
-            raise ValueError("This profile has no mood-light route")
+            raise ValueError("This bed model has no mood light")
         if self.profile.app_profile != "vmat":
             self._mood_intent[key] = value
         word = MOOD if self.profile.basic else MOOD | EXTENSION
@@ -1279,7 +1279,7 @@ class VibradormAppController(BedController):
 
     async def _massage_callback(self, code: int) -> None:
         if not self.profile.massage:
-            raise ValueError("This profile has no massage route")
+            raise ValueError("This bed model has no massage")
         await self._write_massage_packets([self._plan_massage_callback(code)])
 
     async def _send_massage(self) -> None:
@@ -1341,7 +1341,7 @@ class VibradormAppController(BedController):
 
     async def _massage_mode(self, automatic: bool) -> None:
         if not self.profile.massage:
-            raise ValueError("This profile has no massage route")
+            raise ValueError("This bed model has no massage")
         await self._write_massage_packets(self._plan_massage_mode(automatic))
 
     async def _massage_zone(self, index: int, delta: int = 0) -> None:
@@ -1353,7 +1353,7 @@ class VibradormAppController(BedController):
                 m.automatic == 7 and m.wave == 7 or m.individual == 9 and m.zone_states[index] == 7
             )
         ):
-            raise ValueError("Massage action is disabled in the current app mode")
+            raise ValueError("This massage control is not available in the current massage mode")
         if not delta:
             states = list(m.zone_states)
             states[index] = 7 if states[index] == 8 else 8
@@ -1380,7 +1380,7 @@ class VibradormAppController(BedController):
 
     async def set_massage_wave(self, option: str) -> None:
         if not self.profile.massage or option not in MASSAGE_WAVES or self._massage.automatic != 7:
-            raise ValueError("Wave requires automatic massage and a shipped option 1..4")
+            raise ValueError("Wave needs automatic massage and a wave option from 1 to 4")
         self._massage.effect = int(option)
         self._massage.zones = (self._massage.zones[0] or 1, self._massage.zones[1] or 1)
         await self._send_massage()
@@ -1389,7 +1389,7 @@ class VibradormAppController(BedController):
     async def set_massage_speed(self, value: float) -> None:
         value = _integer(value, 1, 5, "Massage value")
         if not self.profile.massage:
-            raise ValueError("This profile has no massage route")
+            raise ValueError("This bed model has no massage")
         self._massage.speed = value
         await self._send_massage()
         self._massage.indicators()
