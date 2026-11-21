@@ -56,6 +56,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_RESOLVED_VARIANT,
@@ -81,6 +82,7 @@ from custom_components.adjustable_bed.const import (
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
     CONF_VMATBASIC_PROFILE,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
     ESHINE_OKIN_PROFILES,
     KAIDI_VARIANT_SEAT_1,
@@ -491,10 +493,12 @@ class TestPairedSetup:
         await async_unpair_entry(hass, entry)
         await hass.async_block_till_done()
 
-        # Only the schema 5 profile id and migration record were added.
+        # Only the schema 5 profile id and migration record were added, and the
+        # connection 4.x ran this entry with, which it had not saved.
         restored = dict(entry.data)
         assert restored.pop(CONF_PROFILE_ID) == resolve_profile_id(original_data)
         assert restored.pop(CONF_PROFILE_MIGRATION)["from_version"] == 4
+        assert restored.pop(CONF_CONNECTION_MODE) == CONNECTION_MODE_IDLE
         assert restored == original_data
         assert entry.unique_id == LEFT_ADDR
         assert not is_paired(entry.data)
