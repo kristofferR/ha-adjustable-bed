@@ -17,7 +17,6 @@ from custom_components.adjustable_bed.beds.richmat_app.catalog import (
     PROFILE_CHOICES,
     RESTORED_CHOICES,
     descriptors,
-    normalize_product,
     scan_matches,
 )
 from custom_components.adjustable_bed.beds.richmat_app.protocol import BlanketSleep
@@ -78,8 +77,6 @@ def written(c):
 def test_full_catalog_identity_selection_and_actual_routes():
     assert len(PRODUCTS) == 1118 and len(PROFILE_CHOICES) == 756 and len(RESTORED_CHOICES) == 362
     assert not set(PROFILE_CHOICES) & set(RESTORED_CHOICES)
-    assert normalize_product(" 7i\nrm ") == "7IRM"
-    assert normalize_product("\t7irm") == "\t7IRM"
     assert scan_matches("vendor-7IRM-extra") and not scan_matches("vendor-7irm-extra")
     assert scan_matches("Luffabenz") and not scan_matches(None)
     assert sum(len(p["versions"]["other"]["motors"]) for p in PRODUCTS.values()) == 3179

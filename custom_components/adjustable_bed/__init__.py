@@ -1066,11 +1066,6 @@ async def _async_finish_entry_setup(
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
 
 
-def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
-    """Parent-level config inherited by every child (each descriptor overrides)."""
-    return inheritable_child_fields(parent_data)
-
-
 def _make_child_persist_cb(
     hass: HomeAssistant, entry: ConfigEntry, side: str
 ) -> Callable[[dict[str, Any]], None]:

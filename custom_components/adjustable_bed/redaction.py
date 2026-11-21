@@ -74,22 +74,6 @@ def _is_health_key(key: str) -> bool:
     return _HEALTH_KEY.search(f"_{re.sub('[^a-z0-9]+', '_', words)}_") is not None
 
 
-def _redact_mac_address(mac: str | None | Any) -> str | Any:
-    """Keep the manufacturer prefix (first three bytes) of a MAC address.
-
-    Example: AA:BB:CC:DD:EE:FF -> AA:BB:CC:**:**:**
-
-    Non-string or empty inputs are returned unchanged; a string that is not a
-    six-byte address becomes "**REDACTED**".
-    """
-    if not mac or not isinstance(mac, str):
-        return mac
-    match = MAC_ADDRESS_PATTERN.fullmatch(mac.strip())
-    if match is None:
-        return REDACTED
-    return _mask_match(match)
-
-
 def _mask_match(match: re.Match[str]) -> str:
     sep = match.group(2)
     prefix = sep.join(match.group(index).upper() for index in (1, 3, 4))

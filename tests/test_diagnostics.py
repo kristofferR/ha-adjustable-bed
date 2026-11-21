@@ -34,7 +34,6 @@ from custom_components.adjustable_bed.discovery_log import async_get_discovery_l
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
 from custom_components.adjustable_bed.redaction import (
     KEYS_TO_REDACT,
-    _redact_mac_address,
     redact_data,
 )
 
@@ -120,15 +119,6 @@ class TestDiagnosticsRedaction:
             "octo_pin": "**REDACTED**",
             "octo_pin_confirmation": "**REDACTED**",
         }
-
-    def test_mac_address_partial_redaction(self):
-        """Test that MAC addresses are partially redacted, keeping the OUI."""
-        # Should keep first 3 bytes (OUI) and redact last 3
-        assert _redact_mac_address("AA:BB:CC:DD:EE:FF") == "AA:BB:CC:**:**:**"
-        assert _redact_mac_address("aa:bb:cc:dd:ee:ff") == "AA:BB:CC:**:**:**"
-        # Should handle dash separators
-        assert _redact_mac_address("AA-BB-CC-DD-EE-FF") == "AA-BB-CC-**-**-**"
-
 
 class TestDiagnosticsOutput:
     """Test diagnostics output structure."""

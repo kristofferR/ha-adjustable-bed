@@ -48,25 +48,6 @@ LOCK_MASK: Final = StateKey[int | None]("timotion_ahf_lock_mask")
 LAMP_DISPLAY_CODE: Final = StateKey[int | None]("timotion_ahf_lamp_display_code")
 
 
-class TiMOTIONAhfCommands:
-    """AHF app-action bitmasks, grouped by packet byte."""
-
-    CONTROL_1_UP = 0x01
-    CONTROL_1_DOWN = 0x02
-    CONTROL_2_UP = 0x04
-    CONTROL_2_DOWN = 0x08
-    CONTROL_3_UP = 0x10
-    CONTROL_3_DOWN = 0x20
-
-    CONTROL_4_UP = 0x01
-    CONTROL_4_DOWN = 0x02
-    CONTROL_5_UP = 0x04
-    CONTROL_5_DOWN = 0x08
-    NIGHT = 0x10
-    LIGHT = 0x20
-    CHAIR = 0x40
-
-
 @dataclass(frozen=True, slots=True)
 class _ControlAction:
     """One action label and its app-observed packet bit."""

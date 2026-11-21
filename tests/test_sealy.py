@@ -35,17 +35,6 @@ def test_literal_fit(key, literal):
 
 
 @pytest.mark.parametrize(
-    "parts,literal",
-    [
-        ((0, 0, 56, 34, 12, 19, 4, 11, 2026), "07041a0b13040c2238"),
-        ((0, 0, 0, 0, 0, 1, 1, 1, 2001), "070401010101000000"),
-    ],
-)
-def test_exact_raw_parts_clock(parts, literal):
-    assert codec.raw_parts_clock(parts).hex() == literal
-
-
-@pytest.mark.parametrize(
     "raw,expected",
     [
         ("a50b", None),

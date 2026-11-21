@@ -19,7 +19,6 @@ from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.timotion_ahf import (
     STATUS_READINESS_TIMEOUT_SECONDS,
-    TiMOTIONAhfCommands,
     TiMOTIONAhfController,
     build_timotion_ahf_command,
 )
@@ -411,7 +410,7 @@ async def test_app_action_vectors_and_finite_button_pulse(
 
 
 def test_command_builder_is_immutable_neutral_based_and_eleven_bytes() -> None:
-    packet = build_timotion_ahf_command(group1=TiMOTIONAhfCommands.CONTROL_2_UP)
+    packet = build_timotion_ahf_command(group1=0x04)
 
     assert packet == bytes.fromhex("ddddff0404000000000000")
     assert len(packet) == 11

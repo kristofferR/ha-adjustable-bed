@@ -11,13 +11,6 @@ MAX_ASCII_PREVIEW_LENGTH = 64
 MAX_REPEATED_PAYLOADS = 5
 
 
-def payload_hex(data: bytes | bytearray | memoryview | None) -> str | None:
-    """Return payload as hex string."""
-    if data is None:
-        return None
-    return bytes(data).hex()
-
-
 def payload_length(data: bytes | bytearray | memoryview | None) -> int | None:
     """Return payload length in bytes."""
     if data is None:

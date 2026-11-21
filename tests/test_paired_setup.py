@@ -27,7 +27,6 @@ from custom_components.adjustable_bed import (
     _build_paired_children,
     _make_child_persist_cb,
     _maybe_create_pairing_issue_for,
-    _shared_child_fields,
     async_unpair_entry,
     paired_topology,
 )
@@ -117,6 +116,7 @@ from custom_components.adjustable_bed.pairing import (
     KEY_ABSORBED_ENTRY_ID,
     effective_child_data,
     get_child,
+    inheritable_child_fields,
     is_paired,
     octo_snapshot_from_descriptor,
     pair_member_addresses,
@@ -1225,7 +1225,7 @@ class TestPairedSetup:
 class TestPairedBuilders:
     """Unit tests for the child-construction helpers (no BLE)."""
 
-    def test_shared_child_fields_excludes_pair_keys(self):
+    def testinheritable_child_fields_excludes_pair_keys(self):
         data = {
             **_paired_entry_data(),
             "ble_bond_established": True,
@@ -1233,7 +1233,7 @@ class TestPairedBuilders:
             "ble_bond_context": {"transport": "local"},
             "ble_bond_attempted_source": "hci0",
         }
-        shared = _shared_child_fields(data)
+        shared = inheritable_child_fields(data)
         assert CONF_PAIR_ID not in shared
         assert CONF_PAIR_CHILDREN not in shared
         assert CONF_PAIR_MODE not in shared
@@ -1270,7 +1270,7 @@ class TestPairedBuilders:
 
     async def test_child_persist_writes_delta_to_correct_descriptor(self, hass: HomeAssistant):
         entry = _paired_entry(hass)
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
 
         # Persist a change (e.g. a BLE bond marker) for the left side.
@@ -1290,7 +1290,7 @@ class TestPairedBuilders:
             entry,
             options={"ble_bond_established": False},
         )
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
 
         persist({**baseline, "ble_bond_established": True})
@@ -1302,7 +1302,7 @@ class TestPairedBuilders:
     async def test_child_persist_noop_when_unchanged(self, hass: HomeAssistant):
         entry = _paired_entry(hass)
         before = entry.data
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
         persist(dict(baseline))  # no change
         assert entry.data is before  # entry not updated
@@ -1311,7 +1311,7 @@ class TestPairedBuilders:
         # A value set then reverted must still be written (compares against the
         # live descriptor, not a stale build-time baseline).
         entry = _paired_entry(hass)
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
 
         persist({**baseline, "ble_bond_established": True})
@@ -1322,7 +1322,7 @@ class TestPairedBuilders:
     async def test_child_persist_removes_runtime_bond_keys(self, hass: HomeAssistant):
         """Confirmed removal must delete markers instead of leaving stale overrides."""
         entry = _paired_entry(hass)
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
         persist(
             {
