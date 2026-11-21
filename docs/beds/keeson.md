@@ -4762,7 +4762,7 @@ whether the bed stores the position still needs testing by owners.
 
 ## Notes
 
-### Timing evidence
+### Timing sources
 
 Cadence belongs to the app or protocol family, not to the shared 32-bit command
 values. The values are in [Hold and release timing](#hold-and-release-timing).
