@@ -48,11 +48,11 @@ def validate_comfort_request(
         if value is None:
             continue
         if name not in supported_fields:
-            raise ValueError(f"This Reverie profile does not support {name}")
+            raise ValueError(f"This bed model has no {name.replace('_', ' ')} setting")
         if isinstance(value, bool) or not isinstance(value, int):
             raise ValueError(f"{name} must be an integer")
         if not -(2**31) <= value <= 2**31 - 1:
-            raise ValueError(f"{name} must fit the source Java integer input")
+            raise ValueError(f"The {name.replace('_', ' ')} value is out of range. Choose a value closer to zero")
         if name in domains:
             minimum, maximum = domains[name]
             if not minimum <= value <= maximum:

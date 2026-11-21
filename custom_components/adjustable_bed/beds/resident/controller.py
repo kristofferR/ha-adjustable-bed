@@ -420,7 +420,7 @@ class ResidentController(Okin64BitController):
             or not isinstance(duration_ms, int)
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Hold duration must be an integer from 1 to 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def move_simultaneously(
         self,

@@ -477,7 +477,7 @@ class YamadaController(KeesonController):
             or not isinstance(duration_ms, int)
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Hold duration must be 1..60000 milliseconds")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -551,7 +551,7 @@ class YamadaController(KeesonController):
         link = self._live()
         if self.profile.key == "yamada_p1" and self._p1_pending_fields is not None:
             raise ValueError(
-                "Waiting for the written P1 alarm table to be observed; refresh or reconnect"
+                "The bed has not confirmed the last alarm change yet. Wait a moment or reconnect the bed, then try again"
             )
         if isinstance(slot, bool) or slot not in (1, 2) or not isinstance(enabled, bool):
             raise ValueError("Choose an explicit alarm slot and enabled state")

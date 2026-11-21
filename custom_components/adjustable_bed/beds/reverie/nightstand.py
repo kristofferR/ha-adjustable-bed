@@ -789,7 +789,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                     or not 0 <= current <= 255
                 ):
                     raise ValueError(
-                        f"STK side {self._stk_selected_side} routine needs current axis feedback"
+                        "Wait until the bed reports its position, then start the routine again"
                     )
 
     async def _write_routine_comfort(self, request: ReverieComfortRequest) -> None:
@@ -1199,7 +1199,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         if isinstance(duration_ms, bool) or not isinstance(duration_ms, int):
             raise ValueError("Reverie hold duration must be an integer number of milliseconds")
         if not 100 <= duration_ms <= 60_000:
-            raise ValueError("Reverie hold duration must be between 100 and 60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Hold one axis once and release that same physical axis and STK side."""
@@ -1567,9 +1567,9 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             return
         if zone == "stk_global":
             if not self.model.tandem or self._stk_selected_side == "1":
-                raise ValueError("STK global massage requires numeric side 2 or 3")
+                raise ValueError("Whole-bed massage is not available for this bed or side")
             if not 0 <= level <= 191:
-                raise ValueError("STK global massage value must fit in the offset byte")
+                raise ValueError("Choose a whole-bed massage value from 0 to 191")
             await self._write_bytes_to_char(
                 STK_SIDE_DATA_UUID,
                 bytes((int(self._stk_selected_side), level + 64)),

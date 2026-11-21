@@ -79,7 +79,7 @@ def rename_frames(name: str) -> tuple[bytes, bytes, bytes]:
         or len(encoded) > NAME_MAX_BYTES
         or not set(name) <= NAME_ALPHABET
     ):
-        raise ValueError("Name must contain 1..20 letters, digits, ä, ö, ü or ß")
+        raise ValueError("Use a name of 1 to 20 characters, using only the letters A to Z, ä, ö, ü and ß, and digits")
     return b"AT+ENAT\r\n", b"AT+LENA" + encoded + b"\r\n", b"AT+REST\r\n"
 
 

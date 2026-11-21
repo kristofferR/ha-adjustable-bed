@@ -41,7 +41,7 @@ def build_request(service: str, data: Mapping[str, object]) -> Request:
             or type(minutes) is not int
             or minutes not in range(5, 106, 5)
         ):
-            raise ValueError("Choose a supported frequency and duration")
+            raise ValueError("Choose a frequency this bed offers and a duration from 5 to 105 minutes in steps of 5")
         return Request("wave", frequency=frequency, minutes=minutes)
     if service == "sleeptracker_massage":
         action = data["action"]

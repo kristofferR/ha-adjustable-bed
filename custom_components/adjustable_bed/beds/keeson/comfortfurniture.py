@@ -338,7 +338,7 @@ class ComfortFurnitureController(OreComfortBedController):
 
     async def set_massage_level(self, zone: str, level: int) -> None:
         if type(level) is not int or not 0 <= level <= 2:
-            raise ValueError("ComfortFurniture massage bins are 0..2; bin 0 is not off")
+            raise ValueError("Choose a massage level from 0 to 2. Level 0 is the lowest level, not off")
         await self.set_massage_progress(zone, level * 10)
 
     async def massage_start(self) -> None:

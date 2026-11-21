@@ -196,7 +196,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
         if current is None or (link is not None and current is not link) or self._coordinator is not current.owner or self._coordinator.controller is not self or self.client is not current.client or not current.client.is_connected:
             raise ConnectionError("SonicSleep physical session changed")
         if self.command_side is not None:
-            raise ValueError("SonicSleep has no single-address side selector")
+            raise ValueError("This bed has no sides. Leave out the side")
         return current
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -337,7 +337,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in DIRECTIONS or isinstance(duration_ms, bool) or not 0 < duration_ms <= 60000:
-            raise ValueError("Choose a SonicSleep direction and a duration from 1 to 60000 ms")
+            raise ValueError("Choose a direction and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -386,7 +386,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
         if request.operation not in ("list", "new", "edit", "toggle", "delete", "link_name", "sync_clock"):
             raise ValueError("Unknown SonicSleep operation")
         if request.operation in ("edit", "toggle", "delete") and (request.id is None or not 0 <= request.id <= 255):
-            raise ValueError("Choose the received alarm ID")
+            raise ValueError("Choose the number of an alarm in the alarm list")
         if request.operation in ("new", "edit"):
             form_alarm(request.id or 1, request.hour, request.minute, request.mode, request.days, request.enabled)
 
@@ -465,7 +465,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
         self._live(plan.link)
         if plan.request.operation in ("new", "edit", "toggle", "delete"):
             if tuple(self._alarm_records.values()) != plan.cache or plan.packets[0][6] in self._stale_alarm_ids:
-                raise ValueError("SonicSleep alarm list changed during admission; refresh and retry")
+                raise ValueError("The alarm list changed while the action was starting. Read the alarm list and try again")
 
     async def execute_prepared(self, plan: PreparedRequest) -> None:
         self.validate_plan(plan)

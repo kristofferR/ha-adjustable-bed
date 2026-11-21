@@ -275,7 +275,7 @@ class SomosController(KeesonController):
         if action not in self.actions and not (
             action == "status_query" and self.product.query is not None
         ):
-            raise ValueError("Action unavailable on this Somos product")
+            raise ValueError("This bed model does not offer that action")
 
     async def perform_action(self, action: str) -> None:
         self.validate_action(action)
@@ -346,7 +346,7 @@ class SomosController(KeesonController):
             or isinstance(duration_ms, bool)
             or not 100 <= duration_ms <= 60000
         ):
-            raise ValueError("Choose a supported Somos held control and 100..60000ms")
+            raise ValueError("Choose a control this bed offers and a duration from 0.1 to 60 seconds")
         axis, direction = control.rsplit("_", 1)
         if self.leased_hold_refreshes(app.REFRESH_MS) is not None:
             # The scheduler owns the changing deadline and absolute ceiling.

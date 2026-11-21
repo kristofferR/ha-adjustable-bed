@@ -88,11 +88,11 @@ class Request:
         if self.operation not in operations:
             raise ValueError("Unknown Good Vibe Sleep action")
         if controller.catalog.reply_gated_menus and self.operation.startswith("snore_"):
-            raise ValueError("MLILY does not expose the library's bed snore settings page")
+            raise ValueError("This bed has no snore settings")
         product = controller.product
         if product is None:
             if controller.catalog.reply_gated_menus and self.operation == "anti_snore" and self.enabled is not None and self.left is None and self.right is None:
-                raise ValueError("Supply the app's explicit Left/Right anti-snore operands")
+                raise ValueError("Enter an anti-snore value for at least one side")
             if self.operation not in (
                 "sync",
                 "part",
@@ -104,23 +104,23 @@ class Request:
                 "sensitivity",
                 "init",
             ):
-                raise ValueError("This is a sleep-sensor profile")
+                raise ValueError("This sleep sensor does not offer that operation")
             if controller.kind == 2 and self.operation in ("time", "anti_snore", "sensitivity", "init"):
-                raise ValueError("This action has no type 1 packet")
+                raise ValueError("This sleep sensor does not offer that operation")
             admitted_parts = (
                 (1, 2)
                 if self.operation in ("report", "report_allow") or controller.kind == 2
                 else (11, 12, 13)
             )
             if not controller.catalog.reply_gated_menus and self.part is not None and self.part not in admitted_parts:
-                raise ValueError("Select an admitted sleep part")
+                raise ValueError("Choose a part this sleep sensor offers")
             if (
                 self.operation == "report"
                 or self.operation == "report_allow"
                 and controller.kind == 2
             ):
                 if self.date is None or self.part is None or self.report_type not in (1, 2):
-                    raise ValueError("Report requires date, part and day/month type")
+                    raise ValueError("Enter a date, a part and a day or month report type")
             if (
                 self.operation == "report_allow"
                 and controller._sleep is not None
@@ -138,7 +138,7 @@ class Request:
             "sensitivity",
             "init",
         ):
-            raise ValueError("Add the independent sleep device with an RM- or HJ- profile")
+            raise ValueError("Sleep operations run on the separate sleep sensor. Add the sensor as its own device and use them there")
         if reported and controller.catalog.notification_menus:
             menu = (
                 "light"
@@ -151,36 +151,36 @@ class Request:
                 else None
             )
             if menu is not None and menu not in controller._menus:
-                raise ValueError("The connected bed has not advertised this product capability")
+                raise ValueError("The bed has not reported that it offers this. Reconnect the bed and try again")
         light_allowed = product.light if controller.catalog.bed is not None and not reported else controller.menu_available("light")
         if self.operation in ("light_color", "light_duration", "light_off") and not light_allowed:
-            raise ValueError("The selected product has no light menu")
+            raise ValueError("This bed model has no light settings")
         if self.operation == "massage_timer" and (
             not product.massage_timer or self.value not in (0, 10, 20, 30)
         ):
-            raise ValueError("Choose an admitted massage countdown")
+            raise ValueError("Choose a massage timer of 0, 10, 20 or 30 minutes on a bed model that has one")
         if self.operation == "light_color" and (
             self.rgb is None or any(type(v) is not int or not 0 <= v <= 255 for v in self.rgb)
         ):
-            raise ValueError("Light color requires three byte channels")
+            raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
         eight_color = product.light_display == "deviceBedLightDisplayCircleEightColorValue"
         if self.operation == "light_color" and eight_color and self.rgb not in p.EIGHT_COLORS:
-            raise ValueError("Choose one of this product's eight app colors")
+            raise ValueError("Choose one of the eight light colors this bed offers")
         durations = (
             tuple(minute * 60 for minute in controller.catalog.bed.light_minutes)
             if controller.catalog.bed else p.light_durations(product.label.split(" / ")[0], eight_color)
         )
         if self.operation == "light_duration" and self.seconds not in durations:
-            raise ValueError("Choose one of this product's app light durations")
+            raise ValueError("Choose a light duration this bed offers")
         if (
             self.operation in ("single", "cancel_single", "repeat", "delete", "alarms", "toggle", "enable_alarm")
             and not controller.menu_available("alarm")
         ):
-            raise ValueError("The selected product has no alarm menu")
+            raise ValueError("This bed model has no alarms")
         if self.operation in ("repeat", "delete", "alarms", "toggle", "enable_alarm") and not product.repeat_alarm:
-            raise ValueError("The selected product does not offer repeat alarms")
+            raise ValueError("This bed model has no repeating alarms")
         if controller.catalog.reply_gated_menus and product.repeat_alarm and self.operation in ("single", "cancel_single"):
-            raise ValueError("This product uses the repeat-alarm page")
+            raise ValueError("This bed model sets alarms with the repeating alarm operation")
         if self.operation in ("single", "repeat"):
             record_edit = controller.catalog.reply_gated_menus and self.operation == "repeat" and self.record is not None
             if (
@@ -190,12 +190,12 @@ class Request:
                 or (self.when is None and not record_edit)
                 or (self.when is not None and self.when.utcoffset() is None)
             ):
-                raise ValueError("Choose an exact alarm action and a timezone-aware date/time")
+                raise ValueError("Choose an alarm action this bed offers and enter the alarm time with its time zone")
         if self.alarm_id is not None and not 1 <= self.alarm_id <= 7:
             raise ValueError("Alarm number must be 1–7")
         if self.operation == "enable_alarm":
             if self.enabled is None or self.alarm_id is None:
-                raise ValueError("Choose an observed alarm and its enabled state")
+                raise ValueError("Choose an alarm number and whether the alarm is on")
             self.observed_alarm(controller)
         if self.operation == "delete" and self.alarm_id is None:
             raise ValueError("Choose the alarm to delete")
@@ -205,9 +205,9 @@ class Request:
             raise ValueError("An alarm record has six byte fields")
         if self.record is not None and self.operation in ("repeat", "toggle"):
             if not 1 <= self.record[0] <= 7 or self.alarm_id not in (None, self.record[0]):
-                raise ValueError("An edit must retain a valid observed alarm ID")
+                raise ValueError("Enter an alarm record with an alarm number from 1 to 7. An alarm number entered separately must match it")
         if self.operation == "toggle" and (self.record is None or self.enabled is None):
-            raise ValueError("Choose the observed alarm record and its enabled state")
+            raise ValueError("Enter the alarm record from the alarm list and whether the alarm is on")
         if self.operation == "repeat" and self.alarm_id is None and self.record is None and (
             reported or controller.catalog.bed is None
         ):
@@ -216,11 +216,11 @@ class Request:
             raise ValueError("Invalid weekday")
         if self.operation == "repeat" and self.record is not None and self.action is None:
             if not any(controller.catalog.actions[key].short == self.record[4] for key in product.alarms):
-                raise ValueError("The observed alarm mode is unknown; choose a mode explicitly")
+                raise ValueError("The alarm record has an unknown alarm action. Choose an action")
         if self.operation in ("snore_switch", "snore_count", "snore_time", "snore_query") and (
             not controller.snore_available
         ):
-            raise ValueError("This product does not expose the BLE sleep/snore menu")
+            raise ValueError("This bed model has no snore settings")
         if self.operation == "snore_switch" and self.enabled is None:
             raise ValueError("Choose whether snore intervention is enabled")
         if self.operation == "snore_count" and (self.value is None or not 1 <= self.value <= 30):
@@ -238,7 +238,7 @@ class Request:
             or len(value) != 6
             or any(type(v) is not int or not 0 <= v <= 255 for v in value)
         ):
-            raise ValueError("Query the current alarm list before changing its enabled state")
+            raise ValueError("Read the alarm list first, then turn the alarm on or off")
         return tuple(value)
 
     def repeat_slot(self, controller: GoodVibeController) -> int:
@@ -251,12 +251,12 @@ class Request:
         if controller.catalog.reply_gated_menus:
             # MLILY reports individual records without a list-completion marker.
             # An empty or partially received cache cannot prove a slot is unused.
-            raise ValueError("Choose alarm_id or alarm_record; the alarm list may be incomplete")
+            raise ValueError("Choose an alarm number or enter an alarm record. This bed does not report its full alarm list, so a free alarm cannot be picked for you")
         records = controller.choices.events.get("repeat_alarms", {})
         occupied = set(records) if isinstance(records, dict) else set()
         number = next((n for n in range(1, 8) if str(n) not in occupied), None)
         if number is None:
-            raise ValueError("All seven observed alarm slots are occupied")
+            raise ValueError("All seven alarms are in use. Delete one, or choose the alarm number to replace")
         return number
 
     def plan(self, controller: GoodVibeController) -> Request:

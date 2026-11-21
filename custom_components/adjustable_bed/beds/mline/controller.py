@@ -204,13 +204,13 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
             and action != "stopCommand"
             and self._coordinator.entry.data.get(app.CHILD_MODE, False)
         ):
-            raise ValueError("M Line local child mode is enabled")
+            raise ValueError("Child lock is on. Turn it off and try again")
         if action in app.MASSAGE.values() and not self._coordinator.entry.data.get(
             CONF_HAS_MASSAGE, False
         ):
-            raise ValueError("Enable the conditional M Line massage route in Configure")
+            raise ValueError("Turn on massage in Configure first")
         if action in ("anti_snore", "privacy", "history", "live") and self.profile.key != "sleep":
-            raise ValueError("This M Line feature is available only on the Sleep protocol")
+            raise ValueError("This bed model does not offer that")
 
     async def _release(self, link: Link) -> None:
         async def release() -> None:
@@ -797,7 +797,7 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
         if asyncio.get_running_loop().time() > self._history_ack_until:
             self._history_token = None
         if not token or token != self._history_token:
-            raise ValueError("Acknowledge only a completed raw transfer on this same live session")
+            raise ValueError("Download the sleep history first, then confirm it while the bed is still connected")
         self._live()
 
     async def acknowledge_history(self, token: str) -> None:

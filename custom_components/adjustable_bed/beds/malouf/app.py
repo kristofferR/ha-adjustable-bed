@@ -734,7 +734,7 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
     async def sync_clock(self) -> None:
         transport = self._resolve_transport()
         if not self.supports_clock_sync:
-            raise ValueError("This app transport has no clock")
+            raise ValueError("This bed has no clock")
         await self.write_command(
             codec.clock(transport, dt_util.now()),
             repeat_count=self.profile.routes[transport].settings_repeats,
@@ -760,15 +760,15 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
     ) -> None:
         transport = self._resolve_transport()
         if not self.supports_clock_alarm:
-            raise ValueError("This model/transport has no alarm control")
+            raise ValueError("This bed has no alarm")
         if head_level != 0 or foot_level != 0:
-            raise ValueError("These app alarms have no massage-intensity fields")
+            raise ValueError("This bed's alarm has no massage levels. Remove them and try again")
         if not 0 <= hour <= 23 or not 0 <= minute <= 59:
             raise ValueError("Invalid alarm time")
         if any(isinstance(day, bool) or not 0 <= day <= 6 for day in weekdays):
             raise ValueError("Alarm weekdays must use Monday=0 through Sunday=6")
         if preset not in codec.ALARM_TYPES:
-            raise ValueError("Alarm preset must be one of the six app alarm choices")
+            raise ValueError("Choose a wake action this bed offers")
         if enabled and preset.startswith("memory_"):
             self._validate_memory(int(preset.removeprefix("memory_")))
         if not enabled:

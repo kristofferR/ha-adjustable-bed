@@ -495,7 +495,7 @@ async def test_massage_program_stop_variants_and_local_countdown_no_wire() -> No
 async def test_absent_massage_program_rejected_without_writes_or_state_changes(handset, missing):
     controller = await fast_controller(handset)
     state = controller.protocol_diagnostics.copy()
-    with pytest.raises(ValueError, match="absent"):
+    with pytest.raises(ValueError, match="no such massage program"):
         await controller.set_furnimove_massage_program(missing)
     assert not written(controller)
     assert controller.protocol_diagnostics == state

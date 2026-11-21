@@ -758,7 +758,7 @@ async def test_expired_finite_hold_in_ble_lane_sends_only_captured_stop(runtime,
 async def test_panel_e_save_has_no_release_recall_and_snore_remains_held(runtime, clock):
     hass, co = runtime
     await install(co, name("E1"))
-    with pytest.raises(ServiceValidationError, match="release recall"):
+    with pytest.raises(ServiceValidationError, match="Hold the snore preset"):
         await call(hass, "save_snore", recall_on_release=True)
     assert writes(co) == []
     await call(hass, "save_snore")

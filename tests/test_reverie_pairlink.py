@@ -667,7 +667,7 @@ async def test_pairlink_harmoniq_comfort_preflight_excludes_unsupported_lumbar()
             force=True,
         )
     )
-    with pytest.raises(ValueError, match="does not support lumbar_position"):
+    with pytest.raises(ValueError, match="no lumbar position setting"):
         controller.validate_comfort_request(
             ReverieComfortRequest(head_position=20, lumbar_position=40)
         )

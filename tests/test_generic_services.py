@@ -248,7 +248,7 @@ async def test_hold_control_profile_constraint_becomes_validation_error(
     ("status_ready", "lock_mask", "message"),
     [
         (False, 0, "valid status frame"),
-        (True, 0x01, "disabled by status lock bit"),
+        (True, 0x01, "locked on the bed"),
     ],
 )
 async def test_ahf_hold_control_preflights_status_and_lock_before_writes(
@@ -426,7 +426,7 @@ async def test_jalon_programming_hold_is_rejected_before_an_earlier_target_moves
         validate_hold_control=jalon.validate_hold_control,
     )
     select(resolve, (first, first_controller), (second, second_controller))
-    with pytest.raises(ServiceValidationError, match="save_preset"):
+    with pytest.raises(ServiceValidationError, match="Save preset action"):
         await hass.services.async_call(
             DOMAIN, "hold_control",
             {"device_id": ["first", "second"], "control": "memory_1", "duration": 6},

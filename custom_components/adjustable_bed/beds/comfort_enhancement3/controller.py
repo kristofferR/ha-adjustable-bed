@@ -160,7 +160,7 @@ def validate_massage(duration: int, intensity: int, kind: str) -> None:
         or intensity not in (1, 2, 3)
         or kind not in ("head", "feet", "both", "wave")
     ):
-        raise ValueError("Choose 10/20/30 minutes, intensity 1/2/3 and head/feet/both/wave")
+        raise ValueError("Choose 10, 20 or 30 minutes, intensity 1, 2 or 3, and head, feet, both or wave")
 
 
 def massage_axes(kind: str) -> tuple[str, ...]:
@@ -642,7 +642,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
             or type(duration_ms) is not int
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Unsupported movement or hold duration")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -827,7 +827,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
         from homeassistant.util import dt as dt_util
 
         if target.tzinfo is None:
-            raise ValueError("Wake-up time requires a timezone")
+            raise ValueError("Enter the wake-up time with its time zone")
         ticks = delay_ticks(target, dt_util.now())
         if ticks < 0:
             raise ValueError("The selected wake-up time has passed")

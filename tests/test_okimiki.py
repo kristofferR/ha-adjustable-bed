@@ -421,7 +421,7 @@ async def test_alarm_ack_cannot_revalidate_pre_mutation_fields(obj, coordinator,
     obj._event("alarm_list", row)
     await obj.execute_request(Request("repeat", alarm_id=1, mode="lounge").plan(obj))
     obj._event("alarm_add_success", None)
-    with pytest.raises(ValueError, match="fresh record"):
+    with pytest.raises(ValueError, match="alarm list again"):
         Request("enable", alarm_id=1, enabled=False).plan(obj)
     obj._event("alarm_update", replace(row, opcode=89))
     assert Request("enable", alarm_id=1, enabled=False).plan(obj).record.opcode == 89
@@ -435,16 +435,16 @@ async def test_alarm_refresh_requires_explicit_slot_after_delete(obj, coordinato
     await obj.execute_request(Request("delete", alarm_id=2).plan(obj))
     obj._event("alarm_cancel_success", None)
     new = Request("repeat", when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge")
-    with pytest.raises(ValueError, match="explicit alarm ID"):
+    with pytest.raises(ValueError, match="alarm number from 1 to 7"):
         new.plan(obj)
     await obj.execute_request(Request("alarms"))
     if remaining:
         obj._event("alarm_list", p.Alarm(1, 7, 6, 30, 69, 137))
     count = len(writes(coordinator))
-    with pytest.raises(ValueError, match="explicit alarm ID"):
+    with pytest.raises(ValueError, match="alarm number from 1 to 7"):
         await obj.execute_request(new.plan(obj))
     assert len(writes(coordinator)) == count
-    with pytest.raises(ValueError, match="Query this bed's alarms"):
+    with pytest.raises(ValueError, match="Read the bed's alarm list"):
         Request("enable", alarm_id=2, enabled=False).plan(obj)
     await obj.execute_request(replace(new, alarm_id=2).plan(obj))
     assert writes(coordinator)[-1][6] == 2
@@ -459,7 +459,7 @@ async def test_failed_alarm_refresh_keeps_edits_guarded(obj, coordinator, virtua
     coordinator.client.write_gatt_char.side_effect = BleakError("query failed")
     with pytest.raises(BleakError, match="query failed"):
         await obj.execute_request(Request("alarms"))
-    with pytest.raises(ValueError, match="Query this bed's alarms"):
+    with pytest.raises(ValueError, match="Read the bed's alarm list"):
         Request("enable", alarm_id=1, enabled=False).plan(obj)
 
 
@@ -467,7 +467,7 @@ async def test_new_alarm_plan_rejects_a_slot_observed_after_preflight(obj, coord
     obj._menus.add("alarm")
     plan = Request("repeat", alarm_id=2, when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge").plan(obj)
     obj._event("alarm_list", p.Alarm(2, 91, 8, 0, 69, 137))
-    with pytest.raises(ValueError, match="fresh record"):
+    with pytest.raises(ValueError, match="alarm list again"):
         await obj.execute_request(plan)
     assert not writes(coordinator)
 

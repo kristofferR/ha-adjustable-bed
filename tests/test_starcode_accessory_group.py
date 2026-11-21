@@ -240,7 +240,7 @@ async def test_unrelated_and_unready_rejected_before_movement(hass: HomeAssistan
     hass.config_entries.async_update_entry(
         lifts[0].entry, data={**lifts[0].entry.data, CONF_BED_TYPE: "desk"}
     )
-    with pytest.raises(ValueError, match="bedding profile"):
+    with pytest.raises(ValueError, match="Adjustable M5X5 bed"):
         validate_lift_entries(hass, main.entry.data, [lifts[0].entry.entry_id])
     # The action says to set up the lifts again, without writing anything.
     with raises_key("lifts_not_configured", ServiceValidationError):

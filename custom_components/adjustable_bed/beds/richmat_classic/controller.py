@@ -434,7 +434,7 @@ class RichmatClassicController(BedController):
         for button in self._controls:
             if button.node == node and button.rich_button:
                 return button
-        raise ValueError("Choose an action from the selected app layout")
+        raise ValueError("Choose an action this bed model offers")
 
     def _apply(self, button: Control, event: str, selection: Selection) -> Selection:
         session = self._session
@@ -502,7 +502,7 @@ class RichmatClassicController(BedController):
         if button.status not in (1, 2, 3):
             raise ValueError("This node uses a separate local or settings action")
         if self._hidden(button) and not (button.hold_affected and self._selection.hold is True):
-            raise ValueError("This control is hidden in the selected app state")
+            raise ValueError("This control is not available right now")
         if long and button.hold_affected and self._selection.hold is True:
             raise ValueError("Choose the separate save button in Hold mode")
         if button.excluded_long if long else button.excluded_short:
@@ -595,7 +595,7 @@ class RichmatClassicController(BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not self.controller_button_available(control) or not 1 <= duration_ms <= 60000:
-            raise ValueError("Choose an available held control and duration of 1 to 60000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -670,7 +670,7 @@ class RichmatClassicController(BedController):
         elif kind == "head_foot" and value in ("head", "foot"):
             self._selection = replace(self._selection, head=value == "head")
         else:
-            raise ValueError("Selection is unavailable on this app layout")
+            raise ValueError("This bed model does not offer that choice")
         self._publish()
 
     @property
@@ -708,10 +708,10 @@ class RichmatClassicController(BedController):
         feature = "alarm" if op in ("alarm", "cancel_alarm") else "light" if op in ("rgb", "lamp_slider", "lamp_save") else "aroma" if op == "aroma" else None
         if feature and feature not in self._receive.menu:
             if feature != "alarm" or not any(c.status == 7 for c in self._controls):
-                raise ValueError("The app's capability/menu gate has not enabled this feature")
+                raise ValueError("The bed has not reported that it offers this. Reconnect it and try again")
         if op == "alarm":
             if request.action not in self._alarm_actions() or request.when is not None and (request.when.second or request.when.microsecond):
-                raise ValueError("Choose one selected-layout alarm action and a time with minute precision")
+                raise ValueError("Choose an alarm action this bed model offers and an alarm time")
         elif op == "rgb":
             if request.color is None or len(request.color) != 3 or any(not 0 <= v <= 255 for v in request.color):
                 raise ValueError("Choose an RGB color")
@@ -723,16 +723,16 @@ class RichmatClassicController(BedController):
                 raise ValueError("Aroma times are 1 to 60 minutes, 1 to 60 minutes, and 1 to 12 hours")
         elif op == "massage_popup":
             if request.popup not in ("15", "30", "45", "toggle") or not any(c.tag == "65" for c in self._controls):
-                raise ValueError("Choose a timer offered by this layout’s massage popup")
+                raise ValueError("Choose a massage timer this bed model offers")
         elif op == "massage_timer":
             if request.progress is None:
-                raise ValueError("Choose the massage timer slider value")
+                raise ValueError("Choose a massage timer value")
             massage_timer(self.layout, request.progress)
         elif op.startswith("desk_"):
             if self.layout not in ("FWRM", "WFRM"):
                 raise ValueError("The desk action requires an exact desk layout")
             if op in ("desk_target", "desk_unit", "desk_recall") and not self._receive.modern_controls:
-                raise ValueError("The app's old-desk response has hidden this control")
+                raise ValueError("This desk does not offer that control")
             if op == "desk_reset" and not self._receive.error_confirmation_pending:
                 raise ValueError("The desk has no reported error awaiting confirmation")
             if op == "desk_target" and (request.height is None or self._receive.minimum is None or self._receive.maximum is None):
@@ -740,13 +740,13 @@ class RichmatClassicController(BedController):
             if op == "desk_target":
                 assert request.height is not None and self._receive.minimum is not None and self._receive.maximum is not None
                 if not math.isfinite(request.height) or not self._receive.minimum <= request.height <= self._receive.maximum or not self._receive.modern_controls:
-                    raise ValueError("Choose a target within the current app ruler range")
+                    raise ValueError("Choose a height within the desk's range")
             if op == "desk_unit" and request.unit not in ("cm", "inches"):
                 raise ValueError("Choose cm or inches")
             if op == "desk_recall" and request.slot not in (1, 2, 3, 4):
                 raise ValueError("Choose desk button 1 through 4")
             if op == "desk_recall" and not 1 <= request.duration_ms <= 60000:
-                raise ValueError("Desk button duration must be between 1 and 60000 ms")
+                raise ValueError("Choose a duration of up to 60 seconds")
 
     async def async_execute_richmat_classic_request(self, request: Request) -> None:
         self.validate_richmat_classic_request(request)
@@ -825,25 +825,25 @@ class RichmatClassicController(BedController):
         op = request.operation
         feature = "alarm" if op in ("alarm", "cancel_alarm") else "light" if op in ("rgb", "lamp_timer") else None
         if live and feature and (self._session is None or feature not in self._receive.menu):
-            raise ValueError("The current bed session has not reported this capability")
+            raise ValueError("The bed has not reported that it offers this. Reconnect it and try again")
         if op == "alarm":
             rise.alarm_action(self._alarm_actions(), request.actions)
             if request.when and (request.when.second or request.when.microsecond):
                 raise ValueError("Choose a time with minute precision")
         elif op == "rgb":
             if request.color is None or len(request.color) != 3 or any(type(v) is not int or not 0 <= v <= 255 for v in request.color):
-                raise ValueError("Choose three RGB bytes")
+                raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
         elif op == "lamp_timer":
             if request.seconds is None:
                 raise ValueError("Choose the lamp timer in seconds")
             rise.lamp_timer(request.seconds, save=request.timer_save)
         elif op == "massage_timer":
             if request.progress is None:
-                raise ValueError("Choose a timer slider index")
+                raise ValueError("Choose a timer value")
             massage_timer(self.layout, request.progress)
         elif op == "massage_popup":
             if request.popup not in ("15", "30", "45", "toggle") or not any(c.tag == "65" for c in self._controls):
-                raise ValueError("This layout does not offer the selected timer popup")
+                raise ValueError("This bed model does not offer that timer")
         elif op not in ("query", "cancel_alarm"):
             raise ValueError("Unknown bed utility")
 

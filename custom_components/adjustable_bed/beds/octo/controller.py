@@ -1560,7 +1560,7 @@ class OctoController(BedController, OctoPacketCodec):
             isinstance(duration_ms, bool)
             or not 100 <= duration_ms <= OCTO_CARD_HOLD_MAX_SECONDS * 1000
         ):
-            raise ValueError("OCTO hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     def _held_session_is_current(self, client: BleakClient | None, session_generation: int) -> bool:
         """Keep an admitted PIN hold bound to its original live controller link."""

@@ -397,26 +397,26 @@ class ResourceBedController(RichmatClassicController):
             # Metadata/direct navigation is independent of the menu reply.
         elif op in ("rgb", "lamp_timeout"):
             if live and (self._session is None or not self._receive.light_capable):
-                raise ValueError("The current bed session has not reported LED support")
+                raise ValueError("The bed has not reported a light. Reconnect it and try again")
             if op == "rgb":
                 if (
                     request.color is None
                     or len(request.color) != 3
                     or any(type(v) is not int or not 0 <= v <= 255 for v in request.color)
                 ):
-                    raise ValueError("Choose three RGB bytes")
+                    raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
             elif request.seconds is None:
                 raise ValueError("Choose a light timeout in seconds")
             else:
                 p.lamp_timeout(request.seconds)
         elif op == "massage_timer":
             if self.layout != "D1RM" or request.progress is None:
-                raise ValueError("This layout has no massage timer slider")
+                raise ValueError("This bed model has no massage timer")
             massage_timer(self.layout, request.progress)
         elif op == "bed_command":
             if request.command not in p.BED_COMMANDS or not 1 <= request.duration_ms <= 60000:
                 raise ValueError(
-                    "Choose a verified app BED command and a duration of 1 to 60000 ms"
+                    "Choose a control this bed offers and a duration of up to 60 seconds"
                 )
         elif op not in ("query", "cancel_alarm"):
             raise ValueError("Unknown bed action")

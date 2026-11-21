@@ -209,7 +209,7 @@ class SymphonyController(KeesonController):
             or not 1 <= color <= 7
             or not 20 <= brightness <= 80
         ):
-            raise ValueError("Choose a SoundWave light product, color 1..7 and brightness 20..80")
+            raise ValueError("Choose a color from 1 to 7 and a brightness from 20 to 80. Only SoundWave bed models have this light")
 
     def _roles(self) -> None:
         client = self.client
@@ -320,7 +320,7 @@ class SymphonyController(KeesonController):
             or isinstance(duration_ms, bool)
             or not 100 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a product motor and a duration of 100..30000 ms")
+            raise ValueError("Choose a motor this bed offers and a duration from 0.1 to 30 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -499,7 +499,7 @@ class SymphonyController(KeesonController):
             return (frame,)
         if self.app.product.page == "split_p3" and len(sides) > 1 and enabled:
             raise ValueError(
-                "Split P3 sides cannot share the same enabled alarm time; select one side"
+                "The two sides cannot have the same alarm time. Set the alarm on one side"
             )
         return frames
 
@@ -561,7 +561,7 @@ class SymphonyController(KeesonController):
     async def set_privacy(self, enabled: bool) -> None:
         if self.app.selector not in (2, 9):
             raise ValueError(
-                "The app's Privacy Settings are available only for Sleep Smart selectors 2 and 9"
+                "This bed model has no privacy settings"
             )
         frame = (
             okin_soundwave.record(7, 2, (int(enabled),))

@@ -368,6 +368,6 @@ class BedJetPowerLayerController(ProfileExecution[PowerLayerProfile], BedControl
     async def program_memory(self, memory_num: int) -> None:
         """Reject programming - the frame exposes no save command."""
         raise ValueError(
-            "The PowerLayer has no BLE command to save a memory slot; "
-            "hold M1, M2 or M3 on the physical remote instead"
+            "This bed cannot save memory positions from Home Assistant. "
+            "Hold M1, M2 or M3 on the remote instead"
         )

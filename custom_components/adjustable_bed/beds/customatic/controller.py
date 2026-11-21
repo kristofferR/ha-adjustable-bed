@@ -353,7 +353,7 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
 
     async def move_lumbar_stop(self) -> None:
         if "lumbar" not in self.simultaneous_movement_axes:
-            raise ValueError("This app profile has no lumbar control")
+            raise ValueError("This bed has no lumbar control")
         await self.stop_all()
 
     async def stop_all(self) -> None:
@@ -413,10 +413,10 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
         return False
 
     async def preset_memory(self, memory_num: int) -> None:
-        raise ValueError("Customatic app profiles have no numbered recall slots")
+        raise ValueError("This bed has no numbered memory positions. Use its preset buttons instead")
 
     async def program_memory(self, memory_num: int) -> None:
-        raise ValueError("Use the app-labelled Customatic save controls")
+        raise ValueError("Use the bed's save buttons to save a position")
 
     @property
     def supports_lights(self) -> bool:

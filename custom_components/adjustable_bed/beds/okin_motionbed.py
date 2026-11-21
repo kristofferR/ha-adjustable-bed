@@ -197,7 +197,7 @@ class OkinMotionBedController(ProfileExecution[OkinNFrameProfile], OkinNFrameCon
             or not isinstance(duration_ms, int)
             or not 100 <= duration_ms <= 60000
         ):
-            raise ValueError("Hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)

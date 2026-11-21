@@ -333,7 +333,7 @@ async def test_idle_disconnected_hold_reconnects_then_checks_current_status(
     ):
         if lock_mask:
             # The live check rejects it the way preflight would have.
-            with pytest.raises(ServiceValidationError, match="disabled by status lock bit 0"):
+            with pytest.raises(ServiceValidationError, match="locked on the bed"):
                 await hass.services.async_call(DOMAIN, "hold_control", call_data, blocking=True)
         else:
             await hass.services.async_call(DOMAIN, "hold_control", call_data, blocking=True)
@@ -763,7 +763,7 @@ def test_lock_mask_gates_only_app_actions(mask: int, disabled: set[str]) -> None
             key not in disabled
         )
         if key in disabled:
-            with pytest.raises(ValueError, match="disabled by status lock bit"):
+            with pytest.raises(ValueError, match="locked on the bed"):
                 controller.validate_hold_control(key, 100)
         else:
             controller.validate_hold_control(key, 100)

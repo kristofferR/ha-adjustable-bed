@@ -330,7 +330,7 @@ async def test_raw_controls_name_the_effective_operand_and_reject_stale_buttons(
     assert framed.key not in c.held_control_options
     with pytest.raises(ValueError, match="changed"):
         await framed.press_fn(c)
-    with pytest.raises(ValueError, match="available held"):
+    with pytest.raises(ValueError, match="control this bed offers"):
         await c.hold_control(framed.key, 150)
     combined = next(s for s in c.controller_button_specs if s.key == "richmat_classic_15_raw")
     assert combined.name == "Motor 1+2 up"
