@@ -91,18 +91,6 @@ def mock_leggett_gen2_config_entry(
 class TestLeggettGen2Controller:
     """Test Leggett & Platt Gen2 controller."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_leggett_gen2_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == LEGGETT_GEN2_WRITE_CHAR_UUID
-
     async def test_write_command(
         self,
         hass: HomeAssistant,

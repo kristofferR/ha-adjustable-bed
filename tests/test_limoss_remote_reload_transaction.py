@@ -12,12 +12,19 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import const, services
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.beds.limoss import remote_services as limoss_remote_services
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
 from custom_components.adjustable_bed.beds.limoss.remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.codec import limoss as codec
 from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
 from tests.test_limoss_remote_entity_reloads import CAPS
+
+
+@pytest.fixture(autouse=True)
+def _fast_tick(monkeypatch):
+    """Pace the remote's frames at 5 ms instead of the app's tick; these tests check reloads."""
+    monkeypatch.setattr(LimossRemoteController, "_tick", property(lambda _self: 0.005))
 
 
 @asynccontextmanager

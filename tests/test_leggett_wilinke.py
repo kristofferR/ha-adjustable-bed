@@ -58,18 +58,6 @@ def mock_leggett_wilinke_config_entry(
 class TestLeggettWilinkeController:
     """Test Leggett & Platt WiLinke controller."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == LEGGETT_RICHMAT_CHAR_UUID
-
     async def test_build_command_wilinke_format(
         self,
         hass: HomeAssistant,

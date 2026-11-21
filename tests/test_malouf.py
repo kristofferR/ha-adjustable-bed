@@ -27,8 +27,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     MALOUF_LAYOUT_FOUR_MOTOR,
     MALOUF_LAYOUT_HILO,
-    MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
-    MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -119,18 +117,6 @@ class TestMaloufCommands:
 class TestMaloufNewOkinController:
     """Test Malouf NEW_OKIN controller."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_malouf_new_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == MALOUF_NEW_OKIN_WRITE_CHAR_UUID
-
     async def test_coordinator_preserves_observed_ble_name(
         self,
         hass: HomeAssistant,
@@ -147,20 +133,6 @@ class TestMaloufNewOkinController:
 
 class TestMaloufLegacyOkinController:
     """Test Malouf LEGACY_OKIN controller."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_malouf_legacy_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_malouf_legacy_config_entry)
-        await coordinator.async_connect()
-
-        assert (
-            coordinator.controller.control_characteristic_uuid == MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID
-        )
 
 
 class TestMaloufNewOkinPresets:

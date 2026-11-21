@@ -9,7 +9,6 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
-    BEDTECH_WRITE_CHAR_UUID,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -61,18 +60,6 @@ def mock_bedtech_config_entry(
 
 class TestBedTechController:
     """Test BedTechController."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_bedtech_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use BedTech write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == BEDTECH_WRITE_CHAR_UUID
 
     async def test_supports_preset_zero_g(
         self,

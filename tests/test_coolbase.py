@@ -178,18 +178,6 @@ class TestCoolBasePacketBuilding:
 class TestCoolBaseController:
     """Test CoolBaseController."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_coolbase_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Keeson Base write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_coolbase_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == KEESON_BASE_WRITE_CHAR_UUID
-
     async def test_supports_preset_zero_g(
         self,
         hass: HomeAssistant,

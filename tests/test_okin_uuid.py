@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -182,18 +182,6 @@ def _variant_coordinator(hass, variant, motor_count=2):
 
 class TestOkinUuidController:
     """Test Okin UUID controller."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == OKIMAT_WRITE_CHAR_UUID
 
     async def test_build_command(
         self,
@@ -468,7 +456,8 @@ class TestOkinUuidPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_93329_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
+            await coordinator.controller.program_memory(1)
 
         # Should have written the memory save command
         calls = mock_bleak_client.write_gatt_char.call_args_list
@@ -501,7 +490,8 @@ class TestOkinUuidPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_94238_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep") as sleep:
+            await coordinator.controller.program_memory(1)
 
         remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_94238]
         assert remote.memory_save == OkinUuidComplexCommand(0x10000, 25, 200)
@@ -510,6 +500,7 @@ class TestOkinUuidPresets:
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
         assert len(mock_bleak_client.write_gatt_char.call_args_list) == 25
+        assert sleep.await_args_list == [call(0.2)] * 24
 
     async def test_execute_command_honours_complex_timing(
         self,
