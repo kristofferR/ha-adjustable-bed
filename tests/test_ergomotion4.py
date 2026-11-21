@@ -235,7 +235,7 @@ async def test_side_state_is_not_published_as_both_sides():
     frame = bytearray(19)
     frame[0], frame[14], frame[16] = 241, 3, 2
     ctrl._parse_notification(bytes(frame))
-    assert coord.controller_state["right_app_timer_status"] == 3
+    assert coord.controller_state["right_app_timer_status"] == 30
     assert coord.controller_state["left_app_timer_status"] is None
     assert coord.controller_state["app_timer_status"] is None
     with ctrl.side_scope("right"):

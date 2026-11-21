@@ -23,8 +23,9 @@ from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
-from ..keeson.layout_app import APP_TIMER_STATUS, AppController
+from ..keeson.layout_app import APP_TIMER_STATUS, AppController, app_timer_minutes
 from .profiles import ACTIONS, PRODUCTS, Action, Product, Step
 
 if TYPE_CHECKING:
@@ -639,12 +640,10 @@ class Ergomotion4Controller(AppController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
                 "app_timer_status",
                 "app_timer_status",
                 _side_key(APP_TIMER_STATUS, self.command_side),
-                "mdi:timer-outline",
-                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE_TIMER,
             ),
         )
@@ -667,8 +666,8 @@ class Ergomotion4Controller(AppController):
         updates: list[StateUpdate] = []
         for side in ("both", "left", "right"):
             parsed = parse_status(data, self.product.style, dynamic=self._dynamic, side=side)
-            if "timer" in parsed:
-                updates.append(_side_key(APP_TIMER_STATUS, side)(parsed["timer"]))
+            if "timer" in parsed and (minutes := app_timer_minutes(parsed["timer"])) is not None:
+                updates.append(_side_key(APP_TIMER_STATUS, side)(minutes))
             if "light" in parsed:
                 updates.append(_side_key(LIGHT, side)(parsed["light"]))
                 updates.append(_side_key(UNDER_BED_LIGHTS_ON, side)(parsed["light"]))

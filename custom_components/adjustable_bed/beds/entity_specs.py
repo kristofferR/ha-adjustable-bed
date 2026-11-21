@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.components.sensor import SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import EntityCategory
 
 from ..card import CARD_HIDDEN, CARD_UTILITY, CardPlacement
@@ -251,6 +251,8 @@ class ControllerStateSensorSpec:
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
     state_class: SensorStateClass | None = field(default=None, kw_only=True)
     entity_category: EntityCategory | None = field(default=EntityCategory.DIAGNOSTIC, kw_only=True)
+    # A timestamp reading publishes an aware datetime.
+    device_class: SensorDeviceClass | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -363,6 +365,33 @@ def sleep_flag_binary_sensor_spec(
         card=CARD_UTILITY,
         device_class=_SLEEP_FLAGS[kind],
         entity_category=None,
+    )
+
+
+def massage_timer_sensor_spec(
+    key: str,
+    translation_key: str,
+    state_key: AnyStateKey,
+    *,
+    card: CardPlacement = CARD_HIDDEN,
+    attribute_keys: tuple[AnyStateKey, ...] = (),
+) -> ControllerStateSensorSpec:
+    """A massage timer as a duration in minutes on the dashboard.
+
+    Publish minutes, never an index: a bed whose index has no proven duration
+    keeps its own spec, named as a step.
+    """
+    return ControllerStateSensorSpec(
+        key,
+        translation_key,
+        state_key,
+        "mdi:timer-outline",
+        native_unit_of_measurement="min",
+        attribute_keys=attribute_keys,
+        entity_registry_enabled_default=True,
+        card=card,
+        entity_category=None,
+        device_class=SensorDeviceClass.DURATION,
     )
 
 

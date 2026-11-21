@@ -587,6 +587,14 @@ async def test_due_callback_has_real_bed_effect_and_stale_fences(
         )
         if invalidate == "none":
             assert c._massage_end == (now + timedelta(minutes=10)).isoformat()
+            # The reading is a timestamp, so Home Assistant shows it in local time.
+            published = [
+                update.value
+                for call in coordinator.handle_controller_state_updates.call_args_list
+                for update in call.args
+                if update.key == apex.MASSAGE_END
+            ]
+            assert published[-1] == now + timedelta(minutes=10)
         c.on_disconnect()
 
 
@@ -844,3 +852,21 @@ async def test_set_alarm_reaches_every_wake_up_program_number(hass, bed):
     for slot in (0, 99):
         await call_set_alarm(hass, c, {"enabled": False, "slot": slot})
     assert [call.args[0] for call in c.delete_wakeup.await_args_list] == [0, 99]
+
+
+async def test_massage_end_reaches_the_sensor_platform_as_a_timestamp(bed):
+    from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+
+    c, _, _ = bed
+    await c.async_discover_capabilities()
+    spec = next(s for s in c.controller_state_sensor_specs if s.state_key == apex.MASSAGE_END)
+    end = datetime(2026, 11, 12, 12, 10, tzinfo=UTC)
+    runtime = SimpleNamespace(
+        controller_state={apex.MASSAGE_END: end},
+        entity_unique_id=lambda key: key,
+        device_info={},
+        entity_side=None,
+    )
+    sensor = AdjustableBedControllerStateSensor(runtime, spec)
+    assert sensor.device_class == "timestamp"
+    assert sensor.native_value == end

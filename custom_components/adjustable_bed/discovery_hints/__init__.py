@@ -74,11 +74,26 @@ def _identity(matcher: Matcher) -> tuple[int, str, int | str, str]:
     return _KIND_ORDER.index(kind), kind, value, json.dumps(rest, sort_keys=True)
 
 
+def _covers(wider: Matcher, matcher: Matcher) -> bool:
+    """Whether ``wider`` is a shorter name prefix admitting every device ``matcher`` admits."""
+    glob, name = wider.get("local_name"), matcher.get("local_name")
+    if not isinstance(glob, str) or not isinstance(name, str) or glob == name:
+        return False
+    prefix = glob.removesuffix("*")
+    # Home Assistant's gate requires a connectable device unless told otherwise.
+    return (
+        "*" not in prefix
+        and name.startswith(prefix)
+        and (not wider.get("connectable", True) or bool(matcher.get("connectable", True)))
+    )
+
+
 def manifest_matchers() -> list[Matcher]:
     """The manifest's ``bluetooth`` list, deduplicated in a stable order.
 
     Families may declare the same signal. They must then agree on
     ``connectable``, so the list never holds two spellings of one matcher.
+    A name a shorter declared prefix already admits gets no matcher of its own.
     """
     merged: dict[tuple[int, str, int | str, str], Matcher] = {}
     for hint in _ALL_HINTS:
@@ -87,7 +102,12 @@ def manifest_matchers() -> list[Matcher]:
             known = merged.setdefault(identity, matcher)
             if known != matcher:
                 raise ValueError(f"conflicting discovery hints: {known} and {matcher}")
-    return [merged[identity] for identity in sorted(merged)]
+    prefixes = [matcher for matcher in merged.values() if "local_name" in matcher]
+    return [
+        merged[identity]
+        for identity in sorted(merged)
+        if not any(_covers(wider, merged[identity]) for wider in prefixes)
+    ]
 
 
 @dataclass(frozen=True, slots=True)

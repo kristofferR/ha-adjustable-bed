@@ -529,7 +529,8 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
             native_max_value=spec.native_max_value,
             native_step=spec.native_step,
             native_unit_of_measurement=spec.native_unit_of_measurement,
-            mode=NumberMode.SLIDER,
+            # A slider for a usable range; a box past 256 steps (a 16-bit height).
+            mode=NumberMode.AUTO,
             entity_category=spec.entity_category,
             entity_registry_enabled_default=spec.entity_registry_enabled_default,
         )

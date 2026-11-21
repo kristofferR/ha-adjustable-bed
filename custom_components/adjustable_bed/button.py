@@ -48,6 +48,7 @@ from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace, hold_leas
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
 from .entity_sweep import PlatformEntities, records_entities
+from .errors import BedNotConnectedError
 from .labels import display_label
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -1282,53 +1283,33 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
 
         # Handle coordinator-level actions (connect/disconnect/stop)
         if self.entity_description.is_coordinator_action:
-            try:
-                if self.entity_description.key == "disconnect":
-                    await self._coordinator.async_disconnect(serialize_with_commands=True)
-                    _LOGGER.info("Disconnected from bed - physical remote should now work")
-                elif self.entity_description.key == "connect":
-                    if not await self._coordinator.async_ensure_connected():
-                        raise RuntimeError(f"Failed to connect to {self._coordinator.name}")
-                    _LOGGER.info("Connected to bed")
-            except Exception:
-                _LOGGER.exception(
-                    "Failed to execute coordinator action %s",
-                    self.entity_description.key,
-                )
-                raise
+            if self.entity_description.key == "disconnect":
+                await self._coordinator.async_disconnect(serialize_with_commands=True)
+                _LOGGER.info("Disconnected from bed - physical remote should now work")
+            elif self.entity_description.key == "connect":
+                if not await self._coordinator.async_ensure_connected():
+                    raise BedNotConnectedError
+                _LOGGER.info("Connected to bed")
             return
 
         # Stop button gets special handling - cancels current command immediately
         if self.entity_description.key == "stop":
-            try:
-                await self._coordinator.async_stop_command()
-            except Exception:
-                _LOGGER.exception("Failed to execute stop command")
-                raise
+            await self._coordinator.async_stop_command()
             return
 
-        try:
-            _LOGGER.debug("Executing button action: %s", self.entity_description.key)
-            if self.entity_description.press_fn is None:
-                _LOGGER.warning(
-                    "No press function defined for button: %s", self.entity_description.key
-                )
-                return
-            press_fn = self.entity_description.press_fn
-            if _moves_untimed(self.entity_description.key):
-                press_fn = invalidate_on_command(self.hass, press_fn)
-            await self._coordinator.async_execute_controller_command(
-                press_fn,
-                cancel_running=self.entity_description.cancel_movement,
-                resource=_button_resource(self.entity_description.key),
-            )
-            _LOGGER.debug("Button action completed: %s", self.entity_description.key)
-        except Exception:
-            _LOGGER.exception(
-                "Failed to execute button action %s",
-                self.entity_description.key,
-            )
-            raise
+        _LOGGER.debug("Executing button action: %s", self.entity_description.key)
+        if self.entity_description.press_fn is None:
+            _LOGGER.warning("No press function defined for button: %s", self.entity_description.key)
+            return
+        press_fn = self.entity_description.press_fn
+        if _moves_untimed(self.entity_description.key):
+            press_fn = invalidate_on_command(self.hass, press_fn)
+        await self._coordinator.async_execute_controller_command(
+            press_fn,
+            cancel_running=self.entity_description.cancel_movement,
+            resource=_button_resource(self.entity_description.key),
+        )
+        _LOGGER.debug("Button action completed: %s", self.entity_description.key)
 
 
 class ControllerActionButton(AdjustableBedEntity, ButtonEntity):

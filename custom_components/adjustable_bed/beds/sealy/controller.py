@@ -36,6 +36,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..okin_7byte import Okin7ByteController
 
@@ -112,6 +113,11 @@ class SealyController(Okin7ByteController):
     def supports_massage(self) -> bool:
         # Element's local voice-result dispatcher also reaches these commands.
         return True
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        # The Massage switch already sends the app's own on and off commands.
+        return False
 
     @property
     def supports_head_massage_toggle_control(self) -> bool:
@@ -230,15 +236,11 @@ class SealyController(Okin7ByteController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
                 "sealy_massage_timer",
                 "sealy_massage_timer",
                 MASSAGE_TIMER_MINUTES,
-                "mdi:timer",
-                native_unit_of_measurement="min",
                 card=CARD_MASSAGE_TIMER,
-                entity_registry_enabled_default=True,
-                entity_category=None,
             ),
             *(
                 ControllerStateSensorSpec(

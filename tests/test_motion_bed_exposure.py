@@ -115,3 +115,19 @@ async def test_configure_stores_auto_as_no_retained_layout(hass, saved):
     assert result["type"] == "create_entry", result
     assert CONF_MOTION_BED_PRESET not in entry.data
     assert CONF_MOTION_BED_MOVEMENT not in entry.data
+
+
+async def test_air_massage_timer_reads_in_minutes(hass):
+    """The bed's air timer 0, 1 and 2 are the app's 10, 20 and 30 minutes."""
+    from custom_components.adjustable_bed.beds.motion_bed.controller import AIR_TIMER_MINUTES
+
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: "TL-Q"})
+    coord = AdjustableBedCoordinator(hass, entry)
+    controller = MotionBedController(coord, selection=select_motion_bed("TL-Q"))
+    coord._controller = controller
+    for raw, minutes in ((0, 10), (2, 30), (None, None)):
+        controller._state = replace(controller._state, air_timer=raw)
+        controller._publish()
+        assert coord.controller_state.get(AIR_TIMER_MINUTES) == minutes
+    spec = next(s for s in controller.controller_state_sensor_specs if s.key == "motion_bed_air_timer")
+    assert (spec.state_key, spec.native_unit_of_measurement) == (AIR_TIMER_MINUTES, "min")
