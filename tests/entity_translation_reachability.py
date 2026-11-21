@@ -202,6 +202,17 @@ async def factory_controllers() -> list[BedController]:
     from custom_components.adjustable_bed.profiles.cheerssleep import MODELS as CHEERSSLEEP_MODELS
     for model in CHEERSSLEEP_MODELS.values():
         controllers.append(CheersSleepController(_FactoryCoordinator(), model))
+    # Every GM Control product and RMControl product lists its own app catalog.
+    from custom_components.adjustable_bed.beds.gmmotor.controller import GmmotorController
+    from custom_components.adjustable_bed.beds.gmmotor.profiles import profile_choices
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
+    from custom_components.adjustable_bed.beds.rmcontrol.profiles import RICHMAT_PRODUCT_CODES
+
+    for product in profile_choices():
+        controllers.append(GmmotorController(_FactoryCoordinator(), profile=product))
+    for product in RICHMAT_PRODUCT_CODES:
+        if product not in ("FWRM", "WFRM"):  # The desk protocol is its own controller.
+            controllers.append(RmcontrolController(_FactoryCoordinator(), product))
     # A Sleep Number MCR foundation reports its per-side motors once connected.
     controller = await _create_controller_for_bed_type(BED_TYPE_SLEEP_NUMBER_MCR)
     assert isinstance(controller, SleepNumberMcrController)

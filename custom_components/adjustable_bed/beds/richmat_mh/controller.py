@@ -44,6 +44,7 @@ from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
 from ...labels import display_label
 from ...profiles.richmat import RICHMAT_MH, RichmatProfile
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
@@ -398,6 +399,12 @@ _GROUP_CONTEXT: Final = {
 }
 
 
+# The massage timers of this app vocabulary (its GGRM catalog names them), by
+# their minutes. A layout's control is one only where its own label agrees.
+_MASSAGE_TIMERS: Final = {0x5F: 10, 0x63: 20, 0x61: 30}
+_MINUTES: Final = re.compile(r"(\d+)\s*min", re.IGNORECASE)
+
+
 _BARE_LABELS: Final = frozenset(
     {"off", "high", "low", "medium", "mode", "next", "previous", "switch", "on/off",
      "intensity", "volume", "pause", "pause/start", "start stop", "volume up", "volume down"}
@@ -741,9 +748,49 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             None,
         )
 
+    @property
+    def _massage_timer_codes(self) -> dict[int, int]:
+        """The layout's fixed massage timer controls, by their minutes.
+
+        They are one timer select; a layout with a single duration keeps its button.
+        """
+        timers: dict[int, int] = {}
+        for c in self._controls():
+            minutes = _MINUTES.search(_clean_label(c.label)) if c.area == "massage" else None
+            if minutes and _MASSAGE_TIMERS.get(c.code) == int(minutes[1]):
+                timers.setdefault(int(minutes[1]), c.code)
+        return timers if len(timers) > 1 else {}
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_codes)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows the layout's massage timers.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self._massage_timer_codes)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No timer control turns the timer off.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        code = self._massage_timer_codes.get(minutes)
+        if code is None:
+            raise ValueError("Choose a massage timer this layout offers")
+        # The bed reports no timer.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.tap(code)
+
     def _taps(self) -> tuple[Tap, ...]:
         """Every remaining app control, one button per opcode."""
-        used: set[int] = set()
+        # The massage timer select sends the timer controls.
+        used: set[int] = set(self._massage_timer_codes.values())
         for recall, save in self._memory_slots().values():
             used.add(recall.code)
             if save is not None:
