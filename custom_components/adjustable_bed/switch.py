@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -41,6 +41,9 @@ if TYPE_CHECKING:
     from .beds.octo.controller import OctoController
 
 _LOGGER = logging.getLogger(__name__)
+
+# Disconnects the integration did not make itself: the bed may have changed.
+_LINK_LOST_REASONS: Final = frozenset({None, "unexpected", "connect_failed"})
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -258,9 +261,16 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
 
     @callback
     def _handle_connection_state(self, connected: bool) -> None:
-        # Without a readback the bed may change while unwatched, so a dropped
-        # link makes the last command unknown rather than stale.
-        cleared = not connected and self._spec.state_key is None and self._commanded is not None
+        # Without a readback the bed may change while unwatched, so a link that
+        # dropped on its own makes the last command unknown rather than stale.
+        # The integration's own disconnects (idle, after a command, switching
+        # the side of a sequential pair) say nothing about the bed.
+        cleared = (
+            not connected
+            and self._spec.state_key is None
+            and self._commanded is not None
+            and self._coordinator.last_disconnect_reason in _LINK_LOST_REASONS
+        )
         if cleared:
             self._commanded = None
         if cleared or self._spec.available_fn is not None:
@@ -319,8 +329,7 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             if live is None:
                 raise invalid("option_unavailable")
             # Record it while the link that sent it is still up: a sequential
-            # pair releases the side before the command returns, and that
-            # release makes the value unknown again.
+            # pair releases the side before the command returns.
             def show(delivery: Delivery) -> None:
                 if delivery is not Delivery.NONE and self._spec.state_key is None:
                     # A value sent only in part is unknown.
