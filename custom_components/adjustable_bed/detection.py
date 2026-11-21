@@ -601,7 +601,12 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     # v5 names the RUF and Richmat apps like the other Richmat MH apps.
     **{
         bed_type: f"{name} app"
-        + {"AMERICANSTAR": " (Richmat)", "W.Silver Products": " (newer version)"}.get(name, "")
+        + {
+            "AMERICANSTAR": " (Richmat)",
+            "W.Silver Products": " (newer version)",
+            # Not the newer BedTech app, whose name has no space.
+            "Bed Tech": " (older app)",
+        }.get(name, "")
         for bed_type, name in (
             ("ruf_betten", "RUF | Betten (Motor 2)"),
             ("wsilver_products", "W.Silver Products"),
@@ -726,8 +731,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     ),
     BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt MlRM remote",
     # Brand-specific types
-    BED_TYPE_BEDTECH: "BedTech app",
-    BED_TYPE_COOLBASE: "Cool Base",
+    BED_TYPE_BEDTECH: "BedTech app (newer app)",
+    BED_TYPE_COOLBASE: "Cool Base app",
     BED_TYPE_ERGOMOTION: "Ergomotion remote",
     BED_TYPE_ERGOMOTION_4: "Ergomotion 4.0 app",
     BED_TYPE_JIECANG: "Glide and Comfort Motion remotes (Jiecang)",
@@ -765,11 +770,11 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LOGICDATA_APP: "MOTIONrelax and Sleep Smart apps (LOGICDATA)",
     BED_TYPE_LOGICDATA_AIR_PUMP: "Logicdata Sleep Smart air mattress pump",
     BED_TYPE_MALOUF_APP: "Malouf Base / Lucid Base apps",
-    BED_TYPE_SBI: "SBI/Q-Plus (Costco)",
+    BED_TYPE_SBI: "SBI/Q-Plus (Costco, without the Q-Plus app)",
     BED_TYPE_SCOTT_LIVING: "Scott Living",
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Fuzion (Climate 360, FlexFit)",
-    BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number BAM/MCR (older i8, 360 FlexFit 2)",
+    BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number older base (i8, 360 FlexFit 2)",
     BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite BOX15 receiver",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite BOX24 receiver",
@@ -818,6 +823,8 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
     **{(BED_TYPE_RICHMAT_CLASSIC_APPS, app): f"{label} app" for app, label in RICHMAT_CLASSIC_APPS.items()},
+    # The current L&P Adjustable Base app, told apart from its older version's row.
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "lp2"): "L&P Adjustable Base app (newer version)",
     **{(BED_TYPE_RICHMAT_APP_SLEEP, profile): f"Richmat app sleep sensor ({label})" for profile, label in RICHMAT_SLEEP_CHOICES.items()},
     **{(BED_TYPE_RICHMAT_APP, profile): f"Richmat app ({label})" for profile, label in RICHMAT_APP_PRODUCTS.items()},
     **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
@@ -898,14 +905,14 @@ def bed_type_label(bed_type: str | None) -> str:
     return _COMPATIBILITY_LABELS.get(bed_type, bed_type)
 
 
-# Each compatibility ID gets its own label, naming the route it runs, so a label
-# always maps back to exactly one saved ID.
+# Each compatibility ID, saved by an older version, gets its own label naming
+# the product, so a label always maps back to exactly one saved ID.
 _COMPATIBILITY_LABELS: Final[dict[str, str]] = {
-    "okimat": "Okimat (Okin UUID route, requires pairing)",
-    "dewertokin": "DewertOkin (Okin Handle route)",
-    "nectar": "Nectar (Okin 7-Byte route)",
-    "mattressfirm": "Mattress Firm 900 (Okin Nordic route)",
-    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt (route chosen by its saved variant)",
+    "okimat": "Okimat bed (older setup)",
+    "dewertokin": "DewertOkin bed (older setup)",
+    "nectar": "Nectar bed (older setup)",
+    "mattressfirm": "Mattress Firm 900 bed (older setup)",
+    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt bed (older setup)",
 }
 
 

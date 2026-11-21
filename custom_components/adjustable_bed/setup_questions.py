@@ -145,7 +145,6 @@ from .const import (
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_SOFA_ACU_NO,
-    CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
@@ -250,7 +249,6 @@ from .const import (
 )
 from .import_executor import async_import_modules
 from .profiles import jiecang as jiecang_profiles
-from .profiles import limoss as limoss_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
@@ -266,6 +264,7 @@ from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
+from .validators import MLINE_PROTOCOL_LABELS, SMART_SLEEP_CONTROLS
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -1622,10 +1621,6 @@ def _richmat_mh_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {CONF_PROTOCOL_VARIANT: f"richmat_mh_{problem}"} if problem else {}
 
 
-def _limoss_remote_themes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    return {theme: theme for theme in limoss_profiles.REMOTE_THEMES}
-
-
 def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .config_flow import _limoss_remote_errors as errors
 
@@ -1644,9 +1639,7 @@ def _mline_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
 
 
 def _mline_protocols(_data: Mapping[str, Any]) -> Mapping[str, str]:
-    return {"auto": "Use Bluetooth name and manufacturer data", "sleep": "Sleep",
-            "smart": "Smart", "smartsainuo": "Smart Sainuo", "okin": "Okin",
-            "unknown": "Unmatched-name fallback"}
+    return {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS}
 
 
 def _personal_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
@@ -1958,13 +1951,38 @@ def _app_layout_title(data: Mapping[str, Any]) -> str:
     return APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")
 
 
+# What each of the app's feature keys adds to an Other product, read from the
+# controls ``custom_product`` gives it. The fifth preset key adds no control.
+_ERGOMOTION4_FEATURES: Final = {
+    "k1": "Simple remote: head up and down",
+    "k2": "Simple remote: foot up and down",
+    "k3": "Simple remote: flat",
+    "o1": "Anti-snore preset",
+    "o2": "Memory preset",
+    "o3": "Relax preset",
+    "o4": "TV preset",
+    "o5": "Fifth preset (adds no control)",
+    "m1": "Massage timer",
+    "m2": "Massage stop, with the massage timer",
+    "m3": "Head massage levels, with foot massage levels",
+    "m4": "Foot massage levels, with head massage levels",
+    "m5": "Head massage",
+    "m6": "Foot massage",
+    "m7": "Head tilt, on a bed with a waist motor",
+    "m8": "Waist motor",
+    "m9": "Foot tilt, on a bed with a waist motor",
+    "m10": "Two head and two foot motors",
+}
+
+
 def _ergomotion4_keys(kind: Literal["model", "massage"]) -> Choices:
-    """The catalog's model or massage feature keys, for an Other product."""
+    """The catalog's model or massage feature keys, for an Other product, by what they add."""
 
     def choices(_data: Mapping[str, Any]) -> Mapping[Any, str]:
         from .beds.ergomotion4.controller import MASSAGE_KEYS, MODEL_KEYS
 
-        return {key: key for key in (MODEL_KEYS if kind == "model" else MASSAGE_KEYS)}
+        keys = MODEL_KEYS if kind == "model" else MASSAGE_KEYS
+        return {key: _ERGOMOTION4_FEATURES.get(key, key) for key in keys}
 
     return choices
 
@@ -2237,10 +2255,22 @@ def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {} if profile is not None and profile.key != "MattressControllerDrawerFragment" else {CONF_BLE_DEVICE_NAME: "suta_name"}
 
 
-def _cheerssleep_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+def _cheerssleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
     from .beds.cheerssleep.catalog import MODELS
-    # Several app screens share a model name; the key tells them apart.
-    return {str(key): f"{model.label} ({key})" for key, model in MODELS.items()}
+
+    # App entries that differ only in their key show once; a saved entry keeps
+    # its own. Entries that share a name but not their commands keep the key.
+    saved = str(data.get(CONF_PRODUCT_TYPE, ""))
+    by_model: dict[Any, str] = {}
+    for key, model in MODELS.items():
+        same = replace(model, key=0)
+        if same not in by_model or str(key) == saved:
+            by_model[same] = str(key)
+    names = [model.label for model in by_model]
+    return {
+        key: model.label if names.count(model.label) == 1 else f"{model.label} ({key})"
+        for model, key in by_model.items()
+    }
 
 
 def _cheerssleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
@@ -2336,7 +2366,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
         questions=(
-            Question(CONF_PROTOCOL_VARIANT, {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"}, "p1"),
+            Question(CONF_PROTOCOL_VARIANT, SMART_SLEEP_CONTROLS, "p1"),
             Question(CONF_PRODUCT_TYPE, _smart_sleep_models, "0", searchable=True),
         ),
         normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,
@@ -2743,8 +2773,9 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_SLEEP_NUMBER_MCR: _asking(
         BED_TYPE_SLEEP_NUMBER_MCR, questions=_angle_sensing(BED_TYPE_SLEEP_NUMBER_MCR)
     ),
-    # The Limoss Remote app's bed or chair, its local light and massage choices,
-    # reversals and artwork theme. The connected device supplies the key layout.
+    # The Limoss Remote app's bed or chair, its local light and massage choices
+    # and reversals. The connected device supplies the key layout. The app's
+    # artwork theme changes no control, so it is not asked; a saved one stays.
     BED_TYPE_LIMOSS_REMOTE: _asking(
         BED_TYPE_LIMOSS_REMOTE,
         owns={
@@ -2760,7 +2791,6 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_HAS_LIGHT, default=HAS_LIGHT_DEFAULTS[BED_TYPE_LIMOSS_REMOTE]),
             Question(CONF_HAS_MASSAGE, default=False),
             *(Question(key, default=False) for key in CONF_REVERSE_MOTORS),
-            Question(CONF_LIMOSS_REMOTE_THEME, _limoss_remote_themes, OPTIONAL),
         ),
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
@@ -3072,8 +3102,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_SLEEPTRACKER_UNIT, default=0, validator=_INT32, advanced=True),
             Question(
                 CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+                {0: "Left side", 1: "Right side", 2: "Whole bed", 3: "Other"},
                 default=0,
-                validator=vol.All(int, vol.Range(min=0, max=3)),
                 advanced=True,
             ),
             Question(CONF_SLEEPTRACKER_RESTRICTED, default=False, advanced=True),

@@ -36,9 +36,9 @@ async def app_question(hass):
     return result
 
 
-def app_rows(result) -> dict[str, str]:
-    """The app question's rows, label to choice."""
-    return result["data_schema"].schema[const.CONF_BED_TYPE].rows()
+def app_rows(result, field: str = const.CONF_BED_TYPE) -> dict[str, str]:
+    """A searchable question's rows, label to choice: the app question's by default."""
+    return result["data_schema"].schema[field].rows()
 
 
 async def test_the_start_screen_offers_the_app_first_routes(hass, enable_custom_integrations):
@@ -215,8 +215,18 @@ async def test_the_brand_list_names_families_and_their_apps(hass, enable_custom_
         const.BED_TYPE_SVANE,
         const.BED_TYPE_LINAK,
     } <= choices
-    # An app's own row stays in the app question's full list.
-    assert "keeson:heal_every_night" not in choices
+    # Every row of the bed-type list has its brand here, not a hand-kept subset.
+    assert {
+        const.BED_TYPE_SLEEP_NUMBER,
+        const.BED_TYPE_VIBRADORM,
+        "remacro",
+        "tempur_curve",
+        "sleeptracker",
+        "serta_mp_remote",
+    } <= choices
+    # An app its family's question offers is reached through the family row.
+    assert "richmat_classic_apps:acaa" not in choices
+    assert const.BED_TYPE_DIAGNOSTIC not in choices
     # Protocol-named routes are behind one plain-words Okin receiver row.
     from custom_components.adjustable_bed.detection import PROTOCOL_ROUTES
 
@@ -228,6 +238,20 @@ async def test_the_brand_list_names_families_and_their_apps(hass, enable_custom_
     assert list(rows)[-1] == _STRINGS["config"]["step"]["select_family"]["data"]["not_sure"]
 
 
+async def test_typed_text_that_matches_no_row_gets_one_short_error(
+    hass, enable_custom_integrations
+):
+    """The searchable list never answers free text with every row it has."""
+    from homeassistant.data_entry_flow import InvalidData
+
+    result = await app_question(hass)
+    with pytest.raises(InvalidData) as raised:
+        await hass.config_entries.flow.async_configure(
+            result["flow_id"], {const.CONF_BED_TYPE: "Tempur"}
+        )
+    assert raised.value.schema_errors == {const.CONF_BED_TYPE: "choice_not_listed"}
+
+
 async def test_not_sure_runs_diagnostics(hass, enable_custom_integrations):
     result = await brand_list(hass)
     with patch(PATCH_DISCOVERED, return_value=[]):
@@ -236,6 +260,23 @@ async def test_not_sure_runs_diagnostics(hass, enable_custom_integrations):
         )
     # With nothing in range, diagnostics asks for the address to browse.
     assert result["step_id"] == "diagnostic_manual"
+
+
+async def test_not_sure_offers_a_detected_devices_controls_first(
+    hass, enable_custom_integrations, mock_bluetooth_service_info
+):
+    """A device picked first and detected is not sent to diagnostics by "Not sure"."""
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": SOURCE_USER}
+    flow._discovery_info = mock_bluetooth_service_info
+    flow._app_after_device = "device"
+    result = await flow.async_step_select_family({const.CONF_BED_TYPE: "not_sure"})
+    assert result["type"] == "menu"
+    assert result["menu_options"] == ["not_sure_detected", "diagnostic"]
+    assert result["description_placeholders"]["detected"].startswith("Linak")
+    with patch.object(flow, "_async_start_new_bed", return_value={"type": "form"}) as start:
+        await flow.async_step_not_sure_detected()
+    start.assert_called_once_with(const.BED_TYPE_LINAK, None)
 
 
 async def test_a_brand_opens_its_familys_question(hass, enable_custom_integrations):
@@ -506,3 +547,29 @@ async def test_bedjet_powerlayer_from_the_app_question_finishes(hass, enable_cus
             )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_BEDJET_POWERLAYER
+
+
+async def test_the_device_list_puts_recognized_beds_first(
+    hass, enable_custom_integrations, mock_bluetooth_service_info,
+    mock_bluetooth_service_info_unknown,
+):
+    """Every nearby device is listed, but the recognized bed leads, named by its family."""
+    mock_bluetooth_service_info_unknown.name = "Aardvark speaker"
+    mock_bluetooth_service_info_unknown.connectable = False
+    devices = [mock_bluetooth_service_info_unknown, mock_bluetooth_service_info]
+    result = await start(hass, devices)
+    with patch(PATCH_DISCOVERED, return_value=devices):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_ADDRESS: "manual"}
+        )
+    assert result["step_id"] == "manual"
+    rows = app_rows(result, CONF_ADDRESS)
+    labels = list(rows)
+    assert labels[0].endswith(" · Linak")
+    assert labels[1] == "Aardvark speaker (11:22:33:44:55:66) (cannot connect)"
+    assert labels[-1] == _STRINGS["config"]["step"]["manual"]["data"]["manual_entry"]
+    # A row is submitted by its label and selects its device.
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_ADDRESS: labels[1]}
+    )
+    assert result["step_id"] == "select_app"

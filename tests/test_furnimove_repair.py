@@ -307,6 +307,19 @@ async def test_okimat_drive_on_cst_can_choose_a_captured_furnimove_handset(hass)
     assert not ir.async_get(hass).issues
 
 
+async def test_an_unlisted_handset_can_still_switch_to_okimat(hass):
+    """The repair dialog has no Back, so the handset list itself offers Okimat."""
+    entry = _cst(hass)
+    flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
+    flow.hass = hass
+    form = await flow.async_step_init({"route": "furnimove"})
+    config = form["data_schema"].schema[CONF_FURNIMOVE_REMOTE].config
+    assert config["options"][-1]["value"] == "okimat"
+    assert config["translation_key"] == "okimat_cst_route"
+    await flow.async_step_handset({CONF_FURNIMOVE_REMOTE: "okimat"})
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIMAT
+
+
 async def test_okimat_drive_on_cst_can_keep_cst_and_other_cst_entries_get_no_prompt(hass):
     entry = _cst(hass)
     before = dict(entry.data)
