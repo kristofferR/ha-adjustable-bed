@@ -10,7 +10,7 @@ from homeassistant.helpers import device_registry as dr
 
 from custom_components.adjustable_bed.command_scheduler import PreparedCommandInvalidated
 from custom_components.adjustable_bed.config_flow import (
-    _pairlink_settings_schema,
+    _async_pairlink_settings_schema,
     _validate_pairlink_option_values,
 )
 from custom_components.adjustable_bed.const import (
@@ -94,7 +94,7 @@ async def test_registered_comfort_cannot_cross_stop_during_reconnect(
 @pytest.mark.parametrize("stored,expected", [(None, ""), (0, "0"), (12345, "12345")])
 async def test_persisted_home_id_form_default_round_trips(hass, stored, expected):
     current = {CONF_PAIRLINK_HOME_ID: stored}
-    schema = _pairlink_settings_schema(hass, current)
+    schema = await _async_pairlink_settings_schema(hass, current)
     field = next(key for key in schema if key.schema == CONF_PAIRLINK_HOME_ID)
     assert isinstance(field, vol.Optional)
     default = field.default

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import socket
 from collections.abc import Callable, Mapping
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Protocol, cast
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -444,7 +446,7 @@ async def test_pairlink_option_flow_requires_current_local_source_and_exact_cred
 
     from custom_components.adjustable_bed import bluetooth_transport
     from custom_components.adjustable_bed.config_flow import (
-        _pairlink_settings_schema,
+        _async_pairlink_settings_schema,
         _validate_pairlink_option_values,
     )
 
@@ -466,8 +468,17 @@ async def test_pairlink_option_flow_requires_current_local_source_and_exact_cred
         lambda *_args, **_kwargs: SimpleNamespace(manufacturer_data=_manufacturer_data()),
     )
 
-    schema = _pairlink_settings_schema(hass, {})
+    schema = await _async_pairlink_settings_schema(hass, {})
     assert schema
+    # The role choices are translated, in the words their help text uses.
+    role = next(value for key, value in schema.items() if key.schema == CONF_PAIRLINK_ROLE)
+    assert role.config["translation_key"] == "pairlink_role"
+    strings = json.loads(
+        (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
+    )
+    help_text = strings["options"]["step"]["settings"]["data_description"][CONF_PAIRLINK_ROLE]
+    for option in role.config["options"]:
+        assert strings["selector"]["pairlink_role"]["options"][option] in help_text
     valid_values = {
         CONF_PAIRLINK_ROLE: PAIRLINK_ROLE_PERIPHERAL,
         CONF_PAIRLINK_HOST_SOURCE: _HOST_SOURCE,

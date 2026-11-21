@@ -7321,7 +7321,7 @@ def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
 _PAIRLINK_SETTINGS_MODULES: Final = ("beds.reverie.pairlink_profile", "beds.reverie.pairlink_runtime")
 
 
-def _pairlink_settings_schema(
+async def _async_pairlink_settings_schema(
     hass: HomeAssistant,
     current_data: Mapping[str, Any],
 ) -> dict[vol.Marker, Any]:
@@ -7342,8 +7342,11 @@ def _pairlink_settings_schema(
     if isinstance(current_source, str) and current_source and all(
         option["value"] != current_source for option in local_sources
     ):
+        inactive = await _async_translation(
+            hass, "options", "step.settings.data.pairlink_source_inactive", "not active now"
+        )
         local_sources.append(
-            {"value": current_source, "label": f"{current_source} (not currently active)"}
+            {"value": current_source, "label": f"{current_source} ({inactive})"}
         )
     source_selector: Any = (
         SelectSelector(
@@ -7356,11 +7359,12 @@ def _pairlink_settings_schema(
         vol.Optional(
             CONF_PAIRLINK_ROLE,
             default=current_data.get(CONF_PAIRLINK_ROLE, PAIRLINK_ROLE_CENTRAL),
-        ): vol.In(
-            {
-                PAIRLINK_ROLE_CENTRAL: "Selected-bed central connection",
-                PAIRLINK_ROLE_PERIPHERAL: "Join from this host adapter",
-            }
+        ): SelectSelector(
+            SelectSelectorConfig(
+                options=[PAIRLINK_ROLE_CENTRAL, PAIRLINK_ROLE_PERIPHERAL],
+                translation_key="pairlink_role",
+                mode=SelectSelectorMode.LIST,
+            )
         ),
         vol.Optional(
             CONF_PAIRLINK_HOST_SOURCE,
@@ -7705,7 +7709,7 @@ class AdjustableBedOptionsFlow(
         )
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
-            schema.update(_pairlink_settings_schema(self.hass, current))
+            schema.update(await _async_pairlink_settings_schema(self.hass, current))
         _hide_owned_generic_fields(schema, bed_type, variant)
         # This receiver's own profile questions; the pair's shared form cannot
         # ask them, because each side may run another profile.
@@ -8096,7 +8100,7 @@ class AdjustableBedOptionsFlow(
 
         if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
             await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
-            schema_dict.update(_pairlink_settings_schema(self.hass, current_data))
+            schema_dict.update(await _async_pairlink_settings_schema(self.hass, current_data))
 
         # An app's own fields may ask a generic field its route sets, so the
         # generic ones it owns wait until those fields are in.

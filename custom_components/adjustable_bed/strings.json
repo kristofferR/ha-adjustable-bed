@@ -909,6 +909,7 @@
           "pairlink_role": "Pairlink connection role",
           "pairlink_host_source": "Bluetooth adapter for Pairlink",
           "pairlink_home_id": "Pairlink home ID (optional)",
+          "pairlink_source_inactive": "not active now",
           "pairlink_password_text": "Pairlink password",
           "pairlink_password_hex": "Pairlink password as hex (optional)",
           "back_max_angle": "Maximum back angle (degrees)",
@@ -1003,8 +1004,8 @@
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
           "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
-          "pairlink_role": "Central keeps Home Assistant connected to this bed. Local peripheral makes this Home Assistant host join the Pairlink network itself.",
-          "pairlink_host_source": "The Bluetooth adapter on this Home Assistant host that joins the Pairlink network. Needed only for the local peripheral role; a Bluetooth proxy cannot do this.",
+          "pairlink_role": "**Connect to this bed** keeps Home Assistant connected to this bed. **Join the Pairlink network from this host** makes a Bluetooth adapter on this Home Assistant host join the bed's Pairlink network itself.",
+          "pairlink_host_source": "The Bluetooth adapter on this Home Assistant host that joins the Pairlink network. Needed only for **Join the Pairlink network from this host**; a Bluetooth proxy cannot do this.",
           "pairlink_home_id": "Leave blank to use the home ID the bed advertises, or 5566 if it advertises none. Otherwise enter the home ID as a whole number.",
           "pairlink_password_text": "The Pairlink network password, exactly four characters. The default is 1122.",
           "pairlink_password_hex": "Only if the password has characters you cannot type: enter it as eight hex digits. It applies only while the password above is 1122.",
@@ -12439,6 +12440,12 @@
         "light": "Toggle under-bed light",
         "motion_on": "Motion on",
         "motion_off": "Motion off"
+      }
+    },
+    "pairlink_role": {
+      "options": {
+        "central": "Connect to this bed",
+        "peripheral": "Join the Pairlink network from this host"
       }
     }
   }
