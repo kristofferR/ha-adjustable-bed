@@ -778,14 +778,14 @@ class PairedBedCombinedPositionNumber(RenamesInPlace, PlacedInCard, NumberEntity
         """
         max_angle = self.entity_description.max_angle
         position_key = self.entity_description.position_key
-        positions = [
-            child.position_data.get(position_key) for child in self._coordinator.children.values()
-        ]
-        if not positions or None in positions:
+        positions: list[float] = []
+        for child in self._coordinator.children.values():
+            if (position := child.position_data.get(position_key)) is None:
+                return None
+            positions.append(min(max_angle, max(0.0, float(position))))
+        if not positions:
             return None
-        return sum(min(max_angle, max(0.0, float(position))) for position in positions) / len(
-            positions
-        )
+        return sum(positions) / len(positions)
 
     async def async_set_native_value(self, value: float) -> None:
         """Seek both sides to the target position."""
