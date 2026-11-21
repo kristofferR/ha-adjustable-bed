@@ -368,6 +368,34 @@ def sleep_flag_binary_sensor_spec(
     )
 
 
+def massage_timer_sensor_spec(
+    key: str,
+    translation_key: str,
+    state_key: StateKey[int | None],
+    *,
+    unit: Literal["min", "s"] = "min",
+    card: CardPlacement = CARD_HIDDEN,
+    attribute_keys: tuple[AnyStateKey, ...] = (),
+) -> ControllerStateSensorSpec:
+    """A massage timer as a duration on the dashboard; 0 while no timer runs.
+
+    Publish minutes or seconds, never an index: a bed whose index has no proven
+    duration keeps its own spec, named as a step.
+    """
+    return ControllerStateSensorSpec(
+        key,
+        translation_key,
+        state_key,
+        "mdi:timer-outline",
+        native_unit_of_measurement=unit,
+        attribute_keys=attribute_keys,
+        entity_registry_enabled_default=True,
+        card=card,
+        entity_category=None,
+        device_class=SensorDeviceClass.DURATION,
+    )
+
+
 # Movement commands for the four standard position axes, so controllers can
 # build sliders without restating the lambdas.
 POSITION_AXIS_COMMANDS: Final[
