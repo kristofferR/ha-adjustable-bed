@@ -41,7 +41,6 @@ async def _execute(
     await _preflight_and_execute(
         _call_targets(call),
         RmcontrolController,
-        "RMControl configuration",
         command,
         supported=supported,
         validate=validate,

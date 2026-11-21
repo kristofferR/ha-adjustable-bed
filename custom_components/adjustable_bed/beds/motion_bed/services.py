@@ -145,7 +145,6 @@ async def _execute(call: ServiceCall, request: MotionBedWrite | None = None) -> 
     await _preflight_and_execute(
         _call_targets(call),
         MotionBedController,
-        "Motion Bed app controls",
         execute,
         validate=validate,
         cancel_running=True,

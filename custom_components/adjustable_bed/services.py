@@ -1358,7 +1358,13 @@ async def _timed_move_plan(
 
         if hold_control is not None:
             if hold_control not in controller.held_control_options:
-                raise invalid("action_rejected", reason=f"Motor '{motor}' declares unsupported held control '{hold_control}'")
+                # The bed declares a motor it cannot hold: it has no such timed move.
+                raise invalid(
+                    "invalid_motor_for_bed_type",
+                    motor=motor,
+                    device_name=coordinator.name,
+                    valid_motors=", ".join(sorted(valid_motors - {motor})),
+                )
             try:
                 controller.validate_hold_control(hold_control, duration_ms)
             except ValueError as err:
@@ -1819,7 +1825,6 @@ async def _preflight_each(
 async def _preflight_capability[T](
     targets: list[tuple[BedTarget, str]],
     interface: type[T],
-    label: str,
     supported: Callable[[T], bool] | None = None,
     validate: Callable[[T], None] | None = None,
 ) -> PreflightedSides:
@@ -1835,7 +1840,7 @@ async def _preflight_capability[T](
             raise invalid(
                 "feature_not_supported",
                 device_name=target.name,
-                feature=label,
+                feature="this action",
             )
         if validate is not None:
             validate(family)
@@ -1844,7 +1849,7 @@ async def _preflight_capability[T](
 
 
 def _family_command[T](
-    interface: type[T], label: str, command: Callable[[T], Awaitable[None]]
+    interface: type[T], command: Callable[[T], Awaitable[None]]
 ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
     """Adapt a family command to the scheduler; a ``ValueError`` is a validation error."""
 
@@ -1853,8 +1858,8 @@ def _family_command[T](
         if family is None:
             raise invalid(
                 "feature_not_supported",
-                device_name="This bed",
-                feature=label,
+                device_name=controller._coordinator.name,
+                feature="this action",
             )
         try:
             await command(family)
@@ -1867,7 +1872,6 @@ def _family_command[T](
 async def _preflight_and_execute[T](
     targets: list[tuple[BedTarget, str]],
     interface: type[T],
-    label: str,
     command: Callable[[T], Awaitable[None]],
     *,
     supported: Callable[[T], bool] | None = None,
@@ -1898,7 +1902,7 @@ async def _preflight_and_execute[T](
             else None
             for coordinator, side in targets
         ]
-    preflighted = await _preflight_capability(targets, interface, label, supported, validate)
+    preflighted = await _preflight_capability(targets, interface, supported, validate)
     if prepare is not None:
         try:
             # An ingress update may affect an already running operation. Admit
@@ -1916,7 +1920,7 @@ async def _preflight_and_execute[T](
     await _execute_preflighted(
         targets,
         preflighted,
-        _family_command(interface, label, command),
+        _family_command(interface, command),
         cancel_running=cancel_running,
         skip_disconnect=skip_disconnect,
         resource=resource,
@@ -2454,10 +2458,25 @@ def _with_bed_defaults(
     return dataclasses.replace(alarm, **defaults) if defaults else alarm
 
 
+# Values of set_alarm fields that ask nothing of the bed.
+_ALARM_NOTHING: Final[dict[str, object]] = {
+    ATTR_WEEKDAYS: [],
+    ATTR_MASSAGE: False,
+    "light": False,
+}
+
+
 async def handle_set_alarm(call: ServiceCall) -> None:
     """Validate one alarm on every physical target, then write it to each."""
     alarm = _alarm_request(call)
-    given = [name for name in ALARM_OPTIONAL_FIELDS if name in call.data]
+    # No repeat days, no massage and no light ask nothing of a bed without
+    # those options, so a bed is not refused for them.
+    given = [
+        name
+        for name in ALARM_OPTIONAL_FIELDS
+        if name in call.data
+        and (name not in _ALARM_NOTHING or call.data[name] != _ALARM_NOTHING[name])
+    ]
     targets = _call_targets(call)
 
     route = _profile_route(
@@ -2495,12 +2514,14 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         # are checked on every target, connecting where needed, before anything
         # is scheduled.
         async def write_zseries(controller: BedController) -> None:
-            await controller.configure_alarm(_check_alarm("", controller, alarm, given))
+            await controller.configure_alarm(
+                _check_alarm(controller._coordinator.name, controller, alarm, given)
+            )
 
         def check_zseries(controller: BedController) -> None:
             _check_alarm(controller._coordinator.name, controller, alarm, given)
 
-        await _execute_zseries_alarm(call, "alarms", write_zseries, validate=check_zseries)
+        await _execute_zseries_alarm(call, write_zseries, validate=check_zseries)
         return
 
     selection = _Selection.capture(targets)
@@ -2578,7 +2599,7 @@ async def _write_checked_alarms(
                 )
             await run(controller, capability)
 
-        return _family_command(BedController, "alarms", execute)
+        return _family_command(BedController, execute)
 
     async def prepare_side(parent: BedTarget, side: str, child: BedChild) -> None:
         plan = plans[id(child)]
@@ -2735,7 +2756,7 @@ async def handle_sync_clock(call: ServiceCall) -> None:
         from .beds.serenity.services import _execute_zseries_alarm
 
         # Z-Series clocks live on the alarm page, gated by a live manufacturer read.
-        await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
+        await _execute_zseries_alarm(call, sync)
         return
 
     def check(target: BedChild, controller: BedController) -> None:
@@ -3179,7 +3200,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                vol.Required(ATTR_PRESET): vol.All(_whole_number, vol.Range(min=1)),
                 vol.Optional(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
             }
@@ -3192,7 +3213,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                vol.Required(ATTR_PRESET): vol.All(_whole_number, vol.Range(min=1)),
                 **SIDE_FIELD,
             }
         ),

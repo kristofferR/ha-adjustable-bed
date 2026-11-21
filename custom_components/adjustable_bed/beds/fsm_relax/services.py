@@ -29,7 +29,6 @@ async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         FsmRelaxController,
-        "FSM Relax local action",
         execute,
         cancel_running=True,
         resource=None,

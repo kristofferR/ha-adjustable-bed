@@ -73,7 +73,6 @@ async def handle_resource_bed(call: ServiceCall) -> None:
     preflighted = await _preflight_capability(
         targets,
         ResourceBedController,
-        "Resource app bed actions",
         None,
         lambda controller: controller.validate_request(request),
     )
@@ -87,7 +86,6 @@ async def handle_resource_bed(call: ServiceCall) -> None:
         preflighted,
         _family_command(
             ResourceBedController,
-            "Resource app bed actions",
             execute,
         ),
         cancel_running=movement,
