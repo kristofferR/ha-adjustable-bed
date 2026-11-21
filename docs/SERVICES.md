@@ -334,9 +334,9 @@ entities, including the light colors, are separate.
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Motor directions and app buttons that can be held | 100 to 60000 ms. Motion sensor actions end after five seconds. BOX25 voice positions run once |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Axes, presets, memories, light and massage controls by model, listed in the guide | At most 30 seconds. Memory recalls take under 5 seconds; save with `save_preset` |
 | [Leggett Okin app profiles](beds/okin-nframe.md#leggett-okin-family) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | |
-| [Jordan's Serenity](beds/okin-nframe.md#reachable-commands) | 31 of the app's controls | |
-| [Jordan's Tranquil](beds/okin-nframe.md#reachable-commands-1) | 30 of the app's controls | |
-| [Customatic Z-Series](beds/okin-nframe.md#reachable-commands-2) | The Z-230 or Z-280 controls | A Z-230 refuses Z-280-only controls and the other way round |
+| [Jordan's Serenity](beds/okin-nframe.md#app-commands) | 31 of the app's controls | |
+| [Jordan's Tranquil](beds/okin-nframe.md#app-commands-1) | 30 of the app's controls | |
+| [Customatic Z-Series](beds/okin-nframe.md#app-commands-2) | The Z-230 or Z-280 controls | A Z-230 refuses Z-280-only controls and the other way round |
 | [SIMMONS](beds/okin-nframe.md#simmons) | `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed | Holding `memory` for 5 seconds saves Custom Mode, as in the app; not yet confirmed on a real bed |
 | [AdjustaMattress](beds/keeson.md#adjustamattress) | The app's control names, such as `headUp`, `footDown`, `unionUp`, `neckTiltUp`, `lumbarDown`, `flatPosition`, `zeroGravity`, `m1`, `underbedLighting`, `headStrengthAdd`, `timer10`, by model and layout | |
 | [Adjustable bed (Lumbar)](beds/okin-nframe.md#timing-and-controls) | `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up`, `massage_down` | Not yet confirmed on a real bed whether a save stores the position |
