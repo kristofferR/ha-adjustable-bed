@@ -19,7 +19,6 @@ from custom_components.adjustable_bed.button import (
     _button_entities_for,
 )
 from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.paired_coordinator import (
@@ -417,46 +416,3 @@ async def test_partial_refresh_capability_change_persists_and_reconciles_after_f
         coordinator._schedule_pending_capability_reload()
         await hass.async_block_till_done()
         reload.assert_awaited_once_with(coordinator.entry.entry_id)
-
-
-async def test_a_capability_reload_fences_the_pair_until_it_finishes(hass):
-    """While one side's reload replaces the pair, the other side neither reloads
-    again, drops or reopens its link, nor writes an ordinary command."""
-    pair, children, _ = await pair_runtime(hass)
-    left, right = children[const.SIDE_LEFT], children[const.SIDE_RIGHT]
-    reloading, finish = asyncio.Event(), asyncio.Event()
-
-    async def reload(_entry_id):
-        reloading.set()
-        await finish.wait()
-        return True
-
-    async def command(_controller):
-        raise AssertionError("an ordinary command reached the bed during the reload")
-
-    with patch.object(hass.config_entries, "async_reload", side_effect=reload) as reloaded:
-        left._client = None
-        left._pending_capability_reload = True
-        left._schedule_pending_capability_reload()
-        await asyncio.wait_for(reloading.wait(), 1)
-
-        # A sequential pair releasing the right link for a left command would
-        # leave a right STOP nothing to reach: the link stays until the unload.
-        assert right.is_connected
-        assert await right.async_disconnect() is False
-        assert right.is_connected
-
-        right._client = None
-        right._pending_capability_reload = True
-        right._schedule_pending_capability_reload()
-        # Not async_block_till_done: it would wait for the blocked reload.
-        for _ in range(5):
-            await asyncio.sleep(0)
-        assert right._capability_reload_blocks_connection()
-        await right.async_execute_controller_command(command, cancel_running=False)
-        # It ends as the unload would have ended it, not as completed.
-        assert right.command_scheduler.recent_records[-1].outcome is CommandOutcome.SHUTDOWN
-
-        finish.set()
-        await hass.async_block_till_done()
-    reloaded.assert_awaited_once_with(pair.entry.entry_id)

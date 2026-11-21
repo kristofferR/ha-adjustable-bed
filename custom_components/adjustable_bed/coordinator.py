@@ -565,9 +565,6 @@ class AdjustableBedCoordinator(
         # become readable on a later connection; the dialects expose different lights.
         self._box25_dialect: type[BedController] | None = None
         self._capability_reload_scheduled = False
-        # Set on every coordinator of the entry while a capability reload
-        # replaces them: only STOP reaches the bed until the unload is done.
-        self._capability_reload_running = False
         self._capability_reload_deferrals = 0
         self._shutting_down = False
         self._pairing_transfer_active = False
@@ -736,18 +733,12 @@ class AdjustableBedCoordinator(
                 async with self.async_command_operation_guard():
                     reload = self._claim_capability_reload()
             if reload is not None:
-                coordinators, retained_states = reload
-                try:
-                    await self._async_reload_capabilities(retained_states)
-                finally:
-                    # Only matters if the unload failed and these stay loaded.
-                    for child in coordinators:
-                        child._capability_reload_running = False
+                await self._async_reload_capabilities(reload)
         finally:
             self._capability_reload_scheduled = False
 
-    def _entry_reload_coordinators(self, loaded: object) -> tuple[AdjustableBedCoordinator, ...]:
-        """Find this entry's standalone coordinator or its children in a loaded pair."""
+    def _starcode_reload_coordinators(self, loaded: object) -> tuple[AdjustableBedCoordinator, ...]:
+        """Find the exact standalone or physical children of this loaded entry."""
         from .paired_coordinator import PairedBedCoordinator
 
         if isinstance(loaded, AdjustableBedCoordinator):
@@ -761,23 +752,16 @@ class AdjustableBedCoordinator(
             )
         return ()
 
-    def _claim_capability_reload(
-        self,
-    ) -> (
-        tuple[
-            tuple[AdjustableBedCoordinator, ...],
-            dict[tuple[str, str], RetainedAppState],
-        ]
-        | None
-    ):
-        """Take a pending reload this disconnected coordinator may run.
+    async def _async_reload_if_capability_changed(self) -> None:
+        """Reload if this disconnected coordinator still owns the loaded entry."""
+        reload = self._claim_capability_reload()
+        if reload is not None:
+            await self._async_reload_capabilities(reload)
 
-        Returns the entry's coordinators the reload replaces and the Starcode
-        app state to carry over, or None when no reload is due.
-        """
+    def _claim_capability_reload(self) -> dict[tuple[str, str], RetainedAppState] | None:
+        """Take a due reload; return the Starcode app state to carry over it."""
         if (
             not self._pending_capability_reload
-            or self._capability_reload_running
             or self._capability_reload_deferrals
             or self._shutting_down
             or self._pairing_transfer_active
@@ -795,21 +779,15 @@ class AdjustableBedCoordinator(
             return None
         from .beds.starcode.abm5_4_profiles import RetainedAppState
 
-        coordinators = self._entry_reload_coordinators(loaded)
         retained_states = {
             (child.entry.entry_id, child.address): child.starcode_app_retained_state
-            for child in coordinators
+            for child in self._starcode_reload_coordinators(loaded)
             if child.bed_type == BED_TYPE_STARCODE_ABM5_4
             and isinstance(child.starcode_app_retained_state, RetainedAppState)
             and child.starcode_app_retained_state.address == child.address
         }
         self._pending_capability_reload = False
-        # The reload rebuilds every side of the entry: the other side's pending
-        # reload waits for it instead of reloading the new runtime again, and
-        # ordinary commands no longer reach the bed while the old runtime unloads.
-        for child in coordinators:
-            child._capability_reload_running = True
-        return coordinators, retained_states
+        return retained_states
 
     async def _async_reload_capabilities(
         self, retained_states: dict[tuple[str, str], RetainedAppState]
@@ -824,7 +802,7 @@ class AdjustableBedCoordinator(
         from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         reloaded = loaded_runtime(self.hass, self.entry.entry_id)
-        for child in self._entry_reload_coordinators(reloaded):
+        for child in self._starcode_reload_coordinators(reloaded):
             retained = retained_states.get((child.entry.entry_id, child.address))
             fresh = child.starcode_app_retained_state
             if (
@@ -839,20 +817,6 @@ class AdjustableBedCoordinator(
             for controller in controllers:
                 if isinstance(controller, StarcodeAbm5_4Controller):
                     controller.restore_retained_app_state(retained)
-
-    def _fenced_by_capability_reload(self, context: CommandContext | None) -> bool:
-        """Return whether a capability reload replacing this runtime holds back an operation.
-
-        Only STOP passes, as when the reload held the command lock until the
-        unload had finished. A held-back command ends as that unload ended it.
-        """
-        if not self._capability_reload_running or (
-            context is not None and context.kind is CommandKind.STOP
-        ):
-            return False
-        if context is not None and context.scheduler_token is self._command_scheduler.token:
-            context.request_cancel(CommandOutcome.SHUTDOWN)
-        return True
 
     @contextlib.asynccontextmanager
     async def async_defer_capability_reload(self) -> AsyncIterator[None]:
@@ -2288,8 +2252,7 @@ class AdjustableBedCoordinator(
                 if scheduler_managed
                 else self._cancel_counter > entry_cancel_count
             )
-            reloading = self._fenced_by_capability_reload(command_context)
-            if (preemptible and cancelled_while_waiting) or reloading:
+            if preemptible and cancelled_while_waiting:
                 _LOGGER.debug("Controller %s cancelled while waiting for lock", operation_name)
                 if (
                     not preserve_idle_deadline

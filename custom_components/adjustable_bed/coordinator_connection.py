@@ -2175,12 +2175,6 @@ class CoordinatorConnectionMixin:
                     the command lock, such as disconnect-after-command.
         """
         _LOGGER.debug("async_disconnect called for %s", self._address)
-        if self._capability_reload_running and not self._shutting_down:
-            # The reload's unload disconnects this runtime. Until then the link
-            # stays, so a STOP for this side still finds it (a sequential pair
-            # releasing it for the other side would leave that STOP nowhere).
-            _LOGGER.debug("Keeping %s connected until its capability reload", self._address)
-            return False
         if reason == "intentional":
             # A user releasing the link (e.g. for the bed's phone app) wants the
             # configured handoff again until another connect stalls.

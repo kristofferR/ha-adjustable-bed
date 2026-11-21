@@ -496,7 +496,7 @@ async def test_internal_reload_handoff_preserves_delayed_factory_but_rejects_new
         return True
 
     with patch.object(hass.config_entries, "async_reload", side_effect=reload) as operation:
-        await old._async_reload_after_capability_change()
+        await old._async_reload_if_capability_changed()
         operation.assert_awaited_once_with(entry.entry_id)
     if replacement == "delayed":
         assert new.controller is None and new._offline_controller is None
