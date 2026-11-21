@@ -120,11 +120,11 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks | ❌ (motor reports never populate position feedback or sliders) | ❌ No calibrated position controls; raw typed events remain visible | ❌ | ❌ Raw motor-number diagnostics only, not calibrated angles | ❌ Raw index, angle and height events only |
 | Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates | ❌ (named preset saves instead) | ✅ Product-specific short/long gestures and local memory mode | ⚠️ Only as the selected layout's named app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Product-specific recall and explicit save |
 | Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Model-specific presets; Lounge only on legacy | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge actions where the product has them | ⚠️ Only as the selected layout's named app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ Product-specific, recall and save |
-| Massage | ✅ | ✅ Model-specific zone, mode and off actions; 20-minute **Massage: Timer** select | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage: Timer** select where the main page has several timers | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode and intensity buttons; **Massage: Timer** select (10, 20, 30 minutes) | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off; **Massage: Timer** select (10, 20, 30 minutes or off) | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
+| Massage | ✅ | ✅ Model-specific zone, mode and off actions; 20-minute **Massage: Timer** select | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage: Timer** select where the main page has several timers | ✅ App-labelled buttons; VER1 head/foot intensity numbers; **Massage: Timer** select where the model has more than one of the 10, 20 and 30 minute timers | ✅ Product-specific mode and intensity buttons; **Massage: Timer** select (10, 20, 30 minutes) | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off; **Massage: Timer** select (10, 20, 30 minutes or off) | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
 | Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Model-specific toggle; legacy also off | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB | ✅ Light buttons; ordinary light or RGB page where the product and its reply allow | ✅ RGB strip for lighting-flag products, colour and timer otherwise |
 | Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ✅ Where the layout has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ❌ | ❌ (one-address Left/Right on stored L400SH and L300SH) | ❌ (one-address Left/Right on side-flag products) |
 | Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
-| Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) | ✅ Music page, external snore trigger, sensor-name query; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
+| Other | | | | ✅ The product's other catalog controls as buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) | ✅ Music page, external snore trigger, sensor-name query; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
 
 ## Choosing a profile
 
@@ -973,13 +973,23 @@ replies; basic controls stay usable and late replies are accepted.
 #### Controls
 
 Standard movement, presets, memory programming, massage and lighting appear
-where the selected catalog supports them. Additional catalog actions are exposed
-as **disabled-by-default buttons**. Enable the relevant entities in the device's
-entity list.
+where the selected catalog supports them. The product's other catalog actions
+are buttons named the way the app names them, each where it belongs on the card:
+motor moves with the motors, positions with the presets, massage and light with
+theirs. Music, fans, resets and similar extras start disabled.
 
-- Button names retain the app getter/context and occurrence number where needed
-  to distinguish variants. Long-press actions have separate buttons; held
-  movement uses cancellable repeats and protocol-specific release cleanup.
+- A control with no button of its own sends exactly what a listed entity sends:
+  the same command on the bed's transport, held until STOP or sent once. That
+  entity is a standard one (motor, preset, memory recall and save, light, sync,
+  massage, the massage timer) or another page's identical copy, and the main
+  page's copy is the one listed.
+- A copy that sends something else keeps a disabled button whose name tells it
+  apart: the motor list's single tap of a held move is "… (short press)", and a
+  copy with another command under the same name is numbered.
+- A preset's or memory's own long operand saves it: that long press is its
+  **Save …** button, confirmed in the card. Another long operand is a disabled
+  "(long press)" button. Held movement uses cancellable repeats and
+  protocol-specific release cleanup.
 - This includes supported combined/extra motor commands and less common heating,
   fan, airbag, anti-pinch, aroma, music and sleep actions. It does not invent
   parameterized controls merely because the shared library can parse a report.
@@ -5300,15 +5310,15 @@ gates. Catalog declarations without a live control binding do not create bed ent
 | Protocol version 1 | deviceFunctionVersionOneCurrentMassageMode | `6E 9A A0 00 A8` |
 | Protocol version 1 | deviceFunctionVersionOneCurrentBedLightStatus | `6E 9A B0 00 B8` |
 
-Named operations: `sync`, `detection`, `toggle_alarm`, `sleep_sync`, `query`,
-`single_alarm`, `cancel_alarm`, `repeat_alarm`, `delete_alarm`, `light_timer`,
-`light_rgb`, `strip_rgb`, `strip_timer`, `strip_groove`, `strip_color_mode`,
-`strip_breathe`, `strip_power`, `therapy_light`, `therapy_sound`, `therapy_timer`,
-`music_source`, `white_noise`, `snore`, `get_off_bed`, `snore_intervention`,
-`blanket_power`, `blanket_mode`, `blanket_temperature`, `blanket_delay`,
-`blanket_mite`, `blanket_settings`, `blanket_sleep`, `usb`, `demo`, `sleep_time`,
-`sleep_part`, `sleep_realtime`, `sleep_report`, `sleep_snore`,
-`sleep_sensitivity`, `sleep_init`, `sleep_cancel`, `sleep_poll`.
+Named operations: `detection`, `toggle_alarm`, `query`, `single_alarm`,
+`cancel_alarm`, `repeat_alarm`, `delete_alarm`, `light_timer`, `light_rgb`,
+`strip_rgb`, `strip_timer`, `strip_groove`, `strip_color_mode`, `strip_breathe`,
+`strip_power`, `therapy_light`, `therapy_sound`, `therapy_timer`, `music_source`,
+`white_noise`, `snore`, `get_off_bed`, `snore_intervention`, `blanket_power`,
+`blanket_mode`, `blanket_temperature`, `blanket_delay`, `blanket_mite`,
+`blanket_settings`, `blanket_sleep`, `usb`, `demo`, `sleep_time`, `sleep_part`,
+`sleep_realtime`, `sleep_report`, `sleep_snore`, `sleep_sensitivity`,
+`sleep_init`, `sleep_cancel`, `sleep_poll`.
 <!-- /generated -->
 
 Product identities and their two menu branches remain separate even when their
@@ -6501,8 +6511,8 @@ no action accepts arbitrary packet bytes.
 
 - Lighting: timer, palette/RGB and opacity, groove/color/breathe modes, power,
   therapy timer/color/sound and the local-music source.
-- Alarms: single countdown, cancellation, explicit repeat slot, toggle, deletion,
-  list refresh and time synchronization. Weekdays are Monday 0 through Sunday 6;
+- Alarms: single countdown, cancellation, explicit repeat slot, toggle, deletion
+  and list refresh. Weekdays are Monday 0 through Sunday 6;
   7 means once. Full tables require an explicit slot and never emit Android's -1.
 - Blanket: power, mode, selected-zone temperature, main delay, mite removal, all
   six settings flags and each zone's sleep schedule. Flags are child lock,
@@ -6511,10 +6521,13 @@ no action accepts arbitrary packet bytes.
   delay and four stage temperatures. Schedule duration is validated together.
 - Detection start/stop, anti-snore/off-bed settings, USB and cancellable automatic
   demos. Demo steps use known app enum names, sustain seconds and delay seconds.
-- Separate sleep entry: `sleep_sync`, time/part/realtime queries, polling,
+- Separate sleep entry: time/part/realtime queries, polling,
   sensitivity query, automatic anti-snore query/setting, report session, init and
   local cancellation. `sleep_snore` uses value 0 for query and 1 for setting.
   There is no valid sensitivity setter in this artifact.
+- Clock: the bed and the separate sleep entry set their clock with
+  [Set bed clock](../SERVICES.md#sync_clock); the sleep entry also sets it on
+  every connection.
 
 #### Evidence
 
@@ -10441,9 +10454,10 @@ The dedicated `13`-family setting is separate from normal anti-snore recall/save
 
 Button names come from the catalog's command names, shown in the Richmat MH
 buttons' wording; the catalog labels stay as recorded. For example `Massage Head
-Intensity Inc` is Massage: Head Up, `Massage 10Min` is Massage: Timer 10 Minutes,
-`Zg2 Back`/`Zg2 Set` are Zero Gravity 2 and Save Zero Gravity 2, and `Ubl Off` is
-Underbed light off.
+Intensity Inc` is Massage: Head Up, `Zg2 Back`/`Zg2 Set` are Zero Gravity 2 and
+Save Zero Gravity 2, and `Ubl Off` is Underbed light off. A model with more than
+one of `Massage 10Min`, `Massage 20Min` and `Massage 30Min` shows them as the
+**Massage: Timer** select (durations only); a model with one keeps its button.
 
 Nisco's light timer preserves the high and low duration bytes. Normal and
 waist mattress controls are dormant, even though startup probes and shared
@@ -15482,13 +15496,14 @@ four colors appear in the normal app chooser. Home Assistant retains the chosen
 product across restarts and keeps each paired side's product data separate.
 
 Case-sensitive names containing `QRRM`, `COOL`, `MPE_`, `209A` or `BED-` offer this
-app as a candidate. Shared services and names never choose its product. A Left /
-Right choice is available only for products that offer sides and a link that
-encodes them. The selected side survives controller rebuilds for that product. On a link that
+app as a candidate. Shared services and names never choose its product. The
+**Controlled side** select offers Right only for products that offer sides and a
+link that encodes them. The selected side survives controller rebuilds for that product. On a link that
 cannot encode sides, choose **Left** to recover from a retained Right selection;
 Right movement is rejected and STOP remains available. The last discovered
 framing also restricts choices while the bed is disconnected.
-Green, Orange and Blue separately offer split/standard control.
+Green, Orange and Blue separately offer split/standard control. The
+**Synchronization** switch, on products with Sync on and Sync off, starts disabled.
 
 #### Controls
 

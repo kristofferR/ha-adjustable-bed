@@ -2438,7 +2438,7 @@ richmat_app:
       required: true
       selector:
         select:
-          options: [sync, detection, toggle_alarm, sleep_sync, query, single_alarm, cancel_alarm, repeat_alarm,
+          options: [detection, toggle_alarm, query, single_alarm, cancel_alarm, repeat_alarm,
             delete_alarm, light_timer, light_rgb, strip_rgb, strip_timer, strip_groove, strip_color_mode,
             strip_breathe, strip_power, therapy_light, therapy_sound, therapy_timer, music_source, white_noise,
             snore, get_off_bed, snore_intervention, blanket_power, blanket_mode, blanket_temperature,

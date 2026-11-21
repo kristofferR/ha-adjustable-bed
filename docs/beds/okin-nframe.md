@@ -5822,6 +5822,8 @@ Flat + Zero gravity chord. Neither operation has a separate save opcode, and
 its physical effect has not been tested. Under-bed motion activation has no
 reported state; the switch shows a delivered command, or unknown after a
 partial command or disconnect. Its refresh ends without an invented STOP.
+The app's Massage on and Massage off keys are the **Massage** switch, shown the
+same way; the massage timer, mode and level sensors show what the bed reports.
 
 The command-input action preserves the selected speech callers' timing.
 Nonmotor preset, light and massage on/off targets use the one-shot attempts;

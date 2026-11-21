@@ -44,7 +44,7 @@ from .catalog import (
     descriptors,
 )
 from .receive import Receiver, Value
-from .requests import DemoStep, Request
+from .requests import CLOCK_SYNC, DemoStep, Request
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -881,6 +881,17 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 raise ValueError("Invalid saved demo step")
             steps.append(DemoStep(row["action"], row["sustain"], row["seconds"], row["delay"]))
         return replace(request, steps=tuple(steps))
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    def validate_clock_sync(self) -> None:
+        self.validate_request(Request(CLOCK_SYNC))
+
+    async def sync_clock(self) -> None:
+        # The frames of the action's former sync operation.
+        await self.execute_request(Request(CLOCK_SYNC))
 
     def validate_request(self, request: Request) -> None:
         from .actions import validate

@@ -22,9 +22,9 @@
 
 | Feature | Product controller | FWRM / WFRM desk | MM / SXB module |
 |---------|--------------------|------------------|-----------------|
-| Motor Control | Exact named app controls and holds | Up, down, reset | None |
+| Motor Control | Exact app controls and holds, named the way the app names them | Up, down, reset | None |
 | Position Feedback | Raw indexed reports; no inferred axis mapping | Raw height, unit, bounds and state | None |
-| Memory Presets | Exact product controls, including state-dependent recall/program gestures | Three short recalls; long memory callback sends nothing | None |
+| Memory Presets | Exact product controls, including state-dependent recall/program gestures; a preset's or memory's own long press is its **Save …** button | Three short recalls; long memory callback sends nothing | None |
 | Massage | Exact product controls; bottom countdown where admitted; **Massage: Timer** select for products with several fixed timers | None | None |
 | Lights | Product controls; RGB/timeout menu requires its capability reply | None | None |
 | Alarms | Countdown or repeat table according to product; requires clock reply | None | None |
@@ -113,10 +113,16 @@ covers commands, raw state and static-only status.
 
 ## Commands
 
-The named buttons come from the selected catalog. The card places motor,
-preset, memory, massage and light buttons in their own sections and the rest
-under Utility, with continuous holds for sustain actions and separate buttons
-for finite short/long callbacks. The `hold_control` action
+The named buttons come from the selected catalog, named the way the app names
+them. The card places motor, preset, memory, massage and light buttons in their
+own sections and the rest under Utility, disabled by default, with continuous
+holds for sustain actions and separate buttons for finite short/long callbacks.
+A preset's or memory's own long operand saves it, so that long press is its
+**Save …** button. Another long operand is a disabled "(long press)" button; a
+long press that writes only what its short press writes has no button. Empty
+app slots and menu headings that send no command have none either; an empty
+slot that sends one takes that command's name. A control the app lists twice
+has one button. The `hold_control` action
 accepts the button's `held_control` identifier and a bounded duration.
 
 ### Example: 6BRM product, framed Left
