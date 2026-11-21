@@ -210,6 +210,12 @@ def jensen_memory_store_key(address: str) -> str:
     return f"{DOMAIN}.jensen_memory.{address.replace(':', '_').lower()}"
 
 
+def pairlink_sdk_store_key(entry_id: str, address: str | None = None) -> str:
+    """A Pairlink entry's SDK metadata file; each side of a pair keeps its own."""
+    suffix = f".{address.upper().replace('-', ':')}" if address is not None else ""
+    return f"{DOMAIN}.pairlink_sdk.{entry_id}{suffix}"
+
+
 def _registry(hass: HomeAssistant) -> dict[str, AppStateStore]:
     return domain_registry(hass, _REGISTRY_KEY, dict)
 

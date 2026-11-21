@@ -251,8 +251,12 @@ async def generate_support_bundle(
     if coordinator is not None:
         typed.add(coordinator.name)
     if (names := names_pattern(typed - set(_advertised_names(report)))) is not None:
-        for log in [*report["recent_logs"], *report["pairing_logs"]]:
-            log["message"] = names.sub(lambda match: "*" * len(match.group(0)), log["message"])
+        # Copies: the records still belong to the shared log buffer.
+        for section in ("recent_logs", "pairing_logs"):
+            report[section] = [
+                {**log, "message": names.sub(lambda match: "*" * len(match.group(0)), log["message"])}
+                for log in report[section]
+            ]
     return redact_bundle(report, addresses=known | candidates)  # type: ignore[no-any-return]
 
 

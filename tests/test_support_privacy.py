@@ -19,7 +19,10 @@ from homeassistant.helpers.storage import Store
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_remove_entry
-from custom_components.adjustable_bed.app_state_store import jensen_memory_store_key
+from custom_components.adjustable_bed.app_state_store import (
+    jensen_memory_store_key,
+    pairlink_sdk_store_key,
+)
 from custom_components.adjustable_bed.beds.jensen.controller import JensenController
 from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_LOW_POWER_NOTIFY_UUID,
@@ -27,7 +30,6 @@ from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_LOW_POWER_WRITE_UUID,
     PAIRLINK_NOTIFY_UUID,
 )
-from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_storage import sdk_store_key
 from custom_components.adjustable_bed.ble_diagnostics import (
     BLEDiagnosticRunner,
     CharacteristicInfo,
@@ -212,7 +214,7 @@ async def test_removing_a_bed_deletes_its_stored_files(hass: HomeAssistant) -> N
     )
     entry.add_to_hass(hass)
     memory = Store(hass, 1, jensen_memory_store_key(TARGET))
-    pairlink = Store(hass, 1, sdk_store_key(entry.entry_id))
+    pairlink = Store(hass, 1, pairlink_sdk_store_key(entry.entry_id))
     await memory.async_save({"1": [10, 20]})
     await pairlink.async_save({"pl_finger_print": {}})
 
@@ -298,3 +300,22 @@ def test_saving_two_bundles_in_one_second_keeps_both(hass: HomeAssistant, tmp_pa
 
     assert first != second
     assert json.loads(first.read_text()) == {"bed": 1}
+
+
+async def test_masking_names_leaves_the_shared_log_buffer_intact(hass: HomeAssistant) -> None:
+    """A bundle never rewrites the records a later bundle reads (PRIV-8)."""
+    MockConfigEntry(domain=DOMAIN, title="Kris side", data={CONF_ADDRESS: TARGET}).add_to_hass(hass)
+    logs = async_setup_support_logs(hass)
+    logging.getLogger("custom_components.adjustable_bed.coordinator").warning("Kris side moved")
+    with (
+        patch.object(
+            BLEDiagnosticRunner, "run_diagnostics", new=AsyncMock(return_value=_capture(TARGET))
+        ),
+        patch(
+            "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+            return_value=[],
+        ),
+    ):
+        await generate_support_bundle(hass, address=TARGET, capture_duration=0, include_logs=True)
+
+    assert any(entry["message"] == "Kris side moved" for entry in logs.snapshot())

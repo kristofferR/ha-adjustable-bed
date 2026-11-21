@@ -15,7 +15,6 @@ from weakref import WeakValueDictionary
 
 from homeassistant.helpers.storage import Store
 
-from .pairlink_protocol import normalize_mac
 from .pairlink_sdk_metadata import (
     PairlinkSdkMetadata,
     SdkAttributeRecord,
@@ -94,12 +93,6 @@ _NAMES = {
     "period_divisor": "periodDivisor",
     "publish_period": "publishPeriod",
 }
-
-
-def sdk_store_key(entry_id: str, address: str | None = None) -> str:
-    """The entry's SDK metadata file; each side of a pair keeps its own."""
-    suffix = f".{normalize_mac(address)}" if address is not None else ""
-    return f"adjustable_bed.pairlink_sdk.{entry_id}{suffix}"
 
 
 class SdkUnitView:
