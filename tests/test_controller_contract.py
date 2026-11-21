@@ -1028,7 +1028,7 @@ async def test_base_write_cancelled_while_waiting_for_ble_lock_is_not_sent() -> 
 
 
 async def test_overridden_stop_helpers_keep_finally_cleanup() -> None:
-    """Controllers overriding stop helpers should preserve finally-based cleanup."""
+    """Controllers overriding stop helpers keep their cleanup: a finally or releasing()."""
     instantiated: dict[type[BedController], BedController] = {}
 
     for bed_type in SUPPORTED_BED_TYPES:
@@ -1043,10 +1043,12 @@ async def test_overridden_stop_helpers_keep_finally_cleanup() -> None:
             and not controller.auto_stops_on_idle
         ):
             source = inspect.getsource(controller_cls._move_with_stop)
-            assert "finally" in source, f"{controller_cls.__name__}._move_with_stop missing finally"
+            assert "finally" in source or "self.releasing(" in source, (
+                f"{controller_cls.__name__}._move_with_stop missing finally"
+            )
 
         if controller_cls._preset_with_stop is not BedController._preset_with_stop:
             source = inspect.getsource(controller_cls._preset_with_stop)
-            assert "finally" in source, (
+            assert "finally" in source or "self.releasing(" in source, (
                 f"{controller_cls.__name__}._preset_with_stop missing finally"
             )
