@@ -178,10 +178,7 @@ A new app is normally a profile plus its vectors, not a new controller.
    codec's vector file (for example `tests/jiecang_vectors.py`) and run its
    harness (`tests/test_jiecang_vectors.py`). An existing codec is the right one
    only if it reproduces every frozen literal byte for byte. Shared names, UUIDs,
-   packet resemblance or constructor calls are not proof. Each codec family
-   registers in its own `tests/codec_families/<family>.py` with the bed types it
-   backs. Standalone bed types are in `tests/codec_families/_standalone.py`;
-   `tests/test_codec_contract.py` checks them all.
+   packet resemblance or constructor calls are not proof.
    - **A codec reproduces the vectors:** add a profile to its
      `profiles/<family>.py`. Timing, layouts, presets, memory slots, setup
      schedules and name rules are profile data, from this app's evidence only.
@@ -218,17 +215,15 @@ A new app is normally a profile plus its vectors, not a new controller.
      `KEY: Final = StateKey[T]("name")` next to the controller, or in
      `state_keys.py` when a platform or the coordinator reads it. Write with
      `self.forward_controller_state_updates(KEY(value), ...)` and give specs the
-     same key. `tests/test_controller_state_keys.py` fails when a read key has
-     no writer.
+     same key.
    - Put connect-time startup in the controller's lifecycle hooks
      (`async_on_connect`, `async_after_connect`, `capability_snapshot_policy`
      and the others at the end of `beds/base.py`), never in the coordinator.
      Entry setup a family needs before or instead of the first connection is
      registered in `entry_hooks.py`.
    - Held and concurrent execution (#483, #516) is the profile's `execution`
-     field, or an `execution` override on a standalone controller. Each
-     declaration needs an evidence row in `tests/test_execution_capabilities.py`
-     naming the app evidence that proves it (see
+     field, or an `execution` override on a standalone controller. Declare
+     only what the app's evidence proves (see
      [protocol codecs](docs/design/protocol-codecs.md#execution-capabilities)).
 
 5. **Add detection to `detection.py`.** `detect_bed_type()` only wraps
@@ -262,9 +257,7 @@ A new app is normally a profile plus its vectors, not a new controller.
    A builder reads its settings from `ctx.data`; never add a bed-specific
    parameter to `create_controller()`. A builder that picks a class from another
    module loads it with `await ctx.preload("family.module")` first; the name is
-   relative to `beds/`.
-   `tests/test_controller_contract.py` resolves every entry and keeps the two
-   registries disjoint.
+   relative to `beds/`. A bed type is in one of the two registries, never both.
 
 7. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
 
@@ -329,11 +322,8 @@ A new app is normally a profile plus its vectors, not a new controller.
     raw or protocol state stays in `protocol_diagnostics`. Controller state
     sensors are disabled by default: set `entity_registry_enabled_default=True`
     only for dashboard values (motion, presets, massage and light state, timers).
-    `tests/test_entity_names.py` checks every name, unique ID and default over
-    every variant `tests/entity_surface.py` builds.
 
-13. **Use the shared shapes and plumbing.** Each rule has a test that fails
-    when it is broken.
+13. **Use the shared shapes and plumbing.**
     - A control takes its shared shape: an on/off light is a `light`, timers are
       the shared massage and light timer selects, a settable level is a number,
       sleep readings use the shared sleep sensor builders, and app-catalog
@@ -345,8 +335,7 @@ A new app is normally a profile plus its vectors, not a new controller.
     - Entities show commanded values through `_async_send`; controllers publish
       them with `sent_state()` around the write. Only `delivered()` reads
       delivery.
-    - Build user-visible errors in `errors.py` with a translation key
-      (`tests/test_translated_errors.py`).
+    - Build user-visible errors in `errors.py` with a translation key.
     - Set a clock through the `supports_clock_sync` / `sync_clock` hook, never a
       per-bed button or operation. Expose an alarm through `alarm_capability`
       and the shared `set_alarm` action; keep a bed-specific alarm action only
@@ -536,8 +525,7 @@ not in auto-injected instructions. Clean-room analysts must not open that guide.
 
 [`docs/README.md`](docs/README.md) indexes every guide. Bed guides follow
 [`docs/BED_GUIDE_FORMAT.md`](docs/BED_GUIDE_FORMAT.md). A change that removes or
-renames a setting, entity, action or field updates the docs in the same PR
-(`tests/test_doc_terms.py` checks the common cases).
+renames a setting, entity, action or field updates the docs in the same PR.
 
 ## Reference Materials
 

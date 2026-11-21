@@ -182,7 +182,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
 
 
 def bed_types() -> dict[str, tuple[str, ...]]:
-    """Bed types per profile; ``tests/test_codec_docs.py`` checks them against the factory."""
+    """Bed types per profile."""
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
         **{p.key: ("dreamsense",) for p in dreamsense.PROFILES.values()},

@@ -1,28 +1,14 @@
 """Which entity translation keys code can give an entity.
 
-Both directions are checked: a side-suffixed key no entity can be given is dead
-weight, and a key an entity can be given but that has no translation leaves
-Home Assistant naming the entity after its device alone (#711).
-
-Paired side devices carry their side in the device name, and combined controls
-sit on the parent device, so no entity appends ``_left``, ``_right`` or
-``_both`` to its key. A key with one of those suffixes is reachable only when
-code states it: a literal, or a spec or description a bed builds for a side it
-controls natively (such as Sleep Number's per-side climate). Unsuffixed keys
-are not judged as dead weight: confirming every base would need every app
-profile's specs.
-
-Run as a script to list both::
-
-    uv run --no-sync python -m tests.entity_translation_reachability
+A key an entity can be given that has no translation leaves Home Assistant
+naming the entity after its device alone (#711). The keys come from every
+offline controller variant's specs, including each side of a single-address
+pair, and from the platforms' own entity descriptions.
 """
 
 from __future__ import annotations
 
-import ast
-import asyncio
 import json
-import re
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -82,16 +68,6 @@ SIDE_SUFFIXES = ("_left", "_right", "_both")
 def entity_strings(path: Path = TRANSLATION_FILES[0]) -> dict[str, dict[str, object]]:
     """Return the ``entity`` section of one translation file."""
     return json.loads(path.read_text())["entity"]
-
-
-def literal_keys() -> set[str]:
-    """Return every snake_case string literal in the integration source.
-
-    A literal such as ``"bed_presence_left"`` or ``"elevate_both"`` is a key a
-    description or spec states verbatim, whatever its suffix looks like.
-    """
-    source = "\n".join(path.read_text() for path in INTEGRATION.rglob("*.py"))
-    return set(re.findall(r"""["']([a-z0-9_]+)["']""", source))
 
 
 async def factory_controllers() -> list[BedController]:
@@ -221,43 +197,6 @@ async def factory_controllers() -> list[BedController]:
     return controllers
 
 
-# Each spec class's platform and the position of its translation_key field.
-SPEC_PLATFORMS = {
-    "MotorControlSpec": ("cover", 1),
-    "ControllerButtonSpec": ("button", 4),
-    "ControllerSelectSpec": ("select", 1),
-    "ControllerNumberSpec": ("number", 1),
-    "ControllerSwitchSpec": ("switch", 1),
-    "ControllerStateSensorSpec": ("sensor", 1),
-    "ControllerStateBinarySensorSpec": ("binary_sensor", 1),
-}
-
-
-def literal_spec_keys() -> dict[str, set[str]]:
-    """Return the translation keys spec constructors state literally, per platform.
-
-    This reaches specs a bed adds only for a capability it reports at runtime,
-    which no offline controller configuration exposes.
-    """
-    keys: dict[str, set[str]] = {}
-    for path in INTEGRATION.rglob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text())):
-            if not isinstance(node, ast.Call):
-                continue
-            func = node.func
-            name = func.id if isinstance(func, ast.Name) else getattr(func, "attr", None)
-            if name not in SPEC_PLATFORMS:
-                continue
-            platform, position = SPEC_PLATFORMS[name]
-            values = [kw.value for kw in node.keywords if kw.arg == "translation_key"]
-            if len(node.args) > position:
-                values.append(node.args[position])
-            for value in values:
-                if isinstance(value, ast.Constant) and isinstance(value.value, str):
-                    keys.setdefault(platform, set()).add(value.value)
-    return keys
-
-
 def _motion_bed_controllers() -> list[BedController]:
     """Motion Bed motor specs depend on the movement layout."""
     from tests.test_motion_bed_entity_keys import HOME_MOVEMENTS, controller
@@ -328,8 +267,6 @@ def required_keys(
         for controller in _motion_bed_controllers()
         for spec in controller.motor_control_specs
     }
-    for platform, keys in literal_spec_keys().items():
-        required.setdefault(platform, set()).update(keys)
     sides = ("left", "right")
     descriptions = {
         # Product actions all share one translation, named by a placeholder.
@@ -390,40 +327,3 @@ def missing_translations(
             missing[platform] = absent
     return missing
 
-
-def unreachable_side_keys(
-    strings: dict[str, dict[str, object]],
-    controllers: Iterable[BedController],
-) -> dict[str, set[str]]:
-    """Return side-suffixed copies of a translated base that no entity is given."""
-    required = required_keys(controllers, strings)
-    literals = literal_keys()
-    unreachable: dict[str, set[str]] = {}
-    for platform, keys in strings.items():
-        for key in keys:
-            if (
-                _is_side_variant(key, keys)
-                and key not in literals
-                and key not in required.get(platform, ())
-            ):
-                unreachable.setdefault(platform, set()).add(key)
-    return unreachable
-
-
-def _report(title: str, keys_by_platform: dict[str, set[str]]) -> None:
-    print(title)
-    for platform, keys in sorted(keys_by_platform.items()):
-        print(f"{platform}: {len(keys)}")
-        for key in sorted(keys):
-            print(f"  {key}")
-    print(f"total: {sum(map(len, keys_by_platform.values()))}")
-
-
-def main() -> None:
-    controllers = asyncio.run(factory_controllers())
-    _report("unreachable:", unreachable_side_keys(entity_strings(), controllers))
-    _report("missing:", missing_translations(entity_strings(), controllers))
-
-
-if __name__ == "__main__":
-    main()

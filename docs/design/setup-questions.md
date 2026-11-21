@@ -201,9 +201,7 @@ does not ask them.
 ## Dedicated steps
 
 A dedicated step remains only for what data cannot express, with its reason
-recorded here as each family converts. `tests/test_setup_questions.py` checks
-this section and [Shared steps](#shared-steps) against the setup and Configure
-flows, so a new step cannot appear unrecorded and a removed one cannot linger.
+recorded here as each family converts.
 
 | Step | Why it is not data |
 |---|---|

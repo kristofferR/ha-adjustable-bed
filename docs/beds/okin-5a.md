@@ -308,9 +308,7 @@ raw-parts clock formula, parser and captured-session execution.
 
 `tests/okin_5a_vectors.py` freezes the earlier profiles' frames, and
 `tests/test_okin_5a_vectors.py` checks each literal against the codec and each
-profile's frames against its vectors. `tests/test_codec_docs.py` checks every
-frame spelled in this guide against the vectors and each bed type against the
-factory. Each profile's vectors are
+profile's frames against its vectors. Each profile's vectors are
 the frames its pre-v5 controller sent. No app was analyzed for the Nectar,
 Mattress Firm and CB35 key frames; ELEVATE's frames match its apps (see
 its [Evidence](#dewertokin-elevate)). The same file holds every StarCode frame
