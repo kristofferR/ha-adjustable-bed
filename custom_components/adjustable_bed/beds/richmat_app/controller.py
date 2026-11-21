@@ -16,7 +16,7 @@ from homeassistant.util import dt as dt_util
 from ...card import CARD_CLIMATE, CARD_CONTROLLED_SIDE, CARD_HIDDEN
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
-from ...controller_state import StateKey
+from ...controller_state import StateKey, sided
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
 from ...state_keys import HEAT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
@@ -823,8 +823,10 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         detail = self._massage_timers.get(minutes)
         if detail is None:
             raise ValueError("Choose a massage timer this product offers")
-        # The bed reports no timer.
-        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+        # The bed reports no timer. A side of a single-address pair shows its own.
+        side = self.command_side
+        sides = ("left", "right") if side == "both" else (side,)
+        with self.sent_state(*(sided(MASSAGE_TIMER_MINUTES, s)(minutes) for s in sides)):
             await self.press(detail)
 
     def _saves(self, detail: str) -> bool:

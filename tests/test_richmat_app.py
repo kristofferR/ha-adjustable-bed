@@ -826,3 +826,14 @@ async def test_heat_levels_are_one_select_that_sends_what_the_buttons_sent(coord
             assert written(c) == button and button
         products += 1
     assert products
+
+
+async def test_a_side_of_a_one_address_pair_shows_its_own_massage_timer(coordinator, clocked):
+    c = controller(coordinator, "6HRM", single=True)
+    with c.side_scope("right"):
+        await c.set_massage_timer(20)
+    state = coordinator.controller_state
+    assert state.get("massage_timer_right") == 20 and "massage_timer_left" not in state
+    with c.side_scope("both"):
+        await c.set_massage_timer(30)
+    assert (state["massage_timer_left"], state["massage_timer_right"]) == (30, 30)

@@ -193,6 +193,7 @@ def _waist_setting_key(side: str, field: str) -> StateKey[str | None]:
 # Tap kinds the card shows outside its utility section.
 _TAP_KINDS: Final = {
     "richmat_mh_preset": Kind.PRESET,
+    "richmat_mh_memory": Kind.MEMORY,
     "richmat_mh_massage": Kind.MASSAGE,
     "richmat_mh_save": Kind.SAVE,
 }
@@ -848,6 +849,9 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     taps.append(Tap(key, f"Save {base}", c.code, "richmat_mh_save"))
                 elif c.group in ("FACTORY_RESET", "Factory Reset"):
                     taps.append(Tap(key, base, c.code, "richmat_mh_action"))
+                elif base.startswith("Memory "):
+                    # A memory slot outside the contiguous ones: recall and save share its card slot.
+                    taps.append(Tap(key, base, c.code, "richmat_mh_memory"))
                 else:
                     taps.append(Tap(key, base, c.code, "richmat_mh_preset"))
             elif c.area == "massage":
