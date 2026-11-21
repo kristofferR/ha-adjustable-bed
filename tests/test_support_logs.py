@@ -358,3 +358,30 @@ async def test_bundle_captures_debug_without_file_and_honors_opt_out(
         assert report["bluetooth"]["pairing_proxy_logs"] == []
         assert report["evidence"]["log_capture_status"] == "not_requested"
         factory.assert_not_called()
+
+
+async def test_proxy_capture_leaves_out_other_devices(hass, proxy):
+    """Scan results and other devices' connections stay out of the bundle (PRIV-3)."""
+    client, _, _ = proxy
+    async with capture_proxy_logs(hass, "AA:BB:CC:DD:EE:FF") as reports:
+        callback = client.subscribe_logs.call_args.args[0]
+        for message in (
+            b"[D][esp32_ble_tracker:747]: Found device 11:22:33:44:55:66 RSSI=-70",
+            b"[D][esp32_ble_tracker:752]:   Name: 'Anna phone'",
+            b"[I][bluetooth_proxy.connection:91]: [1] [11:22:33:44:55:66] Connecting",
+            b"[I][bluetooth_proxy.connection:91]: [0] [AA:BB:CC:DD:EE:FF] Connecting",
+        ):
+            callback(SimpleNamespace(message=message, level=5))
+        assert [entry["message"] for entry in reports[0]["entries"]] == [
+            "[I][bluetooth_proxy.connection:91]: [0] [AA:BB:CC:DD:EE:FF] Connecting"
+        ]
+        assert reports[0]["withheld_entries"] == 3
+
+
+def test_logged_notification_payloads_are_removed() -> None:
+    """The generic notification log line keeps its source but not its bytes."""
+    message = sanitize_log_message(
+        "GATT notify from AA:BB:CC:DD:EE:FF (uuid): 00112233445566778899aabbccddeeff"
+    )
+
+    assert message == "GATT notify from AA:BB:CC:DD:EE:FF (uuid): **REDACTED**"

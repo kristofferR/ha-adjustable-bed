@@ -43,7 +43,7 @@ _BLE_GATT_PAYLOAD = re.compile(
     r"[^\r\n]*?:\s*)[^\r\n]*"
 )
 _BLE_NOTIFICATION_PAYLOAD = re.compile(
-    r"(?im)(\bnotification\b[^\r\n]*?:\s*)(?:bytearray\(|b['\"]|[0-9a-f]{16,})[^\r\n]*"
+    r"(?im)(\b(?:notification|notify)\b[^\r\n]*?:\s*)(?:bytearray\(|b['\"]|[0-9a-f]{16,})[^\r\n]*"
 )
 _FAILED_BLE_WRITE_PAYLOAD = re.compile(
     r"(?i)(\b(?:could not|failed to)\s+write\s+value\s+).+?"

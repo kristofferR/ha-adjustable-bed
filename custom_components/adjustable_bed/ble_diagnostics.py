@@ -708,11 +708,22 @@ class BLEDiagnosticRunner:
 
         try:
             value = await self._read_gatt_char(target)
-            char_info.read_result = (
-                {"hex": "**REDACTED**", "length": len(value), "ascii_preview": None}
-                if char_info.uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
-                else format_payload(value)
-            )
+            controller = self.coordinator.controller if self.coordinator is not None else None
+            control_uuid: str | None = None
+            with contextlib.suppress(Exception):  # some controllers resolve it on connect
+                control_uuid = controller.control_characteristic_uuid.lower() if controller else None
+            if char_info.uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
+                char_info.read_result = {
+                    "hex": "**REDACTED**",
+                    "length": len(value),
+                    "ascii_preview": None,
+                }
+            elif controller is not None and char_info.uuid.lower() == control_uuid:
+                # A command characteristic can read back the last frame written,
+                # such as a PIN: redact it as the command trace does.
+                char_info.read_result = controller._format_command_trace_payload(bytes(value))
+            else:
+                char_info.read_result = format_payload(value)
         except asyncio.CancelledError:
             raise
         except Exception as err:
