@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -737,12 +738,13 @@ async def test_a_control_without_a_button_sends_what_a_listed_entity_sends(nordi
     """Every app control is reachable: a press without a button of its own sends
     the same frames, repeats, delays and STOP as an entity that is listed."""
 
-    async def sent(command: Callable[[], Awaitable[None]]) -> tuple[object, ...]:
-        ctrl.write_command.reset_mock()
-        await command()
+    async def sent(ctrl: RmcontrolController, command: Awaitable[None]) -> tuple[object, ...]:
+        mock = cast(AsyncMock, ctrl.write_command)
+        mock.reset_mock()
+        await command
         return tuple(
             (call.args, tuple(sorted((k, v) for k, v in call.kwargs.items() if k != "cancel_event")))
-            for call in ctrl.write_command.call_args_list
+            for call in mock.call_args_list
         )
 
     told_apart = 0
@@ -750,17 +752,21 @@ async def test_a_control_without_a_button_sends_what_a_listed_entity_sends(nordi
         ctrl = controller(code, nordic=nordic)
         ctrl.write_command = AsyncMock()
         specs = ctrl.controller_button_specs
-        listed = {await sent(lambda s=spec: s.press_fn(ctrl)) for spec in specs}
-        listed |= {await sent(command) for command in _standard_commands(ctrl)}
+        listed = {await sent(ctrl, spec.press_fn(ctrl)) for spec in specs}
+        listed |= {await sent(ctrl, command()) for command in _standard_commands(ctrl)}
         for action in ctrl.product_profile.actions:
             if action.action.startswith(("deviceFunctionItemTitle", "deviceFunctionSofa")):
                 continue
             for long_press in (False, True):
                 try:
                     frames = await sent(
-                        lambda a=action, lp=long_press: ctrl.async_execute_product_action(
-                            a.action, getter=a.getter, occurrence=a.occurrence, long_press=lp
-                        )
+                        ctrl,
+                        ctrl.async_execute_product_action(
+                            action.action,
+                            getter=action.getter,
+                            occurrence=action.occurrence,
+                            long_press=long_press,
+                        ),
                     )
                 except ValueError:
                     continue  # Not a gesture this control has, or not a bed command.
