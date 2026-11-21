@@ -212,9 +212,9 @@ class FurniMoveController(BedController):
         self._widget_pending = False
         self._widget_last: bytes | None = None
         self._widget_before_last: bytes | None = None
-        widget_state = getattr(coordinator, "furnimove_widget_state", None)
-        if isinstance(widget_state, tuple):
-            self._widget_pending, self._widget_last, self._widget_before_last = widget_state
+        self._widget_pending, self._widget_last, self._widget_before_last = (
+            coordinator.furnimove_widget_state
+        )
         self._cleanup_kind: str | None = None
         self._cleanup_dot = True
         self._cleanup_query = False

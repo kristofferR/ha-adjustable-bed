@@ -478,8 +478,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             raise ValueError(f"Unknown Richmat MH app: {app}")
         self._app = app
         self.profile = self._wire_profiles[app]
-        data = getattr(getattr(coordinator, "entry", None), "data", None)
-        data = data if isinstance(data, Mapping) else {}
+        data = coordinator.entry.data
         stored_name = data.get(CONF_BLE_DEVICE_NAME)
         name = device_name if not is_mac_like_name(device_name) else None
         if name is None and isinstance(stored_name, str) and not is_mac_like_name(stored_name):
@@ -1629,9 +1628,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if snapshot is None or snapshot == self._stored_snapshot:
             return
         self._stored_snapshot = dict(snapshot)
-        remember = getattr(self._coordinator, "remember_richmat_mh_snapshot", None)
-        if callable(remember):
-            remember(snapshot)
+        self._coordinator.remember_richmat_mh_snapshot(snapshot)
 
     # ------------------------------------------------------------ notifications
 

@@ -34,7 +34,7 @@ class MotoSleepController(BedController):
         self, coordinator: AdjustableBedCoordinator, device_name: str | None = None
     ) -> None:
         super().__init__(coordinator)
-        self._device_name = device_name or getattr(coordinator, "ble_device_name", None)
+        self._device_name = device_name or coordinator.ble_device_name
         self.profile: MotoSleepProfile = resolve_motosleep_profile(self._device_name)
         self._write_with_response = self.profile.write_with_response
         self._light_rgb = (255, 255, 255)

@@ -1063,6 +1063,6 @@ class VibradormController(BedController):
         if self.client is None or not self.client.is_connected:
             raise ConnectionError("Not connected to bed")
 
-        self._massage_on = not getattr(self, "_massage_on", False)
+        self._massage_on = not self._massage_on
         on_off = b"\x01" if self._massage_on else b"\x00"
         await self._write_cbi_command(self.profile.vibration, extra_bytes=on_off)

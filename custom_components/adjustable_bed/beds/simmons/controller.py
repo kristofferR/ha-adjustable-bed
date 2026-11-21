@@ -156,10 +156,9 @@ PEER_CONFLICT_ERROR: Final = (
 )
 
 
-def _stored_ble_name(coordinator: object) -> object:
+def _stored_ble_name(coordinator: AdjustableBedCoordinator) -> object:
     """Return the raw Bluetooth name saved for this entry, never its display name."""
-    data = getattr(getattr(coordinator, "entry", None), "data", None)
-    return data.get(CONF_BLE_DEVICE_NAME) if isinstance(data, Mapping) else None
+    return coordinator.entry.data.get(CONF_BLE_DEVICE_NAME)
 
 
 def _protocol_name(live: str | None, stored: object) -> str | None:

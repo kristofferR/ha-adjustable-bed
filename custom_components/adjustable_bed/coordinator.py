@@ -1974,7 +1974,7 @@ class AdjustableBedCoordinator(
         # then waits for any cancelled controller cleanup to release the wire lock.
         async with self._command_demand_scope(), self._command_lock:
             self._hold_link_for_command()
-            if getattr(self, "_pairing_transfer_active", False) is True:
+            if self._pairing_transfer_active:
                 raise ConnectionError("Bed ownership is being transferred")
             controller = self._controller
             disconnected_transport = controller is not None and (
@@ -2040,7 +2040,7 @@ class AdjustableBedCoordinator(
 
     async def _async_prepare_controller_operation(self, operation_name: str) -> BedController:
         """Prepare the selected transport before any controller operation."""
-        if getattr(self, "_pairing_transfer_active", False) is True:
+        if self._pairing_transfer_active:
             raise ConnectionError("Bed ownership is being transferred")
         controller = self._controller
         if controller is not None and controller.requires_disconnected_transport is True:

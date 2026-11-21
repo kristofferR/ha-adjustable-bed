@@ -466,8 +466,8 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
             self._motor_state[motor] = command_value
 
         combined_command = sum(self._motor_state.values())
-        pulse_count = getattr(self._coordinator, "motor_pulse_count", 25)
-        pulse_delay = getattr(self._coordinator, "motor_pulse_delay_ms", 200)
+        pulse_count = self._coordinator.motor_pulse_count
+        pulse_delay = self._coordinator.motor_pulse_delay_ms
 
         try:
             if combined_command:

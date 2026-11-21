@@ -65,8 +65,6 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
         # Auto is the documented default layout only after the user selects
         # this app. Shared smartbed names never infer the app or product.
         self.profile = p.PROFILES["remedy_iii" if variant == "auto" else variant]
-        retained = getattr(coordinator, "rize_home_source", "button")
-        coordinator.rize_home_source = "speak" if retained == "speak" else "button"
         self._link: _Link | None = None
         self._notifying = False
         self._timer = 0

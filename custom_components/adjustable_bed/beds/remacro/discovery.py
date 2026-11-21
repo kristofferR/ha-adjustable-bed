@@ -177,8 +177,7 @@ def async_watch_remacro_fallback(
 
 def remacro_side_lacks_global_stop(runtime: EntityRuntime) -> bool:
     """Whether a Remacro side's screen defines no global STOP frame (NineActivity)."""
-    # Checked first so other bed types (and minimal test runtimes) are untouched.
-    if getattr(runtime, "bed_type", None) != BED_TYPE_REMACRO:
+    if runtime.bed_type != BED_TYPE_REMACRO:
         return False
     controller = runtime.capability_controller
     return controller is not None and not controller.supports_stop_all

@@ -375,7 +375,7 @@ class SertaMPRemoteController(AppController):
 
     def on_disconnect(self) -> None:
         self._local_release_stop = None
-        for setter in getattr(self, "_setters", ()):
+        for setter in self._setters:
             setter.cancel()
         self._setters = []
         self._memory_active = False

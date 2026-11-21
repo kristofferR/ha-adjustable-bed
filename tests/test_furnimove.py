@@ -45,6 +45,7 @@ def make_controller(handset_id="82417", *, characteristics=None) -> FurniMoveCon
         lambda *updates: state_writer(coordinator.controller_state)(*updates)
     )
     coordinator.motor_pulse_count = 2
+    coordinator.furnimove_widget_state = (False, None, None)
     coordinator.client = MagicMock(
         is_connected=True,
         services=[

@@ -105,7 +105,7 @@ class KaidiController(BedController):
         self._massage_mode_index = 0
         self._set_massage_timer_mode(0)
 
-        entry_data = getattr(getattr(self._coordinator, "entry", None), "data", {})
+        entry_data = self._coordinator.entry.data
         cached_room_id = entry_data.get(CONF_KAIDI_ROOM_ID)
         cached_target_vaddr = entry_data.get(CONF_KAIDI_TARGET_VADDR)
         cached_product_id = entry_data.get(CONF_KAIDI_PRODUCT_ID)
@@ -412,9 +412,7 @@ class KaidiController(BedController):
 
     def _try_resolve_room_id_from_ha(self) -> None:
         """Attempt to resolve room ID from Home Assistant's Bluetooth scanner."""
-        hass = getattr(self._coordinator, "hass", None)
-        if hass is None:
-            return
+        hass = self._coordinator.hass
         try:
             from .metadata import resolve_kaidi_advertisement
             advertisement = resolve_kaidi_advertisement(
