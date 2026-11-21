@@ -29,6 +29,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
+    massage_timer_sensor_spec,
 )
 from ..okin_nframe import OkinNFrameController
 from .state import SIDES, AlarmSettings
@@ -693,13 +694,11 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
             spec
             for name, keys in SIDES.items()
             for spec in (
-                ControllerStateSensorSpec(
+                massage_timer_sensor_spec(
                     f"ultramatic_{name.lower()}_timer",
                     f"ultramatic_{name.lower()}_timer",
                     keys.timer,
-                    "mdi:timer",
-                    "min",
-                    (keys.wave, keys.head, keys.foot, keys.standalone),
+                    attribute_keys=(keys.wave, keys.head, keys.foot, keys.standalone),
                     card=CARD_MASSAGE,
                 ),
                 ControllerStateSensorSpec(

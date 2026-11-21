@@ -4734,7 +4734,7 @@
         "name": "Model"
       },
       "jalon_massage": {
-        "name": "Massage timer indicator"
+        "name": "Massage timer step"
       },
       "jalon_alarm": {
         "name": "Alarm"
@@ -4761,7 +4761,7 @@
         "name": "Massage timer indicator"
       },
       "rize_home_timer_index": {
-        "name": "Massage timer setting"
+        "name": "Massage timer step"
       },
       "rize_home_combined_intensity": {
         "name": "Combined massage intensity"
@@ -5052,7 +5052,7 @@
         "name": "Massage wave setting"
       },
       "betterliving2_massage_timer": {
-        "name": "Massage timer setting"
+        "name": "Massage timer step"
       },
       "heart_rate": {
         "name": "Heart rate"

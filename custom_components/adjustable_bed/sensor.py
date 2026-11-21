@@ -10,12 +10,13 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory, Platform
+from homeassistant.const import EntityCategory, Platform, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 
 from .bed_traits import bed_traits
@@ -126,8 +127,9 @@ MASSAGE_SENSOR_DESCRIPTIONS: tuple[AdjustableBedMassageSensorEntityDescription, 
     AdjustableBedMassageSensorEntityDescription(
         key="massage_timer_mode",
         translation_key="massage_timer_mode",
-        icon="mdi:timer",
-        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:timer-outline",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        device_class=SensorDeviceClass.DURATION,
         state_key=MASSAGE_TIMER_MINUTES,
     ),
 )
@@ -303,7 +305,8 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
             value = state[key]
             return value if isinstance(value, (str, int)) else None
         value = state.get(key)
-        return None if value is None else str(value) if value else "Off"
+        # Minutes; 0 while no timer runs.
+        return value if isinstance(value, int) else None
 
 
 class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):

@@ -377,7 +377,7 @@ def massage_timer_sensor_spec(
     card: CardPlacement = CARD_HIDDEN,
     attribute_keys: tuple[AnyStateKey, ...] = (),
 ) -> ControllerStateSensorSpec:
-    """A massage timer as a duration on the dashboard; 0 while no timer runs.
+    """A massage timer as a duration on the dashboard.
 
     Publish minutes or seconds, never an index: a bed whose index has no proven
     duration keeps its own spec, named as a step.

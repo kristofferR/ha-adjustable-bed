@@ -51,12 +51,14 @@ from ..entity_specs import (
     ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..family_actions import MotionBedModuleActions
 from .actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from .models import MotionBedSelection
 from .protocol import (
     SOURCE_COMMANDS,
+    AirTimer,
     AlarmMode,
     AlarmSound,
     AlarmSwitch,
@@ -320,6 +322,12 @@ class _HeldSession:
 
 
 ACTIVE_MODULE: Final = StateKey[str | None]("motion_bed_active_module")
+AIR_TIMER_MINUTES: Final = StateKey[int | None]("motion_bed_air_timer_minutes")
+_AIR_TIMER_MINUTES: Final[Mapping[int, int]] = {
+    AirTimer.TEN_MINUTES: 10,
+    AirTimer.TWENTY_MINUTES: 20,
+    AirTimer.THIRTY_MINUTES: 30,
+}
 
 
 def _field_key(name: str) -> StateKey[ScalarState]:
@@ -786,7 +794,11 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
+                "motion_bed_air_timer", "motion_bed_air_timer", AIR_TIMER_MINUTES
+            )
+            if name == "air_timer"
+            else ControllerStateSensorSpec(
                 key="motion_bed_" + name, translation_key="motion_bed_" + name,
                 state_key=_field_key(name), icon="mdi:bed-outline",
                 attribute_keys=tuple(_field_key(item) for item in attributes),
@@ -811,9 +823,11 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         if self._state.massage_timer != self._reported_massage_timer:
             self._reported_massage_timer = self._shown_massage_timer = self._state.massage_timer
         timer = self._shown_massage_timer
+        air_timer = self._state.air_timer
         self.forward_controller_state_updates(
             *(_field_key(name)(value) for name, value in self._state.to_updates().items()),
             ACTIVE_MODULE(self._active_module),
+            AIR_TIMER_MINUTES(None if air_timer is None else _AIR_TIMER_MINUTES.get(air_timer)),
             MASSAGE_TIMER_MINUTES(timer if timer in _MASSAGE_TIMERS else None),
         )
 
