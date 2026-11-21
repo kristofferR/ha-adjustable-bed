@@ -417,6 +417,7 @@ def test_ha_connection_sensor_already_exposes_adapter_rssi() -> None:
     from custom_components.adjustable_bed.binary_sensor import AdjustableBedConnectionSensor
 
     sensor = SimpleNamespace(
+        _base_attributes=dict,
         _coordinator=SimpleNamespace(
             entity_side=None,
             last_connected=None,
