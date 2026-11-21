@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
 from custom_components.adjustable_bed.beds.richmat_classic.protocol import Worker
 from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
 from custom_components.adjustable_bed.beds.richmat_classic.removed_layouts import REMOVED_LAYOUTS
+from custom_components.adjustable_bed.card import CardRole
 from custom_components.adjustable_bed.profiles.bedsmart import (
     EXCLUDED_LAYOUTS,
     MODE_LABELS,
@@ -528,3 +529,13 @@ async def test_explicit_stop_never_crosses_a_retired_physical_route(clock, chang
     with pytest.raises(HomeAssistantError):
         await c.stop_all()
     assert not packets(co)
+
+
+def test_the_set_key_is_named_for_what_it_does_not_as_a_save():
+    """GVRM's Set key arms programming: it saves nothing by itself."""
+    c, _co = controller("GVRM", "RAW")
+    spec = next(s for s in c.controller_button_specs if s.key == "richmat_classic_5")
+    assert spec.translation_placeholders == {"action": "Program"}
+    assert spec.card.role is not CardRole.SAVE and spec.hold is None
+    # Sent once and confirmed, as before (test_gvrm_head_or_foot_buttons_send_their_head_command).
+    assert spec.requires_confirmation and not spec.entity_registry_enabled_default

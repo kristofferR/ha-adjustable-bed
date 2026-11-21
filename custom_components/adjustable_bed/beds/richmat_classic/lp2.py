@@ -84,6 +84,10 @@ _ALARMS: Final = {
 _PACKAGE_SERVICE: Final = codec.TRANSPORTS["w0"].service_uuid
 
 
+# The remote's Set key, which the app sends once, as it sends a save.
+_SET_KEYS: Final = frozenset({"k_set_old", "com_set_old"})
+
+
 @dataclass(frozen=True, slots=True)
 class Gesture:
     node: int
@@ -102,6 +106,11 @@ class Gesture:
     def saves(self) -> bool:
         shape = classify(self.label)
         return shape is not None and shape.kind is Kind.SAVE
+
+    @property
+    def once(self) -> bool:
+        """Sent once per press, never held: a save, or the Set key that arms one."""
+        return self.saves or self.resource.removeprefix("@string/") in _SET_KEYS
 
     @property
     def key(self) -> str:
@@ -324,7 +333,7 @@ class Lp2Controller(RichmatClassicController):
         held: bool = False,
     ) -> None:
         gestures = self.validate_action(node, long=long, held=held, head=head, flag=flag)
-        single_save = any(g.saves and g.status == 1 for g in gestures)
+        single_save = any(g.once and g.status == 1 for g in gestures)
         if mode not in self._model.modes or flag not in ("53", "54", "55"):
             raise ValueError("This control selection is unavailable")
         with self._transaction():
@@ -451,10 +460,10 @@ class Lp2Controller(RichmatClassicController):
             self._gesture(node, selected, long=long, held=held, head=head, flag=flag)
             for selected in wires
         )
-        if held and any(g.saves or g.status != 1 for g in gestures):
+        if held and any(g.once or g.status != 1 for g in gestures):
             raise ValueError("This control does not support held execution")
         context = current_command_context()
-        if context and context.lease and any(g.saves or g.status != 1 for g in gestures):
+        if context and context.lease and any(g.once or g.status != 1 for g in gestures):
             raise invalid("control_hold_renewal_not_supported")
         return gestures
 
@@ -628,9 +637,9 @@ class Lp2Controller(RichmatClassicController):
                     label,
                     partial(_press, key=key, expected=gesture),
                     hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release")
-                    if gesture.status == 1 and not gesture.saves
+                    if gesture.status == 1 and not gesture.once
                     else None,
-                    requires_confirmation=gesture.saves or gesture.long,
+                    requires_confirmation=gesture.once or gesture.long,
                 )
             )
         result.append(

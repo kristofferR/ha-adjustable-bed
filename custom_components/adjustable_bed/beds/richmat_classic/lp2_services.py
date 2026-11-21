@@ -104,7 +104,7 @@ async def handle_settings(call: ServiceCall) -> None:
                 head=data["head"],
                 flag="5" + str(data["motor"]),
             )
-            if (data["long"] or any(g.saves for g in gestures)) and not data["confirm"]:
+            if (data["long"] or any(g.once for g in gestures)) and not data["confirm"]:
                 raise ValueError("Confirm the save or long press before sending it")
         elif op == "aromatherapy" and not all(
             1 <= n <= limit for n, limit in zip(data["aroma_times"], (60, 60, 12), strict=True)

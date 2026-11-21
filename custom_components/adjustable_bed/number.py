@@ -861,8 +861,11 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         )
         state = self._coordinator.controller_state
         if key not in state:
-            # A connected bed that tracks no level for this zone shows zero.
-            return None if self._coordinator.controller is None else 0.0
+            # A connected bed that tracks no level for this zone shows zero,
+            # unless zero is not a level the zone has.
+            if self._coordinator.controller is None or (self.native_min_value or 0) > 0:
+                return None
+            return 0.0
         value = state[key]
         return None if value is None else float(value)
 

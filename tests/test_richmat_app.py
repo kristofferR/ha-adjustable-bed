@@ -740,3 +740,90 @@ async def test_blanket_mode_readiness_requires_complete_declared_checksum_valid_
     c._notification(link, None, bytearray(complete[-1:]))
     assert c._blanket_mode_received.is_set()
     assert (c.blanket["f"], c.blanket["17"]) == (30, 35)
+
+
+async def test_a_tile_without_a_save_code_offers_no_save_and_the_reset_asks_first(coordinator):
+    """14 products flag their "Factory Reset" tile as savable; its action has no long press."""
+    product, detail = next(
+        (key, str(row[0]))
+        for key, p in PRODUCTS.items()
+        for row in p["versions"]["other"]["presets"]
+        if row[1]
+        and ACTIONS[str(row[0])]["enum"] == "deviceFunctionItemRelieveZeroGravitySetting"
+    )
+    assert ACTIONS[detail]["long"] == 0
+    c = controller(coordinator, product)
+    specs = {spec.key: spec for spec in c.controller_button_specs}
+    assert "richmat_app_save_" + detail not in specs
+    with pytest.raises(ValueError, match="no save control"):
+        await c.press(detail, save=True)
+    assert written(c) == []
+    reset = specs["richmat_app_" + detail]
+    assert reset.requires_confirmation and not reset.entity_registry_enabled_default
+
+
+async def test_every_massage_timer_choice_sends_what_its_button_sent(coordinator, clocked):
+    """10/20/30 Min (or 2h/3h/5h) are one select; each option is its old button's frames."""
+    checked = 0
+    for product in PRODUCTS:
+        for version in (0, 1):
+            c = controller(coordinator, product)
+            c.version = version
+            if not c.supports_massage_timer:
+                continue
+            assert c.auto_enable_massage and not c.massage_timer_can_turn_off
+            keys = {spec.key for spec in c.controller_button_specs}
+            for minutes, detail in c._massage_timers.items():
+                assert "richmat_app_" + detail not in keys
+                coordinator.client.write_gatt_char.reset_mock()
+                await c.press(detail)
+                button = written(c)
+                coordinator.client.write_gatt_char.reset_mock()
+                await c.set_massage_timer(minutes)
+                assert written(c) == button and button
+                checked += 1
+    assert checked > 1000
+
+
+async def test_every_massage_level_sends_what_its_button_sent(coordinator, clocked):
+    """Head and foot Level 1-3 and Off buttons are one number per zone."""
+    zones = 0
+    for product in PRODUCTS:
+        for version in (0, 1):
+            c = controller(coordinator, product)
+            c.version = version
+            keys = {spec.key for spec in c.controller_button_specs}
+            for zone, levels in c._level_actions.items():
+                assert c.massage_intensity_min(zone) == (0 if 0 in levels else 1)
+                for level, detail in levels.items():
+                    assert "richmat_app_" + detail not in keys
+                    coordinator.client.write_gatt_char.reset_mock()
+                    await c.press(detail)
+                    button = written(c)
+                    coordinator.client.write_gatt_char.reset_mock()
+                    await c.set_massage_intensity(zone, level)
+                    assert written(c) == button and button
+                zones += 1
+    assert zones >= 6
+
+
+async def test_heat_levels_are_one_select_that_sends_what_the_buttons_sent(coordinator, clocked):
+    products = 0
+    for product in PRODUCTS:
+        c = controller(coordinator, product)
+        if not c._heat_levels:
+            continue
+        (spec,) = [s for s in c.controller_select_specs if s.key == "heat_level"]
+        assert spec.options == ("off", "low", "medium", "high")
+        keys = {s.key for s in c.controller_button_specs}
+        for level, detail in c._heat_levels.items():
+            assert "richmat_app_" + detail not in keys
+            coordinator.client.write_gatt_char.reset_mock()
+            await c.press(detail)
+            button = written(c)
+            coordinator.client.write_gatt_char.reset_mock()
+            await spec.select_fn(c, level)
+            assert written(c) == button and button
+        products += 1
+    assert products
+

@@ -400,7 +400,7 @@ def unique_buttons(
         translation_key = spec.translation_key
         if spec.translation_placeholders is None and translation_key is not None:
             if translation_key in shared:
-                spec = _own_label(spec)
+                spec = own_label(spec)
             else:
                 shared.add(translation_key)
         name = _shown_name(spec).casefold()
@@ -421,14 +421,15 @@ def _shown_name(spec: ControllerButtonSpec) -> str:
 
 def _numbered(spec: ControllerButtonSpec, number: int) -> ControllerButtonSpec:
     if spec.translation_placeholders is None:
-        spec = _own_label(spec)
+        spec = own_label(spec)
     placeholders = dict(spec.translation_placeholders or {})
     field = "preset" if "preset" in placeholders else "action"
     placeholders[field] = f"{display_label(placeholders[field])} {number}"
     return replace(spec, translation_placeholders=placeholders)
 
 
-def _own_label(spec: ControllerButtonSpec) -> ControllerButtonSpec:
+def own_label(spec: ControllerButtonSpec) -> ControllerButtonSpec:
+    """The spec under its own label in its kind's ``{action}`` shape, never a shared name."""
     name = display_label(spec.name)
     key = {
         CardSection.PRESETS: PRESET_KEY,
