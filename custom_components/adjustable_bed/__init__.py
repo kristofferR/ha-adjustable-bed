@@ -295,28 +295,21 @@ _V4_RUNTIME_DEFAULTS: Final[dict[str, bool]] = {
 }
 
 
-def migrate_v4_runtime_defaults(
-    data: Mapping[str, Any], options: Mapping[str, Any] | None = None
-) -> dict[str, Any]:
+def migrate_v4_runtime_defaults(data: Mapping[str, Any]) -> dict[str, Any]:
     """Return 4.x entry data with the values 4.x ran with saved where it had none.
 
-    A paired side read the pair's data and options, so they are filled once for
-    both sides; an original entry a pair restores on unpair is filled on its own.
-    Diagnostic entries from 1.4.6 to 2.5.3, for example, saved no handoff.
+    4.x read both from the entry data, where options that a pair's sides read
+    still win. A paired side read the pair's data under its own, so the pair's
+    data is filled once for both sides; an original entry a pair restores on
+    unpair is filled on its own. Diagnostic entries from 1.4.6 to 2.5.3, for
+    example, saved no handoff.
     """
     migrated = dict(data)
     for key, value in _V4_RUNTIME_DEFAULTS.items():
-        if key not in migrated and key not in (options or {}):
-            migrated[key] = value
+        migrated.setdefault(key, value)
     if isinstance(children := migrated.get(CONF_PAIR_CHILDREN), list):
         migrated[CONF_PAIR_CHILDREN] = [
-            {
-                **child,
-                KEY_ORIGIN_DATA: migrate_v4_runtime_defaults(
-                    child[KEY_ORIGIN_DATA],
-                    origin if isinstance(origin := child.get(KEY_ORIGIN_OPTIONS), Mapping) else None,
-                ),
-            }
+            {**child, KEY_ORIGIN_DATA: migrate_v4_runtime_defaults(child[KEY_ORIGIN_DATA])}
             if isinstance(child, Mapping) and isinstance(child.get(KEY_ORIGIN_DATA), Mapping)
             else child
             for child in children
@@ -917,7 +910,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         # default is saved. Schema 5 entries cannot load on 4.x; restoring a Home
         # Assistant backup is the only way back.
         data = migrate_v5_data(
-            migrate_v4_runtime_defaults(entry.data, entry.options),
+            migrate_v4_runtime_defaults(entry.data),
             entry.options,
             from_version=original_version[0],
             from_minor_version=original_version[1],

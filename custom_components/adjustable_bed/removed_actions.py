@@ -28,6 +28,7 @@ class Removal:
     """An action, one of its fields or one value of a field that 4.x or a beta had."""
 
     action: str
+    # A field, or a dotted path into a mapping field.
     field: str | None = None
     # The field's removed value, or None when the field itself is gone.
     value: str | None = None
@@ -40,11 +41,18 @@ class Removal:
             return False
         if self.field is None:
             return True
-        if self.field not in data:
-            return False
-        # Templates compile to objects that keep their source.
-        value = data[self.field]
-        return self.value is None or str(getattr(value, "template", value)) == self.value
+        value: object = data
+        for name in self.field.split("."):
+            if not isinstance(value, Mapping) or name not in value:
+                return False
+            value = value[name]
+        if self.value is None:
+            return True
+        # Templates compile to objects that keep their source; 4.x read "01" as 1.
+        given = str(getattr(value, "template", value)).strip()
+        if given.isdecimal() and self.value.isdecimal():
+            return int(given) == int(self.value)
+        return given == self.value
 
     @property
     def line(self) -> str:
@@ -72,14 +80,22 @@ REMOVALS: Final[tuple[Removal, ...]] = (
     *_actions("leggett_hold_control", f"{DOMAIN}.hold_control"),
     *_actions("malouf_sync_clock motion_bed_clock", f"{DOMAIN}.sync_clock"),
     *_actions("reverie_test", None),
+    # A call matching one of these is listed by it, not by its action's row.
+    Removal("rmcontrol_alarm", "operation", "sync", f"{DOMAIN}.sync_clock"),
+    Removal("rmcontrol_alarm", "operation", "query"),
+    *(
+        Removal("rmcontrol_alarm", "operation", operation, f"{DOMAIN}.set_alarm enabled: false")
+        for operation in ("cancel_single", "delete")
+    ),
     # Only in v5 betas.
     *_actions(
-        "comfort_enhancement3_set_wakeup comfort_enhancement3_delete_wakeup "
+        "comfort_enhancement3_set_wakeup "
         "comfortbase_set_alarm jalon_bed_set_alarm jalon_set_alarm mline_set_alarm "
         "n32_motion_bed_alarm richmat_app_alarm smart_sleep_set_alarm "
         "symphony_sense_set_alarm symphony_set_alarm yamada_set_alarm",
         f"{DOMAIN}.set_alarm",
     ),
+    Removal("comfort_enhancement3_delete_wakeup", use=f"{DOMAIN}.set_alarm enabled: false"),
     *(
         Removal(old, use=f"{DOMAIN}.estimate_{new}")
         for old, new in (
@@ -114,6 +130,11 @@ REMOVALS: Final[tuple[Removal, ...]] = (
     Removal("goodvibe", "operation", "sync", f"{DOMAIN}.sync_clock"),
     Removal("furnimove_action", "consumer"),
     Removal("sleep_number_command", "command", "set_system_time", f"{DOMAIN}.sync_clock"),
+    # Only the app's single local outlet and light remain.
+    *(
+        Removal("sleep_number_command", "parameters.device", str(device), "parameters.device: 0")
+        for device in range(1, 16)
+    ),
     *(
         Removal("sleep_number_command", "command", command)
         for command in (
@@ -170,9 +191,12 @@ def removed_calls(hass: HomeAssistant) -> dict[str, set[str]]:
     callers: dict[str, set[str]] = {}
     for entity_id, config in _configs(hass):
         for action, data in _calls(config):
-            for removal in REMOVALS:
-                if removal.matches(action, data):
-                    callers.setdefault(removal.line, set()).add(entity_id)
+            matched = [removal for removal in REMOVALS if removal.matches(action, data)]
+            # A field's own row says more than its action's.
+            if any(removal.field is not None for removal in matched):
+                matched = [removal for removal in matched if removal.field is not None]
+            for removal in matched:
+                callers.setdefault(removal.line, set()).add(entity_id)
     return callers
 
 

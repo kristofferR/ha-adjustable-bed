@@ -251,6 +251,8 @@ class TestDiagnosticsOutput:
             "resolver_version": 1,
             "profile_id": BED_TYPE_LINAK,
             "fields": {CONF_BED_TYPE: BED_TYPE_LINAK},
+            # The connection it ran with before, which it had not saved.
+            "settings_5_6": {"data": ["connection_mode=idle"]},
         }
 
     async def test_diagnostics_redacts_sensitive_data(

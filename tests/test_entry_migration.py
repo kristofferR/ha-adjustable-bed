@@ -183,6 +183,22 @@ async def test_a_4x_entry_keeps_the_connection_it_ran_with(
     assert entry.data[CONF_CONNECTION_MODE] == mode
 
 
+async def test_a_4x_entry_keeps_not_reading_positions_its_options_never_reached(
+    hass: HomeAssistant,
+) -> None:
+    """4.x read a bed's own setting from its data alone."""
+    entry = _entry(
+        hass,
+        {CONF_ADDRESS: "AA:BB:CC:DD:EE:0F", CONF_BED_TYPE: BED_TYPE_LINAK},
+        minor_version=3,
+        options={CONF_DISABLE_ANGLE_SENSING: False},
+    )
+
+    await async_migrate_entry(hass, entry)
+
+    assert not reads_positions(entry.data)
+
+
 async def test_a_4x_pair_keeps_what_each_side_ran_with(hass: HomeAssistant) -> None:
     """Sides and originals that saved neither setting stay connected and do not read positions."""
     original = {

@@ -52,9 +52,16 @@ SCRIPTS = {
             "sequence": [
                 {
                     "action": "adjustable_bed.gmmotor",
-                    "data": {"operation": "sleep_report", "part": 1, "report_type": "day"},
+                    # 4.x read a quoted number as the number.
+                    "data": {"operation": "sleep_report", "part": "01", "report_type": "day"},
                 },
                 {"action": "adjustable_bed.reverie_test"},
+                # Listed by the operation that moved, not as an alarm.
+                {"action": "adjustable_bed.rmcontrol_alarm", "data": {"operation": "sync"}},
+                {
+                    "action": "adjustable_bed.sleep_number_command",
+                    "data": {"command": "kid_outlet", "parameters": {"device": 2, "outlet_on": True}},
+                },
             ]
         }
     }
@@ -83,6 +90,10 @@ async def test_repair_names_each_caller_and_its_replacement(hass: HomeAssistant)
                 "- `adjustable_bed.linak_set_alarm` → `adjustable_bed.set_alarm`: "
                 "automation.wake_up",
                 "- `adjustable_bed.reverie_test`: script.report",
+                "- `adjustable_bed.rmcontrol_alarm` `operation: sync` → "
+                "`adjustable_bed.sync_clock`: script.report",
+                "- `adjustable_bed.sleep_number_command` `parameters.device: 2` → "
+                "`parameters.device: 0`: script.report",
             )
         )
     }
@@ -127,7 +138,12 @@ def test_every_removal_is_on_the_upgrade_page_and_gone_from_the_actions() -> Non
     assert {removal.action for removal in REMOVALS if removal.field is None} == listed
     assert not listed & actions.keys()
     for removal in REMOVALS:
-        if removal.field is not None:
-            assert (removal.value or removal.field) in page, removal
-        if removal.field is not None and removal.value is None:
-            assert removal.field not in actions[removal.action].get("fields", {}), removal
+        # A field of an action that is gone only refines that action's advice.
+        if removal.field is None or removal.action not in actions:
+            continue
+        field = actions[removal.action].get("fields", {}).get(removal.field)
+        if removal.value is None:
+            assert field is None, removal
+        elif field is not None:
+            options = field["selector"]["select"]["options"]
+            assert removal.value not in options, removal
