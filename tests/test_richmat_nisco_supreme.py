@@ -422,6 +422,11 @@ def test_controls_are_named_as_their_buttons_show_them() -> None:
             controller.control_named(name)
 
 
+def test_a_control_keeps_its_colon_name() -> None:
+    controller = make("nisco", "bhrm")
+    assert controller.control_named("Massage: Head Up") == controller.control_named("Massage head up")
+
+
 @pytest.mark.parametrize(("app", "model"), [("nisco", "bhrm"), ("nisco", "garm"), ("mlily_supreme", "aerm")])
 def test_every_button_name_runs_its_own_control(app: str, model: str) -> None:
     """The action takes the name a button shows, so a name copied from the UI works."""

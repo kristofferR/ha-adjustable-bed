@@ -150,7 +150,7 @@ number. The token is omitted when there is none.
 |---------|-------------|-----------|-------------|
 | Move up / down | `motor-command` | `{"movement": {"position": {"side": <unit>, "location": "head"\|"foot"\|"lumbar"}, "action": "up"\|"down", "ticks": 4, "waitForResponse": false}}` | One increment per reply |
 | Axis stop | `motor-command` | `{"movement": {"position": {"side": <unit>, "location": <axis>}, "action": "stop"}}` | Release cleanup for that axis |
-| Stop all | `motor-command` | `{"stop": {"action": "all", "position": {"side": <unit>}}}` | All features; also stops the local motor/massage animation |
+| Stop All | `motor-command` | `{"stop": {"action": "all", "position": {"side": <unit>}}}` | All features; also stops the local motor/massage animation |
 | Read motor status | `motor-status` | none | Status refresh |
 
 ### Presets
