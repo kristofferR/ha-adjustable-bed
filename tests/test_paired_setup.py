@@ -2340,6 +2340,10 @@ class TestPairBedsConversion:
             assert manager.beds[address].tracking(["back"])
             assert [position.name for position in manager.positions] == names
             assert all(position.targets == {"bed": {"back": 0.0}} for position in manager.positions)
+        # The left bed's button is its own again, under the same entity ID.
+        assert ent_reg.async_get_entity_id(
+            "button", DOMAIN, f"{LEFT_ADDR}_saved_position_{left_reading.id}"
+        ) == reading_button
 
         # Removing a bed forgets its store; the other bed keeps its own.
         await hass.config_entries.async_remove(left.entry_id)
