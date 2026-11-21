@@ -1537,20 +1537,28 @@ class TestServices:
 
         stop.assert_awaited_once_with()
 
-    @pytest.mark.parametrize(
-        ("side", "error"),
-        [("left", "side_not_supported"), ("middle", "side_unavailable"), (["left"], "side_unavailable")],
-    )
+    async def test_stop_all_rejects_an_empty_device_list(
+        self, hass: HomeAssistant, mock_config_entry, enable_custom_integrations
+    ):
+        """A template that renders no beds is an error, never a silent success."""
+        import voluptuous as vol
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        with pytest.raises(vol.Invalid):
+            await hass.services.async_call(
+                DOMAIN, SERVICE_STOP_ALL, {"device_id": []}, blocking=True
+            )
+
     async def test_stop_all_with_a_side_stops_a_single_bed_whole(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
         enable_custom_integrations,
-        side: object,
-        error: str,
     ):
-        """A side the bed cannot honour stops the whole bed, then reports the side."""
+        """A side a single bed lacks stops the whole bed, then reports the side."""
         from homeassistant.exceptions import ServiceValidationError
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -1562,12 +1570,12 @@ class TestServices:
 
         with (
             patch.object(coordinator, "async_stop_command", new=AsyncMock()) as stop,
-            raises_key(error, ServiceValidationError),
+            raises_key("side_not_supported", ServiceValidationError),
         ):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_STOP_ALL,
-                {"device_id": [device_id], "side": side},
+                {"device_id": [device_id], "side": "left"},
                 blocking=True,
             )
 

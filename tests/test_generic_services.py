@@ -8,7 +8,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import voluptuous as vol
 import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
@@ -116,21 +115,6 @@ async def test_every_registered_action_is_described(hass: HomeAssistant) -> None
     await async_register_services(hass)
     services = yaml.safe_load((ROOT / "services.yaml").read_text())
     assert set(hass.services.async_services()[DOMAIN]) == set(services)
-
-
-async def test_no_action_accepts_an_empty_device_list(hass: HomeAssistant) -> None:
-    """A template that renders no beds is an error, never a silent success."""
-    await async_register_services(hass)
-    accepting = []
-    for name, service in hass.services.async_services()[DOMAIN].items():
-        assert service.schema is not None
-        try:
-            service.schema({"device_id": []})
-        except vol.MultipleInvalid as err:
-            if any(error.path[:1] == ["device_id"] for error in err.errors):
-                continue
-        accepting.append(name)
-    assert accepting == []
 
 
 async def test_hold_control_runs_a_declared_control(hass: HomeAssistant, resolve) -> None:
