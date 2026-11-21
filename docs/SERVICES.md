@@ -565,18 +565,16 @@ See [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) for
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Setting | `color`, `light_duration`, `aromatherapy`, `movement_test` or `bed_command`. |
+| `operation` | Setting | `color`, `light_duration`, `aromatherapy` or `bed_command`. |
 | `rgb_color` | Light color | Three channels from 0 to 255, required for `color`. |
 | `seconds` | Light duration (seconds) | 0 to 300, required for `light_duration`. |
 | `aroma_times` | Aromatherapy times | Three whole numbers: 1 to 60, 1 to 60 and 1 to 12, required for `aromatherapy`. |
-| `confirm` | Confirm programming or saving | Set `confirm: true` for `movement_test`, available only on the TEST layout. |
 | `command` | Bed command | Required for `bed_command`: `head_up`, `head_down`, `foot_up`, `foot_down`, `tv`, `lounge`, `zero_gravity`, `anti_snore`, `memory_one`, `memory_two`, `memory_three`, `flat` or `voice_stop_request`. |
-| `duration_ms` | Movement duration (milliseconds) | 1 to 60000, default 1000, for repeating named bed commands. It does not change the finite movement-test sequence. |
+| `duration_ms` | Movement duration (milliseconds) | 1 to 60000, default 1000, for repeating named bed commands. |
 
 All targets are checked before writing; each physical bed of a combined pair
 keeps its own layout and local mode. Lighting and aromatherapy require a
-support reply on the connection used for the write. The TEST movement sequence
-runs once and performs its release cleanup on cancellation. Use
+support reply on the connection used for the write. Use
 [`set_alarm`](#set_alarm) for the selected layout's wake actions and massage
 combinations. BedSmart has no clock or Bluetooth rename action.
 See the [BedSmart guide](beds/richmat.md#bedsmart--x-series) for layout controls,
@@ -1200,15 +1198,14 @@ write. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Setting | One of `color`, `light_duration`, `aromatherapy`, `fan`, `motor_program`, `movement_test` or `control`. |
+| `operation` | Setting | One of `color`, `light_duration`, `aromatherapy`, `fan` or `control`. |
 | `rgb_color` | Light color | Color for `color`. |
 | `seconds` | Light duration (seconds) | A number from 0 to 300. |
 | `aroma_times` | Aromatherapy times | Three whole numbers: 1 to 60, 1 to 60 and 1 to 12. |
 | `fan` | Fan | `head` or `foot`. |
 | `intensity` | Intensity (%) | 0 to 100 in steps of 20. |
 | `duration` | Fan duration | Duration choice 0 through 6, required for either fan. Only the head fan uses it; the foot fan sends only intensity. |
-| `schedule` | Movement program | For `motor_program`: 12 `records`, each `[order, run, pause]` with `order` 1 to 12; `rest` and `count`; `radio` (`rf` or `ble`), `code` (`new` or `old`), `identifier` 1 to 9 and four `motors` (1 to 4). `run`, `pause`, `rest` and `count` are 0 to 65535. |
-| `confirm` | Confirm programming or saving | Required for `motor_program` (RMCS layout), `movement_test` (TEST layout), and a control's long press or save. |
+| `confirm` | Confirm programming or saving | Required for a control's long press or save. |
 | `control` | Control | The layout's control number, for `control`. |
 | `mode` | Control mode | The layout's control mode, 0 to 2 (default 0). |
 | `long` | Long press | Send the control's long press. |
@@ -1390,7 +1387,7 @@ local calendar. Each target is validated before any writes. Not yet confirmed on
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation | One of `query` (Read current settings), `alarm` (Alarm tone), `cancel_alarm`, `rgb` (Light color), `lamp_timer`, `massage_timer`, `massage_popup` (Massage menu), `diagnostic_cycle` (Test cycle) and others; see the action in Home Assistant. |
+| `operation` | Operation | One of `query` (Read current settings), `alarm` (Alarm tone), `cancel_alarm`, `rgb` (Light color), `lamp_timer`, `massage_timer` and `massage_popup` (Massage menu). |
 | `actions` | Alarm actions | Alarm actions such as node_1, as listed under alarm actions in the bed's diagnostics. The first bed action and the massage choices decide what the alarm does. |
 | `time` | Alarm time | Next occurrence of this local time, with minute precision. Omit for 1440 minutes. |
 | `rgb_color` | RGB color | A color. |
@@ -1398,7 +1395,6 @@ local calendar. Each target is validated before any writes. Not yet confirmed on
 | `timer_save` | Use save encoding | Saves the timer the way the app's Save button does, instead of the way releasing the slider does. |
 | `progress` | Massage timer index | The app's slider position, 0 to 5, on D1RM and D9RM models. |
 | `popup` | Timer popup choice | Massage timer choice from the remote: 15, 30 or 45 minutes, or on and off. |
-| `schedule` | Motor schedule | Power Cool RMCS only. records: twelve [order, run_seconds, rest_seconds] rows in fixed M1/M2/M3/M4/M12/M34 up/down order; rest and count: nonnegative integers; radio: rf or ble; code: new or old; identifier: 1 to 9; motors: permutation of [1,2,3,4]. A running schedule cannot be stopped or read back. |
 
 ### Luuna Rise / Power Cool bed settings
 
@@ -1410,22 +1406,15 @@ bed's countdown, `rgb` for a three-byte color, and `lamp_timer` with `seconds`
 is a list of `node_<number>` keys from the device's `alarm_actions` diagnostics.
 Only that layout's choices are accepted. `time` is the next local occurrence;
 omitting it selects 1440 minutes. Unsupported preset/massage combinations are
-rejected before writing. Confirmation is not schedule readback.
+rejected before writing.
 
 `massage_timer` accepts `progress` 0–5 only for D1RM/D9RM. `massage_popup` uses
 Y6RM's `popup` choice (`15`, `30`, `45`, `toggle`). These labels do not establish
 firmware durations. Alarm and lamp writes require capability evidence from the
 current physical session, including after an idle reconnect.
 
-Power Cool's explicitly selected TEST layout permits `diagnostic_cycle`, a
-finite motor sequence cancelled by STOP. Its RMCS layout permits
-`program_schedule`. Supply `schedule` with twelve `[order, run_seconds,
-rest_seconds]` records in fixed M1/M2/M3/M4/M12/M34 up/down order, plus `rest`,
-`count`, `radio` (`rf` or `ble`), `code` (`new` or `old`), `identifier` (1–9), and
-`motors` (a permutation of 1–4). Orders must be a permutation of 1–12. The radio
-field is part of the BLE program. A running program cannot be stopped or read back.
-These operations use movement scheduling. Luuna's manufacturing layouts,
-standalone desks, networks and separate accessories are not service targets.
+Luuna's manufacturing layouts, standalone desks, networks and separate
+accessories are not service targets.
 
 See the [generated command tables](beds/richmat.md#luuna-rise--power-cool).
 

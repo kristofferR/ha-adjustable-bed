@@ -1431,9 +1431,6 @@ def render_rise_commands() -> str:
             (", ".join(sorted(set(layouts))), *key) for key, layouts in sorted(groups.items())
         ]))
         lines.append("\n</details>\n")
-    lines.append(_table(("Power Cool TEST opcode", "Refresh seconds", "Rest seconds"), [
-        (_code_hex(code), str(seconds), "5") for code, seconds in rise_frames.DIAGNOSTIC_CYCLE
-    ]))
     return _block(*lines)
 
 

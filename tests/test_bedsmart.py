@@ -405,19 +405,6 @@ async def test_earlier_selector_state_restores_without_changing_any_command(cloc
     assert packets(co) == ["3f", "6e"]
 
 
-async def test_movement_test_is_one_finite_source_sequence(clock):
-    from itertools import groupby
-
-    from custom_components.adjustable_bed.profiles.bedsmart import DIAGNOSTIC_CYCLE
-
-    c, co = controller("TEST")
-    await c.diagnostic_cycle()
-    codes = [bytes.fromhex(p)[3] for p in packets(co)]
-    groups = [code for code, _ in groupby(codes)]
-    assert groups == [code for command, _ in DIAGNOSTIC_CYCLE for code in (command, 0x6E)]
-    assert codes.count(0x6E) == 14
-
-
 @pytest.mark.parametrize("zone,code", [("both", 0xA9), ("head", 0xAA), ("feet", 0xAB)])
 async def test_memory_three_alarm_combines_with_layout_massage(clock, zone, code):
     c, co = controller("YPRM")

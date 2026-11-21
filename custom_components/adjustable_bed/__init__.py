@@ -38,6 +38,7 @@ from .beds.reverie.pairlink_local_setup import (
     release_pairlink_local_profile_lease,
     release_pairlink_local_reservations,
 )
+from .beds.richmat_classic.layout_repair import async_refresh_removed_layout_issues
 from .beta_feedback import async_setup_beta_feedback, async_setup_upgrade_notice
 from .combine_suggestion import async_load_dismissal
 from .const import (
@@ -1638,6 +1639,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     hass.data.setdefault(DOMAIN, {})
     async_track_combine_beds_issue(hass, entry)
     async_refresh_furnimove_layout_issues(hass, entry)
+    async_refresh_removed_layout_issues(hass, entry)
     async_refresh_profile_review_issue(hass, entry)
     await async_register_services(hass)
 

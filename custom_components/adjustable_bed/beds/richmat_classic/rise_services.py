@@ -27,20 +27,8 @@ from ..base import BedController
 from . import rise
 
 OPERATIONS = (
-    "query", "alarm", "cancel_alarm", "rgb", "lamp_timer", "massage_timer",
-    "massage_popup", "diagnostic_cycle", "program_schedule",
+    "query", "alarm", "cancel_alarm", "rgb", "lamp_timer", "massage_timer", "massage_popup",
 )
-INTEGER = vol.All(vol.Coerce(int), vol.Range(min=0, max=2147483647))
-ROW = vol.All(vol.ExactSequence((vol.All(vol.Coerce(int), vol.Range(min=1, max=12)), INTEGER, INTEGER)), vol.Coerce(tuple))
-SCHEDULE = vol.Schema({
-    vol.Required("records"): vol.All([ROW], vol.Length(min=12, max=12), vol.Coerce(tuple)),
-    vol.Required("rest"): INTEGER,
-    vol.Required("count"): INTEGER,
-    vol.Required("radio"): vol.In(("rf", "ble")),
-    vol.Required("code"): vol.In(("new", "old")),
-    vol.Required("identifier"): vol.All(vol.Coerce(int), vol.Range(min=1, max=9)),
-    vol.Required("motors"): vol.All([vol.All(vol.Coerce(int), vol.Range(min=1, max=4))], vol.Length(min=4, max=4), vol.Coerce(tuple)),
-})
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(OPERATIONS),
@@ -51,7 +39,6 @@ FIELDS: dict[vol.Marker, object] = {
     vol.Optional("timer_save", default=False): cv.boolean,
     vol.Optional("progress"): vol.All(cv.positive_int, vol.Range(max=5)),
     vol.Optional("popup"): vol.In(("15", "30", "45", "toggle")),
-    vol.Optional("schedule"): SCHEDULE,
 }
 FIELDS.update(SIDE_FIELD.items())
 
@@ -60,17 +47,14 @@ async def handle_richmat_rise(call: ServiceCall) -> None:
     await async_import_modules(call.hass, "beds.richmat_classic.controller")
     from .controller import RichmatClassicController
 
-    schedule = rise.Schedule(**call.data["schedule"]) if "schedule" in call.data else None
     request = rise.Request(
         cast(rise.Operation, call.data["operation"]), actions=call.data.get("actions", ()),
         when=call.data.get("time"), color=call.data.get("rgb_color"),
         seconds=call.data.get("seconds"), timer_save=call.data["timer_save"],
-        progress=call.data.get("progress"), popup=call.data.get("popup"), schedule=schedule,
+        progress=call.data.get("progress"), popup=call.data.get("popup"),
     )
     targets = _call_targets(call)
-    movement = request.operation in ("diagnostic_cycle", "program_schedule")
-    resource = "movement" if movement else "configuration"
-    admissions = [_capture_command_admission(coordinator, side, (resource,)) for coordinator, side in targets]
+    admissions = [_capture_command_admission(coordinator, side, ("configuration",)) for coordinator, side in targets]
     # First reject invalid static parameters on every target. Then establish a
     # current physical session for capability checks, including offline setup.
     for coordinator, side in targets:
@@ -113,7 +97,7 @@ async def handle_richmat_rise(call: ServiceCall) -> None:
 
     await _execute_preflighted(
         targets, [], _family_command(RichmatClassicController, "Luuna Rise / Power Cool bed settings", lambda controller: controller.async_execute_richmat_rise_request(request)),
-        cancel_running=movement, resource=resource, admissions=admissions,
+        cancel_running=False, resource="configuration", admissions=admissions,
     )
 
 

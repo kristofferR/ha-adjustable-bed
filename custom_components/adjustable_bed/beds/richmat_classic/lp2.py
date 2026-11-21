@@ -22,7 +22,7 @@ from ...command_scheduler import current_command_context, note_frame_skipped
 from ...controller_state import StateKey
 from ...errors import invalid
 from ...execution import ExecutionCapabilities
-from ...profiles.lp2 import ALARM_COMBINATIONS, DIAGNOSTIC_CYCLE
+from ...profiles.lp2 import ALARM_COMBINATIONS
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..cancellation import settled
@@ -45,7 +45,6 @@ from .protocol import (
     LAMP_QUERY,
     Wire,
     aroma,
-    control,
     release,
     rgb,
     worker_interval,
@@ -55,7 +54,6 @@ from .protocol import (
 )
 from .receive import ReceiveState
 from .requests import Request
-from .rise import Schedule
 from .transport import Transport, select
 
 if TYPE_CHECKING:
@@ -685,65 +683,6 @@ class Lp2Controller(RichmatClassicController):
     async def async_execute_richmat_classic_request(self, request: Request) -> None:
         with self._transaction():
             await super().async_execute_richmat_classic_request(request)
-
-    @staticmethod
-    def schedule_frame(schedule: Schedule) -> bytes:
-        if len(schedule.records) != 12 or len(schedule.motors) != 4:
-            raise ValueError("Provide twelve movement records and four motor mappings")
-        if any(not 1 <= row[0] <= 12 for row in schedule.records) or any(
-            not 1 <= n <= 4 for n in schedule.motors
-        ):
-            raise ValueError("Choose movement orders 1 through 12 and motors 1 through 4")
-        values = (schedule.rest, schedule.count, *(v for row in schedule.records for v in row[1:]))
-        if any(type(value) is not int or not 0 <= value <= 65535 for value in values):
-            raise ValueError("Program times and count must be between 0 and 65535")
-        if (
-            schedule.radio not in ("rf", "ble")
-            or schedule.code not in ("new", "old")
-            or not 1 <= schedule.identifier <= 9
-        ):
-            raise ValueError("Choose the program radio, code and identifier")
-        return codec.motor_test_schedule(
-            schedule.records,
-            schedule.rest,
-            schedule.count,
-            1 if schedule.radio == "rf" else 3,
-            1 if schedule.code == "new" else 2,
-            schedule.identifier,
-            schedule.motors,
-        )
-
-    async def diagnostic_cycle(self) -> None:
-        if self.layout != "TEST":
-            raise ValueError("Choose the movement-test layout first")
-        with self._transaction() as session:
-            cancel = self._coordinator.cancel_command
-            for code, seconds in DIAGNOSTIC_CYCLE:
-                if cancel.is_set():
-                    return
-                deadline = monotonic() + seconds
-                try:
-                    while not cancel.is_set() and monotonic() < deadline:
-                        await self.write_command(control(bytes((code,)), session.wire))
-                        if not await self._wait(
-                            min(
-                                self._worker.tick_ms, max(0, ceil((deadline - monotonic()) * 1000))
-                            ),
-                            cancel,
-                        ):
-                            break
-                finally:
-                    await self._release()
-                await asyncio.sleep(0.00005)
-                if not await self._wait(5000, cancel):
-                    return
-
-    async def program_schedule(self, schedule: Schedule) -> None:
-        if self.layout != "RMCS":
-            raise ValueError("Choose the motor program layout before programming")
-        data = self.schedule_frame(schedule)
-        with self._transaction():
-            await self._frames(tuple(data[i : i + 20] for i in range(0, len(data), 20)), 10)
 
     def _alarm_zones(self) -> dict[str, int]:
         owned = set(self._alarm_actions().values())

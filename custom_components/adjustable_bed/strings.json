@@ -8719,10 +8719,6 @@
           "name": "Timer popup choice",
           "description": "Massage timer choice from the remote: 15, 30 or 45 minutes, or on and off."
         },
-        "schedule": {
-          "name": "Motor schedule",
-          "description": "Power Cool RMCS only. records: twelve [order, run_seconds, rest_seconds] rows in fixed M1/M2/M3/M4/M12/M34 up/down order; rest and count: nonnegative integers; radio: rf or ble; code: new or old; identifier: 1 to 9; motors: permutation of [1,2,3,4]. A running schedule cannot be stopped or read back."
-        },
         "side": {
           "name": "Side"
         }
@@ -9555,9 +9551,6 @@
           "name": "Fan duration",
           "description": "Duration choice 0 through 6. The foot fan sends only intensity; it does not send a duration."
         },
-        "schedule": {
-          "name": "Movement program"
-        },
         "confirm": {
           "name": "Confirm programming or saving"
         },
@@ -9605,9 +9598,6 @@
         },
         "aroma_times": {
           "name": "Aromatherapy times"
-        },
-        "confirm": {
-          "name": "Confirm programming or saving"
         },
         "duration_ms": {
           "name": "Movement duration (milliseconds)"
@@ -10698,6 +10688,10 @@
       "title": "Update automations for {bed}",
       "description": "Some of {bed}'s controls changed type or options in this version. These automations and scripts still use them the old way:\n\n{entities}\n\nEdit each one to use the new entity or its new options. An under-bed light is now a light, so use the light actions instead of the switch actions. Then ignore this message."
     },
+    "richmat_classic_layout": {
+      "title": "Choose the layout for {name}",
+      "description": "{name} was set up with the {layout} layout, a factory screen for testing or programming the motors. Adjustable Bed no longer offers it, so {name} has no controls and does not connect. Open Configure for this bed and choose the layout your bed uses. This notice goes away once you save it."
+    },
     "removed_actions": {
       "title": "Update automations that use removed bed actions",
       "description": "These automations and scripts call Adjustable Bed actions, fields or options that this version no longer has, so those steps fail when they run:\n\n{calls}\n\nAfter an arrow is what to use instead. For a line without one, select **Learn more** to see what replaces it. Edit each automation and script; this message goes away when Home Assistant next starts without finding one."
@@ -11568,9 +11562,7 @@
         "rgb": "Light color",
         "lamp_timer": "Lamp timer",
         "massage_timer": "Massage timer",
-        "massage_popup": "Massage menu",
-        "diagnostic_cycle": "Test cycle",
-        "program_schedule": "Program schedule"
+        "massage_popup": "Massage menu"
       }
     },
     "richmat_rise_popup": {
@@ -12361,9 +12353,7 @@
         "light_duration": "Set light duration",
         "aromatherapy": "Set aromatherapy times",
         "fan": "Set fan",
-        "motor_program": "Program movement sequence",
-        "control": "Run control",
-        "movement_test": "Run movement test"
+        "control": "Run control"
       }
     },
     "lp2_fan": {
@@ -12377,7 +12367,6 @@
         "color": "Light color",
         "light_duration": "Light timeout",
         "aromatherapy": "Aroma times",
-        "movement_test": "Movement test",
         "bed_command": "Bed command"
       }
     },

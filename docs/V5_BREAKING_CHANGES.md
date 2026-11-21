@@ -436,6 +436,14 @@ sensors with the same object ID where it is free, and its
 intervention selects are the **Left snore intervention** and **Right snore
 intervention** switches.
 
+The factory motor tests and motor programming are gone: `richmat_rise`
+`operation: diagnostic_cycle` and `program_schedule` with its `schedule` field,
+`lp2` `operation: motor_program` and `movement_test` with its `schedule` field,
+`bedsmart` `operation: movement_test` with its `confirm` field, and the BedSmart
+**Movement test** button. Nothing replaces them. A bed set up with the TEST or
+RMCS layout loads without controls, and a repair asks you to choose its layout
+in Configure.
+
 Galaxy and MLILY (`operation: sync`), SonicSleep (`operation: sync_clock`) and
 the Richmat app beds (`richmat_app` `operation: sync` and `sleep_sync`) set
 their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during

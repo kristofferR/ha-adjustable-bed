@@ -22,11 +22,11 @@ from tests.test_richmat_classic import controller, packets
 from tests.test_richmat_classic import instant as instant
 
 
-@pytest.mark.parametrize("app,total", [("luunarise2", 417), ("powercool", 22)])
-def test_frozen_artifact_vectors(app, total):
+@pytest.mark.parametrize("app,total,unchecked", [("luunarise2", 417, 4), ("powercool", 22, 1)])
+def test_frozen_artifact_vectors(app, total, unchecked):
     vectors = records(app, "vectors")
     assert len(vectors) == total
-    checked = 0
+    checked = skipped = 0
     for vector in vectors:
         args = vector["inputs"]
         kind = args.get("builder", vector.get("kind"))
@@ -43,10 +43,6 @@ def test_frozen_artifact_vectors(app, total):
             result = rise.lamp_timer(args["seconds"], save=not args.get("slider", True))
         elif kind == "alarm":
             result = b"".join(alarm(args.get("minutes", args.get("delay_minutes")), int(args["code"], 16) if "code" in args else args["action"]))
-        elif kind == "diagnostic":
-            result = codec.motor_test_schedule(tuple(zip(args["orders"], args["run_seconds"], args["rest_seconds"], strict=True)), args["total_rest"], args["total_run"], args["tx"], args["code"], 1, tuple(args["motors"]))
-        elif kind == "factory":
-            result = rise.Schedule(tuple(tuple(row) for row in args["records"]), args["pause"], args["count"], args["tx_type"], args["code_type"], args["identifier"], tuple(args["motors"])).encode()
         elif kind == "receive":
             from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
             state = ReceiveState()
@@ -54,11 +50,13 @@ def test_frozen_artifact_vectors(app, total):
             state.feed(result, app=app, layout="A8RM", desk_bound=False, table_controls_bound=False)
             assert state.alarm_capable or state.light_capable
         else:
-            assert kind == "ascii"  # Excluded radio network administration.
+            # Radio network administration and factory motor programs are not offered.
+            assert kind in ("ascii", "diagnostic", "factory")
+            skipped += 1
             continue
         assert result.hex() == vector["expected_bytes"].replace(" ", "").lower(), vector["id"]
         checked += 1
-    assert checked >= total - 2
+    assert (checked, skipped) == (total - unchecked, unchecked)
 
 
 @pytest.mark.parametrize("app,total", [("luunarise2", 21046), ("powercool", 20664)])
@@ -243,31 +241,6 @@ async def test_failed_local_notify_does_not_block_controls_or_emit_initializatio
     assert packets(coord) == ["6e0a000179"]
     await ctrl.execute_action(1, hold_ms=0)
     assert packets(coord)[-2:] == ["6e01002493", "6e01006edd"]
-
-
-@pytest.mark.parametrize("wire", ["RAW", "FRAMED"])
-async def test_diagnostic_cancel_is_a_movement_and_sends_fresh_stop(wire, instant):
-    ctrl, coord = controller("powercool", "TEST", wire)
-    async def write(_channel, data, **kwargs):
-        coord.cancel_command.set()
-    coord.client.write_gatt_char.side_effect = write
-    await ctrl.async_execute_richmat_rise_request(rise.Request("diagnostic_cycle"))
-    assert packets(coord) == (["24", "6e"] if wire == "RAW" else ["6e01002493", "6e01006edd"])
-
-
-async def test_schedule_fragmentation_preserves_bytes_and_does_not_invent_stop(instant):
-    ctrl, coord = controller("powercool", "RMCS", "RAW")
-    vector = records("powercool", "vectors")[-1]
-    a = vector["inputs"]
-    schedule = rise.Schedule(tuple(zip(a["orders"], a["run_seconds"], a["rest_seconds"], strict=True)), 0, 0, "ble", "new", 1, (1, 2, 3, 4))
-    await ctrl.async_execute_richmat_rise_request(rise.Request("program_schedule", schedule=schedule))
-    data = packets(coord)
-    assert [len(bytes.fromhex(x)) for x in data] == [20, 20, 20, 20, 9]
-    assert "".join(data) == vector["expected_bytes"].lower()
-    overflow = replace(schedule, rest=0x123456)
-    assert overflow.encode()[74:76] == bytes.fromhex("1234")
-    with pytest.raises(ValueError):
-        replace(schedule, motors=(1, 1, 2, 3)).encode()
 
 
 async def test_service_reconnects_and_proves_capability_before_rgb(hass, instant):
