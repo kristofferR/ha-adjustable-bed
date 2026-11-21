@@ -12,6 +12,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -812,9 +813,14 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         return tuple(
             ControllerStateBinarySensorSpec(
                 key="motion_bed_" + name, translation_key="motion_bed_" + name,
-                state_key=_field_key(name), icon="mdi:bed-outline",
+                state_key=_field_key(name),
+                icon=None if name == "thermal_low_water" else "mdi:bed-outline",
                 attribute_keys=tuple(_field_key(item) for item in attributes),
                 entity_registry_enabled_default=enabled,
+                # Low water: the climate module needs refilling.
+                device_class=(
+                    BinarySensorDeviceClass.PROBLEM if name == "thermal_low_water" else None
+                ),
             )
             for name, enabled, attributes in _BINARY_SENSORS
         )

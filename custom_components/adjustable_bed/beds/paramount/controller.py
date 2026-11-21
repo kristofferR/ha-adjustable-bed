@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.components import bluetooth
+from homeassistant.components.sensor import SensorDeviceClass
 
 from ...codec import paramount as codec
 from ...controller_state import StateKey
@@ -440,6 +441,7 @@ class ParamountController(ProfileExecution, BedController):
                 "mdi:arrow-expand-vertical",
                 "cm",
                 entity_registry_enabled_default=True,
+                device_class=SensorDeviceClass.DISTANCE,
             ),
             ControllerStateSensorSpec(
                 "paramount_tilt",
@@ -455,6 +457,7 @@ class ParamountController(ProfileExecution, BedController):
                 "mdi:signal",
                 "dBm",
                 entity_registry_enabled_default=False,
+                device_class=SensorDeviceClass.SIGNAL_STRENGTH,
             ),
             ControllerStateSensorSpec(
                 "paramount_serial",
