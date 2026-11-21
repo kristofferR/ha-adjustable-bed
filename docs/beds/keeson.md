@@ -613,7 +613,7 @@ dashboard's established `massage_intensity_level_*` entity IDs no longer existed
 so those button presses never reached BLE. The entity IDs are retained for
 compatibility. Their meanings are variant-specific and must not be applied to the
 KSBT, Sino, Purple, or Ergomotion profiles. The existing `0x00000200` timer-step
-action is separate from wave selection and is displayed as **Massage: Timer**
+action is separate from wave selection and is displayed as **Massage timer**
 while retaining its established entity identity.
 
 #### Side controls
@@ -950,7 +950,7 @@ from `6e400003` longer than 12 bytes are read without header or checksum checks:
 
 | Byte(s) | Meaning | Entity |
 |---------|---------|--------|
-| 12 | `1` lights the bulb icon; anything else is off | **Under Bed Lights** light |
+| 12 | `1` lights the bulb icon; anything else is off | **Under-bed lights** light |
 | 3-4 (KSBT03C) | Big-endian value; above 1200, 600 or 0 shows the 30, 20 or 10 minute timer image, otherwise none | **Massage timer** sensor (0/10/20/30 min, raw value as attribute) |
 
 Both states exist only while Home Assistant holds the connection. With the
@@ -1073,15 +1073,15 @@ Heal Every Night picks Healing 6, 7 or 8 with the motor count (2, 3 or 4).
 Healing 7 and 8 both show tilt, lumbar and the light; tilt, lumbar and light keys
 are Healing 7/8 only. Presets are single writes. Pressing the selected preset
 again sends Preset STOP instead, as the app does, and selecting another preset
-moves the selection. **Stop All** also sends Preset STOP while a preset is
-selected; a cover stop does not, as the app's movement release does not. Stop All
+moves the selection. **Stop all** also sends Preset STOP while a preset is
+selected; a cover stop does not, as the app's movement release does not. Stop all
 and massage Off attempt every cleanup frame even if one fails or the action is
 cancelled, then report the first error.
 
 The massage page stays disabled until a timer is chosen. A timer turns zero
 levels into one, then writes the timer key, the wave, head and foot levels
 100 ms apart. The level sliders (head and foot 0-3, wave 1-4) and the +/- buttons
-then write one frame each; +/- clamp but still write. **Massage: Off** (or the
+then write one frame each; +/- clamp but still write. **Massage off** (or the
 timer's Off) writes head 0 and foot 0 and disables the page again, keeping the
 levels. The light writes the explicit on/off key. The bed reports no light
 state, so the switch starts unknown and shows the commanded state as assumed.
@@ -1107,7 +1107,7 @@ Held keys write at 0 ms and then at the apps' fixed refresh. The motor pulse cou
 sets how many writes a press makes; the interval stays fixed whatever the pulse
 delay. The release cancels the refresh and writes the zero key after each app's
 delay ([Hold and release timing](#hold-and-release-timing)). A cover stop or the
-end of a timed move writes it at once; **Stop All** does too.
+end of a timed move writes it at once; **Stop all** does too.
 
 #### Notifications
 
@@ -1206,7 +1206,7 @@ without header or checksum checks:
 | 19 | 14 | 15 |
 
 Flag bit 5 (`0x20`) suppresses the update and bit 6 (`0x40`) is the lamp icon,
-shown by the **Under Bed Lights** light, which sends the toggle when the reported
+shown by the **Under-bed lights** light, which sends the toggle when the reported
 state differs from the one asked for. The signed timer byte `-1` sets the
 **Massage timer** sensor to 0 minutes and `1`/`2`/`3` show 10/20/30 minutes;
 other values leave it unchanged. Both states clear when the connection ends. The app shows
@@ -1277,7 +1277,7 @@ Release: `E5 FE 16 00 00 00 00 06` after every control.
 <!-- /generated -->
 
 Remote B's back-up and back-down glyphs (head and foot together) appear as a
-**Back + Legs** cover. The app sends the same light frame on every press and
+**Back + legs** cover. The app sends the same light frame on every press and
 tracks no state, so the light is a toggle button, not a light entity. ZZZ is
 exposed as a **ZZZ** button: the app does not show what it does, so it is not
 mapped to anti-snore or a memory.
@@ -1394,7 +1394,7 @@ off words, so the integration exposes an on/off under-bed light with assumed sta
 | Head, Foot and Wave massage numbers (0-3) | A slider change sends that zone's level word. Levels persist across restarts like the app's preferences; a fresh install starts at level 1. |
 | **Start massage** button | Sends the current wave, head and foot levels, in that order. |
 | **Massage off** button | Sends head level 0, then foot level 0. The sliders keep their levels and the timer indicator resets. No wave-off frame exists. |
-| **Massage: Timer** select | Sends the 10, 20 or 30 minute word. The app's timer button cycles through the same three words; it has no timer-off word. |
+| **Massage timer** select | Sends the 10, 20 or 30 minute word. The app's timer button cycles through the same three words; it has no timer-off word. |
 
 - **Second tap:** tapping the running preset again sends the zero word. The
   integration exposes the same frame as the **Stop** button; preset buttons
@@ -1693,7 +1693,7 @@ feedback and direct pulse targets. Hardware behavior remains unverified.
 - Head and foot keys drive the **Back** and **Legs** covers. Every other key is
   an app-labelled button; held keys also accept
   [`hold_control`](../SERVICES.md#hold_control). Physical effects are unverified.
-- Cover stop and **Stop All** send the zero key frame (MX: the release queries).
+- Cover stop and **Stop all** send the zero key frame (MX: the release queries).
 - Opaque app keys such as *Memory Level 1* or *M4* are buttons, not memory slots:
   no app has a physical memory-save command.
 - Each app's key table, generated from its profile, is in its section below.
@@ -4458,10 +4458,10 @@ The lift helpers send the same `05` frames on every model.
 
 **Dedicated P2 controls** (P2 L0/L1/L2/L3/L5):
 
-- The **Massage: Head Intensity**, **Massage: Foot Intensity** and
-  **Massage: Wave Intensity** numbers (1–4, for selector index 0–3), written
+- The **Massage head intensity**, **Massage foot intensity** and
+  **Massage wave intensity** numbers (1–4, for selector index 0–3), written
   once per choice.
-- The **Massage: Timer** select (10, 20 or 30 minutes; no off).
+- The **Massage timer** select (10, 20 or 30 minutes; no off).
 - Their bytes are the app's exact selector/timer commands.
 
 | Selector index | Head | Foot | Wave |
@@ -6250,7 +6250,7 @@ controls; its artwork depicts head motion, so the physical actuator needs
 confirmation. The 4-motor layout adds separately labelled waist and lumbar
 controls. No position or angle readout is supported.
 
-**Flat** and **Zero Gravity** are single presses with release. Memory A/B use
+**Flat** and **Zero gravity** are single presses with release. Memory A/B use
 held commands, exposed as **Memory 1** and **Memory 2**; no save/program command
 is supported. The massage page has **Increase head massage**, **Decrease head
 massage**, **Increase foot massage**, **Decrease foot massage**, **Cycle massage
@@ -6260,8 +6260,8 @@ available through [`hold_control`](../SERVICES.md#hold_control). **Cycle
 massage mode** is available only on the 3-motor layout. These cycle commands do
 not set an absolute intensity or timer.
 
-The light toggle is a single press, with no extra zero release. The **Under Bed
-Lights** light shows the reported light state and sends the toggle when it
+The light toggle is a single press, with no extra zero release. The **Under-bed
+lights** light shows the reported light state and sends the toggle when it
 differs from the one asked for; the physical toggle behavior needs confirmation.
 
 <!-- generated:keeson-enso -->

@@ -87,7 +87,7 @@ def test_a_terse_screen_label_keeps_its_name_but_takes_the_enum_shape() -> None:
     spec = catalog_button("p", "Gravedad Cero", _press, meaning="Zero gravity 2")
     assert spec is not None
     assert (spec.translation_key, spec.card) == ("catalog_preset", CARD_PRESETS)
-    assert spec.translation_placeholders == {"action": "Gravedad Cero"}
+    assert spec.translation_placeholders == {"action": "Gravedad cero"}
 
 
 def test_unique_buttons_drops_repeats_and_tells_same_names_apart() -> None:

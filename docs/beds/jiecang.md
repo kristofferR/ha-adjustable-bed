@@ -1040,7 +1040,7 @@ configurations retain their previous behavior.
   head zone is the back (left back in `split_series`), the foot zone the legs,
   and the right zone the right back in `split_series`. Massage level and massage
   stop are single frames.
-- When lighting is enabled, the Under Bed Lights binary sensor exposes the
+- When lighting is enabled, the Under-bed lights binary sensor exposes the
   latest notification state. The light button remains toggle-only; pressing it
   does not optimistically replace the reported state.
 - Neither app reports motor positions, brightness or RGB color, so the

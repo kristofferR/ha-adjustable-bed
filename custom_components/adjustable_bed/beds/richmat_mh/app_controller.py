@@ -448,8 +448,13 @@ class RichmatMHAppController(RufRichmatController):
         """Return the code of the one control on this app/model page named ``name``.
 
         The name its button shows is accepted, and so is the app's own wording.
+        Colons are ignored, so 4.x's "Massage: Mode" still names "Massage mode".
         """
-        wanted = " ".join(name.split()).casefold()
+
+        def plain(text: str) -> str:
+            return " ".join(text.replace(":", " ").split()).casefold()
+
+        wanted = plain(name)
         names: dict[int, set[str]] = {}
         for control in self._controls():
             # A motor's two directions share its label: "Back up", "Back down".
@@ -464,7 +469,7 @@ class RichmatMHAppController(RufRichmatController):
             code = next((c for c in names if spec.key.endswith(f"_{c:02x}")), None)
             if code is not None:
                 names[code].add(_shown_name(spec))
-        codes = {code for code, labels in names.items() if wanted in {n.casefold() for n in labels}}
+        codes = {code for code, labels in names.items() if wanted in {plain(n) for n in labels}}
         if len(codes) != 1:
             raise ValueError("Choose a control by the name of its button")
         return codes.pop()

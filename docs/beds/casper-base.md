@@ -39,7 +39,7 @@ differences and sensor accuracy are unconfirmed. If you own one, a
 | Flat | ✅ | ✅ |
 | Presets | ✅ (TV, Lounge, Anti-snore, Zero-G; recall and save) | ✅ (same) |
 | Memory Presets | ✅ (1 slot, recall and save) | ✅ (1 slot, recall and save) |
-| Massage | ✅ (head/foot intensity, mode change, all off; 10/20/30-minute timers as the **Massage: Timer** select) | ✅ (same; different all-off opcode) |
+| Massage | ✅ (head/foot intensity, mode change, all off; 10/20/30-minute timers as the **Massage timer** select) | ✅ (same; different all-off opcode) |
 | Lights | ✅ (Light Board button) | ✅ (Light Board and Bed Light buttons; a light control once the bed reports one) |
 | RGB, music, alarms, sensor menu | ❌ | ❌ |
 | Position Feedback | ❌ (raw motor values in diagnostics only) | ❌ (same) |

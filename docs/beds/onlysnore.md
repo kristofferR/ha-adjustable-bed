@@ -180,7 +180,7 @@ side at a time is refused before anything moves.
 The **Massage** switch starts and stops massage; it is on while the reported
 massage timer option is nonzero. That state is only as fresh as the last status
 query, so the switch shows separate on and off controls, and each always sends
-its start or stop command. Use the cycle buttons for wave (Massage: Mode),
+its start or stop command. Use the cycle buttons for wave (Massage mode),
 timer and head/foot strength. The reported option indices stay internal. No
 absolute massage level setter, light brightness, color or discrete light state is
 inferred.

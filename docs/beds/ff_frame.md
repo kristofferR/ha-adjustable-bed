@@ -709,11 +709,11 @@ lists the layouts that expose it.
   Zero Gravity and Anti Snore by the indicator. Types 6 and 8 replace slot 5
   with the special Flat Bed and have no slot-5 clear.
 - Circulation buttons on types 1-5 (type 3 has its own whole-body frame).
-- Massage steps and wave on every layout. The **Massage: Timer** select sends
+- Massage steps and wave on every layout. The **Massage timer** select sends
   the layout's timers, and its Off sends the cancel frame; choosing the running
   timer again keeps it. Step counters clamp at 0-3 (wave 0-4) but every tap
   writes.
-- Light durations only, as the **Light Timer** select: there is no off,
+- Light durations only, as the **Light timer** select: there is no off,
   brightness or colour command.
 - Memory indicators are queried on every connection; there is no refresh button.
 
@@ -910,7 +910,7 @@ Select the explicit **Motion Bed app** route and the original case-sensitive Blu
 - Named presets, massage, lighting, sync, audio and sleep controls are buttons or
   validated actions; diagnostics list the available action keys. Light
   brightness is the **Light brightness** number, the massage and light timers
-  are the **Massage: Timer** and **Light Timer** selects, and the night light,
+  are the **Massage timer** and **Light timer** selects, and the night light,
   smart sleep and the module light, massage, climate timer and adaptive air
   settings are switches where the layout has them. Entity
   identities follow the control's function, so a layout change keeps a shared
@@ -1133,7 +1133,7 @@ Home Assistant does not invent countdown tasks or periodic writes.
 
 The app's movement / massage header action (STOP's body with a different
 trailer) has no effect and is not exposed. Use the normal motor STOP for
-release. Bed synchronization is the **Controller Sync** switch. The shared movement, massage and lighting command tables above
+release. Bed synchronization is the **Controller sync** switch. The shared movement, massage and lighting command tables above
 apply to Sophie; the additional rows and exact startup offsets follow.
 
 <!-- generated:sophie -->
@@ -1214,7 +1214,7 @@ sides). QMS2 has no alarm massage. Every target is checked before any is
 written. The side-specific wake actions apply only to the alarm, and do not
 enable normal movement addressing.
 `adjustable_bed.sync_clock` sends the local Home Assistant clock. The
-**Controller Sync** switch (disabled by default) sends on/off only after the bed
+**Controller sync** switch (disabled by default) sends on/off only after the bed
 reports synchronization support. Its state resets to unknown on disconnect and
 updates after a report or a successful command.
 

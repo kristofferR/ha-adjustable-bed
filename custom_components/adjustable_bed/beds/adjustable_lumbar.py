@@ -699,7 +699,7 @@ class AdjustableBedAppController(AdjustableLumbarController):
                 ),
                 icon="mdi:gesture-tap",
                 translation_key="adjustable_bed_speech",
-                translation_placeholders={"action": _voice_label(action)},
+                translation_placeholders={"action": "Voice: " + _voice_label(action)},
                 diagnostic=True,
                 card=CARD_UTILITY,
             )

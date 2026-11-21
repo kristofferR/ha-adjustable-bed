@@ -379,7 +379,7 @@ def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
             for name in names:
                 assert not raw.search(name) and not problems(name), (model, name)
             if model == "bhrm" and not advanced:
-                assert "Massage: Head Up" in names
+                assert "Massage head up" in names
                 # Its 10, 20 and 30 minute timers are the massage timer select.
                 assert controller.massage_timer_options == [10, 20, 30]
 
@@ -420,6 +420,11 @@ def test_controls_are_named_as_their_buttons_show_them() -> None:
     for name in ("Back", "Nonexistent"):
         with pytest.raises(ValueError, match="name of its button"):
             controller.control_named(name)
+
+
+def test_a_control_keeps_its_colon_name() -> None:
+    controller = make("nisco", "bhrm")
+    assert controller.control_named("Massage: Head Up") == controller.control_named("Massage head up")
 
 
 @pytest.mark.parametrize(("app", "model"), [("nisco", "bhrm"), ("nisco", "garm"), ("mlily_supreme", "aerm")])

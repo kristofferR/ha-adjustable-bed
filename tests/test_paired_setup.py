@@ -4394,7 +4394,7 @@ class TestCombinedPositionSliders:
         assert all(row.device_id == parent.id for row in both_numbers.values())
         state = hass.states.get(both_numbers[f"{PAIR_ID}_back_position_both"].entity_id)
         assert state is not None
-        assert state.name == "Master Bed Back Position"
+        assert state.name == "Master Bed Back position"
         # The per-side sliders still live on the children.
         assert registry.async_get_entity_id("number", DOMAIN, f"{LEFT_ADDR}_back_position")
 

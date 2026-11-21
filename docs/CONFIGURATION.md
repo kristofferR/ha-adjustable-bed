@@ -14,7 +14,7 @@ newer.
 - [Bed Model or Remote](#bed-model-or-remote)
 - [Bed-Specific Settings](#bed-specific-settings)
 - [Single-Address Left / Right Controls](#single-address-left--right-controls)
-- [Split-King / Controller Sync](#split-king--controller-sync)
+- [Split-King / Controller sync](#split-king--controller-sync)
 - [Dashboard Card Graphics and Dialog](#dashboard-card-graphics-and-dialog)
 - [Troubleshooting Tips](#troubleshooting-tips)
 
@@ -241,11 +241,11 @@ not decide the receiver.
 
 ## Toggle-Only Under-Bed Lights
 
-Beds whose existing light control is the **Toggle Light** button, including
+Beds whose existing light control is the **Toggle light** button, including
 Tempur/Keeson profiles without light-state feedback, also offer an optional
-**Under Bed Lights** light entity. It is disabled by default because its on/off state is an estimate.
+**Under-bed lights** light entity. It is disabled by default because its on/off state is an estimate.
 To enable it, open the bed's device page under **Settings > Devices & services**,
-show disabled entities, select **Under Bed Lights**, and enable it.
+show disabled entities, select **Under-bed lights**, and enable it.
 
 On first use, set the physical light off with the remote before enabling the
 entity. Home Assistant initially assumes off and restores its last estimate on
@@ -255,7 +255,7 @@ Repeated on or off requests do not toggle the light again; a failed command
 leaves the estimate unchanged. The bed card uses the light once enabled.
 
 Home Assistant marks this entity's state as **assumed**. It cannot detect changes
-made with the physical remote, the manufacturer's app, the existing Toggle Light
+made with the physical remote, the manufacturer's app, the existing Toggle light
 button, or a hardware auto-off timer. Those changes can make its estimate wrong,
 and later on/off actions then rely on that incorrect estimate. Keep the existing
 toggle button if you need direct control without an estimated state. For a
@@ -800,9 +800,9 @@ Existing entries do not change by themselves.
 - Beds whose commands have no side, such as newer CB24 control boxes, do not
   offer it.
 
-## Split-King / Controller Sync
+## Split-King / Controller sync
 
-The **Controller Sync** switch sends a sync command
+The **Controller sync** switch sends a sync command
 to the bed controller. Any resulting synchronization depends on the controller's
 firmware and its existing relationship with the other frame. Turning it on does
 not discover another Home Assistant bed entry or mirror commands between entries.
@@ -824,7 +824,7 @@ reliably enforce a requested on/off state. Do not assume that reloading Home
 Assistant resets the bed's own sync setting.
 
 To enable it, open **Settings > Devices & services > Adjustable Bed**, select the
-bed, and enable **Controller Sync** under **Entities**.
+bed, and enable **Controller sync** under **Entities**.
 
 ### Two Independent Frames
 
@@ -833,7 +833,7 @@ only its intended side. For compatible entries, start **Add Integration >
 Adjustable Bed**, then choose **Combine two beds into one (Dual Bed)** and select
 Left and Right. The resulting parent device provides
 combined controls; the child devices provide side-specific controls. The card
-also offers Left/Both/Right selection. This does not require Controller Sync.
+also offers Left/Both/Right selection. This does not require Controller sync.
 
 Each receiver keeps its own **Bluetooth connection** setting. Selecting one
 side does not disconnect the other, and Both can operate the two receivers

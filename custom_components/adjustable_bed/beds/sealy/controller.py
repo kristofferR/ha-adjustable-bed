@@ -216,7 +216,7 @@ class SealyController(Okin7ByteController):
             "once_anti_snore": "Anti-snore once",
             "once_memory_1": "Memory 1 once",
             "once_memory_2": "Memory 2 once",
-            "once_both_down": "Head and foot down once",
+            "once_both_down": "Head + feet down once",
         }
         specs: list[ControllerButtonSpec] = []
         for key, label in labels.items():

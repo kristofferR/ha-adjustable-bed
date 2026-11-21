@@ -169,7 +169,7 @@ def test_profile_exposes_only_reachable_controls(
 
     assert controller.supports_preset_lounge is False
     assert controller.supports_preset_reading is True
-    assert controller.memory_slot_names == ("Zero Gravity", "Reading")
+    assert controller.memory_slot_names == ("Zero gravity", "Reading")
     assert controller.memory_slot_count == 2
     assert controller.requires_notification_channel is True
     assert controller.supports_light_toggle_control is True

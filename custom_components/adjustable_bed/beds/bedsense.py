@@ -184,7 +184,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
             "M1",
             "M2",
             "TV",
-            "Zero Gravity",
+            "Zero gravity",
             "Flat" if self.layout in (6, 8) else "Anti-snore",
         )
 

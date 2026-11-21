@@ -1532,7 +1532,7 @@ mask at once, after the own release of any move it pre-empts.
   example `04 02 00 00 00 05` for back and legs up. When one motor ends, the
   next frame drops its bit at once and the others keep moving; the zero write
   follows 100 ms after the last motor ends. A motor's own Stop ends only that
-  motor, while Stop All ends them all. HA uses one 120 ms lane instead of the
+  motor, while Stop all ends them all. HA uses one 120 ms lane instead of the
   app's duplicate phase-offset chains.
 - Each app streams a held mask until release, so `timed_move` and
   `hold_control` accept a renewable hold lease
@@ -1731,7 +1731,7 @@ See the [timing tables](#hold-and-release-timing).
   different motors, renewable or not, run together: each 100 ms frame carries
   the OR of every moving motor's key. When one motor ends, the next frame drops
   its key and the others keep moving; the four zero frames follow only when the
-  last motor ends. A motor's own Stop ends only that motor, while Stop All ends
+  last motor ends. A motor's own Stop ends only that motor, while Stop all ends
   them all. Prodigy 2 and 2L keep one motor at a time: their reports do not
   prove that one key can be released while another stays held.
 
@@ -1862,7 +1862,7 @@ unknown and reports an error without retrying. State is not restored across Home
 Assistant sessions and clears on disconnect. After subscribing, startup sends the
 app's four idle zero frames, which request live status without toggling the
 light (the September report confirms a key write refreshes status); without a
-valid reply the state stays unknown. The redundant **Toggle Light** button is
+valid reply the state stays unknown. The redundant **Toggle light** button is
 removed; `light.toggle` stays available, as does the physical remote.
 
 **Remaining hardware observations:**
@@ -3956,7 +3956,7 @@ Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Seren
 | Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save TV) |
 | Presets | ✅ Flat, Zero Gravity, TV, Leisure (exposed through Lounge), Anti-Snore |
 | Massage | ✅ (head/foot/mode/timer cycles, toggle, off, Wave 1-3) |
-| Lights | ✅ (native toggle, assumed-state on/off **Under Bed Lights** light; no RGB or brightness) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under-bed lights** light; no RGB or brightness) |
 | Alarms | ❌ (alarm replies are parsed as diagnostic state only) |
 | Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
 
@@ -4032,8 +4032,8 @@ every release zeros the whole command.
 | Light toggle | `light_toggle` | `0x20000` | 0 |
 | Light on, off | `light_on`, `light_off` | 0 | `0x40`, `0x80` |
 
-Light on/off is the **Under Bed Lights** light, which starts unknown and marks
-commanded values as assumed. The separate **Toggle Light** button preserves the app's
+Light on/off is the **Under-bed lights** light, which starts unknown and marks
+commanded values as assumed. The separate **Toggle light** button preserves the app's
 native toggle/cycle. Neither control has physical state feedback, RGB
 selection, or brightness selection.
 
@@ -4226,7 +4226,7 @@ Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Tranq
 | Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save Lounge) |
 | Presets | ✅ Flat, Zero Gravity, Lounge, Anti-Snore (voice only); no TV |
 | Massage | ✅ (head/foot/mode/timer cycles, toggle; voice-only off and Wave 1-3) |
-| Lights | ✅ (native toggle, assumed-state on/off **Under Bed Lights** light; no RGB or brightness) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under-bed lights** light; no RGB or brightness) |
 | Alarms | ❌ (no alarm page; alarm replies are parsed as diagnostic state only) |
 | Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
 
@@ -4268,7 +4268,7 @@ each selector is unverified.
 | Save Zero Gravity, Save Lounge (`save_zero_g`, `save_lounge`) | `0x08001000`, `0x08002000` | 0 | Flat + preset chord |
 | Save M1, Save M2 (`save_memory_1`, `save_memory_2`) | `0x08010000`, `0x08040000` | 0 | Flat + preset chord |
 
-Only M1 and M2 are numbered memory slots. **Save Zero Gravity** and **Save
+Only M1 and M2 are numbered memory slots. **Save Zero gravity** and **Save
 Lounge** buttons cover the other chords.
 
 ###### Massage
@@ -4288,7 +4288,7 @@ Lounge** buttons cover the other chords.
 | Light toggle (`light_toggle`) | `0x20000` | 0 | Massage page and voice |
 | Light on, off (`light_on`, `light_off`) | 0 | `0x40`, `0x80` | Voice only |
 
-Light on/off is the assumed-state **Under Bed Lights** light; **Toggle Light** sends the native
+Light on/off is the assumed-state **Under-bed lights** light; **Toggle light** sends the native
 toggle. There is no RGB or brightness command, although the app help mentions
 color cycling.
 
@@ -4474,7 +4474,7 @@ and this app's builder operation 5 emits `0x10`/`0x20`. HA exposes
 | Save Zero Gravity, Save TV, Save M1 (`save_zero_g`, `save_tv`, `save_memory_1`) | `0x08001000`, `0x08004000`, `0x08010000` | yes | yes |
 | Save M2 (`save_memory_2`) | `0x08040000` | | yes |
 
-Numbered memory: Z-230 has M1, Z-280 has M1 and M2. **Save Zero Gravity** and
+Numbered memory: Z-230 has M1, Z-280 has M1 and M2. **Save Zero gravity** and
 **Save TV** buttons cover the named chords.
 
 ###### Massage
@@ -4971,7 +4971,7 @@ Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the sha
 | Flat / Zero Gravity / Lounge / Incline / Anti-Snore | ✅ |
 | Preset saves | ⚠️ Save Zero Gravity / Lounge / Incline / Anti-Snore (storage unverified) |
 | Massage | ✅ Wave 1–3, intensity +/−, off, on (voice route), check |
-| Lights | ⚠️ One light frame (Toggle Light); no light on/off |
+| Lights | ⚠️ One light frame (Toggle light); no light on/off |
 | Timers / Alarms | ❌ |
 | BLE Pairing | ❌ No pairing, PIN or handshake |
 
@@ -5025,7 +5025,7 @@ are always attempted.
 | Home Assistant control | Behavior |
 |---|---|
 | Head, Feet and Lumbar covers | Stream for the configured pulse count at 100 ms (default 10, about 1 s), then the release STOPs. Motor count and pulse delay are fixed. |
-| Flat, Zero Gravity, Lounge, Incline, Anti-Snore presets; Toggle Light; Massage +/−; Wave 1–3 | App tap: one write, then the release STOPs. Use `hold_control` to hold longer. |
+| Flat, Zero Gravity, Lounge, Incline, Anti-Snore presets; Toggle light; Massage +/−; Wave 1–3 | App tap: one write, then the release STOPs. Use `hold_control` to hold longer. |
 | Massage off | Massage stop, then the release STOPs (the release replaces the app's +100 ms repeat). |
 | Save Zero Gravity / Lounge / Incline / Anti-Snore | Holds the Flat+preset save frame for 6 s, when the app reports "Setup" (its help text says 5 s), then the release STOPs. Whether the bed stores the position is unverified. |
 | Massage On | The app's voice route: one pre-STOP, then the massage-on frame twice, 100 ms apart. It is the only path to this frame. |

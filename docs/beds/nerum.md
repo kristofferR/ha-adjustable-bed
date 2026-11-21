@@ -184,7 +184,7 @@ for reference, but no massage controls are created.
 
 The light key is held like the app's; the app's on and off buttons send the
 same bytes. It does not provide discrete on/off, brightness or color. P1
-reports the light state, so P1 has an **Under Bed Lights** light that shows it
+reports the light state, so P1 has an **Under-bed lights** light that shows it
 and sends the light key when the reported state differs from the one asked
 for. P2 and P3 report nothing and keep the **Toggle light** button.
 

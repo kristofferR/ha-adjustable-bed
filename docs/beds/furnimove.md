@@ -104,7 +104,7 @@ sets no explicit Android write type.
   when no physical wireless handset is present.
 - A configured catalog layout loads its control and diagnostic entities even if
   the first BLE connection fails or times out. Commands and **Connect** retry
-  the connection on demand. **BLE Connection** remains disconnected and live
+  the connection on demand. **BLE connection** remains disconnected and live
   feedback stays unknown until startup succeeds. This uses the selected handset
   table; it does not confirm that the receiver supports it.
 

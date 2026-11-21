@@ -120,7 +120,7 @@ Bluetooth name does not tell which layout a bed has, so you pick it in setup (se
 | Position Feedback | ❌ | ❌ | ❌ | ❌ | ⚠️ Angle numbers on VER1 models; **Reached position** shows when a memory move ends | ⚠️ Raw travel, angle and height values; no move-to-position | ❌ (desks show height, range, unit and errors) | ❌ | ❌ (raw position messages only) | ❌ | ❌ (raw motor values in diagnostics only) | ❌ (raw values only) |
 | Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the product has them | ✅ The model's memory slots | ✅ Recall and save buttons by product, including memory 1–4 | ✅ Recall and save as in the app, including its memory and hold buttons | ❌ (named preset saves instead) | ✅ Recall and save as in the app, including its memory mode | ⚠️ Only as your layout's app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Recall and save, by product |
 | Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ By model; Lounge only on the older route | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the product has them | ✅ The model's standard presets | ✅ By product | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge where the product has them | ⚠️ Only as your layout's app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ By product, recall and save |
-| Massage | ✅ | ✅ Zone, mode and off by model; 20-minute **Massage: Timer** select | ✅ Head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage: Timer** select where the main page has several timers | ✅ The app's buttons; head/foot intensity numbers on VER1 models; **Massage: Timer** select where the model has more than one of the 10, 20 and 30 minute timers | ✅ Mode and intensity buttons by product; **Massage: Timer** select (10, 20, 30 minutes) | ✅ Levels, patterns, timers and choices, as in the app | ✅ Head and foot strength, mode, off; **Massage: Timer** select (10, 20, 30 minutes or off) | ✅ Your product's controls; massage countdown | ⚠️ Only as your layout's app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
+| Massage | ✅ | ✅ Zone, mode and off by model; 20-minute **Massage timer** select | ✅ Head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage timer** select where the main page has several timers | ✅ The app's buttons; head/foot intensity numbers on VER1 models; **Massage timer** select where the model has more than one of the 10, 20 and 30 minute timers | ✅ Mode and intensity buttons by product; **Massage timer** select (10, 20, 30 minutes) | ✅ Levels, patterns, timers and choices, as in the app | ✅ Head and foot strength, mode, off; **Massage timer** select (10, 20, 30 minutes or off) | ✅ Your product's controls; massage countdown | ⚠️ Only as your layout's app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
 | Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Toggle by model; the older route also has off | ✅ (toggle) | ⚠️ RGB, **Always On** or a **1 through 15 minutes** timer, on products with a light strip once the bed answers | ✅ RGB light or colour buttons, light timeout, button lights | ✅ Lamp buttons; timeout and RGB on products that have them, once the bed answers | ✅ The layout's light controls; RGB and timer where the bed has them | ✅ (toggle) | ✅ Light buttons, RGB settings and duration, by product | ⚠️ Only as your layout's app buttons; no RGB | ✅ Light buttons; a light or RGB control where the product has one and the bed confirms it | ✅ RGB strip on products with one; colour and timer otherwise |
 | Split-King Sync | ✅ (on/off; shows the last command sent) | ❌ | ❌ | ✅ Where the product has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ✅ Where the layout has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ❌ | ❌ (stored L400SH and L300SH have left and right sides on one address) | ❌ (products with two sides get left and right on one address, except on Nordic UART receivers) |
 | Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, on products that have it | ✅ On models with alarms | ✅ Single or repeating alarms on products that have them, once the bed answers a clock request | ✅ Runs one of the layout's buttons once, at the next occurrence of the chosen time | ❌ | ✅ Single and repeating alarms, slots 1–7, by product | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating on restored products that have it |
@@ -660,9 +660,9 @@ Device name hints:
     color and timer. Timer range: 1-5 minutes or "Always On". Off is the toggle.
   - RGB-capable beds expose a **Light** entity with a color wheel instead of a
     simple on/off light. See [Lights](#lights) for the frames.
-- **Controller Sync** sends `BC` (on) or `BD` (off).
+- **Controller sync** sends `BC` (on) or `BD` (off).
 
-**Controller Sync** sends the selected controller's
+**Controller sync** sends the selected controller's
 sync command. It does not mirror commands between two Home Assistant entries.
 The displayed switch state records requested changes, not confirmed movement or
 sync status from the bed. In the HJC9 report, enabling it on both frames did not
@@ -840,7 +840,7 @@ disconnect callback cannot interrupt a newer operation.
 
 No app initialization frame, notification subscription, position parser, read
 query, pairing/PIN handshake, MTU negotiation or bed acknowledgement is present.
-GATT write completion is not bed state. The **Massage: Timer** select's 20-minute choice sends one
+GATT write completion is not bed state. The **Massage timer** select's 20-minute choice sends one
 command; Off is offered only on models with a massage-off command. Neither reports the bed's state.
 There are no inferred position sensors or sliders.
 
@@ -1002,7 +1002,7 @@ theirs. Music, fans, resets and similar extras start disabled.
   strength-increase action retains its named product button; it does not expose
   that action as a zone on/off toggle.
 - A product whose main page has more than one fixed massage timer (10, 20 or 30
-  minutes) gets the **Massage: Timer** select instead of those buttons. It
+  minutes) gets the **Massage timer** select instead of those buttons. It
   offers only the durations, since no timer action turns the timer off. A timer
   button on another app page that sends different bytes stays.
 
@@ -1237,20 +1237,20 @@ Answer the Richmat question with the app your phone uses, for example **Revive C
 Every MH-family app (these five, Nisco, MLILY Supreme, the RUF apps and Bed
 Tech's classic app) sends one command code per control, and its labels say the
 same thing many ways. A button is named by its command: `Msg Head Intensity
-Inc`, `Head Intensity+` and `Head+` are all **Massage: Head Up**, `Mode` is
-**Massage: Mode**, and `Next` on the music page is **Next music track**. A
+Inc`, `Head Intensity+` and `Head+` are all **Massage head up**, `Mode` is
+**Massage mode**, and `Next` on the music page is **Next music track**. A
 label that says more than its code keeps its own button (`Start Stop` is
-**Massage: Toggle**), and a timer keeps the duration its label shows, because
+**Massage toggle**), and a timer keeps the duration its label shows, because
 one timer code is 10 minutes on one model and 2 hours on another. A preset keeps
-the app's name for it, in the shared words (`Zg Back` is **Zero Gravity**,
+the app's name for it, in the shared words (`Zg Back` is **Zero gravity**,
 `M2 Back` is **Memory 2**, `Lull` is **Sleep aid**). Where a label names
 another feature or action than its code (`Back Fan` on the head massage code),
 the button keeps the label and starts disabled. Command `62` is **Factory
 reset** in every app: it asks first and starts disabled.
 
-Fixed timer buttons, minutes or hours, are the **Massage: Timer** select
+Fixed timer buttons, minutes or hours, are the **Massage timer** select
 (durations only) where a layout has more than one. A layout with all three
-massage intensity buttons (`67`, `AF`, `68`) has the **Massage: Intensity**
+massage intensity buttons (`67`, `AF`, `68`) has the **Massage intensity**
 number from 1 to 3 instead, and one with heat off, low, medium and high
 (`9C` to `9F`) the **Heat level** select. Each choice sends exactly what its
 button sent; a layout missing one of them keeps its buttons.
@@ -1487,7 +1487,7 @@ Choose HJBed and the exact app product. Its profile owns layout, massage, timing
 Covers represent actual selected up/down pairs. A lone combined-up action remains
 a button, without inventing combined-down. Named buttons retain each product's
 preset, save, massage, light, sync and sofa controls. The 10, 20 and 30-minute massage
-timers are the **Massage: Timer** select, with durations only: no action turns the
+timers are the **Massage timer** select, with durations only: no action turns the
 timer off. All eight independent
 MusicPage actions are available, including next/previous, even when the
 profile has no music tab. Music packets always use left 0, as configured.
@@ -1845,7 +1845,7 @@ named preset saves, massage and a light toggle.
 
 Head, feet, lumbar and pillow covers share one global STOP and one scheduling
 resource. Flat, Zero-G and Anti-Snore recall are each sent once.
-**Save Zero Gravity** and **Save Anti-Snore** are separate buttons for named
+**Save zero gravity** and **Save anti-snore** are separate buttons for named
 presets, not numbered memory slots. The phone app's three-second gesture chooses
 save, but the bed does not receive a three-second stream: each save button
 sends its save code once. Strength and mode labels do not tell the physical
@@ -2536,7 +2536,7 @@ See [Catalog app timing](#catalog-app-timing).
 
 Use `adjustable_bed.goodvibe` for these settings and queries. The action
 validates every target before writing. The dashboard card includes app
-controls, local side selection, the **Light Timer** and **Massage: Timer**
+controls, local side selection, the **Light timer** and **Massage timer**
 selects, the **Synchronization** switch (where a product has Sync on and off),
 snore numbers and sleep state.
 
@@ -3541,7 +3541,7 @@ writer supports it, otherwise writes use a response.
 Every product has Flat, Anti-Snore, Zero-G and Memory 1. Preset save buttons send
 their separate program opcode once. Rise Pro adds Memory 2; Rise Pro Light does
 not. Massage controls are one-shot actions, including intensity steps, mode
-and off; the three timer actions are the **Massage: Timer** select. The ordinary strip page requires both the
+and off; the three timer actions are the **Massage timer** select. The ordinary strip page requires both the
 Rise Pro Light flag and its exact light capability announcement.
 
 #### Timing
@@ -3641,19 +3641,19 @@ Only MS600 has alarm-mode choices. No shared receive parser expands these gates.
 
 | Entity | Products |
 |---|---|
-| Flat, Memory 1–3, Save to Memory 1–3 (shared preset buttons) | all, memory 3 on MS600 |
-| Zero Gravity, Anti-Snore and their Save buttons | all |
+| Flat, Memory 1–3, Save to memory 1–3 (shared preset buttons) | all, memory 3 on MS600 |
+| Zero gravity, Anti-snore and their Save buttons | all |
 | TV, Save TV | MS600 |
 | Lounge, Save Lounge | MS200 |
-| Toggle Light | all except MS200 |
-| Massage: Head/Foot Up, Massage mode, All Off, Massage: Timer 10/20/30 Minutes | MS300, MS300-SH, MS600 |
-| Massage: Lumbar Up | MS600 |
-| Fan: Head/Foot Up, Mode, Off, Timer 2/3/5 Hours | PowerCool |
+| Toggle light | all except MS200 |
+| Massage head/foot up, Massage mode, All off, Massage timer 10/20/30 minutes | MS300, MS300-SH, MS600 |
+| Massage lumbar up | MS600 |
+| Fan head/foot up, Fan mode, Fan off, Fan timer 2/3/5 hours | PowerCool |
 | Model (diagnostic, disabled by default) | all |
 
 PowerCool sends the massage codes to its fans, with 2/3/5-hour timers; the
 same codes on MS300, MS300-SH and MS600 are massage controls, with the
-10/20/30-minute timers as the **Massage: Timer** select. Discrete actions send once. Preset recall and Save
+10/20/30-minute timers as the **Massage timer** select. Discrete actions send once. Preset recall and Save
 buttons use distinct codes; Save waits the app's three-second programming
 threshold and asks for confirmation.
 
@@ -5094,11 +5094,11 @@ save buttons, massage controls and the angle/intensity sliders. Preset saving
 uses its separate button with the catalog's long opcode, without a save hold;
 a tile whose action has no long opcode (the "Factory Reset" tile on 14 products)
 has no save button. Buttons take the action's name in the shared words
-(`deviceFunctionItemMassageHeadInstensityStrengthen` is **Massage: Head Up**); a
+(`deviceFunctionItemMassageHeadInstensityStrengthen` is **Massage head up**); a
 preset keeps the product's own name for it, a fixed timer the duration the
 product shows, and a label naming another feature than its action ("Head Fan +"
 on a massage action) keeps the label and starts disabled. A product with more
-than one fixed massage timer has the **Massage: Timer** select instead (with the
+than one fixed massage timer has the **Massage timer** select instead (with the
 durations its labels show), one with head or foot massage levels 1 to 3 a
 massage intensity number per zone (0 where the zone has its own off), and one
 with heat off, low, medium and high the **Heat level** select. The relieve
@@ -6789,7 +6789,7 @@ title is not an action. Flat is the app's MotorReset control.
 
 Native motor entities expose each product's held directions. Presets and their
 separate save buttons, light toggle and every massage action are product-gated.
-The massage timer keys are one **Massage: Timer** select (Off sends All Off), and
+The massage timer keys are one **Massage timer** select (Off sends All Off), and
 each zone's level keys are one head or foot massage number (0 sends that zone's
 off key where the product has one).
 Saving uses the source long operand with a single short action, not a timed long
@@ -6997,7 +6997,7 @@ order. Third-service fallback requires the Advanced option.
 Each selected layout supplies its own motion, presets, saves, massage, light
 and extra controls. Saves use the card's save controls; long-press saves do not
 become renewable holds. On/off pairs use switches. Fixed massage durations
-use the **Massage: Timer** select. APRM has conflicting duration labels and retains
+use the **Massage timer** select. APRM has conflicting duration labels and retains
 its individual timer controls. There are no app screen, arming or side pickers:
 every command uses the first mode.
 
@@ -10545,7 +10545,7 @@ example `Massage Head Intensity Inc` is Massage: Head Up, `Zg2 Back`/`Zg2 Set`
 are Zero gravity 2 and Save Zero gravity 2, and `Ubl Off` is Under-bed light
 off. A model with more than
 one of `Massage 10Min`, `Massage 20Min` and `Massage 30Min` shows them as the
-**Massage: Timer** select (durations only); a model with one keeps its button.
+**Massage timer** select (durations only); a model with one keeps its button.
 
 Nisco's light timer preserves the high and low duration bytes. Normal and
 waist mattress controls are dormant, even though startup probes and shared
@@ -11684,7 +11684,7 @@ adapter/proxy discovery, connection acceptance and handoff.
 |---|---|
 | Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and foot up, Upper Section Up, ...), without guessing the physical motor count. |
 | Presets and memory | Exact named actions in the selected profile, including separate Save buttons where the app can save. No universal slot count or numeric memory namespace. |
-| Massage and bed light | Profile-specific request buttons; local icon/flag changes do not confirm remote state. Where a remote has more than one fixed massage timer key (10MIN, 20MIN, 30MIN), they are the **Massage: Timer** select, with durations only; **Timer / Off** stays a button. |
+| Massage and bed light | Profile-specific request buttons; local icon/flag changes do not confirm remote state. Where a remote has more than one fixed massage timer key (10MIN, 20MIN, 30MIN), they are the **Massage timer** select, with durations only; **Massage timer / off** stays a button. |
 | Factory Reset | Only where listed; requires confirmation in the native card, as do Save buttons. |
 | Position and device state feedback | None. |
 | Renewable holds | Motion controls only. Countdown, massage, programming and local selectors remain finite. |
@@ -14904,7 +14904,7 @@ combined beds retain each physical bed’s settings.
 #### Controls
 
 The entities expose named actions, inverse on/off pairs as switches, known
-light state through the light platform, the **Massage: Timer** select (off, 10,
+light state through the light platform, the **Massage timer** select (off, 10,
 20 or 30 minutes on D1RM and D9RM; 15, 30 or 45 minutes on Y6RM, whose popup has
 no idempotent off), and the layout's real intensity range where present. Aroma
 times are configuration entities, disabled by default. Save controls use the card’s guarded Set mode or an explicit confirmation,
@@ -15414,7 +15414,7 @@ used. Motor positions, light state and massage levels are not reported.
 
 Use `timed_move` for back/legs movement and `stop_all` to end active refresh.
 Use `goto_preset` and `save_preset` for memory slots 1 and 2. Other controls are
-native buttons and the **Massage: Timer** select. See [Actions and
+native buttons and the **Massage timer** select. See [Actions and
 Automations](../SERVICES.md#movement-and-memory).
 
 #### Evidence
