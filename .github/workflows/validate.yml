@@ -181,4 +181,4 @@ jobs:
           tests/test_bluetooth_transport.py tests/test_bluetooth_freshness.py tests/test_coordinator.py
           tests/test_config_flow.py tests/test_init.py
           tests/test_paired_devices.py tests/test_paired_registry.py tests/test_paired_setup.py
-          tests/test_diagnostics.py tests/test_support_report_logs.py tests/test_support_bundle.py
+          tests/test_diagnostics.py tests/test_support_privacy.py tests/test_support_bundle.py

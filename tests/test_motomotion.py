@@ -948,3 +948,11 @@ async def test_restore_rejects_invalid_working_targets(coordinator, targets):
     with pytest.raises(ValueError, match="Recall or fine tune"):
         await c.action("motomotion_posture_save")
     assert written(coordinator) == []
+
+
+def test_receive_buffer_is_bounded_without_a_carriage_return():
+    """A device that never ends its frame cannot grow memory (PRIV-11)."""
+    s = State()
+    for _ in range(100):
+        s.feed(b"$" + b"1 " * 50, "SOFA000001MC00H", lambda _event: None)
+        assert len(s.buffer) <= 4096

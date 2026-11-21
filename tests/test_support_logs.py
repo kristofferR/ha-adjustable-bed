@@ -27,7 +27,7 @@ from custom_components.adjustable_bed.support_proxy_logs import (
     DATA_PAIRING_PROXY_LOGS,
     capture_proxy_logs,
 )
-from custom_components.adjustable_bed.support_report import _get_recent_logs, async_check_log_file
+from custom_components.adjustable_bed.support_report import async_check_log_file
 
 
 async def test_memory_logs_include_failure_before_capture_without_file(hass: HomeAssistant, caplog, tmp_path):
@@ -49,7 +49,7 @@ async def test_memory_logs_include_failure_before_capture_without_file(hass: Hom
     )
     logging.getLogger("other.integration").error("Unrelated secret")
 
-    logs = await _get_recent_logs(hass)
+    logs = buffer.snapshot()
     assert len(logs) == 2
     assert "ValueError: Authentication failed" in logs[0]["message"]
     serialized_logs = json.dumps(logs)
@@ -358,3 +358,28 @@ async def test_bundle_captures_debug_without_file_and_honors_opt_out(
         assert report["bluetooth"]["pairing_proxy_logs"] == []
         assert report["evidence"]["log_capture_status"] == "not_requested"
         factory.assert_not_called()
+
+
+async def test_proxy_capture_leaves_out_other_devices(hass, proxy):
+    """Scan results and other devices' connections stay out of the bundle (PRIV-3)."""
+    client, _, _ = proxy
+    async with capture_proxy_logs(hass, "AA:BB:CC:DD:EE:FF") as reports:
+        callback = client.subscribe_logs.call_args.args[0]
+        for message in (
+            b"[D][esp32_ble_tracker:747]: Found device 11:22:33:44:55:66 RSSI=-70",
+            b"[D][esp32_ble_tracker:752]:   Name: 'Anna phone'",
+            b"[I][bluetooth_proxy.connection:91]: [1] [11:22:33:44:55:66] Connecting",
+            b"[I][bluetooth_proxy.connection:91]: [0] [AA:BB:CC:DD:EE:FF] Connecting",
+        ):
+            callback(SimpleNamespace(message=message, level=5))
+        assert [entry["message"] for entry in reports[0]["entries"]] == [
+            "[I][bluetooth_proxy.connection:91]: [0] [AA:BB:CC:DD:EE:FF] Connecting"
+        ]
+        assert reports[0]["withheld_entries"] == 3
+
+
+def test_logged_notification_payloads_are_removed() -> None:
+    """The generic notification log line keeps its source but not its bytes."""
+    for prefix in ("GATT notify from AA:BB:CC:DD:EE:FF (uuid): ", "Notification on uuid: "):
+        for payload in ("1e01", "00112233445566778899aabbccddeeff"):
+            assert sanitize_log_message(prefix + payload) == prefix + "**REDACTED**"

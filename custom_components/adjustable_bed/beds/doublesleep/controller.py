@@ -45,6 +45,20 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# Vital signs, presence and sleep reports stay out of diagnostics and support
+# bundles, which users post publicly. Their entities show them instead.
+_SLEEP_DATA_KEYS: Final = frozenset(
+    {"last_json", "last_notification", "live_legacy_raw", "legacy_report"}
+)
+_SIDE_SLEEP_DATA: Final = frozenset(
+    {"heart_rate", "breath_rate", "status", "flag1", "flag2", "history", "raw", "report"}
+)
+
+
+def _is_sleep_data(key: str) -> bool:
+    side, _, field = key.partition("_")
+    return key in _SLEEP_DATA_KEYS or (side in ("left", "right") and field in _SIDE_SLEEP_DATA)
+
 
 @dataclass
 class Session:
@@ -247,7 +261,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             "child_lock": self.session.child_lock,
             "sonic_ui": self.ui.sonic_ui,
             "slow_anti_snore": self.ui.slow,
-            "state": self.parser.state,
+            "state": {
+                key: value for key, value in self.parser.state.items() if not _is_sleep_data(key)
+            },
         }
 
     def _publish(self) -> None:
