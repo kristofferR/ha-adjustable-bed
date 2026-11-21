@@ -707,3 +707,13 @@ def test_a_new_link_shows_the_light_only_from_its_own_report() -> None:
     # The same reading as the last link still counts as this link's report.
     controller._parse_feedback(generic(0x00020000))
     assert state["under_bed_lights_on"] is True
+
+
+def test_a_report_corrects_the_light_state_a_command_showed() -> None:
+    controller = make_controller()
+    state = controller._coordinator.controller_state
+    controller._parse_feedback(generic(0))
+    # A toggle showed On; the remote switched the lamp back before the next report.
+    state["under_bed_lights_on"] = True
+    controller._parse_feedback(generic(0))
+    assert state["under_bed_lights_on"] is False

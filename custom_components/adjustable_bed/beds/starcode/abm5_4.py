@@ -821,11 +821,13 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
 
     async def lights_on(self) -> None:
         if self._accept_light_action():
-            await self._once("turnonUnderbedLighting")
+            with self.sent_state(UNDER_BED_LIGHTS_ON(True)):
+                await self._once("turnonUnderbedLighting")
 
     async def lights_off(self) -> None:
         if self._accept_light_action():
-            await self._once("turnoffUnderbedLighting")
+            with self.sent_state(UNDER_BED_LIGHTS_ON(False)):
+                await self._once("turnoffUnderbedLighting")
 
     async def lights_toggle(self) -> None:
         if self._accept_light_action():

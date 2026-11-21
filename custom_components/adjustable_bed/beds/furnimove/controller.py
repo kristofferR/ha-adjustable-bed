@@ -498,8 +498,9 @@ class FurniMoveController(BedController):
             if value is not None and (
                 value != self._state[state_key]
                 or type(self._coordinator.controller_state.get(_state_key(state_key))) is not bool
+                # Every light report is the truth, also over a value just sent.
                 or key == "ubl"
-                and self._coordinator.controller_state.get(UNDER_BED_LIGHTS_ON) is None
+                and self._coordinator.controller_state.get(UNDER_BED_LIGHTS_ON) is not value
             ):
                 self._publish(state_key, value)
 
