@@ -391,6 +391,22 @@ async def test_recall_moves_each_motor_for_its_calculated_time(
     assert bed.motors["back"].percent == pytest.approx(30.0)
 
 
+async def test_a_move_too_short_to_time_counts_as_arrived(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """5% of a one-second motor is below the shortest move: nothing moves, no error."""
+    manager = await calibrated(hass)
+    bed = manager.beds[LEFT]
+    bed.configure({"back": (pe.MIN_TRAVEL_S, pe.MIN_TRAVEL_S)})
+    bed.set_reference()
+    hass.data[DOMAIN]["entry"] = object()
+    timed_move = AsyncMock()
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+
+    assert await pe.async_move_bed(hass, manager, bed, {"back": 5.0})
+    timed_move.assert_not_awaited()
+
+
 async def test_recall_reports_a_stopped_move_and_skips_the_rest(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -993,11 +993,14 @@ async def async_move_bed(
             return False
         estimate = bed.motors[motor]
         plan = estimate.plan(targets[motor])
-        if plan is not None and plan[1] * 1000 >= MIN_MOVE_MS:
+        if plan is not None and plan[1] * 1000 < MIN_MOVE_MS:
+            # A motor closer than the shortest move is as close as it gets.
+            plan = None
+        if plan is not None:
             await _async_timed_move(parent, bed, motor, plan[0], plan[1])
         if estimate.state is not EstimateState.TRACKING:
             raise failed("position_estimate_move_failed")
-        if not _arrived(bed, motor, targets[motor]):
+        if plan is not None and not _arrived(bed, motor, targets[motor]):
             return False
     return True
 
