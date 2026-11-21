@@ -206,6 +206,7 @@ from .const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
+    BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
@@ -3485,7 +3486,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_sleep_number",
                 "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
-                "2. Click 'Pair Now'",
+                "2. Choose **Pair now**, then select **Submit**.",
             )
         if bed_type == BED_TYPE_LEGGETT_GEN2 or (
             bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
@@ -3497,7 +3498,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "1. Unplug your bed's power cord and remove any batteries from the power supply.\n"
                 "2. Plug the bed back in. Wait for a small chime and a pulsing blue light "
                 "under the bed.\n"
-                "3. While the light is pulsing, promptly click 'Pair Now'.",
+                "3. While the light is pulsing, promptly choose **Pair now** and select **Submit**.",
             )
         if bed_type in {
             BED_TYPE_OKIMAT,
@@ -3506,6 +3507,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             BED_TYPE_OKIN_UUID,
             BED_TYPE_LEGGETT_OKIN,
             BED_TYPE_LEGGETT_PLATT,
+            # Their guides send the user to the same OKIN pairing mode.
+            BED_TYPE_OKIN_64BIT,
+            BED_TYPE_RESIDENT,
         }:
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_okin",
@@ -3514,12 +3518,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it "
                 "until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn "
                 "button on the box only syncs the RF remote.\n"
-                "2. While the light is active, click 'Pair Now'.",
+                "2. While the light is active, choose **Pair now** and select **Submit**.",
             )
         return await self._get_config_translation(
             "step.bluetooth_pairing.data_description.pairing_instructions_generic",
-            "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n"
-            "2. Click 'Pair Now'",
+            # No documented procedure for these beds, so none is invented here.
+            "1. Put the bed into Bluetooth pairing mode as its manual describes.\n"
+            "2. Choose **Pair now**, then select **Submit**.",
         )
 
     def _get_octo_split_setup_note(

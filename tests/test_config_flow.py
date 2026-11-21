@@ -81,15 +81,18 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
@@ -100,6 +103,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    BED_TYPE_VIBRADORM_APP,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -403,33 +407,30 @@ class TestPairingInstructions:
         assert "side pairing button" in instructions
         assert "blue light blinks" in instructions
 
-    async def test_default_pairing_instructions_remain_generic(self, hass: HomeAssistant) -> None:
-        """Other pairing-required beds should keep the generic fallback guidance."""
+    @pytest.mark.parametrize(
+        "bed_type", [BED_TYPE_VIBRADORM, BED_TYPE_VIBRADORM_APP, BED_TYPE_LOGICDATA]
+    )
+    async def test_beds_without_documented_steps_get_no_invented_ones(
+        self, hass: HomeAssistant, bed_type: str
+    ) -> None:
+        """No lamp button or power cycle is promised for a bed whose guide names none."""
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
 
-        with patch(
-            "custom_components.adjustable_bed.config_flow.async_get_translations",
-            new=AsyncMock(
-                return_value={
-                    (
-                        "component.adjustable_bed.config.step.bluetooth_pairing."
-                        "data_description.pairing_instructions_generic"
-                    ): (
-                        "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n"
-                        "2. Click 'Pair Now'"
-                    )
-                }
-            ),
-        ):
-            instructions = await flow._get_pairing_instructions(BED_TYPE_VIBRADORM)
+        instructions = await flow._get_pairing_instructions(bed_type)
 
-        assert "lamp button" in instructions
-        assert "unplug for 30+ seconds" in instructions
+        assert "as its manual describes" in instructions
+        assert "lamp" not in instructions and "unplug" not in instructions
 
     @pytest.mark.parametrize(
         "bed_type",
-        [BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT],
+        [
+            BED_TYPE_OKIN_UUID,
+            BED_TYPE_OKIN_CST,
+            BED_TYPE_OKIN_RF_ECO_BT,
+            BED_TYPE_OKIN_64BIT,
+            BED_TYPE_RESIDENT,
+        ],
     )
     async def test_okin_pairing_instructions_use_power_cycle_guidance(
         self, hass: HomeAssistant, bed_type: str

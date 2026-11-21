@@ -144,10 +144,10 @@
           "bond_state_mismatched": "Bond state"
         },
         "data_description": {
-          "pairing_instructions_generic": "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'",
-          "pairing_instructions_okin": "1. Put the OKIN base into Bluetooth pairing mode by power-cycling the control box: unplug it for ~30 seconds, then plug it back in. The status light blinks blue, then turns green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn button on the box only syncs the RF remote.\n2. While the light is active, click 'Pair Now'.",
-          "pairing_instructions_sleep_number": "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n2. Click 'Pair Now'",
-          "pairing_instructions_leggett_gen2": "1. Unplug your bed's power cord and remove any batteries from the power supply.\n2. Plug the bed back in. Wait for a small chime and a pulsing blue light under the bed.\n3. While the light is pulsing, promptly click 'Pair Now'.",
+          "pairing_instructions_generic": "1. Put the bed into Bluetooth pairing mode as its manual describes.\n2. Choose **Pair now**, then select **Submit**.",
+          "pairing_instructions_okin": "1. Put the OKIN base into Bluetooth pairing mode by power-cycling the control box: unplug it for ~30 seconds, then plug it back in. The status light blinks blue, then turns green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn button on the box only syncs the RF remote.\n2. While the light is active, choose **Pair now** and select **Submit**.",
+          "pairing_instructions_sleep_number": "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n2. Choose **Pair now**, then select **Submit**.",
+          "pairing_instructions_leggett_gen2": "1. Unplug your bed's power cord and remove any batteries from the power supply.\n2. Plug the bed back in. Wait for a small chime and a pulsing blue light under the bed.\n3. While the light is pulsing, promptly choose **Pair now** and select **Submit**.",
           "bond_state": "What this Home Assistant host already knows about a bond for this bed.",
           "bond_state_proxy": "ℹ️ This bed will pair through a Bluetooth proxy, which keeps the bond itself. Home Assistant cannot read or remove a bond stored on a proxy, so it cannot tell you whether one already exists.",
           "bond_state_unreadable": "ℹ️ Home Assistant could not read the Bluetooth bonds on this host, so it cannot tell whether this bed is already paired.",
