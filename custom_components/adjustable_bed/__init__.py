@@ -298,23 +298,38 @@ _V4_RUNTIME_DEFAULTS: Final[dict[str, bool]] = {
 def migrate_v4_runtime_defaults(data: Mapping[str, Any]) -> dict[str, Any]:
     """Return 4.x entry data with the values 4.x ran with saved where it had none.
 
-    4.x read both from the entry data, where options that a pair's sides read
-    still win. A paired side read the pair's data under its own, so the pair's
-    data is filled once for both sides; an original entry a pair restores on
-    unpair is filled on its own. Diagnostic entries from 1.4.6 to 2.5.3, for
-    example, saved no handoff.
+    4.x read both from the data of the bed that ran: a standalone entry, a
+    one-address pair, or a two-address side over its pair's data (options that
+    reached the side still win). A two-address pair's own data held neither,
+    so only its sides are filled. An original entry a pair restores on unpair is
+    filled on its own. Diagnostic entries from 1.4.6 to 2.5.3, for example,
+    saved no handoff.
     """
     migrated = dict(data)
-    for key, value in _V4_RUNTIME_DEFAULTS.items():
-        migrated.setdefault(key, value)
-    if isinstance(children := migrated.get(CONF_PAIR_CHILDREN), list):
+    children = migrated.get(CONF_PAIR_CHILDREN)
+    separate = isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+    if not separate:
+        for key, value in _V4_RUNTIME_DEFAULTS.items():
+            migrated.setdefault(key, value)
+    if isinstance(children, list):
         migrated[CONF_PAIR_CHILDREN] = [
-            {**child, KEY_ORIGIN_DATA: migrate_v4_runtime_defaults(child[KEY_ORIGIN_DATA])}
-            if isinstance(child, Mapping) and isinstance(child.get(KEY_ORIGIN_DATA), Mapping)
-            else child
+            _v4_side_defaults(child, data, fill=separate) if isinstance(child, Mapping) else child
             for child in children
         ]
     return migrated
+
+
+def _v4_side_defaults(
+    child: Mapping[str, Any], pair: Mapping[str, Any], *, fill: bool
+) -> dict[str, Any]:
+    side = dict(child)
+    if fill:
+        for key, value in _V4_RUNTIME_DEFAULTS.items():
+            if key not in pair:
+                side.setdefault(key, value)
+    if isinstance(origin := side.get(KEY_ORIGIN_DATA), Mapping):
+        side[KEY_ORIGIN_DATA] = migrate_v4_runtime_defaults(origin)
+    return side
 
 
 def _with_migration_record(
