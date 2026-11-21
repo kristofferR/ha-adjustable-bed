@@ -309,8 +309,8 @@ features, and STOP behavior.
 
 - **Existing HHC support:** ✅ User tested
 - **Expanded model matrix:** needs testing on hardware. Owners of these beds can help confirm
-  them. App evidence shows what the OEM apps send, but not
-  how every firmware and actuator behaves.
+  them. The apps show what they send, but not how every firmware and actuator
+  behaves.
 
 #### Setup
 
@@ -399,7 +399,7 @@ the root cause of [issue #445](https://github.com/kristofferR/ha-adjustable-bed/
 > `$z` is an initialization-only query that the wrapped path drops and the
 > integration does not send; sync uses the numeric MainPanel frames below.
 
-Where an app exposes a command pair but does not establish one unique physical
+Where an app has a command pair but no single physical
 label across models, Home Assistant uses `Auxiliary`, `Auxiliary 1`, or
 `Auxiliary 2`. This preserves app-defined controls without guessing that
 they are lumbar, neck, or tilt. Real users can provide model-specific hardware
@@ -444,8 +444,8 @@ trustworthy physical label, so the integration does not invent one.
 
 #### Evidence
 
-Both reports are COMPLETE; see [Analysis provenance](#analysis-provenance).
-MotoSleep, Power Bob and the legacy route send only their frozen frames.
+Based on MotoSleep 5.1.5 and Power Bob 2.0.3; the legacy route sends the pre-v5
+controller's frames. See [Analysis provenance](#analysis-provenance).
 
 ### MotoSleep
 
@@ -566,7 +566,7 @@ except Panel Eight also routes to the RGB settings.
 | Six ZG | char 8 `D` | Back, legs | None | None | `$b` |
 
 - Short HHC names that select Power Bob Panel Eight retain Home as `$O`. A
-  user-confirmed device uses this shared command, matching the reachable
+  user-confirmed device uses this shared command, matching the
   MotoSleep 5.1.5 PanelEight action even though Power Bob 2.0.3 does not render
   that action on its separate Panel Eight
   ([issue #468](https://github.com/kristofferR/ha-adjustable-bed/issues/468)).
@@ -577,8 +577,8 @@ except Panel Eight also routes to the RGB settings.
 
 The Power Bob app's RGB settings route is independent of the selected root
 motor panel. Advertised-name character 10 selects the Mood configuration when
-it is `D` and the Night configuration otherwise. Reachability in the generic
-settings UI does not by itself prove the connected hardware implements those
+it is `D` and the Night configuration otherwise. Showing them in the generic
+settings UI does not by itself mean the connected hardware implements those
 numeric commands: the user-confirmed Panel Eight compatibility profile supports
 only its root `$A` light toggle.
 
@@ -766,7 +766,7 @@ address; independent paired beds retain HA's normal physical-side routing.
 
 Row A12's accepted Bedgear 2.0.1 frames match the shared HHC codec byte for byte,
 including six-plus-four-digit alarm fields. All selected layouts have their own
-Bedgear profile rules. App evidence does not establish physical movement,
+Bedgear profile rules. The app does not confirm physical movement,
 STOP completion or firmware compatibility. External owners can
 qualify those behaviors with timestamps, GATT details and physical observations.
 
@@ -794,7 +794,7 @@ characteristic with no response. No application handshake or startup write is se
 
 #### Controls
 
-The name selects the layout, reachable axes, memory capacity, presets and massage
+The name selects the layout, axes, memory capacity, presets and massage
 controls below. A shared UUID does not grant another app's controls.
 
 <!-- generated:l2motion-layouts -->
@@ -926,8 +926,8 @@ ignoring a terminator in an initial packet and removing the byte before a later
 terminator. Only token counts 39, 44, 71 and 75 update state. RGB, light timer and
 alarm time/strength are projected from their own offsets; synchronization is
 available only after the bed reports support. Unknown synchronization values and
-raw color state stay in diagnostics. No position, firmware or movement feedback
-is established. There is no command acknowledgement correlation.
+raw color state stay in diagnostics. The bed reports no position, firmware or
+movement feedback. There is no command acknowledgement correlation.
 
 #### Services
 

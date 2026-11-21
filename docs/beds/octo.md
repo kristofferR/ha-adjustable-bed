@@ -227,7 +227,7 @@ the Standard or Star2 implementation when the variant is left on Auto. Features
 are still limited by the device capabilities and the support table above, and
 every OEM combination is not necessarily hardware-tested.
 
-The accepted 1.03.02 artifact defines no separate protocol profile selected by
+App version 1.03.02 has no separate protocol profile selected by
 OEM branding, CID, PID, hardware, firmware, locale or device name. Standard P1
 remains the existing OCTO bed type; Star2 remains separate.
 
@@ -574,8 +574,8 @@ integration whose controls do nothing.
 The official app hides *every* control while locked (motors, light and presets
 alike), so the app itself does not distinguish between them. Users have reported
 the under-bed light still responding while the motors do not, which is how this
-usually presents in the field, but that asymmetry is a field observation and is
-not established by the app.
+usually presents in the field, but that asymmetry is a field observation, not
+something the app shows.
 
 The integration raises a repair notification when capability discovery reports
 `CAP_BLE_PIN` locked while no PIN is configured. Enter the PIN in the
