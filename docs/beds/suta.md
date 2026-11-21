@@ -113,8 +113,7 @@ The final characteristic with write or write-without-response properties is
 the writer. Every other notify/indicate characteristic is subscribed.
 The write branch takes precedence on a characteristic with both properties.
 No fixed characteristic UUID is assumed. Normal BED writes use response mode.
-Notification setup and MTU negotiation do not establish an authentication
-handshake; the app requests MTU 250, without gating the command UI on success.
+Notification setup and MTU negotiation are not an authentication handshake; the app requests MTU 250, without gating the command UI on success.
 
 ### Framing and checksum
 

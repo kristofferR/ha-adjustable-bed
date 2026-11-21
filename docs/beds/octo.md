@@ -761,7 +761,7 @@ ordering tests, but still needs validation on real dual OCTO hardware.
 
 The APK proves the app uses one active GATT target, but it cannot prove whether
 bed firmware permits two simultaneous central connections or whether two
-Bluetooth proxies behave differently from one. It also does not establish a
+Bluetooth proxies behave differently from one. It also does not show a
 shared connection limit across two independent receivers. Single-proxy and
 dual-proxy operation remain hardware-validation items.
 
