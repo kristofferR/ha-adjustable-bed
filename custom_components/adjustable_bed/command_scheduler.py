@@ -143,10 +143,10 @@ class HoldWindow:
 
 
 class HoldWindows:
-    """One bed's presses by (side, owner), kept by the runtime they describe.
+    """One bed's presses by (side, owner), kept by its scheduler.
 
     Ended presses are remembered, bounded, so a late renewal of an ended press
-    never starts motion again. A reloaded bed gets a new runtime and starts empty.
+    never starts motion again. A reloaded bed gets a new scheduler and starts empty.
     """
 
     __slots__ = ("_presses",)
@@ -959,6 +959,7 @@ class DeviceCommandScheduler:
     def __init__(self, name: str) -> None:
         self._name = name
         self._token = object()
+        self.hold_windows = HoldWindows()
         self._lock = asyncio.Lock()
         self._queue: deque[CommandHandle] = deque()
         self._active: CommandHandle | None = None

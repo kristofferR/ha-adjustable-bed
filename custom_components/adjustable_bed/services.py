@@ -61,6 +61,7 @@ from .command_scheduler import (
     HoldClaim,
     HoldLease,
     HoldWindow,
+    HoldWindows,
     StaleHoldLease,
     command_resources,
     current_command_context,
@@ -2115,6 +2116,13 @@ def _declares_hold(targets: list[tuple[BedTarget, str]], control: str) -> bool:
     )
 
 
+def _hold_windows(coordinator: BedTarget, side: str) -> HoldWindows:
+    """The presses kept by the bed that runs this side's commands."""
+    child = _command_targets(coordinator, side)[0]
+    physical = child.inner if isinstance(child, SingleAddressSideCoordinator) else child
+    return physical.command_scheduler.hold_windows
+
+
 def _windowed_press(
     targets: list[tuple[BedTarget, str]], lease: HoldLease, control: str
 ) -> bool:
@@ -2127,11 +2135,12 @@ def _windowed_press(
     if len(targets) != 1:
         return not _declares_hold(targets, control)
     coordinator, side = targets[0]
-    press = coordinator.hold_windows.get(side, lease.owner)
+    windows = _hold_windows(coordinator, side)
+    press = windows.get(side, lease.owner)
     if press is not None and press.generation >= lease.generation:
         return press.windowed
     if _declares_hold(targets, control):
-        coordinator.hold_windows.remember(
+        windows.remember(
             side,
             lease.owner,
             HoldWindow(control, lease.generation, math.inf, windowed=False, ended=True),
@@ -2157,8 +2166,9 @@ async def _async_hold_window(
     if len(targets) != 1:
         raise invalid("hold_one_bed")
     coordinator, side = targets[0]
+    windows = _hold_windows(coordinator, side)
     now = asyncio.get_running_loop().time()
-    window = coordinator.hold_windows.get(side, lease.owner)
+    window = windows.get(side, lease.owner)
     if window is not None and window.generation >= lease.generation:
         if window.generation > lease.generation or window.control != lease.action:
             raise invalid("hold_ended")
@@ -2167,7 +2177,7 @@ async def _async_hold_window(
             window.deadline = now + lease.duration_s
         return
     window = HoldWindow(lease.action, lease.generation, now + lease.duration_s)
-    coordinator.hold_windows.remember(side, lease.owner, window)
+    windows.remember(side, lease.owner, window)
     # A dropped caller (a closed dashboard) must not take the deadline with it.
     task = hass.async_create_background_task(
         _run_hold_window(window, run), "adjustable_bed hold window"
