@@ -172,7 +172,7 @@ use. Shared names and Bluetooth services never decide it.
 | Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app | The app | [Adjustable Lite](#adjustable-lite-profile), [Simon Li, Heal Every Night and OKIN-Seating](#simon-li-heal-every-night-and-okin-seating-profiles) |
 | Purple Smart Base, Member's Mark or Linx / Juna Sleep | Which of them | [Purple](#purple-variant), [Base](#base-basei4i5), [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health) |
 | Cool Base app (with fan) | | [Cool Base](#cool-base) |
-| No app: another Keeson remote route | The route and motor count; the Ergomotion route also asks whether to read positions | Any [Keeson route](#profile-summary), such as KSBT or KSBT03CR |
+| No app: another Keeson remote | The route and motor count; the Ergomotion route also asks whether to read positions | Any [Keeson route](#profile-summary), such as KSBT or KSBT03CR |
 | I don't know: keep the detected controls | | The detected or chosen route |
 
 An app row in the bed-type list answers the question itself; the one
@@ -2802,7 +2802,7 @@ Commands are 32-bit values sent in little-endian byte order.
 
 ##### Side Selection (Split-King)
 
-For split-king beds, configure the protocol variant:
+For split-king beds, choose the side under **Bed model or remote**:
 
 | Variant | Value | Description |
 |---------|-------|-------------|
@@ -3586,7 +3586,7 @@ was found.
 For an existing Keeson entry, select **BaseI4/BaseI5 (Member's Mark)** or
 **Ergomotion (with position feedback)** before enabling side controls. Do this
 through **Reconfigure** in the entry's three-dot menu, under the Keeson
-question's **No app: another Keeson remote route** answer; Configure refuses a
+question's **No app: another Keeson remote** answer; Configure refuses a
 Keeson route change. An existing Ergomotion bed-type
 entry also offers the option. Auto is excluded from the menu because it may
 resolve to an incompatible JSON or P2 profile at connection time. Choose the
@@ -4254,7 +4254,7 @@ models P3 and P4 send [Okin N-frames](okin-nframe.md#framing-and-checksum), desc
 
 ##### AdjustaMattress setup and layout
 
-Choose the matching product layout and BLE model in **Protocol variant**. The 28
+Choose the matching product layout and model under **Bed model or remote**. The 28
 explicit choices (`P1_L0` to `P4_L6`) combine two independent dimensions.
 
 ###### AdjustaMattress models

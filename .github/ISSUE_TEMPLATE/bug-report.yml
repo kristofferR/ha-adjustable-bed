@@ -38,7 +38,7 @@ body:
     attributes:
       label: Integration version
       description: "The exact version, shown under Settings > Devices & services > Adjustable Bed, including any beta suffix."
-      placeholder: "e.g., 5.0.0b9 or 4.4.2"
+      placeholder: "e.g., 5.0.0 or 4.4.2"
     validations:
       required: true
 

@@ -36,12 +36,11 @@ and take a Home Assistant backup first. That backup is the only way back; see
 
 ### "New app profiles are available" repair
 
-Beds added before 4.1.0 keep the bed type they were set up with. Version 4.1.0
-adds app profiles for beds that the earlier generic routes controlled only
-partly, or with the wrong commands. Bluetooth advertisements cannot tell these
-apps apart, so an upgraded bed whose bed type gained app profiles shows one
-repair under **Settings > System > Repairs**. It lists only the apps that fit
-that bed type:
+An upgrade never changes a working bed's setup by itself. When a bed still uses
+a generic route that has since gained app profiles, it shows one repair under
+**Settings > System > Repairs**. Bluetooth advertisements cannot tell these
+apps apart, so the repair asks which one you use. It lists only the apps that
+fit that bed's setup:
 
 - **Choose the app you use.** The repair opens **Reconfigure** with that app
   selected. It asks the app's own questions, checks the bed where the app
@@ -60,11 +59,11 @@ that bed type:
   Right and Both controls**). Each bed then gets its own repair. A working pair can keep its
   current configuration instead.
 
-Handing off to **Configure** or the guided change does not answer the repair.
-It stays open until you save a change or choose to keep the current setup.
+Opening **Reconfigure** or the guided change does not answer the repair. It
+stays open until you save a change or choose to keep the current setup.
 
-Version 5 asks once more where a bed type gained apps after that review, with
-the same repair:
+Upgrading to v5 shows it for these setups, even if you kept the current setup
+in 4.x:
 
 - Solace on Automatic (the HomeKobo, Sealy MotionFlex and Sweet Night route):
   Woosa Sleep and Sophie, which share these beds' names, so only the app tells
@@ -79,7 +78,9 @@ advertisement now identifies another bed type than the one it was set up
 with. So far this applies to Keeson beds whose name contains, but does not
 start with, `base-i5`; they are Cool Base beds.
 
-| Bed type set up before 4.1.0 | Apps offered |
+Beds set up before 4.1.0 that have not answered it yet are offered these apps:
+
+| Bed type | Apps offered |
 |------------------------------|--------------|
 | Keeson (Auto or Base variant) | Adjustable Lite (Auto only), Simon Li, Heal Every Night, OKIN-Seating, Avanti Bases, INNOVA, AMERICANSTAR, MaxCoil Una, Dynasty Bases, Bedsense Bases, Restonic BT A/B, SIMMONS |
 | Keeson (KSBT variant) | Adjustable Lite |
@@ -130,15 +131,15 @@ To go back:
    integration and its config entries together. It also rolls back every other
    change made since that backup, not only this integration.
 2. Restart Home Assistant and reload the dashboard page.
-3. If **Settings > Updates** still offers the v5 beta, open **Adjustable Bed**
-   under **Settings > Marketplace** and choose **Exclude pre-releases** in its
-   three-dots menu.
+3. If **Settings > Updates** offers v5 again, skip that update. If you turned on
+   pre-releases to try a beta, also open **Adjustable Bed** under **Settings >
+   Marketplace** and choose **Exclude pre-releases** in its three-dots menu.
 
-Report the problem that made you go back in the
-[v5 beta feedback issue](https://github.com/kristofferR/ha-adjustable-bed/issues/914),
-with the beta number and, if you still have them, diagnostics or a support
-bundle from v5. The same issue is linked from the notification a v5 beta shows
-24 hours after you install it.
+Report the problem that made you go back in
+[a new issue](https://github.com/kristofferR/ha-adjustable-bed/issues/new/choose),
+with the version number and, if you still have them, diagnostics or a support
+bundle from v5. If you ran a beta, the notification it showed 24 hours after
+you installed it links its feedback issue.
 
 ## Dashboard Card Missing or Configuration Error
 
@@ -166,10 +167,9 @@ lovelace:
       type: module
 ```
 
-Home Assistant's frontend can replace its custom element registry after the
-card has already defined itself, which made Lovelace intermittently report the
-card as missing until the next page load. The card now also registers in the
-replacement registry, so this no longer needs a reload or cache reset. Remove any manually added duplicate or relative
+Older Home Assistant versions sometimes reported the card as missing until the
+next page load. Home Assistant 2026.11, the minimum this version needs, fixed
+that. Remove any manually added duplicate or relative
 `adjustable_bed_frontend/...` resource; it is not needed.
 
 After updating the integration and restarting Home Assistant, reload the page
@@ -198,22 +198,6 @@ When reporting a remaining failure, include the expanded configuration error,
 Home Assistant and Companion app versions, resource URL, and any failed module
 request's HTTP status or console exception. A BLE support bundle alone cannot
 show why browser JavaScript failed to load.
-
-### Related upstream reports
-
-- [Home Assistant frontend #53890](https://github.com/home-assistant/frontend/issues/53890)
-  documents that elements defined by an `extra_module_url` module before the
-  scoped registry polyfill loads are invisible to Lovelace. Home Assistant
-  2026.11 fixes this by loading extra modules after the polyfill
-  ([frontend #54444](https://github.com/home-assistant/frontend/pull/54444)).
-- [Home Assistant frontend #52570](https://github.com/home-assistant/frontend/issues/52570)
-  documents custom-module loading races, especially panel views and custom
-  dashboard strategies. Resource registration alone does not guarantee that
-  every dashboard waits for the module.
-- [Home Assistant core #181190](https://github.com/home-assistant/core/issues/181190)
-  reports long-lived cached 404 responses in its static-file handler on
-  2026.9.0. This is relevant when investigating a failed request, but does not
-  establish the cause of earlier failures on 2026.8.2.
 
 ## Connection Issues
 
@@ -431,7 +415,7 @@ Open **Reconfigure** and answer the
 | Bed | Answer |
 |-----|--------|
 | Member's Mark or Purple Smart Base | **Purple Smart Base, Member's Mark or Linx / Juna Sleep**, then which one |
-| A BaseI4/BaseI5 remote, or a `KSBT03*` / `KSBT04*` Nordic UART bed, without an app | **No app: another Keeson remote route**, then Base or KSBT to match |
+| A BaseI4/BaseI5 remote, or a `KSBT03*` / `KSBT04*` Nordic UART bed, without an app | **No app: another Keeson remote**, then Base or KSBT to match |
 | Commands partially work on a remote route | The same answer with the other route |
 
 ### Leggett & Platt Variant Selection
