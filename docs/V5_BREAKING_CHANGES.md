@@ -316,6 +316,12 @@ removed below, with what to use instead; it is checked again at every start
 and goes away once none does. Templates are not checked. The
 [Actions and Automations](SERVICES.md) guide describes every current action.
 
+Entities removed or folded into another one are handled the same way: once
+the bed has connected and they are gone, a repair lists the automations and
+scripts that still use one, and goes away at the first start where none does.
+[Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) says what
+replaced each. Dashboards are not checked.
+
 | 4.x action | Use now |
 |------------|---------|
 | `bf_cherish_set_alarm` | `set_alarm` |
