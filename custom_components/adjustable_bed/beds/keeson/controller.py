@@ -83,6 +83,7 @@ from ..entity_specs import (
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
+    massage_timer_sensor_spec,
 )
 
 if TYPE_CHECKING:
@@ -600,14 +601,11 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         if not self.profile.status_timer:
             return ()
         return (
-            ControllerStateSensorSpec(
-                key="adjustable_lite_massage_timer",
-                translation_key="adjustable_lite_massage_timer",
-                state_key=STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
-                icon="mdi:timer-outline",
-                native_unit_of_measurement="min",
+            massage_timer_sensor_spec(
+                "adjustable_lite_massage_timer",
+                "adjustable_lite_massage_timer",
+                STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
                 attribute_keys=(STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,),
-                entity_registry_enabled_default=True,
             ),
         )
 

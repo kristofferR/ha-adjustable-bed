@@ -100,7 +100,7 @@ bed has been tested on real hardware.
 | [Aging in Place / Dawn House](docs/beds/keeson.md#aging-in-place--dawn-house) | [Aging in Place / Dawn House](docs/beds/keeson.md#aging-in-place--dawn-house) | Dawn House |
 | [Bedgear](docs/beds/motomotion.md#bedgear) | [Bedgear](docs/beds/motomotion.md#bedgear) | Bedgear |
 | [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | [BedJet PowerLayer adjustable frame](docs/beds/bedjet-powerlayer.md) | BedJet (the frame, not the BedJet climate unit) |
-| [BedTech, newer app](docs/beds/richmat.md#bedtech) | [BedTech app](docs/beds/richmat.md#bedtech), [Legacy BedTech controls](docs/beds/richmat.md#bedtech) | BedTech |
+| [BedTech, newer app](docs/beds/richmat.md#bedtech) | [BedTech app](docs/beds/richmat.md#bedtech), [Older BedTech controls](docs/beds/richmat.md#bedtech) | BedTech |
 | [Bed Tech, older app](docs/beds/richmat.md#bed-tech) | [Bed Tech app](docs/beds/richmat.md#bed-tech), [separate sleep and intervention receiver](docs/beds/richmat.md#bed-tech) | BedTech |
 | [BetterLiving2](docs/beds/keeson.md#betterliving2) | [BetterLiving / BetterLiving2 app](docs/beds/keeson.md#betterliving2) | BetterLiving |
 | [Casper Base](docs/beds/casper-base.md) | [Casper Base app](docs/beds/casper-base.md), [Casper Base sleep sensor, MM or SXB](docs/beds/casper-base.md#separate-sleep-sensors-and-remote-finder), [Casper Base remote finder (RCRM handset)](docs/beds/casper-base.md#remote-finder) | Casper |

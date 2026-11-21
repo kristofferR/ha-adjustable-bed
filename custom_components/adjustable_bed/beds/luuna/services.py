@@ -53,7 +53,6 @@ async def async_handle_request(call: ServiceCall, request: Request) -> None:
         [],
         _family_command(
             LuunaController,
-            "Luuna + controls",
             lambda controller: controller.async_execute_casper_base_request(request),
         ),
     )

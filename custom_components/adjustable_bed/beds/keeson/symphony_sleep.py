@@ -28,6 +28,7 @@ from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from .controller import KeesonController, _wait_unless_cancelled
 
@@ -448,9 +449,8 @@ class SymphonySleepController(KeesonController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            *((ControllerStateSensorSpec("symphony_massage_minutes", "symphony_massage_minutes", TIMER,
-                                        "mdi:timer", native_unit_of_measurement="min", card=CARD_MASSAGE_TIMER,
-                                        entity_registry_enabled_default=True),)
+            *((massage_timer_sensor_spec("symphony_massage_minutes", "symphony_massage_minutes", TIMER,
+                                         card=CARD_MASSAGE_TIMER),)
               if self.supports_massage else ()),
             ControllerStateSensorSpec("symphony_alarm_time", "symphony_alarm_time", ALARM_TIME, "mdi:alarm",
                                       attribute_keys=(ALARM_ENABLED, ALARM_WAKE), card=CARD_UTILITY,

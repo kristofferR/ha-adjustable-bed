@@ -99,7 +99,7 @@ app or remote you use; the bed's name and services never decide it.
 2. Without an app, choose the remote's legacy controls: **No app: Glide or Comfort
    Motion remote** (`jiecang`) or **No app: Comfort Motion / Lierda remote**
    (`comfort_motion`), then the motor count. See the [legacy route](#legacy-route).
-3. When detection found a legacy bed, **Keep the current setup**
+3. When detection found a legacy bed, **Keep the detected or saved controls**
    saves the detected legacy route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see

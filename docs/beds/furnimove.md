@@ -218,7 +218,7 @@ Older versions chose CST for these drives from shared CSS and Nordic DFU
 services. The repair offers **Switch to Okimat** (the route a new setup uses),
 **Switch to FurniMove** with a captured handset, or **Keep Okin CST**. A remote
 code missing from DewertOkin's catalog, such as #555's `90569`, cannot be
-selected; use Okimat instead.
+selected; the handset list ends with **Switch to Okimat** for that case.
 
 Every repair:
 

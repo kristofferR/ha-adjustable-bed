@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.util import dt as dt_util
 
 from ... import errors
@@ -28,6 +29,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..okin_nframe import OkinNFrameController
 from . import state_keys as s
@@ -257,7 +259,14 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return tuple(
+        return (
+            massage_timer_sensor_spec(
+                "superior_sleep_timer_minutes",
+                "superior_sleep_timer_minutes",
+                s.TIMER,
+                card=CARD_MASSAGE,
+            ),
+        ) + tuple(
             ControllerStateSensorSpec(
                 f"superior_sleep_{name}",
                 f"superior_sleep_{name}",
@@ -268,7 +277,6 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 card=CARD_MASSAGE,
             )
             for name, key in (
-                ("timer_minutes", s.TIMER),
                 ("mode", s.MODE),
                 ("head_level", s.HEAD),
                 ("foot_level", s.FOOT),
@@ -287,6 +295,7 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 s.SECONDS,
                 "mdi:timer-outline",
                 native_unit_of_measurement="s",
+                device_class=SensorDeviceClass.DURATION,
             ),
         )
 

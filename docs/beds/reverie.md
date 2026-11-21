@@ -354,8 +354,10 @@ for the writer, without following a replacement primary or changed authenticatio
 
 ### Local peripheral role
 
-The separate local peripheral role is an explicit setup choice that makes this
-Home Assistant host join the Pairlink network. It uses the integration-owned
+The separate local peripheral role is an explicit choice in **Configure**,
+**Join the Pairlink network from this host** (the default, **Connect to this
+bed**, is the central route), that makes this Home Assistant host join the
+Pairlink network. It uses the integration-owned
 Linux BlueZ D-Bus backend at `beds/reverie/pairlink_transport.py`. It is outside
 Home Assistant's public server-transport API and never substitutes a central
 write for a local write. Setup selects one active local HA scanner source and

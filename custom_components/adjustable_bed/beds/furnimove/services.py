@@ -55,7 +55,6 @@ async def _execute_furnimove(
     await _preflight_and_execute(
         _call_targets(call),
         FurniMoveController,
-        "FurniMove app controls",
         operation,
         supported=lambda controller: bool(controller.furnimove_action_specs),
         validate=validate,

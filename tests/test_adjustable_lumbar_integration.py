@@ -10,10 +10,10 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.bed_traits import bed_traits, bed_type_has_position_feedback
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
+    _family_rows,
     _motor_count_options,
     _name_rule_setup_name,
 )
@@ -78,7 +78,7 @@ def test_profile_constants_and_setup_options():
     assert get_variants_for_bed_type(BED_TYPE_ADJUSTABLE_LUMBAR) == ADJUSTABLE_LUMBAR_VARIANTS
     assert is_valid_variant_for_bed_type(BED_TYPE_ADJUSTABLE_LUMBAR, "adjustable_lumbar_star")
     assert not is_valid_variant_for_bed_type(BED_TYPE_ADJUSTABLE_LUMBAR, "simmons_okin")
-    assert actuator_group_for(BED_TYPE_ADJUSTABLE_LUMBAR) == "okin"
+    assert BED_TYPE_ADJUSTABLE_LUMBAR in dict(_family_rows())
     assert any(
         option["value"] == BED_TYPE_ADJUSTABLE_LUMBAR for option in get_bed_type_options()
     )

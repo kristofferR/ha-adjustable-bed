@@ -191,7 +191,6 @@ async def _execute_limoss_remote(
         preflighted = await _preflight_capability(
             targets,
             LimossRemoteController,
-            "Limoss Remote",
             supported=lambda controller: controller.requires_notification_channel,
             validate=check,
         )

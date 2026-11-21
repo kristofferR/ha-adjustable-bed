@@ -117,8 +117,9 @@ async def test_automatic_write_uuid_discovery_requires_explicit_app(
     result = await hass.config_entries.flow.async_init(
         const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info
     )
+    # An uncertain match asks first, saying the device may not be a bed.
     assert result["type"] == FlowResultType.FORM
-    assert result["step_id"] == "bluetooth_confirm"
+    assert result["step_id"] == "bluetooth_disambiguate"
     assert _confident_auto_detect(detect_bed_type_detailed(info)) is None
 
 
@@ -141,7 +142,7 @@ async def test_nearby_write_uuid_receiver_is_selectable(hass, mock_bluetooth_ser
         assert info.address in flow._discovered_devices
         selected = await flow.async_step_user({"address": info.address})
     assert result["type"] == selected["type"] == FlowResultType.FORM
-    assert selected["step_id"] == "bluetooth_confirm"
+    assert selected["step_id"] == "bluetooth_disambiguate"
 
 
 @pytest.mark.parametrize(

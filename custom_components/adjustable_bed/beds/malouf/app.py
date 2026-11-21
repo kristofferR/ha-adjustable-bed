@@ -36,6 +36,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 
 if TYPE_CHECKING:
@@ -792,12 +793,10 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         if self.supports_massage and self._family == "okin":
             return (
-                ControllerStateSensorSpec(
+                massage_timer_sensor_spec(
                     "malouf_massage_remaining",
                     "malouf_massage_remaining",
                     MASSAGE_REMAINING_MINUTES,
-                    "mdi:timer-outline",
-                    native_unit_of_measurement="min",
                 ),
             )
         return ()

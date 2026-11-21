@@ -160,7 +160,7 @@ from the profile data.
 ### Home Assistant setup
 
 Choosing **Keeson**, **Ergomotion**, **Serta Motion Perfect**, **Okin FFE** or
-**Cool Base**, or a bed detected as one of them, asks which app or remote you
+**Cool Base app**, or a bed detected as one of them, asks which app or remote you
 use. Shared names and Bluetooth services never decide it.
 
 | Answer | Then | Route |
@@ -173,7 +173,7 @@ use. Shared names and Bluetooth services never decide it.
 | Purple Smart Base, Member's Mark or Linx / Juna Sleep | Which of them | [Purple](#purple-variant), [Base](#base-basei4i5), [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health) |
 | Cool Base app (with fan) | | [Cool Base](#cool-base) |
 | No app: another Keeson remote | The route and motor count; the Ergomotion route also asks whether to read positions | Any [Keeson route](#profile-summary), such as KSBT or KSBT03CR |
-| Keep the current setup | | The detected or chosen route |
+| Keep the detected or saved controls | | The detected or chosen route |
 
 An app row in the bed-type list answers the question itself; the one
 **Restonic BT app** row still asks the remote style. A Keeson brand list entry
@@ -1209,9 +1209,9 @@ without header or checksum checks:
 | 19 | 14 | 15 |
 
 Flag bit 5 (`0x20`) suppresses the update and bit 6 (`0x40`) is the lamp icon,
-shown as the **Light** binary sensor. The signed timer byte `-1` clears the
-**Massage timer** sensor and `1`/`2`/`3` show 10/20/30 minutes; other values
-leave it unchanged. Both states clear when the connection ends. The app shows
+shown as the **Light** binary sensor. The signed timer byte `-1` sets the
+**Massage timer** sensor to 0 minutes and `1`/`2`/`3` show 10/20/30 minutes;
+other values leave it unchanged. Both states clear when the connection ends. The app shows
 the lamp only on its light page and the timer only on its other pages; Home
 Assistant shows both. The app enables FFE4 locally without writing the CCCD,
 so delivery after Home Assistant subscribes needs confirming on hardware.
@@ -1757,9 +1757,9 @@ capacity are in the table above.
 
 #### Notifications
 
-The **Massage timer** sensor reports the app's timer: -1 off, 1, 2 or 3 for
-10, 20 or 30 minutes. Status byte `0xFF` is off; other values leave the sensor
-unchanged. Packets are not reassembled, and nothing else (acknowledgement,
+The **Massage timer** sensor reports the app's timer in minutes: 0 when off,
+else 10, 20 or 30 for timer 1, 2 or 3. Status byte `0xFF` is off; other values
+leave the sensor unchanged. Packets are not reassembled, and nothing else (acknowledgement,
 battery, motor count, light state) is inferred.
 
 | Length | Tempur Curve, ROW Control, TEMPUR AU | Ergomotion app | Omazz | Ergo Slim | Q-Plus | Serta MP Remote |

@@ -3509,6 +3509,9 @@
  "select:goodvibe_side": {
   "card_section": "motors"
  },
+ "select:heat_level": {
+  "card_section": "climate"
+ },
  "select:hjbed_layout": {
   "card_section": "utility"
  },
@@ -3725,9 +3728,6 @@
  "select:vmatbasic_mood_palette": {
   "card_section": "lighting",
   "card_role": "mood"
- },
- "sensor:adjustable_lite_massage_timer": {
-  "card_section": "hidden"
  },
  "sensor:adjustamattress_foot_intensity": {
   "card_section": "massage"

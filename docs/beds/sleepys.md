@@ -153,7 +153,7 @@ rows of their own. Setup asks which app or receiver runs the bed:
 | BOX24 receiver on the OKIN 64-bit service | [BOX24](#box24-protocol-7-byte-packets), then the motor count |
 | BOX15 receiver on the FFE5 service | [BOX15](#box15-protocol-9-byte-packets-with-checksum), then the motor count |
 | An app the profile review suggests | That app's own setup, for example [Adjustable bed (Lumbar)](okin-nframe.md#adjustable-bed-lumbar) on a BOX25 receiver |
-| Keep the current setup | The detected route and its questions |
+| Keep the detected or saved controls | The detected route and its questions |
 
 Choose a receiver by the Bluetooth service the bed advertises. A `Star` name or
 a lumbar motor does not identify the receiver: other apps use `Star` names, and

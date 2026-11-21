@@ -15,6 +15,12 @@ type Matcher = dict[str, str | int | bool | list[int]]
 # therefore must be literal (homeassistant.components.bluetooth.match).
 _LITERAL_PREFIX_LENGTH = 3
 
+# App scan prefixes that common non-bed devices also advertise ("TEST-ESP32",
+# "SLEEPACE", "1520 printer"). They get no manifest matcher, so they never start
+# discovery on their own; detection still reads them for a device another
+# matcher admitted, and the apps stay selectable by hand.
+TOO_BROAD: frozenset[str] = frozenset({"TEST", "SLEEP", "1320", "1520"})
+
 
 class Advertisement(NamedTuple):
     """The advertisement fields hints match, normalized once."""
@@ -125,7 +131,7 @@ class NameHint:
 
     @property
     def globs(self) -> tuple[str, ...]:
-        """The manifest ``local_name`` globs, every spelling of every pattern."""
+        """The ``local_name`` globs, every spelling of every pattern."""
         return tuple(
             dict.fromkeys(
                 spelling + "*"
@@ -135,7 +141,12 @@ class NameHint:
         )
 
     def matchers(self) -> tuple[Matcher, ...]:
-        return tuple(_connectable({"local_name": glob}, self.connectable) for glob in self.globs)
+        """The manifest matchers, leaving out the ``TOO_BROAD`` patterns."""
+        return tuple(
+            _connectable({"local_name": glob}, self.connectable)
+            for glob in self.globs
+            if glob.removesuffix("*").upper() not in TOO_BROAD
+        )
 
     def matches(self, advertisement: Advertisement) -> bool:
         return self.matches_name(advertisement.name)

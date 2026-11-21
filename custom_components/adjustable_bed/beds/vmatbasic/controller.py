@@ -10,6 +10,8 @@ from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, cast
 
+from homeassistant.components.sensor import SensorDeviceClass
+
 from ...app_session import app_session
 from ...card import (
     CARD_LIGHT_LEVEL,
@@ -796,14 +798,15 @@ class VMatBasicController(BedController):
                     "mdi:information-outline",
                     native_unit_of_measurement=unit,
                     entity_registry_enabled_default=False,
+                    device_class=device_class,
                 )
-                for state_key, unit in (
-                    (_read_key("model"), None),
-                    (_read_key("firmware"), None),
-                    (_read_key("temperature"), "°C"),
-                    (FLOOR_LEVEL_OBSERVED, None),
-                    (FLOOR_MINUTES_OBSERVED, "min"),
-                    (FLOOR_PERCENT_OBSERVED, "%"),
+                for state_key, unit, device_class in (
+                    (_read_key("model"), None, None),
+                    (_read_key("firmware"), None, None),
+                    (_read_key("temperature"), "°C", SensorDeviceClass.TEMPERATURE),
+                    (FLOOR_LEVEL_OBSERVED, None, None),
+                    (FLOOR_MINUTES_OBSERVED, "min", SensorDeviceClass.DURATION),
+                    (FLOOR_PERCENT_OBSERVED, "%", None),
                 )
             ),
             ControllerStateSensorSpec(
@@ -814,6 +817,7 @@ class VMatBasicController(BedController):
                 "dBm",
                 attribute_keys=(RSSI_SOURCE, RSSI_SEEN_AT, RSSI_REPRESENTATION),
                 entity_registry_enabled_default=False,
+                device_class=SensorDeviceClass.SIGNAL_STRENGTH,
             ),
         )
 

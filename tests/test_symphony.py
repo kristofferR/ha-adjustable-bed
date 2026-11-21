@@ -210,6 +210,15 @@ async def test_p2_source_fields_exact_light_length_and_disabled_alarm_cache():
     assert values[k.SNORE] is True and values[k.STRENGTH] == 3 and values[k.PRIVACY] is True
 
 
+def test_massage_timer_reads_in_minutes():
+    """Timer step 2 is the app's 20 minute timer (step * 600 seconds)."""
+    ctrl = bed("12", 9)
+    ctrl._notify(ctrl._generation, ctrl._link, bytes.fromhex("2a000006810b0024360000040058025902"))
+    assert ctrl._coordinator.controller_state[k.TIMER] == 20
+    spec = next(s for s in ctrl.controller_state_sensor_specs if s.key == "symphony_massage")
+    assert spec.native_unit_of_measurement == "min"
+
+
 def test_premier_F1_time_projection_and_other_five_consumers():
     packet = bytearray.fromhex("f4fe1600000000000000000305000000000000000004")
     profile = app.SymphonyProfile(app.PRODUCTS["3"], 4)

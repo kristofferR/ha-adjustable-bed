@@ -53,7 +53,6 @@ async def handle_solace_audio(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         SolaceController,
-        "Solace music/audio control",
         control,
         supported=lambda controller: controller.supports_solace_audio,
         skip_disconnect=action == "query",

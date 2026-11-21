@@ -195,7 +195,7 @@ Detection uses the unique Sleep Number service UUID for each protocol family:
 - `ffffd1fd-388d-938b-344a-939d1f6efee0` (MCR)
 
 The bed-type list has one **Sleep Number: SleepIQ app, Fuzion (Climate 360,
-FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases** row. When Home Assistant has
+FlexFit) and older (i8, 360 FlexFit 2) bases** row. When Home Assistant has
 seen the advertisement, setup confirms the transport from its service without
 asking; otherwise it asks which base the bed is, and a detected transport stays
 one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks no

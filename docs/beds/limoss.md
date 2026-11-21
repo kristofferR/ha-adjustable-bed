@@ -148,7 +148,7 @@ asks which app you use:
 
 | Answer | Route |
 |---|---|
-| Limoss Remote app | [Limoss Remote](#limoss-remote): bed or chair, light, massage, reversals and the optional artwork theme |
+| Limoss Remote app | [Limoss Remote](#limoss-remote): bed or chair, light, massage and reversals |
 | FSM Relax app | [FSM Relax](#fsm-relax): bed or chair, light, massage, reversals and the eight memory names |
 | No app: Stawett or older Limoss controls | The [legacy route](#legacy-route) |
 
@@ -161,7 +161,7 @@ the app's FFE0 service and its notifying FFE1 characteristic. Leaving Limoss
 Remote with its light or massage enabled sends the app's OFF commands before
 saving, as Configure does; if they fail or are cancelled, the saved setup stays.
 A change also drops the old app's own settings. **Configure** keeps routine
-settings, including Limoss Remote's light, massage, reversals and theme; the app
+settings, including Limoss Remote's light, massage and reversals; the app
 changes only through **Reconfigure**.
 
 ## Wire codec
@@ -424,8 +424,9 @@ controller's.
   phase, including preflight and terminal persistence. BLE links still release
   between sequential sides. Reloads resume only after the transaction and any
   active sibling command have released their command lanes.
-- App artwork themes are retained as a local preference in diagnostics; HA keeps
-  its own theme and does not copy app artwork.
+- Setup does not ask for the app's artwork theme, which changes no control. A
+  theme saved by an earlier version stays in diagnostics; HA does not copy app
+  artwork.
 
 **Paired beds**
 

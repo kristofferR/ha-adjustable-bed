@@ -35,8 +35,9 @@ The first screen lists the discovered beds, each named with its family, then:
   Casper Base and Comfort Enhancements have one row each, which then asks the
   exact product or layout. Its last answer,
   **My app isn't listed, or I don't know**, asks which brand is on the bed:
-  each family, named with its apps, then opens its own question, and **Not
-  sure** runs diagnostics.
+  every row of the bed-type list named brand first, where a family's row
+  opens its own question. **Not sure, or not listed** offers the detected
+  controls when you picked the device first, and otherwise runs diagnostics.
   You then pick the Bluetooth device, or type its address.
 - **Pick any Bluetooth device** lets you choose any device first, then asks the
   same app question. A confidently detected bed suggests its own row.
@@ -46,7 +47,7 @@ The first screen lists the discovered beds, each named with its family, then:
 A discovered bed asks first which app or remote controls it, from its detected
 family: that family's own question, or the detected bed type's rows. **Another
 app or remote** opens the full app list for the same bed. The family question's
-**Keep the current setup** answer saves the detected route, after a screen that says its controls
+**Keep the detected or saved controls** answer saves the detected route, after a screen that says its controls
 are generic, whether it needs pairing, and that **Reconfigure** can choose the
 app later; its **Back** returns to the question. Detection never picks an app by
 itself, because a bed's name and Bluetooth services do not tell these apps
@@ -123,8 +124,9 @@ legacy app entry or a Richmat entry on the L&P QRRM remote, so they can move
 to that family's other routes.
 
 1. Choose the app you use, then the layout or remote the app shows. The
-   question's keep answer, **Keep the current setup**, leaves the entry
-   exactly as it is.
+   question's keep answer, **Keep the detected or saved controls**, leaves the
+   entry exactly as it is; when you add a bed it keeps the route detection
+   chose.
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
    Home Assistant releases its connection and checks the chosen setup. The
    check screen lists its steps. Nothing is saved yet.
@@ -584,8 +586,8 @@ route that has since gained app profiles can be asked once, through a repair,
 which app it uses; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 For a combined bed with two addresses, settings belong to each physical bed.
 Each receiver's own app settings, such as its motor count, massage or light
-settings, are under **Configure > Change left receiver settings** or **Change
-right receiver settings**. To change a receiver's bed type or app, separate the
+settings, are under **Configure > Change left side settings** or **Change
+right side settings**. To change a receiver's bed type or app, separate the
 beds, Reconfigure that bed, then combine them again.
 
 | Bed or brand | Model and remote settings |
@@ -593,7 +595,7 @@ beds, Reconfigure that bed, then combine them again.
 | Adjustable bed (Lumbar) | [Automatic, or the layout your bed uses](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/keeson.md#adjustamattress). Four models and seven layouts; the layout sets the controls. Each bed of a combined pair keeps its own. |
 | BedSense | [Layout, or the Bluetooth-name layout rule](beds/ff_frame.md#bedsense). |
-| BedTech | [The exact model, or **Legacy BedTech controls**](beds/richmat.md#bedtech). Existing entries keep the legacy controls until you choose a model. |
+| BedTech | [The exact model, or **Older BedTech controls, without a model**](beds/richmat.md#bedtech). Existing entries keep the legacy controls until you choose a model. |
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it sets the layout. |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | CheersSleep | See the [setup steps](beds/cheerssleep.md#cheerssleep-profile). |
@@ -684,10 +686,10 @@ Standard OCTO PIN exchange.
 - Use the PIN set in the OCTO Smart Control app; it is not the OS Bluetooth pairing code.
 - If your bed works without a PIN, leave this field empty
 
-Standard OCTO setup verifies PIN acceptance without moving the bed. Setup finishes
-only when the PIN is accepted or the controller confirms no PIN is required.
-An inconclusive check leaves the entry unsaved and can be retried; it does not
-mean the PIN is wrong. After a PIN lock challenge, the integration retries the
+Standard OCTO setup verifies PIN acceptance without moving the bed. A PIN the
+bed requires or rejects must be entered or corrected first. An inconclusive
+check can be retried, or setup can finish without it; it does not mean the PIN
+is wrong. After a PIN lock challenge, the integration retries the
 configured PIN once after one second. It does not use a periodic PIN timer. See
 [OCTO Smart Control](beds/octo.md#pin-control).
 
@@ -843,8 +845,8 @@ a successful connection first to discover their capabilities. One-motor OCTO
 TV/bed lifts remain standalone. Combined controls use capabilities shared by both
 sides; side-specific controls retain each side's own features.
 
-For two receivers, open **Configure > Change left receiver settings** or
-**Change right receiver settings** to adjust its adapter, Bluetooth connection, Movement per tap and its own app's
+For two receivers, open **Configure > Change left side settings** or
+**Change right side settings** to adjust its adapter, Bluetooth connection, Movement per tap and its own app's
 settings.
 These changes apply only to the selected receiver, without separating the bed. **Change settings**
 retains the shared form; changed values there apply to both receivers.

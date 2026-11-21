@@ -2125,7 +2125,8 @@ def test_ergomotion_status_feeds_the_massage_sensors(
         with patch.object(coordinator, "handle_controller_state_updates") as publish:
             controller._parse_notification(bytes(status))
         publish.assert_not_called()
-        assert (head.native_value, foot.native_value, timer.native_value) == (3, 5, "20")
+        assert (head.native_value, foot.native_value, timer.native_value) == (3, 5, 20)
+        assert timer.native_unit_of_measurement == "min"
         status[14] = 0
         controller._parse_notification(bytes(status))
         assert timer.native_value is None

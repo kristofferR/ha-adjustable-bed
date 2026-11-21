@@ -242,8 +242,9 @@ class Answer:
 
 
 KEEP: Final = Answer(bed_type="", keep=True)
-# The one wording every question uses for keeping the current route.
-KEEP_LABEL: Final = "Keep the current setup"
+# The one wording every family question uses for keeping its route: the
+# detected one on a new bed, the saved one in Reconfigure.
+KEEP_LABEL: Final = "Keep the detected or saved controls"
 
 
 @dataclass(frozen=True, slots=True)
@@ -1359,7 +1360,7 @@ SLEEP_NUMBER_FAMILY: Final = AppFamily(
     step="sleep_number_family",
     row=BED_TYPE_SLEEP_NUMBER,
     name="Sleep Number",
-    apps="SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases",
+    apps="SleepIQ app, Fuzion (Climate 360, FlexFit) and older (i8, 360 FlexFit 2) bases",
     answers={
         "fuzion": Answer(BED_TYPE_SLEEP_NUMBER),
         "mcr": Answer(BED_TYPE_SLEEP_NUMBER_MCR),

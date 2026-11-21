@@ -53,7 +53,7 @@ from that app; the bed's name never decides it.
 | L&P Adjustable Base app with an MlRM base | [MlRM](#mlrm-variant) |
 | L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2) | [Richmat](richmat.md) with the **L&P QRRM** remote |
 | L&P Adjustable Base legacy app (2.2.1) | [L&P legacy app](richmat.md#lp-legacy-app), which keeps its own row and settings |
-| Keep the current setup | The detected or chosen route |
+| Keep the detected or saved controls | The detected or chosen route |
 
 LP Control lists its own Okin products, but none is proven to change the Leggett
 Okin layout, so LP Control on an LP BED receiver keeps the default one.

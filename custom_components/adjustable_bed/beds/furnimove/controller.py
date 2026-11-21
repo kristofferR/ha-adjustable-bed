@@ -30,6 +30,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from .profiles import FurniMoveAction, get_furnimove_profile
 
@@ -522,7 +523,11 @@ class FurniMoveController(BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
+                "furnimove_" + key, "furnimove_" + key, StateKey[int | None]("furnimove_" + key)
+            )
+            if key == "massage_timer_minutes"
+            else ControllerStateSensorSpec(
                 "furnimove_" + key,
                 "furnimove_" + key,
                 _state_key("furnimove_" + key),
