@@ -23,6 +23,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from .controller import KeesonController, _wait_unless_cancelled
 
@@ -409,12 +410,10 @@ class SomosController(KeesonController):
         if not self.product.massage:
             return ()
         return (
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
                 "somos_timer",
                 "somos_timer",
                 TIMER_INDICATOR,
-                "mdi:timer-outline",
-                native_unit_of_measurement="min",
                 attribute_keys=(REMAINING_SECONDS,),
                 card=CARD_MASSAGE_TIMER,
             ),

@@ -19,6 +19,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.storage import Store
 
@@ -538,9 +539,10 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 key="reverie_pairlink_low_battery",
                 translation_key="reverie_pairlink_low_battery",
                 state_key=LOW_BATTERY,
-                icon="mdi:battery-low",
+                icon=None,
                 entity_registry_enabled_default=True,
                 card=CARD_UTILITY,
+                device_class=BinarySensorDeviceClass.BATTERY,
             ),
         )
 

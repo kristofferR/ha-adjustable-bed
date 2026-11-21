@@ -10,6 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
+from homeassistant.components.sensor import SensorDeviceClass
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESETS
@@ -42,7 +43,7 @@ NOTIFY_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 SERVICE_CHANGED: Final = "00002a05-0000-1000-8000-00805f9b34fb"
 MODEL_UUID: Final = "00002a24-0000-1000-8000-00805f9b34fb"
 FIRMWARE_UUID: Final = "00002a26-0000-1000-8000-00805f9b34fb"
-MASSAGE_END: Final = StateKey[str | None]("apex_local_massage_end")
+MASSAGE_END: Final = StateKey[datetime | None]("apex_local_massage_end")
 FIRMWARE: Final = StateKey[str | None]("apex_firmware")
 
 
@@ -372,6 +373,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
                     "mdi:timer",
                     card=CARD_MASSAGE,
                     entity_registry_enabled_default=True,
+                    device_class=SensorDeviceClass.TIMESTAMP,
                 ),
             )
             if self.remote.massage
@@ -926,7 +928,10 @@ class ComfortEnhancement3Controller(OkinHandleController):
         self._timers[key] = handle
 
     def _publish(self) -> None:
-        self.forward_controller_state_updates(MASSAGE_END(self._massage_end))
+        end = self._massage_end
+        self.forward_controller_state_updates(
+            MASSAGE_END(datetime.fromisoformat(end) if end else None)
+        )
 
 
 def _apex(controller: BedController) -> ComfortEnhancement3Controller:

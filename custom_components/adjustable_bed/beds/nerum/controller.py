@@ -26,6 +26,7 @@ from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..lifecycle import ControllerSession
 from . import state
@@ -542,13 +543,9 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = (
             [
-                ControllerStateSensorSpec(
-                    str(key),
-                    str(key),
-                    key,
-                    "mdi:information-outline",
-                    native_unit_of_measurement="min" if key is state.MINUTES else None,
-                )
+                massage_timer_sensor_spec(str(key), str(key), key)
+                if key is state.MINUTES
+                else ControllerStateSensorSpec(str(key), str(key), key, "mdi:information-outline")
                 for key in (state.HEAD, state.FOOT, state.MINUTES, state.WAVE)
             ]
             if self.profile.key != "p3"

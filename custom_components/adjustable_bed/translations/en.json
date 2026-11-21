@@ -3013,12 +3013,6 @@
       "jalon_massage_feet": {
         "name": "Feet massage"
       },
-      "jalon_massage_all": {
-        "name": "Massage all"
-      },
-      "jalon_massage_type": {
-        "name": "Cycle massage type"
-      },
       "jalon_bed_massage_timer": {
         "name": "Cycle massage timer"
       },
@@ -4618,10 +4612,7 @@
         "name": "Foot massage"
       },
       "doublesleep_massage_time": {
-        "name": "Massage timer"
-      },
-      "doublesleep_massage_source": {
-        "name": "Massage source"
+        "name": "Massage timer step"
       },
       "doublesleep_sonic_mode": {
         "name": "Sonic massage mode"
@@ -4636,13 +4627,13 @@
         "name": "Sonic foot massage"
       },
       "doublesleep_sonic_time": {
-        "name": "Sonic massage timer"
+        "name": "Sonic massage timer step"
       },
       "doublesleep_sonic_source": {
         "name": "Sonic massage source"
       },
       "adjustamattress_massage_time": {
-        "name": "Massage timer"
+        "name": "Massage timer step"
       },
       "adjustamattress_head_intensity": {
         "name": "Head massage intensity"
@@ -4735,7 +4726,7 @@
         "name": "Model"
       },
       "jalon_massage": {
-        "name": "Massage timer indicator"
+        "name": "Massage timer step"
       },
       "jalon_alarm": {
         "name": "Alarm"
@@ -4762,7 +4753,7 @@
         "name": "Massage timer indicator"
       },
       "rize_home_timer_index": {
-        "name": "Massage timer setting"
+        "name": "Massage timer step"
       },
       "rize_home_combined_intensity": {
         "name": "Combined massage intensity"
@@ -5053,7 +5044,7 @@
         "name": "Massage wave setting"
       },
       "betterliving2_massage_timer": {
-        "name": "Massage timer setting"
+        "name": "Massage timer step"
       },
       "heart_rate": {
         "name": "Heart rate"
@@ -5971,7 +5962,7 @@
         "state": {
           "1": "Side 1",
           "2": "Side 2",
-          "3": "Side 3"
+          "3": "Both sides"
         }
       },
       "reverie_pairlink_massage_mode": {
@@ -6532,37 +6523,65 @@
       "comfy_timer_selection": {
         "name": "Timer duration",
         "state": {
-          "10": "10 minutes",
-          "20": "20 minutes",
-          "30": "30 minutes",
-          "40": "40 minutes",
-          "50": "50 minutes"
+          "10": "10 min",
+          "20": "20 min",
+          "30": "30 min",
+          "40": "40 min",
+          "50": "50 min"
         }
       },
       "smart_sleep_antisnore": {
         "name": "Automatic anti-snore",
         "state": {
           "off": "Off",
-          "1": "1",
-          "3": "3",
-          "6": "6",
+          "1": "Level 1",
+          "3": "Level 3",
+          "6": "Level 6",
           "demo": "Demonstration"
         }
       },
       "smart_sleep_sensitivity": {
-        "name": "Anti-snore sensitivity"
+        "name": "Anti-snore sensitivity",
+        "state": {
+          "1": "Level 1",
+          "2": "Level 2",
+          "3": "Level 3"
+        }
       },
       "smart_sleep_wave": {
-        "name": "Massage wave"
+        "name": "Massage wave",
+        "state": {
+          "1": "Wave 1",
+          "2": "Wave 2",
+          "3": "Wave 3",
+          "4": "Wave 4"
+        }
       },
       "smart_sleep_head_strength": {
-        "name": "Head massage strength"
+        "name": "Head massage strength",
+        "state": {
+          "1": "Level 1",
+          "2": "Level 2",
+          "3": "Level 3",
+          "4": "Level 4"
+        }
       },
       "smart_sleep_foot_strength": {
-        "name": "Foot massage strength"
+        "name": "Foot massage strength",
+        "state": {
+          "1": "Level 1",
+          "2": "Level 2",
+          "3": "Level 3",
+          "4": "Level 4"
+        }
       },
       "smart_sleep_timer": {
-        "name": "Massage timer"
+        "name": "Massage timer",
+        "state": {
+          "1": "Step 1",
+          "2": "Step 2",
+          "3": "Step 3"
+        }
       },
       "goodvibe_side": {
         "name": "Controlled side",

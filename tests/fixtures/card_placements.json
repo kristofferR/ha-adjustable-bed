@@ -3726,9 +3726,6 @@
   "card_section": "lighting",
   "card_role": "mood"
  },
- "sensor:adjustable_lite_massage_timer": {
-  "card_section": "hidden"
- },
  "sensor:adjustamattress_foot_intensity": {
   "card_section": "massage"
  },
