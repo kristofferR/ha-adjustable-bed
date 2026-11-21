@@ -37,7 +37,7 @@
   "motor.hip": "Hip",
   "motor.bed_height": "Bed height",
   "motor.stair": "Stair",
-  "motor.head_feet": "Head and feet",
+  "motor.head_feet": "Head + feet",
   "motor.both": "Back and legs",
   "motor.all_motors": "All motors",
   "motor.waist": "Waist",
