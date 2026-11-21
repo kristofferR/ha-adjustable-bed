@@ -292,8 +292,8 @@ coordinator.
 ### Readiness and interrupts
 
 - All selected targets must be ready before group writes.
-- Individual main movement interrupts connected ready lifts; individual lift
-  movement interrupts its connected ready main.
+- Individual main movement interrupts the ready lifts it can reach; individual
+  lift movement interrupts its ready main if it can reach it.
 - Unloaded, disconnected or unready peers, and peer write failures, do not block
   a healthy individual control. Related pending group admissions are cancelled
   before peer writes, without requiring an offline peer to reconnect.
@@ -310,7 +310,7 @@ coordinator.
   coordinator/controller/client/session or unload cancels delayed writes.
 - Failure/cancellation cleans every admitted target.
 - Group STOP first cancels retained delayed operations and attempts STOP on
-  every connected configured member, even if the main or another lift is
+  every loaded configured member, connecting if needed, even if the main or another lift is
   unavailable. It reports missing members or transport errors after attempting
   the remaining targets.
 - Successful Elevate flat receives no invented immediate STOP.

@@ -1050,32 +1050,33 @@ layout lacks is refused before anything is sent.
 
 | Name | What it does |
 |---|---|
-| `kuaijie_k2mfragment_flat`, `_zero_gravity`, `_tv`, `_snore`, `_relax` | Flat, Zero Gravity, Watch TV, Anti-snore and Relax presets |
-| `kuaijie_k2mfragment_memory1`, `_memory2` | Recall memory 1 or 2 |
-| `kuaijie_k2mfragment_memory1_program`, `_memory2_program`, `_zero_gravity_program`, `_tv_program`, `_snore_program` | Save the current position to that preset (`branch: save`) or clear it (`branch: clear`); needs `confirmed: true` |
-| `kuaijie_k2mfragment_music`, `_audio_off`, `_audio_stop` | Sleep and music, stop audio, stop an audio preview (beds with audio) |
-| `kuaijie_k2mfragment_stop`, `_sync`, `_status` | Stop, Sync and refresh the preset state |
-| `weitiao_w2fragment_back_up`, `_back_down`, `_head_up`, `_head_down`, `_lumbar_up`, `_lumbar_down`, `_legs_up`, `_legs_down` | Move one part for `duration` seconds |
-| `weitiao_w2fragment_air_fullgxunhuan`, `_upperxunhuan`, `_lumbarxunhuan`, `_legsxunhuan` | The app's Full, Head, Lumbar and Leg cycle buttons |
-| `weitiao_w2fragment_stop`, `_sync` | Stop and Sync on the movement screen |
-| `massage_fragment_massage_upper_increase`, `_upper_decrease`, `_lower_increase`, `_lower_decrease`, `_wave_increase`, `_wave_decrease` | Back and leg massage strength and massage wave |
-| `massage_fragment_10time`, `_20time`, `_30time` | Massage timer of 10, 20 or 30 minutes |
+| `kuaijie_k2mfragment_flat`, `kuaijie_k2mfragment_zero_gravity`, `kuaijie_k2mfragment_tv`, `kuaijie_k2mfragment_snore`, `kuaijie_k2mfragment_relax` | Flat, Zero Gravity, Watch TV, Anti-snore and Relax presets |
+| `kuaijie_k2mfragment_memory1`, `kuaijie_k2mfragment_memory2` | Recall memory 1 or 2. Sends nothing until the bed reports that slot as saved |
+| `kuaijie_k2mfragment_memory1_program`, `kuaijie_k2mfragment_memory2_program`, `kuaijie_k2mfragment_zero_gravity_program`, `kuaijie_k2mfragment_tv_program`, `kuaijie_k2mfragment_snore_program` | Save the current position to that preset (`branch: save`) or clear it (`branch: clear`); needs `confirmed: true` |
+| `kuaijie_k2mfragment_music`, `kuaijie_k2mfragment_audio_off`, `kuaijie_k2mfragment_audio_stop` | Sleep and music, stop audio, stop an audio preview (beds with audio) |
+| `kuaijie_k2mfragment_stop`, `kuaijie_k2mfragment_sync`, `kuaijie_k2mfragment_status` | Stop, Sync and refresh the preset state |
+| `weitiao_w2fragment_back_up`, `weitiao_w2fragment_back_down`, `weitiao_w2fragment_head_up`, `weitiao_w2fragment_head_down`, `weitiao_w2fragment_lumbar_up`, `weitiao_w2fragment_lumbar_down`, `weitiao_w2fragment_legs_up`, `weitiao_w2fragment_legs_down` | Move one part for `duration` seconds |
+| `weitiao_w2fragment_air_fullgxunhuan`, `weitiao_w2fragment_upperxunhuan`, `weitiao_w2fragment_lumbarxunhuan`, `weitiao_w2fragment_legsxunhuan` | The app's Full, Head, Lumbar and Leg cycle buttons |
+| `weitiao_w2fragment_stop`, `weitiao_w2fragment_sync` | Stop and Sync on the movement screen |
+| `massage_fragment_massage_upper_increase`, `massage_fragment_massage_upper_decrease`, `massage_fragment_massage_lower_increase`, `massage_fragment_massage_lower_decrease`, `massage_fragment_massage_wave_increase`, `massage_fragment_massage_wave_decrease` | Back and leg massage strength and massage wave |
+| `massage_fragment_10time`, `massage_fragment_20time`, `massage_fragment_30time` | Start a 10, 20 or 30 minute massage timer; the name of the timer that is already running cancels it |
 | `light_fragment_brightness_0` to `light_fragment_brightness_10` | Light brightness, 0 (off) to 10 |
-| `light_fragment_tv_10fenzhong`, `_tv_8xiaoshi`, `_tv_10xiaoshi` | Light timer of 10 minutes, 8 hours or 10 hours |
+| `light_fragment_tv_10fenzhong`, `light_fragment_tv_8xiaoshi`, `light_fragment_tv_10xiaoshi` | Light timer of 10 minutes, 8 hours or 10 hours |
 | `smart_sleep_fragment_sleepmian`, `smart_sleep_fragment_night_light` | Smart sleep and smart light on or off |
-| `sleep_adjust_activity_adjust_head_up`, `_back_up`, `_legs_up`, `_lumbar_up` and the `_down` forms; `sleep_adjust_activity_stop` | Sleep-adjustment moves and stop |
-| `sleep_data_entry_activity_calibration_flat_position`, `_calibration_next_position` | Move to the calibration positions |
+| `sleep_adjust_activity_adjust_head_up`, `sleep_adjust_activity_adjust_back_up`, `sleep_adjust_activity_adjust_legs_up`, `sleep_adjust_activity_adjust_lumbar_up`, the matching `_down` names, `sleep_adjust_activity_stop` | Sleep-adjustment moves and stop |
+| `sleep_data_entry_activity_calibration_flat_position`, `sleep_data_entry_activity_calibration_next_position` | Move to the calibration positions |
 | `sleep_data_entry_activity_reset_calibration` | Reset calibration; needs `confirmed: true` |
-| `alarm_activity_audio_preview_1` to `_5`, `alarm_activity_audio_stop` | Preview an alarm sound, or stop the preview |
+| `alarm_activity_audio_preview_1` to `alarm_activity_audio_preview_5`, `alarm_activity_audio_stop` | Preview an alarm sound, or stop the preview |
 
-In the table, a name starting with `_` continues the screen prefix of the name
-before it. Other layouts name a few controls after the app, such as
+Other layouts name a few controls after the app, such as
 `kuaijie_k1fragment_yujia` (yoga) or `weitiao_w12fragment_wholelift_up`. Split
-layouts (K4, K5, W7, W8) use `split_..._left`, `split_..._right` and
-`coupled_...` names, for example `kuaijie_k4fragment_split_flat_left`. The
-modular TL-Q hub, TL-A air, TL-B motor and TL-W thermal products have their own
-names. For those, download the bed's diagnostics: it lists every name the bed
-accepts.
+layouts (K4, K5, W7, W8) name their sides differently from layout to layout, for
+example `kuaijie_k4fragment_split_flat_left`,
+`kuaijie_k4fragment_coupled_zero_gravity`,
+`weitiao_w7fragment_split_back_left_up` and `weitiao_w8fragment_split_legs_up`.
+The modular TL-Q hub, TL-A air, TL-B motor and TL-W thermal products have their
+own names. For those, download the bed's diagnostics: it lists every name the
+bed accepts.
 
 #### Evidence
 

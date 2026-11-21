@@ -3548,7 +3548,7 @@ Based on eShine 1.1.8 (22); its key, request, clock and alarm frames are in
 `tests/okin_nframe_vectors.py`.
 
 - Not yet tested on hardware, including what STOP stops and whether a long-hold
-  preset save is kept.
+  preset save is kept. Do not assume either from beds that share this transport.
 - Wi-Fi, cloud, account and firmware update features are not supported.
 
 ###### eShine analysis provenance
@@ -5568,8 +5568,8 @@ indicate-only receivers are accepted. No PIN or mandatory bond is declared.
 
 The stored selector is Left (A), Both (AB, the default) or Right (B). Optional single-address
 Left/Right child devices route to A/B on the same connection. Each physical
-bed of a two-address pair retains its own selector. These names only choose
-the address. The compatibility motor-count setting does not limit the
+bed of a two-address pair retains its own selector. Left and Right choose the
+protocol side within the same connection; they say nothing else about the bed. The compatibility motor-count setting does not limit the
 app's five control pairs or assert a physical actuator count.
 
 #### Controls
