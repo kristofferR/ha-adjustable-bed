@@ -824,11 +824,16 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         if detail is None:
             raise ValueError("Choose a massage timer this product offers")
         # The bed reports no timer. Each side keeps what it was sent, so the side
-        # selector and each side of a pair show their own.
-        addressed = self._side()
-        sides = ("left", "right") if addressed == 2 else (("left", "right")[addressed],)
+        # selector and each side of a pair show their own. A single-link frame
+        # carries no side: the receiver's one timer is both sides'.
+        addressed = 2 if self._current_link().single else self._side()
+        name = ("left", "right", "both")[addressed]
+        sides = ("left", "right") if addressed == 2 else (name,)
         try:
-            with self.sent_state(*(sided(MASSAGE_TIMER_MINUTES, side)(minutes) for side in sides)):
+            # The frame and the published side are the one captured here.
+            with self.side_scope(name), self.sent_state(
+                *(sided(MASSAGE_TIMER_MINUTES, side)(minutes) for side in sides)
+            ):
                 await self.press(detail)
         finally:
             self._show_timer()

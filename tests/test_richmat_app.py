@@ -868,17 +868,26 @@ async def test_the_massage_timer_follows_delivered_state_not_the_controller(coor
     await c.set_massage_timer(20)
     select("right")
     assert state["massage_timer"] is None
-    # The side chosen while a write runs shows its own timer when the write settles.
-    press = c.press
-
-    async def switching(detail, **kwargs):
-        select("left")
-        await press(detail, **kwargs)
-
-    c.press = switching
+    # A side chosen while the frame goes out: the frame and its record stay with
+    # the side it was sent to; the timer shows the newly selected side's own.
+    coordinator.client.write_gatt_char.reset_mock()
+    coordinator.client.write_gatt_char.side_effect = lambda *_args, **_kwargs: select("left")
     await c.set_massage_timer(10)
+    coordinator.client.write_gatt_char.side_effect = None
+    assert written(c)[0][4:6] == "01"  # the right side's frame
     assert (state["massage_timer"], state["massage_timer_right"]) == (20, 10)
     # A replacement controller reads the sides from the published state.
     fresh = controller(coordinator, "6HRM")
     side_select(fresh)("right")
     assert state["massage_timer"] == 10
+
+
+async def test_a_single_link_timer_is_the_receivers_for_both_sides(coordinator, clocked):
+    """A single-link frame carries no side, so either side shows what the receiver got."""
+    c = controller(coordinator, "6HRM", single=True)
+    (spec,) = [s for s in c.controller_select_specs if s.key == "richmat_app_side"]
+    assert spec.local_select_fn is not None
+    spec.local_select_fn("left")
+    await c.set_massage_timer(20)
+    spec.local_select_fn("right")
+    assert coordinator.controller_state["massage_timer"] == 20
