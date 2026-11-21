@@ -637,6 +637,7 @@ There are two ways to gather diagnostic information:
 | **What it captures** | Real-time stream of all integration activity | Snapshot of device state at one moment |
 | **Content** | Actual BLE commands sent (e.g., `e5fe16...`), connection events, errors with stack traces | Configuration, advertisements (per source), detection reasoning, GATT/descriptor details, notifications, buffered command trace, connection-attempt details |
 | **Size** | Large, includes unrelated entries from other integrations | Focused JSON file for one device |
+| **Redacted** | No: remove what you do not want to share before posting | Yes: see [what the files share](GETTING_HELP.md#what-the-files-share) |
 | **Best for** | "Why didn't this command work?" - seeing exact bytes sent | "What device do I have?" - sharing device info in bug reports |
 
 **When to use Debug Logging:**
@@ -670,8 +671,10 @@ while the link is valid.
 
 Expiry does not delete the JSON file. Use the file path shown in the persistent
 notification to retrieve the existing capture, or generate another support
-bundle for a new link. Bundles retain full device addresses and optional logs
-for troubleshooting, so inspect their contents before sharing them publicly.
+bundle for a new link. Only the five newest bundles are kept; older files are
+deleted when a new one is saved. Before you share a bundle, open it and remove
+anything you do not want to share: see
+[what the files share](GETTING_HELP.md#what-the-files-share).
 
 ## Position commands and reported state
 
