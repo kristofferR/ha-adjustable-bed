@@ -43,6 +43,7 @@ from .const import (
 )
 from .detection import detect_bed_type_detailed
 from .diagnostic_payloads import format_mapping_payloads
+from .download import is_bundle_filename
 from .pairing import iter_children
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_pins_only, redact_sleep_number_sessions, redact_sleeptracker_sessions
@@ -54,7 +55,6 @@ from .support_report import (
     _get_controller_info,
     _get_integration_info,
     _get_pairing_info,
-    _get_recent_logs,
     _get_system_info,
 )
 
@@ -65,6 +65,7 @@ _LOGGER = logging.getLogger(__name__)
 
 _REPORT_VERSION = "2.6"
 _MAX_NEARBY_BLUETOOTH_DEVICES = 30
+MAX_SAVED_BUNDLES = 5
 _BLUETOOTH_DOMAIN = "bluetooth"
 _ESPHOME_DOMAIN = "esphome"
 _ESPHOME_PAIRING_FEATURE_FLAG = 1 << 3
@@ -146,7 +147,7 @@ async def generate_support_bundle(
         controller = {"initialized": False, "class": None, "characteristic_uuid": None}
         position_data = {}
 
-    recent_logs = await _get_recent_logs(hass) if include_logs else []
+    recent_logs = log_buffer.snapshot() if log_buffer is not None else []
     # Preserve the original failure if verbose capture traffic fills the ring.
     recent_logs = list({
         (log.get("timestamp"), log.get("name"), log.get("message")): log
@@ -996,4 +997,16 @@ def save_support_bundle(hass: HomeAssistant, report: dict[str, Any], address: st
         json.dump(report, f, indent=2, default=str)
 
     _LOGGER.info("Support bundle saved to %s", filepath)
+    _prune_saved_bundles(config_dir)
     return filepath
+
+
+def _prune_saved_bundles(config_dir: Path) -> None:
+    """Keep only the newest bundles; older ones would sit in every backup."""
+    saved = sorted(
+        (path for path in config_dir.iterdir() if is_bundle_filename(path.name)),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for path in saved[MAX_SAVED_BUNDLES:]:
+        path.unlink(missing_ok=True)

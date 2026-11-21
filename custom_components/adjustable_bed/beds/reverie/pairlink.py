@@ -124,7 +124,7 @@ from .pairlink_sdk_models import (
     PairlinkSdkDevice,
     replace_ping_device,
 )
-from .pairlink_sdk_storage import PairlinkSdkState
+from .pairlink_sdk_storage import PairlinkSdkState, sdk_store_key
 from .pairlink_transport import (
     PairlinkHostAdapterInventoryEntry,
     PairlinkPeerIdentity,
@@ -254,11 +254,11 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             runtime._sdk_state = PairlinkSdkState(
                 lambda: Store(
                     coordinator.hass, 1,
-                    f"adjustable_bed.pairlink_sdk.{coordinator.entry.entry_id}"
-                    + (
-                        f".{normalize_mac(coordinator.address)}"
+                    sdk_store_key(
+                        coordinator.entry.entry_id,
+                        coordinator.address
                         if coordinator.entry.data.get(CONF_SIDE) in ("left", "right")
-                        else ""
+                        else None,
                     ),
                 ),
                 self._async_sdk_metadata_effect,

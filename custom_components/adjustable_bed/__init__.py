@@ -1778,11 +1778,17 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     for other in hass.config_entries.async_entries(DOMAIN):
         if other.entry_id != entry.entry_id and addresses.intersection(_entry_addresses(other)):
             async_refresh_remacro_issues(hass, other)
+    from homeassistant.helpers.storage import Store
+
     from .app_state_store import async_remove_app_states
+    from .beds.reverie.pairlink_sdk_storage import sdk_store_key
 
     # Re-adding a bed must not restore the removed entry's app state or session.
     try:
         await async_remove_app_states(hass, unowned)
+        # Pairlink keys its metadata by entry, so no other entry ever reads it.
+        for address in (None, *addresses):
+            await Store(hass, 1, sdk_store_key(entry.entry_id, address)).async_remove()
     except OSError:
         _LOGGER.warning("Could not delete stored app preferences for %s", sorted(unowned), exc_info=True)
     hass.loop.call_soon(async_refresh_combine_beds_issue, hass)

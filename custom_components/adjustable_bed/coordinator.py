@@ -1896,9 +1896,14 @@ class AdjustableBedCoordinator(
             # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
             self._hold_link_for_command()
 
+            logged_command = (
+                self._controller.loggable_hex(command)
+                if self._controller is not None
+                else command.hex()
+            )
             # Check if we were cancelled while waiting for the lock
             if self._cancel_counter > entry_cancel_count:
-                _LOGGER.debug("Command %s cancelled while waiting for lock", command.hex())
+                _LOGGER.debug("Command %s cancelled while waiting for lock", logged_command)
                 # Reset disconnect timer since we're bailing out
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
@@ -1908,11 +1913,6 @@ class AdjustableBedCoordinator(
                 # Clear cancel signal for this command
                 self._cancel_command.clear()
 
-                logged_command = command.hex()
-                if self._bed_type == BED_TYPE_OCTO and self._controller is not None:
-                    trace_payload = self._controller._format_command_trace_payload(command)
-                    if trace_payload is not None:
-                        logged_command = str(trace_payload.get("hex", "**REDACTED**"))
                 _LOGGER.debug(
                     "async_write_command: %s (repeat: %d, delay: %dms)",
                     logged_command,

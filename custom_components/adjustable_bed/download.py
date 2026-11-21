@@ -28,6 +28,11 @@ _BUNDLE_FILENAME_RE = re.compile(
 )
 
 
+def is_bundle_filename(name: str) -> bool:
+    """Whether a file name is one this integration wrote as a support file."""
+    return _BUNDLE_FILENAME_RE.fullmatch(name) is not None
+
+
 @dataclass(frozen=True, slots=True)
 class DownloadGrant:
     """A reusable download permission with a bounded lifetime."""
@@ -69,7 +74,7 @@ class SupportBundleDownloadView(HomeAssistantView):
 
         filepath = grant.path
         filename = filepath.name
-        if not _BUNDLE_FILENAME_RE.match(filename):
+        if not is_bundle_filename(filename):
             return web.Response(status=403, text="Invalid file", headers=_NO_STORE)
 
         try:

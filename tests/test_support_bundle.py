@@ -2323,20 +2323,6 @@ class TestSupportBundleLogProbeSafety:
         assert reason == "not_a_file"
         assert "not a regular file" in error
 
-    def test_tail_refuses_a_fifo_too(self, tmp_path):
-        """The capture's own reader has the same hazard."""
-        import os
-
-        from custom_components.adjustable_bed.support_report import _read_log_file
-
-        fifo = tmp_path / "home-assistant.log"
-        os.mkfifo(fifo)
-        entries = _read_log_file(str(fifo))
-
-        # Treated like a missing file: the remedy is a downloadable log, not a
-        # permissions fix.
-        assert entries[0]["log_read_reason"] == "missing"
-
     def test_probe_rejects_an_empty_log_file(self, tmp_path):
         """A left-over empty file is readable but will never yield evidence."""
         from custom_components.adjustable_bed.support_report import _probe_log_file

@@ -27,7 +27,7 @@ from custom_components.adjustable_bed.support_proxy_logs import (
     DATA_PAIRING_PROXY_LOGS,
     capture_proxy_logs,
 )
-from custom_components.adjustable_bed.support_report import _get_recent_logs, async_check_log_file
+from custom_components.adjustable_bed.support_report import async_check_log_file
 
 
 async def test_memory_logs_include_failure_before_capture_without_file(hass: HomeAssistant, caplog, tmp_path):
@@ -49,7 +49,7 @@ async def test_memory_logs_include_failure_before_capture_without_file(hass: Hom
     )
     logging.getLogger("other.integration").error("Unrelated secret")
 
-    logs = await _get_recent_logs(hass)
+    logs = buffer.snapshot()
     assert len(logs) == 2
     assert "ValueError: Authentication failed" in logs[0]["message"]
     serialized_logs = json.dumps(logs)
