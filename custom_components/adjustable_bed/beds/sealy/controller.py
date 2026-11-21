@@ -114,6 +114,11 @@ class SealyController(Okin7ByteController):
         return True
 
     @property
+    def supports_massage_toggle_control(self) -> bool:
+        # The Massage switch already sends the app's own on and off commands.
+        return False
+
+    @property
     def supports_head_massage_toggle_control(self) -> bool:
         return False
 
