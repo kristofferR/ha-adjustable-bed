@@ -5,8 +5,8 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 Remacro is the SynData protocol used by three store-branded Android apps from
-the same developer. The integration follows all three apps.
-No physical bed has confirmed these controls yet.
+the same developer. The integration supports all three apps.
+These controls are not yet tested on a real bed.
 
 ## Known Models
 
@@ -41,14 +41,14 @@ screen, and therefore which codes, apply.
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (screen-specific: Head, Feet, Lumbar, All motors; split side-selected axes on CS-B500Y) |
+| Motor Control | ✅ (by model: Head, Feet, Lumbar, All motors; per side on the split CS-B500Y) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (2 slots; 1 on the ASI models; per side on split beds) |
 | Factory Presets | ✅ (Flat on every screen; Anti-snore, TV, Zero-G on preset screens) |
 | Massage | ✅ (head and foot levels 1-3, wave 1/2, off) |
 | Lights | ✅ (on/off **Under Bed Lights** light; LED level and **Save light level** in Slumberland and The Brick) |
 | Controlled side | ✅ (split models 51, 52) |
-| RGB color, heating, LED modes, tilt, memory 3/4 | ❌ (no reachable app route) |
+| RGB color, heating, LED modes, tilt, memory 3/4 | ❌ |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
 
 ## Protocol Details
