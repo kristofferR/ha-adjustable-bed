@@ -1418,11 +1418,12 @@ class TestSleepysBox25Controller:
         with (
             patch.object(
                 controller, "write_command", AsyncMock(side_effect=[arm_failed, commit_failed])
-            ),
+            ) as mock_write,
             pytest.raises(BleakError) as raised,
         ):
             await controller.preset_flat()
         assert raised.value is arm_failed
+        assert mock_write.call_args_list[1].args[0] == Box25Commands.STAR_PRESET_TERMINATOR
 
     async def test_named_and_memory_presets_use_starcode_frames(
         self,
