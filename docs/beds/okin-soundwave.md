@@ -193,7 +193,7 @@ Motor holds send once on press. P1 base release waits 300 ms; forced P1 split
 and P3 release wait 100 ms. P2 sends driver STOP then command STOP immediately.
 The controller owns and awaits captured release frames, side and session, even
 after cancellation. It never rereads a mutable command for delayed cleanup.
-There is no proven movement refresh interval or concurrent-motor composition.
+The app defines no movement refresh interval and does not move motors together.
 
 ### Vectors
 
