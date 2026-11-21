@@ -978,14 +978,18 @@ are buttons named the way the app names them, each where it belongs on the card:
 motor moves with the motors, positions with the presets, massage and light with
 theirs. Music, fans, resets and similar extras start disabled.
 
-- A control the standard entities already send has no button of its own. Another
-  app page's copy of a control (the motor or memory list, an alarm picker) is
-  the same function: the first page's button, normally the main page, stands for
-  it. Conflicting copies on one page keep a button each, numbered.
+- A control with no button of its own sends exactly what a listed entity sends:
+  the same command on the bed's transport, held until STOP or sent once. That
+  entity is a standard one (motor, preset, memory recall and save, light, sync,
+  massage, the massage timer) or another page's identical copy, and the main
+  page's copy is the one listed.
+- A copy that sends something else keeps a disabled button whose name tells it
+  apart: the motor list's single tap of a held move is "… (short press)", and a
+  copy with another command under the same name is numbered.
 - A preset's or memory's own long operand saves it: that long press is its
-  **Save …** button, confirmed in the card. Another distinct long operand is a
-  disabled "(long press)" button; a long press that adds no command has none.
-  Held movement uses cancellable repeats and protocol-specific release cleanup.
+  **Save …** button, confirmed in the card. Another long operand is a disabled
+  "(long press)" button. Held movement uses cancellable repeats and
+  protocol-specific release cleanup.
 - This includes supported combined/extra motor commands and less common heating,
   fan, airbag, anti-pinch, aroma, music and sleep actions. It does not invent
   parameterized controls merely because the shared library can parse a report.

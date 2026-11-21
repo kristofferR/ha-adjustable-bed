@@ -118,9 +118,10 @@ them. The card places motor, preset, memory, massage and light buttons in their
 own sections and the rest under Utility, disabled by default, with continuous
 holds for sustain actions and separate buttons for finite short/long callbacks.
 A preset's or memory's own long operand saves it, so that long press is its
-**Save …** button. Another distinct long operand is a disabled "(long press)"
-button; a long press that adds no command has no button. Empty app slots and
-menu headings have none either, and a control the app lists twice has one button. The `hold_control` action
+**Save …** button. Another long operand is a disabled "(long press)" button; a
+long press that writes only what its short press writes has no button. Empty
+app slots and menu headings have none either, and a control the app lists twice
+has one button. The `hold_control` action
 accepts the button's `held_control` identifier and a bounded duration.
 
 ### Example: 6BRM product, framed Left
