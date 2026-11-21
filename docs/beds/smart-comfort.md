@@ -201,7 +201,7 @@ layout without a controllable middle never exposes address 1. Seat order and
 rotation never become left/right pairing. The selected seat survives BLE reconnects and entry reloads in a process-local
 HA session scoped to this address and app profile. Each system reply validates
 it against the current model. A cold session starts with address 0 if allowed,
-otherwise the first selectable address. This is one peripheral, with no inferred paired-bed topology.
+otherwise the first selectable address. This is one peripheral, not a paired bed.
 
 #### Controls
 

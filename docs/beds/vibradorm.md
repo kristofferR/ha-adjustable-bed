@@ -1307,7 +1307,7 @@ The bed type is `vmatbasic` with profile `basic`, `cbi` or `xtbox` (see the
   of these profiles.
 - The dedicated app bed type keeps these accepted profiles separate from the
   existing generic and Caresse/Werkmeister routes; it is a Home Assistant
-  configuration boundary, not an inferred protocol identity.
+  configuration boundary, not a different protocol.
 
 ##### GATT roles
 
@@ -1342,7 +1342,7 @@ three-byte CBI floor; `0011` / `0077` prefixed XT frames.
 - HA's manufacturer map loses AD order, duplicates and declared lengths, even
   with one company: diagnostics report conditional per-record matches and keep
   the exact source scan verdict unknown.
-- A conditional candidate hint cannot infer a profile. Existing cached-address
+- A conditional candidate hint cannot choose a profile. Existing cached-address
   selection remains explicit; rename and optional model strings are not identity
   proof.
 

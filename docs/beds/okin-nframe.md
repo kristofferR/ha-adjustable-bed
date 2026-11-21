@@ -2504,7 +2504,7 @@ Setup asks for the saved app model and the BLE driver separately. Automatic driv
 selection uses the advertisement name and company 89 payload. It waits for an
 advertisement rather than guessing an offline driver's controls. An explicit P1,
 P2 or P3 selection is available when the advertisement cannot be recovered.
-Changing a saved UI model does not change the driver inferred from an advertisement.
+Changing a saved UI model does not change the driver chosen from the advertisement.
 
 | Selection | Rule in the shipped selector |
 |---|---|
@@ -3944,7 +3944,7 @@ secondary field (both big-endian), then four zero bytes
 
 ##### Home Assistant setup
 
-Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Serenity app**, for the accepted `com.okin.bedding.serenity` 1.0.1 (2) application profile. Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app proves two named axes, additional literal selectors, and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Serenity app**, for the profile based on `com.okin.bedding.serenity` 1.0.1 (2). Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app has two named axes, the additional selectors and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -5338,7 +5338,7 @@ The profile fixes its three UI groups, disables angle sensing, light and
 massage, and owns its protocol and refresh cadence. Ordinary cover movement
 keeps the user's pulse count. No PIN, bonding, model selection or single-address
 side controls are required. Two independently configured physical receivers can
-use HA's two-address pairing; app-wide device iteration proves no physical sides.
+use HA's two-address pairing; the app itself has no physical sides.
 
 #### Controls
 
