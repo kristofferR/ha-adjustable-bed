@@ -28,6 +28,7 @@ from .entity_retypes import async_retyped_entities_built
 from .entity_runtime import controller_side_scope
 from .paired_coordinator import PairedBedCoordinator, entity_runtimes
 from .pairing import iter_children
+from .removed_entities import async_remove_entities
 from .runtime_data import entry_runtime
 
 if TYPE_CHECKING:
@@ -128,18 +129,19 @@ class EntityLedger:
             return
         self._swept = created
         registry = er.async_get(self.hass)
-        removed: list[str] = []
-        for row in list(er.async_entries_for_config_entry(registry, self._entry.entry_id)):
-            if (
-                row.platform == DOMAIN
-                and row.domain in platforms
-                and (row.domain, row.unique_id) not in created
-            ):
-                registry.async_remove(row.entity_id)
-                removed.append(row.entity_id)
-        if removed:
+        stale = [
+            row
+            for row in er.async_entries_for_config_entry(registry, self._entry.entry_id)
+            if row.platform == DOMAIN
+            and row.domain in platforms
+            and (row.domain, row.unique_id) not in created
+        ]
+        if stale:
+            async_remove_entities(self.hass, self._entry, stale)
             _LOGGER.info(
-                "Removed entities %s no longer provided by %s", ", ".join(removed), self._entry.title
+                "Removed entities %s no longer provided by %s",
+                ", ".join(row.entity_id for row in stale),
+                self._entry.title,
             )
 
 

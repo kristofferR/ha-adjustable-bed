@@ -89,21 +89,20 @@ async def _execute_selection(
     targets: list[tuple[BedTarget, str]],
     admissions: list[_CommandAdmission],
     selection: Selection,
-    label: str,
     execute: Callable[[BetterLiving2Controller], Awaitable[None]],
     validate: Callable[[BetterLiving2Controller], None],
 ) -> None:
     from .betterliving2 import BetterLiving2Controller
 
     preflighted = await _preflight_capability(
-        targets, BetterLiving2Controller, label, validate=validate
+        targets, BetterLiving2Controller, validate=validate
     )
 
     async def prepared(controller: BetterLiving2Controller) -> None:
         if await selection.prepared(controller):
             await execute(controller)
 
-    command = _family_command(BetterLiving2Controller, label, prepared)
+    command = _family_command(BetterLiving2Controller, prepared)
 
     async def child_operation(child: BedChild) -> None:
         if not isinstance(child, AdjustableBedCoordinator):
@@ -185,7 +184,7 @@ async def diagnostic_action(call: ServiceCall) -> None:
             await execute_diagnostic_action(controller, action)
 
         await _execute_selection(
-            targets, admissions, selection, "bed diagnostic action", execute, prepare
+            targets, admissions, selection, execute, prepare
         )
 
 
@@ -239,7 +238,7 @@ async def _set_alarm(
         # Only the cohort can admit the native same-owner sequential switch.
         await controller.set_alarm(replace(plans[owner], link=controller._live()))
 
-    await _execute_selection(targets, admissions, selection, "bed alarms", execute, prepare)
+    await _execute_selection(targets, admissions, selection, execute, prepare)
 
 
 async def massage(call: ServiceCall) -> None:
@@ -277,7 +276,7 @@ async def _massage(
         await controller.massage_pair(call.data["head"], call.data["feet"])
 
     await _execute_selection(
-        targets, admissions, selection, "BetterLiving2 massage", execute, prepare
+        targets, admissions, selection, execute, prepare
     )
 
 

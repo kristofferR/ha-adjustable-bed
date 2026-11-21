@@ -23,6 +23,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.start import async_at_started
 
+from .automation_references import entity_users
 from .const import BED_TYPE_OCTO, DOMAIN
 from .paired_coordinator import entity_runtimes
 
@@ -333,9 +334,6 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
     row that kept its entity ID and only changed its options is still named by
     automations the user already fixed, so its line is raised once and kept.
     """
-    from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
-    from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
-
     registry = er.async_get(hass)
     reported = _reported_moves(hass, entry)
     rows = er.async_entries_for_config_entry(registry, entry.entry_id)
@@ -360,15 +358,7 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
         if not isinstance(old_entity_id, str):
             continue
         references = (old_entity_id, options.get(RETYPED_FROM_ID))
-        users = {
-            user
-            for reference in references
-            if isinstance(reference, str)
-            for user in (
-                *automations_with_entity(hass, reference),
-                *scripts_with_entity(hass, reference),
-            )
-        }
+        users = entity_users(hass, [ref for ref in references if isinstance(ref, str)])
         options_changed = bool(options.get(RETYPED_OPTIONS))
         if not users or options_changed:
             # Reported once (an options change), or nothing names the old entity.

@@ -135,7 +135,7 @@ async def handle_control(call: ServiceCall) -> None:
                 await controller.tap(code)
 
     await _preflight_and_execute(
-        targets, RichmatMHAppController, "Nisco / MLILY Supreme BED controls", execute,
+        targets, RichmatMHAppController, execute,
         validate=validate, cancel_running=action != "query", resource=None,
         admit=True, admissions=admissions,
     )
@@ -149,8 +149,7 @@ async def handle_sleep_mode(call: ServiceCall) -> None:
     from .app_sleep import RichmatMHAppSleepController
 
     await _preflight_and_execute(
-        targets, RichmatMHAppSleepController, "Nisco direct sleep-user-mode caller",
-        lambda ctrl: ctrl.direct_user_mode(option),
+        targets, RichmatMHAppSleepController, lambda ctrl: ctrl.direct_user_mode(option),
         validate=lambda ctrl: ctrl.validate_direct_user_mode(option),
         admit=True, admissions=admissions,
     )

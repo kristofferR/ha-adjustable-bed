@@ -356,7 +356,7 @@ async def handle_okimiki(call: ServiceCall) -> None:
             ) from None
 
     prepared = await _preflight_capability(
-        targets, OkimikiController, "Okimiki", validate=None if live_validation else validate
+        targets, OkimikiController, validate=None if live_validation else validate
     )
     if live_validation and len(physical_targets) > 1:
         # Session menus and alarm records cannot be validated on an offline controller.
@@ -371,7 +371,7 @@ async def handle_okimiki(call: ServiceCall) -> None:
         await _execute_preflighted(
             targets,
             prepared,
-            _family_command(OkimikiController, "Okimiki", prepare),
+            _family_command(OkimikiController, prepare),
             skip_disconnect=True,
             resource=resource,
             admissions=admissions,
@@ -437,7 +437,7 @@ async def handle_okimiki(call: ServiceCall) -> None:
     await _execute_preflighted(
         targets,
         prepared,
-        _family_command(OkimikiController, "Okimiki", execute),
+        _family_command(OkimikiController, execute),
         cancel_running=movement,
         resource=resource,
         admissions=admissions,
