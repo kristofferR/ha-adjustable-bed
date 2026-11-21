@@ -220,8 +220,7 @@ data:
     position: 35
 ```
 
-The additional SleepIQ 5.4.11 controls need physical testing on each bed model.
-Successful static tests do not establish hardware compatibility.
+The controls added from SleepIQ 5.4.11 are not yet tested on hardware.
 
 ### MCR position services
 
