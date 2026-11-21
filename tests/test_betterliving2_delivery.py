@@ -13,7 +13,7 @@ from custom_components.adjustable_bed.command_scheduler import (
 )
 from custom_components.adjustable_bed.light import AdjustableBedAssumedLight
 from tests.hold_lease_wire import virtual_clock
-from tests.test_betterliving2_review import NOW, ready
+from tests.test_betterliving2_holds_and_sides import NOW, ready
 from tests.test_betterliving2_runtime import bed, writes
 
 

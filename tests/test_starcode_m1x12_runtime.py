@@ -1,4 +1,4 @@
-"""Focused regressions for independently reproduced M1X12 review findings."""
+"""M1X12 holds, stops, pairs, light telemetry and alarm records."""
 
 from __future__ import annotations
 
