@@ -185,6 +185,7 @@ from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     is_mac_like_name,
 )
+from .errors import BedCommandFailedError, BedNotConnectedError
 from .execution import HOLD_CEILING_MS
 from .import_executor import async_import_modules
 from .pairing import (
@@ -1899,94 +1900,6 @@ class AdjustableBedCoordinator(
         with command_frames_not_counted():
             await self._controller.async_refresh_auth()
 
-    async def async_write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_running: bool = True,
-    ) -> None:
-        """Write a command to the bed.
-
-        Motor commands cancel any running command for immediate response.
-        """
-        if cancel_running:
-            # Cancel any running command immediately
-            self.request_command_cancel()
-
-        # Capture cancel count at entry to detect if we get cancelled while waiting
-        entry_cancel_count = self._cancel_counter
-
-        async with self._command_demand_scope(), self._command_lock:
-            # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
-            self._hold_link_for_command()
-
-            # Check if we were cancelled while waiting for the lock
-            if self._cancel_counter > entry_cancel_count:
-                _LOGGER.debug("Command %s cancelled while waiting for lock", command.hex())
-                # Reset disconnect timer since we're bailing out
-                if self._client is not None and self._client.is_connected:
-                    self._reset_disconnect_timer()
-                return
-
-            try:
-                # Clear cancel signal for this command
-                self._cancel_command.clear()
-
-                logged_command = command.hex()
-                if self._bed_type == BED_TYPE_OCTO and self._controller is not None:
-                    trace_payload = self._controller._format_command_trace_payload(command)
-                    if trace_payload is not None:
-                        logged_command = str(trace_payload.get("hex", "**REDACTED**"))
-                _LOGGER.debug(
-                    "async_write_command: %s (repeat: %d, delay: %dms)",
-                    logged_command,
-                    repeat_count,
-                    repeat_delay_ms,
-                )
-                if not await self.async_ensure_connected(reset_timer=False):
-                    _LOGGER.error("Cannot write command: not connected to bed")
-                    raise ConnectionError("Not connected to bed")
-
-                if self._controller is None:
-                    _LOGGER.error("Cannot write command: no controller available")
-                    raise RuntimeError("No controller available")
-
-                await self._async_refresh_controller_auth()
-
-                # Start position polling during movement if angle sensing enabled
-                poll_stop: asyncio.Event | None = None
-                poll_task: asyncio.Task[None] | None = None
-                if (
-                    not self._disable_angle_sensing
-                    and self._controller.allow_position_polling_during_commands
-                ):
-                    poll_stop = asyncio.Event()
-                    poll_task = asyncio.create_task(
-                        self._async_poll_positions_during_movement(poll_stop)
-                    )
-
-                try:
-                    await self._controller.write_command(
-                        command, repeat_count, repeat_delay_ms, self._cancel_command
-                    )
-                finally:
-                    # Stop polling
-                    if poll_stop is not None:
-                        poll_stop.set()
-                    if poll_task is not None:
-                        poll_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await poll_task
-
-                # Final position read after command
-                if not self._disable_angle_sensing and not self._cancel_command.is_set():
-                    # Fire-and-forget with lock to prevent concurrent GATT ops
-                    self._start_background_position_read()
-            finally:
-                if self._client is not None and self._client.is_connected:
-                    self._reset_disconnect_timer()
-
     def _protocol_command_resources(self, resources: frozenset[str]) -> frozenset[str]:
         """Keep protocol-wide streams in the same scope as their release."""
         controller = self.capability_controller
@@ -2078,8 +1991,8 @@ class AdjustableBedCoordinator(
                         )
                 else:
                     if not await self.async_ensure_connected(reset_timer=False):
-                        _LOGGER.error("Cannot send stop: not connected to bed")
-                        raise ConnectionError("Not connected to bed")
+                        _LOGGER.debug("Cannot send stop: not connected to bed")
+                        raise BedNotConnectedError
 
                     # Connecting can rebuild the controller from the selected
                     # path. STOP must use that live instance, not the offline
@@ -2107,7 +2020,10 @@ class AdjustableBedCoordinator(
                         )
 
                 # Use controller's stop_all method which knows the correct protocol
-                await controller.stop_all()
+                try:
+                    await controller.stop_all()
+                except BleakError as err:
+                    raise BedCommandFailedError(err) from err
                 _LOGGER.info("Stop command sent")
             finally:
                 if (
@@ -2141,8 +2057,8 @@ class AdjustableBedCoordinator(
             return controller
 
         if not await self.async_ensure_connected(reset_timer=False):
-            _LOGGER.error("Cannot execute %s: not connected to bed", operation_name)
-            raise ConnectionError("Not connected to bed")
+            _LOGGER.debug("Cannot execute %s: not connected to bed", operation_name)
+            raise BedNotConnectedError
 
         # async_ensure_connected may resolve a different usable path and
         # replace the offline controller. Return only the controller bound to
@@ -2467,7 +2383,11 @@ class AdjustableBedCoordinator(
                         self._start_background_position_read()
 
                 return result
+            except BedCommandFailedError:
+                raise
             except BleakError as err:
+                # The one place a Bluetooth error from an admitted command or
+                # motor STOP gets the integration's wording.
                 if _is_ble_authentication_error(err):
                     # A runtime auth failure is not the startup case: the
                     # controller is already initialised, so this link can still
@@ -2482,7 +2402,7 @@ class AdjustableBedCoordinator(
                         # The unpaired proxy link is encrypted now and its bond
                         # verified; only this command failed. Nothing is
                         # dropped or cleared, so the next command works.
-                        raise
+                        raise BedCommandFailedError(err) from err
                     # After a failed proxy attempt the link counts as paired,
                     # so this only selects the one-connection beds' path.
                     encrypt_in_place = self._can_encrypt_link_in_place()
@@ -2491,7 +2411,7 @@ class AdjustableBedCoordinator(
                     )
                     if encrypt_in_place:
                         await self._async_encrypt_link_in_place()
-                raise
+                raise BedCommandFailedError(err) from err
             except _CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS:
                 if (
                     not preserve_idle_deadline
@@ -2778,12 +2698,6 @@ class AdjustableBedCoordinator(
                 # The group helper rejects public STOP during its await. Its
                 # own settled cleanup STOPs precede this individual admission.
                 expected_stop_epoch = self._command_scheduler.stop_epoch
-
-        if (
-            expected_stop_epoch is not None
-            and self._command_scheduler.stop_epoch != expected_stop_epoch
-        ):
-            return
 
         if (
             expected_stop_epoch is not None

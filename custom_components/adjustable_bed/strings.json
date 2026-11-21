@@ -10093,6 +10093,9 @@
     "bed_not_connected": {
       "message": "The bed is not connected. Check that it is powered on and in range, then try again."
     },
+    "bluetooth_command_failed": {
+      "message": "Bluetooth could not send the command to the bed ({error}). Check that it is powered on and in range, then try again."
+    },
     "bed_missing_service": {
       "message": "The bed does not offer the Bluetooth service this profile needs. Check the bed model in its settings."
     },

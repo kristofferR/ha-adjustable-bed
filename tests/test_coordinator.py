@@ -68,6 +68,7 @@ from custom_components.adjustable_bed.const import (
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.errors import BedCommandFailedError, BedNotConnectedError
 from custom_components.adjustable_bed.state_keys import (
     LIGHT_LEVEL,
     LIGHT_TIMER_MINUTES,
@@ -949,8 +950,9 @@ class TestCoordinatorWriteCommand:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
-        command = bytes([0x01, 0x00])
-        await coordinator.async_write_command(command)
+        await coordinator.async_execute_controller_command(
+            lambda controller: controller.write_command(bytes([0x01, 0x00]))
+        )
 
         # The controller should have written the command
         mock_bleak_client.write_gatt_char.assert_called()
@@ -962,7 +964,7 @@ class TestCoordinatorWriteCommand:
         mock_async_ble_device_from_address,
         mock_bluetooth_api,
     ):
-        """Test writing commands fails when not connected."""
+        """A command for a bed that cannot be reached fails with the translated error."""
         # Make connection fail
         with patch(
             "custom_components.adjustable_bed.coordinator_connection.establish_connection",
@@ -971,8 +973,30 @@ class TestCoordinatorWriteCommand:
         ):
             coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
 
-            with pytest.raises(ConnectionError):
-                await coordinator.async_write_command(bytes([0x01, 0x00]))
+            with pytest.raises(BedNotConnectedError) as raised:
+                await coordinator.async_execute_controller_command(
+                    lambda controller: controller.write_command(bytes([0x01, 0x00]))
+                )
+        assert raised.value.translation_key == "bed_not_connected"
+
+    async def test_bluetooth_error_in_a_command_is_translated(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A Bluetooth error that ends a command keeps its type and text, translated."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.side_effect = BleakError("ATT error 0x0e")
+
+        with pytest.raises(BleakError, match="ATT error 0x0e") as raised:
+            await coordinator.async_execute_controller_command(
+                lambda controller: controller.write_command(bytes([0x01, 0x00]))
+            )
+        assert isinstance(raised.value, BedCommandFailedError)
+        assert raised.value.translation_key == "bluetooth_command_failed"
 
     async def test_execute_controller_command_auth_failure_clears_bond_marker(
         self,
@@ -3256,7 +3280,7 @@ class TestStopAfterCancel:
                 "async_ensure_connected",
                 new=AsyncMock(return_value=False),
             ),
-            pytest.raises(ConnectionError, match="Not connected to bed"),
+            pytest.raises(BedNotConnectedError),
         ):
             await coordinator.async_stop_command()
 

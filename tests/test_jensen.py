@@ -342,32 +342,6 @@ class TestJensenCoordinatorAuthRefresh:
             any_order=False,
         )
 
-    async def test_async_write_command_refreshes_pin(
-        self,
-        hass: HomeAssistant,
-        mock_jensen_config_entry,
-    ):
-        """Test coordinator refreshes Jensen PIN before raw write commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
-        coordinator._client = MagicMock()
-        coordinator._client.is_connected = True
-        coordinator._controller = make_controller_mock()
-        coordinator._controller.async_refresh_auth = AsyncMock()
-        coordinator._controller.write_command = AsyncMock()
-
-        await coordinator.async_write_command(
-            FLAT,
-            cancel_running=False,
-        )
-
-        refresh_idx = coordinator._controller.mock_calls.index(call.async_refresh_auth())
-        write_idx = next(
-            idx
-            for idx, mock_call in enumerate(coordinator._controller.mock_calls)
-            if mock_call[0] == "write_command"
-        )
-        assert refresh_idx < write_idx
-
     async def test_async_stop_command_refreshes_pin(
         self,
         hass: HomeAssistant,

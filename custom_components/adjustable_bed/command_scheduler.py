@@ -37,6 +37,8 @@ from enum import StrEnum
 from typing import Any, Final, Literal, Protocol
 from uuid import uuid4
 
+from .errors import BedNotConnectedError
+
 _LOGGER = logging.getLogger(__name__)
 
 ALL_COMMAND_RESOURCES: Final = frozenset({"*"})
@@ -1055,7 +1057,7 @@ class DeviceCommandScheduler:
 
         async with self._lock:
             if self._closed:
-                raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+                raise BedNotConnectedError
             if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
                 self._finish_locked(
                     handle,
@@ -1126,7 +1128,7 @@ class DeviceCommandScheduler:
             raise ValueError(f"{member.resource} is not a concurrent resource")
         async with self._lock:
             if self._closed:
-                raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+                raise BedNotConnectedError
             if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
                 return CommandOutcome.STOPPED
             if member.lease is not None:
@@ -1255,7 +1257,7 @@ class DeviceCommandScheduler:
         writer and ends only that member.
         """
         if self._closed:
-            raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+            raise BedNotConnectedError
         normalized_resources = command_resources(*resources)
         active = self._active
         overlaps = active is not None and _resources_overlap(
