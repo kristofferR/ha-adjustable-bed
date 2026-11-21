@@ -43,7 +43,7 @@ from ...const import (
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
 from ...profiles.richmat import RICHMAT_MH, RichmatProfile
-from ...state_keys import MASSAGE_TIMER_MINUTES
+from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..catalog_buttons import Kind, catalog_button, own_label, unique_buttons
@@ -345,6 +345,8 @@ _PRESETS: Final[dict[int, tuple[str, frozenset[str]]]] = {
     0xF0: ("yoga", frozenset({"yoga", "yoga mode"})),
 }
 FLAT_CODE: Final = 0x31
+# Massage intensity levels 1, 2 and 3, as every catalog names them.
+_INTENSITY_LEVELS: Final = {1: 0x67, 2: 0xAF, 3: 0x68}
 FACTORY_RESET_CODE: Final = 0x62
 LIGHT_TOGGLE_CODE: Final = 0x3C
 # Motor-page icons carry no text; name them after their app command keys.
@@ -728,8 +730,45 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     @property
     def auto_enable_massage(self) -> bool:
-        # The app always shows the layout's massage timers.
-        return super().auto_enable_massage or self.supports_massage_timer
+        # The app always shows the layout's massage timers and intensity levels.
+        return (
+            super().auto_enable_massage
+            or self.supports_massage_timer
+            or self.supports_massage_intensity_control
+        )
+
+    @property
+    def _intensity_level_codes(self) -> dict[int, int]:
+        """The layout's massage intensity 1, 2 and 3 controls, when it has all three.
+
+        They are one intensity number; a layout missing a level keeps its buttons.
+        """
+        codes = {c.code for c in self._controls() if c.area == "massage"}
+        return dict(_INTENSITY_LEVELS) if set(_INTENSITY_LEVELS.values()) <= codes else {}
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        return bool(self._intensity_level_codes)
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        return ["all"] if self._intensity_level_codes else []
+
+    @property
+    def massage_intensity_max(self) -> int:
+        return 3
+
+    def massage_intensity_min(self, zone: str) -> int:
+        # No level control turns the massage off.
+        return 1
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        code = self._intensity_level_codes.get(level) if zone == "all" else None
+        if code is None:
+            raise ValueError("Choose a massage intensity this layout offers")
+        # The bed reports no level.
+        with self.sent_state(massage_intensity(zone)(level)):
+            await self.tap(code)
 
     @property
     def massage_timer_options(self) -> list[int]:
@@ -750,8 +789,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     def _taps(self) -> tuple[Tap, ...]:
         """Every remaining app control, one button per opcode."""
-        # The massage timer select sends the timer controls.
-        used: set[int] = set(self._massage_timer_codes.values())
+        # The massage timer select and intensity number send these controls.
+        used: set[int] = {*self._massage_timer_codes.values(), *self._intensity_level_codes.values()}
         for recall, save in self._memory_slots().values():
             used.add(recall.code)
             if save is not None:

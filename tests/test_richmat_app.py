@@ -783,3 +783,25 @@ async def test_every_massage_timer_choice_sends_what_its_button_sent(coordinator
                 assert written(c) == button and button
                 checked += 1
     assert checked > 1000
+
+
+async def test_every_massage_level_sends_what_its_button_sent(coordinator, clocked):
+    """Head and foot Level 1-3 and Off buttons are one number per zone."""
+    zones = 0
+    for product in PRODUCTS:
+        for version in (0, 1):
+            c = controller(coordinator, product)
+            c.version = version
+            keys = {spec.key for spec in c.controller_button_specs}
+            for zone, levels in c._level_actions.items():
+                assert c.massage_intensity_min(zone) == (0 if 0 in levels else 1)
+                for level, detail in levels.items():
+                    assert "richmat_app_" + detail not in keys
+                    coordinator.client.write_gatt_char.reset_mock()
+                    await c.press(detail)
+                    button = written(c)
+                    coordinator.client.write_gatt_char.reset_mock()
+                    await c.set_massage_intensity(zone, level)
+                    assert written(c) == button and button
+                zones += 1
+    assert zones >= 6

@@ -18,7 +18,7 @@ from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
-from ...state_keys import MASSAGE_TIMER_MINUTES
+from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..catalog_buttons import (
@@ -95,6 +95,21 @@ def select_link(client: BleakClient) -> Link:
     return Link(client, selected.tx, selected.rx, selected.query_single)
 
 
+# Actions that set one massage zone to a level, as the app names them.
+_LEVELS: Final = {
+    f"deviceFunctionItem{action}": target
+    for zone, prefix in (("head", "MassageHead"), ("foot", "MassageFoot"))
+    for action, target in (
+        (f"{prefix}Off", (zone, 0)),
+        (f"{prefix}InstensFirstMode", (zone, 1)),
+        (f"{prefix}InstensSecondMode", (zone, 2)),
+        (f"{prefix}InstensThirdMode", (zone, 3)),
+    )
+} | {
+    "deviceFunctionItemMassageInstensityFirstGear": ("all", 1),
+    "deviceFunctionItemMassageInstensitySecondGear": ("all", 2),
+    "deviceFunctionItemMassageInstensityThirdGear": ("all", 3),
+}
 _RESETS: Final = frozenset(
     {"deviceFunctionItemRelieveZeroGravitySetting", "deviceFunctionItemRelieveSnoreSetting"}
 )
@@ -725,8 +740,48 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
 
     @property
     def auto_enable_massage(self) -> bool:
-        # The app always shows the product's massage timers.
-        return super().auto_enable_massage or self.supports_massage_timer
+        # The app always shows the product's massage timers and levels.
+        return (
+            super().auto_enable_massage
+            or self.supports_massage_timer
+            or self.supports_massage_intensity_control
+        )
+
+    @property
+    def _level_actions(self) -> dict[str, dict[int, str]]:
+        """Each massage zone's level actions, for zones with levels 1, 2 and 3.
+
+        A zone's levels are one intensity number; a zone missing a level keeps its buttons.
+        """
+        zones: dict[str, dict[int, str]] = {}
+        for detail in sorted(self._allowed()):
+            if (target := _LEVELS.get(ACTIONS[detail]["enum"])) is not None:
+                zones.setdefault(target[0], {}).setdefault(target[1], detail)
+        return {zone: levels for zone, levels in zones.items() if {1, 2, 3} <= set(levels)}
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        return bool(self._level_actions)
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        return list(self._level_actions)
+
+    @property
+    def massage_intensity_max(self) -> int:
+        return 3
+
+    def massage_intensity_min(self, zone: str) -> int:
+        # Only a zone with its own off action offers 0.
+        return 0 if 0 in self._level_actions.get(zone, {}) else 1
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        detail = self._level_actions.get(zone, {}).get(level)
+        if detail is None:
+            raise ValueError("Choose a massage level this product offers")
+        # The bed reports no level.
+        with self.sent_state(massage_intensity(zone)(level)):
+            await self.press(detail)
 
     @property
     def massage_timer_options(self) -> list[int]:
@@ -760,8 +815,9 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         rows: list[ControllerButtonSpec | None] = []
         motors = {str(d) for m in self.route["motors"] for d in m[1:3]}
-        # The massage timer select sends the timer actions.
-        for detail in sorted(self._allowed() - motors - set(self._massage_timers.values())):
+        # The massage timer select and intensity numbers send these actions.
+        numbers = {d for levels in self._level_actions.values() for d in levels.values()}
+        for detail in sorted(self._allowed() - motors - set(self._massage_timers.values()) - numbers):
             label = self._shown_label(detail)
             enum = ACTIONS[detail]["enum"]
             meaning = action_name(ACTIONS[detail])

@@ -748,3 +748,31 @@ def test_a_factory_reset_asks_first_whatever_its_label_case() -> None:
     assert next(x.label for x in c._controls() if x.code == 0x62) == "Factory reset"
     spec = next(s for s in c.controller_button_specs if s.key == "richmat_mh_62")
     assert spec.requires_confirmation and not spec.entity_registry_enabled_default
+
+
+ONE, TWO, THREE = ["6e010067d6", "6e01006edd"], ["6e0100af1e", "6e01006edd"], ["6e010068d7", "6e01006edd"]
+
+
+# The 32 Richmat MH-family layout pages with all three massage intensity
+# buttons form 5 groups by what they send; one of each is pinned here. Each
+# level of the number sends what its button sent.
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "stop_after"),
+    [
+        ("mh", "idealbed", "b1rm", 0.12),
+        ("ruf", "wsilver2", "b1rm", 0.12),
+        ("ruf", "bailey2", "b1rm", 0.1),
+        ("app", "nisco", "r2rm", 0.12),
+        ("bedtech", "bedtech_classic", "b1rm", 0.12),
+    ],
+)
+async def test_massage_intensity_levels_are_one_number(delays, kind, app, model, stop_after):
+    c = _timer_layout(kind, app, model)
+    assert c.massage_intensity_zones == ["all"] and c.auto_enable_massage
+    assert (c.massage_intensity_min("all"), c.massage_intensity_max) == (1, 3)
+    assert not {"richmat_mh_67", "richmat_mh_af", "richmat_mh_68"} & {s.key for s in c.controller_button_specs}
+    for level, expected in ((1, ONE), (2, TWO), (3, THREE)):
+        fresh = _timer_layout(kind, app, model)
+        delays.clear()
+        await fresh.set_massage_intensity("all", level)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
