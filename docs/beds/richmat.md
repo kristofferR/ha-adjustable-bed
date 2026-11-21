@@ -6909,7 +6909,8 @@ Based on Majestic Home 1.0.4 (10400).
 
 #### Setup
 
-Choose **L&P Adjustable Base app**, then the layout printed on the remote or
+Choose **L&P Adjustable Base app (newer version)**, then the layout printed on the
+remote or
 selected in the app. The `L&P-ADJBED` and `L&P ADJBED` names open a choice of
 APRM or AQRM. A Bluetooth name or shared service offers an app hint, never a
 physical left/right mapping. The special package service takes precedence
