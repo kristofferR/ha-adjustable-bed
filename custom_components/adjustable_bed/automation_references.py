@@ -48,8 +48,8 @@ def _listed(value: object, references: Collection[str]) -> bool:
 
 def entity_users(hass: HomeAssistant, references: Collection[str]) -> set[str]:
     """Return the automations and scripts naming an entity by its ID or registry ID."""
-    from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
-    from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
+    from homeassistant.components.automation import automations_with_entity
+    from homeassistant.components.script import scripts_with_entity
 
     wanted = {reference.lower() for reference in references}
     # Triggers and conditions as loaded, which the sequence leaves out.

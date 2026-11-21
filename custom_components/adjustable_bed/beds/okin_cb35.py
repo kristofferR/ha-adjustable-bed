@@ -267,7 +267,7 @@ class OkinCB35Controller(Okin7ByteController):
         if raw[0] == 0xA5 and raw[1] == 0x0B and len(raw) >= 8:
             _LOGGER.debug("CB35 massage status: %s", raw.hex())
 
-    async def start_notify(self, callback=None) -> None:  # noqa: ARG002
+    async def start_notify(self, callback=None) -> None:
         """Start listening for notifications via Nordic UART RX."""
         client = self.client
         if client is None or not client.is_connected:

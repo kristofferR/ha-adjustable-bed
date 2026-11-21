@@ -458,7 +458,7 @@ class BLEDiagnosticRunner:
             )
             try:
                 connected = await self.coordinator.async_ensure_connected(reset_timer=False)
-            except Exception as err:  # noqa: BLE001 - preserve a standalone diagnostic fallback
+            except Exception as err:
                 connected = False
                 message = f"Coordinator connection failed before diagnostics: {err}"
                 _LOGGER.warning(message)

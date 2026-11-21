@@ -523,7 +523,7 @@ class CoordinatorBondsMixin:
         details["in_place_pairing"] = "attempted"
         try:
             paired = await self._async_pair_on_live_link(details)
-        except Exception as err:  # noqa: BLE001 - recovery continues in the caller
+        except Exception as err:
             details["in_place_pairing"] = "failed"
             details["in_place_pairing_error"] = str(err)
             _LOGGER.warning(

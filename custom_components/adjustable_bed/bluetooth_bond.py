@@ -300,14 +300,14 @@ async def _async_managed_objects() -> dict[str, Any] | None:
                     member="GetManagedObjects",
                 )
             )
-    except Exception as err:  # noqa: BLE001 - any failure means "cannot answer"
+    except Exception as err:
         _LOGGER.debug("Could not read BlueZ objects: %s", err)
         return None
     finally:
         if bus is not None:
             try:
                 bus.disconnect()
-            except Exception:  # noqa: BLE001 - cleanup must not mask the result
+            except Exception:
                 _LOGGER.debug("Failed to close the D-Bus connection", exc_info=True)
 
     if reply is None or getattr(reply, "message_type", None) != MessageType.METHOD_RETURN:
@@ -422,7 +422,7 @@ async def async_remove_local_bond(record: LocalBondRecord) -> BondRemovalResult:
             # tree verification below can overlap a new advertisement whose
             # recreated Device1 object is already safe to reconnect through.
             removed_at = advertisement_time_marker()
-    except Exception as err:  # noqa: BLE001 - any failure means "not removed"
+    except Exception as err:
         _LOGGER.warning("Could not remove the host bond for %s: %s", record.address, err)
         return BondRemovalResult(
             status=BondRemovalStatus.RPC_FAILED,
@@ -433,7 +433,7 @@ async def async_remove_local_bond(record: LocalBondRecord) -> BondRemovalResult:
         if bus is not None:
             try:
                 bus.disconnect()
-            except Exception:  # noqa: BLE001 - cleanup must not mask the result
+            except Exception:
                 _LOGGER.debug("Failed to close the D-Bus connection", exc_info=True)
 
     if reply is None or getattr(reply, "message_type", None) != MessageType.METHOD_RETURN:

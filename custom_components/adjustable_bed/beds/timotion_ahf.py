@@ -497,7 +497,7 @@ class TiMOTIONAhfController(BedController):
                 except TimeoutError:
                     self._notify_error = "Status notification subscription timed out"
                     raise
-                except Exception as err:  # noqa: BLE001 - read can still establish status
+                except Exception as err:
                     self._notify_error = f"Status notification subscription failed: {err}"
                     _LOGGER.warning("Failed to start TiMOTION AHF status notifications: %s", err)
 
@@ -515,7 +515,7 @@ class TiMOTIONAhfController(BedController):
             async def read_initial_status() -> None:
                 try:
                     initial_status = await client.read_gatt_char(TIMOTION_AHF_NOTIFY_CHAR_UUID)
-                except Exception as err:  # noqa: BLE001 - a later valid notification may succeed
+                except Exception as err:
                     self._read_error = f"Initial status read failed: {err}"
                     _LOGGER.debug("Failed to read initial TiMOTION AHF status: %s", err)
                 else:
