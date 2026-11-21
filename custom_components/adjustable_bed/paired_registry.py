@@ -27,6 +27,7 @@ from .const import (
 )
 from .errors import failed
 from .paired_devices import async_restore_full_device
+from .position_estimate import async_migrate_entry_store, estimate_bed_keys
 from .pairing import (
     KEY_ABSORBED_ENTRY_ID,
     KEY_ORIGIN_SOURCE,
@@ -540,6 +541,9 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
     # Child devices cannot change config-entry ownership. Restore their full
     # records first, then use the same ownership transaction as standalone beds.
     try:
+        # A pair that never loaded on this version still has its per-entry
+        # estimates; the beds must find them in their own stores.
+        await async_migrate_entry_store(hass, entry.entry_id, estimate_bed_keys(entry.data))
         for child in children:
             device = dr.async_get(hass).async_get_child_device_by_identifier(
                 (DOMAIN, child.get(CONF_ADDRESS, "")), entry.entry_id,

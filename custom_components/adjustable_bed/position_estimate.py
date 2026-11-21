@@ -29,7 +29,7 @@ import asyncio
 import contextlib
 import logging
 import time
-from collections.abc import Callable, Coroutine, Iterable, Mapping
+from collections.abc import Callable, Collection, Coroutine, Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
@@ -375,9 +375,6 @@ class SavedPosition:
     button: bool
     targets: dict[str, dict[str, float]] = field(default_factory=dict)
 
-    def stored(self) -> dict[str, Any]:
-        return {"id": self.id, "name": self.name, "button": self.button, "targets": self.targets}
-
     @classmethod
     def restored(cls, stored: Mapping[str, Any]) -> SavedPosition | None:
         position_id, name = stored.get("id"), stored.get("name")
@@ -430,7 +427,7 @@ class PositionEstimates:
         return next((bed for bed in self.beds.values() if bed.key == key), None)
 
     async def async_load(self) -> None:
-        await _async_migrate_entry_store(
+        await async_migrate_entry_store(
             self.hass, self.entry_id, {bed.key: bed.address for bed in self.beds.values()}
         )
         session = domain_value(self.hass, _SESSION_KEY) or {}
@@ -465,24 +462,26 @@ class PositionEstimates:
     def _add_position_part(self, part: SavedPosition) -> bool:
         """Add one bed's part of a saved position; True when its stored form changes.
 
-        Parts with the same name form one position, so two beds that each saved
-        "Reading" recall it together once combined. A part whose id another
-        position already uses gets a new one.
+        Parts with the same id, name and button are one position stored by each
+        side of a pair. Every other part stays a position of its own bed, so
+        combining and separating keep each position's id and button. A part
+        whose id another position already uses gets a new one.
         """
         if not part.targets:
             return True
-        folded = part.name.casefold()
-        same = next((item for item in self.positions if item.name.casefold() == folded), None)
-        if same is not None and not same.targets.keys() & part.targets.keys():
+        same = next((item for item in self.positions if item.id == part.id), None)
+        if same is None:
+            self.positions.append(part)
+            return False
+        if (
+            (same.name, same.button) == (part.name, part.button)
+            and not same.targets.keys() & part.targets.keys()
+        ):
             same.targets.update(part.targets)
-            changed = same.id != part.id or same.button != part.button
-            same.button = same.button or part.button
-            return changed
-        changed = any(item.id == part.id for item in self.positions)
-        if changed:
-            part.id = uuid4().hex[:12]
+            return False
+        part.id = uuid4().hex[:12]
         self.positions.append(part)
-        return changed
+        return True
 
     def _stored(self, bed: BedEstimate) -> dict[str, Any]:
         return {
@@ -530,15 +529,25 @@ class PositionEstimates:
             await self._stores[bed.address].async_save(self._stored(bed))
 
     # ------------------------------------------------------------- saved positions
-    def position(self, reference: str) -> SavedPosition:
-        """Find a saved position by id, then by case-insensitive name."""
+    def position(self, reference: str, keys: Collection[str] | None = None) -> SavedPosition:
+        """Find a saved position by id, then by case-insensitive name.
+
+        Combined beds can each bring a position of the same name; ``keys``, the
+        selected beds, tells them apart, and a name that stays ambiguous is
+        refused rather than guessed.
+        """
         found = next((item for item in self.positions if item.id == reference), None)
-        if found is None:
-            folded = reference.strip().casefold()
-            found = next((item for item in self.positions if item.name.casefold() == folded), None)
-        if found is None:
+        if found is not None:
+            return found
+        folded = reference.strip().casefold()
+        named = [item for item in self.positions if item.name.casefold() == folded]
+        within = [item for item in named if keys is not None and set(item.targets) <= set(keys)]
+        named = within or named
+        if len(named) > 1:
+            raise invalid("saved_position_ambiguous", position=reference.strip())
+        if not named:
             raise invalid("saved_position_not_found", position=reference)
-        return found
+        return named[0]
 
     def current_targets(self, beds: Iterable[BedEstimate]) -> dict[str, dict[str, float]]:
         """Capture the current estimates; every motor must be tracking."""
@@ -615,13 +624,14 @@ def estimate_bed_keys(entry_data: Mapping[str, Any]) -> dict[str, str]:
     return keys
 
 
-async def _async_migrate_entry_store(
+async def async_migrate_entry_store(
     hass: HomeAssistant, entry_id: str, addresses: Mapping[str, str]
 ) -> None:
-    """Move a per-entry store into the stores of its beds, then remove it.
+    """Move a first-beta per-entry store into the stores of its beds, then remove it.
 
     ``addresses`` maps the bed keys saved positions use to addresses. Values
-    already in a bed's store win, so a repeated migration never loses data.
+    already in a bed's store win, so a repeated migration never loses data. The
+    old store stays until every bed's store reads back as written.
     """
     legacy: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, entry_storage_key(entry_id))
     data = await legacy.async_load()
@@ -651,7 +661,12 @@ async def _async_migrate_entry_store(
         positions = current_positions if isinstance(current_positions, list) else []
         known = {item.get("id") for item in positions if isinstance(item, dict)}
         positions = [*positions, *(item for item in part["positions"] if item.get("id") not in known)]
-        await store.async_save({"motors": motors, "positions": positions})
+        written = {"motors": motors, "positions": positions}
+        await store.async_save(written)
+        # Home Assistant logs a failed write without raising.
+        if await Store(hass, STORAGE_VERSION, storage_key(address)).async_load() != written:
+            _LOGGER.warning("Could not move estimated positions of %s; will retry", address)
+            return
     await legacy.async_remove()
 
 
@@ -700,7 +715,7 @@ async def async_remove_position_estimates(
     Combining and separating remove entries whose beds another entry takes
     over, so those beds keep their calibration and saved positions.
     """
-    await _async_migrate_entry_store(hass, entry_id, estimate_bed_keys(entry_data))
+    await async_migrate_entry_store(hass, entry_id, estimate_bed_keys(entry_data))
     session = domain_value(hass, _SESSION_KEY) or {}
     for address in unowned:
         session.pop(address.upper(), None)

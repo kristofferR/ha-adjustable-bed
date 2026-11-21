@@ -206,11 +206,11 @@ stores and moves only that side. Each side has its own calibration and estimate.
 
 Calibration, estimates and saved positions belong to each bed, so they stay
 when you combine two beds into a pair or separate a pair. Combining makes each
-bed's saved positions positions of its side, and a name both beds used becomes
-one position that moves both sides. A saved position's button keeps its entity
-ID when its bed is combined. Separating gives each bed back its own part of
-every position, with a button on each bed. Removing a bed deletes its
-calibration and saved positions.
+bed's saved positions positions of its side, with the same IDs, and their
+buttons keep their entity IDs. If both beds have a position with the same name,
+choose the side or use the position's ID. Separating gives each bed back its
+own part of every position, with a button on each bed. Removing a bed deletes
+its calibration and saved positions.
 
 ## Actions
 

@@ -9799,6 +9799,9 @@
     "position_estimate_not_tracking": {
       "message": "The estimated position is not confirmed. Set the reference, or confirm the bed has not moved, first."
     },
+    "saved_position_ambiguous": {
+      "message": "More than one saved position is called {position}. Choose a side, or use the position's ID."
+    },
     "saved_position_not_found": {
       "message": "There is no saved position named \"{position}\"."
     },

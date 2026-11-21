@@ -624,7 +624,8 @@ def _combined_position_entities_for(
     source is unknown, not absent, so no combined slider is built until both
     sides are known (same rule as the combined buttons).
     """
-    if not children or any(child.capability_controller is None for child in children):
+    # A side kept by its own entry leaves nothing to combine.
+    if len(children) < 2 or any(child.capability_controller is None for child in children):
         return []
     specs_per_side = [_position_number_specs(child) for child in children]
     specs_by_side = [{spec.key: spec for spec in specs} for specs in specs_per_side]

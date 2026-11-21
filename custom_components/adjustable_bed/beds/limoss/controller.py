@@ -419,6 +419,11 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
             }
         }
 
+    @property
+    def retain_live_controller_offline(self) -> bool:
+        """Checks made while disconnected see the reported slots and the latest saves."""
+        return True
+
     def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:
         memory = state.get("memory", {})
         if not isinstance(memory, dict):

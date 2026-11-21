@@ -799,6 +799,46 @@ class TestPairedSetup:
         for candidate in restored:
             candidate.async_cancel_retry_setup()
 
+    async def test_unpair_moves_a_first_beta_pair_store_to_each_bed(
+        self,
+        hass: HomeAssistant,
+        hass_storage: dict[str, Any],
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A pair that has not loaded since the update still hands each bed its estimates."""
+        from custom_components.adjustable_bed import position_estimate as pe
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        legacy = pe.entry_storage_key(entry.entry_id)
+        hass_storage[legacy] = {
+            "version": pe.STORAGE_VERSION,
+            "key": legacy,
+            "data": {
+                "beds": {LEFT_ADDR: {"back": {"up_s": 20.0, "down_s": 10.0, "percent": 30.0}}},
+                "positions": [
+                    {
+                        "id": "reading",
+                        "name": "Reading",
+                        "button": False,
+                        "targets": {SIDE_LEFT: {"back": 30.0}},
+                    }
+                ],
+            },
+        }
+
+        restored = await async_unpair_entry(hass, entry)
+        await hass.async_block_till_done()
+
+        left = next(item for item in restored if item.data[CONF_ADDRESS] == LEFT_ADDR)
+        manager = pe.position_estimates(hass, left.entry_id)
+        assert manager is not None
+        assert manager.beds[LEFT_ADDR].motors["back"].percent == 30.0
+        assert [(p.id, p.targets) for p in manager.positions] == [("reading", {"bed": {"back": 30.0}})]
+        assert legacy not in hass_storage
+
     async def test_unpair_rolls_back_if_second_single_cannot_be_added(
         self,
         hass: HomeAssistant,
@@ -2280,23 +2320,30 @@ class TestPairBedsConversion:
         ent_reg = er.async_get(hass)
         left = await self._setup_single(hass, LEFT_ADDR, "Seng")
         right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
-        for entry, address, names in (
-            (left, LEFT_ADDR, ("Reading",)),
-            (right, RIGHT_ADDR, ("Reading", "Sleep")),
+        saved: dict[str, dict[str, tuple[str, bool]]] = {}
+        for entry, address, positions in (
+            (left, LEFT_ADDR, (("Reading", True),)),
+            (right, RIGHT_ADDR, (("Reading", True), ("Sleep", False))),
         ):
             manager = pe.position_estimates(hass, entry.entry_id)
             assert manager is not None
             bed = manager.beds[address]
             bed.configure({"back": (20.0, 10.0)})
             bed.set_reference()
-            for name in names:
-                manager.save_position(name, [bed], button=True)
+            saved[address] = {
+                manager.save_position(name, [bed], button=button).id: (name, button)
+                for name, button in positions
+            }
         await hass.async_block_till_done()
-        left_reading = pe.position_estimates(hass, left.entry_id).position("Reading")
-        reading_button = ent_reg.async_get_entity_id(
-            "button", DOMAIN, f"{LEFT_ADDR}_saved_position_{left_reading.id}"
-        )
-        assert reading_button is not None
+        buttons = {
+            position_id: ent_reg.async_get_entity_id(
+                "button", DOMAIN, f"{address}_saved_position_{position_id}"
+            )
+            for address, positions in saved.items()
+            for position_id, (_name, button) in positions.items()
+            if button
+        }
+        assert all(buttons.values())
 
         result = await self._reach_pair_step(hass)
         result = await hass.config_entries.flow.async_configure(
@@ -2318,32 +2365,44 @@ class TestPairBedsConversion:
             assert ent_reg.async_get_entity_id(
                 "number", DOMAIN, f"{address}_back_position_estimated"
             )
-        # Both beds' "Reading" is one position that moves both sides.
-        reading = manager.position("Reading")
-        assert reading.targets == {SIDE_LEFT: {"back": 0.0}, SIDE_RIGHT: {"back": 0.0}}
-        assert manager.position("Sleep").targets == {SIDE_RIGHT: {"back": 0.0}}
-        assert len(manager.positions) == 2
-        # The left bed's button now recalls the pair's position, under its entity ID.
-        row = ent_reg.async_get(reading_button)
-        assert row is not None
-        assert row.unique_id == f"{pair.data[CONF_PAIR_ID]}_saved_position_{reading.id}"
-        assert row.config_entry_id == pair.entry_id
+        # Each bed's positions become its side's, with their ids and buttons.
+        sides = {LEFT_ADDR: SIDE_LEFT, RIGHT_ADDR: SIDE_RIGHT}
+        assert {
+            (position.id, position.name, position.button, *position.targets)
+            for position in manager.positions
+        } == {
+            (position_id, name, button, sides[address])
+            for address, positions in saved.items()
+            for position_id, (name, button) in positions.items()
+        }
+        # Two sides' "Reading" are told apart by side; on their own they are refused.
+        with pytest.raises(ServiceValidationError):
+            manager.position("Reading")
+        assert manager.position("Reading", {SIDE_RIGHT}).targets == {SIDE_RIGHT: {"back": 0.0}}
+        # Every button keeps its entity ID on the pair's device.
+        for position_id, entity_id in buttons.items():
+            row = ent_reg.async_get(entity_id)
+            assert row is not None
+            assert row.unique_id == f"{pair.data[CONF_PAIR_ID]}_saved_position_{position_id}"
+            assert row.config_entry_id == pair.entry_id
 
         await async_unpair_entry(hass, pair)
         await hass.async_block_till_done()
-        for entry, address, names in (
-            (left, LEFT_ADDR, ["Reading"]),
-            (right, RIGHT_ADDR, ["Reading", "Sleep"]),
-        ):
+        for entry, address in ((left, LEFT_ADDR), (right, RIGHT_ADDR)):
             manager = pe.position_estimates(hass, entry.entry_id)
             assert manager is not None
             assert manager.beds[address].tracking(["back"])
-            assert [position.name for position in manager.positions] == names
+            assert {
+                position.id: (position.name, position.button) for position in manager.positions
+            } == saved[address]
             assert all(position.targets == {"bed": {"back": 0.0}} for position in manager.positions)
-        # The left bed's button is its own again, under the same entity ID.
-        assert ent_reg.async_get_entity_id(
-            "button", DOMAIN, f"{LEFT_ADDR}_saved_position_{left_reading.id}"
-        ) == reading_button
+        # Each bed's buttons are its own again, under the same entity IDs.
+        for address, positions in saved.items():
+            for position_id in positions:
+                if position_id in buttons:
+                    assert ent_reg.async_get_entity_id(
+                        "button", DOMAIN, f"{address}_saved_position_{position_id}"
+                    ) == buttons[position_id]
 
         # Removing a bed forgets its store; the other bed keeps its own.
         await hass.config_entries.async_remove(left.entry_id)
@@ -4073,6 +4132,7 @@ class TestCombinedPositionSliders:
         from custom_components.adjustable_bed.number import (
             PairedBedCombinedPositionNumber,
             _build_position_description,
+            _combined_position_entities_for,
         )
 
         back = build_position_number_spec("back", max_value=68, unit="°")
@@ -4085,6 +4145,8 @@ class TestCombinedPositionSliders:
         coord.children = {SIDE_LEFT: left, SIDE_RIGHT: right}
         coord.async_seek_position = AsyncMock()
 
+        # A side kept by its own entry leaves nothing to combine.
+        assert _combined_position_entities_for(coord, [left]) == []
         entity = PairedBedCombinedPositionNumber(coord, _build_position_description(back))
         assert entity.native_value == 25.0
         # One side's angle is not the whole bed's.

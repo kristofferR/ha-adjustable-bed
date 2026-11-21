@@ -178,6 +178,14 @@ class TestLimossController:
             await rebuilt.preset_memory(2)
         assert err.value.translation_key == "memory_slot_empty"
 
+        # A slot saved on a later link passes the checks made while disconnected.
+        rebuilt._handle_notification(
+            MagicMock(), bytearray(codec.frame(b"\x20" + (4000).to_bytes(4, "big"), 0))
+        )
+        await rebuilt.program_memory(2)
+        await coordinator.async_disconnect()
+        coordinator.capability_controller.validate_memory_recall(2)
+
     async def test_read_positions_queries_each_motor(
         self,
         hass: HomeAssistant,
