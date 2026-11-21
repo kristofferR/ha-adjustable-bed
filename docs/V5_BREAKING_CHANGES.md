@@ -446,6 +446,10 @@ the betas changed their entities too (clock buttons, timer selects, switches
 and sleep readings, as described under [Entities](#entities)); each beta's
 release notes list them.
 
+`sleep_number_command` no longer offers `reset_articulation_presets`; reset
+saved positions with the **Reset saved positions** button, which the card asks
+about before it runs.
+
 ## Dashboard card
 
 - Quick actions (`compact_actions`) are saved as entity IDs. Cards that list
