@@ -173,6 +173,7 @@ class ResourceBedController(RichmatClassicController):
                 await session.client.write_gatt_char(
                     session.write, packet, response=session.response
                 )
+            note_frame_written(cancel)
 
         task = asyncio.create_task(write())
         cancelled = False
@@ -182,7 +183,6 @@ class ResourceBedController(RichmatClassicController):
             except asyncio.CancelledError:
                 cancelled = True
         task.result()
-        note_frame_written(cancel)
         if cancelled:
             raise asyncio.CancelledError
 

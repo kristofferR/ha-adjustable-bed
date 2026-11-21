@@ -18,15 +18,12 @@ from collections.abc import Callable
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Final
 
-from bleak.exc import BleakError
 from homeassistant.const import EntityCategory
 
 from ...card import CARD_CONTROLLED_SIDE, CARD_MASSAGE, motor_card
 from ...command_scheduler import (
     Delivery,
     delivered,
-    note_frame_skipped,
-    note_frame_written,
 )
 from ...const import (
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
@@ -502,47 +499,13 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a single byte value to a specific characteristic."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-        command = bytes([value])
-
-        _LOGGER.debug(
-            "Writing 0x%02X to %s (repeat: %d, delay: %dms, response=True)",
-            value,
+        await self._write_gatt_with_retry(
             char_uuid,
-            repeat_count,
-            repeat_delay_ms,
-        )
-        self._record_command_trace(
-            char_uuid,
-            command,
-            response=True,
+            bytes([value]),
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
         )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                note_frame_skipped()
-                return
-
-            async with self._ble_lock:
-                try:
-                    if effective_cancel is not None and effective_cancel.is_set():
-                        note_frame_skipped()
-                        return
-                    await self.client.write_gatt_char(char_uuid, command, response=True)
-                    note_frame_written(effective_cancel)
-                except BleakError:
-                    _LOGGER.exception("Failed to write to %s", char_uuid)
-                    raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
 
     async def _write_bytes_to_char(
         self,
@@ -552,23 +515,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write one exact app payload to a specific characteristic."""
-        if self.client is None or not self.client.is_connected:
-            raise ConnectionError("Not connected to bed")
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-        if effective_cancel is not None and effective_cancel.is_set():
-            note_frame_skipped()
-            return
-        self._record_command_trace(char_uuid, value, response=True)
-        async with self._ble_lock:
-            if effective_cancel is not None and effective_cancel.is_set():
-                note_frame_skipped()
-                return
-            try:
-                await self.client.write_gatt_char(char_uuid, value, response=True)
-                note_frame_written(effective_cancel)
-            except BleakError:
-                _LOGGER.exception("Failed to write to %s", char_uuid)
-                raise
+        await self._write_gatt_with_retry(char_uuid, value, cancel_event=cancel_event)
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
