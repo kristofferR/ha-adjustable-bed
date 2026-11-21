@@ -14,7 +14,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 
 from .beds.entity_specs import ControllerSelectSpec
-from .beds.octo.runtime import octo_controller
+from .beds.octo.runtime import octo_controls_locked
 from .card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE_TIMER, CardPlacement
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
@@ -471,14 +471,8 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Set the massage timer duration."""
-        # Validate option against allowed options
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid timer option '%s' - allowed options: %s",
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         _LOGGER.info(
             "Massage timer set requested: %s (device: %s)",
@@ -511,11 +505,10 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         """Respect Octo's PIN gate and the controller's own gate for live settings."""
         with self._side_scope():
             controller = self._coordinator.capability_controller
-            octo = octo_controller(controller)
             available_fn = self.entity_description.available_fn
             return (
                 super().available
-                and (octo is None or octo.normal_controls_available)
+                and not octo_controls_locked(controller)
                 and (available_fn is None or controller is not None and available_fn(controller))
             )
 
@@ -564,15 +557,8 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Set the controller-backed option."""
-        # Validate option against allowed options
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid %s option '%s' - allowed options: %s",
-                self.entity_description.key,
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         _LOGGER.info(
             "%s set requested: %s (device: %s)",
@@ -634,18 +620,12 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the side this preset selector targets."""
-        return {"side": self.entity_description.side}
+        return {**self._base_attributes(), "side": self.entity_description.side}
 
     async def async_select_option(self, option: str) -> None:
         """Set the side-specific option through the controller."""
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid %s option '%s' - allowed options: %s",
-                self.entity_description.key,
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         async def _set_option(ctrl: BedController) -> None:
             await self.entity_description.select_fn(ctrl, self.entity_description.side, option)
