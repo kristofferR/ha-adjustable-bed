@@ -8,7 +8,14 @@ from typing import Any
 
 from homeassistant.const import CONF_NAME
 
+from .beds.reverie.pairlink_protocol import (
+    PAIRLINK_LOW_POWER_NOTIFY_UUID,
+    PAIRLINK_LOW_POWER_WRITE_UUID,
+    PAIRLINK_NOTIFY_UUID,
+    PAIRLINK_WRITE_UUID,
+)
 from .const import (
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BLE_DEVICE_NAME,
     CONF_FSM_RELAX_MEMORY_NAMES,
@@ -34,7 +41,7 @@ _CREDENTIAL_KEYS = {
     "password",
 }
 # Text the user typed or renamed: often a person's name, never needed to debug.
-_USER_TEXT_KEYS = {"title", CONF_BLE_DEVICE_NAME, CONF_FSM_RELAX_MEMORY_NAMES}
+_USER_TEXT_KEYS = {"title", "origin_title", CONF_BLE_DEVICE_NAME, CONF_FSM_RELAX_MEMORY_NAMES}
 KEYS_TO_REDACT = {
     CONF_NAME,
     "serial",
@@ -88,11 +95,22 @@ def _mask_match(match: re.Match[str]) -> str:
     return f"{prefix}{sep}**{sep}**{sep}**"
 
 
-def _device_half_pattern(addresses: Iterable[str]) -> re.Pattern[str] | None:
+def _ascii_hex(text: str) -> str:
+    """Match ``text`` written as ASCII in a hex payload, in any letter case."""
+    return "".join(
+        f"3{char}" if char.isdigit() else f"(?:4|6){ord(char.upper()) - 0x40:x}"
+        for char in text
+    )
+
+
+def _device_half_pattern(
+    addresses: Iterable[str], names: Iterable[str] = ()
+) -> re.Pattern[str] | None:
     """Match the device-specific half of known addresses in any other form.
 
     Names, advertisement data and frames can carry it without separators, in
-    reverse byte order or as ASCII text.
+    reverse byte order or as ASCII text, raw or hex-encoded. ``names`` are
+    typed names that log lines repeat.
     """
     forms: set[str] = set()
     for address in addresses:
@@ -101,10 +119,14 @@ def _device_half_pattern(addresses: Iterable[str]) -> re.Pattern[str] | None:
             continue
         tail = match.group(0)[9:].replace(match.group(2), "").lower()
         octets = [tail[index : index + 2] for index in (0, 2, 4)]
-        forms.add("[:\\-_]?".join(octets))
-        forms.add("[:\\-_]?".join(reversed(octets)))
-        forms.add(tail.encode().hex())
-        forms.add(tail.upper().encode().hex())
+        for ordered in (octets, octets[::-1]):
+            forms.add("[:\\-_]?".join(ordered))
+            forms.add("(?:3a|2d|5f)?".join(_ascii_hex(octet) for octet in ordered))
+    forms.update(
+        rf"(?<!\w){re.escape(name)}(?!\w)"
+        for name in names
+        if isinstance(name, str) and len(name.strip()) >= 3
+    )
     if not forms:
         return None
     return re.compile(f"(?i){'|'.join(sorted(forms))}")
@@ -154,15 +176,16 @@ def redact_data(data: Any, *, addresses: Iterable[str] = ()) -> Any:
     return _redact(data, KEYS_TO_REDACT, _device_half_pattern(addresses), 0)
 
 
-def redact_bundle(data: Any, *, addresses: Iterable[str]) -> Any:
+def redact_bundle(data: Any, *, addresses: Iterable[str], names: Iterable[str] = ()) -> Any:
     """Redact a support bundle: the diagnostics policy, but device names stay.
 
     Every Bluetooth address keeps only its manufacturer prefix. The device half
     of each address in ``addresses`` is also starred wherever it appears without
     separators, in reverse byte order or as ASCII (names, advertisement data,
-    frames, logs). Health and presence readings keep their key only.
+    frames, logs). ``names`` (typed entry names) are starred wherever log lines
+    repeat them. Health and presence readings keep their key only.
     """
-    return _redact(data, _BUNDLE_KEYS_TO_REDACT, _device_half_pattern(addresses), 0)
+    return _redact(data, _BUNDLE_KEYS_TO_REDACT, _device_half_pattern(addresses, names), 0)
 
 
 def _addresses_in(text: str) -> set[str]:
@@ -239,5 +262,41 @@ def redact_sleeptracker_sessions(report: dict[str, Any]) -> None:
         report.get("notification_summary", {}).get("by_characteristic", {}).items()
     ):
         if uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
+            summary["top_repeated_payloads"] = []
+            summary["ascii_previews"] = []
+
+
+# Pairlink keys its frames with the home ID, which the bed advertises, and a
+# four-byte password: one captured frame lets anyone recover the password
+# offline. The low-power characteristics use generic UUIDs, so they are
+# redacted only for a Pairlink bed.
+_PAIRLINK_CHARACTERISTICS = frozenset({PAIRLINK_WRITE_UUID, PAIRLINK_NOTIFY_UUID})
+_PAIRLINK_LOW_POWER_CHARACTERISTICS = frozenset(
+    {PAIRLINK_LOW_POWER_WRITE_UUID, PAIRLINK_LOW_POWER_NOTIFY_UUID}
+)
+
+# A JSON credential, such as a bed's Wi-Fi provisioning message.
+CREDENTIAL_PAYLOAD = re.compile(rb'(?i)"(?:ssid|pswd|password|passwd|pwd)"\s*:')
+
+
+def redact_pairlink_frames(report: dict[str, Any]) -> None:
+    """Keep Pairlink frame lengths and counts, never their bytes."""
+    secret = set(_PAIRLINK_CHARACTERISTICS)
+    if BED_TYPE_REVERIE_PAIRLINK in (
+        report.get("detection", {}).get("bed_type"),
+        report.get("integration", {}).get("bed_type"),
+    ):
+        secret |= _PAIRLINK_LOW_POWER_CHARACTERISTICS
+    for service in report.get("gatt_services", []):
+        for characteristic in service.get("characteristics", []):
+            result = characteristic.get("read_result")
+            if str(characteristic.get("uuid", "")).lower() in secret and isinstance(result, dict):
+                result["hex"] = REDACTED
+                result["ascii_preview"] = None
+    for notification in report.get("notifications", []):
+        if str(notification.get("characteristic", "")).lower() in secret:
+            notification["data_hex"] = REDACTED
+    for uuid, summary in report.get("notification_summary", {}).get("by_characteristic", {}).items():
+        if uuid.lower() in secret:
             summary["top_repeated_payloads"] = []
             summary["ascii_previews"] = []

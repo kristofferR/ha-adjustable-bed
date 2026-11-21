@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Only serve files matching this pattern (prevents path traversal)
 _BUNDLE_FILENAME_RE = re.compile(
-    r"^adjustable_bed_support_(bundle|report)_[0-9a-f]+_\d{8}_\d{6}\.json$"
+    r"^adjustable_bed_support_(bundle|report)_[0-9a-f]+_\d{8}_\d{6}(?:_[0-9a-f]{6})?\.json$"
 )
 
 

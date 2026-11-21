@@ -54,7 +54,7 @@ from .diagnostic_payloads import (
     payload_ascii_preview,
     summarize_repeated_payloads,
 )
-from .redaction import SLEEPTRACKER_SECRET_CHARACTERISTICS
+from .redaction import CREDENTIAL_PAYLOAD, SLEEPTRACKER_SECRET_CHARACTERISTICS
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -1028,7 +1028,11 @@ class BLEDiagnosticRunner:
         """Handle an incoming notification."""
         timestamp = datetime.now(UTC).isoformat()
         payload = bytes(data)
-        sensitive = characteristic_uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
+        sensitive = (
+            characteristic_uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
+            # Both capture modes: a raw-address capture bypasses the controller.
+            or CREDENTIAL_PAYLOAD.search(payload) is not None
+        )
         if sensitive:
             payload = bytes(len(payload))
 

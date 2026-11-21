@@ -2698,12 +2698,8 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         target = _get_support_bundle_target_from_device(hass, selected_device_id)
         if target is not None:
             address, coordinator, entry = target
-            device_name = coordinator.name if coordinator is not None else entry.title
-            _LOGGER.info(
-                "Generating support bundle for configured device %s at %s",
-                device_name,
-                address,
-            )
+            # By address only: the device name is typed text the bundle leaves out.
+            _LOGGER.info("Generating support bundle for configured device at %s", address)
         else:
             raise _missing_device_error(selected_device_id)
     else:

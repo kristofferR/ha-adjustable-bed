@@ -5,10 +5,12 @@ from __future__ import annotations
 import inspect
 import json
 import logging
+from collections.abc import Iterator
 from contextlib import nullcontext
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
+from secrets import token_hex
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import bluetooth
@@ -49,6 +51,7 @@ from .profile_decisions import async_profile_decision_history
 from .redaction import (
     mentions_only,
     redact_bundle,
+    redact_pairlink_frames,
     redact_sleep_number_sessions,
     redact_sleeptracker_sessions,
 )
@@ -236,11 +239,32 @@ async def generate_support_bundle(
 
     redact_sleep_number_sessions(report)
     redact_sleeptracker_sessions(report)
+    redact_pairlink_frames(report)
     candidates = {
         str(device["address"])
         for device in bluetooth_info.get("nearby_devices", {}).get("devices", [])
     }
-    return redact_bundle(report, addresses=known | candidates)  # type: ignore[no-any-return]
+    # Log lines repeat the names users typed. A name a device advertises stays:
+    # detection matches it, and the address policy already covers its suffix.
+    typed = {other.title for other in hass.config_entries.async_entries(DOMAIN)}
+    if coordinator is not None:
+        typed.add(coordinator.name)
+    return redact_bundle(  # type: ignore[no-any-return]
+        report, addresses=known | candidates, names=typed - set(_advertised_names(report))
+    )
+
+
+def _advertised_names(data: Any) -> Iterator[str]:
+    """Yield every device and scanner name the report records."""
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key in ("name", "device_name") and isinstance(value, str):
+                yield value
+            else:
+                yield from _advertised_names(value)
+    elif isinstance(data, list):
+        for item in data:
+            yield from _advertised_names(item)
 
 
 async def _build_bluetooth_section(
@@ -1016,7 +1040,8 @@ def save_support_bundle(hass: HomeAssistant, report: dict[str, Any], address: st
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     # The file name is published with the file: only the manufacturer prefix.
     address_safe = address.replace(":", "").lower()[:6]
-    filename = f"adjustable_bed_support_bundle_{address_safe}_{timestamp}.json"
+    # The random part keeps two captures in the same second apart.
+    filename = f"adjustable_bed_support_bundle_{address_safe}_{timestamp}_{token_hex(3)}.json"
 
     config_dir = Path(hass.config.config_dir)
     filepath = config_dir / filename

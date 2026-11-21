@@ -43,8 +43,10 @@ _BLE_GATT_PAYLOAD = re.compile(
     r"[^\r\n]*?:\s*)[^\r\n]*"
 )
 _BLE_NOTIFICATION_PAYLOAD = re.compile(
-    r"(?im)(\b(?:notification|notify)\b[^\r\n]*?:\s*)(?:bytearray\(|b['\"]|[0-9a-f]{16,})[^\r\n]*"
+    r"(?im)(\bnotification\b[^\r\n]*?:\s*)(?:bytearray\(|b['\"]|[0-9a-f]{16,})[^\r\n]*"
 )
+# BedController.forward_raw_notification's own line, whatever the payload length.
+_GATT_NOTIFY_PAYLOAD = re.compile(r"(\bGATT notify from \S+ \([^)\r\n]*\): )[0-9a-fA-F]+")
 _FAILED_BLE_WRITE_PAYLOAD = re.compile(
     r"(?i)(\b(?:could not|failed to)\s+write\s+value\s+).+?"
     r"(\s+to\s+(?:characteristic|descriptor)\b)"
@@ -57,6 +59,7 @@ def sanitize_log_message(message: str) -> str:
     message = _SECRETS.sub(r"\1**REDACTED**", message)
     message = _BLE_GATT_PAYLOAD.sub(r"\1**REDACTED**", message)
     message = _BLE_NOTIFICATION_PAYLOAD.sub(r"\1**REDACTED**", message)
+    message = _GATT_NOTIFY_PAYLOAD.sub(r"\1**REDACTED**", message)
     message = _FAILED_BLE_WRITE_PAYLOAD.sub(r"\1**REDACTED**\2", message)
     return message[:MAX_LOG_MESSAGE_LENGTH]
 

@@ -367,7 +367,8 @@ class Classifier:
         if len(self.buffer) + len(hex_text) > MAX_BUFFER_LEN:
             # Bounds memory only: the longest frame is far shorter.
             self.buffer = ""
-            return self.events
+            if len(hex_text) > MAX_BUFFER_LEN:
+                return self.events
         self.buffer += hex_text
         buf = self.buffer
         if buf == RX_VERSION1:

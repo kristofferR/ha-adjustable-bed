@@ -101,7 +101,8 @@ class ReceiveState:
         # HA retention budget; the app's longest parsed record is 16 bytes.
         if len(self.buffer) + len(text) > MAX_BUFFER_HEX:
             self.buffer = ""
-            return
+            if len(text) > MAX_BUFFER_HEX:
+                return
         self.buffer += text
         if len(self.buffer) < 10:
             return
