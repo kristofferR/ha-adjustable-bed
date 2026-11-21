@@ -500,8 +500,8 @@ async def test_a_resolved_line_goes_even_if_the_issue_was_not_saved(hass: HomeAs
 
 
 
-def test_v5_no_longer_builds_a_retyped_entity() -> None:
-    """The sweep would keep both if v5 still built the old entity."""
+def test_v5_builds_the_new_entity_and_not_the_old_one() -> None:
+    """A row pointing at nothing loses the settings; building both, the sweep keeps both."""
     from tests.entity_surface import devices
 
     built = {
@@ -510,5 +510,6 @@ def test_v5_no_longer_builds_a_retyped_entity() -> None:
         for entity in device.entities
     }
     for retype in RETYPES:
+        assert (retype.new_domain, retype.new_key) in built, retype
         if not retype.keep_on:
             assert (retype.old_domain, retype.old_key) not in built, retype
