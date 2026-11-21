@@ -19,14 +19,14 @@ Nerum app profiles, with Bluetooth names beginning `okin` or `smartbed`
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | Head/back and foot; explicit 2/3/4 motor pages add combined control, head tilt and lumbar |
+| Motor Control | Head/back and foot; with 2, 3 or 4 motors chosen in setup, also both together, head tilt and lumbar |
 | Position Feedback | No |
 | Memory Presets | P1: M1; P2/P3: M1 and M2 |
-| Programming | No proven SAVE command |
-| Massage | Read-only reported state on P1/P2; no ordinary BLE massage page |
+| Saving memory positions | ❌ |
+| Massage | ❌ No massage controls; P1 and P2 show the massage state the bed reports |
 | Lights | Toggle light button; P1 light state sensor |
-| Clock and alarms | P2/P3 clock sync and three complete alarm records |
-| Paired beds | Independent two-address sides; no single-address side selector |
+| Clock and alarms | P2/P3: sets the bed clock; three alarms |
+| Paired beds | Two beds with their own Bluetooth addresses can be paired; one address cannot be split into sides |
 
 ## Protocol Details
 

@@ -7,8 +7,8 @@
 ## Known Models
 
 - TiMOTION AHF devices advertising names starting with `AHF`
-- Adjustable bed/recliner controllers with up to five app control channels
-  (Control 1–5). The Android artifact does not identify physical actuator axes.
+- Adjustable bed and recliner controllers with up to five controls, named
+  Control 1–5 as in the app. Which motor each control moves depends on the bed.
 
 ## Apps
 
@@ -16,22 +16,18 @@
 |----------|-----|------------|
 | ✅ | [AHF Remote](https://play.google.com/store/apps/details?id=com.timotion.ahf), fixed P1 route | `com.timotion.ahf` |
 
-The Android artifact establishes thirteen app-labelled controls and a status
-frame. It does not identify physical actuator axes or the physical meaning of the
-lamp codes.
-
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (app Controls 1–5; covers keep legacy axis names) |
-| Night / Chair | ✅ (app-labelled actions; no verified posture meaning) |
+| Motor Control | ✅ (Controls 1–5 from the app; the covers keep their earlier motor names) |
+| Night / Chair | ✅ (buttons named as in the app; the position they move to depends on the bed) |
 | Position Feedback | ❌ |
 | Memory Presets | ❌ |
 | Factory Presets | ❌ (no flat or Zero-G commands) |
-| Under-bed Lights | ✅ (toggle semantics; no discrete on/off packets) |
-| Massage | ❌ (setup does not offer massage for this route) |
-| Status diagnostics | ✅ (readiness, raw lock mask, lamp display code) |
+| Under-bed Lights | ✅ (toggle only; no separate on and off) |
+| Massage | ❌ |
+| Status diagnostics | ✅ (ready state, lock state, lamp display code) |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then three neutral frames) |
 
 ## Protocol Details

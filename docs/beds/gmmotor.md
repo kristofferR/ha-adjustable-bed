@@ -7,10 +7,10 @@
 ## Known Models
 
 - Exact GM Control product codes, selected in setup.
-- `V9RM`, `V9RM (standard)` and `V9RM (split head)` retain distinct catalogs. Select the configuration actually used by the app.
-- `FWRM` and `WFRM` use the dedicated desk controller.
-- MM and SXB sleep modules are separate Bluetooth devices and separate integration entries.
-- Shared Bluetooth names or UUIDs do not establish that another app uses this catalog.
+- `V9RM`, `V9RM (standard)` and `V9RM (split head)` have different controls. Pick the one your app uses.
+- `FWRM` and `WFRM` are desk controllers.
+- MM and SXB sleep modules are separate Bluetooth devices and are added as separate beds.
+- Another app's bed with a similar Bluetooth name does not use these controls.
 
 ## Apps
 
@@ -22,16 +22,16 @@
 
 | Feature | Product controller | FWRM / WFRM desk | MM / SXB module |
 |---------|--------------------|------------------|-----------------|
-| Motor Control | Exact app controls and holds, named the way the app names them | Up, down, reset | None |
-| Position Feedback | Raw indexed reports; no inferred axis mapping | Raw height, unit, bounds and state | None |
-| Memory Presets | Exact product controls, including state-dependent recall/program gestures; a preset's or memory's own long press is its **Save …** button | Three short recalls; long memory callback sends nothing | None |
-| Massage | Exact product controls; bottom countdown where admitted; **Massage: Timer** select for products with several fixed timers | None | None |
-| Lights | Product controls; RGB/timeout menu requires its capability reply | None | None |
-| Alarms | Countdown or repeat table according to product; requires clock reply | None | None |
-| Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | Incoming raw state only |
-| Sleep Monitoring | BLE module name query where admitted | None | **Live sleep data** switch; heart rate, breathing rate, in bed, snoring and body movement; part settings, day/month reports, clock, raw sensitivity query on SXB |
-| Paired Beds | Separate addresses retain their own product and app side; one address requires that product's side choices | Separate physical devices | Separate physical devices |
-| Firmware / Cloud / Bed Network | Outside integration boundary | Outside integration boundary | Outside integration boundary |
+| Motor Control | The app's controls for your product, with the app's names | Up, down, reset | None |
+| Position Feedback | ❌ Not shown as bed positions | Desk height, unit, limits and state | None |
+| Memory Presets | Your product's recall and save controls; where the app saves with a long press, you get a **Save …** button | Three memory recalls; no save | None |
+| Massage | Your product's controls; a countdown where the product has one; **Massage: Timer** select for products with several fixed timers | None | None |
+| Lights | Your product's controls; the RGB and timeout controls appear once the bed reports it has them | None | None |
+| Alarms | Countdown or repeating alarms, by product; appear once the bed answers a clock request | None | None |
+| Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | ❌ |
+| Sleep Monitoring | `sleep_name` request on products with sleep monitoring | None | **Live sleep data** switch; heart rate, breathing rate, in bed, snoring and body movement; on SXB also settings, day and month reports and clock |
+| Paired Beds | Two addresses each keep their own product and side; one address offers the sides its product has | Separate devices | Separate devices |
+| Firmware updates, cloud and bed Wi-Fi | ❌ | ❌ | ❌ |
 
 ## Protocol Details
 

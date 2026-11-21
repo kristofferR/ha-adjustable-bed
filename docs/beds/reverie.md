@@ -7,14 +7,12 @@
 ## Known Models
 
 - Reverie 9T / 8Q / 7S and other Reverie adjustable bases.
-- Protocol 110 exposes an explicit app-model option
-  with 44 selectable rows: 3E, 5D, 7S, 8Q, 3E Low Pro, 3ET, 3EW, 3EM, 3EMT, 4M,
+- Protocol 110 beds ask for your model in setup, with the app's 44 choices: 3E, 5D, 7S, 8Q, 3E Low Pro, 3ET, 3EW, 3EM, 3EMT, 4M,
   4M Low Pro, 4MM, 6S, 7T, 7HT, 8X, 8T, 9T, STK, O300, O300T, O350LP, O400,
   R350LP, R400, R450, Harmoniq Upgrade, R450HT, R550, R510L, R550L, R650,
   Skye 300, Skye 500, Skye 800, Oasis 2.0, Purple Power Base, Other, R310,
-  R310LP, R310T, R310TLP, R410, and R410LP. `Other` is the explicit fallback.
-  O450 and Base occur in the app enum but are not selectable there and are not
-  offered as setup choices.
+  R310LP, R310T, R310TLP, R410, and R410LP. Pick `Other` if yours is not listed.
+  O450 and Base are not offered, as in the app.
 
 ## Apps
 
@@ -27,18 +25,18 @@
 | Feature | Protocol 108 | Protocol 110 / STK | Pairlink |
 | --- | --- | --- | --- |
 | Motor Control | ✅ (head/back, foot/legs) | ✅ (head, foot; lumbar/body tilt by model) | ✅ (back, legs; lumbar on R510L) |
-| Position Feedback | ✅ (nine-byte notifications, 0–100%) | ✅ (characteristic / selected-side feedback, 0–100%) | ✅ (current authenticated peer) |
-| Memory Presets | ✅ (recall/save 1–4, model-gated) | ✅ (recall/save 1–4, model-gated) | ✅ (recall 1–4; save unavailable) |
-| Massage | ✅ (head/foot 0–10, wave compatibility control) | ✅ (model-gated head/foot 0–10, wave controls) | ✅ (head/foot 0–10, mode/rhythm, raw timer byte) |
-| Wave Massage | ✅ (decimal-text builder; no inferred protocol range/cycle) | ✅ (raw characteristic / STK side-specific controls) | See mode/rhythm controls |
-| Under-bed Lights | ✅ (toggle, model-gated) | ✅ (brightness/RGB, model-gated) | ✅ (on/off, level, RGB feedback) |
-| Zero-G / Anti-Snore / Flat | ✅ (model-gated) | ✅ (model-specific preset route) | ✅ |
-| Composer routines / diagnostics | ✅ (per-address lifecycle) | ✅ (model-gated per-address lifecycle) | ✅ (central or explicit local role) |
-| Local BlueZ peripheral role | Not used | Not used | ✅ (explicit setup; active authenticated subscribed peer required) |
+| Position Feedback | ✅ (0–100%) | ✅ (0–100%, per side) | ✅ (from the connected bed) |
+| Memory Presets | ✅ (recall/save 1–4, by model) | ✅ (recall/save 1–4, by model) | ✅ (recall 1–4; no save) |
+| Massage | ✅ (head/foot 0–10, wave) | ✅ (head/foot 0–10, wave, by model) | ✅ (head/foot 0–10, mode/rhythm, timer) |
+| Wave Massage | ✅ | ✅ (per side on STK) | See mode/rhythm controls |
+| Under-bed Lights | ✅ (toggle, by model) | ✅ (brightness/RGB, by model) | ✅ (on/off, level, RGB) |
+| Zero-G / Anti-Snore / Flat | ✅ (by model) | ✅ (by model) | ✅ |
+| Routines and diagnostics | ✅ (per bed) | ✅ (per bed, by model) | ✅ |
+| Home Assistant joins the Pairlink network | ❌ | ❌ | ✅ (chosen in setup; needs a connected bed) |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ |
 
-Capabilities describe implementation, not hardware confirmation. The selected
-app model remains the source of feature gates.
+These features are not yet tested on hardware. Which ones you get depends on
+the model you pick in setup.
 
 ## Protocol Details
 
