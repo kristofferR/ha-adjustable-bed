@@ -14,6 +14,7 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.components.sensor import SensorDeviceClass
 
 from ...app_session import app_session
 from ...card import CARD_PRESETS, CARD_UTILITY
@@ -250,6 +251,7 @@ class ComfyController(KaidiAppController):
                 "mdi:timer-outline",
                 "s",
                 entity_registry_enabled_default=True,
+                device_class=SensorDeviceClass.DURATION,
             ),
         )
 

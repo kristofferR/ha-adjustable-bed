@@ -249,6 +249,32 @@ def _cover_entities_for(
     ]
 
 
+_COVER_TEMPLATES: dict[str, AdjustableBedCoverEntityDescription] = {
+    description.key: description for description in COVER_DESCRIPTIONS
+}
+# Beds name the feet motor "Foot" as often as "Feet".
+_COVER_TEMPLATES["foot"] = _COVER_TEMPLATES["feet"]
+
+
+def _cover_template(spec: MotorControlSpec) -> AdjustableBedCoverEntityDescription | None:
+    """The template whose icon matches the motor the user sees.
+
+    The translation key names what the user sees ("keeson_back" is "Back"), so it
+    decides first, also by a trailing motor name ("foot_end_tilt" is a tilt)
+    unless another motor name comes right before it ("back_legs" is two motors
+    and gets the generic icon). The internal key decides only when the
+    translation key names no known motor.
+    """
+    parts = spec.translation_key.split("_")
+    for start in range(len(parts)):
+        template = _COVER_TEMPLATES.get("_".join(parts[start:]))
+        if template is not None:
+            if start and parts[start - 1] in _COVER_TEMPLATES:
+                break
+            return template
+    return _COVER_TEMPLATES.get(spec.key)
+
+
 def _build_cover_description(
     spec: MotorControlSpec,
 ) -> AdjustableBedCoverEntityDescription:
@@ -257,8 +283,7 @@ def _build_cover_description(
     Travel limits come from the spec, so per-frame limits belong on the
     controller's motor_max_angles rather than as a bed-type check here.
     """
-    templates_by_key = {description.key: description for description in COVER_DESCRIPTIONS}
-    template = templates_by_key.get(spec.key)
+    template = _cover_template(spec)
 
     return AdjustableBedCoverEntityDescription(
         key=spec.key,

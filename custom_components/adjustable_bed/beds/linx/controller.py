@@ -27,6 +27,7 @@ from ..entity_specs import (
     ControllerMotorHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..lifecycle import ControllerSession
 
@@ -725,12 +726,10 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
         if self.profile.massage and self.transport == "a00a":
             specs.extend(
                 (
-                    ControllerStateSensorSpec(
+                    massage_timer_sensor_spec(
                         "linx_massage_minutes",
                         "linx_massage_minutes",
                         TIMER,
-                        "mdi:timer-outline",
-                        native_unit_of_measurement="min",
                         card=CARD_MASSAGE_TIMER,
                     ),
                     ControllerStateSensorSpec(

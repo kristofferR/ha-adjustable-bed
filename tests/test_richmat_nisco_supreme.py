@@ -365,6 +365,7 @@ def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
 
 @pytest.mark.parametrize("app", ("nisco", "mlily_supreme"))
 def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
+    from custom_components.adjustable_bed.beds.richmat_mh.app_controller import _shown_name
     from tests.test_entity_names import problems
 
     raw = re.compile(r"\b(Inc\d?|Dec|\d*Min|Zg2|Ubl|Flat2)\b")
@@ -373,7 +374,7 @@ def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
             controller = make(app, model)
             if advanced:
                 controller._version, controller._call_page = "0001", True
-            names = [spec.name for spec in controller.controller_button_specs]
+            names = [_shown_name(spec) for spec in controller.controller_button_specs]
             assert len(names) == len(set(names)), (model, names)
             for name in names:
                 assert not raw.search(name) and not problems(name), (model, name)

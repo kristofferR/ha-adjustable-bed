@@ -866,8 +866,9 @@ class AdjustaMattressController(
                 NS + key,
                 _field_key(key),
                 "mdi:information-outline",
-                native_unit_of_measurement="min" if key == "massage_time" else None,
-                # Readbacks of the step buttons, which take no direct value.
+                # Readbacks of the step buttons, which take no direct value. The
+                # timer is the bed's step (P3 and P4 round 600 units up to one);
+                # its duration is unproven, so it has no unit.
                 entity_registry_enabled_default=False,
                 card=CARD_MASSAGE if key in _MASSAGE_FIELDS else CARD_UTILITY,
             )

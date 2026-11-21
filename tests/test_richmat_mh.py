@@ -612,6 +612,8 @@ async def test_detection_buttons_status_and_results() -> None:
     controller = make("revive", "CFRM0001", snapshot={**vers0("cfrm"), "detection": True})
     await controller.async_discover_capabilities()
     start = next(s for s in controller.controller_button_specs if s.key == "richmat_mh_start_detection")
+    # The self-test is maintenance, not a dashboard control.
+    assert start.diagnostic
     await start.press_fn(controller)
     assert frames(controller) == ["6e88c210c8"]
     controller._classifier.rx_type = "INIT"
@@ -750,6 +752,10 @@ async def test_waist_page_state_selects_and_frames() -> None:
     assert (state["richmat_mh_waist_both_alarm"], state["richmat_mh_waist_both_alarm_repeat"],
             state["richmat_mh_waist_both_alarm_intensity"]) == ("06:30", "daily", 3)
     selects = {s.key: s for s in controller.controller_select_specs}
+    # The mode never turns the heat on, so the heat, pressure and duration selects are
+    # plain controls, as they were in 4.x.
+    heat = selects["richmat_mh_waist_left_heat"]
+    assert heat.entity_category is None and heat.entity_registry_enabled_default
     await selects["richmat_mh_waist_both_pressure"].select_fn(controller, "level_2")
     await selects["richmat_mh_waist_both_heat"].select_fn(controller, "8_hours")
     await selects["richmat_mh_waist_mode"].select_fn(controller, "both_relax")

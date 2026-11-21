@@ -25,6 +25,7 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 
 if TYPE_CHECKING:
@@ -417,13 +418,8 @@ class JalonBedController(ProfileExecution[KeesonProfile], BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
-                "jalon_massage_timer_bucket",
-                "jalon_massage_timer_bucket",
-                TIMER_BUCKET,
-                "mdi:timer-outline",
-                native_unit_of_measurement="min",
-                entity_registry_enabled_default=True,
+            massage_timer_sensor_spec(
+                "jalon_massage_timer_bucket", "jalon_massage_timer_bucket", TIMER_BUCKET
             ),
         )
 

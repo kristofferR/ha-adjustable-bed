@@ -247,7 +247,9 @@ SoundWave alarm page uses its fixed P2 calendar builder.
 
 #### Notifications
 
-The massage sensor reports the app's timer **index**, not countdown telemetry.
+The **Massage timer** sensor reports the app's chosen timer in minutes, not a
+countdown: each timer step is ten minutes (the app writes step × 600 seconds),
+and 0 means no timer runs.
 The six legacy pages remain distinct: combined strength is only logged by the
 app and is not invented as a seventh UI state. Premier runs when head strength
 is positive; its display is zero or the received time index followed by a

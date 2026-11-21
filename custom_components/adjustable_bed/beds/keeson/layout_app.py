@@ -33,6 +33,7 @@ from ..entity_specs import (
     ControllerMotorHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 
 if TYPE_CHECKING:
@@ -66,6 +67,17 @@ def name_frame(name: str, *, max_units: int = 15) -> bytes:
 
 
 APP_TIMER_STATUS: Final = StateKey[int | None]("app_timer_status")
+
+
+def app_timer_minutes(index: int) -> int | None:
+    """The app's massage timer in minutes: off (-1 or 255) is 0, 1-3 are 10-30.
+
+    The apps put 1-600, 601-1200 and 1201-1800 seconds in timers 1, 2 and 3.
+    Any other value has no proven duration.
+    """
+    if index in (-1, 255):
+        return 0
+    return index * 10 if index in (1, 2, 3) else None
 
 
 # What each app key is, in plain words: the profile keeps the app's own labels.
@@ -278,13 +290,8 @@ class AppController(ProfileExecution[AppProfile], BedController):
         if self._zero_g_box:
             return ()
         return (
-            ControllerStateSensorSpec(
-                "app_timer_status",
-                "app_timer_status",
-                APP_TIMER_STATUS,
-                "mdi:timer-outline",
-                card=CARD_MASSAGE_TIMER,
-                entity_registry_enabled_default=True,
+            massage_timer_sensor_spec(
+                "app_timer_status", "app_timer_status", APP_TIMER_STATUS, card=CARD_MASSAGE_TIMER
             ),
         )
 
@@ -688,6 +695,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
         if self._zero_g_box:
             return
         status = self._timer_byte(data)
-        if status in (255, 1, 2, 3):
-            self._timer_status = -1 if status == 255 else status
-            self.forward_controller_state_updates(APP_TIMER_STATUS(self._timer_status))
+        minutes = None if status is None else app_timer_minutes(status)
+        if minutes is not None:
+            self._timer_status = minutes
+            self.forward_controller_state_updates(APP_TIMER_STATUS(minutes))

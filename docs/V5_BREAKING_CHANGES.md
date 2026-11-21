@@ -271,6 +271,17 @@ The same control now looks the same on every bed:
   integration had created disabled is enabled once; one you disabled stays
   disabled. The DoubleSleep breathing rate's unit changes from brpm to
   breaths/min, and Home Assistant offers to update its statistics.
+- **Massage timer readings are durations.** They show minutes (or seconds),
+  are no longer under Diagnostic and are enabled on new installs; entities you
+  already have keep their enabled state. Readings that showed the app's timer
+  code instead ("-1", "1" to "3" on the Keeson app layouts and Ergomotion 4)
+  show 0 to 30 minutes, and the StarCode ABM5-4 and Keeson **Massage: Timer
+  Mode** readings show a number of minutes instead of text. The AdjustaMattress
+  massage timer reading loses its minutes unit: the bed reports a step, not
+  minutes.
+- **Readings carry their device class.** Temperature, signal strength, height
+  and countdown readings, low battery and low water use Home Assistant's device
+  classes, so a temperature follows your unit system (°F where you use it).
 - **Sleep Number bed presence** is enabled by default and named **In bed**,
   **Left in bed** and **Right in bed**. It updates only while the bed is
   connected (see [Connection](#connection)).
@@ -608,7 +619,7 @@ described under [One shape per control](#one-shape-per-control).
 | OKIN CST | | Memory recall buttons for slots a named preset recalls: **Zero Gravity**, **Incline**, **Reading** or **Lounge**; the slot's save stays |
 | ORE comfort-bed apps (Avanti, Bedsense, Dynasty, MaxCoil Una), StarCode ABM5-4 | | Bed-specific massage timer select: **Massage: Timer** select (durations only; same entity ID) |
 | Reverie, Reverie Nightstand, Pairlink, Jiecang app | Wave sensor, Pairlink massage mode and timer sensors (the select and number show them), head and foot massage up and down buttons where an intensity number exists | Pairlink massage rhythm select: **Massage rhythm** switch |
-| Richmat MH apps (Revive, Best Mattress, Blvd Home, Harmony, Idealbed) | | Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only), on layouts with more than one of them |
+| Richmat MH apps (Revive, Best Mattress, Blvd Home, Harmony, Idealbed) | | Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only), on layouts with more than one of them. Massage intensity 1, 2 and 3 buttons: **Massage: Intensity** number (1 to 3), on layouts with all three. Buttons are named for what their command does, keeping their entity IDs ("Head Intensity+" is **Massage: Head Up**, "Start Stop" is **Massage: Toggle**, "Next" on the music page is **Next music track**); music controls that the app filed with massage ("Vibration Mode", "Previous", "Next") and the start and stop component check buttons start disabled. **Factory reset** always asks first |
 | RMControl | Protocol version, bed mode and last alarm record sensors. Disabled catalog buttons that send exactly what a standard entity sends (motor covers, presets, memory recall and save, light, sync and massage controls), and another app page's identical copy of a control | Massage timer buttons: **Massage: Timer** select (durations only), on products with more than one duration. The other catalog buttons keep their entity IDs, lose the app page and position from their names and, except music, fans, resets and similar extras, start enabled. A copy that sends something else stays disabled, named "… (short press)" (the motor list's single tap of a held move) or numbered. A preset's long press that sends its save: the **Save …** button |
 | Serta MP Remote | Memory request sensor | |
 | SIMMONS | "Sync Clock" button | Clock: the **Set bed clock** action |

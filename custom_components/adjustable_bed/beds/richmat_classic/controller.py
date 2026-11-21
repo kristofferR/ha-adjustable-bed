@@ -631,7 +631,8 @@ class RichmatClassicController(BedController):
             if not button.excluded_short:
                 result.append(catalog_button(
                 key, label, partial(_press, node=button.node),
-                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if button.status == 1 or button.mem_special and not self._selection.armed else None,
+                # The Set key only arms programming: it is a tap, as the saves it arms are.
+                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if (button.status == 1 or button.mem_special and not self._selection.armed) and label != "Program" else None,
                 ))
             if button.hold_affected and not button.view_id.endswith("Long"):
                 held_key = key + "_hold"
