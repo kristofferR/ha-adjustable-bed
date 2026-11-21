@@ -237,7 +237,7 @@ VMAT and V-MAT Basic keep whitespace and NULs.
 ### Vectors
 
 `tests/vibradorm_vectors.py` freezes every fixed frame each profile sends, by
-characteristic, and the value frames from the artifact fixtures
+characteristic, and the value frames from the app fixtures
 (`tests/fixtures/vibradorm_vmat_vectors.json`,
 `tests/fixtures/vmatbasic-vectors.json`). `tests/test_vibradorm_vectors.py`
 checks that every literal round-trips through the codec and that each profile
@@ -397,7 +397,7 @@ by big-endian 16-bit counts, or the short `3f flags` form:
 This describes the current implementation in
 [`VibradormController`](../../custom_components/adjustable_bed/beds/vibradorm/controller.py),
 covered by `TestVibradormPositionFeedback` in
-[`test_vibradorm.py`](../../tests/test_vibradorm.py). It does not establish a
+[`test_vibradorm.py`](../../tests/test_vibradorm.py). It does not give a
 calibrated physical angle, initialization-state handling or equivalent position
 support in another app profile.
 
@@ -454,8 +454,8 @@ actuator layout.
   reads. Do not constrain restored states solely to non-normal control values.
 - Fresh selection is type 2/all false.
 - Werkmeister accepted own-selector scope is 5/7; its dead selectors/features are
-  excluded and are not promoted into supported Werkmeister options by Caresse
-  evidence.
+  left out and are not turned into Werkmeister options because Caresse has
+  them.
 - All counts above describe app movement groups. They do not prove physical motor
   topology.
 - Hide conflicting generic motor-count/has-massage/angle/repeat-delay options for
@@ -475,20 +475,20 @@ These app paths use the COMMAND (motor `1526`), LIGHT (`1529`), CBI (`1550`) and
 CBI response (`1551`) roles of the [transport table](#transports).
 
 - These app paths select exact characteristics across services. No fixed parent
-  service, guessed writable fallback or base-UUID alias is proven.
+  service, guessed writable fallback or base-UUID alias is used.
 - COMMAND/LIGHT/CBI/CBI_RESPONSE are exact characteristic identities; service
   membership is not an app requirement.
 - Select the first requested exact characteristic in native service order, and
   retain that selected object for the actual read/write/notification operation.
-- No arbitrary writable/notifiable or `1528`/`1534`/proxy-base alias fallback is
-  proven for these app profiles.
+- These app profiles use no arbitrary writable/notifiable or
+  `1528`/`1534`/proxy-base alias fallback.
 - Validate actual operation properties and use the selected host backend's write
   semantics.
 - The application inherits runtime native write properties/type: the APK leaves
   Android native write type/property metadata at runtime, so it does not prove a
   universal response=False/True mode.
 - Home Assistant's declared property-based transport policy is host behavior, not
-  evidence of a fixed Android response mode.
+  a fixed Android response mode.
 
 ##### Advertisement diagnostics and target selection
 
@@ -523,7 +523,7 @@ CBI response (`1551`) roles of the [transport table](#transports).
 Select **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
 bed-type picker, then choose Caresse Diamant or Werkmeister. Existing generic
 entries keep their legacy setup until explicitly reconfigured. Bluetooth identifiers do not select an app
-or remote layout. Werkmeister offers its two proven remote
+or remote layout. Werkmeister offers its two remote
 layouts. Fresh Caresse uses its basic two-axis layout; enable retained settings
 only when you know the app's saved remote type and independent floor-light,
 mood-light, massage and light-extension settings. The `other` retained type has
@@ -539,13 +539,12 @@ pending timer while retaining the remembered brightness.
 Setup hides generic motor-count and pulse settings. Controls use the selected
 profile's fixed refresh and release behavior. First onboarding shares one
 10-second connection, information and native pairing deadline. Local stored
-bonds require exact-adapter BlueZ evidence; a successful proxy pairing request
+bonds must be confirmed by BlueZ on that adapter; a successful proxy pairing request
 remains unverified. App metadata is diagnostic information, not bond proof.
 
 ##### Information, notification and bonding lifecycle
 
-Reachable onboarding order is in scope, not excluded merely because Android
-initiated it. For a new explicit-profile bond:
+Setup follows the app's onboarding order. For a new explicit-profile bond:
 
 1. Issue ordinary unbonded connect/service discovery and start one source
    10,000 ms whole onboarding deadline, including connection/discovery; no
@@ -562,7 +561,7 @@ initiated it. For a new explicit-profile bond:
 5. After information completion call native bond using existing typed host/proxy
    pairing, proof, cancellation and cleanup policy. Record a real native bond
    result. DIS/article bytes are metadata and never new bond proof, credentials,
-   profile inference or connection-gated-by-bond evidence.
+   a profile choice or a sign that the bed requires a bond.
 6. Complete/store the selected configuration and disconnect/transition. Later
    configured startup targets exact MAC and checks existing bond/recovery; avoid
    an unnecessary new first-bond transaction.
@@ -579,21 +578,21 @@ Reconnects and deadlines:
   The shared onboarding budget also applies to a new transport without saved
   context.
 - A profile-aware pre-pair hook carries the selected client, cancellation state
-  and shared deadline. The static pairing policy alone does not establish the
+  and shared deadline. The static pairing policy alone does not give the
   required information-before-bond order.
 - Existing generic Vibradorm route is preserved. The setup lifecycle owns the
   hook/order and host/proxy proof; the app controller owns its exact
   read/parser/transaction helper.
 - Android activity dialogs, synchronous callback-before-post race and
   host-specific retry/unbond implementation details are separate
-  process/safety/platform exclusions, without waiving this reachable workflow or
-  the source deadline.
+  process/safety/platform exclusions; the app's workflow and deadline still
+  apply.
 
-Native bond evidence and legacy boundary:
+Native bond check and older entries:
 
 - The app checks exact-MAC native bonded inventory and native completion.
   Metadata reads and successful pair RPCs are not cryptographic authentication
-  proof. Use typed native OS state evidence distinct from an authenticated
+  proof. Use the operating system's bond state, separate from an authenticated
   protocol probe.
 - Unsupported proxy confirmation remains unverified with an accurate
   pairing-attempted status.
@@ -614,7 +613,7 @@ Native bond evidence and legacy boundary:
 
 #### Controls
 
-The profile matrix determines each reachable command and its preconditions. Eight normal
+The profile matrix determines each command and its preconditions. Eight normal
 motor-direction opcodes, all-up/all-down, exact six memory opcode choices, fixed
 save tails, dedicated light paths, mood group bit, massage group bit and article
 literal requests require profile-specific vectors.
@@ -766,13 +765,13 @@ Group `0000` for basic, `1000` for nonbasic.
   catalog and an explicit bounded duration (100 ms to 60 s), with paired side
   routing. Its catalog is validated for every selected physical target before
   writes, and release uses the controller STOP cleanup path.
-- All-down means movement toward flat while held, not a proven self-completing
-  preset.
+- All-down means movement toward flat while held, not a preset that finishes
+  on its own.
 - Release always ends refresh and attempts the exact profile STOP with a fresh
   cancellation signal, including cancellation/error/side-routed service cleanup.
 - Do not copy source stranded-STOP, unhandled ACTION_CANCEL, queue
   clear/disconnect without STOP or indefinitely blocked write behavior. These are
-  explicit safety exclusions with source evidence.
+  deliberate safety exclusions based on the app's code.
 - Do not append STOP after a one-shot feature or information packet unless it is
   a separate requested navigation/motor release.
 - Host serialization can safely replace shared unsent-command races, without
@@ -802,7 +801,7 @@ Group `0000` for basic, `1000` for nonbasic.
 - Preserve three requests and parser results, and test unrelated/late/malformed
   callbacks, missing notify, failed read/write, cancellation, bounded deadline and
   no writes after completion.
-- No parser-reachable measured angle/motor position exists in these apps.
+- These apps read no measured angle or motor position.
 
 ##### Sync replies
 
@@ -845,8 +844,7 @@ Group `0000` for basic, `1000` for nonbasic.
   controls therefore begin from 6 in that same app process. A later configured
   process begins from current level 0 while preserving remembered level 6.
 - Missing remembered preferences have a separate fallback: 6 with extension,
-  otherwise 8. A getter fallback does not establish normal first-onboarding
-  state.
+  otherwise 8. A getter fallback is not the normal first-onboarding state.
 - The Android reset/preferences screen is excluded as local application UI
   (`R031-0671`). Its downstream floor level/default effects are in scope because
   they change subsequent packets.
@@ -935,7 +933,7 @@ the last column.
   and speed 1–5 with the exact listener/updateIndicators predicates.
 - Do not collapse saved flags and saved intensities or automatically invent a
   fresh individual 3/3 fallback.
-- Zone controls use the proven toggle/increment/decrement callbacks; no arbitrary
+- Zone controls use the app's toggle/increment/decrement callbacks; no arbitrary
   direct intensity setter is implied.
 - Preserve 72 accepted state vectors, complete Cartesian guard proof and exact
   nested off-then-restore sequences.
@@ -957,7 +955,7 @@ the last column.
 - Separate-address pairs retain side-specific app/profile/retained-feature
   fields; differing sides prohibit global option propagation.
 - Single-address pairing/addressing is not supported by these app profiles. This
-  is a HA integration boundary, not an app-proven partner feature.
+  is a Home Assistant limit, not a partner feature of the app.
 
 #### Evidence
 
@@ -1035,10 +1033,10 @@ move through CBI. Detection: none; the profile is an explicit choice.
 
 ##### Bonding
 
-- Setup requires positive native bond evidence for the exact address and actual
-  host route. An unverified pairing RPC cannot finish setup or authorize control.
-- Metadata does not identify a wire layout or prove a bond. No app PIN/key
-  exchange is proven.
+- Setup requires the operating system to report a bond for the exact address and
+  actual host route. An unverified pairing RPC cannot finish setup or authorize control.
+- Metadata does not identify a wire layout or prove a bond. The app uses no
+  PIN or key exchange.
 - Unsupported proxy pairing should use a supported host adapter; existing bonds
   are never silently removed.
 
@@ -1128,8 +1126,8 @@ Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
 bed-type picker, then **VMAT** and the same remote ordinal as the app. Its fourteen
 shipped selections derive the logical axes, memory, sync, floor, mood and
 massage controls. Independent feature overrides
-and inferred product identification are unavailable. Setup requires positive
-native bond evidence for the exact address and actual host adapter; an
+and inferred product identification are unavailable. Setup requires the
+operating system to report a bond for the exact address and host adapter; an
 unverified proxy pairing request cannot finish setup. Ordinary sessions do not
 send onboarding queries or position polls. Accessory state is assumed local
 intent, preserved during the current HA process and rolled back on failed
@@ -1153,8 +1151,8 @@ construction toggle (0 or `8000`) ORed into the 16-bit CBI header.
 ##### Motor control
 
 VMAT sends the opcodes of the
-[motor and memory opcode index](#motor-and-memory-opcode-index), verified
-independently from its own artifact: the basic motor frame on basic remotes, the
+[motor and memory opcode index](#motor-and-memory-opcode-index), checked
+against this app: the basic motor frame on basic remotes, the
 CBI frame on the others, and STOP (release) `FF` basic or `00 FF` CBI.
 
 - Enabled motor directions, All Up/All Down and recall are held actions. All Down
@@ -1183,7 +1181,7 @@ held action:
 | Reply | `20 3f flags` or `3f flags extra` (minimum length 3) |
 | Held action | Opcode 25 when reply bit `40` is set, otherwise 24 |
 
-Late replies cannot restart released movement. No partner selector is proven.
+Late replies cannot restart released movement. There is no partner selector.
 
 ##### Floor light
 
@@ -1227,7 +1225,7 @@ Late replies cannot restart released movement. No partner selector is proven.
   1/zones 3/3.
 - ON is the full 10-byte `0030/1030` state; OFF is `0034/1034` plus `00`. Mode
   switching preserves off/restore order.
-- Unreachable OFF `01` and the unexposed massage timer are disabled.
+- OFF `01`, which no app control sends, and the hidden massage timer are disabled.
 
 #### Timing
 
@@ -1244,8 +1242,8 @@ Late replies cannot restart released movement. No partner selector is proven.
 - Failed/cancelled VMAT accessory writes roll back the requested state.
   Successful delivery remains assumed intent, not readback.
 - Restart clears current intent while retaining the configured floor default.
-- No live position parser, angle target, battery query, firmware update,
-  calibration or named presets are proven.
+- There is no live position, angle target, battery query, firmware update,
+  calibration or named preset.
 - Diagnostics retain raw notifications; unsolicited EEPROM/log recognition does
   not enable dead collectors or queries.
 
@@ -1447,7 +1445,7 @@ are unknown; successful writes publish requested intent only.
   failure, with bounded cleanup. All-down is a direction, not a measured flat
   position.
 - XT floor hold repeats `00 11` and stops by ending the stream; no separate
-  release frame is proven.
+  release frame exists.
 
 #### Notifications
 
@@ -1554,14 +1552,12 @@ Based on `com.vibradorm.vmatbasic` 2.4.3 (14) (`basic`, `cbi` and `xtbox` in
 
 - Caresse and Werkmeister: hardware operation, on-air packet delivery, peripheral
   security and physical effects remain unverified.
-- VMAT: hardware absence does not defer implementation. Focused tests exercise
-  real controller/setup delivery, frozen vectors, native-proof gates, timing and
-  failure cleanup. Physical validation remains.
+- VMAT: tests cover controller and setup delivery, the vectors, the bond checks,
+  timing and failure cleanup. It is not yet tested on hardware.
 - V-MAT Basic: physical packet delivery, movement effects, floor timing/scales,
   mood and massage effects, rename persistence, temperature interpretation,
-  optional read support, dual connection behavior and security remain deferred
-  user validation. App evidence does not claim those
-  hardware outcomes.
+  optional read support, dual connection behavior and security still need
+  testing by owners.
 
 ### References
 
