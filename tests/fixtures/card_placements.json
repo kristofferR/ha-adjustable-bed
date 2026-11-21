@@ -1,7 +1,4 @@
 {
- "binary_sensor:adjustable_lite_light": {
-  "card_section": "lighting"
- },
  "binary_sensor:adjustamattress_busy": {
   "card_section": "utility"
  },
@@ -50,13 +47,6 @@
  "binary_sensor:cheerssleep_right_asleep": {
   "card_section": "hidden"
  },
- "binary_sensor:enso_light": {
-  "card_section": "lighting",
-  "card_role": "state"
- },
- "binary_sensor:ergomotion4_light": {
-  "card_section": "hidden"
- },
  "binary_sensor:floyd_battery_mode": {
   "card_section": "hidden"
  },
@@ -65,9 +55,6 @@
  },
  "binary_sensor:furnimove_sync": {
   "card_section": "hidden"
- },
- "binary_sensor:innova_light": {
-  "card_section": "lighting"
  },
  "binary_sensor:leggett_alarm_indicator": {
   "card_section": "hidden"
@@ -111,10 +98,6 @@
  "binary_sensor:motion_bed_thermal_timer_enabled": {
   "card_section": "hidden"
  },
- "binary_sensor:nerum_light": {
-  "card_section": "lighting",
-  "card_role": "state"
- },
  "binary_sensor:nerum_massage": {
   "card_section": "hidden"
  },
@@ -135,9 +118,6 @@
  },
  "binary_sensor:rize_home_active": {
   "card_section": "massage"
- },
- "binary_sensor:sleeptracker_light_on": {
-  "card_section": "lighting"
  },
  "binary_sensor:sleeptracker_wind_down_running": {
   "card_section": "massage"
@@ -204,9 +184,6 @@
  },
  "binary_sensor:symphony_privacy": {
   "card_section": "hidden"
- },
- "binary_sensor:under_bed_light_state": {
-  "card_section": "lighting"
  },
  "button:adjustable_bed_speech": {
   "card_section": "utility"
@@ -1882,10 +1859,6 @@
  "button:sleeptracker_light_off": {
   "card_section": "lighting"
  },
- "button:sleeptracker_light_toggle": {
-  "card_section": "lighting",
-  "card_role": "toggle"
- },
  "button:sleeptracker_local_animation": {
   "card_section": "massage"
  },
@@ -2175,12 +2148,6 @@
   "card_motor": "stair"
  },
  "button:starcode_abm5_4_light_minus": {
-  "card_section": "lighting"
- },
- "button:starcode_abm5_4_light_off": {
-  "card_section": "lighting"
- },
- "button:starcode_abm5_4_light_on": {
   "card_section": "lighting"
  },
  "button:starcode_abm5_4_light_plus": {
