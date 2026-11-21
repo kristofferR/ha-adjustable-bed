@@ -559,3 +559,55 @@ async def test_a_press_that_expires_in_preflight_never_replaces_a_newer_move(run
         )
         await asyncio.wait_for(asyncio.gather(press, newer), 5)
     assert controller.frames == ["up"] * 100 + ["stop"]
+
+
+@pytest.mark.parametrize(
+    ("old_execution", "old_generation", "new_execution"),
+    [
+        # A declared hold's route must not refuse the new bed's windowed press.
+        pytest.param(STREAM, 1, NO_EXECUTION_CAPABILITIES, id="declared-route"),
+        # An ended press must neither end the new bed's lease ...
+        pytest.param(NO_EXECUTION_CAPABILITIES, 2, STREAM, id="ended-newer"),
+        # ... nor swallow its press as a late renewal.
+        pytest.param(NO_EXECUTION_CAPABILITIES, 1, NO_EXECUTION_CAPABILITIES, id="ended-same"),
+    ],
+)
+async def test_a_reloaded_bed_starts_with_no_presses_from_the_old_one(
+    runtime, clock, old_execution: ExecutionCapabilities, old_generation: int,
+    new_execution: ExecutionCapabilities,
+) -> None:
+    """The same owner restarting at generation 1 after a reload holds the new bed."""
+    from custom_components.adjustable_bed import services
+
+    def bed(coordinator: AdjustableBedCoordinator, execution: ExecutionCapabilities):
+        held = StreamController if execution.hold else LatchedController
+        coordinator._controller = held(coordinator, execution)
+        return coordinator._controller
+
+    hass, old = runtime
+    bed(old, old_execution)
+    await asyncio.wait_for(_held(hass, old_generation), 2)
+    await old.async_shutdown()
+
+    # A reload builds a new runtime; CPython may give it the old one's id().
+    new = AdjustableBedCoordinator(hass, old.entry)
+    new._client = old._client
+    controller = bed(new, new_execution)
+    hass.data[DOMAIN][old.entry.entry_id] = new
+    real_id = id
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(new, "async_ensure_connected", AsyncMock(return_value=True)))
+        stack.enter_context(patch.object(new, "_async_refresh_controller_auth", AsyncMock()))
+        stack.enter_context(
+            patch.object(services, "_resolve_sided_targets", return_value=([(new, "both")], []))
+        )
+        stack.enter_context(
+            patch.object(
+                services, "id", lambda obj: real_id(old if obj is new else obj), create=True
+            )
+        )
+        await asyncio.wait_for(_held(hass, 1), 2)
+    await new.async_shutdown()
+    # The new bed held the control and then released it.
+    assert controller.frames[0] in ("start", "up")
+    assert controller.frames[-1] in ("release", "stop")
