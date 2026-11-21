@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.codec.motomotion import (
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
 from custom_components.adjustable_bed.controller_state import StateKey
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.execution import HOLD_CEILING_MS
 
 
 def runtime(hass, name="SOFA000001A000H", address="AA:BB:CC:DD:EE:13"):
@@ -622,13 +623,15 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
             text=True,
         ).stdout
     )
+    # The press starts the hold and renews it; release presses the release.
+    holds = events[:-1]
     assert [(e["domain"], e["service"]) for e in events] == [
-        (DOMAIN, "hold_control"),
-        ("button", "press"),
-    ]
-    assert events[1]["data"] == {"entity_id": "button.release"}
+        (DOMAIN, "hold_control")
+    ] * len(holds) + [("button", "press")]
+    assert all(e["data"] == holds[0]["data"] for e in holds)
+    assert events[-1]["data"] == {"entity_id": "button.release"}
     now = [events[0]["at"] / 1000]
-    release_time = events[1]["at"] / 1000
+    release_time = events[-1]["at"] / 1000
     release_due = asyncio.Event()
     wire = []
     original_sleep = asyncio.sleep
@@ -659,9 +662,8 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
     )
 
     async def held(controller):
-        await controller.hold_control(
-            events[0]["data"]["control"], int(events[0]["data"]["duration"] * 1000)
-        )
+        # The service holds a control without a declared hold for its ceiling.
+        await controller.hold_control(events[0]["data"]["control"], HOLD_CEILING_MS)
 
     try:
         with (
@@ -678,7 +680,8 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
         if stops:
             expected.extend([(release_at + 50, ascii_command(0))] * 3)
         assert wire == expected
-        assert [e["at"] for e in events] == [0, release_at]
+        assert [e["at"] for e in holds] == list(range(0, release_at + 1, 250))
+        assert events[-1]["at"] == release_at
     finally:
         c._client.is_connected = False
         await c.async_shutdown()

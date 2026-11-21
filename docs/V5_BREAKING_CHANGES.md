@@ -414,7 +414,10 @@ release notes list them.
 
 - Quick actions (`compact_actions`) are saved as entity IDs. Cards that list
   the old keys keep working, and the editor rewrites them to entity IDs the
-  next time you edit the card, if every side keeps the same actions.
+  next time you edit the card, if every side keeps the same actions. A quick
+  action for an app preset on a Richmat bed (`richmat_mh_preset`) no longer
+  shows: that key named all of the bed's app presets at once, so pick the
+  preset again in the card editor.
 - Preset save buttons are never offered as quick actions, and they ask for
   confirmation in the card.
 - A button that asks for confirmation is a plain tap: holding it never sends
