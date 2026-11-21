@@ -1373,6 +1373,23 @@ def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, s
     return {CONF_BLE_DEVICE_NAME: name}
 
 
+def _may_hold_bond(data: Mapping[str, Any]) -> bool:
+    """Return whether a bed pairs, or either of its sides has a recorded bond.
+
+    A bed that never pairs has no bond to remove, unless one was recorded anyway.
+    """
+    for side in (data, *iter_children(data)):
+        bed_type = side.get(CONF_BED_TYPE) or data.get(CONF_BED_TYPE)
+        variant = side.get(CONF_PROTOCOL_VARIANT, data.get(CONF_PROTOCOL_VARIANT))
+        if (
+            side.get(CONF_BLE_BOND_ESTABLISHED)
+            or side.get(CONF_BLE_BOND_CONTEXT)
+            or (isinstance(bed_type, str) and requires_pairing(bed_type, variant))
+        ):
+            return True
+    return False
+
+
 def _svane_fixed_settings(variant: str) -> dict[str, Any]:
     """Return the settings a Svane Remote profile fixes; Jensen LinOn fixes none."""
     if variant not in SVANE_VARIANTS:
@@ -7570,9 +7587,13 @@ class AdjustableBedOptionsFlow(
         ):
             menu_options.append("pair_sides")
         menu_options.extend(self.estimate_menu_options())
-        if data.get(CONF_ADDRESS) or (
-            data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS and bool(iter_children(data))
-        ):
+        if (
+            data.get(CONF_ADDRESS)
+            or (
+                data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS
+                and bool(iter_children(data))
+            )
+        ) and _may_hold_bond(data):
             menu_options.append("remove_bond")
         return self.async_show_menu(step_id="init", menu_options=menu_options)
 

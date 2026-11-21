@@ -4223,10 +4223,39 @@ def _transport_coordinator(error: Exception | None = None) -> tuple[Any, list[st
 
 
 async def _open_remove_bond(hass: HomeAssistant, entry_id: str) -> Any:
+    # Only a bed that pairs or recorded a bond offers the action.
+    entry = hass.config_entries.async_get_entry(entry_id)
+    assert entry is not None
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BLE_BOND_ESTABLISHED: True}
+    )
     result = await hass.config_entries.options.async_init(entry_id)
     return await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "remove_bond"}
     )
+
+
+@pytest.mark.parametrize(
+    ("extra", "offered"),
+    [
+        ({}, False),
+        ({CONF_BLE_BOND_ESTABLISHED: True}, True),
+        ({CONF_BED_TYPE: BED_TYPE_OKIN_UUID}, True),
+    ],
+)
+async def test_bond_removal_is_offered_only_where_a_bond_can_exist(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    enable_custom_integrations,
+    extra: dict[str, Any],
+    offered: bool,
+) -> None:
+    """A bed that never pairs has nothing to remove, unless a bond was recorded."""
+    hass.config_entries.async_update_entry(
+        mock_config_entry, data={**mock_config_entry.data, **extra}
+    )
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    assert ("remove_bond" in result["menu_options"]) is offered
 
 
 async def test_unpair_requires_confirmation_and_names_the_transport(
