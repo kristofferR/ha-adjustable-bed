@@ -19,8 +19,8 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import BED_TYPE_OCTO, DOMAIN
 from custom_components.adjustable_bed.entity_retypes import (
-    RETYPES,
     ISSUE_PREFIX,
+    RETYPES,
     async_carry_over_retyped_entities,
     async_retyped_entities_built,
 )

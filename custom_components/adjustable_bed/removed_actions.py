@@ -1,0 +1,175 @@
+"""Name the automations and scripts that still call what v5 removed.
+
+A removed action fails as an unknown action when an automation runs, and a
+removed field or option fails validation; neither says what replaces it. Once
+Home Assistant has started, one repair lists every automation and script that
+still calls one, with its replacement, and goes away at the first start where
+none does. Templates are not checked.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterator, Mapping
+from dataclasses import dataclass
+from typing import Final
+
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.helpers.start import async_at_started
+from homeassistant.loader import async_get_integration
+
+from .beta_feedback import breaking_changes_url
+from .const import DOMAIN
+
+
+@dataclass(frozen=True, slots=True)
+class Removal:
+    """An action, one of its fields or one value of a field that 4.x had."""
+
+    action: str
+    field: str | None = None
+    # The field's removed value, or None when the field itself is gone.
+    value: str | None = None
+    # What a call uses now, as the call writes it; None where nothing in an
+    # action replaces it (the upgrade guide says what does).
+    use: str | None = None
+
+    def matches(self, action: str, data: Mapping[object, object]) -> bool:
+        if action != self.action:
+            return False
+        if self.field is None:
+            return True
+        if self.field not in data:
+            return False
+        # Templates compile to objects that keep their source.
+        value = data[self.field]
+        return self.value is None or str(getattr(value, "template", value)) == self.value
+
+    @property
+    def line(self) -> str:
+        call = f"`{DOMAIN}.{self.action}`"
+        if self.field is not None:
+            call += f" `{self.field}`" if self.value is None else f" `{self.field}: {self.value}`"
+        return call if self.use is None else f"{call} → `{self.use}`"
+
+
+def _actions(actions: str, use: str | None) -> tuple[Removal, ...]:
+    return tuple(Removal(action, use=use) for action in actions.split())
+
+
+# What 4.4.2 offered and v5 no longer accepts, from the upgrade guide.
+REMOVALS: Final[tuple[Removal, ...]] = (
+    *_actions(
+        "bf_cherish_set_alarm comfort_enhancements_set_alarm configure_alarm_schedule "
+        "eshine_set_alarm glideaway_set_alarm jiecang_set_alarm leggett_alarm_timer "
+        "linak_set_alarm logicdata_set_alarm malouf_set_alarm motion_bed_alarm "
+        "richmat_mh_alarm richmat_mh_waist_alarm rmcontrol_alarm simmons_set_alarm "
+        "solace_set_alarm zseries_set_alarm",
+        f"{DOMAIN}.set_alarm",
+    ),
+    *_actions("jiecang_rename linak_rename logicdata_rename", f"{DOMAIN}.rename"),
+    *_actions("leggett_hold_control", f"{DOMAIN}.hold_control"),
+    *_actions("malouf_sync_clock motion_bed_clock", f"{DOMAIN}.sync_clock"),
+    *_actions("reverie_test", None),
+    Removal("gmmotor", "operation", "clock_sync", f"{DOMAIN}.sync_clock"),
+    Removal("gmmotor", "repeat"),
+    Removal("gmmotor", "status"),
+    *(
+        Removal("gmmotor", field, old, f"{field}: {new}")
+        for field, values in (("part", ("left", "right")), ("report_type", ("day", "month")))
+        for old, new in zip(("1", "2"), values, strict=True)
+    ),
+    Removal("goodvibe", "operation", "sync", f"{DOMAIN}.sync_clock"),
+    Removal("furnimove_action", "consumer"),
+    Removal("sleep_number_command", "command", "set_system_time", f"{DOMAIN}.sync_clock"),
+    *(
+        Removal("sleep_number_command", "command", command)
+        for command in (
+            "reboot_system",
+            "starts_actuator_homing",
+            "get_frosty_mode",
+            "set_frosty_mode",
+            "get_frosty_presence",
+            "get_heidi_mode",
+            "set_heidi_mode",
+            "get_heidi_presence",
+            "get_system_status",
+        )
+    ),
+)
+
+ISSUE_ID: Final = "removed_actions"
+
+
+def _calls(config: object) -> Iterator[tuple[str, Mapping[object, object]]]:
+    """Yield each call of this integration's actions in a config, with its data."""
+    if isinstance(config, Mapping):
+        action = config.get("action", config.get("service"))
+        if isinstance(action, str) and action.startswith(f"{DOMAIN}."):
+            data: dict[object, object] = {}
+            for key in ("data", "data_template"):
+                if isinstance(given := config.get(key), Mapping):
+                    data.update(given)
+            yield action.removeprefix(f"{DOMAIN}."), data
+        for value in config.values():
+            yield from _calls(value)
+    elif isinstance(config, list | tuple):
+        for value in config:
+            yield from _calls(value)
+
+
+def _configs(hass: HomeAssistant) -> Iterator[tuple[str, object]]:
+    """Yield each automation and script with its config as written and as loaded."""
+    for domain in ("automation", "script"):
+        component = hass.data.get(domain)
+        if not isinstance(component, EntityComponent):
+            continue
+        for entity in component.entities:
+            # The loaded sequence holds what a blueprint expands to.
+            script = getattr(entity, "action_script", None) or getattr(entity, "script", None)
+            yield entity.entity_id, (
+                getattr(entity, "raw_config", None),
+                getattr(script, "sequence", None),
+            )
+
+
+def removed_calls(hass: HomeAssistant) -> dict[str, set[str]]:
+    """Return each removed call's line with the automations and scripts that make it."""
+    callers: dict[str, set[str]] = {}
+    for entity_id, config in _configs(hass):
+        for action, data in _calls(config):
+            for removal in REMOVALS:
+                if removal.matches(action, data):
+                    callers.setdefault(removal.line, set()).add(entity_id)
+    return callers
+
+
+@callback
+def async_report_removed_calls(hass: HomeAssistant) -> None:
+    """Raise or withdraw the repair once automations and scripts have loaded."""
+
+    async def report(_hass: HomeAssistant) -> None:
+        callers = removed_calls(hass)
+        if not callers:
+            ir.async_delete_issue(hass, DOMAIN, ISSUE_ID)
+            return
+        version = (await async_get_integration(hass, DOMAIN)).version
+        guide = breaking_changes_url(version) if version is not None else None
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            ISSUE_ID,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            learn_more_url=f"{guide}#actions-and-automations" if guide else None,
+            translation_key=ISSUE_ID,
+            translation_placeholders={
+                "calls": "\n".join(
+                    f"- {line}: {', '.join(sorted(users))}"
+                    for line, users in sorted(callers.items())
+                ),
+            },
+        )
+
+    async_at_started(hass, report)

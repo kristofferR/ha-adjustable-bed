@@ -29,7 +29,9 @@ Changes between betas are in each beta's
 
 ## Before you upgrade
 
-**v5 requires Home Assistant 2026.11.0 or newer** (4.x needs 2026.9.0).
+**v5 requires Home Assistant 2026.11.0 or newer** (4.x needs 2026.9.0). On an
+older Home Assistant, v5 does not load, and the log's "Setup failed" line names
+the version it needs.
 
 1. Update Home Assistant to 2026.11.0 or newer and check that it runs.
 2. Create a full backup under **Settings > System > Backups**. Keep it until
@@ -54,9 +56,10 @@ once Home Assistant runs 2026.11.
 
 1. **Repairs.** Open **Settings > System > Repairs**. When an entity changed
    type and an automation or script still references the old entity, the bed
-   gets a repair that lists them. Templates and dashboards are not checked,
-   so look through those yourself. Some beds get one question about the app
-   they use.
+   gets a repair that lists them. Another repair lists the automations and
+   scripts that still call a removed action, field or option, with what to
+   use instead. Templates and dashboards are not checked, so look through
+   those yourself. Some beds get one question about the app they use.
 2. **Alarm automations.** The per-bed alarm actions are one action,
    [`adjustable_bed.set_alarm`](SERVICES.md#set_alarm), with new field names.
    See [Actions and automations](#actions-and-automations).
@@ -294,7 +297,10 @@ on every entity that tells the dashboard card where it belongs.
 
 ## Actions and automations
 
-Update scripts and automations that call these actions. The
+Update scripts and automations that call these actions. A repair lists the
+automations and scripts that still call a removed action, or a field or option
+removed below, with what to use instead; it is checked again at every start
+and goes away once none does. Templates are not checked. The
 [Actions and Automations](SERVICES.md) guide describes every current action.
 
 | 4.x action | Use now |

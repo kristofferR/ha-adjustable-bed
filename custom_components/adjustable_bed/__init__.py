@@ -20,6 +20,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
+# Imported first: it stops on a Home Assistant too old for the imports below.
+from . import minimum_home_assistant  # noqa: F401
 from .bed_traits import bed_type_has_position_feedback, default_connection_mode
 from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
 from .beds.remacro.discovery import (
@@ -36,7 +38,7 @@ from .beds.reverie.pairlink_local_setup import (
     release_pairlink_local_profile_lease,
     release_pairlink_local_reservations,
 )
-from .beta_feedback import async_setup_beta_feedback
+from .beta_feedback import async_setup_beta_feedback, async_setup_upgrade_notice
 from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -122,6 +124,7 @@ from .profile_review import (
     profile_review_mark,
     v5_profile_review_mark,
 )
+from .removed_actions import async_report_removed_calls
 from .repairs import (
     async_refresh_combine_beds_issue,
     async_setup_combine_beds_issue,
@@ -245,6 +248,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     await async_register_services(hass)
     await async_setup_beta_feedback(hass)
+    await async_setup_upgrade_notice(hass)
+    async_report_removed_calls(hass)
     return True
 
 
