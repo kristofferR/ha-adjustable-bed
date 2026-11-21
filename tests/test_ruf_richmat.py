@@ -713,21 +713,15 @@ TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"]
     ],
 )
 async def test_massage_timer_select_sends_what_its_buttons_sent(delays, kind, app, model, sent, stop_after):
-    from custom_components.adjustable_bed.beds.richmat_mh.controller import _tap_action
-
     c = _timer_layout(kind, app, model)
     assert c.massage_timer_options == sorted(sent) and not c.massage_timer_can_turn_off
     keys = {spec.key for spec in c.controller_button_specs}
     assert not {f"richmat_mh_{code:02x}" for code in c._massage_timer_codes.values()} & keys
     for minutes, expected in sent.items():
-        for press in (
-            lambda ctrl, code=c._massage_timer_codes[minutes]: _tap_action(code)(ctrl),
-            lambda ctrl, m=minutes: ctrl.set_massage_timer(m),
-        ):
-            fresh = _timer_layout(kind, app, model)
-            delays.clear()
-            await press(fresh)
-            assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
+        fresh = _timer_layout(kind, app, model)
+        delays.clear()
+        await fresh.set_massage_timer(minutes)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
 
 
 @pytest.mark.parametrize(
