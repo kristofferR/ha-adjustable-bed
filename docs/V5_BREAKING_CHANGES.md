@@ -357,7 +357,9 @@ Other action changes:
   `starts_actuator_homing`, `set_system_time`, the cooling and core-temperature
   module commands (`get_frosty_mode`, `set_frosty_mode`, `get_frosty_presence`,
   `get_heidi_mode`, `set_heidi_mode`, `get_heidi_presence`) or
-  `get_system_status` (network and update status). Restarting and homing are
+  `get_system_status` (network and update status), and MCR beds no longer
+  offer `preset_reset`, which reset a saved position without asking first.
+  Restarting and homing are
   buttons now (see **New controls** under [Entities](#entities)); **Restart
   bed** always restarts both components, so one component can no longer be
   restarted alone. Set the clock with `sync_clock`, which writes Home
@@ -365,8 +367,7 @@ Other action changes:
   are the **Climate** entities and their duration the **Climate Timer**
   selects; module presence is detected automatically. `kid_outlet` and
   `kid_outlet_status` accept only `device: 0`. New
-  commands: `reset_articulation_presets`, `run_diagnostics`, `bind_foundation`
-  and `underbed_intensity`. See the
+  commands: `run_diagnostics`, `bind_foundation` and `underbed_intensity`. See the
   [Sleep Number command guide](beds/sleep-number-services.md).
 - `timed_move` and `hold_control` gain optional `hold_owner` and
   `hold_generation` fields for renewable holds. Calls without them work as
