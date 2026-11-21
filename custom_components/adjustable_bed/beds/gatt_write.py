@@ -43,6 +43,11 @@ class GattWriter(ABC):
         """Return a safe diagnostic representation of a command."""
         return format_payload(command)
 
+    def loggable_hex(self, command: bytes) -> str:
+        """Return the command's hex for a log line, redacted as the trace is."""
+        payload = self._format_command_trace_payload(command)
+        return str(payload.get("hex", "**REDACTED**")) if payload else "**REDACTED**"
+
     def _record_command_trace(
         self,
         char_uuid: str,
@@ -152,8 +157,7 @@ class GattWriter(ABC):
             raise BedNotConnectedError
 
         effective_cancel = cancel_event or self._coordinator.cancel_command
-        payload = self._format_command_trace_payload(command)
-        logged_command = str(payload.get("hex", "**REDACTED**")) if payload else "**REDACTED**"
+        logged_command = self.loggable_hex(command)
 
         _LOGGER.debug(
             "GATT write to %s (%s): %s (response=%s, repeat=%d, delay=%dms, wall_clock_pacing=%s)",

@@ -7,6 +7,8 @@ come from the JMC400 support bundle and capture in issue #631.
 from __future__ import annotations
 
 import asyncio
+import json
+import re
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
@@ -23,6 +25,7 @@ from custom_components.adjustable_bed.beds.jensen.controller import (
     JensenController,
     JensenFeatureFlags,
 )
+from custom_components.adjustable_bed.ble_diagnostics import BLEDiagnosticRunner, DiagnosticReport
 from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JENSEN,
@@ -37,6 +40,8 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.state_keys import massage_intensity
+from custom_components.adjustable_bed.support_bundle import generate_support_bundle
+from custom_components.adjustable_bed.support_logs import async_setup_support_logs
 from tests.state_helpers import published
 
 from .conftest import make_controller_mock
@@ -1393,3 +1398,68 @@ async def test_a_jmc400_set_up_through_the_family_row_keeps_its_massage_buttons(
         if item.domain == "button" and "_massage_" in item.unique_id
     ]
     assert bool(massage_buttons) is massage
+
+
+async def test_support_bundle_never_contains_the_pin(
+    hass: HomeAssistant,
+    mock_jensen_config_entry_data: dict,
+    mock_coordinator_connected,
+    _shorten_mocked_config_timeout: None,
+) -> None:
+    """The PIN frame is in no trace, log line or notification of a bundle (PRIV-1)."""
+    mock_jensen_config_entry_data[CONF_JENSEN_PIN] = "8264"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_jensen_config_entry_data,
+        unique_id="AA:BB:CC:DD:EE:FF",
+        entry_id="jensen_bundle_entry",
+    )
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    logs = async_setup_support_logs(hass)
+    with logs.capture_debug():
+        await coordinator.async_connect()
+        await coordinator.async_execute_controller_command(lambda _controller: asyncio.sleep(0))
+    pin_frame = jmc.pin("8264")
+    # The bed echoes nothing secret, but a capture records whatever it receives.
+    reply = {"characteristic": JENSEN_CHAR_UUID, "timestamp": "t", "data_hex": "1e01"}
+    capture = DiagnosticReport(
+        metadata={},
+        device={"address": entry.data[CONF_ADDRESS]},
+        advertisement=None,
+        advertisements_by_source=[],
+        detection={},
+        gatt_services=[],
+        gatt_summary={},
+        device_information={},
+        notifications=[reply],
+        notification_summary={},
+        adapter_details={},
+        connection_history={},
+        connection_attempt_details=[],
+        command_trace=list(coordinator.command_trace),
+        errors=[],
+    )
+    with (
+        patch.object(BLEDiagnosticRunner, "run_diagnostics", new=AsyncMock(return_value=capture)),
+        patch(
+            "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+            return_value=[],
+        ),
+    ):
+        report = await generate_support_bundle(
+            hass,
+            address=entry.data[CONF_ADDRESS],
+            capture_duration=0,
+            include_logs=True,
+            coordinator=coordinator,
+            entry=entry,
+        )
+
+    assert sum(
+        trace["payload"]["hex"] == "**REDACTED**" for trace in report["command_trace"]
+    ) >= 2, "the PIN was sent on connect and before the command"
+    assert any("GATT write to" in log["message"] for log in report["recent_logs"])
+    dumped = json.dumps(report)
+    assert pin_frame.hex() not in dumped
+    assert re.search(r"(?<!\d)8264(?!\d)", dumped) is None

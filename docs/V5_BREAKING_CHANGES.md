@@ -382,6 +382,10 @@ Other action changes:
   (`estimate_save_position`, `estimate_recall_position`,
   `estimate_set_reference`, `lower_to_flat` and others), useful only after you
   enable estimated positions.
+- `generate_support_bundle` needs an administrator. Its file keeps only the
+  manufacturer prefix of Bluetooth addresses, leaves out names you typed,
+  health readings and other nearby devices, and only the five newest bundles
+  are kept. See [what the files share](GETTING_HELP.md#what-the-files-share).
 
 ### If you ran a v5 beta
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import stat
 import sys
 from datetime import UTC, datetime
@@ -34,39 +33,15 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
-    DOMAIN,
     connection_gated_by_bond,
     requires_pairing,
 )
-from .redaction import redact_pins_only
 from .support_logs import DATA_SUPPORT_LOGS
 
 if TYPE_CHECKING:
     from .paired_coordinator import BedChild
 
 _LOGGER = logging.getLogger(__name__)
-
-# Maximum number of log entries to include
-MAX_LOG_ENTRIES = 100
-
-# How much of the tail of home-assistant.log to scan (bytes). Debug runs are
-# verbose, so keep enough history to cover a reproduction without reading the
-# whole (potentially multi-MB) file.
-_LOG_TAIL_BYTES = 512 * 1024
-
-# Standard Home Assistant log line:
-#   2026-06-24 13:26:56.557 DEBUG (MainThread) [logger.name] message
-_LOG_LINE_RE = re.compile(
-    r"^(?P<ts>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[.,]\d+) "
-    r"(?P<level>[A-Z]+) "
-    r"\([^)]*\) "
-    r"\[(?P<name>[^\]]+)\] "
-    r"(?P<msg>.*)$"
-)
-
-# Logger-name fragments worth keeping for bed debugging.
-_RELEVANT_LOG_NAMES = (DOMAIN, "bluetooth", "bleak", "habluetooth")
-
 
 def _get_system_info(hass: HomeAssistant, integration_version: str) -> dict[str, Any]:
     """Get system information."""
@@ -247,20 +222,6 @@ async def _get_bluetooth_info(
     return info
 
 
-async def _get_recent_logs(hass: HomeAssistant) -> list[dict[str, str]]:
-    """Read the integration's memory buffer, with a file fallback for legacy callers."""
-    if (buffer := hass.data.get(DATA_SUPPORT_LOGS)) is not None:
-        return buffer.snapshot()
-    log_path = hass.config.path("home-assistant.log")
-    return await hass.async_add_executor_job(_read_log_file, log_path)
-
-
-def _is_relevant_log_name(name: str) -> bool:
-    """Return True if a logger name belongs to the bed/Bluetooth stack."""
-    lowered = name.lower()
-    return any(fragment in lowered for fragment in _RELEVANT_LOG_NAMES)
-
-
 class _NotARegularFile(OSError):
     """The log path exists but is a FIFO, device, or similar."""
 
@@ -297,91 +258,6 @@ def _open_regular_file(log_path: str) -> int:
         os.close(fd)
         raise
     return fd
-
-
-def _tail_text(log_path: str, max_bytes: int) -> str:
-    """Read up to the last ``max_bytes`` of a UTF-8 log file as text.
-
-    Refuses anything that is not a regular file: opening a FIFO blocks until a
-    writer appears, which would hang the capture in its executor thread.
-    """
-    fd = _open_regular_file(log_path)
-    try:
-        handle = os.fdopen(fd, "rb")
-    except BaseException:
-        os.close(fd)
-        raise
-    with handle:
-        handle.seek(0, 2)
-        size = handle.tell()
-        start = max(0, size - max_bytes)
-        handle.seek(start)
-        data = handle.read()
-    # If we seeked into the middle of the file, drop the partial first line.
-    if start > 0:
-        newline = data.find(b"\n")
-        if newline != -1:
-            data = data[newline + 1 :]
-    return data.decode("utf-8", errors="replace")
-
-
-def _read_log_file(log_path: str) -> list[dict[str, str]]:
-    """Parse relevant entries out of the tail of the HA log file.
-
-    Runs in an executor (blocking file I/O). Continuation lines (e.g. traceback
-    bodies) are appended to the entry they belong to so multi-line records stay
-    readable.
-    """
-    try:
-        raw = _tail_text(log_path, _LOG_TAIL_BYTES)
-    except OSError as err:
-        _LOGGER.debug("Could not read %s: %s", log_path, err)
-        # A missing file and an unreadable one need different remedies, so keep
-        # the distinction (and the original error) instead of always blaming
-        # disabled logging.
-        # A FIFO (a container logging to stdout) needs the same remedy as a
-        # missing file: a real log to download, not a permissions fix.
-        missing = isinstance(err, FileNotFoundError | _NotARegularFile)
-        hint = (
-            "File logging may be disabled; enable it and reproduce the issue to "
-            "capture logs."
-            if missing
-            else "The log file exists but could not be read; check its permissions "
-            "and the configured log path."
-        )
-        return [
-            {
-                "timestamp": datetime.now(UTC).isoformat(),
-                "level": "INFO",
-                "name": DOMAIN,
-                "message": f"Could not read {log_path}: {err}. {hint}",
-                "log_read_error": str(err),
-                "log_read_reason": "missing" if missing else "unreadable",
-            }
-        ]
-
-    logs: list[dict[str, str]] = []
-    current: dict[str, str] | None = None
-    for line in raw.splitlines():
-        match = _LOG_LINE_RE.match(line)
-        if match:
-            if not _is_relevant_log_name(match.group("name")):
-                current = None
-                continue
-            # Only redact PINs — MACs/names are needed for debugging and the
-            # caller applies its own MAC redaction over the whole report.
-            current = {
-                "timestamp": match.group("ts"),
-                "level": match.group("level"),
-                "name": match.group("name"),
-                "message": redact_pins_only({"msg": match.group("msg")})["msg"],
-            }
-            logs.append(current)
-        elif current is not None:
-            # Continuation of the current (relevant) entry, e.g. a traceback.
-            current["message"] += "\n" + redact_pins_only({"msg": line})["msg"]
-
-    return logs[-MAX_LOG_ENTRIES:]
 
 
 def _probe_log_file(log_path: str) -> tuple[bool, str | None, str | None]:
@@ -434,9 +310,7 @@ async def async_check_log_file(hass: HomeAssistant) -> dict[str, Any]:
     #
     # os.open on a wedged network or FUSE mount cannot be cancelled, so no
     # arrangement here can free the worker; the only question is which pool it
-    # is stranded in. _get_recent_logs() already performs this same open on this
-    # same executor a few seconds later during the capture, so the probe adds no
-    # hazard that the capture did not already carry. A private executor would
+    # is stranded in. A private executor would
     # instead leave a thread that concurrent.futures joins at interpreter
     # shutdown, which can block a clean Home Assistant restart: strictly worse.
     # The caller's timeout is what keeps the *service* responsive.
