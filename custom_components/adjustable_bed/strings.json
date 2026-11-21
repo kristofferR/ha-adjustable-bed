@@ -3012,12 +3012,6 @@
       "jalon_massage_feet": {
         "name": "Feet massage"
       },
-      "jalon_massage_all": {
-        "name": "Massage all"
-      },
-      "jalon_massage_type": {
-        "name": "Cycle massage type"
-      },
       "jalon_bed_massage_timer": {
         "name": "Cycle massage timer"
       },
@@ -4618,9 +4612,6 @@
       },
       "doublesleep_massage_time": {
         "name": "Massage timer"
-      },
-      "doublesleep_massage_source": {
-        "name": "Massage source"
       },
       "doublesleep_sonic_mode": {
         "name": "Sonic massage mode"
