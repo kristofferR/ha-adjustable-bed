@@ -9748,6 +9748,12 @@
     "memory_programming_not_supported": {
       "message": "{device_name} cannot save memory presets."
     },
+    "memory_slot_empty": {
+      "message": "Memory {preset} on {device_name} is empty. Save a position to it first."
+    },
+    "memory_position_unknown": {
+      "message": "{device_name} has not reported its position yet, so memory {preset} was not saved. Move the bed a little, then save again."
+    },
     "invalid_preset_number": {
       "message": "{device_name} has memory presets 1 to {max_preset}, so preset {requested_preset} is not available. Choose one of those."
     },
@@ -9816,6 +9822,9 @@
     },
     "position_estimate_not_tracking": {
       "message": "The estimated position is not confirmed. Set the reference, or confirm the bed has not moved, first."
+    },
+    "saved_position_ambiguous": {
+      "message": "More than one saved position is called {position}. Choose a side, or use the position's ID."
     },
     "saved_position_not_found": {
       "message": "There is no saved position named \"{position}\"."

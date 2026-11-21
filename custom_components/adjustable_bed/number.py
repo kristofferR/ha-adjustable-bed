@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant, callback
 
 from .bed_traits import bed_type_has_position_feedback
 from .beds.entity_specs import ControllerNumberSpec, PositionNumberSpec
-from .beds.octo.runtime import octo_controller
+from .beds.octo.runtime import octo_controls_locked
 from .card import (
     CARD_CLIMATE,
     CARD_FIRMNESS,
@@ -542,10 +542,9 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
     def available(self) -> bool:
         """Respect Octo's PIN gate for live settings."""
         controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
         return (
             super().available
-            and (octo is None or octo.normal_controls_available)
+            and not octo_controls_locked(controller)
             and (
                 controller is None
                 or self.entity_description.key not in controller.unavailable_controller_entity_keys
@@ -626,7 +625,8 @@ def _combined_position_entities_for(
     source is unknown, not absent, so no combined slider is built until both
     sides are known (same rule as the combined buttons).
     """
-    if not children or any(child.capability_controller is None for child in children):
+    # A side kept by its own entry leaves nothing to combine.
+    if len(children) < 2 or any(child.capability_controller is None for child in children):
         return []
     specs_per_side = [_position_number_specs(child) for child in children]
     specs_by_side = [{spec.key: spec for spec in specs} for specs in specs_per_side]
@@ -724,7 +724,7 @@ class PairedBedCombinedPositionNumber(RenamesInPlace, PlacedInCard, NumberEntity
     """A 'both sides' position slider on the paired parent device.
 
     Reports the mean of the sides' positions, so the slider sits between them
-    while they differ. Setting it seeks both sides to the same target through
+    while they differ, and nothing while a side has not reported. Setting it seeks both sides to the same target through
     the parent (side=both), which takes the pair command lock.
     """
 
@@ -774,14 +774,17 @@ class PairedBedCombinedPositionNumber(RenamesInPlace, PlacedInCard, NumberEntity
 
     @property
     def native_value(self) -> float | None:
-        """Return the mean position of the sides that report one."""
+        """Return the mean position, unknown until every side reports one.
+
+        One side's angle is not the whole bed's.
+        """
         max_angle = self.entity_description.max_angle
         position_key = self.entity_description.position_key
-        positions = [
-            min(max_angle, max(0.0, float(position)))
-            for child in self._coordinator.children.values()
-            if (position := child.position_data.get(position_key)) is not None
-        ]
+        positions: list[float] = []
+        for child in self._coordinator.children.values():
+            if (position := child.position_data.get(position_key)) is None:
+                return None
+            positions.append(min(max_angle, max(0.0, float(position))))
         if not positions:
             return None
         return sum(positions) / len(positions)
@@ -1030,7 +1033,7 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return side metadata for the configured Sleep Number setting."""
-        attrs: dict[str, Any] = {}
+        attrs = self._base_attributes()
         side = self._coordinator.controller_state.get(SLEEP_NUMBER_SIDE)
         if side is not None:
             attrs["side"] = side
@@ -1099,7 +1102,7 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the side served by this number entity."""
-        return {"side": self.entity_description.side}
+        return {**self._base_attributes(), "side": self.entity_description.side}
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the side-specific value through the controller."""

@@ -17,27 +17,35 @@ coordinator's scheduler with each protocol's own cadence, cancellation and STOP.
 The estimator only wraps the controller command an entry point already sends,
 times it and never sends a frame of its own. Wrappers resolve the physical bed
 from the controller they are called with, so a paired fan-out updates each side.
+
+Calibration, estimates and saved positions are stored per Bluetooth address,
+like app state, so they follow a bed when it is combined into a pair or
+separated from one. Each address stores its own part of every saved position.
 """
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import logging
 import time
-from collections.abc import Callable, Coroutine, Iterable, Mapping
+from collections.abc import Callable, Collection, Coroutine, Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
+from functools import partial
 from typing import TYPE_CHECKING, Any, Final, TypedDict
 from uuid import uuid4
 
+from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, SIDE_BOTH
+from .const import CONF_SIDE, DOMAIN, SIDE_BOTH
 from .errors import failed, invalid
+from .pairing import iter_children
 from .runtime_data import DomainKey, domain_registry, domain_value, loaded_runtime
 
 if TYPE_CHECKING:
@@ -49,8 +57,9 @@ _LOGGER = logging.getLogger(__name__)
 
 STORAGE_VERSION: Final = 1
 _REGISTRY_KEY: Final[DomainKey[dict[str, PositionEstimates]]] = DomainKey("position_estimates")
-# Confirmations survive an entry reload (options change) but never a restart.
-_SESSION_KEY: Final[DomainKey[dict[str, dict[tuple[str, str], float]]]] = DomainKey(
+# Confirmations survive an entry reload, combining and separating, but never a
+# restart. Keyed by address, then motor.
+_SESSION_KEY: Final[DomainKey[dict[str, dict[str, float]]]] = DomainKey(
     "position_estimate_session"
 )
 STANDALONE_KEY: Final = "bed"
@@ -367,9 +376,6 @@ class SavedPosition:
     button: bool
     targets: dict[str, dict[str, float]] = field(default_factory=dict)
 
-    def stored(self) -> dict[str, Any]:
-        return {"id": self.id, "name": self.name, "button": self.button, "targets": self.targets}
-
     @classmethod
     def restored(cls, stored: Mapping[str, Any]) -> SavedPosition | None:
         position_id, name = stored.get("id"), stored.get("name")
@@ -402,11 +408,16 @@ class PositionEstimates:
     ) -> None:
         self.hass = hass
         self.entry_id = entry_id
-        self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, storage_key(entry_id))
         self.beds: dict[str, BedEstimate] = {
             address.upper(): BedEstimate(self, address.upper(), side) for address, side in beds
         }
+        self._stores: dict[str, Store[dict[str, Any]]] = {
+            address: Store(hass, STORAGE_VERSION, storage_key(address)) for address in self.beds
+        }
         self.positions: list[SavedPosition] = []
+        # Positions given a new id at load, by new id: the address and id their
+        # button was stored under, so the button can follow.
+        self.renamed_ids: dict[str, tuple[str, str]] = {}
         self._listeners: list[Callable[[], None]] = []
 
     @property
@@ -420,42 +431,86 @@ class PositionEstimates:
         return next((bed for bed in self.beds.values() if bed.key == key), None)
 
     async def async_load(self) -> None:
-        stored = await self._store.async_load() or {}
-        stored_beds = stored.get("beds")
-        session = (domain_value(self.hass, _SESSION_KEY) or {}).pop(self.entry_id, {})
-        if isinstance(stored_beds, dict):
-            for address, motors in stored_beds.items():
-                bed = self.bed_for_address(address) if isinstance(address, str) else None
-                if bed is None or not isinstance(motors, dict):
-                    continue
-                for motor, data in motors.items():
+        await async_migrate_entry_store(
+            self.hass, self.entry_id, {bed.key: bed.address for bed in self.beds.values()}
+        )
+        session = domain_value(self.hass, _SESSION_KEY) or {}
+        for bed in self.beds.values():
+            stored = await self._stores[bed.address].async_load() or {}
+            trusted = session.pop(bed.address, {})
+            stored_motors = stored.get("motors")
+            if isinstance(stored_motors, dict):
+                for motor, data in stored_motors.items():
                     if isinstance(motor, str) and isinstance(data, dict):
                         estimate = MotorEstimate.restored(data)
-                        if (
-                            estimate.percent is not None
-                            and session.get((bed.address, motor)) == estimate.percent
-                        ):
-                            # An entry reload within one Home Assistant run keeps trust.
+                        if estimate.percent is not None and trusted.get(motor) == estimate.percent:
+                            # A reload, combine or separate within one Home
+                            # Assistant run keeps trust.
                             estimate.confirmed = True
                             estimate.reason = None
                         bed.motors[motor] = estimate
+            self._load_positions(bed, stored)
+
+    def _load_positions(self, bed: BedEstimate, stored: Mapping[str, Any]) -> None:
         stored_positions = stored.get("positions")
         if isinstance(stored_positions, list):
-            self.positions = [
-                position
-                for item in stored_positions
-                if isinstance(item, dict) and (position := SavedPosition.restored(item))
-            ]
+            for item in stored_positions:
+                # Each address stores its own motors' targets of a position.
+                part = (
+                    SavedPosition.restored({**item, "targets": {bed.key: item.get("targets")}})
+                    if isinstance(item, dict)
+                    else None
+                )
+                if part is not None and part.targets:
+                    self._add_position_part(part, bed.address)
 
-    def _data_to_save(self) -> dict[str, Any]:
+    def _add_position_part(self, part: SavedPosition, address: str) -> None:
+        """Add one bed's part of a saved position.
+
+        Parts with the same id, name and button are one position stored by each
+        side of a pair. Every other part stays a position of its own bed, so
+        combining and separating keep each position's id and button. A part
+        whose id another position already uses gets one derived from its bed
+        and old id: until a change saves it, every load derives the same id, so
+        its button can follow from the old one even after a failed setup.
+        """
+        same = next((item for item in self.positions if item.id == part.id), None)
+        if same is None:
+            self.positions.append(part)
+            return
+        if (
+            (same.name, same.button) == (part.name, part.button)
+            and not same.targets.keys() & part.targets.keys()
+        ):
+            same.targets.update(part.targets)
+            return
+        new_id = hashlib.sha256(f"{address}:{part.id}".encode()).hexdigest()[:12]
+        self.renamed_ids[new_id] = (address, part.id)
+        part.id = new_id
+        self.positions.append(part)
+
+    def _stored(self, bed: BedEstimate) -> dict[str, Any]:
         return {
-            "beds": {address: bed.stored() for address, bed in self.beds.items() if bed.motors},
-            "positions": [position.stored() for position in self.positions],
+            "motors": bed.stored(),
+            "positions": [
+                {
+                    "id": position.id,
+                    "name": position.name,
+                    "button": position.button,
+                    "targets": position.targets[bed.key],
+                }
+                for position in self.positions
+                if bed.key in position.targets
+            ],
         }
+
+    def _save(self) -> None:
+        for bed in self.beds.values():
+            self._stores[bed.address].async_delay_save(partial(self._stored, bed), 1)
 
     def changed(self) -> None:
         """Persist and publish a change."""
-        self._store.async_delay_save(self._data_to_save, 1)
+        self._save()
         for listener in list(self._listeners):
             listener()
 
@@ -471,24 +526,34 @@ class PositionEstimates:
     async def async_unload(self) -> None:
         """Flush, and keep confirmations for a reload in this Home Assistant run."""
         session = domain_registry(self.hass, _SESSION_KEY, dict)
-        session[self.entry_id] = {
-            (bed.address, motor): estimate.percent
-            for bed in self.beds.values()
-            for motor, estimate in bed.motors.items()
-            if estimate.state is EstimateState.TRACKING and estimate.percent is not None
-        }
-        await self._store.async_save(self._data_to_save())
+        for bed in self.beds.values():
+            session[bed.address] = {
+                motor: estimate.percent
+                for motor, estimate in bed.motors.items()
+                if estimate.state is EstimateState.TRACKING and estimate.percent is not None
+            }
+            await self._stores[bed.address].async_save(self._stored(bed))
 
     # ------------------------------------------------------------- saved positions
-    def position(self, reference: str) -> SavedPosition:
-        """Find a saved position by id, then by case-insensitive name."""
+    def position(self, reference: str, keys: Collection[str] | None = None) -> SavedPosition:
+        """Find a saved position by id, then by case-insensitive name.
+
+        Combined beds can each bring a position of the same name; ``keys``, the
+        selected beds, tells them apart, and a name that stays ambiguous is
+        refused rather than guessed.
+        """
         found = next((item for item in self.positions if item.id == reference), None)
-        if found is None:
-            folded = reference.strip().casefold()
-            found = next((item for item in self.positions if item.name.casefold() == folded), None)
-        if found is None:
+        if found is not None:
+            return found
+        folded = reference.strip().casefold()
+        named = [item for item in self.positions if item.name.casefold() == folded]
+        within = [item for item in named if keys is not None and set(item.targets) <= set(keys)]
+        named = within or named
+        if len(named) > 1:
+            raise invalid("saved_position_ambiguous", position=reference.strip())
+        if not named:
             raise invalid("saved_position_not_found", position=reference)
-        return found
+        return named[0]
 
     def current_targets(self, beds: Iterable[BedEstimate]) -> dict[str, dict[str, float]]:
         """Capture the current estimates; every motor must be tracking."""
@@ -520,7 +585,8 @@ class PositionEstimates:
         self, position: SavedPosition, name: str, *, button: bool | None = None
     ) -> None:
         clean = _position_name(name)
-        if any(
+        # Combined beds may already share a name; keeping it is no clash.
+        if clean.casefold() != position.name.casefold() and any(
             item is not position and item.name.casefold() == clean.casefold()
             for item in self.positions
         ):
@@ -541,8 +607,76 @@ class PositionEstimates:
         self.changed()
 
 
-def storage_key(entry_id: str) -> str:
+def storage_key(address: str) -> str:
+    """Store of one physical bed: calibration, estimates and its part of saved positions."""
+    return f"{DOMAIN}.position_estimates_bed_{address.replace(':', '_').lower()}"
+
+
+def entry_storage_key(entry_id: str) -> str:
+    """Store of the first v5 betas, one per config entry; split per bed on first use."""
     return f"{DOMAIN}.position_estimates_{entry_id}"
+
+
+def estimate_bed_keys(entry_data: Mapping[str, Any]) -> dict[str, str]:
+    """Map each saved-position bed key of a config entry to its address."""
+    keys = {
+        side: address
+        for child in iter_children(entry_data)
+        if isinstance(side := child.get(CONF_SIDE), str)
+        and isinstance(address := child.get(CONF_ADDRESS), str)
+    }
+    address = entry_data.get(CONF_ADDRESS)
+    if isinstance(address, str):
+        keys[STANDALONE_KEY] = address
+    return keys
+
+
+async def async_migrate_entry_store(
+    hass: HomeAssistant, entry_id: str, addresses: Mapping[str, str]
+) -> bool:
+    """Move a first-beta per-entry store into the stores of its beds, then remove it.
+
+    ``addresses`` maps the bed keys saved positions use to addresses. Values
+    already in a bed's store win, so a repeated migration never loses data. The
+    old store stays until every bed's store reads back as written; False
+    means it is still there.
+    """
+    legacy: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, entry_storage_key(entry_id))
+    data = await legacy.async_load()
+    if data is None:
+        return True
+    parts: dict[str, dict[str, Any]] = {}
+    stored_beds = data.get("beds") if isinstance(data, dict) else None
+    if isinstance(stored_beds, dict):
+        for address, motors in stored_beds.items():
+            if isinstance(address, str) and isinstance(motors, dict):
+                parts.setdefault(address.upper(), {"motors": {}, "positions": []})["motors"] = motors
+    stored_positions = data.get("positions") if isinstance(data, dict) else None
+    for item in stored_positions if isinstance(stored_positions, list) else ():
+        targets = item.get("targets") if isinstance(item, dict) else None
+        if not isinstance(targets, dict):
+            continue
+        for key, motors in targets.items():
+            if (address := addresses.get(key)) is not None:
+                part = parts.setdefault(address.upper(), {"motors": {}, "positions": []})
+                part["positions"].append({**item, "targets": motors})
+    for address, part in parts.items():
+        store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, storage_key(address))
+        current = await store.async_load() or {}
+        current_motors = current.get("motors")
+        current_positions = current.get("positions")
+        motors = {**part["motors"], **(current_motors if isinstance(current_motors, dict) else {})}
+        positions = current_positions if isinstance(current_positions, list) else []
+        known = {item.get("id") for item in positions if isinstance(item, dict)}
+        positions = [*positions, *(item for item in part["positions"] if item.get("id") not in known)]
+        written = {"motors": motors, "positions": positions}
+        await store.async_save(written)
+        # Home Assistant logs a failed write without raising.
+        if await Store(hass, STORAGE_VERSION, storage_key(address)).async_load() != written:
+            _LOGGER.warning("Could not move estimated positions of %s; will retry", address)
+            return False
+    await legacy.async_remove()
+    return True
 
 
 def _position_name(name: str) -> str:
@@ -582,9 +716,39 @@ async def async_unload_position_estimates(hass: HomeAssistant, entry_id: str) ->
         await manager.async_unload()
 
 
-async def async_remove_position_estimates(hass: HomeAssistant, entry_id: str) -> None:
-    (domain_value(hass, _SESSION_KEY) or {}).pop(entry_id, None)
-    await Store(hass, STORAGE_VERSION, storage_key(entry_id)).async_remove()
+async def async_one_side_positions(
+    hass: HomeAssistant, entry_id: str, beds: Iterable[tuple[str, str | None]]
+) -> dict[str, tuple[str, str]]:
+    """Saved positions of one bed or side: their address and the id that bed stores.
+
+    Keyed by the id a load of these beds gives the position. Reads the beds'
+    stores as a load would, so it needs no loaded entry; the entry must be
+    unloaded, which saves its positions.
+    """
+    manager = PositionEstimates(hass, entry_id, beds)
+    for bed in manager.beds.values():
+        manager._load_positions(bed, await manager._stores[bed.address].async_load() or {})
+    return {
+        position.id: manager.renamed_ids.get(position.id, (bed.address, position.id))
+        for position in manager.positions
+        if len(position.targets) == 1
+        and (bed := manager.bed_for_key(next(iter(position.targets)))) is not None
+    }
+
+
+async def async_remove_position_estimates(
+    hass: HomeAssistant, entry_id: str, entry_data: Mapping[str, Any], unowned: Iterable[str]
+) -> None:
+    """Forget the stores of beds that no config entry owns any more.
+
+    Combining and separating remove entries whose beds another entry takes
+    over, so those beds keep their calibration and saved positions.
+    """
+    await async_migrate_entry_store(hass, entry_id, estimate_bed_keys(entry_data))
+    session = domain_value(hass, _SESSION_KEY) or {}
+    for address in unowned:
+        session.pop(address.upper(), None)
+        await Store(hass, STORAGE_VERSION, storage_key(address)).async_remove()
 
 
 def _estimates_active(hass: HomeAssistant | None) -> bool:
@@ -873,11 +1037,14 @@ async def async_move_bed(
             return False
         estimate = bed.motors[motor]
         plan = estimate.plan(targets[motor])
-        if plan is not None and plan[1] * 1000 >= MIN_MOVE_MS:
+        if plan is not None and plan[1] * 1000 < MIN_MOVE_MS:
+            # A motor closer than the shortest move is as close as it gets.
+            plan = None
+        if plan is not None:
             await _async_timed_move(parent, bed, motor, plan[0], plan[1])
         if estimate.state is not EstimateState.TRACKING:
             raise failed("position_estimate_move_failed")
-        if not _arrived(bed, motor, targets[motor]):
+        if plan is not None and not _arrived(bed, motor, targets[motor]):
             return False
     return True
 

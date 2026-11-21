@@ -363,4 +363,7 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the parser metadata selected by the controller spec."""
         state = self._coordinator.controller_state
-        return {key: state[key] for key in self._spec.attribute_keys if key in state}
+        return {
+            **self._base_attributes(),
+            **{key: state[key] for key in self._spec.attribute_keys if key in state},
+        }
