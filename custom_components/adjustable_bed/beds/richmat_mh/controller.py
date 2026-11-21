@@ -57,7 +57,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..family_actions import YogaPresetActions
-from ..richmat.labels import MH_CODES, preset_name, richmat_mh_name
+from ..richmat.labels import MH_CODES, preset_name, richmat_mh_name, richmat_mh_timer_minutes
 from ..ruf_richmat.models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from . import catalog
 from .models import RICHMAT_MH_MODEL_CHOICES
@@ -391,12 +391,6 @@ def _clean_label(label: str) -> str:
     return " ".join(label.replace("\\n", " ").replace("\n", " ").split())
 
 
-# The massage timers of this app vocabulary (its GGRM catalog names them), by
-# their minutes. A layout's control is one only where its own label agrees.
-_MASSAGE_TIMERS: Final = {0x5F: 10, 0x63: 20, 0x61: 30}
-_MINUTES: Final = re.compile(r"(\d+)\s*min", re.IGNORECASE)
-
-
 @dataclass(frozen=True, slots=True)
 class Axis:
     key: str
@@ -723,9 +717,9 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         """
         timers: dict[int, int] = {}
         for c in self._controls():
-            minutes = _MINUTES.search(_clean_label(c.label)) if c.area == "massage" else None
-            if minutes and _MASSAGE_TIMERS.get(c.code) == int(minutes[1]):
-                timers.setdefault(int(minutes[1]), c.code)
+            minutes = richmat_mh_timer_minutes(c.code, c.label) if c.area == "massage" else None
+            if minutes is not None:
+                timers.setdefault(minutes, c.code)
         return timers if len(timers) > 1 else {}
 
     @property

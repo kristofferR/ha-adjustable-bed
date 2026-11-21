@@ -696,9 +696,10 @@ def _timer_layout(kind: str, app: str, model: str):
 TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"], ["6e010061d0", "6e01006edd"]
 
 
-# Running every timer button and the select on all 4,104 Richmat MH-family
-# layout pages gives 8 groups by the frames and delays they send; one layout of
-# each group is pinned here. The frames are what the buttons sent.
+# Running every timer button and the select on all 4,139 Richmat MH-family
+# layout pages gives 11 groups by the frames and delays they send; one layout of
+# each group is pinned here. The frames are what the buttons sent. Hour timers
+# send the minute timers' codes: the label states the duration.
 @pytest.mark.parametrize(
     ("kind", "app", "model", "sent", "stop_after"),
     [
@@ -710,6 +711,9 @@ TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"]
         ("app", "nisco", "mlrm", {10: TEN, 30: THIRTY}, 0.12),
         ("app", "nisco", "ygrm", {10: TEN, 20: TWENTY}, 0.12),
         ("bedtech", "bedtech_classic", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "americanstar", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.12),
+        ("ruf", "bailey2", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.1),
+        ("bedtech", "bedtech_classic", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.12),
     ],
 )
 async def test_massage_timer_select_sends_what_its_buttons_sent(delays, kind, app, model, sent, stop_after):
@@ -729,7 +733,7 @@ async def test_massage_timer_select_sends_what_its_buttons_sent(delays, kind, ap
     [
         ("app", "nisco", "a9rm", "richmat_mh_5f"),  # 10 minutes only
         ("app", "nisco", "ilrm", "richmat_mh_61"),  # 30 minutes only
-        ("ruf", "americanstar", "j2rm", "richmat_mh_63"),  # hour timers
+        ("ruf", "americanstar", "cwrn", "richmat_mh_60"),  # 15 minutes only
     ],
 )
 def test_a_layout_without_a_minute_timer_choice_keeps_its_buttons(kind, app, model, button):

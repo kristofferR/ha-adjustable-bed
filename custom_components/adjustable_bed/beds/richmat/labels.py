@@ -362,6 +362,18 @@ def _with_feature(feature: str, words: list[str]) -> str:
     return text[:1].upper() + text[1:]
 
 
+def richmat_mh_timer_minutes(code: int, label: str) -> int | None:
+    """The minutes a Richmat MH-family massage timer control sets, as its label states."""
+    if _MH_TIMERS.get(code) != MASSAGE:
+        return None
+    text = " ".join(_words(label))
+    duration = re.search(r"(\d+) (minutes|hours)|(minutes|hours) (\d+)", text)
+    if duration is None or _feature_of(text.split()) not in (None, MASSAGE):
+        return None
+    number, unit = int(duration[1] or duration[4]), duration[2] or duration[3]
+    return number * 60 if unit == "hours" else number
+
+
 def richmat_mh_name(code: int, label: str, *, massage_page: bool = False) -> tuple[str, bool]:
     """Name a Richmat MH-family control, and say whether the catalogs establish it.
 
