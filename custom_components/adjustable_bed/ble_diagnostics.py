@@ -27,6 +27,7 @@ from .adapter import (
 )
 from .address_lock import async_get_connect_lock
 from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
+from .codec.keeson import parse_json_indication
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_OKIMAT,
@@ -38,6 +39,7 @@ from .const import (
     DEVICE_INFO_CHARS,
     DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
+    KEESON_JSON_NOTIFY_CHAR_UUID,
     SUPPORTED_BED_TYPES,
 )
 from .detection import (
@@ -1032,6 +1034,12 @@ class BLEDiagnosticRunner:
             characteristic_uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
             # Both capture modes: a raw-address capture bypasses the controller.
             or CREDENTIAL_PAYLOAD.search(payload) is not None
+            # Dawn House sends whole JSON documents; one that does not parse may
+            # be part of a Wi-Fi password, as its controller also assumes.
+            or (
+                characteristic_uuid.lower() == KEESON_JSON_NOTIFY_CHAR_UUID
+                and parse_json_indication(payload) is None
+            )
         )
         if sensitive:
             payload = bytes(len(payload))

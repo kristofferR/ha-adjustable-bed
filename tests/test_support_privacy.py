@@ -23,6 +23,8 @@ from custom_components.adjustable_bed.app_state_store import jensen_memory_store
 from custom_components.adjustable_bed.beds.jensen.controller import JensenController
 from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_LOW_POWER_NOTIFY_UUID,
+    PAIRLINK_LOW_POWER_SERVICE_UUID,
+    PAIRLINK_LOW_POWER_WRITE_UUID,
     PAIRLINK_NOTIFY_UUID,
 )
 from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_storage import sdk_store_key
@@ -32,7 +34,12 @@ from custom_components.adjustable_bed.ble_diagnostics import (
     DiagnosticReport,
 )
 from custom_components.adjustable_bed.codec import jmc
-from custom_components.adjustable_bed.const import BED_TYPE_JENSEN, CONF_BED_TYPE, DOMAIN
+from custom_components.adjustable_bed.const import (
+    BED_TYPE_JENSEN,
+    CONF_BED_TYPE,
+    DOMAIN,
+    KEESON_JSON_NOTIFY_CHAR_UUID,
+)
 from custom_components.adjustable_bed.redaction import (
     redact_bundle,
     redact_data,
@@ -133,7 +140,8 @@ def _capture(address: str) -> DiagnosticReport:
 
 async def test_bundle_logs_leave_out_other_devices_and_typed_names(hass: HomeAssistant) -> None:
     """Lines about other people's devices are withheld, typed names starred (PRIV-3, PRIV-8)."""
-    MockConfigEntry(domain=DOMAIN, title="Kris side", data={CONF_ADDRESS: TARGET}).add_to_hass(hass)
+    for title in ("Kris", "Kris side", "Connection"):
+        MockConfigEntry(domain=DOMAIN, title=title, data={CONF_ADDRESS: TARGET}).add_to_hass(hass)
     logs = async_setup_support_logs(hass)
     logger = logging.getLogger("homeassistant.components.bluetooth.manager")
     with logs.capture_debug():
@@ -156,7 +164,9 @@ async def test_bundle_logs_leave_out_other_devices_and_typed_names(hass: HomeAss
     messages = [log["message"] for log in report["recent_logs"]]
     assert "AA:BB:CC:**:**:**: connecting" in messages
     assert "Anna" not in json.dumps(report)
-    assert "Kris" not in json.dumps(report)
+    assert "********* moved" in messages
+    # Typed names are starred in log lines only, never in the report's structure.
+    assert "connection" in report
     assert report["metadata"]["withheld_log_entries"] == 1
 
 
@@ -240,17 +250,31 @@ async def test_capture_hides_a_credential_message_in_either_mode(hass: HomeAssis
 
     await runner._handle_notification("0000b004-0000-1000-8000-00805f9b34fb", message)
 
-    (captured,) = runner._notifications
-    assert captured.data_hex == "**REDACTED**"
+    # A cut-off Dawn House indication can hold the rest of the password.
+    await runner._handle_notification(KEESON_JSON_NOTIFY_CHAR_UUID, b'ord-123"}')
+
+    assert [captured.data_hex for captured in runner._notifications] == ["**REDACTED**"] * 2
     assert b"secret".hex() not in str(runner._notification_payloads)
+    assert b"ord-123".hex() not in str(runner._notification_payloads)
 
 
-@pytest.mark.parametrize("bed_type", (None, "reverie_pairlink"))
-def test_pairlink_frames_never_reach_the_bundle(bed_type: str | None) -> None:
+@pytest.mark.parametrize(
+    ("bed_type", "low_power_profile"),
+    ((None, False), ("reverie_pairlink", False), (None, True)),
+)
+def test_pairlink_frames_never_reach_the_bundle(
+    bed_type: str | None, low_power_profile: bool
+) -> None:
     """A captured Pairlink frame would let anyone recover the bed's password."""
     frame = "0119" + "ab" * 16
+    characteristics = [{"uuid": PAIRLINK_LOW_POWER_NOTIFY_UUID}, {"uuid": PAIRLINK_LOW_POWER_WRITE_UUID}]
     report = {
         "integration": {"bed_type": bed_type},
+        "gatt_services": [
+            {"uuid": PAIRLINK_LOW_POWER_SERVICE_UUID, "characteristics": characteristics}
+        ]
+        if low_power_profile
+        else [],
         "notifications": [
             {"characteristic": PAIRLINK_NOTIFY_UUID, "data_hex": frame},
             {"characteristic": PAIRLINK_LOW_POWER_NOTIFY_UUID, "data_hex": frame},
@@ -260,8 +284,9 @@ def test_pairlink_frames_never_reach_the_bundle(bed_type: str | None) -> None:
     redact_pairlink_frames(report)
 
     hidden = [n["data_hex"] == "**REDACTED**" for n in report["notifications"]]
-    # The low-power characteristic's generic UUID is only hidden on a Pairlink bed.
-    assert hidden == [True, bed_type == "reverie_pairlink"]
+    # The low-power characteristic's generic UUID is hidden only on a Pairlink bed,
+    # or in a capture by address of a device with the whole low-power profile.
+    assert hidden == [True, bed_type == "reverie_pairlink" or low_power_profile]
 
 
 def test_saving_two_bundles_in_one_second_keeps_both(hass: HomeAssistant, tmp_path: Path) -> None:

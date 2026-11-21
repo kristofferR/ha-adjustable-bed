@@ -10,6 +10,7 @@ from homeassistant.const import CONF_NAME
 
 from .beds.reverie.pairlink_protocol import (
     PAIRLINK_LOW_POWER_NOTIFY_UUID,
+    PAIRLINK_LOW_POWER_SERVICE_UUID,
     PAIRLINK_LOW_POWER_WRITE_UUID,
     PAIRLINK_NOTIFY_UUID,
     PAIRLINK_WRITE_UUID,
@@ -103,14 +104,11 @@ def _ascii_hex(text: str) -> str:
     )
 
 
-def _device_half_pattern(
-    addresses: Iterable[str], names: Iterable[str] = ()
-) -> re.Pattern[str] | None:
+def _device_half_pattern(addresses: Iterable[str]) -> re.Pattern[str] | None:
     """Match the device-specific half of known addresses in any other form.
 
     Names, advertisement data and frames can carry it without separators, in
-    reverse byte order or as ASCII text, raw or hex-encoded. ``names`` are
-    typed names that log lines repeat.
+    reverse byte order or as ASCII text, raw or hex-encoded.
     """
     forms: set[str] = set()
     for address in addresses:
@@ -122,11 +120,6 @@ def _device_half_pattern(
         for ordered in (octets, octets[::-1]):
             forms.add("[:\\-_]?".join(ordered))
             forms.add("(?:3a|2d|5f)?".join(_ascii_hex(octet) for octet in ordered))
-    forms.update(
-        rf"(?<!\w){re.escape(name)}(?!\w)"
-        for name in names
-        if isinstance(name, str) and len(name.strip()) >= 3
-    )
     if not forms:
         return None
     return re.compile(f"(?i){'|'.join(sorted(forms))}")
@@ -176,16 +169,29 @@ def redact_data(data: Any, *, addresses: Iterable[str] = ()) -> Any:
     return _redact(data, KEYS_TO_REDACT, _device_half_pattern(addresses), 0)
 
 
-def redact_bundle(data: Any, *, addresses: Iterable[str], names: Iterable[str] = ()) -> Any:
+def redact_bundle(data: Any, *, addresses: Iterable[str]) -> Any:
     """Redact a support bundle: the diagnostics policy, but device names stay.
 
     Every Bluetooth address keeps only its manufacturer prefix. The device half
     of each address in ``addresses`` is also starred wherever it appears without
     separators, in reverse byte order or as ASCII (names, advertisement data,
-    frames, logs). ``names`` (typed entry names) are starred wherever log lines
-    repeat them. Health and presence readings keep their key only.
+    frames, logs). Health and presence readings keep their key only.
     """
-    return _redact(data, _BUNDLE_KEYS_TO_REDACT, _device_half_pattern(addresses, names), 0)
+    return _redact(data, _BUNDLE_KEYS_TO_REDACT, _device_half_pattern(addresses), 0)
+
+
+def names_pattern(names: Iterable[str]) -> re.Pattern[str] | None:
+    """Match typed names as whole words, the longest first so none is left half shown."""
+    words = sorted(
+        {name.strip() for name in names if isinstance(name, str) and len(name.strip()) >= 3},
+        key=len,
+        reverse=True,
+    )
+    if not words:
+        return None
+    return re.compile(
+        "(?i)" + "|".join(rf"(?<!\w){re.escape(word)}(?!\w)" for word in words)
+    )
 
 
 def _addresses_in(text: str) -> set[str]:
@@ -282,7 +288,15 @@ CREDENTIAL_PAYLOAD = re.compile(rb'(?i)"(?:ssid|pswd|password|passwd|pwd)"\s*:')
 def redact_pairlink_frames(report: dict[str, Any]) -> None:
     """Keep Pairlink frame lengths and counts, never their bytes."""
     secret = set(_PAIRLINK_CHARACTERISTICS)
-    if BED_TYPE_REVERIE_PAIRLINK in (
+    # A capture by address alone knows no bed type: the complete low-power
+    # profile, which no other supported bed uses, is enough.
+    low_power_profile = any(
+        str(service.get("uuid", "")).lower() == PAIRLINK_LOW_POWER_SERVICE_UUID
+        and {str(char.get("uuid", "")).lower() for char in service.get("characteristics", [])}
+        >= _PAIRLINK_LOW_POWER_CHARACTERISTICS
+        for service in report.get("gatt_services", [])
+    )
+    if low_power_profile or BED_TYPE_REVERIE_PAIRLINK in (
         report.get("detection", {}).get("bed_type"),
         report.get("integration", {}).get("bed_type"),
     ):

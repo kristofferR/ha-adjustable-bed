@@ -380,6 +380,6 @@ async def test_proxy_capture_leaves_out_other_devices(hass, proxy):
 
 def test_logged_notification_payloads_are_removed() -> None:
     """The generic notification log line keeps its source but not its bytes."""
-    for payload in ("1e01", "00112233445566778899aabbccddeeff"):
-        message = sanitize_log_message(f"GATT notify from AA:BB:CC:DD:EE:FF (uuid): {payload}")
-        assert message == "GATT notify from AA:BB:CC:DD:EE:FF (uuid): **REDACTED**"
+    for prefix in ("GATT notify from AA:BB:CC:DD:EE:FF (uuid): ", "Notification on uuid: "):
+        for payload in ("1e01", "00112233445566778899aabbccddeeff"):
+            assert sanitize_log_message(prefix + payload) == prefix + "**REDACTED**"

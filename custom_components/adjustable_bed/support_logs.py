@@ -45,8 +45,10 @@ _BLE_GATT_PAYLOAD = re.compile(
 _BLE_NOTIFICATION_PAYLOAD = re.compile(
     r"(?im)(\bnotification\b[^\r\n]*?:\s*)(?:bytearray\(|b['\"]|[0-9a-f]{16,})[^\r\n]*"
 )
-# BedController.forward_raw_notification's own line, whatever the payload length.
-_GATT_NOTIFY_PAYLOAD = re.compile(r"(\bGATT notify from \S+ \([^)\r\n]*\): )[0-9a-fA-F]+")
+# The integration's own notification lines, whatever the payload length.
+_GATT_NOTIFY_PAYLOAD = re.compile(
+    r"(\b(?:GATT notify from \S+ \([^)\r\n]*\)|Notification on \S+): )[0-9a-fA-F]+"
+)
 _FAILED_BLE_WRITE_PAYLOAD = re.compile(
     r"(?i)(\b(?:could not|failed to)\s+write\s+value\s+).+?"
     r"(\s+to\s+(?:characteristic|descriptor)\b)"

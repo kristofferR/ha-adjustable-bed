@@ -6,7 +6,7 @@ import inspect
 import json
 import logging
 from collections.abc import Iterator
-from contextlib import nullcontext
+from contextlib import nullcontext, suppress
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
@@ -50,6 +50,7 @@ from .pairing import iter_children
 from .profile_decisions import async_profile_decision_history
 from .redaction import (
     mentions_only,
+    names_pattern,
     redact_bundle,
     redact_pairlink_frames,
     redact_sleep_number_sessions,
@@ -249,9 +250,10 @@ async def generate_support_bundle(
     typed = {other.title for other in hass.config_entries.async_entries(DOMAIN)}
     if coordinator is not None:
         typed.add(coordinator.name)
-    return redact_bundle(  # type: ignore[no-any-return]
-        report, addresses=known | candidates, names=typed - set(_advertised_names(report))
-    )
+    if (names := names_pattern(typed - set(_advertised_names(report)))) is not None:
+        for log in [*report["recent_logs"], *report["pairing_logs"]]:
+            log["message"] = names.sub(lambda match: "*" * len(match.group(0)), log["message"])
+    return redact_bundle(report, addresses=known | candidates)  # type: ignore[no-any-return]
 
 
 def _advertised_names(data: Any) -> Iterator[str]:
@@ -1056,10 +1058,12 @@ def save_support_bundle(hass: HomeAssistant, report: dict[str, Any], address: st
 
 def _prune_saved_bundles(config_dir: Path) -> None:
     """Keep only the newest bundles; older ones would sit in every backup."""
-    saved = sorted(
-        (path for path in config_dir.iterdir() if is_bundle_filename(path.name)),
-        key=lambda path: path.stat().st_mtime,
-        reverse=True,
-    )
-    for path in saved[MAX_SAVED_BUNDLES:]:
+    saved: list[tuple[float, Path]] = []
+    for path in config_dir.iterdir():
+        if is_bundle_filename(path.name):
+            # A concurrent save may have pruned it already.
+            with suppress(FileNotFoundError):
+                saved.append((path.stat().st_mtime, path))
+    saved.sort(reverse=True)
+    for _mtime, path in saved[MAX_SAVED_BUNDLES:]:
         path.unlink(missing_ok=True)
