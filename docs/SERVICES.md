@@ -815,8 +815,9 @@ reported.
 ### FSM Relax app actions
 
 
-[`hold_control`](#hold_control) takes one of the bed's `command_XX` controls,
-listed in its diagnostics, with a `duration` in seconds. `goto_preset` recalls
+[`hold_control`](#hold_control) takes one of the bed's `command_XX` controls
+with a `duration` in seconds. The guide's
+[FSM Relax services](beds/limoss.md#services-1) explain the names. `goto_preset` recalls
 a memory up to the number the bed reports, and accepts an optional `duration`.
 `fsm_relax_calibrate` needs `confirmed: true` and sends the calibration once.
 The Save and Memory buttons cover up to eight memories, as many as the bed
@@ -1362,8 +1363,9 @@ off. `sleep_name` reads the name of the Rise or Rise Pro Light sleep sensor, and
 `adjustable_bed.richmat_rise` uses the app and layout chosen in setup. Use
 `query` to read the alarm and lamp settings, `alarm` and `cancel_alarm` for the
 one-time alarm, `rgb` for the light color, and `lamp_timer` with `seconds` (0 to
-300) and optional `timer_save`. `actions` lists alarm actions such as `node_1`,
-from the bed's diagnostics; only your layout's choices are accepted. `time` is
+300) and optional `timer_save`. `actions` lists alarm actions such as `node_1`;
+the guide's [Alarm actions](beds/richmat.md#alarm-actions) explains the names,
+and only your layout's choices are accepted. `time` is
 the next time of day it occurs; leave it out for 24 hours from now. A position
 and massage combination the layout does not have is refused before anything is
 sent. The bed does not report the alarm back.

@@ -9740,6 +9740,31 @@ proven long lock-labelled gestures remain available.
  </details>
 <!-- /generated -->
 
+#### Alarm actions
+
+The `actions` field of [`richmat_rise`](../SERVICES.md#richmat_rise) takes
+names of the form `node_<number>`, where the number is the control's place in
+your layout. A layout accepts only the controls the app can wake you with: TV,
+Lounge, Zero Gravity, Anti-snore, Flat sleep, M1 to M3, massage 1 and 2
+intensity up, and the 10-minute massage timer. About 140 of each app's 600
+layouts have any. Choose one bed action and, if you like, one or both massage
+actions, for example `actions: [node_3, node_14]`; two massage actions select
+all massage.
+
+The numbers differ between layouts. These are the most common sets:
+
+| Layouts | Alarm actions |
+|---|---|
+| HTRM (Luuna Rise only), UFRM, XJRM, XKRM, XZRM, Z5RM | `node_1` TV, `node_2` Lounge, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
+| O7RM, V4RM, XYRM, Z4RM, ZFRM | `node_1` TV, `node_2` Anti-snore, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
+| AFRM, AGRM, AMRM, ANRM, XFRM | `node_1` Zero Gravity, `node_3` Anti-snore, `node_4` TV, `node_12` massage 1 intensity up, `node_14` massage 2 intensity up |
+| A9RM, DARM, WURM, Z6RM | `node_8` TV, `node_9` Anti-snore, `node_10` Zero Gravity, `node_11` massage 1 intensity up, `node_12` M1, `node_13` massage 2 intensity up, `node_15` M2 |
+| FHRM, G9RM, HLRM and HRRM (Luuna Rise only) | `node_1` TV, `node_3` Lounge, `node_4` Anti-snore, `node_6` Zero Gravity, `node_11` M1 |
+| XGRM, Y1RM, Y7RM, YQRM | `node_1` Zero Gravity, `node_2` Anti-snore, `node_3` M1 |
+
+For another layout, download the bed's diagnostics: `controls` lists each
+control's number and name, and `alarm_actions` lists the names an alarm accepts.
+
 #### Position Feedback / Notifications
 
 The source recognizer's checksum, prefix order and partial/coalesced-message

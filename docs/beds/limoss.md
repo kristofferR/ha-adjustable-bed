@@ -751,8 +751,11 @@ the STOP burst.
 
 #### Services
 
-- Use `adjustable_bed.hold_control` to choose a hold duration. Available
-  `command_XX` names appear in protocol diagnostics as `held_controls`.
+- Use `adjustable_bed.hold_control` to choose a hold duration. A control's name
+  is `command_` followed by its opcode from [Held controls](#held-controls),
+  for example `command_12` for Back up or `command_70` for the light.
+  [FSM Relax key tables](#fsm-relax-key-tables) lists the opcodes your layout
+  has. A name your bed does not have is refused with the list of names it has.
 
   ```yaml
   action: adjustable_bed.hold_control
