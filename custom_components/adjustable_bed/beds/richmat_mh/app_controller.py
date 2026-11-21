@@ -17,7 +17,7 @@ from ...execution import HOLD_CEILING_MS
 from ...profiles.richmat_mh_apps import APPS
 from ..base import BedController
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, relabel, unique_buttons
+from ..catalog_buttons import unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -26,7 +26,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..richmat.labels import command_label
+from ..richmat.labels import preset_name
 from ..ruf_richmat.controller import RufRichmatController, waist_init
 from . import protocol
 from .app_catalog import catalog, details
@@ -453,12 +453,13 @@ class RichmatMHAppController(RufRichmatController):
         names: dict[int, set[str]] = {}
         for control in self._controls():
             # A motor's two directions share its label: "Back up", "Back down".
-            label = (
-                f"{control.label} {control.kind}"
-                if control.kind in ("up", "down")
-                else command_label(control.label, save=control.kind == "save")
-            )
-            names.setdefault(control.code, set()).add(label)
+            label = " ".join(control.label.split())
+            wording = {label, preset_name(label)} if control.area == "memory" else {label}
+            if control.kind == "save":
+                wording = {f"Save {w}" for w in wording}
+            elif control.kind in ("up", "down"):
+                wording = {f"{label} {control.kind}"}
+            names.setdefault(control.code, set()).update(wording)
         for spec in self.controller_button_specs:
             code = next((c for c in names if spec.key.endswith(f"_{c:02x}")), None)
             if code is not None:
@@ -523,14 +524,6 @@ class RichmatMHAppController(RufRichmatController):
         specs = []
         for spec in super().controller_button_specs:
             control = next((c for c in self._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
-            if control:
-                # These catalogs label controls with command names ("Massage Head
-                # Intensity Inc", "Zg2 Set"); show them in the MH buttons' wording.
-                name = command_label(control.label, save=control.kind == "save")
-                relabelled = relabel(spec, name, kind=Kind.SAVE if control.kind == "save" else None)
-                if relabelled is None:
-                    continue
-                spec = relabelled
             if control and control.keep_ms:
                 spec = replace(spec, hold=ControllerHoldSpec(f"mh_{control.code:02x}"))
             # A preset save already asks; a memory save is offered only in Set mode.

@@ -42,12 +42,11 @@ from ...const import (
 )
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
-from ...labels import display_label
 from ...profiles.richmat import RICHMAT_MH, RichmatProfile
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button, unique_buttons
+from ..catalog_buttons import Kind, catalog_button, own_label, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -58,7 +57,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..family_actions import YogaPresetActions
-from ..richmat.labels import command_label, screen_label
+from ..richmat.labels import MH_CODES, preset_name, richmat_mh_name
 from ..ruf_richmat.models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from . import catalog
 from .models import RICHMAT_MH_MODEL_CHOICES
@@ -323,6 +322,14 @@ def resolve_model(
 
 # Canonical app labels that map a recall code onto a standard capability.
 _MEMORY_SLOTS: Final = {0x2E: 1, 0x2F: 2, 0x30: 3, 0xB2: 4, 0xF4: 5}
+_MEMORY_SAVES: Final = {0x2B: 1, 0x2C: 2, 0x2D: 3, 0xB3: 4, 0xF5: 5}
+# Motor-page moves the app shows as one button, by their code.
+_MOTOR_BUTTONS: Final = {
+    0x29: "Head and foot up",
+    0x3F: "Pillow up",
+    0x5B: "Pillow and lumbar tilt up",
+    0x5C: "Pillow and lumbar tilt down",
+}
 _GENERIC_MEMORY_LABELS: Final = {
     1: {"memory1", "m1", "memory"},
     2: {"memory2", "m2"},
@@ -383,53 +390,10 @@ def _clean_label(label: str) -> str:
     return " ".join(label.replace("\\n", " ").replace("\n", " ").split())
 
 
-# Massage-page groups whose button text only makes sense beside its heading.
-_GROUP_CONTEXT: Final = {
-    "HEAT_LEVEL": "Heat",
-    "HEAT_OFF": "Heat",
-    "MUSIC": "Music",
-    "MUSIC_PREVIOUS_NEXT": "Music",
-    "MUSIC_START_PAUSE": "Music",
-    "MODE": "Massage",
-    "MODE2": "Massage",
-    "Mode": "Massage",
-    "WAVE": "Massage wave",
-    "HEAD_FOOT_BOTH_ON": "Massage",
-    "HEAD_INTENSITY_INC3": "Head massage",
-}
-
-
 # The massage timers of this app vocabulary (its GGRM catalog names them), by
 # their minutes. A layout's control is one only where its own label agrees.
 _MASSAGE_TIMERS: Final = {0x5F: 10, 0x63: 20, 0x61: 30}
 _MINUTES: Final = re.compile(r"(\d+)\s*min", re.IGNORECASE)
-
-
-_BARE_LABELS: Final = frozenset(
-    {"off", "high", "low", "medium", "mode", "next", "previous", "switch", "on/off",
-     "intensity", "volume", "pause", "pause/start", "start stop", "volume up", "volume down"}
-)
-
-
-def _display_label(label: str, group: str | None = None) -> str:
-    """An entity name for an app button label, with its heading where needed."""
-    text = _clean_label(label)
-    text = re.sub(r"(?<=\d)(?=[A-Za-z])|(?<=[a-z])(?=\d)|(?<=[A-Z]{2})(?=\d)", " ", text)
-    text = re.sub(r"\bMins?\b", "min", text).replace("Hours", "hours")
-    # A trailing + or - is a direction; "+/-" names the button itself.
-    text = re.sub(r"(?<!/)\s*\+$", " up", re.sub(r"(?<!/)\s*-$", " down", text))
-    zone = re.fullmatch(r"(Head|Foot|Lumbar) Intensity (up|down)", text, re.IGNORECASE)
-    if zone:
-        # The shared wording of the generic massage buttons.
-        return f"Massage: {zone[1].capitalize()} {zone[2].capitalize()}"
-    if group in ("MIN", "HEAT_MIN") and (minutes := re.fullmatch(r"(\d+) min", text)):
-        heading = "Massage" if group == "MIN" else "Heat"
-        return f"{heading}: Timer {minutes[1]} Minutes"
-    if re.fullmatch(r"\d+ (?:min|hours)", text):
-        text = f"Timer {text}"
-    elif group in _GROUP_CONTEXT and text.lower() in _BARE_LABELS:
-        text = f"{_GROUP_CONTEXT[group]} {text.lower()}"
-    return screen_label(text)
 
 
 @dataclass(frozen=True, slots=True)
@@ -448,6 +412,8 @@ class Tap:
     name: str
     code: int
     translation_key: str
+    # False where the catalogs do not establish what the control does.
+    clear: bool = True
 
 
 LightPage = Literal["led", "btn_led"]
@@ -808,14 +774,14 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         group_labels: dict[str, str] = {}
         for c in controls:
             if c.area == "memory" and c.kind == "recall":
-                group_labels[c.group] = _display_label(c.label)
+                group_labels[c.group] = preset_name(c.label, slot=_MEMORY_SLOTS.get(c.code))
         for c in controls:
             if c.area == "motor" or c.code in used:
                 continue
             used.add(c.code)
             key = f"richmat_mh_{c.code:02x}"
             if c.area == "memory":
-                base = group_labels.get(c.group, _display_label(c.label))
+                base = group_labels.get(c.group) or preset_name(c.label, slot=_MEMORY_SAVES.get(c.code))
                 if c.kind == "save":
                     taps.append(Tap(key, f"Save {base}", c.code, "richmat_mh_save"))
                 elif c.group in ("FACTORY_RESET", "Factory Reset"):
@@ -823,10 +789,16 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 else:
                     taps.append(Tap(key, base, c.code, "richmat_mh_preset"))
             elif c.area == "massage":
-                taps.append(Tap(key, _display_label(c.label, c.group), c.code, "richmat_mh_massage"))
+                name, clear = richmat_mh_name(c.code, c.label, massage_page=True)
+                taps.append(Tap(key, name, c.code, "richmat_mh_massage", clear))
+            elif (named := _BUTTON_GROUP_NAMES.get(c.group) or _MOTOR_BUTTONS.get(c.code)) is not None:
+                taps.append(Tap(key, named, c.code, "richmat_mh_action"))
+            elif c.code in MH_CODES:
+                taps.append(Tap(key, *richmat_mh_name(c.code, c.label), c.code, "richmat_mh_action"))
+            elif c.kind == "save" or re.search(r"\s(?:set|save)$", c.label, re.IGNORECASE):
+                taps.append(Tap(key, f"Save {preset_name(c.label)}", c.code, "richmat_mh_save"))
             else:
-                name = _BUTTON_GROUP_NAMES.get(c.group) or _display_label(c.label)
-                taps.append(Tap(key, name, c.code, "richmat_mh_action"))
+                taps.append(Tap(key, preset_name(c.label), c.code, "richmat_mh_action"))
         if self._light_page() == "btn_led":
             # Only Revive and Best Mattress have an emitting button-light OFF row; it is
             # dead in HARMONY and has no writer in Blvd Home or Idealbed.
@@ -904,9 +876,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         for slot, (recall, _save) in sorted(self._memory_slots().items()):
             label = _clean_label(recall.label)
             names.append(
-                None
-                if label.lower() in _GENERIC_MEMORY_LABELS[slot]
-                else display_label(command_label(label))
+                None if label.lower() in _GENERIC_MEMORY_LABELS[slot] else preset_name(label)
             )
         return tuple(names)
 
@@ -943,7 +913,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         specs: list[ControllerButtonSpec | None] = []
         for _name, (recall, save) in self._presets().items():
             if save is not None:
-                label = f"Save {_display_label(recall.label)}"
+                label = f"Save {preset_name(recall.label)}"
                 specs.append(
                     catalog_button(
                         f"richmat_mh_{save.code:02x}",
@@ -954,17 +924,18 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     )
                 )
         for tap in self._taps():
-            specs.append(
-                catalog_button(
-                    tap.key,
-                    tap.name,
-                    _tap_action(tap.code),
-                    kind=_TAP_KINDS.get(tap.translation_key),
-                    icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
-                    # A factory reset forgets every saved position.
-                    requires_confirmation=tap.name == "Factory Reset",
-                )
+            spec = catalog_button(
+                tap.key,
+                tap.name,
+                _tap_action(tap.code),
+                kind=_TAP_KINDS.get(tap.translation_key),
+                icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
+                # A factory reset forgets every saved position.
+                requires_confirmation=tap.name == "Factory Reset",
+                enabled=tap.clear,
             )
+            # A control the catalogs do not explain keeps the app's words, never a shared name.
+            specs.append(spec if tap.clear or spec is None else own_label(spec))
         if self._smart_set_lock():
             # One toggle command: a switch could unlock when the state is unknown.
             specs.append(

@@ -206,56 +206,236 @@ def resource_label(name: str) -> str:
     return f"Save {label}" if save else label
 
 
-# Command-name catalog labels (Nisco, MLILY Supreme) for controls the Richmat MH
-# apps also show, in the MH buttons' wording.
-_COMMAND_NAMES: Final[dict[str, str]] = {
-    "Massage Head On Off": "Head On/Off",
-    "Massage Foot On Off": "Foot On/Off",
-    "Massage Off": "All Off",
-    "All massage off": "All Off",
-    "Massage Head Foot Both Off": "All Off",
-    "Massage Head Foot Both On": "All On",
-    "Massage Pulse": "Pulse",
-    "Massage Wave": "Wave",
-    "Massage Wave3": "Wave 3",
-    "Massage Constant": "Constant",
-    "Massage Mode": "Massage mode",
-    "Massage Intensity1": "Intensity 1",
-    "Massage Intensity2": "Intensity 2",
-    "Massage Intensity3": "Intensity 3",
-    "Massage Off Reset": "Massage off and flat",
-    "Massage Head Foot Intensity Inc": "Massage: Intensity Up",
-    "Massage Head Foot Intensity Dec": "Massage: Intensity Down",
-    "Massage Head Foot Speed Inc": "Massage: Speed Up",
-    "Massage Head Foot Speed Dec": "Massage: Speed Down",
-    "Music Vibration Mode": "Vibration mode",
-    "Head Up Only": "One-click Head Up",
-    "Foot Up Only": "One-click Foot Up",
-    "Head Foot Both": "Head and foot up",
-    "Head Foot On Off": "Head and foot on/off",
-    "Pillow": "Pillow up",
-    "Pillow Lumbar Both Tilt Up": "Pillow and lumbar tilt up",
-    "Pillow Lumbar Both Tilt Down": "Pillow and lumbar tilt down",
-    "Ubl Off": "Underbed light off",
-    "Ubl On Off": "Underbed light on/off",
-    "Flat2": "Flat 2",
-    "Zg2 Back": "Zero Gravity 2",
-    "Memory1": "Memory 1",
-    "Anti Snore3": "Anti-snore 3",
+# ---------------------------------------------------------------- MH family
+#
+# The Richmat MH-family apps (Revive, Nisco, MLILY Supreme, the RUF apps and
+# Bed Tech's classic app) send one command code per control, and each code
+# does one thing. Their labels say it in many ways ("Msg Head Intensity Inc",
+# "Head Intensity+", "Head+"), so a control is named by its code. Nisco and
+# MLILY Supreme name every code ("Massage Head Intensity Inc"); the Richmat app
+# names the same codes by enum. A layout's own label still decides when it
+# says more than the code, or something else.
+
+# Each control code's name, with the feature it belongs to. Massage controls use
+# the words the shared massage descriptions take.
+MASSAGE: Final = "massage"
+HEAT: Final = "heat"
+MUSIC: Final = "music"
+FAN: Final = "fan"
+LIGHT: Final = "light"
+OTHER: Final = "other"
+MH_CODES: Final[dict[int, tuple[str, str]]] = {
+    0x32: (MASSAGE, "Head massage on/off"),
+    0x33: (MASSAGE, "Foot massage on/off"),
+    0x34: (MASSAGE, "Massage intensity up"),
+    0x35: (MASSAGE, "Massage intensity down"),
+    0x36: (MASSAGE, "Massage speed up"),
+    0x37: (MASSAGE, "Massage speed down"),
+    0x38: (MASSAGE, "Pulse massage"),
+    0x39: (MASSAGE, "Wave massage"),
+    0x3A: (MASSAGE, "Constant massage"),
+    0x47: (MASSAGE, "Massage off"),
+    0x48: (MASSAGE, "Massage mode"),
+    0x49: (MASSAGE, "Wave massage forward"),
+    0x4A: (MASSAGE, "Wave massage reverse"),
+    0x4B: (MASSAGE, "Wave massage 3"),
+    0x4C: (MASSAGE, "Head massage intensity up"),
+    0x4D: (MASSAGE, "Head massage intensity down"),
+    0x4E: (MASSAGE, "Foot massage intensity up"),
+    0x4F: (MASSAGE, "Foot massage intensity down"),
+    0x5A: (MASSAGE, "Massage off and flat"),
+    0x5D: (MASSAGE, "Head and foot massage on"),
+    0x5E: (MASSAGE, "Head and foot massage off"),
+    0x67: (MASSAGE, "Massage intensity 1"),
+    0xAF: (MASSAGE, "Massage intensity 2"),
+    0x68: (MASSAGE, "Massage intensity 3"),
+    0x6F: (MASSAGE, "Head and foot massage on/off"),
+    # The second head and foot steps never share a model with the first.
+    0xA4: (MASSAGE, "Head massage intensity up"),
+    0xA5: (MASSAGE, "Foot massage intensity up"),
+    0xE0: (MASSAGE, "Lumbar massage intensity up"),
+    0x9C: (HEAT, "Heat off"),
+    0x9D: (HEAT, "Heat low"),
+    0x9E: (HEAT, "Heat medium"),
+    0x9F: (HEAT, "Heat high"),
+    0xA0: (HEAT, "Heat on/off"),
+    0xB7: (MUSIC, "Music volume"),
+    0xB9: (MUSIC, "Music on/off"),
+    0xC4: (MUSIC, "USB music on/off"),
+    0xD2: (MUSIC, "Previous music track"),
+    0xD3: (MUSIC, "Next music track"),
+    0xD4: (MUSIC, "Music volume up"),
+    0xD5: (MUSIC, "Music volume down"),
+    0xD6: (MUSIC, "Music vibration mode"),
+    0xD7: (MUSIC, "Music play/pause"),
+    0xD8: (MUSIC, "Bluetooth music on/off"),
+    0xE1: (FAN, "Fan 1 intensity up"),
+    0xB8: (MUSIC, "Music switch"),
+    0x50: (LIGHT, "Light"),
+    0x75: (LIGHT, "Under-bed light off"),
 }
-# The second head/foot step buttons never share a model with the first.
-_COMMAND_ZONE: Final = re.compile(r"Massage (Head|Foot|Lumbar) Intensity (Inc|Dec)\d?")
-_COMMAND_MINUTES: Final = re.compile(r"Massage (\d+)Min")
+# Codes whose catalogs name them without saying what they do.
+_MH_UNCLEAR: Final = frozenset({0xB8})
+# Words a label may add to its code's name without saying anything else: the
+# Nisco catalog's "Massage Head Foot Intensity Inc" is the code every other app
+# calls "Intensity+".
+_MH_SCOPE: Final[dict[int, frozenset[str]]] = {
+    **dict.fromkeys((0x34, 0x35, 0x36, 0x37), frozenset({"head", "foot"})),
+    0x5A: frozenset({"reset"}),
+}
+# The timer codes set the duration their label states: one code is 10 minutes
+# on one model and 2 hours on another.
+_MH_TIMERS: Final[dict[int, str]] = {
+    0x5F: MASSAGE, 0x60: MASSAGE, 0x61: MASSAGE, 0x63: MASSAGE, 0xA1: HEAT, 0xA2: HEAT,
+}
+_FEATURE_WORDS: Final[dict[str, frozenset[str]]] = {
+    MASSAGE: frozenset({"massage", "vibration"}),
+    HEAT: frozenset({"heat", "heating", "warm"}),
+    MUSIC: frozenset({"music", "bluetooth", "volume", "usb", "track", "song"}),
+    FAN: frozenset({"fan", "fans"}),
+    LIGHT: frozenset({"light", "lights", "lamp"}),
+}
+# Spellings a label uses for one word; the empty string drops the word.
+_SAME: Final[dict[str, str]] = {
+    "msg": "massage",
+    "massager": "massage",
+    "inc": "up",
+    "dec": "down",
+    "+": "up",
+    "-": "down",
+    "virbration": "vibration",
+    "ubl": "under-bed light",
+    "led": "light",
+    "min": "minutes",
+    "mins": "minutes",
+    "minute": "minutes",
+    "hour": "hours",
+    "h": "hours",
+    "all": "",
+    "both": "",
+    "level": "",
+}
+_TOGGLES: Final = re.compile(r"\b(?:on[ /]?off|start[ /]?stop)\b")
+_PLAY: Final = re.compile(r"\b(?:pause[ /]?start|start[ /]?pause|pause[ /]?play|play[ /]?pause|pause)\b")
 
 
-def command_label(label: str, *, save: bool = False) -> str:
-    """Name a command-name catalog label (``Massage Head Intensity Inc``)."""
-    if label == "Zg2 Set":
-        return "Save Zero Gravity 2"
-    if zone := _COMMAND_ZONE.fullmatch(label):
-        name = f"Massage: {zone[1]} {'Up' if zone[2] == 'Inc' else 'Down'}"
-    elif minutes := _COMMAND_MINUTES.fullmatch(label):
-        name = f"Massage: Timer {minutes[1]} Minutes"
-    else:
-        name = _COMMAND_NAMES.get(label, label)
-    return f"Save {name}" if save else name
+def _words(label: str, *, fillers: bool = False) -> list[str]:
+    """A label's words, lower case, in one spelling."""
+    text = " ".join(label.replace("\\n", " ").replace("_", " ").split()).lower()
+    text = re.sub(r"(?<=[a-z])(?=\d)|(?<=\d)(?=[a-z])", " ", text)
+    text = re.sub(r"(?<=\w)([+-])$", r" \1", text)
+    text = _PLAY.sub("play/pause", _TOGGLES.sub("on/off", text))
+    words: list[str] = []
+    for word in text.replace(":", " ").split():
+        same = _SAME.get(word, word)
+        words.extend((same or word).split() if fillers else same.split())
+    return words
+
+
+def _feature_of(words: list[str]) -> str | None:
+    return next((f for f, known in _FEATURE_WORDS.items() if known & set(words)), None)
+
+
+def _with_feature(feature: str, words: list[str]) -> str:
+    text = " ".join(words)
+    if feature in _FEATURE_WORDS and _feature_of(words) != feature:
+        text = f"{feature} {text}"
+    return text[:1].upper() + text[1:]
+
+
+def richmat_mh_name(code: int, label: str, *, massage_page: bool = False) -> tuple[str, bool]:
+    """Name a Richmat MH-family control, and say whether the catalogs establish it.
+
+    A label that only says part of what its code does ("Head+") takes the
+    code's name. A toggle label keeps its own button ("Start Stop" is "Massage
+    on/off"). A label that names another feature or action keeps its words and
+    is not established, nor is a code no catalog names.
+    """
+    words = _words(label)
+    text = " ".join(words)
+    if code in _MH_TIMERS and (
+        duration := re.search(r"(\d+) (minutes|hours)|(minutes|hours) (\d+)", text)
+    ):
+        number, unit = duration[1] or duration[4], duration[2] or duration[3]
+        return _with_feature(_MH_TIMERS[code], ["timer", number, unit]), True
+    shown = _words(label, fillers=True)
+    if code not in MH_CODES or code in _MH_UNCLEAR:
+        feature = MH_CODES[code][0] if code in MH_CODES else MASSAGE if massage_page else OTHER
+        return _with_feature(feature, shown), False
+    feature, name = MH_CODES[code]
+    known = _words(name)
+    own = _FEATURE_WORDS[feature]
+    core = [w for w in words if w not in own]
+    # An app's counter ("All Off2") repeats its control.
+    if core and core[-1].isdigit() and not any(w.isdigit() for w in known):
+        core.pop()
+    # A bare symbol, or part of what the code does ("Head+"), names the code.
+    if not re.search(r"[a-z]", text) or set(core) <= set(known) - own | _MH_SCOPE.get(code, set()):
+        return name, True
+    if _feature_of(words) not in (None, feature):
+        return screen_label(" ".join(shown)), False
+    # A toggle where the code turns the feature on or off: the label's own button.
+    if core == ["on/off"] and {"on", "off", "on/off"} & set(known):
+        return _with_feature(feature, core), True
+    return _with_feature(feature, shown), False
+
+
+# A preset's name in the shared words, by the labels the apps give it.
+_PRESET_NAMES: Final[dict[str, tuple[str, ...]]] = {
+    "Zero gravity": ("zg", "zero g", "zero gravity", "zg 3", "zg 4", "space"),
+    "Zero gravity 2": ("zg 2", "zero g 2", "zero gravity 2"),
+    "Anti-snore": (
+        "snore", "anti snore", "anti-snore", "anti snore 3", "anti snoring", "anti-snoring",
+        "snoring intervention", "snore intervention", "snoring intervention anti snore",
+        "text snore intercept", "anti ronquidos",
+    ),
+    "TV": ("tv",),
+    "Lounge": ("lounge",),
+    "Yoga": ("yoga", "xiaofeiyan"),
+    "Reading": ("read", "reading"),
+    "Movie": ("movie", "movie watching", "movie viewing"),
+    "Relieving stress": ("relieving stress", "erlieving stress"),
+    "Flat 2": ("flat 2",),
+    "Flat sleep": ("flat sleep", "flat sleeping"),
+    "One-click head up": ("one-click head up", "head up only"),
+    "One-click foot up": ("one-click foot up", "foot up only"),
+    "Get-up assist": ("help get up", "assist", "assisted rise", "up", "get-up assist"),
+    "Lumbar position": ("lumbar", "lumbar pos", "lumbar model"),
+    "Pressure relief position": ("release press", "releasing press"),
+    "Motion massage 15 minutes": ("v 15", "motor keep 15"),
+    "Motion massage 30 minutes": ("v 30", "motor keep 30"),
+    "Sleep aid": ("sleep aid", "sleep aid mode 1", "lull", "one-tap sleep aid"),
+    "Sleep aid 2": ("one-tap sleep aid 2",),
+    "Sleep aid 3": ("one-tap sleep aid 3",),
+    "Sleeping": ("sleeping",),
+    "Sleep": ("sleep",),
+    "Timed flat": ("timing levelling",),
+    "Head up foot down": ("head up foot down",),
+    "Head down foot up": ("head down foot up",),
+    "Head up foot up": ("head up foot up",),
+}
+_PRESET_ALIASES: Final = {alias: name for name, aliases in _PRESET_NAMES.items() for alias in aliases}
+# Words some catalogs append to a preset's label: its recall or save role, or
+# an extraction note.
+_PRESET_NOTES: Final = re.compile(
+    r"(?:\s+(?:back|set|save|primary|recall/action|mode))+$", re.IGNORECASE
+)
+_MEMORY_LABEL: Final = re.compile(r"(?:m|mem|memory)\s*(?P<slot>[1-9])?(?: [a-e])?", re.IGNORECASE)
+
+
+def preset_name(label: str, *, slot: int | None = None) -> str:
+    """A recalled preset's name: the shared words, or the app's own name for it.
+
+    ``slot`` is the memory slot a recall code stands for, which names a label
+    that only says "M" or "Memory".
+    """
+    text = " ".join(label.replace("\\n", " ").split())
+    text = _PRESET_NOTES.sub("", text).strip() or text
+    if (memory := _MEMORY_LABEL.fullmatch(text)) and (memory["slot"] or slot):
+        return f"Memory {memory['slot'] or slot}"
+    if position := re.fullmatch(r"pos\s*(\d)", text, re.IGNORECASE):
+        return f"Position {position[1]}"
+    text = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", text)
+    if (name := _PRESET_ALIASES.get(text.lower())) is not None:
+        return name
+    return screen_label(text)
