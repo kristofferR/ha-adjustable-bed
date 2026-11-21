@@ -307,7 +307,7 @@ from .discovery_hints import (
     FirstPass,
     first_pass,
 )
-from .discovery_hints._hints import NameHint
+from .discovery_hints._hints import ManufacturerHint, NameHint
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
@@ -567,27 +567,12 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
     )
 
 
-def _rests_on_shared_service(
-    service_uuids: list[str], first: FirstPass, result: DetectionResult
-) -> bool:
-    """Return whether only a shared service led to the detected bed type.
-
-    A name or maker record corroborates the route only when it names that
-    route itself: one that merely suggests another app does not. Detection's
-    own name rules record such a name as ``name:<bed type>``.
-    """
-    bed_type = result.bed_type
-    assert bed_type is not None
+def _rests_on_shared_service(service_uuids: list[str], first: FirstPass) -> bool:
+    """Return whether only shared services, no declared name or maker hint, matched."""
     return (
         any(not _is_standard_service(uuid) for uuid in service_uuids)
         and _has_only_generic_uuids(service_uuids)
-        and not first.name(bed_type)
-        and not first.manufacturer(bed_type)
-        and not any(
-            signal == f"name:{bed_type}"
-            or signal.startswith(("manufacturer_id:", "manufacturer_payload:", "mac:", "product:"))
-            for signal in result.signals
-        )
+        and not any(isinstance(hint, NameHint | ManufacturerHint) for hint in first.hints)
     )
 
 
@@ -1432,7 +1417,7 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     first = first_pass(service_info)
     result = _detect_with_first_pass(service_info, first)
     service_uuids = [str(uuid).lower() for uuid in service_info.service_uuids or ()]
-    if result.bed_type is not None and _rests_on_shared_service(service_uuids, first, result):
+    if result.bed_type is not None and _rests_on_shared_service(service_uuids, first):
         if is_mac_like_name(service_info.name):
             return DetectionResult(None, 0.0, ["shared_service:no_name"])
         result.confidence = min(result.confidence, 0.5)
@@ -2221,13 +2206,6 @@ def _detect_bed_type_detailed(
     # Check for Svane / Jensen LinOn - unique service UUID (abcb)
     if SVANE_HEAD_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:svane")
-        if (
-            is_svane_discovery_name(service_info.name)
-            or is_jensen_linon_name(service_info.name)
-            or any(pattern in device_name for pattern in SVANE_NAME_PATTERNS)
-        ):
-            # The Svane and Jensen apps' own names confirm the shared service.
-            signals.append("name:svane")
         _LOGGER.info(
             "Detected Svane bed at %s (name: %s) by service UUID",
             service_info.address,
@@ -2970,9 +2948,6 @@ def _detect_bed_type_detailed(
                 )
                 continue
             signals.append("uuid:wilinke")
-            if guard_reason:
-                # The guard passed on the Richmat name.
-                signals.append("name:richmat")
             # FEE9 is ambiguous - could be Richmat or BedTech
             if wilinke_uuid.lower() == BEDTECH_SERVICE_UUID.lower():
                 if is_richmat_named:

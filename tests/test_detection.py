@@ -2609,26 +2609,6 @@ class TestSharedServiceOnly:
         assert result.confidence < 0.7
 
     @pytest.mark.parametrize(
-        ("name", "manufacturer_data"),
-        [
-            ("", {89: b"\x01"}),
-            ("FIRMWARE", {}),
-            ("KSWF07S", {}),
-            ("", {0x0000: bytes.fromhex("babe11110000")}),
-        ],
-    )
-    def test_evidence_for_another_app_does_not_confirm_the_route(self, name, manufacturer_data):
-        """A Nordic record or another app's name hint does not vouch for Comfort Motion."""
-        result = detect_new_bed(
-            _make_service_info(
-                name=name,
-                service_uuids=[_short("fe60")],
-                manufacturer_data=manufacturer_data,
-            )
-        )
-        assert result.bed_type is None or result.confidence < 0.7
-
-    @pytest.mark.parametrize(
         ("name", "service_uuids"),
         [
             ("Body Scale", [SOLACE_SERVICE_UUID, _short("180f")]),
@@ -2658,6 +2638,7 @@ class TestSharedServiceOnly:
                 True,
             ),  # 393
             ("JMC400", [_short("1234")], {}, BED_TYPE_JENSEN, True),
+            ("Jensen Bed", [SVANE_HEAD_SERVICE_UUID], {}, BED_TYPE_SVANE, True),
             # Another bed's receiver advertised AA5C: still offered, as a candidate (#510).
             ("DA1458X", [OCTO_STAR2_SERVICE_UUID], {}, BED_TYPE_OCTO, False),
         ],

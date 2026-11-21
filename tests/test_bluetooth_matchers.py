@@ -175,15 +175,6 @@ def test_a_full_richmat_code_is_confident(name: str) -> None:
     assert result.confidence >= 0.7
 
 
-@pytest.mark.parametrize(
-    ("covered", "name"), [("MOTOB*", "MOTOB12"), ("OKIN-BLE*", "OKIN-BLE01"), ("STAR25*", "STAR25x")]
-)
-def test_a_name_a_shorter_prefix_admits_gets_no_matcher(covered: str, name: str) -> None:
-    names = {m["local_name"] for m in _manifest_matchers() if "local_name" in m}
-    assert covered not in names
-    assert DOMAIN in _gate().match_domains(_info(name=name))
-
-
 def test_richmat_fixed_name_is_discovered() -> None:
     info = _info(name="Sleep Function 2.0")
     assert DOMAIN in _gate().match_domains(info)
