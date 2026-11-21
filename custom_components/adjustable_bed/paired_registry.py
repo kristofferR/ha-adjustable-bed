@@ -674,7 +674,15 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
                     single.title,
                 )
 
-        removal = await hass.config_entries.async_remove(entry.entry_id)
+        # Removing the pair is the commit point. Home Assistant deletes its
+        # remaining rows only after the removal hook, so a cancelled caller
+        # must not cut the removal short and leave them orphaned.
+        removal_task = hass.async_create_task(hass.config_entries.async_remove(entry.entry_id))
+        try:
+            removal = await asyncio.shield(removal_task)
+        except asyncio.CancelledError:
+            await removal_task
+            raise
         ownership.finish(hass)
         if removal.get("require_restart"):
             _LOGGER.warning(

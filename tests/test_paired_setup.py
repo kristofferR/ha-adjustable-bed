@@ -843,6 +843,42 @@ class TestPairedSetup:
         assert [(p.id, p.targets) for p in manager.positions] == [("reading", {"bed": {"back": 30.0}})]
         assert legacy not in hass_storage
 
+    async def test_cancelled_unpair_still_finishes_removing_the_pair(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Past the commit point a cancelled caller leaves no orphaned pair rows."""
+        import custom_components.adjustable_bed as integration
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        ent_reg = er.async_get(hass)
+        assert er.async_entries_for_config_entry(ent_reg, entry.entry_id)
+        in_hook = asyncio.Event()
+        release = asyncio.Event()
+        real_remove = integration.async_remove_entry
+
+        async def slow_remove(hass_: HomeAssistant, removed) -> None:
+            in_hook.set()
+            await release.wait()
+            await real_remove(hass_, removed)
+
+        with patch.object(integration, "async_remove_entry", slow_remove):
+            unpair = hass.async_create_task(async_unpair_entry(hass, entry))
+            await in_hook.wait()
+            unpair.cancel()
+            await asyncio.sleep(0)
+            release.set()
+            with pytest.raises(asyncio.CancelledError):
+                await unpair
+        await hass.async_block_till_done()
+
+        assert hass.config_entries.async_get_entry(entry.entry_id) is None
+        assert not er.async_entries_for_config_entry(ent_reg, entry.entry_id)
+
     async def test_unpair_rolls_back_if_second_single_cannot_be_added(
         self,
         hass: HomeAssistant,
