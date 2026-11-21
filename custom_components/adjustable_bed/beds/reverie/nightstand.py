@@ -370,6 +370,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 icon="mdi:vibrate",
                 entity_registry_enabled_default=True,
                 card=CARD_MASSAGE,
+                entity_category=None,
             ),
             ControllerStateSensorSpec(
                 key="reverie_foot_massage_intensity",
@@ -378,6 +379,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 icon="mdi:vibrate",
                 entity_registry_enabled_default=True,
                 card=CARD_MASSAGE,
+                entity_category=None,
             ),
         )
 

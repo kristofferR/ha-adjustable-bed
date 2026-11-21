@@ -571,6 +571,7 @@ class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile],
             "mdi:alarm",
             attribute_keys=(STATE_ALARM_HOUR, STATE_ALARM_MINUTE, STATE_ALARM_WAKE),
             entity_registry_enabled_default=True,
+            entity_category=None,
         )
         timer = massage_timer_sensor_spec(
             "glideaway_motion_massage_timer",

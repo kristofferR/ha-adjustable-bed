@@ -409,6 +409,8 @@ class OkimikiController(GoodVibeController):
             ControllerStateSensorSpec(
                 "okimiki_alarms", "okimiki_alarms", ALARM_COUNT, "mdi:alarm",
                 attribute_keys=(ALARM_RECORDS,),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

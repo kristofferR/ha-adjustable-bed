@@ -325,6 +325,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
                     icon="mdi:alarm",
                     attribute_keys=(ALARM_CONFIG,),
                     entity_registry_enabled_default=True,
+                    entity_category=None,
                 )
             )
         return tuple(specs)

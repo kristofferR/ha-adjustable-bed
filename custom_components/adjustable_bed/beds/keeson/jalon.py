@@ -364,6 +364,7 @@ class JalonController(KeesonController):
                 attribute_keys=(WAVE, HEAD, FOOT),
                 card=CARD_MASSAGE_TIMER,
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
             ControllerStateSensorSpec(
                 "jalon_alarm",
@@ -372,6 +373,7 @@ class JalonController(KeesonController):
                 "mdi:alarm",
                 attribute_keys=(WEEK, WAKE, HOUR, MINUTE, FIRST),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

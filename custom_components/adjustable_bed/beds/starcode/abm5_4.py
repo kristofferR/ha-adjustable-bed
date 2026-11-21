@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Final
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...card import (
     CARD_LIGHT_LEVEL,
@@ -478,14 +479,14 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         # Raw fields and selectors stay in diagnostics; the timer select and
         # number show the timer and light level where the bed accepts them.
         positive = self.command_selector in _POSITIVE_SELECTORS
-        keys: tuple[tuple[str, bool], ...] = (
-            ("manufacturer", False),
-            ("firmware", False),
-            ("wave", True),
-            ("head_intensity", True),
+        keys: tuple[tuple[str, str], ...] = (
+            ("manufacturer", "mdi:factory"),
+            ("firmware", "mdi:chip"),
+            ("wave", "mdi:waveform"),
+            ("head_intensity", "mdi:vibrate"),
         )
         if not positive:
-            keys += (("massage_timer", True), ("light_level", True))
+            keys += (("massage_timer", ""), ("light_level", "mdi:brightness-6"))
         return tuple(
             massage_timer_sensor_spec(
                 "starcode_abm5_4_massage_timer", "starcode_abm5_4_massage_timer", MASSAGE_TIMER
@@ -495,10 +496,13 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 "starcode_abm5_4_" + key,
                 "starcode_abm5_4_" + key,
                 _state_key(key),
-                "mdi:information-outline",
-                entity_registry_enabled_default=enabled,
+                icon,
+                # Firmware and manufacturer are diagnostics; the rest is bed state.
+                entity_registry_enabled_default=dashboard,
+                entity_category=None if dashboard else EntityCategory.DIAGNOSTIC,
             )
-            for key, enabled in keys
+            for key, icon in keys
+            for dashboard in (key not in ("manufacturer", "firmware"),)
         )
 
     @property

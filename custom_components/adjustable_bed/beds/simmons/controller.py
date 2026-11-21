@@ -372,6 +372,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
                     _ALARM_KEYS[slot].awaiting_reply,
                 ),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             )
             for slot in (1, 2)
         )

@@ -175,6 +175,7 @@ class YamadaController(KeesonController):
                 attribute_keys=(hour, minute, week, position),
                 card=CARD_UTILITY,
                 entity_registry_enabled_default=True,
+                entity_category=None,
             )
             for state, hour, minute, week, position in _KEYS
         )

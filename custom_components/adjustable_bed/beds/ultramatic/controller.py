@@ -714,6 +714,8 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                         keys.standalone,
                     ),
                     card=CARD_UTILITY,
+                    entity_registry_enabled_default=True,
+                    entity_category=None,
                 ),
             )
         )

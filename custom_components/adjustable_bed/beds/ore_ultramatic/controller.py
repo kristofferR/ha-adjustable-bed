@@ -491,7 +491,13 @@ class OreUltramaticController(OreComfortBedController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
             ControllerStateSensorSpec(
-                str(TIME), str(TIME), TIME, "mdi:alarm", attribute_keys=(REPEAT, ACTION)
+                str(TIME),
+                str(TIME),
+                TIME,
+                "mdi:alarm",
+                attribute_keys=(REPEAT, ACTION),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
             ControllerStateSensorSpec(
                 str(INTENSITY),
@@ -499,6 +505,8 @@ class OreUltramaticController(OreComfortBedController):
                 INTENSITY,
                 "mdi:vibrate",
                 attribute_keys=(TIMER,),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

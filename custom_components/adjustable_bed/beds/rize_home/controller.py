@@ -344,6 +344,7 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                 "mdi:vibrate",
                 entity_registry_enabled_default=True,
                 card=CARD_MASSAGE,
+                entity_category=None,
             )
             for key, state in values
         )

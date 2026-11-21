@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
@@ -902,6 +903,7 @@ class SymphonyController(KeesonController):
                 "on",
                 "mdi:lock",
                 local_set_fn=local,
+                entity_category=EntityCategory.CONFIG,
             )
         ]
         if self._privacy_settable:
@@ -912,6 +914,7 @@ class SymphonyController(KeesonController):
                     privacy,
                     k.PRIVACY,
                     icon="mdi:shield-lock",
+                    entity_category=EntityCategory.CONFIG,
                 )
             )
         if self._light_switchable:
@@ -960,6 +963,7 @@ class SymphonyController(KeesonController):
                     self._key(k.ALARM),
                 ),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         ]
         if self.supports_massage:

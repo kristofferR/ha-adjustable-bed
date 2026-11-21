@@ -329,6 +329,7 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
                 state_key=ALARM_INDICATOR,
                 icon="mdi:alarm",
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
             ControllerStateBinarySensorSpec(
                 key="leggett_sleep_timer_indicator",

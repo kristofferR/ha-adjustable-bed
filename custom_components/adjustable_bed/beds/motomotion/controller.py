@@ -1210,6 +1210,8 @@ class MotoMotionController(BedController):
                 "mdi:seat",
                 entity_registry_enabled_default=True,
                 card=CARD_UTILITY,
+                # Heat and massage levels for the dashboard.
+                entity_category=None,
             )
             for side in sides
             for kind in ("heat", "massage")

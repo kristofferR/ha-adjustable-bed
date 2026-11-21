@@ -545,7 +545,14 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
             [
                 massage_timer_sensor_spec(str(key), str(key), key)
                 if key is state.MINUTES
-                else ControllerStateSensorSpec(str(key), str(key), key, "mdi:information-outline")
+                else ControllerStateSensorSpec(
+                    str(key),
+                    str(key),
+                    key,
+                    "mdi:vibrate",
+                    entity_registry_enabled_default=True,
+                    entity_category=None,
+                )
                 for key in (state.HEAD, state.FOOT, state.MINUTES, state.WAVE)
             ]
             if self.profile.key != "p3"
@@ -560,7 +567,8 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                     "mdi:alarm",
                     attribute_keys=(detail,),
                     # Filled by the alarm refresh or a P3 alarm write.
-                    entity_registry_enabled_default=False,
+                    entity_registry_enabled_default=True,
+                    entity_category=None,
                 )
                 for key, detail in zip(state.ALARM_KEYS, state.ALARM_DETAIL_KEYS, strict=True)
             )

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 
 from ..card import (
     CARD_HIDDEN,
@@ -284,6 +285,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
                 # Step counts only mirror the up/down buttons; the bed takes no level.
                 entity_registry_enabled_default=key == "circulation",
                 card=_SENSOR_CARDS.get(key, CARD_HIDDEN),
+                entity_category=None if key in _SENSOR_CARDS else EntityCategory.DIAGNOSTIC,
             )
             # The timer selects show the massage timer and light duration.
             for key in ("circulation", "head_steps", "foot_steps", "wave_steps")
