@@ -580,8 +580,8 @@ its bed guide.
    names and services do not always identify the right layout.
 
 Existing entries keep their selection until you change it. A bed on a generic
-route that has since gained app profiles is asked once, through a repair, which
-app it uses; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
+route that has since gained app profiles can be asked once, through a repair,
+which app it uses; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 For a combined bed with two addresses, settings belong to each physical bed.
 Each receiver's own app settings, such as its motor count, massage or light
 settings, are under **Configure > Change left receiver settings** or **Change

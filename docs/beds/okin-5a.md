@@ -429,8 +429,9 @@ Store), developed by Star Seeds Co LTD (DewertOkin).
 
 #### Setup
 
-For a Sealy Posturematic bed, use this profile: it is the one tested on a real
-bed. A discovered `Star35` bed offers it as the detected receiver. To add the
+For a Sealy Posturematic bed with this receiver (a Bluetooth name starting
+with `Star35`), use this profile: it is the one tested on a real bed, a Sealy
+Element. A discovered `Star35` bed offers it as the detected receiver. To add the
 bed yourself, choose **My app isn't listed, or I don't know**, then **Okin
 (other receivers)** and **Sealy Posturematic or DewertOkin Star bed**. The
 [Sealy Posturematic app](#sealy-posturematic-app) row follows the newer app and
@@ -540,9 +541,10 @@ protocol definition at
 
 #### Setup
 
-This row has not been tested on a real bed yet. The
-[Sealy Posturematic (CB35)](#sealy-posturematic-cb35) profile has, so choose
-that one unless you want to help test this one.
+This row has not been tested on a real bed yet. If the bed's Bluetooth name
+starts with `Star35`, the [Sealy Posturematic (CB35)](#sealy-posturematic-cb35)
+profile has been tested on a Sealy Element, so choose that one unless you want
+to help test this one.
 
 Choose **Sealy Posturematic**, then the product printed on the bed: Element,
 Ascent or Apex. Reconfigure changes that choice. Each physical bed keeps its

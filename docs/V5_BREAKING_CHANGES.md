@@ -41,7 +41,8 @@ the version it needs.
    Bed. Betas show there only after you open **Adjustable Bed** under
    **Settings > Marketplace** and choose **Include pre-releases** in its
    three-dots menu. **Install another version** in the same menu installs one
-   chosen version.
+   chosen version. If you copied the integration by hand, copy the 5.x release
+   archive instead, as the [README](../README.md#manual) describes.
 5. Install the update, then restart Home Assistant and reload the dashboard
    page.
 

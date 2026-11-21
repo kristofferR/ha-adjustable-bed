@@ -3583,8 +3583,8 @@ was found.
    and Both controls** in Configure when needed. P2 products do not offer this option.
    Remove the Left, Right and Both controls before changing from P1 to P2.
 
-For an existing Keeson entry, select **BaseI4/BaseI5 (Member's Mark)** or
-**Ergomotion (with position feedback)** before enabling side controls. Do this
+For an existing Keeson entry, select **Member's Mark base (BaseI4 / BaseI5)** or
+**Ergomotion base (reports positions)** before enabling side controls. Do this
 through **Reconfigure** in the entry's three-dot menu, under the Keeson
 question's **No app: another Keeson remote** answer; Configure refuses a
 Keeson route change. An existing Ergomotion bed-type

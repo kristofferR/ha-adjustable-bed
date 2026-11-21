@@ -126,12 +126,12 @@ bed has been tested on real hardware.
 | [Linak](docs/beds/linak.md) | [Bed Control, Bed Connect and Performance Series apps](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
 | [Linx](docs/beds/linx.md) | [Linx](docs/beds/linx.md) | Linx |
 | [LOGICDATA](docs/beds/logicdata.md) | [SILVERmotion (Logicdata SimplicityFrame)](docs/beds/logicdata.md), [MOTIONrelax phone and tablet](docs/beds/jiecang.md#motionrelax-phone-and-tablet), [Sleep Smart Air Mattress](docs/beds/jiecang.md#sleep-smart-air-mattress-bed), [Sleep Smart air mattress pump](docs/beds/logicdata-sleep-smart.md) | LOGICDATA, SILVERmotion, SimplicityFrame, Sleep Smart Vienna / Toronto / Middle Rail |
-| [M Line](docs/beds/mline.md) | M Line | OKIN |
 | [Majestic Home](docs/beds/richmat.md#majestic-home) | Majestic Home | Majestic Home |
 | [Malouf / Lucid](docs/beds/malouf.md) | [Malouf Base](docs/beds/malouf.md#malouf-base), [Lucid Base](docs/beds/malouf.md#lucid-base), [Nordic UART receiver](docs/beds/malouf.md#new_okin), [FFE5 receiver](docs/beds/malouf.md#legacy-ffe5-route) | Malouf, Lucid, Structures |
 | [MLILY Control](docs/beds/richmat.md#mlily-control) | MLILY Control, MLILY Control sleep sensors (RM- or HJ-) | MLILY |
 | [MLILY Remote](docs/beds/richmat.md#mlily-remote) | MS200, MS300, MS600, PowerCool and MS300-SH | MLILY |
 | [MLILY Supreme](docs/beds/richmat.md#mlily-supreme) | MLILY Supreme app and its separate HJ_Bed sleep receiver | MLILY |
+| [M Line](docs/beds/mline.md) | M Line | OKIN |
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion](docs/beds/motomotion.md) | MotoMotion |
 | [MotoSleep / Power Bob](docs/beds/motomotion.md#motosleep-and-power-bob-family) | [MotoSleep / Power Bob app, HHC models](docs/beds/motomotion.md#hhc-profiles-names-longer-than-14-characters), [Power Bob and binary MOTO models](docs/beds/motomotion.md#power-bob-profiles-14-character-names) | HHC, Power Bob |
 | [Nerum](docs/beds/nerum.md) | Nerum | Nerum |

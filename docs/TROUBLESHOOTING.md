@@ -36,8 +36,8 @@ and take a Home Assistant backup first. That backup is the only way back; see
 
 ### "New app profiles are available" repair
 
-An upgrade never changes a working bed's setup by itself. When a bed still uses
-a generic route that has since gained app profiles, it shows one repair under
+An upgrade never changes a working bed's setup by itself. A bed that still uses
+a generic route that has since gained app profiles can show one repair under
 **Settings > System > Repairs**. Bluetooth advertisements cannot tell these
 apps apart, so the repair asks which one you use. It lists only the apps that
 fit that bed's setup:
@@ -68,7 +68,8 @@ in 4.x:
 - Solace on Automatic (the HomeKobo, Sealy MotionFlex and Sweet Night route):
   Woosa Sleep and Sophie, which share these beds' names, so only the app tells
   them apart.
-- Keeson on Automatic, Base or Sino: ComfortFurniture and Ultramatic.
+- Keeson on Automatic, Base or Sino: ComfortFurniture, Ultramatic and
+  BetterLiving / BetterLiving2.
 - Richmat: Lunio Smart+, SleepEvolution, W.Silver Products (older version),
   MLILY Control, MLILY Remote, Okimiki and Majestic Home, whose names 4.x set
   up as a Richmat bed.
@@ -82,7 +83,7 @@ Beds set up before 4.1.0 that have not answered it yet are offered these apps:
 
 | Bed type | Apps offered |
 |------------------------------|--------------|
-| Keeson (Auto or Base variant) | Adjustable Lite (Auto only), Simon Li, Heal Every Night, OKIN-Seating, Avanti Bases, INNOVA, AMERICANSTAR, MaxCoil Una, Dynasty Bases, Bedsense Bases, Restonic BT A/B, SIMMONS |
+| Keeson (Auto or Base variant) | Adjustable Lite (Auto only), Simon Li, Heal Every Night, OKIN-Seating, Avanti Bases, INNOVA, AMERICANSTAR, MaxCoil Una, Dynasty Bases, Bedsense Bases, Restonic BT A/B, SIMMONS, BetterLiving / BetterLiving2 |
 | Keeson (KSBT variant) | Adjustable Lite |
 | Keeson (Sino variant) | Simon Li, Heal Every Night, OKIN-Seating, Avanti Bases, INNOVA, AMERICANSTAR, MaxCoil Una, Dynasty Bases, Bedsense Bases |
 | Okin ORE | INNOVA, Dynasty Bases |
@@ -667,8 +668,9 @@ is not evidence that the target was reached. Position entities keep their last
 reported value, or remain unknown until the bed reports a position. Sending the
 same target again is allowed when no fresh report verifies the target.
 
-Moving to a position needs a fresh position report from the bed. If the bed
-stops reporting while it moves, the integration stops the motors and reports a
+When the integration steers a bed to a position using its live position
+reports, it needs a fresh report from the bed. If the bed stops reporting while
+it moves, the integration stops the motors and reports a
 failure; the last known position stays visible but is never used to move again.
 
 ### RF ECO BT bed shows only a Stair control or fails pairing

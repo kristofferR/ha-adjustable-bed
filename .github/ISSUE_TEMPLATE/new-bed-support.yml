@@ -57,7 +57,7 @@ body:
 
         1. Find your bed's MAC address: Settings → Devices & Services → Add Integration → Adjustable Bed → "Browse unsupported Bluetooth devices", then select your bed (this only inspects the device, it doesn't add anything)
         2. Go to Developer Tools → Actions
-        3. Search for `adjustable_bed.generate_support_bundle`, leave the device empty, and enter the MAC address in "Target Address"
+        3. Search for `adjustable_bed.generate_support_bundle`, leave "Bed" empty, and enter the MAC address in "Target address"
         4. Click "Perform action" and operate your physical remote during the capture
         5. Click the **download link** in the notification that appears
         6. Open the file and remove anything you do not want to share

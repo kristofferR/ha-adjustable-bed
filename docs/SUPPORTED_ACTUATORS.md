@@ -70,7 +70,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Member's Mark | [Keeson](beds/keeson.md) |
 | MLILY | [MLILY Control](beds/richmat.md#mlily-control), [MLILY Remote](beds/richmat.md#mlily-remote), [MLILY Supreme](beds/richmat.md#mlily-supreme), [Richmat](beds/richmat.md) |
 | MotoMotion | [MotoMotion](beds/motomotion.md) |
-| Nectar | [Nectar](beds/okin-5a.md#nectar), [Nectar Move (Okin CST)](beds/okin-nframe.md#nectar-move-profile) |
+| Nectar | [Nectar](beds/okin-5a.md#nectar), [Nectar Move (Okin CST)](beds/okin-nframe.md#nectar-move-profile), [Nectar Premier (Resident Adjustable Base)](beds/okin-nframe.md#resident-adjustable-base) |
 | Nerum | [Nerum](beds/nerum.md) |
 | Nisco | [Nisco](beds/richmat.md#nisco) |
 | NORA_CON / NORACON | [Okin](beds/okin-nframe.md) |
@@ -100,7 +100,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Simmons | [Okin](beds/okin-nframe.md) |
 | SimplicityFrame | [LOGICDATA](beds/logicdata.md) |
 | Sleep Number | [Sleep Number](beds/sleep_number.md) |
-| Sleep Smart Vienna / Toronto / Middle Rail | [LOGICDATA](beds/logicdata.md) |
+| Sleep Smart Vienna / Toronto / Middle Rail | [Sleep Smart Air Mattress](beds/jiecang.md#sleep-smart-air-mattress-bed) |
 | SleepSpa | [SleepSpa S9000AI](beds/sleepstar.md) |
 | Sleepy's | [Sleepy's Elite](beds/sleepys.md) |
 | Slumberland | [Remacro](beds/remacro.md) |
