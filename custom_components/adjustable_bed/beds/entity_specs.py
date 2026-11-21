@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.components.sensor import SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import EntityCategory
 
 from ..card import CARD_HIDDEN, CARD_UTILITY, CardPlacement
@@ -251,6 +251,8 @@ class ControllerStateSensorSpec:
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
     state_class: SensorStateClass | None = field(default=None, kw_only=True)
     entity_category: EntityCategory | None = field(default=EntityCategory.DIAGNOSTIC, kw_only=True)
+    # A timestamp reading publishes an aware datetime.
+    device_class: SensorDeviceClass | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)

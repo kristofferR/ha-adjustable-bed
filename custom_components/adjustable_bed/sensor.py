@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
@@ -323,6 +324,7 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
         self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
         self._attr_native_unit_of_measurement = spec.native_unit_of_measurement
         self._attr_suggested_display_precision = spec.suggested_display_precision
+        self._attr_device_class = spec.device_class
         self._attr_state_class = spec.state_class or (
             SensorStateClass.MEASUREMENT if spec.native_unit_of_measurement is not None else None
         )
@@ -349,10 +351,10 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
             self.async_write_ha_state()
 
     @property
-    def native_value(self) -> str | int | float | None:
+    def native_value(self) -> str | int | float | datetime | None:
         """Return the latest controller-published value."""
         value = self._coordinator.controller_state.get(self._spec.state_key)
-        return value if isinstance(value, (str, int, float)) else None
+        return value if isinstance(value, (str, int, float, datetime)) else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
