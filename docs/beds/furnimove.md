@@ -6,7 +6,7 @@
 
 ## Known Models
 
-- OKIN receivers used with the FurniMove app, selected by the exact handset ID
+- OKIN receivers used with the FurniMove app, selected by the handset ID
   shown in the app (see [Captured layouts](#captured-layouts))
 - Handset families in the catalog: RF-TOPLINE, RF-TOUCH, RF-TOUCHLINE, RF-STYLE,
   RF-LITE / RF-LITELINE, RF-FLASHLINE, RF-ECO+, RFS-ELLIPSE, RF HS-Elegance,

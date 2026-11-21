@@ -6,7 +6,7 @@
 
 ## Known Models
 
-- Exact GM Control product codes, selected in setup.
+- GM Control product codes, selected in setup.
 - `V9RM`, `V9RM (standard)` and `V9RM (split head)` have different controls. Pick the one your app uses.
 - `FWRM` and `WFRM` are desk controllers.
 - MM and SXB sleep modules are separate Bluetooth devices and are added as separate beds.

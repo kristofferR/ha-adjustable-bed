@@ -15,7 +15,7 @@ architecture.
 
 > [!NOTE]
 > Two newer apps that share these names use a different wire format. The
-> Nectar Motion app is the explicit **Nectar Move** profile of
+> Nectar Motion app is the **Nectar Move** profile of
 > [Okin CST](okin-nframe.md#okin-cst), and beds using the official MFirm 900-O app
 > (`com.okin.bedding.rizemf900`) and advertising as `OKIN-XXXXXX` are
 > [Okin CST](okin-nframe.md#okin-cst) too. Setup does not pick either from the

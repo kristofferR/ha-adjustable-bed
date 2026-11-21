@@ -6,7 +6,7 @@
 
 ## Known Models
 
-- Casper Base **PRO** and **MAX**, selected explicitly through
+- Casper Base **PRO** and **MAX**, chosen in setup with
   **Casper Base app (select product)**.
 - 37 more products from the app's saved product list, labelled **stored
   profile** in the product selector: NUP210, NUP300,

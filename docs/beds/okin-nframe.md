@@ -99,7 +99,7 @@ Customatic app profiles.
 ⚠️ These apps are not fully checked, so the profile listed for them may not
 match your bed, and setup does not name them.
 
-Beds controlled with FurniMove handset IDs normally use the explicit
+Beds controlled with FurniMove handset IDs normally use the
 [FurniMove / OKIN Smart Remote](furnimove.md) app profile.
 
 ## Features
