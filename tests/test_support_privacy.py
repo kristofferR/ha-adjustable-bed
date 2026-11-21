@@ -20,13 +20,13 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_remove_entry
 from custom_components.adjustable_bed.app_state_store import jensen_memory_store_key
+from custom_components.adjustable_bed.beds.jensen.controller import JensenController
+from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_storage import sdk_store_key
 from custom_components.adjustable_bed.ble_diagnostics import (
     BLEDiagnosticRunner,
     CharacteristicInfo,
     DiagnosticReport,
 )
-from custom_components.adjustable_bed.beds.jensen.controller import JensenController
-from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_storage import sdk_store_key
 from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.const import BED_TYPE_JENSEN, CONF_BED_TYPE, DOMAIN
 from custom_components.adjustable_bed.redaction import redact_bundle, redact_data

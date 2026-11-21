@@ -24,8 +24,8 @@ from custom_components.adjustable_bed.beds.richmat_classic.protocol import (
     worker_interval,
 )
 from custom_components.adjustable_bed.beds.richmat_classic.receive import (
-    MalformedFrame,
     MAX_BUFFER_HEX,
+    MalformedFrame,
     ReceiveState,
 )
 

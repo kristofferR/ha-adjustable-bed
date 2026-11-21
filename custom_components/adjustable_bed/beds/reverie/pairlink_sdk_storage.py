@@ -15,6 +15,7 @@ from weakref import WeakValueDictionary
 
 from homeassistant.helpers.storage import Store
 
+from .pairlink_protocol import normalize_mac
 from .pairlink_sdk_metadata import (
     PairlinkSdkMetadata,
     SdkAttributeRecord,
@@ -22,7 +23,6 @@ from .pairlink_sdk_metadata import (
     SdkFingerprintRecord,
     SdkMetadataEffect,
 )
-from .pairlink_protocol import normalize_mac
 from .pairlink_sdk_models import (
     PairlinkSdkCtl,
     PairlinkSdkDevice,

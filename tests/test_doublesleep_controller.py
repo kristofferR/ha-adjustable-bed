@@ -550,6 +550,7 @@ def test_diagnostics_leave_out_vital_signs_and_reports():
 
     state = bed.bed.protocol_diagnostics["state"]
 
+    assert isinstance(state, dict)
     assert state["left_sensitivity"] == 4
     for key in ("left_heart_rate", "left_breath_rate", "left_status", "left_raw", "left_history"):
         assert key not in state
