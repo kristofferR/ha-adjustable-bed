@@ -1617,8 +1617,9 @@ anti-snore movement runs on the left.
 
 The [Motion Bed guide](beds/ff_frame.md#services-2) covers all of the Motion
 Bed actions, including the alarm, sleep calibration and reports, hub modules, air
-pressure, heating schedules and audio. The control names for `motion_bed_action`
-are listed in the bed's diagnostics. Changes the bed stores need `confirmed:
+pressure, heating schedules and audio. The guide lists the
+[control names](beds/ff_frame.md#control-names-for-motion_bed_action) for
+`motion_bed_action`. Changes the bed stores need `confirmed:
 true`. Selecting one side's device acts on that side.
 
 ## MotoMotion

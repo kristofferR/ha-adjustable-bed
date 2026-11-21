@@ -1012,7 +1012,7 @@ before any write; persistent changes need `confirmed: true`.
 
 | Action | Main fields |
 |---|---|
-| `motion_bed_action` | `action` from diagnostics; `branch` app/save/clear; movement `duration` in seconds |
+| `motion_bed_action` | `action`, a [control name](#control-names-for-motion_bed_action); `branch` app/save/clear; movement `duration` in seconds |
 | [`set_alarm`](../SERVICES.md#set_alarm) | `enabled`, `time`, `weekdays`, `wake_action` (`zero_g`, `memory_1`, `none`), `massage`, `sound` (music only on targets with audio). No `confirmed` needed |
 | [`sync_clock`](../SERVICES.md#sync_clock) | Sets the motor or thermal module clock to Home Assistant's time; a hub sets the clock of the module in use, so select the motor or heating module first. No `confirmed` needed |
 | `motion_bed_sleep_angles` | page 2/3/4, four `flat` and four `side_positions` raw values |
@@ -1037,6 +1037,45 @@ before any write; persistent changes need `confirmed: true`.
   map, as the app can.
 - Pressure live edits bind their channel explicitly; whole pressure save is one
   47-byte frame.
+
+##### Control names for `motion_bed_action`
+
+A name is the app screen and the control, joined by underscores. The preset and
+movement screens carry your layout from the [Setup](#setup-3) table, in lower
+case: on a K2M / W2 bed the Flat preset is `kuaijie_k2mfragment_flat` and
+moving the back up is `weitiao_w2fragment_back_up`. On another layout, change
+`k2m` or `w2`, for example `kuaijie_k1fragment_flat` or
+`weitiao_w4fragment_legs_up`. Not every layout has every control; a name your
+layout lacks is refused before anything is sent.
+
+| Name | What it does |
+|---|---|
+| `kuaijie_k2mfragment_flat`, `_zero_gravity`, `_tv`, `_snore`, `_relax` | Flat, Zero Gravity, Watch TV, Anti-snore and Relax presets |
+| `kuaijie_k2mfragment_memory1`, `_memory2` | Recall memory 1 or 2 |
+| `kuaijie_k2mfragment_memory1_program`, `_memory2_program`, `_zero_gravity_program`, `_tv_program`, `_snore_program` | Save the current position to that preset (`branch: save`) or clear it (`branch: clear`); needs `confirmed: true` |
+| `kuaijie_k2mfragment_music`, `_audio_off`, `_audio_stop` | Sleep and music, stop audio, stop an audio preview (beds with audio) |
+| `kuaijie_k2mfragment_stop`, `_sync`, `_status` | Stop, Sync and refresh the preset state |
+| `weitiao_w2fragment_back_up`, `_back_down`, `_head_up`, `_head_down`, `_lumbar_up`, `_lumbar_down`, `_legs_up`, `_legs_down` | Move one part for `duration` seconds |
+| `weitiao_w2fragment_air_fullgxunhuan`, `_upperxunhuan`, `_lumbarxunhuan`, `_legsxunhuan` | The app's Full, Head, Lumbar and Leg cycle buttons |
+| `weitiao_w2fragment_stop`, `_sync` | Stop and Sync on the movement screen |
+| `massage_fragment_massage_upper_increase`, `_upper_decrease`, `_lower_increase`, `_lower_decrease`, `_wave_increase`, `_wave_decrease` | Back and leg massage strength and massage wave |
+| `massage_fragment_10time`, `_20time`, `_30time` | Massage timer of 10, 20 or 30 minutes |
+| `light_fragment_brightness_0` to `light_fragment_brightness_10` | Light brightness, 0 (off) to 10 |
+| `light_fragment_tv_10fenzhong`, `_tv_8xiaoshi`, `_tv_10xiaoshi` | Light timer of 10 minutes, 8 hours or 10 hours |
+| `smart_sleep_fragment_sleepmian`, `smart_sleep_fragment_night_light` | Smart sleep and smart light on or off |
+| `sleep_adjust_activity_adjust_head_up`, `_back_up`, `_legs_up`, `_lumbar_up` and the `_down` forms; `sleep_adjust_activity_stop` | Sleep-adjustment moves and stop |
+| `sleep_data_entry_activity_calibration_flat_position`, `_calibration_next_position` | Move to the calibration positions |
+| `sleep_data_entry_activity_reset_calibration` | Reset calibration; needs `confirmed: true` |
+| `alarm_activity_audio_preview_1` to `_5`, `alarm_activity_audio_stop` | Preview an alarm sound, or stop the preview |
+
+In the table, a name starting with `_` continues the screen prefix of the name
+before it. Other layouts name a few controls after the app, such as
+`kuaijie_k1fragment_yujia` (yoga) or `weitiao_w12fragment_wholelift_up`. Split
+layouts (K4, K5, W7, W8) use `split_..._left`, `split_..._right` and
+`coupled_...` names, for example `kuaijie_k4fragment_split_flat_left`. The
+modular TL-Q hub, TL-A air, TL-B motor and TL-W thermal products have their own
+names. For those, download the bed's diagnostics: it lists every name the bed
+accepts.
 
 #### Evidence
 
