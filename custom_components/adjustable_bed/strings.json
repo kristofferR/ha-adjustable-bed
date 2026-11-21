@@ -10801,7 +10801,8 @@
         "legacy_lierda": "No app: Comfort Motion / Lierda remote (legacy Lierda controls)",
         "logicdata_app": "LOGICDATA app: MOTIONrelax, or the Sleep Smart Air Mattress bed base",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "okin_family_choice": {
@@ -10811,7 +10812,8 @@
         "okin_dot": "No app: DOT remote (RF34 or RF6707)",
         "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "keeson_family_choice": {
@@ -10825,7 +10827,8 @@
         "coolbase": "Cool Base app (with fan)",
         "other_route": "No app: another Keeson remote",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "solace_family_choice": {
@@ -10836,6 +10839,7 @@
         "bedsense": "BedSense app",
         "another": "Another app or remote: search every app",
         "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls",
         "sophie": "Sophie app"
       }
     },
@@ -10851,7 +10855,8 @@
         "lp_app_qrrm": "L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2)",
         "lp_legacy": "L&P Adjustable Base app (older version)",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "sleepys_family_choice": {
@@ -10861,7 +10866,8 @@
         "box24": "No app: control box labelled BOX24",
         "box15": "No app: control box labelled BOX15",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "logicdata_family_choice": {
@@ -10872,7 +10878,8 @@
         "sleep_smart": "Sleep Smart Air Mattress app: bed base",
         "sleep_smart_pump": "Sleep Smart Air Mattress app: air mattress pump (its own device)",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "customatic_family_choice": {
@@ -10883,7 +10890,8 @@
         "zseries_z230": "Z-Series app with the Z-230 model",
         "zseries_z280": "Z-Series app with the Z-280 model",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "jordans_family_choice": {
@@ -10891,7 +10899,8 @@
         "serenity": "Jordan's Serenity app",
         "tranquil": "Jordan's Tranquil app",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "starcode_family_choice": {
@@ -10900,7 +10909,8 @@
         "m5x5": "AdjustableM5X5 app: CB25, F23 or kneading bed",
         "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "remacro_family_choice": {
@@ -10916,7 +10926,8 @@
         "protocol_110": "Nightstand receiver (Reverie Nightstand app)",
         "protocol_108": "Older receiver (Reverie app)",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "limoss_family_choice": {
@@ -10925,7 +10936,8 @@
         "fsm_relax": "FSM Relax app: bed or chair profile with app-labelled controls",
         "generic": "No app: Stawett or older Limoss controls",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "malouf_family_choice": {
@@ -10935,7 +10947,8 @@
         "nordic_uart": "No app: Malouf or Lucid remote, newer receiver",
         "ffe5": "No app: Malouf or Lucid remote, older receiver",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "sleep_number_family_choice": {
@@ -10943,7 +10956,8 @@
         "fuzion": "Fuzion base: Climate 360, FlexFit or FlexFit Smart",
         "mcr": "Older BAM/MCR base: i8 or 360 FlexFit 2",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "jensen_family_choice": {
@@ -10953,7 +10967,8 @@
         "svane_bed": "Svane Remote app with a Svane Bed",
         "svane_jmc400": "Svane Remote app with a JMC400 bed",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current setup"
+        "keep": "Keep the current setup",
+        "keep_detected": "Keep the detected controls"
       }
     },
     "richmat_family_choice": {

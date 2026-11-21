@@ -130,8 +130,8 @@ async def test_the_family_row_asks_the_app_or_receiver_and_has_nothing_to_keep(h
 async def test_a_detected_receiver_is_kept_with_its_motor_count(hass):
     flow = setup_flow(hass, const.BED_TYPE_SLEEPYS_BOX24)
     result = await flow.async_step_sleepys_family()
-    assert choices(result)[-1] == "keep"
-    result = await flow.async_step_sleepys_family({"choice": "keep"})
+    assert choices(result)[-1] == "keep_detected"
+    result = await flow.async_step_sleepys_family({"choice": "keep_detected"})
     assert result["step_id"] == "keep_detected"
     result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"

@@ -76,9 +76,9 @@ async def test_the_family_row_asks_the_app_and_has_nothing_to_keep(hass):
 async def test_a_detected_simplicityframe_is_kept_and_still_pairs(hass):
     flow = setup_flow(hass, const.BED_TYPE_LOGICDATA)
     result = await flow.async_step_logicdata_family()
-    assert choices(result)[-1] == "keep"
+    assert choices(result)[-1] == "keep_detected"
     # The row's form was drawn for the apps, so SimplicityFrame asks its motors.
-    result = await flow.async_step_logicdata_family({"choice": "keep"})
+    result = await flow.async_step_logicdata_family({"choice": "keep_detected"})
     assert result["step_id"] == "keep_detected"
     result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"

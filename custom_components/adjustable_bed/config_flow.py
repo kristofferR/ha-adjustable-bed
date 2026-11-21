@@ -69,6 +69,8 @@ from .app_families import (
     JENSEN_FAMILY,
     JIECANG_FAMILY,
     JORDANS_FAMILY,
+    KEEP_DETECTED_LABEL,
+    KEEP_LABEL,
     KEESON_FAMILY,
     LEGGETT_FAMILY,
     LIMOSS_FAMILY,
@@ -1084,7 +1086,8 @@ def _offer_another_app(schema: vol.Schema) -> vol.Schema:
                     value=_ANOTHER_APP, label="Another app or remote: search every app"
                 )
             )
-            options.insert(values.index("keep") if "keep" in values else len(options), another)
+            keep = next((key for key in ("keep", "keep_detected") if key in values), None)
+            options.insert(values.index(keep) if keep is not None else len(options), another)
             fields[marker] = SelectSelector(
                 SelectSelectorConfig(**{**selector.config, "options": options})
             )
@@ -3095,7 +3098,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else [
                 SelectOptionDict(
                     value=key,
-                    label=offered[key].label or (family.keep_label if offered[key].keep else key),
+                    label=offered[key].label
+                    or (
+                        (KEEP_LABEL if visit.guided else KEEP_DETECTED_LABEL)
+                        if offered[key].keep
+                        else key
+                    ),
                 )
                 for key in keys
             ]

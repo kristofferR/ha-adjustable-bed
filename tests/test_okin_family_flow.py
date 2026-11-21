@@ -113,8 +113,8 @@ async def test_detected_receiver_offers_routes_review_apps_and_keep(hass):
     assert offered[:4] == ["furnimove", "okin_uuid", "okin_dot", "okin_rf_eco_bt"]
     # The apps the app review suggests for this route are one answer away.
     assert {"serenity", "tranquil", "adjustable_lumbar"} <= set(offered)
-    assert offered[-1] == "keep"
-    result = await flow.async_step_okin_family({"choice": "keep"})
+    assert offered[-1] == "keep_detected"
+    result = await flow.async_step_okin_family({"choice": "keep_detected"})
     assert result["step_id"] == "keep_detected"
     result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"
@@ -137,7 +137,7 @@ async def test_keep_detected_controls_collects_motors_without_changing_route(
     assert flow._manual_data is not None
     flow._manual_data[const.CONF_PROTOCOL_VARIANT] = variant
     before = dict(flow._manual_data)
-    result = await flow.async_step_okin_family({"choice": "keep"})
+    result = await flow.async_step_okin_family({"choice": "keep_detected"})
     assert result["step_id"] == "keep_detected"
     result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"
@@ -391,7 +391,7 @@ async def test_discovered_cst_bed_is_asked_with_its_apps_first(
     apps = ["serenity", "tranquil", "customatic_zseries:z230", "customatic_zseries:z280"]
     routes = ["furnimove", "okin_uuid", "okin_dot", "okin_rf_eco_bt"]
     # A discovered bed's question also searches every other app.
-    assert offered == [*cst_apps, *apps, *routes, "another", "keep"]
+    assert offered == [*cst_apps, *apps, *routes, "another", "keep_detected"]
     manager.async_abort(result["flow_id"])
 
 
@@ -401,7 +401,7 @@ async def test_discovered_cst_bed_is_asked_with_its_apps_first(
         ("okin_cst:cst_resident", const.BED_TYPE_OKIN_CST, "cst_resident"),
         ("okin_cst:cst_nectar_move", const.BED_TYPE_OKIN_CST, "cst_nectar_move"),
         ("serenity", const.BED_TYPE_SERENITY, None),
-        ("keep", const.BED_TYPE_OKIN_CST, "auto"),
+        ("keep_detected", const.BED_TYPE_OKIN_CST, "auto"),
     ],
 )
 async def test_cst_answer_saves_its_route(hass, choice, bed_type, variant):
@@ -410,7 +410,7 @@ async def test_cst_answer_saves_its_route(hass, choice, bed_type, variant):
     flow._manual_data[const.CONF_PROTOCOL_VARIANT] = const.VARIANT_AUTO
     with patch.object(flow, "_async_finish_family_route", new=AsyncMock()) as finish:
         result = await flow.async_step_okin_family({"choice": choice})
-        if choice == "keep":
+        if choice == "keep_detected":
             assert result["step_id"] == "keep_detected"
             await flow.async_step_keep_continue()
     finish.assert_awaited_once()

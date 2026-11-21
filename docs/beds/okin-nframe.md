@@ -192,7 +192,7 @@ RF remote to answer.
 5. The apps the [app review](../CONFIGURATION.md#profile-recommendations) lists
    for a detected Okimat route, such as Jordan's Serenity or Adjustable bed
    (Lumbar), switch to that app's profile.
-6. When detection found a route, **I don't know: keep the detected controls**
+6. When detection found a route, **Keep the detected controls**
    saves it.
 
 A bed set up as [Okin CST](#okin-cst), from its row or the discovery question,

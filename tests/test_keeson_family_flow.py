@@ -56,9 +56,9 @@ async def test_generic_row_asks_the_app_and_keep_saves_the_detected_route(hass):
     flow = setup_flow(hass, const.BED_TYPE_KEESON)
     result = await flow.async_step_keeson_family()
     assert result["step_id"] == "keeson_family"
-    assert options(result)[-1] == "keep"
+    assert options(result)[-1] == "keep_detected"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        kept = await flow.async_step_keeson_family({"choice": "keep"})
+        kept = await flow.async_step_keeson_family({"choice": "keep_detected"})
         assert kept["step_id"] == "keep_detected"
         await flow.async_step_keep_continue()
     saved = finish.call_args.args[0]

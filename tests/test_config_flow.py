@@ -280,7 +280,7 @@ async def _keep_family_route(hass: HomeAssistant, result: Any) -> Any:
     if result.get("step_id") != "jiecang_family":
         return result
     manager = hass.config_entries.flow
-    result = await manager.async_configure(result["flow_id"], {"choice": "keep"})
+    result = await manager.async_configure(result["flow_id"], {"choice": "keep_detected"})
     # The Keep screen explains the detected controls before setup continues.
     assert result["step_id"] == "keep_detected"
     return await manager.async_configure(result["flow_id"], {"next_step_id": "keep_continue"})
@@ -1995,7 +1995,7 @@ class TestBluetoothDiscoveryFlow:
             user_input={"bed_type_choice": BED_TYPE_OKIMAT},
         )
         assert result["step_id"] == "okin_family"
-        assert "keep" in select_options(result, "choice")
+        assert "keep_detected" in select_options(result, "choice")
         flow = hass.config_entries.flow._progress[result["flow_id"]]
         assert flow._manual_data[CONF_BED_TYPE] == BED_TYPE_OKIMAT
         hass.config_entries.flow.async_abort(result["flow_id"])
@@ -2541,7 +2541,7 @@ class TestBluetoothDiscoveryFlow:
         # The Okin question asks which app runs the CST bed (#573); keep it.
         assert result["step_id"] == "okin_family"
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], user_input={"choice": "keep"}
+            result["flow_id"], user_input={"choice": "keep_detected"}
         )
         assert result["step_id"] == "keep_detected"
         assert result["description_placeholders"]["pairing"]

@@ -168,7 +168,7 @@ async def test_a_kept_entity_with_another_name_is_reinterpreted(hass):
 
 async def test_keep_on_a_new_bed_explains_its_controls_and_can_go_back(hass):
     flow = setup_flow(hass, const.BED_TYPE_OKIN_UUID)
-    result = await flow.async_step_okin_family({"choice": "keep"})
+    result = await flow.async_step_okin_family({"choice": "keep_detected"})
     assert result["type"] == FlowResultType.MENU
     assert result["step_id"] == "keep_detected"
     assert result["menu_options"] == ["keep_back", "keep_continue"]
@@ -177,7 +177,7 @@ async def test_keep_on_a_new_bed_explains_its_controls_and_can_go_back(hass):
 
     result = await flow.async_step_keep_back()
     assert result["step_id"] == "okin_family"
-    result = await flow.async_step_okin_family({"choice": "keep"})
+    result = await flow.async_step_okin_family({"choice": "keep_detected"})
     result = await flow.async_step_keep_continue()
     assert result["step_id"] == "profile_questions"
     assert flow._manual_data is not None
@@ -186,7 +186,7 @@ async def test_keep_on_a_new_bed_explains_its_controls_and_can_go_back(hass):
 
 async def test_keep_on_a_new_bed_without_pairing_says_nothing_about_it(hass):
     flow = setup_flow(hass, const.BED_TYPE_KEESON)
-    result = await flow.async_step_keeson_family({"choice": "keep"})
+    result = await flow.async_step_keeson_family({"choice": "keep_detected"})
     assert result["step_id"] == "keep_detected"
     assert result["description_placeholders"]["pairing"] == ""
     assert "**Reconfigure**" in result["description_placeholders"]["later"]
@@ -195,7 +195,7 @@ async def test_keep_on_a_new_bed_without_pairing_says_nothing_about_it(hass):
 async def test_keep_on_a_route_without_a_guided_change_points_to_reconfigure(hass):
     flow = setup_flow(hass, const.BED_TYPE_SLEEP_NUMBER_MCR)
     with patch("homeassistant.components.bluetooth.async_last_service_info", return_value=None):
-        result = await flow.async_step_sleep_number_family({"choice": "keep"})
+        result = await flow.async_step_sleep_number_family({"choice": "keep_detected"})
     assert result["step_id"] == "keep_detected"
     later = result["description_placeholders"]["later"]
     # Reconfigure changes the app of every bed type.
