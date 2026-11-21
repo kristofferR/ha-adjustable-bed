@@ -92,7 +92,8 @@ calibration step, including a real OCTO Standard entry. Needs real-bed reports
 on OCTO Standard and Richmat beds: how close a recall lands to the saved
 position, how fast the estimate drifts over many short moves, and whether
 calibrating by tapping is accurate enough. Report the target, what the bed
-actually did and your calibrated times in the v5 beta feedback issue.
+actually did and your calibrated times in
+[a new issue](https://github.com/kristofferR/ha-adjustable-bed/issues/new/choose).
 
 ## States
 

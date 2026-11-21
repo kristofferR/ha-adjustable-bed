@@ -1,13 +1,13 @@
-# Okin 5A
+# Nectar, Mattress Firm 900, Sealy Posturematic and DewertOkin ELEVATE (Okin)
 
 **Status:** Tested on the Sealy Posturematic CB35 profile; the other profiles need testing
 
 **Credit:** Reverse engineering by [MaximumWorf](https://github.com/MaximumWorf) ([homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)), [David Delahoz](https://github.com/daviddelahoz) ([BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)) and [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 One wire codec (`5A 01 03 10 page key A5` key frames over two GATT transports)
-serves four profiles: legacy seven-byte Nectar beds, Mattress Firm 900 / iFlex
-Nordic UART bases, Sealy Posturematic CB35 beds and the DewertOkin ELEVATE lift
-accessory. The codec also builds the other StarCode frames that standalone
+serves five profiles: legacy seven-byte Nectar beds, Mattress Firm 900 / iFlex
+Nordic UART bases, Sealy Posturematic CB35 beds, the Sealy Posturematic app and
+the DewertOkin ELEVATE lift accessory. The codec also builds the other StarCode frames that standalone
 StarCode controllers send (see [StarCode frames](#starcode-frames)). This guide
 covers the codec first, then one section per profile. See
 [Protocol codecs and app profiles](../design/protocol-codecs.md) for the
@@ -429,6 +429,14 @@ Store), developed by Star Seeds Co LTD (DewertOkin).
 
 #### Setup
 
+For a Sealy Posturematic bed with this receiver (a Bluetooth name starting
+with `Star35`), use this profile: it is the one tested on a real bed, a Sealy
+Element. A discovered `Star35` bed offers it as the detected receiver. To add the
+bed yourself, choose **My app isn't listed, or I don't know**, then **Okin
+(other receivers)** and **Sealy Posturematic or DewertOkin Star bed**. The
+[Sealy Posturematic app](#sealy-posturematic-app) row follows the newer app and
+has not been tested yet.
+
 - Detection: a `Star35*` name with Nordic UART; see [Name encoding](#name-encoding).
 - Initialization: only the wake frame, followed by 100 ms; no Mattress Firm
   handshake. CB35 requires write without response (see the
@@ -532,6 +540,11 @@ protocol definition at
 **Status:** Not yet tested
 
 #### Setup
+
+This row has not been tested on a real bed yet. If the bed's Bluetooth name
+starts with `Star35`, the [Sealy Posturematic (CB35)](#sealy-posturematic-cb35)
+profile has been tested on a Sealy Element, so choose that one unless you want
+to help test this one.
 
 Choose **Sealy Posturematic**, then the product printed on the bed: Element,
 Ascent or Apex. Reconfigure changes that choice. Each physical bed keeps its
@@ -652,7 +665,7 @@ Use the shared actions in [Actions and Automations](../SERVICES.md).
 | `hold_control` | `device_id`, `control`, `duration` (seconds), optional `side` | Hold a head, foot, combined or preset control; ordinary STOP release |
 | `goto_preset` | `device_id`, `preset`, optional `duration` (seconds) and `side` | Recall memory 1 or 2, with ordinary STOP release |
 | `save_preset` | `device_id`, `preset`, optional `side` | Save slot 1 or 2 with finite programming and release |
-| `stop` | `device_id`, optional `side` | Ordinary STOP twice; does not promise interruption of every firmware preset |
+| `stop_all` | `device_id`, optional `side` | Ordinary STOP twice; does not promise interruption of every firmware preset |
 
 #### Evidence
 

@@ -1,4 +1,4 @@
-# HHC `$#` frames (MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion)
+# MotoMotion, MotoSleep, Power Bob, Bedgear and L2 Motion
 
 **Status:** Partly tested (existing MotoSleep HHC support user tested in [#51](https://github.com/kristofferR/ha-adjustable-bed/issues/51) and [#445](https://github.com/kristofferR/ha-adjustable-bed/issues/445); MotoMotion, Power Bob and the other MotoSleep models need testing)
 
