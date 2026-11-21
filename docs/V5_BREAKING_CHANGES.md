@@ -178,7 +178,8 @@ Every other saved setting, bed type and ID loads unchanged.
   diagnostics and support bundles.
 - **Entities that change type keep your settings.** When an entity becomes
   another kind (a switch that became a light, a text sensor that became a
-  binary sensor, a select that became a switch or number), the new entity
+  binary sensor, a select or button that became a switch, a select that
+  became a number), the new entity
   takes the old object ID where it is free (`switch.bed_under_bed_lights`
   becomes `light.bed_under_bed_lights`) and the name, icon, area, labels,
   categories, aliases and disabled or hidden state you gave the old one. When
@@ -198,6 +199,27 @@ Every other saved setting, bed type and ID loads unchanged.
 - **No device shows one name twice**, and a paired bed's Left, Right and Both
   entities are named from their devices, as Home Assistant 2026.11 does, so
   the card no longer shows doubled names such as "Bed Left Back".
+
+### Entities that change type
+
+These entities keep their object ID and your settings when their type
+changes, and a repair lists the automations and scripts that still use the
+old entity. Other entities that changed type or were replaced, such as an
+on and off button pair that became one switch, start as new entities:
+[Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists them.
+
+| Bed or app | 4.x type | v5 entity |
+|------------|----------|-----------|
+| Every bed with an on/off under-bed light, except Octo | `switch` | **Under Bed Lights** `light` |
+| Casper, Hush, Good Vibe and Richmat sleep sensors | `sensor` | **Left in bed**, **Right in bed**, **Left body movement**, **Right body movement**, **Left snoring**, **Right snoring** `binary_sensor` |
+| StarCode AdjustableM5X4 | `sensor` | **Massage** `binary_sensor` |
+| Heal Every Night (OKIN apps) | `select` | **Reversed installation**, **Reverse actuator 1**, **Reverse actuator 2** `switch` |
+| Pairlink | `select` | **Massage rhythm** `switch` |
+| DoubleSleep (OKIN SleepEase) | `select` | **Child lock** `switch` |
+| AdjustaMattress | `select` | **Alarm**, **Intelligent anti-snore** `switch` |
+| AdjustaMattress | `button` | **Sleep mode** `switch` |
+| AdjustaMattress | `select` | **Massage: Head Intensity**, **Massage: Foot Intensity**, **Massage: Wave Intensity** `number` |
+| Motion Bed app | `button` | **Night light**, **Smart sleep** `switch` |
 
 ### One shape per control
 
@@ -579,10 +601,10 @@ described under [One shape per control](#one-shape-per-control).
 | SIMMONS | "Sync Clock" button | Clock: the **Set bed clock** action |
 | Sleeptracker | Massage pattern and strength sensors (the selects show them) | |
 | Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons (the light entity drives the light) | Motion sensor on/off buttons: **Motion sensor** switch. Massage timer code select and cycle massage timer button: **Massage: Timer** select (10, 20, 30 min; same entity ID). BOX25 Massage on and Massage off buttons: **Massage** switch. Axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
-| StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time and brightness sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
-| StarCode AdjustableM5X4 | 19 raw field sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor: **Massage** binary sensor |
+| StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time, brightness and RGB-mode sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
+| StarCode AdjustableM5X4 | Raw app field, automatic-white and floor light sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor: **Massage** binary sensor |
 | StarCode AdjustableM5X5 | Raw time, brightness, RGB-mode and motor part 4-6 sensors, motor-stopped, light-on, firmware-read and kneading-demo binary sensors | |
-| SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor, the "Sync clock" button | Lock and unlock: a **Lock** switch with a new entity ID. Head and foot massage off, 1, 2 and 3 buttons and Massage level 0 to 3 buttons: **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Intensity** numbers (0-3). MOON left and right massage strength 1, 2 and 3 buttons: **Left massage intensity** and **Right massage intensity** numbers (1-3). MOON left and right massage timer 10, 20 and 30 minute buttons: **Left massage timer** and **Right massage timer** selects (durations only). Clock: the **Set bed clock** action |
+| SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor, the "Controller Sync" switch, the "Sync clock" button | Lock and unlock: a **Lock** switch with a new entity ID. Head and foot massage off, 1, 2 and 3 buttons and Massage level 0 to 3 buttons: **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Intensity** numbers (0-3). MOON left and right massage strength 1, 2 and 3 buttons: **Left massage intensity** and **Right massage intensity** numbers (1-3). MOON left and right massage timer 10, 20 and 30 minute buttons: **Left massage timer** and **Right massage timer** selects (durations only). Clock: the **Set bed clock** action |
 | Svane | Head, feet and position byte sensors | |
 | V-MAT Basic | ED motor status binary sensor | |
 

@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import re
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -16,6 +19,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import BED_TYPE_OCTO, DOMAIN
 from custom_components.adjustable_bed.entity_retypes import (
+    RETYPES,
     ISSUE_PREFIX,
     async_carry_over_retyped_entities,
     async_retyped_entities_built,
@@ -495,3 +499,42 @@ async def test_a_resolved_line_goes_even_if_the_issue_was_not_saved(hass: HomeAs
         async_carry_over_retyped_entities(hass, entry, _runtime())
         await hass.async_block_till_done()
     assert issues.async_get_issue(DOMAIN, issue_id) is None
+
+
+def _changes_on_the_upgrade_page() -> set[tuple[str, str, str]]:
+    """(4.x type, v5 name, v5 type) for each row of the page's type-change table."""
+    page = (Path(__file__).parents[1] / "docs/V5_BREAKING_CHANGES.md").read_text()
+    section = page.split("\n### Entities that change type\n", 1)[1].split("\n#", 1)[0]
+    changes: set[tuple[str, str, str]] = set()
+    for row in section.splitlines():
+        cells = [cell.strip() for cell in row.strip("|").split("|")]
+        if len(cells) != 3 or not cells[1].startswith("`"):
+            continue
+        old_domain = cells[1].strip("`")
+        new_domain = re.findall(r"`(\w+)`", cells[2])[-1]
+        changes.update(
+            (old_domain, name, new_domain) for name in re.findall(r"\*\*(.+?)\*\*", cells[2])
+        )
+    return changes
+
+
+def test_the_upgrade_page_lists_every_type_change_and_only_those() -> None:
+    """Each cross-platform row names a v5 entity that exists, under the name the page shows."""
+    from tests.entity_surface import devices
+
+    names: dict[tuple[str, str], set[str | None]] = {}
+    for device in asyncio.run(devices()):
+        for entity in device.entities:
+            key = (entity.domain, (entity.unique_id or "").removeprefix("aa:"))
+            names.setdefault(key, set()).add(entity.name)
+    expected: set[tuple[str, str, str]] = set()
+    for retype in RETYPES:
+        shown = names.get((retype.new_domain, retype.new_key))
+        assert shown is not None and len(shown) == 1, retype
+        if not retype.keep_on:
+            # Nothing in v5 builds the old entity, or the sweep would keep both.
+            assert (retype.old_domain, retype.old_key) not in names, retype
+        if retype.old_domain != retype.new_domain:
+            expected.add((retype.old_domain, str(next(iter(shown))), retype.new_domain))
+
+    assert _changes_on_the_upgrade_page() == expected
