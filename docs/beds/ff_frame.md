@@ -1,4 +1,4 @@
-# FFFF frame (Solace, Woosa Sleep, BedSense, Motion Bed)
+# Solace, Woosa Sleep, BedSense and Motion Bed
 
 **Status:** Partly tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles need testing)
 

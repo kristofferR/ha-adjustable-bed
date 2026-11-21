@@ -209,7 +209,7 @@ connecting; diagnostics record the actual adapter or proxy used.
 
 | Motors | Controllable Sections |
 |--------|----------------------|
-| 1 | A single controllable section, when offered by the selected profile |
+| 1 | A single section, such as a TV or bed lift or a stair lift; offered only where the app or remote has one motor |
 | 2 | Back + Legs |
 | 3 | Head + Back + Legs |
 | 4 | Head + Back + Legs + Feet |
@@ -355,9 +355,7 @@ receive a larger bounded retry budget; see
 - Match the range supported by your bed. They control position conversion and validation, not the hardware's mechanical limits.
 
 **Timed Move**
-- `adjustable_bed.timed_move` treats the requested milliseconds as an elapsed movement ceiling, starting after connection and movement preparation. Linak completes its readiness handshake before this timer starts. Bluetooth write latency counts toward the ceiling instead of extending it.
-- Each controller keeps its existing repeat cadence and release sequence. Some controllers finish sooner; controller setup within the movement also consumes the budget. The service waits for STOP/release cleanup, so its total duration can include connection setup and cleanup in addition to the movement limit.
-- Transport errors and failed cleanup remain errors. Reaching the requested movement limit is normal completion.
+- `adjustable_bed.timed_move` moves for at most the time you give it, counted once the bed is connected and ready, so the whole action can take a little longer. See [the command lifecycle](COMMAND_LIFECYCLE.md) for the details.
 
 ### Finding new beds automatically
 

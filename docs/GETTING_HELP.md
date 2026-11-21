@@ -35,8 +35,8 @@ You do not need to know whether the cause is configuration or a software bug.
 
 ### Connected OKIN receiver, but commands do nothing
 
-A successful connection or confirmed bond proves transport/security, not the
-selected command profile. Shared OKIN services and a box/handset label (for
+A working connection, or a successful pairing, does not mean the integration
+sends the commands your bed's app uses. Shared OKIN services and a box/handset label (for
 example CB3633 and RF52) cannot identify an app profile by themselves. Include:
 
 - The exact official app name, store link or Android package ID, and app version.
@@ -49,8 +49,8 @@ example CB3633 and RF52) cannot identify an app profile by themselves. Include:
 If reads now fail with **Insufficient authentication**, capture that failure
 separately: it blocks command validation and does not prove a different profile
 is needed. Use the integration's pairing repair on the same adapter/proxy that
-owns the bond when it is required. Do not delete entries, manually edit saved
-bond flags or cycle through unrelated profiles to identify the protocol.
+owns the bond when it is required. Do not delete entries, edit saved pairing settings by
+hand or try unrelated apps one by one to find the right one.
 For a disabled entry, a support bundle can target its device or its raw address;
 exactly one target is required. See the support-bundle steps below.
 

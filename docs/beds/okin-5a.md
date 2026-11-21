@@ -1,4 +1,4 @@
-# Okin 5A
+# Nectar, Mattress Firm 900, Sealy Posturematic and DewertOkin ELEVATE (Okin)
 
 **Status:** Tested on the Sealy Posturematic CB35 profile; the other profiles need testing
 

@@ -37,11 +37,11 @@ the version it needs.
 2. Create a full backup under **Settings > System > Backups**. Keep it until
    you have decided to stay on v5.
 3. Note the integration version you run now.
-4. Under **Settings > Marketplace**, open **Adjustable Bed**. In its three-dots
-   menu, choose **Include pre-releases** and confirm. The beta then shows as an
-   update under **Settings > Updates**. To pick one beta instead, choose
-   **Install another version** in the same menu and select the `v5.0.0bN`
-   version.
+4. Under **Settings > Updates**, install the latest 5.x version of Adjustable
+   Bed. Betas show there only after you open **Adjustable Bed** under
+   **Settings > Marketplace** and choose **Include pre-releases** in its
+   three-dots menu. **Install another version** in the same menu installs one
+   chosen version.
 5. Install the update, then restart Home Assistant and reload the dashboard
    page.
 
@@ -569,9 +569,9 @@ release notes list them.
 > 4.x.** Installing 4.x over v5 leaves every Adjustable Bed entry failing to
 > load. See [Going back to 4.x](TROUBLESHOOTING.md#going-back-to-4x).
 
-Report beta problems in the pinned v5 beta feedback issue
-([#914](https://github.com/kristofferR/ha-adjustable-bed/issues/914)), or open
-a bug report. Include diagnostics or a
+Report problems in
+[a bug report](https://github.com/kristofferR/ha-adjustable-bed/issues/new/choose).
+A beta's own feedback issue is linked from the notification the beta shows. Include diagnostics or a
 [support bundle](GETTING_HELP.md#generating-a-support-bundle) and the version.
 
 ## Appendix A: removed and replaced entities by bed
@@ -663,27 +663,27 @@ Other setup changes:
 ## Appendix C: moved guides
 
 Per-bed guides that share commands were folded into one guide per family, with
-one section per app. Old links to these files on the `v5` branch return 404.
+one section per app. Links to the old file names no longer work.
 
 | Old guide | New section |
 |-----------|-------------|
-| `beds/adjustable-lumbar.md` | [Okin N-frame: Adjustable bed (Lumbar)](beds/okin-nframe.md#adjustable-bed-lumbar) |
+| `beds/adjustable-lumbar.md` | [Okin and DewertOkin: Adjustable bed (Lumbar)](beds/okin-nframe.md#adjustable-bed-lumbar) |
 | `beds/adjustamattress.md` | [Keeson: AdjustaMattress](beds/keeson.md#adjustamattress) |
-| `beds/bedsense.md` | [FFFF frame: BedSense](beds/ff_frame.md#bedsense) |
+| `beds/bedsense.md` | [Solace and related apps: BedSense](beds/ff_frame.md#bedsense) |
 | `beds/bedtech.md` | [Richmat: BedTech](beds/richmat.md#bedtech) |
 | `beds/bf-cherish.md` | [Keeson: BF and Cherish](beds/keeson.md#bf-and-cherish) |
 | `beds/comfort-enhancements.md` | [Keeson: Comfort Enhancements](beds/keeson.md#comfort-enhancements) |
 | `beds/comfort-motion.md` | [Jiecang: Comfort Motion app](beds/jiecang.md#comfort-motion-app) |
 | `beds/coolbase.md` | [Keeson: Cool Base](beds/keeson.md#cool-base) |
-| `beds/customatic.md` | [Okin N-frame: Customatic family](beds/okin-nframe.md#customatic-family) |
-| `beds/customatic-z-series.md` | [Okin N-frame: Customatic Z-Series](beds/okin-nframe.md#customatic-z-series) |
-| `beds/dewertokin.md` | [Okin N-frame: DewertOkin](beds/okin-nframe.md#dewertokin) |
-| `beds/doublesleep.md` | [Okin N-frame: OKIN SleepEase](beds/okin-nframe.md#okin-sleepease) |
+| `beds/customatic.md` | [Okin and DewertOkin: Customatic family](beds/okin-nframe.md#customatic-family) |
+| `beds/customatic-z-series.md` | [Okin and DewertOkin: Customatic Z-Series](beds/okin-nframe.md#customatic-z-series) |
+| `beds/dewertokin.md` | [Okin and DewertOkin: DewertOkin](beds/okin-nframe.md#dewertokin) |
+| `beds/doublesleep.md` | [Okin and DewertOkin: OKIN SleepEase](beds/okin-nframe.md#okin-sleepease) |
 | `beds/ergo-slim.md` | [Keeson: Ergo Slim](beds/keeson.md#ergo-slim) |
 | `beds/ergomotion.md` | [Keeson: Ergomotion app](beds/keeson.md#ergomotion-app) |
 | `beds/ergomotion-4.md` | [Keeson: Ergomotion 4.0](beds/keeson.md#ergomotion-40) |
 | `beds/eshine.md` | [Richmat: Eshine](beds/richmat.md#eshine) |
-| `beds/eshine-okin.md` | [Okin N-frame: eShine](beds/okin-nframe.md#eshine) |
+| `beds/eshine-okin.md` | [Okin and DewertOkin: eShine](beds/okin-nframe.md#eshine) |
 | `beds/floyd.md` | [Kaidi: Floyd Home](beds/kaidi.md#floyd-home) |
 | `beds/fsm_relax.md` | [Limoss: FSM Relax](beds/limoss.md#fsm-relax) |
 | `beds/glideaway-motion.md` | [Keeson: Glideaway Motion](beds/keeson.md#glideaway-motion) |
@@ -691,21 +691,21 @@ one section per app. Old links to these files on the `v5` branch return 404.
 | `beds/hjbed.md` | [Richmat: HJBed](beds/richmat.md#hjbed) |
 | `beds/isleep.md` | [Kaidi: ISleep](beds/kaidi.md#isleep) |
 | `beds/jiecang-app.md` | [Jiecang: Dream app family](beds/jiecang.md#dream-app-family) |
-| `beds/leggett-okin.md` | [Okin N-frame: Leggett Okin family](beds/okin-nframe.md#leggett-okin-family) |
+| `beds/leggett-okin.md` | [Okin and DewertOkin: Leggett Okin family](beds/okin-nframe.md#leggett-okin-family) |
 | `beds/limoss-remote.md` | [Limoss: Limoss Remote](beds/limoss.md#limoss-remote) |
 | `beds/lp-legacy.md` | [Richmat: L&P legacy app](beds/richmat.md#lp-legacy-app) |
 | `beds/logicdata-app.md` | [Jiecang: LOGICDATA app family](beds/jiecang.md#logicdata-app-family) |
 | `beds/malouf-app.md` | [Malouf: Malouf Base / Lucid Base family](beds/malouf.md#malouf-base--lucid-base-family) |
-| `beds/mattressfirm.md` | [Okin 5A: Mattress Firm 900 / iFlex](beds/okin-5a.md#mattress-firm-900--iflex) |
-| `beds/motion_bed.md` | [FFFF frame: Motion Bed](beds/ff_frame.md#motion-bed) |
-| `beds/motosleep.md` | [HHC `$#` frames: MotoSleep and Power Bob family](beds/motomotion.md#motosleep-and-power-bob-family) |
-| `beds/nectar.md` | [Okin 5A: Nectar](beds/okin-5a.md#nectar) |
-| `beds/okimat.md` | [Okin N-frame: Okimat](beds/okin-nframe.md#okimat) |
-| `beds/okin-64bit.md` | [Okin N-frame: Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) |
-| `beds/okin-cb35.md` | [Okin 5A: Sealy Posturematic (CB35)](beds/okin-5a.md#sealy-posturematic-cb35) |
-| `beds/okin-cst.md` | [Okin N-frame: Okin CST](beds/okin-nframe.md#okin-cst) |
-| `beds/okin-dot.md` | [Okin N-frame: Okin DOT](beds/okin-nframe.md#okin-dot) |
-| `beds/okin-rf-eco-bt.md` | [Okin N-frame: RF ECO BT stair lift](beds/okin-nframe.md#rf-eco-bt-stair-lift) |
+| `beds/mattressfirm.md` | [Nectar, Mattress Firm 900 and Sealy: Mattress Firm 900 / iFlex](beds/okin-5a.md#mattress-firm-900--iflex) |
+| `beds/motion_bed.md` | [Solace and related apps: Motion Bed](beds/ff_frame.md#motion-bed) |
+| `beds/motosleep.md` | [MotoMotion and MotoSleep: MotoSleep and Power Bob family](beds/motomotion.md#motosleep-and-power-bob-family) |
+| `beds/nectar.md` | [Nectar, Mattress Firm 900 and Sealy: Nectar](beds/okin-5a.md#nectar) |
+| `beds/okimat.md` | [Okin and DewertOkin: Okimat](beds/okin-nframe.md#okimat) |
+| `beds/okin-64bit.md` | [Okin and DewertOkin: Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) |
+| `beds/okin-cb35.md` | [Nectar, Mattress Firm 900 and Sealy: Sealy Posturematic (CB35)](beds/okin-5a.md#sealy-posturematic-cb35) |
+| `beds/okin-cst.md` | [Okin and DewertOkin: Okin CST](beds/okin-nframe.md#okin-cst) |
+| `beds/okin-dot.md` | [Okin and DewertOkin: Okin DOT](beds/okin-nframe.md#okin-dot) |
+| `beds/okin-rf-eco-bt.md` | [Okin and DewertOkin: RF ECO BT stair lift](beds/okin-nframe.md#rf-eco-bt-stair-lift) |
 | `beds/omazz-adjusto-iii.md` | [Keeson: Omazz Adjusto III](beds/keeson.md#omazz-adjusto-iii) |
 | `beds/ore-comfort-bed.md` | [Keeson: ORE comfort-bed profiles](beds/keeson.md#ore-comfort-bed-profiles) |
 | `beds/q-plus-adjustable-remote.md` | [Keeson: Q-Plus Adjustable Remote](beds/keeson.md#q-plus-adjustable-remote) |
@@ -716,17 +716,17 @@ one section per app. Old links to these files on the `v5` branch return 404.
 | `beds/row-control.md` | [Keeson: ROW Control](beds/keeson.md#row-control) |
 | `beds/sbi.md` | [Keeson: SBI / Q-Plus (Costco)](beds/keeson.md#sbi--q-plus-costco) |
 | `beds/scott-living.md` | [Keeson: Scott Living](beds/keeson.md#scott-living) |
-| `beds/serenity.md` | [Okin N-frame: Jordan's Serenity](beds/okin-nframe.md#jordans-serenity) |
+| `beds/serenity.md` | [Okin and DewertOkin: Jordan's Serenity](beds/okin-nframe.md#jordans-serenity) |
 | `beds/serta.md` | [Keeson: Serta](beds/keeson.md#serta) |
 | `beds/serta-mp-remote.md` | [Keeson: Serta MP Remote](beds/keeson.md#serta-mp-remote) |
-| `beds/simmons.md` | [Okin N-frame: SIMMONS](beds/okin-nframe.md#simmons) |
-| `beds/solace.md` | [FFFF frame: Solace name routes](beds/ff_frame.md#solace-name-routes) |
-| `beds/star-elevate.md` | [Okin 5A: DewertOkin ELEVATE](beds/okin-5a.md#dewertokin-elevate) |
-| `beds/starcode-abm5-4.md` | [Okin N-frame: AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) |
+| `beds/simmons.md` | [Okin and DewertOkin: SIMMONS](beds/okin-nframe.md#simmons) |
+| `beds/solace.md` | [Solace and related apps: Solace name routes](beds/ff_frame.md#solace-name-routes) |
+| `beds/star-elevate.md` | [Nectar, Mattress Firm 900 and Sealy: DewertOkin ELEVATE](beds/okin-5a.md#dewertokin-elevate) |
+| `beds/starcode-abm5-4.md` | [Okin and DewertOkin: AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) |
 | `beds/tempur-au.md` | [Keeson: TEMPUR AU](beds/keeson.md#tempur-au) |
 | `beds/tempur-curve.md` | [Keeson: Tempur Curve](beds/keeson.md#tempur-curve) |
-| `beds/tranquil.md` | [Okin N-frame: Jordan's Tranquil](beds/okin-nframe.md#jordans-tranquil) |
+| `beds/tranquil.md` | [Okin and DewertOkin: Jordan's Tranquil](beds/okin-nframe.md#jordans-tranquil) |
 | `beds/vibradorm_app.md` | [Vibradorm: Caresse and Werkmeister](beds/vibradorm.md#caresse-and-werkmeister) |
 | `beds/vmat.md` | [Vibradorm: VMAT](beds/vibradorm.md#vmat) |
 | `beds/vmatbasic.md` | [Vibradorm: V-MAT Basic](beds/vibradorm.md#v-mat-basic) |
-| `beds/woosa.md` | [FFFF frame: Woosa Sleep](beds/ff_frame.md#woosa-sleep) |
+| `beds/woosa.md` | [Solace and related apps: Woosa Sleep](beds/ff_frame.md#woosa-sleep) |

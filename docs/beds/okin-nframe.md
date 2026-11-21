@@ -1,4 +1,4 @@
-# Okin N-frame
+# Okin and DewertOkin
 
 **Status:** Partly tested: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 

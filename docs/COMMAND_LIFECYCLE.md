@@ -45,6 +45,14 @@ notification requirements, or preset semantics of other beds.
 - A seek completes the controller's position-read preparation before starting
   its initial feedback timeout. Preparation remains preemptible by STOP and
   replacement; stale feedback is never substituted for a failed read.
+- A feedback-driven seek needs a fresh measurement for the requested axis: a
+  report from the current connection, normally at most three seconds old, with
+  controller-specific freshness limits taking precedence. Notification-only
+  controllers can use a recent report when an active read produces none, but
+  need a new report after movement and never reuse a consumed report to confirm
+  a stall or start another burst. When feedback disappears, the controller's
+  movement cleanup runs and the seek fails; last-known values do not authorize
+  further movement.
 - A timed service starts its movement budget after connection and the controller's
   movement preparation. Linak uses its existing readiness handshake here so a
   cold connection cannot consume the entire movement allowance without moving.
