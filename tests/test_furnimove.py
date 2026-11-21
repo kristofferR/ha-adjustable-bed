@@ -143,7 +143,7 @@ async def test_light_exposure_is_toggle_and_unpublished_initial_boolean() -> Non
     assert not controller.supports_discrete_light_control
     # The light shows the reported UBL state; the initial False is not a report.
     assert controller.supports_light_state_feedback
-    assert "under_bed_lights_on" not in controller._coordinator.controller_state
+    assert controller._coordinator.controller_state.get("under_bed_lights_on") is None
     assert not any(
         entry.args[0] == "furnimove_ubl"
         for entry in controller._coordinator.handle_controller_state_update.call_args_list

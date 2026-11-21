@@ -319,6 +319,8 @@ class FurniMoveController(BedController):
         )
 
     def _clear_session(self) -> None:
+        # The light switches from this link's own report, never a retained one.
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
         self._write_characteristic = self._feedback_characteristic = None
         self._rf_name = self._gap_name = None
         self._info.clear()
@@ -499,6 +501,8 @@ class FurniMoveController(BedController):
             if value is not None and (
                 value != self._state[state_key]
                 or type(self._coordinator.controller_state.get(_state_key(state_key))) is not bool
+                or key == "ubl"
+                and self._coordinator.controller_state.get(UNDER_BED_LIGHTS_ON) is None
             ):
                 self._publish(state_key, value)
 
@@ -928,13 +932,6 @@ class FurniMoveController(BedController):
     async def lights_toggle(self) -> None:
         await self._hold([self._require("UBL")])
 
-    async def lights_on(self) -> None:
-        if not self._state["furnimove_ubl"]:
-            await self.lights_toggle()
-
-    async def lights_off(self) -> None:
-        if self._state["furnimove_ubl"]:
-            await self.lights_toggle()
 
     @property
     def supports_massage(self) -> bool:

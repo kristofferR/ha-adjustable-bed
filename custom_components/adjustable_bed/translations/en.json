@@ -2334,6 +2334,9 @@
       "okin_app_home": {
         "name": "Home"
       },
+      "sleeptracker_light_toggle": {
+        "name": "Toggle safety light"
+      },
       "sleeptracker_light_off": {
         "name": "Safety light off"
       },
@@ -5436,6 +5439,9 @@
       "richmat_mh_smart_light_lock": {
         "name": "Smart light lock"
       },
+      "sleeptracker_light_on": {
+        "name": "Safety light"
+      },
       "sleeptracker_wind_down_running": {
         "name": "Wind-down"
       },
@@ -5474,6 +5480,9 @@
       },
       "adjustamattress_busy": {
         "name": "Control box busy"
+      },
+      "ergomotion4_light": {
+        "name": "Light"
       },
       "rize_battery_mode": {
         "name": "Battery power"

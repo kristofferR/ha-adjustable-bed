@@ -806,7 +806,10 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             return
         level = min(6, self._level + 1) if direction > 0 else self._level - 1
         if level <= 0:
-            await self._once("turnoffUnderbedLighting")
+            # The assumed on/off light shows the off this step sends.
+            off = (UNDER_BED_LIGHTS_ON(False),) if self._native_light_power_buttons else ()
+            with self.sent_state(*off):
+                await self._once("turnoffUnderbedLighting")
         else:
             if self.command_selector not in _POSITIVE_SELECTORS:
                 level = 2

@@ -73,6 +73,9 @@ from .lifecycle import CapabilitySnapshotPolicy, ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
+# Host-side bound for a toggle-only light's first report on a fresh link.
+LIGHT_REPORT_WAIT_SECONDS: Final = 2.0
+
 CONTROLLER_GESTURE_RELEASE: ContextVar[bool] = ContextVar("controller_gesture_release", default=False)
 
 # The standard motor layout: axis -> motor_count needed before it is exposed.
@@ -2241,11 +2244,24 @@ class BedController(GattWriter):
         """
         if not (self.supports_light_state_feedback and self.supports_light_toggle_control):
             raise NotImplementedError("Light control not supported on this bed")
-        reported = self._coordinator.controller_state.get(UNDER_BED_LIGHTS_ON)
+        state = self._coordinator.controller_state
+        if state.get(UNDER_BED_LIGHTS_ON) is None:
+            # A fresh link has no report yet: ask once, then wait briefly for it.
+            await self.async_refresh_diagnostics()
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + LIGHT_REPORT_WAIT_SECONDS
+            while state.get(UNDER_BED_LIGHTS_ON) is None and loop.time() < deadline:
+                if self._coordinator.cancel_command.is_set():
+                    return
+                await asyncio.sleep(0.05)
+        reported = state.get(UNDER_BED_LIGHTS_ON)
         if reported is None:
             raise invalid("light_state_unknown")
         if reported is not on:
-            await self.lights_toggle()
+            # Until the bed reports again the light shows what was sent, so a
+            # second request in between does not toggle it back.
+            with self.sent_state(UNDER_BED_LIGHTS_ON(on)):
+                await self.lights_toggle()
 
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights.

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from ...card import (
     CARD_CLIMATE,
+    CARD_LIGHT_TOGGLE,
     CARD_LIGHTING,
     CARD_MASSAGE,
     CARD_PRESET_SAVE,
@@ -26,7 +27,6 @@ from ...const import (
     CONF_SLEEPTRACKER_UNIT,
 )
 from ...controller_state import StateKey, StateUpdate
-from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController
 from ..builder import BuildContext
 from ..catalog_buttons import as_save
@@ -117,8 +117,6 @@ def _field_key(field: str) -> StateKey[p.Json]:
 
 
 def _state_update(field: str, value: p.Json) -> StateUpdate:
-    if field == "light_on":
-        return UNDER_BED_LIGHTS_ON(value if isinstance(value, bool) else None)
     if field in _OPTION_FIELDS:
         return _option_key(field)(value if isinstance(value, str) else None)
     if field in _NUMBER_FIELDS:
@@ -849,8 +847,9 @@ class SleeptrackerController(BedController):
         )
 
     @property
-    def supports_light_state_feedback(self) -> bool:
-        return True
+    def supports_light_toggle_control(self) -> bool:
+        """Use the app action and reported sensor instead of an assumed light."""
+        return False
 
     def validate_sleeptracker_request(self, request: p.Request) -> None:
         p.validate_request(request, self._model)
@@ -950,6 +949,13 @@ class SleeptrackerController(BedController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         buttons = [
+            ControllerButtonSpec(
+                "sleeptracker_light_toggle",
+                "Toggle safety light",
+                lambda ctrl: ctrl.lights_toggle(),
+                translation_key="sleeptracker_light_toggle",
+                card=CARD_LIGHT_TOGGLE,
+            ),
             ControllerButtonSpec(
                 "sleeptracker_refresh",
                 "Refresh bed state",
@@ -1236,17 +1242,28 @@ class SleeptrackerController(BedController):
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        if not self._model.premium:
-            return ()
         return (
             ControllerStateBinarySensorSpec(
-                "sleeptracker_wind_down_running",
-                "sleeptracker_wind_down_running",
-                _field_key("wind_down_running"),
-                "mdi:bed-clock",
+                "sleeptracker_light_on",
+                "sleeptracker_light_on",
+                _field_key("light_on"),
+                "mdi:lightbulb",
                 entity_registry_enabled_default=True,
-                card=CARD_MASSAGE,
+                card=CARD_LIGHTING,
             ),
+        ) + (
+            (
+                ControllerStateBinarySensorSpec(
+                    "sleeptracker_wind_down_running",
+                    "sleeptracker_wind_down_running",
+                    _field_key("wind_down_running"),
+                    "mdi:bed-clock",
+                    entity_registry_enabled_default=True,
+                    card=CARD_MASSAGE,
+                ),
+            )
+            if self._model.premium
+            else ()
         )
 
 

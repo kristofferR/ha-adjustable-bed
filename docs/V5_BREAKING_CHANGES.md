@@ -220,7 +220,7 @@ on and off button pair that became one switch, start as new entities:
 | Bed or app | 4.x type | v5 entity |
 |------------|----------|-----------|
 | Every bed with an on/off under-bed light, except Octo | `switch` | **Under Bed Lights** `light` |
-| INNOVA, Keeson Adjustable Lite, Logicdata app, FurniMove, Ergomotion 4.0 and Sleeptracker light readings | `binary_sensor` | **Under Bed Lights** `light` |
+| INNOVA, Keeson Adjustable Lite, Logicdata app and FurniMove light readings | `binary_sensor` | **Under Bed Lights** `light` |
 | Casper, Hush, Good Vibe and Richmat sleep sensors | `sensor` | **Left in bed**, **Right in bed**, **Left body movement**, **Right body movement**, **Left snoring**, **Right snoring** `binary_sensor` |
 | StarCode AdjustableM5X4 | `sensor` | **Massage** `binary_sensor` |
 | Heal Every Night (OKIN apps) | `select` | **Reversed installation**, **Reverse actuator 1**, **Reverse actuator 2** `switch` |
@@ -630,7 +630,7 @@ described under [One shape per control](#one-shape-per-control).
 | Comfort Enhancements | Cycle massage timer button (the timer select already sets it) | |
 | Customatic Z-Series | | App "Toggle light": **Toggle Light** |
 | DoubleSleep (OKIN SleepEase) | Four flag binary sensors, parser-error, privacy, massage running and sonic running sensors, "Sync clock" and "Refresh clock" buttons | Child lock select and privacy buttons: **Child lock** and **Privacy** switches. Massage and sonic on/off buttons: **Massage** and **Sonic massage** switches. The app's "Stop all" is **Stop movement** (**Stop All** stops the bed). Clock: the **Set bed clock** action |
-| Ergomotion 4.0 | | Light reading and "Light toggle" button: **Under Bed Lights** light |
+| Ergomotion 4.0 | | Where the light reports its state (RGB, M16, M19 and custom products): light reading and "Light toggle" button: **Under Bed Lights** light |
 | eShine (E6000) | | Massage 10, 20 and 30 minute buttons: **Massage: Timer** select, with Off |
 | eShine OKIN | Alarm refresh and "Sync bed clock" buttons | Clock: the **Set bed clock** action |
 | FSM Relax | 11 count, acknowledgement, calibration, information and raw motor sensors | |
@@ -655,7 +655,7 @@ described under [One shape per control](#one-shape-per-control).
 | RMControl | Protocol version, bed mode and last alarm record sensors. Disabled catalog buttons that send exactly what a standard entity sends (motor covers, presets, memory recall and save, light, sync and massage controls), and another app page's identical copy of a control | Massage timer buttons: **Massage: Timer** select (durations only), on products with more than one duration. The other catalog buttons keep their entity IDs, lose the app page and position from their names and, except music, fans, resets and similar extras, start enabled. A copy that sends something else stays disabled, named "… (short press)" (the motor list's single tap of a held move) or numbered. A preset's long press that sends its save: the **Save …** button |
 | Serta MP Remote | Memory request sensor | |
 | SIMMONS | "Sync Clock" button | Clock: the **Set bed clock** action |
-| Sleeptracker | Massage pattern and strength sensors (the selects show them) | Safety light reading and **Toggle safety light** button: **Under Bed Lights** light |
+| Sleeptracker | Massage pattern and strength sensors (the selects show them) | |
 | Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons (the light entity drives the light) | Motion sensor on/off buttons: **Motion sensor** switch. Massage timer code select and cycle massage timer button: **Massage: Timer** select (10, 20, 30 min; same entity ID). BOX25 Massage on and Massage off buttons: **Massage** switch. Axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
 | StarCode ABM5-4 | **Toggle Light** button where the app has on and off buttons | Light on and off buttons: **Under Bed Lights** light, enabled |
 | StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time, brightness and RGB-mode sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |

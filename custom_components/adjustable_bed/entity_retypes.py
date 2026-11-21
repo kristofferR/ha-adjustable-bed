@@ -103,9 +103,7 @@ RETYPES: Final[tuple[Retype, ...]] = (
             "under_bed_lights",
             "furnimove_ubl",
             "innova_light",
-            "ergomotion4_light",
             "adjustable_lite_light",
-            "sleeptracker_light_on",
         )
     ),
     # Massage level selects that became numbers.

@@ -3702,7 +3702,7 @@ separately advertising receivers, use the ordinary two-address combined bed.
 | P2 split sides | ❌ No side field in this six-byte protocol |
 | Presets and memory | ✅ Product-labelled buttons; no invented memory slots or programming |
 | Massage | ✅ Product-specific steps, modes, timer, stop and nine custom patterns |
-| Lights | ✅ One light that sends the product's light toggle from the reported state; RGB and three brightness levels on eligible products |
+| Lights | ✅ One light where the status reports it (RGB, M16, M19 and custom products), otherwise the product's toggle button; RGB and three brightness levels on eligible products |
 | Position feedback | ❌ No measured motor positions in this app |
 | Reported state | ✅ Massage timer, light state and RGB where reported |
 | Local bed configuration | ✅ Rename, clock sync, two three-slot alarm tables and wake-vibration dismissal |

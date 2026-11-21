@@ -23,6 +23,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds import base
 from custom_components.adjustable_bed.beds.innova import (
     HELD_CONTROLS,
     STATE_MASSAGE_TIMER,
@@ -453,14 +454,17 @@ async def test_innova_capabilities(coordinator):
 
 
 async def test_light_on_and_off_toggle_only_when_the_reported_state_differs(
-    coordinator, mock_bleak_client: MagicMock, no_sleep
+    coordinator, mock_bleak_client: MagicMock, no_sleep, monkeypatch: pytest.MonkeyPatch
 ):
+    monkeypatch.setattr(base, "LIGHT_REPORT_WAIT_SECONDS", 0)
     controller = _innova(coordinator)
     with raises_key("light_state_unknown", ServiceValidationError):
         await controller.lights_on()
     controller._on_notification(MagicMock(), bytearray(_status(16, 0x40, 0x02)))
     await controller.lights_on()
     assert _written(mock_bleak_client) == []
+    # A second Off before the next report does not toggle the lamp back on.
+    await controller.lights_off()
     await controller.lights_off()
     assert _written(mock_bleak_client) == ["e5fe160000020004"]
 

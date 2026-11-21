@@ -767,11 +767,14 @@ def test_custom_preset_ancestor_gates_keep_o5_slot_consumption(keys, expected):
     assert set(product.commands) & {"C043", "C044", "C045", "C046"} == expected
 
 
-async def test_a_product_light_key_is_the_light_not_a_button_and_a_reading():
-    ctrl, _ = await ready("H")
+async def test_a_reported_light_is_one_light_and_an_unreported_one_keeps_its_button():
+    # A custom product's status frames carry the light; the H style's do not.
+    ctrl, _ = await ready("custom", ergomotion4_model_keys=["k1"], has_light=True)
     assert ctrl.supports_light_state_feedback and ctrl.supports_light_toggle_control
-    assert not ctrl.supports_light_color_control
-    assert "c056" not in {s.key for s in ctrl.controller_button_specs if s is not None}
+    light = ctrl._light_action()
+    assert light is not None
+    assert light.key not in {s.key for s in ctrl.controller_button_specs if s is not None}
     assert ctrl.controller_state_binary_sensor_specs == ()
-    without, _ = await ready("M15")
-    assert not without.supports_light_state_feedback
+    plain, _ = await ready("H")
+    assert not plain.supports_light_state_feedback
+    assert "c056" in {s.key for s in plain.controller_button_specs if s is not None}

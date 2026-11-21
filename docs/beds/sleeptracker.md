@@ -33,7 +33,7 @@ controls the bed directly over Bluetooth, as Tempur Sleeptracker-AI
 | Presets | ✅ Flat, Zero G, Anti-Snore, TV, favorite 1 / favorite 2 (layout-dependent) |
 | Preset save | ✅ Zero G, Anti-Snore, TV and favorites; Flat cannot be saved; processor types 5, 6 and 7 disable saving |
 | Massage | ✅ Pattern on all layouts; head/foot steps on supported layouts; premium 28/40 Hz, wave, wind-down, strength and pattern selects |
-| Safety light | ✅ A light that shows its state |
+| Safety light | ✅ Toggle button and a sensor showing its state |
 | ActiveBreeze climate | ✅ Left/right Off / Cool / Heat, levels 0–3, Constant / Curve |
 | Automation actions | ✅ Five [typed actions](../SERVICES.md#sleeptracker-smart-bed) |
 | Pairing two sides | ⚠️ Only two beds with their own Bluetooth addresses; one address cannot be split into sides |
@@ -298,9 +298,8 @@ status snapshot, independent of the configured snapshot side.
 
 ### Lighting
 
-- The safety light is one **Under Bed Lights** light. It shows the state the
-  bed reports and sends the app's toggle when that state differs from the one
-  asked for; no toggle button or separate light reading is exposed.
+- Lighting uses the app-specific toggle button and reported-state sensor; an
+  assumed-state light and duplicate generic toggle button are not exposed.
 - Identify split light sends the app's literal unit-1 light request at 1500 ms,
   bounded to four cycles by HA, and sends explicit light off during cleanup.
 - Restricted sessions also expose response-driven local light identification

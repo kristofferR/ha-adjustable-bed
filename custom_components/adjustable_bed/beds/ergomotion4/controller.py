@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from time import monotonic
-from typing import TYPE_CHECKING, TypedDict, cast
+from typing import TYPE_CHECKING, Final, TypedDict, cast
 
 from ...card import CARD_MASSAGE_TIMER
 from ...codec import keeson as codec
@@ -20,6 +20,7 @@ from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
+    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     massage_timer_sensor_spec,
@@ -91,6 +92,7 @@ MODEL_KEYS = ("k1", "k2", "k3", "o1", "o2", "o3", "o4", "o5")
 MASSAGE_KEYS = tuple(f"m{i}" for i in range(1, 11))
 CONF_MODEL_KEYS = "ergomotion4_model_keys"
 CONF_MASSAGE_KEYS = "ergomotion4_massage_keys"
+LIGHT: Final = StateKey[bool | None]("ergomotion4_light")
 
 
 def _side_key[T](key: StateKey[T], side: str | None) -> StateKey[T]:
@@ -290,17 +292,17 @@ class Ergomotion4Controller(AppController):
 
             return run
 
-        light = self._light_action()
         specs = [
             catalog_button(
                 a.key,
-                a.name,
+                # The Light binary sensor shows the state this button toggles.
+                "Toggle light" if a.name == "Light" else a.name,
                 press(a.key),
                 hold=ControllerHoldSpec(a.key, 0, 0) if a.held else None,
             )
             for a in self._actions()
-            # The light entity switches the light.
-            if a is not light
+            # Where the light reports its state, the light entity switches it.
+            if not (self.supports_light_state_feedback and a is self._light_action())
         ]
         # Shared alarm dismissal is not gated by a selected product.
         specs.append(
@@ -405,6 +407,7 @@ class Ergomotion4Controller(AppController):
                 for side in ("both", "left", "right")
                 for update in (
                     _side_key(APP_TIMER_STATUS, side)(None),
+                    _side_key(LIGHT, side)(None),
                     _side_key(UNDER_BED_LIGHTS_ON, side)(None),
                     _side_key(UNDER_BED_LIGHTS_RGB, side)(None),
                 )
@@ -544,8 +547,18 @@ class Ergomotion4Controller(AppController):
         return self.product.rgb
 
     @property
+    def _toggle_light_reports(self) -> bool:
+        """A non-RGB light toggle on a style whose status frames carry the light."""
+        return (
+            not self.product.rgb
+            and (self.product.style in ("M16", "M19") or self._dynamic)
+            and self._light_action() is not None
+        )
+
+    @property
     def supports_light_toggle_control(self) -> bool:
-        return self._light_action() is not None
+        # Other products keep their product-labelled toggle button.
+        return self._toggle_light_reports
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -554,7 +567,7 @@ class Ergomotion4Controller(AppController):
 
     @property
     def supports_light_state_feedback(self) -> bool:
-        return self._light_action() is not None
+        return self.product.rgb or self._toggle_light_reports
 
     @property
     def supports_explicit_light_on_control(self) -> bool:
@@ -649,6 +662,20 @@ class Ergomotion4Controller(AppController):
             ),
         )
 
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        if self.supports_light_state_feedback:
+            return ()  # The light shows it.
+        return (
+            ControllerStateBinarySensorSpec(
+                "ergomotion4_light",
+                "ergomotion4_light",
+                _side_key(LIGHT, self.command_side),
+                "mdi:lightbulb-outline",
+                entity_registry_enabled_default=True,
+            ),
+        )
+
     def _parse_notification(self, data: bytes | None) -> None:
         if not data:
             return
@@ -658,6 +685,7 @@ class Ergomotion4Controller(AppController):
             if "timer" in parsed and (minutes := app_timer_minutes(parsed["timer"])) is not None:
                 updates.append(_side_key(APP_TIMER_STATUS, side)(minutes))
             if "light" in parsed:
+                updates.append(_side_key(LIGHT, side)(parsed["light"]))
                 updates.append(_side_key(UNDER_BED_LIGHTS_ON, side)(parsed["light"]))
             if "rgb" in parsed:
                 updates.append(_side_key(UNDER_BED_LIGHTS_RGB, side)(parsed["rgb"]))

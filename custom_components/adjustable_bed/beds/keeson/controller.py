@@ -1009,15 +1009,19 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         self._require_lights()
         if self.profile.lights == "discrete":
             await self._write_light(True)
-        else:
+        elif self.supports_light_state_feedback:
             await super().lights_on()
+        else:
+            await self.lights_toggle()
 
     async def lights_off(self) -> None:
         self._require_lights()
         if self.profile.lights == "discrete":
             await self._write_light(False)
-        else:
+        elif self.supports_light_state_feedback:
             await super().lights_off()
+        else:
+            await self.lights_toggle()
 
     async def lights_toggle(self) -> None:
         """Toggle the lights; discrete-light profiles emulate it with tracked state."""
