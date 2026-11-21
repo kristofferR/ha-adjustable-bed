@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
+from .beds.cancellation import settled
 from .const import (
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
@@ -36,6 +37,11 @@ from .pairing import (
     is_paired,
     iter_children,
     standalone_config_after_split,
+)
+from .position_estimate import (
+    async_migrate_entry_store,
+    async_one_side_positions,
+    estimate_bed_keys,
 )
 from .profile_review import carry_profile_review
 
@@ -540,6 +546,19 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
     # Child devices cannot change config-entry ownership. Restore their full
     # records first, then use the same ownership transaction as standalone beds.
     try:
+        # A pair that never loaded on this version still has its per-entry
+        # estimates; the beds must find them in their own stores.
+        if not await async_migrate_entry_store(
+            hass, entry.entry_id, estimate_bed_keys(entry.data)
+        ):
+            raise failed("pair_change_failed", reason="Could not move the estimated positions")
+        # Saved positions of one side keep their buttons below. Read from the
+        # stores, so this also holds for a pair that is not loaded.
+        one_side_positions = await async_one_side_positions(
+            hass,
+            entry.entry_id,
+            [(str(child.get(CONF_ADDRESS)), child.get(CONF_SIDE)) for child in children],
+        )
         for child in children:
             device = dr.async_get(hass).async_get_child_device_by_identifier(
                 (DOMAIN, child.get(CONF_ADDRESS, "")), entry.entry_id,
@@ -561,6 +580,51 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
         )
         if device is not None:
             child_devices[single.entry_id] = device
+
+    # A saved position of one side keeps its button row (entity ID, name, area,
+    # disabled and hidden state): renamed to the unique ID that bed uses and
+    # put on its device, it moves with the side below. A rollback renames it back.
+    saved_position_prefix = f"{entry.data[CONF_PAIR_ID]}_saved_position_"
+    renamed_buttons: list[er.RegistryEntry] = []
+
+    def restore_renamed_buttons() -> bool:
+        complete = True
+        for row in renamed_buttons:
+            try:
+                current = ent_reg.async_get(row.entity_id)
+                if current is not None and current.config_entry_id == entry.entry_id:
+                    ent_reg.async_update_entity(
+                        row.entity_id, new_unique_id=row.unique_id, device_id=row.device_id
+                    )
+            except Exception:
+                complete = False
+                _LOGGER.exception("Could not restore saved-position button %s", row.entity_id)
+        return complete
+
+    try:
+        for row in list(er.async_entries_for_config_entry(ent_reg, entry.entry_id)):
+            position_id = row.unique_id.removeprefix(saved_position_prefix)
+            side = one_side_positions.get(position_id)
+            if row.domain != "button" or position_id == row.unique_id or side is None:
+                continue
+            side_address, stored_id = side
+            device = next(
+                (
+                    child_devices[single.entry_id]
+                    for single, address in singles
+                    if address.upper() == side_address and single.entry_id in child_devices
+                ),
+                None,
+            )
+            unique_id = f"{side_address}_saved_position_{stored_id}"
+            if device is None or ent_reg.async_get_entity_id("button", DOMAIN, unique_id):
+                continue
+            renamed_buttons.append(row)
+            ent_reg.async_update_entity(row.entity_id, new_unique_id=unique_id, device_id=device.id)
+    except (Exception, asyncio.CancelledError):
+        restore_renamed_buttons()
+        await hass.config_entries.async_setup(entry.entry_id)
+        raise
 
     pair_rows = list(er.async_entries_for_config_entry(ent_reg, entry.entry_id))
     row_owners: dict[str, str] = {}
@@ -598,6 +662,9 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             await hass.config_entries.async_add(single)
 
         ownership.apply(hass)
+        # A position of both sides becomes one on each bed with its own new
+        # button. The pair's button stays until the pair is removed, so a
+        # rollback finds it untouched.
 
         # Load the restored entries only after their existing device and entity
         # rows belong to them. The setup paths now adopt those rows in place.
@@ -608,7 +675,10 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
                     single.title,
                 )
 
-        removal = await hass.config_entries.async_remove(entry.entry_id)
+        # Removing the pair is the commit point. Home Assistant deletes its
+        # remaining rows only after the removal hook, so a cancelled caller
+        # must not cut the removal short and leave them orphaned.
+        removal = await settled(hass.config_entries.async_remove(entry.entry_id))
         ownership.finish(hass)
         if removal.get("require_restart"):
             _LOGGER.warning(
@@ -623,6 +693,7 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             _LOGGER.exception("Pair %s was removed before unpair removal raised", entry.entry_id)
             raise
         restored = ownership.rollback(hass)
+        restored = restore_renamed_buttons() and restored
         for single, _address in reversed(singles):
             if hass.config_entries.async_get_entry(single.entry_id) is None:
                 continue

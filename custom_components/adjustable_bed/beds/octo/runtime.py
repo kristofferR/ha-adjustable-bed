@@ -34,6 +34,18 @@ def octo_controller(controller: object | None) -> OctoController | None:
     return controller if isinstance(controller, OctoController) else None
 
 
+def octo_controls_locked(*controllers: object | None) -> bool:
+    """Whether a Standard OCTO PIN lock hides normal controls on any of these controllers.
+
+    Every control except STOP and the connection buttons uses this one gate; a
+    combined control passes the controllers of both sides.
+    """
+    return any(
+        (octo := octo_controller(controller)) is not None and not octo.normal_controls_available
+        for controller in controllers
+    )
+
+
 async def async_refresh_octo_pin_issue(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Drop the Octo PIN repair when the configuration already resolves it.
 

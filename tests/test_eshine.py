@@ -442,6 +442,8 @@ async def test_parsed_state_exposed_as_diagnostics_without_position_mapping():
     assert state["eshine_motors_data"]["motor_type_1"]["monitorHeight"] == 45.6
     assert state["eshine_alarm_data"]["alarm_report"] == [7, 8, 9, 10, 11, 12]
     assert set(STATE_GROUPS) == set(ctrl._observed)
+    # A standalone bed has no side to publish.
+    ctrl._coordinator.entity_side = None
     for spec in ctrl.controller_state_sensor_specs:
         sensor = AdjustableBedControllerStateSensor(ctrl._coordinator, spec)
         assert sensor.native_value == state[spec.state_key]
