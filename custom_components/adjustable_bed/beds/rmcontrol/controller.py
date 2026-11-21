@@ -178,14 +178,18 @@ _ENABLED_TELEMETRY: Final = frozenset(
 )
 
 
-def _long_press_saves(action: RichmatAction, label: str) -> bool | None:
-    """Whether a long press saves the control's position; None if it adds no command.
+# A gesture's command and whether it holds until STOP.
+type Frames = tuple[int, bool]
+
+
+def _long_press_saves(action: RichmatAction, label: str) -> bool:
+    """Whether a long press saves the control's position.
 
     In this app's vocabulary a preset's or memory's own long operand saves it
     (``66`` saves zero gravity, ``2B`` memory 1).
     """
     if action.long_opcode in (0, action.short_opcode, action.nordic_short_opcode):
-        return None
+        return False
     control = classify(label)
     return control is not None and control.kind in (Kind.PRESET, Kind.MEMORY)
 
@@ -355,15 +359,9 @@ class RmcontrolController(RichmatController):
             raise ValueError("This product action has no long-press gesture")
         if not long_press and selected.operate == "longPress":
             raise ValueError("This product action requires a long press")
-        command = (
-            selected.long_opcode
-            if long_press
-            else selected.nordic_short_opcode
-            if self._nordic
-            else selected.short_opcode
-        )
+        command, holds = self._frames(selected, long_press)
         packet = build_action(command, side=self._side_value, nordic=self._nordic, action=action)
-        if selected.operate != "sustainPress":
+        if not holds:
             await self.write_command(packet)
             return
         movement_failed = False
@@ -386,22 +384,41 @@ class RmcontrolController(RichmatController):
                     raise
                 _LOGGER.warning("Failed to release RMControl held action", exc_info=True)
 
-    def _native_actions(self) -> set[tuple[str, bool]]:
-        """(action, long press) that this product's own entities already send."""
-        native: set[tuple[str, bool]] = set()
+    def _frames(self, action: RichmatAction, long_press: bool) -> Frames:
+        """A gesture's command on this bed's transport, and whether it holds until STOP.
+
+        With the catalog action's name, this decides every frame a press sends.
+        """
+        if long_press:
+            return action.long_opcode, False
+        return (
+            action.nordic_short_opcode if self._nordic else action.short_opcode,
+            action.operate == "sustainPress",
+        )
+
+    def _standard_frames(self) -> dict[tuple[str, bool], set[Frames]]:
+        """What the bed's own entities send, by catalog action and long press."""
+        frames: dict[tuple[str, bool], set[Frames]] = {}
 
         def add(*names: str, long: bool = False) -> None:
             if all(self._has(name, long_press=long) for name in names):
-                native.update((_PREFIX + name, long) for name in names)
+                for name in names:
+                    action = self._lookup(name)
+                    assert action is not None
+                    frames.setdefault((action.action, long), set()).add(self._frames(action, long))
 
         for names in _MOTOR_ACTIONS.values():
             add(*names)
         for name in (
             "MotorReset", "ZeroGravity", "AntiSnoring", "TVPosition", "LoungePosition",
-            "BedLight", "BedLightOn", "MassageSwitch", "MassageModeAllOff", "MassageModeChange",
+            "MassageSwitch", "MassageModeAllOff", "MassageModeChange",
         ):
             add(name)
-        add("BedLightOn", "BedLightClose")
+        if self.supports_discrete_light_control:
+            add("BedLightOn", "BedLightClose")
+        else:
+            # The toggle button, or the light that toggles to turn off.
+            add("BedLight")
         add("SyncOn", "SyncOff")
         add("MassageHeadInstensityStrengthen", "MassageHeadInstensityWeaken")
         add("MassageFootInstensityStrengthen", "MassageFootInstensityWeaken")
@@ -409,25 +426,30 @@ class RmcontrolController(RichmatController):
             add(f"MemoryPosition{slot}")
             if self.is_memory_slot_programmable(slot):
                 add(f"MemoryPosition{slot}", long=True)
-        return native
+        for timer in self._massage_timer_actions.values():
+            frames.setdefault((timer.action, False), set()).add(self._frames(timer, False))
+        return frames
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        """The product's other app controls, one button per function.
+        """The product's other app controls, one button per distinct command.
 
-        A control the bed's own entities send has none. Another app screen's copy
-        of a control (the motor or memory list, an alarm picker) is the same
-        function: the first screen's button, normally the main page, stands for
-        it. Conflicting copies on one screen keep a button each.
+        A control sending what an entity already sends (the bed's own entities,
+        the massage timer select, another app page's identical copy) has no
+        button. The main page comes first, so its copy is the one listed. A copy
+        sending something else keeps a disabled button whose name tells it apart.
         """
         specs: list[ControllerButtonSpec | None] = []
-        seen: set[tuple[str, tuple[int, int, int, str, str], bool]] = set()
-        screens: dict[tuple[str, bool], str] = {}
-        native = self._native_actions()
-        # The massage timer select sends these signatures; other contexts keep a button.
-        timers = {(a.action, a.command_signature) for a in self._massage_timer_actions.values()}
-        for action in self.product_profile.actions:
-            if not _is_transport_action(action) or (action.action, action.command_signature) in timers:
+        # Same-named controls already listed, by gesture, to tell a copy apart.
+        shown = {key: set(group) for key, group in self._standard_frames().items()}
+        sent: dict[str, set[Frames]] = {}
+        for (name, _long), group in shown.items():
+            sent.setdefault(name, set()).update(group)
+        actions = sorted(
+            self.product_profile.actions, key=lambda a: a.getter != "get _ detailsPageDisplayList"
+        )
+        for action in actions:
+            if not _is_transport_action(action):
                 continue
             gestures = (
                 (False, True)
@@ -440,17 +462,13 @@ class RmcontrolController(RichmatController):
             action_key = action.action.removeprefix("deviceFunction")
             label = function_label(action.action)
             for long_press in gestures:
-                function = (action.action, long_press)
-                if (
-                    function in native
-                    or screens.setdefault(function, action.getter) != action.getter
-                    or (action.action, action.command_signature, long_press) in seen
-                ):
+                frames = self._frames(action, long_press)
+                if frames in sent.setdefault(action.action, set()):
                     continue
-                seen.add((action.action, action.command_signature, long_press))
+                sent[action.action].add(frames)
+                others = set(shown.setdefault((action.action, long_press), set()))
+                shown[(action.action, long_press)].add(frames)
                 saves = long_press and _long_press_saves(action, label)
-                if long_press and action.operate == "shortAndLongPress" and saves is None:
-                    continue  # The long operand adds no command.
 
                 async def press(
                     ctrl: BedController,
@@ -465,18 +483,25 @@ class RmcontrolController(RichmatController):
                     )
 
                 long_only = action.operate == "longPress"
+                name = (
+                    "Save " + label
+                    if saves
+                    else label + (" (long press)" if long_press and not long_only else "")
+                )
+                if others:
+                    # Another command under a listed control's name: an extra.
+                    held = any(other[1] for other in others)
+                    name += " (short press)" if held and not frames[1] else f" {len(others) + 1}"
                 specs.append(
                     catalog_button(
                         # The product-action namespace keeps earlier unique IDs.
                         f"product_action_rmcontrol_{getter_key}_{action_key}_{action.occurrence}"
                         f"_{'long' if long_press else 'short'}".lower(),
-                        "Save " + label
-                        if saves
-                        else label + (" (long press)" if long_press and not long_only else ""),
+                        name,
                         press,
-                        kind=Kind.SAVE if saves else None,
+                        kind=Kind.SAVE if saves else Kind.EXTRA if others else None,
                         # Another long operand's effect is unnamed: there to enable.
-                        enabled=not long_press or long_only or bool(saves),
+                        enabled=not others and (not long_press or long_only or bool(saves)),
                     )
                 )
         return unique_buttons(specs)
