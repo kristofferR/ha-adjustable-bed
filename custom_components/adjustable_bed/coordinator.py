@@ -179,7 +179,7 @@ from .const import (
 from .controller_factory import create_controller
 from .controller_state import AnyStateKey, ControllerState, StateKey, StateUpdate
 from .coordinator_bonds import CoordinatorBondsMixin
-from .coordinator_connection import CoordinatorConnectionMixin
+from .coordinator_connection import _AUTO_RECONNECT_DELAY_SECONDS, CoordinatorConnectionMixin
 from .coordinator_positions import CoordinatorPositionsMixin
 from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
@@ -601,8 +601,9 @@ class AdjustableBedCoordinator(
         self._connection_success_count: int = 0
         self._last_connection_attempt: datetime | None = None
         self._last_connection_error: str | None = None
-        # Set once a failed connect has been reported, so an outage warns once.
-        self._connect_failure_logged = False
+        # Wait before the next recovery of a bed that asks for one; it grows
+        # while the bed stays away.
+        self._recovery_retry_delay = _AUTO_RECONNECT_DELAY_SECONDS
         # Set once a connect finished startup; a drop before then is part of an outage.
         self._link_ready = False
         self._last_connection_error_type: str | None = None

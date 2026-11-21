@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
@@ -978,6 +979,72 @@ class TestCoordinatorWriteCommand:
                     lambda controller: controller.write_command(bytes([0x01, 0x00]))
                 )
         assert raised.value.translation_key == "bed_not_connected"
+
+    async def test_unreachable_bed_warns_once_across_setup_retries(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_establish_connection: AsyncMock,
+        mock_bleak_client: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """Each setup retry builds a new coordinator; the outage still warns once."""
+        del mock_coordinator_connected
+        succeed = mock_establish_connection.side_effect
+
+        def warnings() -> int:
+            return sum(
+                record.levelno == logging.WARNING
+                and record.getMessage().startswith("Could not connect to")
+                for record in caplog.records
+            )
+
+        mock_establish_connection.side_effect = BleakError("Connection failed")
+        for _ in range(3):
+            assert not await AdjustableBedCoordinator(hass, mock_config_entry).async_connect()
+        assert warnings() == 1
+
+        # Once the bed answers, the next outage is reported again.
+        mock_establish_connection.side_effect = succeed
+        connected = AdjustableBedCoordinator(hass, mock_config_entry)
+        assert await connected.async_connect()
+        await connected.async_disconnect()
+        mock_bleak_client.is_connected = False
+        mock_establish_connection.side_effect = BleakError("Connection failed")
+        assert not await AdjustableBedCoordinator(hass, mock_config_entry).async_connect()
+        assert warnings() == 2
+
+    async def test_requested_recovery_backs_off_while_the_bed_stays_away(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """A bed that asks for recovery is retried less often, and soon after a command."""
+        del mock_coordinator_connected
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+
+        async def next_delay() -> int:
+            await coordinator._async_auto_reconnect()
+            timer = coordinator._reconnect_timer
+            assert timer is not None
+            timer.cancel()
+            coordinator._reconnect_timer = None
+            return round(timer.when() - hass.loop.time())
+
+        with (
+            patch.object(
+                AdjustableBedCoordinator,
+                "capability_controller",
+                new_callable=PropertyMock,
+                return_value=MagicMock(requests_connection_recovery=True),
+            ),
+            patch.object(coordinator, "async_connect", AsyncMock(return_value=False)),
+        ):
+            assert [await next_delay() for _ in range(8)] == [5, 10, 20, 40, 80, 160, 300, 300]
+            coordinator._note_command_demand()
+            assert await next_delay() == 5
 
     async def test_bluetooth_error_in_a_command_is_translated(
         self,
