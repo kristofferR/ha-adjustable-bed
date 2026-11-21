@@ -14,12 +14,12 @@ import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Final
 
-from ...card import CARD_HIDDEN, CARD_LIGHTING
+from ...card import CARD_HIDDEN
 from ...codec import keeson as codec
 from ...const import CONF_FURNIMOVE_REMOTE
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
-from ...state_keys import massage_intensity
+from ...state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
 from ..base import BedController, require_controller
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -301,6 +301,8 @@ class FurniMoveController(BedController):
     def _publish(self, key: str, value: object) -> None:
         self._state[key] = value
         self.forward_controller_state_update(_state_key(key), value)
+        if key == "furnimove_ubl":
+            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(bool(value)))
         if key in _MASSAGE_SESSION_FIELDS:
             self.forward_controller_state_updates(*self._massage_levels())
 
@@ -505,14 +507,13 @@ class FurniMoveController(BedController):
         return tuple(
             ControllerStateBinarySensorSpec(
                 key,
-                "under_bed_light_state" if key == "furnimove_ubl" else key,
+                key,
                 _state_key(key),
                 icon,
                 entity_registry_enabled_default=enabled,
-                card=CARD_LIGHTING if key == "furnimove_ubl" else CARD_HIDDEN,
+                card=CARD_HIDDEN,
             )
             for key, icon, enabled in (
-                ("furnimove_ubl", "mdi:led-strip-variant", True),
                 ("furnimove_sync", "mdi:sync", False),
                 ("furnimove_child_lock", "mdi:lock", True),
                 ("furnimove_massage_running", "mdi:vibrate", True),
@@ -918,6 +919,10 @@ class FurniMoveController(BedController):
 
     @property
     def supports_light_toggle_control(self) -> bool:
+        return self.supports_lights
+
+    @property
+    def supports_light_state_feedback(self) -> bool:
         return self.supports_lights
 
     async def lights_toggle(self) -> None:

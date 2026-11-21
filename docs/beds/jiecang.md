@@ -73,7 +73,7 @@ The LOGICDATA app profiles:
 | Memory Presets | ✅ (2 slots, recall and save, both families) | ✅ (1 slot) |
 | Held Presets | ✅ P2: `adjustable_bed.logicdata_hold_preset` | ✅ Every preset and memory 1 |
 | Massage | ✅ P1 only: Off and levels 1–3 per zone, mode, stop | ✅ (Off and levels 1–3 per zone, stop, mode, **Massage mode** sensor) |
-| Lights | ✅ (toggle, with its state; no brightness or RGB) | ✅ (under-bed toggle) |
+| Lights | ✅ (a light that shows its state; no brightness or RGB) | ✅ (under-bed toggle) |
 | Clock | ✅ Phone app (both families); ❌ tablet | ✅ (set when the bed asks for it) |
 | Alarm | ✅ Phone app with P1; ❌ tablet | ❌ |
 | Factory Reset | ❌ | ⚠️ (disabled by default) |

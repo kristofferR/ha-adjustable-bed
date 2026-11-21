@@ -96,6 +96,18 @@ RETYPES: Final[tuple[Retype, ...]] = (
         "button", "motion_bed_sleepmian", "switch", "controller_switch_motion_bed_sleep_enabled"
     ),
     Retype("button", "adjustamattress_sleep", "switch", "controller_switch_adjustamattress_sleep"),
+    # Light readings of beds that report their light: the light shows that state.
+    *(
+        Retype("binary_sensor", key, "light", "under_bed_lights")
+        for key in (
+            "under_bed_lights",
+            "furnimove_ubl",
+            "innova_light",
+            "ergomotion4_light",
+            "adjustable_lite_light",
+            "sleeptracker_light_on",
+        )
+    ),
     # Massage level selects that became numbers.
     *(
         Retype(

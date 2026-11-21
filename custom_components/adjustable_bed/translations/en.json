@@ -2334,9 +2334,6 @@
       "okin_app_home": {
         "name": "Home"
       },
-      "sleeptracker_light_toggle": {
-        "name": "Toggle safety light"
-      },
       "sleeptracker_light_off": {
         "name": "Safety light off"
       },
@@ -3248,12 +3245,6 @@
       },
       "bedgear_combined_down": {
         "name": "Head and foot down"
-      },
-      "starcode_abm5_4_light_on": {
-        "name": "Turn floor light on"
-      },
-      "starcode_abm5_4_light_off": {
-        "name": "Turn floor light off"
       },
       "isleep_pattern_off": {
         "name": "Massage pattern off"
@@ -5442,17 +5433,8 @@
       "starcode_sonic_active": {
         "name": "Sonic active"
       },
-      "adjustable_lite_light": {
-        "name": "Light"
-      },
-      "innova_light": {
-        "name": "Light"
-      },
       "richmat_mh_smart_light_lock": {
         "name": "Smart light lock"
-      },
-      "sleeptracker_light_on": {
-        "name": "Safety light"
       },
       "sleeptracker_wind_down_running": {
         "name": "Wind-down"
@@ -5492,9 +5474,6 @@
       },
       "adjustamattress_busy": {
         "name": "Control box busy"
-      },
-      "ergomotion4_light": {
-        "name": "Light"
       },
       "rize_battery_mode": {
         "name": "Battery power"
@@ -5538,9 +5517,6 @@
       "cheerssleep_right_asleep": {
         "name": "Right asleep"
       },
-      "nerum_light": {
-        "name": "Light"
-      },
       "nerum_massage": {
         "name": "Massage running"
       },
@@ -5582,12 +5558,6 @@
       },
       "body_movement_right": {
         "name": "Right body movement"
-      },
-      "under_bed_light_state": {
-        "name": "Under-bed light state"
-      },
-      "enso_light": {
-        "name": "Light"
       },
       "superior_sleep_alarm_enabled": {
         "name": "Alarm enabled"

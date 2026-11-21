@@ -12,10 +12,11 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
-from ...card import CARD_HIDDEN, CARD_LIGHT_STATE, CARD_LIGHTING
+from ...card import CARD_HIDDEN, CARD_LIGHTING
 from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles import nerum as app
+from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..cancellation import settled
@@ -352,17 +353,19 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        specs = [
-            ControllerButtonSpec(
-                "nerum_light",
-                "Toggle light",
-                lambda c: require(c)._press("light"),
-                hold=ControllerHoldSpec("light"),
-                translation_key="nerum_light",
-                # A held button: the card's lighting buttons keep its hold.
-                card=CARD_LIGHTING,
+        specs = []
+        if self.profile.key != "p1":
+            specs.append(
+                ControllerButtonSpec(
+                    "nerum_light",
+                    "Toggle light",
+                    lambda c: require(c)._press("light"),
+                    hold=ControllerHoldSpec("light"),
+                    translation_key="nerum_light",
+                    # A held button: the card's lighting buttons keep its hold.
+                    card=CARD_LIGHTING,
+                )
             )
-        ]
         if self.profile.key != "p1":
             specs.append(
                 ControllerButtonSpec(
@@ -528,7 +531,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
             if reply.massage is not None:
                 self.forward_controller_state_updates(state.MASSAGE(reply.massage))
             if reply.light is not None:
-                self.forward_controller_state_updates(state.LIGHT(reply.light))
+                self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(reply.light))
         elif reply is not None and not isinstance(reply, state.Operation):
             # P1 operation replies only echo which app control ran; not state.
             for slot, alarm in reply:
@@ -574,13 +577,11 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                 str(key),
                 key,
                 "mdi:information-outline",
-                # The light state sits beside its toggle in the card, which only
-                # sees enabled entities.
-                card=CARD_LIGHT_STATE if key is state.LIGHT else CARD_HIDDEN,
-                entity_registry_enabled_default=key is state.LIGHT,
+                card=CARD_HIDDEN,
+                entity_registry_enabled_default=False,
             )
-            for key in (state.MASSAGE, state.LIGHT)
-            if self.profile.key == "p1" or self.profile.key == "p2" and key is state.MASSAGE
+            for key in (state.MASSAGE,)
+            if self.profile.key in ("p1", "p2")
         )
 
     async def stop_notify(self) -> None:
@@ -599,6 +600,20 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
         self._notifying = False
         self._replies = state.Replies()
         self._reported = [None, None, None]
+        if self.supports_light_state_feedback:
+            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
+
+    # P1 reports the light; it has only the app's toggle key.
+    @property
+    def supports_light_toggle_control(self) -> bool:
+        return self.profile.key == "p1"
+
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        return self.profile.key == "p1"
+
+    async def lights_toggle(self) -> None:
+        await self._press("light")
 
     async def read_positions(self, motor_count: int = 2) -> None:
         return

@@ -326,6 +326,15 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         return self.ui_selector in ("BOX25", "BOX25_STAR") and self._transport.subscribe
 
     @property
+    def supports_discrete_light_control(self) -> bool:
+        """The app's dedicated on and off buttons, where it shows them."""
+        return self._native_light_power_buttons
+
+    @property
+    def light_state_is_assumed(self) -> bool:
+        return self._native_light_power_buttons
+
+    @property
     def supports_massage(self) -> bool:
         return True
 
@@ -421,8 +430,6 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             "save_zero_g",
             "reset",
         )
-        if self._native_light_power_buttons:
-            actions += ("light_on", "light_off")
         saves = {
             "save_tv": "Save TV position",
             "save_lounge": "Save lounge position",
@@ -434,12 +441,10 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 saves.get(action, action.replace("_", " ").title()),
                 _button(action),
                 translation_key="starcode_abm5_4_" + action,
-                cancel_movement=action not in ("light_plus", "light_minus", "light_on", "light_off"),
-                scheduler_resource="lighting"
-                if action in ("light_plus", "light_minus", "light_on", "light_off")
-                else None,
+                cancel_movement=action not in ("light_plus", "light_minus"),
+                scheduler_resource="lighting" if action in ("light_plus", "light_minus") else None,
                 card=CARD_LIGHTING
-                if action in ("light_plus", "light_minus", "light_on", "light_off")
+                if action in ("light_plus", "light_minus")
                 else CARD_PRESET_SAVE
                 if action.startswith("save_")
                 else CARD_UTILITY,
@@ -734,10 +739,6 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             await self.release_massage()
         elif action in ("union_up", "union_down"):
             await self.hold_control(action, self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
-        elif action == "light_on":
-            await self.lights_on()
-        elif action == "light_off":
-            await self.lights_off()
         elif action in ("light_plus", "light_minus"):
             await self._light_step(1 if action == "light_plus" else -1)
         elif action == "reset":
