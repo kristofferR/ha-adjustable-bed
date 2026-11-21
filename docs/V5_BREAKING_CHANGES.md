@@ -432,8 +432,9 @@ sensors with the same object ID where it is free, and its
 intervention selects are the **Left snore intervention** and **Right snore
 intervention** switches.
 
-Galaxy and MLILY (`operation: sync`) and SonicSleep (`operation: sync_clock`)
-set their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
+Galaxy and MLILY (`operation: sync`), SonicSleep (`operation: sync_clock`) and
+the Richmat app beds (`richmat_app` `operation: sync` and `sleep_sync`) set
+their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
 the betas changed their entities too (clock buttons, timer selects, switches
 and sleep readings, as described under [Entities](#entities)); each beta's
 release notes list them.

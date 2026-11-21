@@ -25,7 +25,7 @@ from .const import DOMAIN
 
 @dataclass(frozen=True, slots=True)
 class Removal:
-    """An action, one of its fields or one value of a field that 4.x had."""
+    """An action, one of its fields or one value of a field that 4.x or a beta had."""
 
     action: str
     field: str | None = None
@@ -58,7 +58,7 @@ def _actions(actions: str, use: str | None) -> tuple[Removal, ...]:
     return tuple(Removal(action, use=use) for action in actions.split())
 
 
-# What 4.4.2 offered and v5 no longer accepts, from the upgrade guide.
+# What 4.4.2 or a v5 beta offered and v5 no longer accepts, from the upgrade guide.
 REMOVALS: Final[tuple[Removal, ...]] = (
     *_actions(
         "bf_cherish_set_alarm comfort_enhancements_set_alarm configure_alarm_schedule "
@@ -72,6 +72,37 @@ REMOVALS: Final[tuple[Removal, ...]] = (
     *_actions("leggett_hold_control", f"{DOMAIN}.hold_control"),
     *_actions("malouf_sync_clock motion_bed_clock", f"{DOMAIN}.sync_clock"),
     *_actions("reverie_test", None),
+    # Only in v5 betas.
+    *_actions(
+        "comfort_enhancement3_set_wakeup comfort_enhancement3_delete_wakeup "
+        "comfortbase_set_alarm jalon_bed_set_alarm jalon_set_alarm mline_set_alarm "
+        "n32_motion_bed_alarm richmat_app_alarm smart_sleep_set_alarm "
+        "symphony_sense_set_alarm symphony_set_alarm yamada_set_alarm",
+        f"{DOMAIN}.set_alarm",
+    ),
+    *(
+        Removal(old, use=f"{DOMAIN}.estimate_{new}")
+        for old, new in (
+            ("save_position", "save_position"),
+            ("rename_position", "rename_position"),
+            ("update_position", "update_position"),
+            ("delete_position", "delete_position"),
+            ("recall_position", "recall_position"),
+            ("set_position_reference", "set_reference"),
+            ("confirm_position_unchanged", "confirm_unchanged"),
+            ("mark_position_unknown", "mark_unknown"),
+        )
+    ),
+    *(
+        Removal(action, "operation", operation, f"{DOMAIN}.sync_clock")
+        for action, operation in (
+            ("galaxy", "sync"),
+            ("mlily", "sync"),
+            ("sonicsleep", "sync_clock"),
+            ("richmat_app", "sync"),
+            ("richmat_app", "sleep_sync"),
+        )
+    ),
     Removal("gmmotor", "operation", "clock_sync", f"{DOMAIN}.sync_clock"),
     Removal("gmmotor", "repeat"),
     Removal("gmmotor", "status"),

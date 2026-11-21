@@ -116,10 +116,10 @@ async def test_no_repair_once_nothing_calls_a_removed_action(hass: HomeAssistant
 def test_every_removal_is_on_the_upgrade_page_and_gone_from_the_actions() -> None:
     root = Path(__file__).parents[1]
     page = (root / "docs/V5_BREAKING_CHANGES.md").read_text()
-    table = page.split("| 4.x action | Use now |", 1)[1].split("\n\n", 1)[0]
     listed = {
         action
-        for row in table.splitlines()[2:]
+        for heading in ("| 4.x action | Use now |", "| Beta action | Use now |")
+        for row in page.split(heading, 1)[1].split("\n\n", 1)[0].splitlines()[2:]
         for action in re.findall(r"`(\w+)`", row.split("|")[1])
     }
     actions = yaml.safe_load((root / "custom_components/adjustable_bed/services.yaml").read_text())
