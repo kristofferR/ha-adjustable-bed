@@ -1373,6 +1373,20 @@ def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, s
     return {CONF_BLE_DEVICE_NAME: name}
 
 
+def _svane_fixed_settings(variant: str) -> dict[str, Any]:
+    """Return the settings a Svane Remote profile fixes; Jensen LinOn fixes none."""
+    if variant not in SVANE_VARIANTS:
+        raise ValueError("Unknown Svane Remote profile")
+    if variant == SVANE_VARIANT_JENSEN_LINON:
+        return {}
+    return {
+        CONF_MOTOR_COUNT: 2,
+        CONF_HAS_MASSAGE: False,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_MOTOR_PULSE_USER_SET: False,
+    }
+
+
 def _motor_count_options(
     bed_type: str | None,
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
@@ -6385,18 +6399,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._async_show_migration_confirm()
         self._record_selected_app_intent(data)
         if data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
-            variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
-            if variant not in SVANE_VARIANTS:
-                raise ValueError("Unknown Svane Remote profile")
-            if variant != SVANE_VARIANT_JENSEN_LINON:
-                data.update(
-                    {
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_HAS_MASSAGE: False,
-                        CONF_DISABLE_ANGLE_SENSING: True,
-                        CONF_MOTOR_PULSE_USER_SET: False,
-                    }
-                )
+            data.update(_svane_fixed_settings(data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)))
         return self.async_create_entry(title=title, data=data)
 
     def _record_selected_app_intent(self, data: dict[str, Any]) -> None:
@@ -6431,18 +6434,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         Octo must verify PIN requirements even when no scanner is available yet.
         """
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
-            variant = entry_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
-            if variant not in SVANE_VARIANTS:
-                raise ValueError("Unknown Svane Remote profile")
-            if variant != SVANE_VARIANT_JENSEN_LINON:
-                entry_data.update(
-                    {
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_HAS_MASSAGE: False,
-                        CONF_DISABLE_ANGLE_SENSING: True,
-                        CONF_MOTOR_PULSE_USER_SET: False,
-                    }
-                )
+            entry_data.update(
+                _svane_fixed_settings(entry_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO))
+            )
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_RF_ECO_BT:
             from .beds.furnimove.repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
 
@@ -8322,15 +8316,7 @@ class AdjustableBedOptionsFlow(
                         data_schema=vol.Schema(schema_dict),
                         errors={"base": "invalid_variant_for_bed_type"},
                     )
-                if svane_variant != SVANE_VARIANT_JENSEN_LINON:
-                    user_input.update(
-                        {
-                            CONF_MOTOR_COUNT: 2,
-                            CONF_HAS_MASSAGE: False,
-                            CONF_DISABLE_ANGLE_SENSING: True,
-                            CONF_MOTOR_PULSE_USER_SET: False,
-                        }
-                    )
+                user_input.update(_svane_fixed_settings(svane_variant))
             if self.config_entry.data.get(
                 CONF_PAIR_MODE
             ) == PAIR_MODE_SINGLE_ADDRESS and not supports_single_address_pairing(
