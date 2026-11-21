@@ -383,6 +383,8 @@ _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
         ),
     ),
 )
+# Readings only the home, motor and hub screens report.
+_MOTOR_REPORTS: Final = frozenset({"upper_massage", "lower_massage", "massage_wave", "alarm_enabled"})
 # Massage state for the dashboard rather than diagnostics.
 _MASSAGE_LEVELS: Final = frozenset(
     {"upper_massage", "lower_massage", "massage_wave", "air_upper_gear", "air_lower_gear"}
@@ -809,6 +811,11 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             self._remembered_module = module
 
     @property
+    def _reports_motor_state(self) -> bool:
+        """Air-only and climate-only apps never report motor massage or the alarm."""
+        return self.selection.surface not in ("air", "thermal")
+
+    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
             massage_timer_sensor_spec(
@@ -820,7 +827,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 state_key=_field_key(name),
                 icon="mdi:vibrate" if name in _MASSAGE_LEVELS else "mdi:bed-outline",
                 attribute_keys=tuple(_field_key(item) for item in attributes),
-                entity_registry_enabled_default=enabled,
+                entity_registry_enabled_default=enabled
+                and (name not in _MOTOR_REPORTS or self._reports_motor_state),
                 entity_category=None if name in _MASSAGE_LEVELS else EntityCategory.DIAGNOSTIC,
             )
             for name, enabled, attributes in _SENSORS
@@ -834,7 +842,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 state_key=_field_key(name),
                 icon=_BINARY_ICONS.get(name, "mdi:bed-outline"),
                 attribute_keys=tuple(_field_key(item) for item in attributes),
-                entity_registry_enabled_default=enabled,
+                entity_registry_enabled_default=enabled
+                and (name not in _MOTOR_REPORTS or self._reports_motor_state),
                 entity_category=None if name == "alarm_enabled" else EntityCategory.DIAGNOSTIC,
                 # Low water: the climate module needs refilling.
                 device_class=(

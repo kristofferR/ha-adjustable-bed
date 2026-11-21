@@ -1207,7 +1207,7 @@ class MotoMotionController(BedController):
                 f"motomotion_{kind}_{side}",
                 f"motomotion_{kind}" if bound else f"motomotion_{kind}_{side}",
                 _field_key(f"{kind}_{side}"),
-                "mdi:seat",
+                "mdi:vibrate" if kind == "massage" else "mdi:seat",
                 entity_registry_enabled_default=True,
                 card=CARD_UTILITY,
                 # Heat and massage levels for the dashboard.

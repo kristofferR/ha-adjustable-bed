@@ -1338,7 +1338,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                         "mdi:vibrate",
                         entity_registry_enabled_default=key not in ("mode", "source"),
                         card=CARD_MASSAGE,
-                        entity_category=None,
+                        entity_category=None
+                        if key not in ("mode", "source")
+                        else EntityCategory.DIAGNOSTIC,
                     )
                 )
         return tuple(specs)

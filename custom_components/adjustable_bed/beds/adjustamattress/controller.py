@@ -869,9 +869,8 @@ class AdjustaMattressController(
                 "mdi:vibrate" if key in _MASSAGE_FIELDS else "mdi:information-outline",
                 # Readbacks of the step buttons, which take no direct value. The
                 # timer is the bed's step (P3 and P4 round 600 units up to one);
-                # its duration is unproven, so it has no unit. The intensity
-                # numbers already show the levels.
-                entity_registry_enabled_default=key == "massage_time",
+                # its duration is unproven, so it has no unit.
+                entity_registry_enabled_default=key in _MASSAGE_FIELDS,
                 card=CARD_MASSAGE if key in _MASSAGE_FIELDS else CARD_UTILITY,
                 entity_category=None if key in _MASSAGE_FIELDS else EntityCategory.DIAGNOSTIC,
             )

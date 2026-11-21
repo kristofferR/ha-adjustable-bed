@@ -727,7 +727,15 @@ class RufRichmatController(RichmatMhController):
             for side in ("left", "right"):
                 key = _mattress_alarm_key(side)
                 specs.append(
-                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY, entity_registry_enabled_default=False)
+                    ControllerStateSensorSpec(
+                        key,
+                        key,
+                        key,
+                        "mdi:alarm",
+                        card=CARD_UTILITY,
+                        entity_registry_enabled_default=True,
+                        entity_category=None,
+                    )
                 )
         return tuple(specs)
 
