@@ -58,7 +58,6 @@ async def handle(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         GmmotorActions,
-        "GM Control actions",
         lambda controller: controller.async_execute_gmmotor_request(request),
         validate=lambda controller: controller.validate_gmmotor_request(request),
     )

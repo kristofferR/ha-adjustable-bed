@@ -380,6 +380,8 @@ Other action changes:
   defaults), and the sleep report's `part` and `report_type` take `left` or
   `right` and `day` or `month` instead of 1 and 2.
 - `goodvibe` no longer offers `operation: sync`; use `sync_clock`.
+- `goto_preset` and `save_preset` refuse a memory number that is not a whole
+  number, such as `1.5`; 4.x quietly used memory 1.
 - `furnimove_action` no longer takes `consumer`.
 - `sleep_number_command` no longer offers `reboot_system`,
   `starts_actuator_homing`, `set_system_time`, the cooling and core-temperature

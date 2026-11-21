@@ -331,7 +331,6 @@ def register_services(hass: HomeAssistant) -> None:
         await _preflight_and_execute(
             targets,
             OnlySnoreController,
-            "Snore Monitor BED alarms",
             execute,
             validate=validate,
             cancel_running=True,

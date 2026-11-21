@@ -51,7 +51,6 @@ async def handle_richmat_classic(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         RichmatClassicController,
-        "Selected app settings",
         lambda controller: controller.async_execute_richmat_classic_request(request),
         validate=lambda controller: controller.validate_richmat_classic_request(request),
         cancel_running=resource == "movement",

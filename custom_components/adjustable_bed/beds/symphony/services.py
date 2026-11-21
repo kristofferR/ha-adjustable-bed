@@ -163,7 +163,7 @@ async def _dispatch(
         await _execute_preflighted(
             targets,
             opened,
-            _family_command(SymphonyController, "Symphony Sleep Sense", execute_current),
+            _family_command(SymphonyController, execute_current),
             cancel_running=True,
             resource=None,
             admissions=admissions,

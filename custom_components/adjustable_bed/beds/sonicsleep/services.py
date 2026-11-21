@@ -94,7 +94,7 @@ async def handle_request(call: ServiceCall) -> None:
         await _execute_preflighted(
             targets,
             preflighted,
-            _family_command(SonicSleepController, "SonicSleep", execute),
+            _family_command(SonicSleepController, execute),
             admissions=admissions,
         )
     finally:

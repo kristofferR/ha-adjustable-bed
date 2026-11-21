@@ -97,7 +97,6 @@ async def handle(call: ServiceCall, *, hush: bool = False, luuna: bool = False) 
     await _preflight_and_execute(
         _call_targets(call),
         CasperBaseActions,
-        "Hush Base controls" if hush else "Casper Base controls",
         lambda controller: controller.async_execute_casper_base_request(request),
         supported=lambda controller: (
             controller.supports_hush_base_controls

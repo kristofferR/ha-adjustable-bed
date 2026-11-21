@@ -444,6 +444,31 @@ async def test_set_alarm_writes_cherish_vector(hass):
     assert frames(client) == ["EAFE160905071E08FFFFFF04C5"]
 
 
+async def test_set_alarm_accepts_empty_options_this_bed_lacks(hass):
+    """No repeat days, massage or light ask nothing of a bed without them."""
+    ctrl, owner, client = make_controller(hass, True)
+    with patch(
+        "custom_components.adjustable_bed.beds.bf_cherish.controller.dt_util.now", return_value=NOW
+    ):
+        await call_set_alarm(
+            hass,
+            ctrl,
+            {
+                "side": "right",
+                "enabled": True,
+                "time": "08:30:00",
+                "wake_action": "memory_1",
+                "weekdays": [],
+                "massage": False,
+                "light": False,
+            },
+            owner=owner,
+            side="right",
+            bed_type=BED_TYPE_CHERISH,
+        )
+    assert frames(client) == ["EAFE160905071E08FFFFFF04C5"]
+
+
 async def test_set_alarm_rejects_options_this_bed_lacks(hass):
     ctrl, owner, client = make_controller(hass, True)
     with raises_key("alarm_option_not_supported", ServiceValidationError):

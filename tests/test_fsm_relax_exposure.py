@@ -122,7 +122,7 @@ async def test_false_confirmation_and_wrong_profile_fail_before_execution():
         with pytest.raises(ServiceValidationError, match="confirmation"):
             await fsm_relax_services.handle_fsm_relax_calibrate(call)
         call.data["confirmed"] = True
-        with pytest.raises(ServiceValidationError, match="does not support FSM Relax"):
+        with pytest.raises(ServiceValidationError, match="does not support this action"):
             await fsm_relax_services.handle_fsm_relax_calibrate(call)
         execute.assert_not_called()
 

@@ -39,12 +39,11 @@ async def handle_leggett_sleep_timer(call: ServiceCall) -> None:
 
         raise _invalid("timer_minutes_required")
     memory_num = call.data.get(ATTR_PRESET, 1)
-    label = "Leggett sleep timers"
 
     def check(target: BedChild, controller: BedController) -> None:
         leggett = controller_as(controller, LeggettOkinController)
         if leggett is None or not leggett.supports_sleep_timer:
-            raise invalid("feature_not_supported", device_name=target.name, feature=label)
+            raise invalid("feature_not_supported", device_name=target.name, feature="this action")
         if not start:
             return
         if memory_num not in leggett.sleep_timer_memory_options:
@@ -63,7 +62,7 @@ async def handle_leggett_sleep_timer(call: ServiceCall) -> None:
     targets = _call_targets(call)
     preflighted = await _preflight_each(targets, check)
     await _execute_preflighted(
-        targets, preflighted, _family_command(LeggettOkinController, label, timer)
+        targets, preflighted, _family_command(LeggettOkinController, timer)
     )
 
 
