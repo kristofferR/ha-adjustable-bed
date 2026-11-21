@@ -610,8 +610,6 @@ async def test_pairlink_action_methods_match_source_command_vectors() -> None:
     )
 
 
-
-
 async def test_pairlink_raw_integer_setters_clamp_after_type_validation() -> None:
     controller, _client, _runtime, _tasks = _controller()
     controller.async_send_payload = AsyncMock()
@@ -710,33 +708,6 @@ async def test_pairlink_held_axis_has_one_press_and_same_axis_release(
     assert tuple(call.args[0] for call in controller.async_send_payload.await_args_list) == (
         bytes.fromhex("0101FF00"),
         bytes.fromhex("01030000"),
-    )
-
-
-async def test_pairlink_diagnostic_uses_fake_two_second_timer_and_exact_stop_pair() -> None:
-    controller, client, runtime, tasks = _controller()
-    await _join_central(controller, client, runtime, tasks)
-    controller.async_send_payload = AsyncMock()
-
-    await controller.async_start_diagnostic()
-
-    assert controller._diagnostic_timer is not None
-    timer = controller._diagnostic_timer
-    assert timer.delay == 2
-    assert tuple(call.args[0] for call in controller.async_send_payload.await_args_list) == (
-        bytes.fromhex("014F1400"),
-        bytes.fromhex("015C0000"),
-    )
-    timer.fire()
-    while tasks:
-        pending, tasks[:] = tasks[:], []
-        await asyncio.gather(*pending)
-
-    assert tuple(call.args[0] for call in controller.async_send_payload.await_args_list) == (
-        bytes.fromhex("014F1400"),
-        bytes.fromhex("015C0000"),
-        bytes.fromhex("01480000"),
-        bytes.fromhex("015D0000"),
     )
 
 

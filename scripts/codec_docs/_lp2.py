@@ -6,7 +6,6 @@ from custom_components.adjustable_bed.beds.richmat_classic.protocol import contr
 from custom_components.adjustable_bed.profiles.lp2 import (
     ALARM_COMBINATIONS,
     ALIASES,
-    DIAGNOSTIC_CYCLE,
 )
 from scripts.codec_docs._common import _block, _table
 
@@ -33,10 +32,6 @@ def render() -> str:
         _table(("Alarm preset operand", "All massage", "Head massage", "Foot massage"), (
             (f"`{preset:02X}`", *(f"`{value:02X}`" for value in values))
             for preset, values in ALARM_COMBINATIONS.items()
-        )),
-        _table(("Movement-test phase", "Operand", "Run, seconds", "Rest, seconds"), (
-            (str(index), f"`{code:02X}`", str(seconds), "5")
-            for index, (code, seconds) in enumerate(DIAGNOSTIC_CYCLE, 1)
         )),
         _table(
             (

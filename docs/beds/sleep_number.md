@@ -24,23 +24,23 @@
 
 ## Features
 
-Features are enabled from the connected bed's system or foundation capability
-responses. A model name alone does not enable optional hardware.
+Controls appear according to what the connected bed reports it has; the model
+name alone adds none.
 
 | Feature | Fuzion | MCR |
 |---|---|---|
 | Head/foot movement and percentage targets | ✅ Yes (0-100%) | ✅ When foundation supports them |
-| Position feedback | ✅ Queried | ✅ Foundation response |
+| Position feedback | ✅ | ✅ |
 | Foundation presets | ✅ Supported presets (Flat, Zero-G, Anti-Snore, TV) | ✅ Supported presets per side |
 | Favorite memory | ✅ Slot 1: recall and save | ✅ `Favorite` foundation preset |
 | Firmness (Sleep Number setting) | ✅ Configured side | ✅ Left and right |
 | Favorite firmness and responsive air | ✅ Named service commands | ✅ Named service commands |
 | Under-bed lighting | ✅ Level and timer | ✅ Foundation lighting and options |
-| Core heating/cooling | ✅ Hardware dependent (unified entity; heating only on Heidi-equipped beds) | ❌ Not in this transport's exposed controls |
-| Footwarming | ✅ Hardware dependent | ✅ Supported foundation |
-| Temperature schedules | ✅ Named service commands | ❌ Not exposed by the app |
-| Massage and outlets | ❌ Not exposed by this transport | ✅ Supported foundation commands |
-| Presence polling | ✅ Left/right, disabled by default | ❌ Not exposed as occupancy sensors |
+| Core heating/cooling | ✅ On beds that have it (one climate entity; heating only on beds with Heidi) | ❌ |
+| Footwarming | ✅ On beds that have it | ✅ On bases that have it |
+| Temperature schedules | ✅ Named service commands | ❌ |
+| Massage and outlets | ❌ | ✅ On bases that have them |
+| Presence polling | ✅ Left/right, disabled by default | ❌ |
 
 Use the normal cover, position, firmness, preset, lighting and climate entities
 for everyday controls. Additional controls and structured queries are available
@@ -195,7 +195,7 @@ Detection uses the unique Sleep Number service UUID for each protocol family:
 - `ffffd1fd-388d-938b-344a-939d1f6efee0` (MCR)
 
 The bed-type list has one **Sleep Number: SleepIQ app, Fuzion (Climate 360,
-FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases** row. When Home Assistant has
+FlexFit) and older (i8, 360 FlexFit 2) bases** row. When Home Assistant has
 seen the advertisement, setup confirms the transport from its service without
 asking; otherwise it asks which base the bed is, and a detected transport stays
 one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks no

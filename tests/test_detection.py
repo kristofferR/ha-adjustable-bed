@@ -203,7 +203,7 @@ class TestDetectBedTypeByServiceUUID:
         """Older Sleep Number BAM/MCR beds should appear with a readable label."""
         assert (
             BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEP_NUMBER_MCR]
-            == "Sleep Number BAM/MCR (older i8, 360 FlexFit 2)"
+            == "Sleep Number older base (i8, 360 FlexFit 2)"
         )
 
     def test_kaidi_manufacturer_data_alone_is_not_sufficient(self):

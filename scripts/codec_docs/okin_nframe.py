@@ -440,7 +440,7 @@ def render_okin_nframe_keys() -> str:
         "the controls it supports; held motors send the OR of their primary words.",
         "#### OKIN Bedding app keys",
         _okin_key_table(_OKIN_GROUPS["OKIN Bedding apps"], envelope=False),
-        "Each app's literal action table, by the app's action names.",
+        "Each app's action table, by the app's action names.",
         "#### Resident Adjustable Base keys",
         _okin_key_table(_OKIN_GROUPS["Resident Adjustable Base"], envelope=False),
         "#### Okin 64-Bit keys",

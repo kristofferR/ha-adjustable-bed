@@ -5,9 +5,9 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 > [!NOTE]
-> Existing generic entries keep their controller unless you explicitly select an
-> app profile. Shared Bluetooth identifiers, device names and model strings do not
-> identify an app or its remote layout.
+> Existing generic entries keep their controls until you pick an app profile.
+> Setup cannot tell from the bed's name or model which app or remote you use, so
+> pick it yourself.
 
 ## Known Models
 
@@ -19,14 +19,13 @@
   and `cdl_cf_17_21_382_vi` (control type 7):
   [Caresse and Werkmeister](#caresse-and-werkmeister)
 - Vibradorm receivers controlled with the VMAT app (`de.vibradorm.vmat`), with the
-  fourteen shipped VMAT remote selections in the
-  [remote table](#vmat-remote-selection). Resource names identify shipped images,
-  not proven physical products: [VMAT](#vmat)
+  fourteen VMAT remotes in the [remote table](#vmat-remote-selection). The names
+  are the app's remote pictures, not product names: [VMAT](#vmat)
 - V-MAT-BASIC-RF (`basic` profile), V-MAT-BASIC-RF-CBI (`cbi` profile) and
   V-MAT-BASIC-RF-CBI with XT-Box (`xtbox` profile), controlled with the
   `com.vibradorm.vmatbasic` app: [V-MAT Basic](#v-mat-basic)
-- Advertisement, DIS strings, service/characteristic presence and remote artwork
-  cannot choose a profile or actuator layout.
+- Setup cannot tell the profile or motor layout from what the bed advertises;
+  pick it yourself.
 
 ## Apps
 
@@ -40,36 +39,32 @@
 
 - The generic controller's protocol comes from the VIBRADORM Remote and
   VIBRADORM Remote for Beds apps.
-- [v4.1.0](https://github.com/kristofferR/ha-adjustable-bed/releases/tag/v4.1.0)
-  includes separate, explicitly selected app profiles. Follow the section for the
-  app and remote you use; capabilities and packet behavior are profile-specific.
-- Each app profile was verified independently. VMAT has its own remote table,
-  setup stages, GATT rules and accessory conversion values, and does not inherit
-  the Caresse and Werkmeister protocol defaults merely because transport
-  identifiers match. Caresse / Werkmeister and V-MAT Basic have their own
-  feature gates and vectors.
-- The [issue #403 reconciliation](#issue-403-reconciliation) explains which
-  parts of the original parity request shipped and which the apps rule out.
-  The apps have no live position or EEPROM support for the Caresse,
-  Werkmeister or VMAT profiles.
+- Since [v4.1.0](https://github.com/kristofferR/ha-adjustable-bed/releases/tag/v4.1.0)
+  each app has its own profile, picked in setup. Follow the section for the app
+  and remote you use.
+- VMAT, Caresse / Werkmeister and V-MAT Basic each have their own controls,
+  remotes and setup; one never borrows another's behavior.
+- [Issue #403](#issue-403-reconciliation) lists which requested features
+  shipped and which these beds cannot do. The Caresse, Werkmeister and VMAT
+  profiles cannot read the bed's position or its stored settings.
 
 ## Features
 
 | Feature | Generic controller | Caresse / Werkmeister | VMAT | V-MAT Basic |
 |---------|--------------------|-----------------------|------|-------------|
-| Motor Control | ✅ (2, 3 or 4 configured motor groups) | ✅ (held app movement groups per profile; see [explicit profiles](#explicit-profiles-and-retained-state)) | ✅ (logical groups per remote; All Up/All Down) | ✅ (two named movement groups: back, legs; all up/down) |
-| Position Feedback | ⚠️ (legacy notification handling on compatible variants; angle estimates) | ❌ (no live position, EEPROM or motor-status parser) | ❌ (no live position parser proven) | ❌ (no position slider; ED is not a position parser) |
-| Memory Presets | ✅ (6 slots) | ⚠️ (6 programmable on CBI layouts; 3 recalls on the basic seat state; none on fresh Caresse) | ✅ (six slots on remotes 07–11 and 13) | ❌ |
-| Flat Preset | ✅ | ❌ (All-down is held movement toward flat, not a self-completing preset) | ❌ (All Down is movement, not a timed flat preset) | ❌ (All-down is a direction, not a measured flat position) |
-| Light Control / Floor light | ✅ | ✅ (Werkmeister; Caresse restored flag) | ✅ (level 0–8 and timer on remotes 01, 04–10) | ✅ CBI and XT-Box (see the product table below) |
-| Mood light | ❌ | ✅ (Caresse restored RGB only: 18-color palette, three effects, speed) | ✅ (remotes 12/13: 18 palette choices, three effects, speed 0–8) | ✅ XT-Box only (palette choices; no arbitrary RGB) |
-| Massage | ✅ (vibration toggle via CBI characteristic) | ✅ (Caresse restored massage only) | ✅ (remotes 12/13: automatic/individual modes, zones, waves, speed) | ✅ XT-Box only (six literal actions; no intensity or measured massage state) |
-| Sync | ❌ | ✅ (Werkmeister type 7 only) | ✅ (remotes 07–11, reply-gated held action) | ❌ |
-| Device information / diagnostics | ❌ | ✅ (DIS strings; article requests on types 5/6/7) | ✅ (DIS strings; onboarding stages) | ✅ (model, controller temperature, floor status, firmware, ED, signal) |
-| Native bond | ❌ | ✅ (information-before-bond onboarding) | ✅ (positive native bond evidence required) | ❌ (bonded status is advisory) |
+| Motor Control | ✅ (2, 3 or 4 configured motor groups) | ✅ (the app's hold-to-move groups; see [profiles](#explicit-profiles-and-retained-state)) | ✅ (movement groups per remote; All Up/All Down) | ✅ (two named movement groups: back, legs; all up/down) |
+| Position Feedback | ⚠️ (estimated angles on some variants) | ❌ | ❌ | ❌ |
+| Memory Presets | ✅ (6 slots) | ⚠️ (6 with save on CBI layouts; 3 recalls on the seat layout; none on a new Caresse setup) | ✅ (six slots on remotes 07–11 and 13) | ❌ |
+| Flat Preset | ✅ | ❌ (hold All down instead) | ❌ (hold All Down instead) | ❌ (hold all down instead) |
+| Light Control / Floor light | ✅ | ✅ (Werkmeister; Caresse with restored settings) | ✅ (level 0–8 and timer on remotes 01, 04–10) | ✅ CBI and XT-Box (see the product table below) |
+| Mood light | ❌ | ✅ (Caresse with restored settings only: 18-color palette, three effects, speed) | ✅ (remotes 12/13: 18 palette choices, three effects, speed 0–8) | ✅ XT-Box only (palette choices; no arbitrary RGB) |
+| Massage | ✅ (vibration toggle on CBI beds) | ✅ (Caresse with restored settings only) | ✅ (remotes 12/13: automatic/individual modes, zones, waves, speed) | ✅ XT-Box only (six massage buttons; no intensity; state not shown) |
+| Sync | ❌ | ✅ (Werkmeister type 7 only) | ✅ (remotes 07–11, hold to use, once the bed answers) | ❌ |
+| Device information / diagnostics | ❌ | ✅ (device details; article number on types 5/6/7) | ✅ (device details; setup progress) | ✅ (model, controller temperature, floor status, firmware, ED, signal) |
+| Pairing | ❌ | ✅ (setup pairs after reading the device details) | ✅ (required) | ❌ (not required) |
 | Rename | ❌ | ❌ | ❌ | ✅ |
 | Linked pair | ❌ | ❌ | ❌ | ⚠️ CBI and CBI with XT-Box at two addresses only |
-| Battery, firmware update, calibration | ❌ | ❌ | ❌ (not proven) | ❌ |
+| Battery, firmware update, calibration | ❌ | ❌ | ❌ | ❌ |
 | Hold until release | ❌ | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`, through the Vibradorm app profile) | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`, then STOP) |
 
 **Generic motor configurations:** the generic controller offers 2, 3, or 4
@@ -81,14 +76,14 @@ controls.
 | Profile | Movement | Floor lighting | XT accessories |
 |---|---|---|---|
 | Basic (`basic`) | Back, legs, all up/down | None | None |
-| CBI (`cbi`) | Same single-byte movement | Fresh-read toggle, level 0–255, timer 0–1439 minutes | None |
-| CBI with XT-Box (`xtbox`) | Same single-byte movement | Held floor action, level 1–6, timer 0–255 minutes | Twenty-color mood palette, brightness 0–100%, three effects, speed 0–255, toggle/nightlight, six massage actions |
+| CBI (`cbi`) | Same single-byte movement | Toggle (reads the state first), level 0–255, timer 0–1439 minutes | None |
+| CBI with XT-Box (`xtbox`) | Same single-byte movement | Hold-to-use floor light, level 1–6, timer 0–255 minutes | Twenty-color mood palette, brightness 0–100%, three effects, speed 0–255, toggle/nightlight, six massage actions |
 
-- V-MAT Basic exposes two named movement groups, not proof of physical motor
-  topology. No head/feet/extra-axis, position slider, automatic flat preset,
-  memory, arbitrary RGB, massage intensity or measured massage state is exposed.
-- Generic motor count, angle sensing and pulse settings do not override an app
-  profile.
+- V-MAT Basic has two movement groups, back and legs, whatever motors the bed
+  has. It has no head, feet or extra motor controls, position sliders, flat
+  preset, memory, free RGB color, massage intensity or massage state.
+- The generic motor count, position reading and pulse settings do not apply to an
+  app profile.
 
 ## Choosing a profile
 
@@ -125,7 +120,7 @@ existing controller, features and Bluetooth pairing requirements.
 For an existing bed, open **Settings → Devices & services → Adjustable Bed**,
 then the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
-The app review in Repairs opens the same wizard. Choose **Keep the current setup**
+The app review in Repairs opens the same wizard. Choose **Keep the detected or saved controls**
 to keep your working controls and answer the review, or choose your app and
 remote/product.
 Keeping the same app seeds the form with your saved settings.

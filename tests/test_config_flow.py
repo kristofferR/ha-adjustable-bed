@@ -87,10 +87,12 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
@@ -432,9 +434,16 @@ class TestPairingInstructions:
         assert "lamp button" in instructions
         assert "unplug for 30+ seconds" in instructions
 
+
     @pytest.mark.parametrize(
         "bed_type",
-        [BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT],
+        [
+            BED_TYPE_OKIN_UUID,
+            BED_TYPE_OKIN_CST,
+            BED_TYPE_OKIN_RF_ECO_BT,
+            BED_TYPE_OKIN_64BIT,
+            BED_TYPE_RESIDENT,
+        ],
     )
     async def test_okin_pairing_instructions_use_power_cycle_guidance(
         self, hass: HomeAssistant, bed_type: str
@@ -4316,10 +4325,39 @@ def _transport_coordinator(error: Exception | None = None) -> tuple[Any, list[st
 
 
 async def _open_remove_bond(hass: HomeAssistant, entry_id: str) -> Any:
+    # Only a bed that pairs or recorded a bond offers the action.
+    entry = hass.config_entries.async_get_entry(entry_id)
+    assert entry is not None
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BLE_BOND_ESTABLISHED: True}
+    )
     result = await hass.config_entries.options.async_init(entry_id)
     return await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "remove_bond"}
     )
+
+
+@pytest.mark.parametrize(
+    ("extra", "offered"),
+    [
+        ({}, False),
+        ({CONF_BLE_BOND_ESTABLISHED: True}, True),
+        ({CONF_BED_TYPE: BED_TYPE_OKIN_UUID}, True),
+    ],
+)
+async def test_bond_removal_is_offered_only_where_a_bond_can_exist(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    enable_custom_integrations,
+    extra: dict[str, Any],
+    offered: bool,
+) -> None:
+    """A bed that never pairs has nothing to remove, unless a bond was recorded."""
+    hass.config_entries.async_update_entry(
+        mock_config_entry, data={**mock_config_entry.data, **extra}
+    )
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    assert ("remove_bond" in result["menu_options"]) is offered
 
 
 async def test_unpair_requires_confirmation_and_names_the_transport(
@@ -5017,12 +5055,32 @@ async def test_replacing_a_bond_requires_its_own_confirmation(
     ):
         result = await getattr(flow, step)({"action": "remove_bond_and_pair"})
 
-    assert result["type"] is FlowResultType.FORM
+    assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "pairing_replace_confirm"
+    assert result["menu_options"] == ["pairing_replace_bond", "pairing_keep_bond"]
     assert flow._pairing_origin_step == origin
     # Naming the adapter matters on a host with more than one.
     assert result["description_placeholders"]["transport"] == "11:22:33:44:55:66"
     removal.assert_not_called()
+
+
+async def test_keeping_the_bond_continues_with_it(hass: HomeAssistant) -> None:
+    """The dialog has no Back: keeping the bond is the confirmation's other answer."""
+    flow = _pairing_flow(hass)
+    inventory = LocalBondInventory(status=BluezReadStatus.OK, records=(_bond_record(),))
+    with (
+        _patch_inventory(inventory),
+        _patch_local_prediction(),
+        patch("custom_components.adjustable_bed.config_flow.async_remove_local_bond") as removal,
+        patch.object(flow, "_async_start_pairing_operation") as start,
+    ):
+        await flow.async_step_manual_pairing({"action": "remove_bond_and_pair"})
+        await flow.async_step_pairing_keep_bond()
+
+    removal.assert_not_called()
+    start.assert_called_once()
+    assert flow._pairing_mode == "verify_existing"
+    assert flow._pairing_remove_record is None
 
 
 async def test_bond_replacement_holds_the_address_lock_through_pairing(
@@ -5979,7 +6037,7 @@ async def test_replacement_confirmation_revalidates_the_exact_bond(
         _patch_local_prediction(),
         patch.object(flow, "_async_start_pairing_operation") as start,
     ):
-        result = await flow.async_step_pairing_replace_confirm({})
+        result = await flow.async_step_pairing_replace_bond()
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "manual_pairing"
@@ -6529,7 +6587,7 @@ async def test_a_reconnect_while_confirming_still_authorizes_the_replacement(
         _patch_local_prediction(),
         patch.object(flow, "_async_start_pairing_operation") as start,
     ):
-        await flow.async_step_pairing_replace_confirm({})
+        await flow.async_step_pairing_replace_bond()
 
     start.assert_called_once()
     assert flow._pairing_remove_record == record
@@ -6698,6 +6756,70 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
     assert result["data"][CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "auto"
     assert result["data"][CONF_OCTO_PIN] == "1234"
     assert [call.kwargs["octo_pin"] for call in probe.call_args_list] == ["1111", "1234"]
+
+
+async def test_octo_setup_can_finish_when_the_pin_check_is_inconclusive(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info_octo_rc2: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """A sleeping bed does not loop forever; a PIN the bed refused still blocks."""
+    from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus
+    from custom_components.adjustable_bed.config_flow import CapabilityReport
+
+    def action_offered(result: Any) -> bool:
+        return "action" in {marker.schema for marker in result["data_schema"].schema}
+
+    with patch.object(
+        AdjustableBedConfigFlow,
+        "_probe_capabilities",
+        AsyncMock(
+            side_effect=[
+                CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.REQUIRED),
+                CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.REJECTED),
+                CapabilityReport(connected=False, octo_pin_status=OctoPinStatus.INCONCLUSIVE),
+            ]
+        ),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_octo_rc2,
+        )
+        result = await _settings(
+            hass,
+            result,
+            {
+                CONF_NAME: "Octo PIN test",
+                "advanced": {CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD},
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
+                CONF_OCTO_PIN: "",
+            },
+        )
+        result = await _advance_progress(hass, result)
+        # The bed says it needs a PIN: no way past this but a PIN.
+        assert result["errors"] == {"base": "octo_pin_required"}
+        assert not action_offered(result)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_OCTO_PIN: "1111"}
+        )
+        result = await _advance_progress(hass, result)
+        assert result["errors"] == {"base": "octo_pin_rejected"}
+        assert not action_offered(result)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_OCTO_PIN: "1111"}
+        )
+        result = await _advance_progress(hass, result)
+        assert result["step_id"] == "verify_octo_pin"
+        assert result["errors"] == {"base": "octo_pin_inconclusive"}
+        assert action_offered(result)
+        # A cleared PIN field is not submitted at all, and must not bring back the old PIN.
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"action": "finish"}
+        )
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_OCTO_PIN] == ""
 
 
 @pytest.mark.parametrize("cancel", [False, True])

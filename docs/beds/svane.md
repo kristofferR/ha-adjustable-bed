@@ -7,11 +7,11 @@
 ## Known Models
 
 - Svane adjustable beds with the "Svane Bed" BLE name (LinonPI controller)
-- JMC400 beds (also in the Svane app), through the explicit P2 JMC400 profile
+- JMC400 beds (also in the Svane app), through the P2 JMC400 profile chosen in setup
 - Jensen LinOn beds ("Adjustable Bed"/"Jensen Bed") share these services but use
   the Jensen app's own frames: protocol variant `jensen_linon`, described in the
   [Jensen guide](jensen.md#linon). The separate [Jensen](jensen.md) and
-  [Jensen LinOn](jensen.md#linon) profiles retain their own behavior.
+  [Jensen LinOn](jensen.md#linon) profiles keep their own behavior.
 - Svane is a Norwegian bed manufacturer; its beds are primarily sold in
   Scandinavia. "LinON" appears to be Svane's internal name for its bed
   controller; it is not related to Linak despite the similar-sounding name.
@@ -22,8 +22,8 @@
 |----------|-----|------------|
 | ✅ | [Svane Remote](https://play.google.com/store/apps/details?id=com.svane.svaneremote) **Version 1.8 (8)** | `com.svane.svaneremote` |
 
-The app has two explicit BLE profiles. Earlier analysis of this protocol
-used the package `com.produktide.svane.svaneremote`.
+The app has two profiles, chosen in setup. An earlier Svane app used the package
+`com.produktide.svane.svaneremote`.
 
 ## Features
 
@@ -32,16 +32,16 @@ used the package `com.produktide.svane.svaneremote`.
 | Motor Control | ✅ (2 app axes: head/backrest and feet/seat+footrest) |
 | Combined movement | ✅ (four head/feet combinations; separate `timed_move` calls on head and feet run together) |
 | Hold until release | ✅ (renewable `timed_move`) |
-| Position Feedback | ❌ (opaque raw bytes as diagnostics only; no angles or sliders) |
-| Memory Presets | ✅ (2 host slots: Read and TV) |
-| Svane Position | ✅ (one-shot; Flat, Zero-G or Anti-Snore meaning unproven) |
-| Flat Preset | ❌ (dormant firmware command, not reachable) |
-| Under-bed Lights | ✅ (on/off, 5-100 intensity, held adjust; assumed state) |
+| Position Feedback | ❌ (the raw values appear in diagnostics only) |
+| Memory Presets | ✅ (2 slots: Read and TV) |
+| Svane Position | ✅ (one press; whether it moves to Flat, Zero-G or Anti-Snore is not yet known) |
+| Flat Preset | ❌ |
+| Under-bed Lights | ✅ (on/off, brightness 5-100, hold to adjust; shows the last command sent, not a reading) |
 | Massage | ❌ |
 | Device information | ✅ (firmware, hardware, manufacturer diagnostics) |
 
 - The two axes keep the integration's existing `back` and `legs` cover keys.
-- Physical actuator count and numeric position units are unknown.
+- How many motors the bed has and what its position values mean are not known.
 - There are no measured-angle sensors or position sliders.
 
 ## Protocol Details

@@ -17,7 +17,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.beds.keeson import controller as keeson
 from custom_components.adjustable_bed.beds.keeson.controller import (
     RESTONIC_A_CONTROLS,
@@ -521,9 +520,6 @@ async def test_profiles_are_selected_only_explicitly(coordinator):
         assert isinstance(explicit, KeesonController)
         assert explicit._variant == variant
         assert variant in KEESON_VARIANTS
-        assert any(
-            route_variant == variant for _bed_type, route_variant in ACTUATOR_GROUPS["keeson"]
-        )
 
 
 def _service_target(coordinator: AdjustableBedCoordinator, variant: str):

@@ -4,7 +4,7 @@
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [_pm](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790), [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10), Murp, and [Brokkert](https://github.com/Brokkert)
 
-**Integration profile:** Standard OCTO Smart Control uses the existing OCTO bed type. Star2 remains a separate protocol variant.
+**Setup:** choose OCTO for beds controlled by OCTO Smart Control. Octo Remote Star2 receivers are a separate variant.
 
 ## Known Models
 
@@ -67,19 +67,19 @@ checked; see [Analysis provenance](#analysis-provenance).
 
 | Feature | Supported |
 |---------|-----------|
-| Bed Motor Control | ✅ (1-4 motors from `CAP_MOTORCOUNT`; explicit 1-4 override) |
-| One-motor TV/Bed Lift | ✅ (Standard variant; dedicated TV Lift entity, hardware validation pending) |
+| Bed Motor Control | ✅ (1-4 motors, as the receiver reports; you can set the count yourself) |
+| One-motor TV/Bed Lift | ✅ (Standard variant; its own TV Lift entity; not yet tested on hardware) |
 | Position Feedback | ❌ |
-| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ (opt-in, Standard variant; TV lift, back, legs, head and feet, hardware validation pending) |
-| Memory Presets | ✅ (dynamically detected, Standard variant only) |
-| Combined Back + Legs Control | ✅ (two-motor Standard and Star2 variants; hold-capable in the bundled card) |
-| Under-bed Lights | ✅ (Standard variant only; on/off switch, RGB / RGBW light entity on `CAP_LIGHT_RGB` / `CAP_LIGHT_RGBWI`) |
-| Light duration, automatic light, light sensitivity | ✅ (Standard variant, when advertised) |
-| Synchro/Linked Mode | ✅ (Standard variant, split-king beds with `CAP_SYNCHRO`) |
-| Remote-control lock / Remote teach | ✅ (Standard variant, when advertised) |
+| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ (opt-in, Standard variant; TV lift, back, legs, head and feet; not yet tested on hardware) |
+| Memory Presets | ✅ (as the receiver reports, Standard variant only) |
+| Combined Back + Legs Control | ✅ (two-motor Standard and Star2 variants; hold to move in the card) |
+| Under-bed Lights | ✅ (Standard variant only; on/off switch, and a color light when the receiver has RGB or RGBW lights) |
+| Light duration, automatic light, light sensitivity | ✅ (Standard variant, when the receiver has them) |
+| Synchro/Linked Mode | ✅ (Standard variant, split-king beds that support it) |
+| Remote-control lock / Remote teach | ✅ (Standard variant, when the receiver has them) |
 | PIN Authentication | ✅ (Standard variant only; PIN enrollment action) |
-| Receiver reset | ✅ (confirmed, destructive action) |
-| Massage, battery, alarm, motor status | ❌ (not exposed by this app protocol) |
+| Receiver reset | ✅ (asks for confirmation; cannot be undone) |
+| Massage, battery, alarm, motor status | ❌ |
 | Hold until release | ✅ Standard ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 350 ms refresh, then STOP); ❌ Star2 |
 
 ## Protocol Details
@@ -490,9 +490,10 @@ the bed's PIN.
 - **PIN not required:** finish setup after capability discovery confirms this.
 - **Required or rejected:** enter or correct the PIN and retry without losing
   the other settings.
-- **Could not verify:** the entry remains unsaved. Wake the bed, close other
-  connected apps, check the selected Bluetooth adapter or proxy, and retry.
-  A timeout or connection failure does not mean the PIN is wrong.
+- **Could not verify:** wake the bed, close other connected apps, check the
+  selected Bluetooth adapter or proxy, and choose **Check again**, or choose
+  **Finish setup anyway** to save the entry without a verdict. A timeout or
+  connection failure does not mean the PIN is wrong.
 
 Further setup rules:
 
@@ -550,7 +551,8 @@ command.
 - The integration handles the LOCK push, tracks STATE responses, and retains the
   25-second keepalive fallback when authentication requires it.
 - Standard Octo setup reports rejected or inconclusive PIN checks before saving
-  the entry; see [PIN verification](#pin-verification-during-setup).
+  the entry, and can finish after an inconclusive one; see
+  [PIN verification](#pin-verification-during-setup).
 - The PIN feature does not exist in OCTO Smart Control 1.1.57 (versionCode
   10157); it was added by versionCode 10301.
 
