@@ -12,7 +12,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
 from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.button import _button_entities_for
@@ -56,12 +55,11 @@ LABELS = {
 
 @pytest.mark.parametrize(("bed_type", "variant"), list(LABELS))
 async def test_explicit_profile_is_offline_constructible_and_never_auto_detected(bed_type, variant):
-    profile, group, slots = LABELS[bed_type, variant]
+    profile, _group, slots = LABELS[bed_type, variant]
     controller = await create_controller(_FactoryCoordinator(), bed_type, variant, None)
     assert controller is not None
     assert controller.protocol_diagnostics["cst_profile"] == profile
     assert controller.memory_slot_count == slots
-    assert actuator_group_for(bed_type) == group
     # Behind its family's row, which names the app.
     assert bed_type_choice(bed_type, variant) in FAMILY_STEP_ROUTES | HIDDEN_APP_CHOICES
     assert any(

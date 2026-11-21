@@ -11,7 +11,6 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
 )
@@ -114,8 +113,6 @@ def test_one_row_names_the_app_and_every_receiver():
         const.BED_TYPE_SLEEPYS_BOX24,
         const.BED_TYPE_SLEEPYS_BOX25,
     } & set(rows)
-    # The brand path opens the same question instead of a try-this-first list.
-    assert ACTUATOR_GROUPS["sleepys"] == ((const.BED_TYPE_SLEEPYS_ELITE_APP, None),)
 
 
 def test_a_detected_receiver_is_shown_as_the_family_row():

@@ -215,8 +215,18 @@ async def test_the_brand_list_names_families_and_their_apps(hass, enable_custom_
         const.BED_TYPE_SVANE,
         const.BED_TYPE_LINAK,
     } <= choices
-    # An app's own row stays in the app question's full list.
-    assert "keeson:heal_every_night" not in choices
+    # Every row of the bed-type list has its brand here, not a hand-kept subset.
+    assert {
+        const.BED_TYPE_SLEEP_NUMBER,
+        const.BED_TYPE_VIBRADORM,
+        "remacro",
+        "tempur_curve",
+        "sleeptracker",
+        "serta_mp_remote",
+    } <= choices
+    # An app its family's question offers is reached through the family row.
+    assert "richmat_classic_apps:acaa" not in choices
+    assert const.BED_TYPE_DIAGNOSTIC not in choices
     # Protocol-named routes are behind one plain-words Okin receiver row.
     from custom_components.adjustable_bed.detection import PROTOCOL_ROUTES
 
@@ -236,6 +246,23 @@ async def test_not_sure_runs_diagnostics(hass, enable_custom_integrations):
         )
     # With nothing in range, diagnostics asks for the address to browse.
     assert result["step_id"] == "diagnostic_manual"
+
+
+async def test_not_sure_offers_a_detected_devices_controls_first(
+    hass, enable_custom_integrations, mock_bluetooth_service_info
+):
+    """A device picked first and detected is not sent to diagnostics by "Not sure"."""
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": SOURCE_USER}
+    flow._discovery_info = mock_bluetooth_service_info
+    flow._app_after_device = "device"
+    result = await flow.async_step_select_family({const.CONF_BED_TYPE: "not_sure"})
+    assert result["type"] == "menu"
+    assert result["menu_options"] == ["not_sure_detected", "diagnostic"]
+    assert result["description_placeholders"]["detected"].startswith("Linak")
+    with patch.object(flow, "_async_start_new_bed", return_value={"type": "form"}) as start:
+        await flow.async_step_not_sure_detected()
+    start.assert_called_once_with(const.BED_TYPE_LINAK, None)
 
 
 async def test_a_brand_opens_its_familys_question(hass, enable_custom_integrations):

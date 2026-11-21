@@ -4924,12 +4924,32 @@ async def test_replacing_a_bond_requires_its_own_confirmation(
     ):
         result = await getattr(flow, step)({"action": "remove_bond_and_pair"})
 
-    assert result["type"] is FlowResultType.FORM
+    assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "pairing_replace_confirm"
+    assert result["menu_options"] == ["pairing_replace_bond", "pairing_keep_bond"]
     assert flow._pairing_origin_step == origin
     # Naming the adapter matters on a host with more than one.
     assert result["description_placeholders"]["transport"] == "11:22:33:44:55:66"
     removal.assert_not_called()
+
+
+async def test_keeping_the_bond_continues_with_it(hass: HomeAssistant) -> None:
+    """The dialog has no Back: keeping the bond is the confirmation's other answer."""
+    flow = _pairing_flow(hass)
+    inventory = LocalBondInventory(status=BluezReadStatus.OK, records=(_bond_record(),))
+    with (
+        _patch_inventory(inventory),
+        _patch_local_prediction(),
+        patch("custom_components.adjustable_bed.config_flow.async_remove_local_bond") as removal,
+        patch.object(flow, "_async_start_pairing_operation") as start,
+    ):
+        await flow.async_step_manual_pairing({"action": "remove_bond_and_pair"})
+        await flow.async_step_pairing_keep_bond()
+
+    removal.assert_not_called()
+    start.assert_called_once()
+    assert flow._pairing_mode == "verify_existing"
+    assert flow._pairing_remove_record is None
 
 
 async def test_bond_replacement_holds_the_address_lock_through_pairing(
@@ -5886,7 +5906,7 @@ async def test_replacement_confirmation_revalidates_the_exact_bond(
         _patch_local_prediction(),
         patch.object(flow, "_async_start_pairing_operation") as start,
     ):
-        result = await flow.async_step_pairing_replace_confirm({})
+        result = await flow.async_step_pairing_replace_bond()
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "manual_pairing"
@@ -6436,7 +6456,7 @@ async def test_a_reconnect_while_confirming_still_authorizes_the_replacement(
         _patch_local_prediction(),
         patch.object(flow, "_async_start_pairing_operation") as start,
     ):
-        await flow.async_step_pairing_replace_confirm({})
+        await flow.async_step_pairing_replace_bond()
 
     start.assert_called_once()
     assert flow._pairing_remove_record == record

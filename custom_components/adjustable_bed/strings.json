@@ -291,7 +291,11 @@
       },
       "pairing_replace_confirm": {
         "title": "Replace the existing bond",
-        "description": "**{name}** already has a Bluetooth bond with this Home Assistant host, stored on **{transport}**.\n\nContinuing removes that bond and pairs again from scratch. Home Assistant checks first that the bed is actually reachable, so a sleeping bed will not be left without a bond.\n\nSelect **Submit** to replace it, or go back to keep it and use it as it is."
+        "description": "**{name}** already has a Bluetooth bond with this Home Assistant host, stored on **{transport}**.\n\nReplacing it removes that bond and pairs again from scratch. Home Assistant checks first that the bed is reachable, so a sleeping bed is not left without a bond.",
+        "menu_options": {
+          "pairing_replace_bond": "Remove the bond and pair again",
+          "pairing_keep_bond": "Keep the existing bond and continue"
+        }
       },
       "pair_beds": {
         "title": "Combine two beds",
@@ -707,11 +711,19 @@
       },
       "select_family": {
         "title": "Which brand is on the bed?",
-        "description": "Look at the label on the motor box, the remote or the base. Each row names the apps it covers. If none of these fit, choose **Not sure**.",
+        "description": "Look at the label on the motor box, the remote or the base, and search for its brand. Each row names the apps it covers. If none of these fit, choose **Not sure, or not listed**.",
         "data": {
           "bed_type": "Brand or family",
-          "not_sure": "Not sure: run diagnostics or browse unsupported devices",
+          "not_sure": "Not sure, or not listed",
           "okin_receivers": "Okin (other receivers)"
+        }
+      },
+      "not_sure": {
+        "title": "Use the detected controls?",
+        "description": "Home Assistant recognized this device as **{detected}**. Use those controls, or look at it as an unsupported device and capture its data for a support request.",
+        "menu_options": {
+          "not_sure_detected": "Use the detected controls",
+          "diagnostic": "Treat it as unsupported"
         }
       },
       "reconfigure_bed_type": {
@@ -737,7 +749,7 @@
       },
       "okin_receiver": {
         "title": "Which Okin receiver is it?",
-        "description": "Choose the bed or remote the receiver came with. If none matches, go back and choose **Not sure**.",
+        "description": "Choose the bed or remote the receiver came with. If none matches, choose **None of these**.",
         "data": {
           "choice": "Receiver"
         }
@@ -12325,7 +12337,8 @@
         "okin_ffe": "Okin 13 or 15 series receiver",
         "okin_handle": "DewertOkin or A H Beard bed",
         "okin_nordic": "Mattress Firm 900 or iFlex bed",
-        "okin_ore": "Older ORE remote"
+        "okin_ore": "Older ORE remote",
+        "not_sure": "None of these"
       }
     },
     "majestichome_operation": {

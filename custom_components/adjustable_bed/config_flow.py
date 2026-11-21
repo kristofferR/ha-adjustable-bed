@@ -53,7 +53,6 @@ from homeassistant.helpers.translation import async_get_translations
 from homeassistant.loader import IntegrationNotFound, async_get_integration
 from homeassistant.setup import async_setup_component
 
-from .actuator_groups import ACTUATOR_GROUPS
 from .adapter import (
     discover_services,
     find_service_info_by_address,
@@ -1098,50 +1097,32 @@ def _family_rows(
 ) -> list[tuple[str, str]]:
     """Return the brand list's rows, as (choice, label), from the bed-type list.
 
-    Each brand group gives the rows that open a family question, as the list
-    shows its routes; a group with one bed type gives that row, and a group
-    with no family question gives its own rows. Its protocol-named routes,
-    which the app question does not list, are rows too. A ``detected`` route
+    Every row of the bed-type list gives its brand's row: an app its family's
+    question offers gives the family row, and any other row gives itself, named
+    brand first. The protocol-named routes, which the app question does not
+    list, share one row that asks which receiver it is. A ``detected`` route
     keeps its place under its family's row, as in the app question.
     """
     listed = {choice: label for label, choice in _bed_type_selector(detected).rows().items()}
     by_label = {label: choice for choice, label in listed.items()}
 
-    def row_for(choice: str) -> str | None:
-        if choice in listed:
-            return choice
-        # A family route is reached through its family's row.
-        return by_label.get(str(_bed_type_selector(choice).shown(choice)))
-
     def family_row(choice: str) -> str:
         # An app its family's question offers is reached through the family row.
         family = answer_family(*resolve_bed_type_choice(choice))
-        if family is None or (row := row_for(family.row)) is None:
+        if family is None:
             return choice
-        return row
+        if family.row in listed:
+            return family.row
+        # A detected route stands in for its family's row, under the row's label.
+        return by_label.get(str(_bed_type_selector(family.row).shown(family.row)), choice)
 
     rows: dict[str, str] = {}
-    for routes in ACTUATOR_GROUPS.values():
-        choices = [row_for(bed_type_choice(bed_type, variant)) for bed_type, variant in routes]
-        families = [
-            choice
-            for choice in choices
-            if choice is not None
-            and (family := question_family(choice)) is not None
-            and family.picks_route
-        ]
-        for choice in families or choices:
-            if choice is not None:
-                choice = family_row(choice)
-                rows.setdefault(choice, _brand_first(choice, listed[choice]))
-        # The protocol-named routes are off the app question. One row asks which
-        # receiver it is in plain words; a detected one keeps its own row.
-        for bed_type, _variant in routes:
-            if bed_type in PROTOCOL_ROUTES:
-                if bed_type == detected:
-                    rows.setdefault(bed_type, bed_type_label(bed_type))
-                else:
-                    rows.setdefault(_OKIN_RECEIVERS, other_receivers)
+    for choice in listed:
+        if resolve_bed_type_choice(choice)[0] == BED_TYPE_DIAGNOSTIC:
+            continue
+        row = family_row(choice)
+        rows.setdefault(row, _brand_first(row, listed[row]))
+    rows.setdefault(_OKIN_RECEIVERS, other_receivers)
     return sorted(rows.items(), key=lambda row: row[1].lower())
 
 
@@ -4643,11 +4624,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         # A device picked first suggests its confidently detected route, and its
         # family row keeps that route, as the generic form's list does.
-        detected = (
-            _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
-            if self._app_after_device == "device" and self._discovery_info is not None
-            else None
-        )
+        detected = self._detected_route()
         rows = _bed_type_selector(detected).rows()
         picker = _SearchableSelect(
             [
@@ -4876,14 +4853,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """
         not_sure = await self._get_config_translation(
             "step.select_family.data.not_sure",
-            "Not sure: run diagnostics or browse unsupported devices",
+            "Not sure, or not listed",
         )
         # A device picked first keeps its confidently detected route.
-        detected = (
-            _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
-            if self._app_after_device == "device" and self._discovery_info is not None
-            else None
-        )
+        detected = self._detected_route()
         other_receivers = await self._get_config_translation(
             "step.select_family.data.okin_receivers", "Okin (other receivers)"
         )
@@ -4901,8 +4874,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is not None:
             choice = picker(user_input[CONF_BED_TYPE])
             if choice == _FAMILY_NOT_SURE:
-                self._app_after_device = None
-                return await self.async_step_diagnostic()
+                return await self._async_not_sure()
             if choice == _OKIN_RECEIVERS:
                 return await self.async_step_okin_receiver()
             bed_type, variant = resolve_bed_type_choice(choice)
@@ -4914,11 +4886,45 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=vol.Schema({vol.Required(CONF_BED_TYPE): picker}),
         )
 
+    def _detected_route(self) -> str | None:
+        """Return a device picked first's confidently detected route, if any."""
+        if self._app_after_device != "device" or self._discovery_info is None:
+            return None
+        return _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
+
+    async def _async_not_sure(self) -> ConfigFlowResult:
+        """Offer the detected controls before diagnostics, when the device was detected."""
+        detected = self._detected_route()
+        if detected is None:
+            self._app_after_device = None
+            return await self.async_step_diagnostic()
+        return self.async_show_menu(
+            step_id="not_sure",
+            menu_options=["not_sure_detected", "diagnostic"],
+            description_placeholders={
+                "detected": str(_bed_type_selector(detected).shown(detected))
+            },
+        )
+
+    async def async_step_not_sure_detected(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Set the device up with the controls detection chose for it."""
+        detected = self._detected_route()
+        if detected is None:
+            return await self.async_step_diagnostic()
+        self._selected_bed_type, self._selected_protocol_variant = resolve_bed_type_choice(
+            detected
+        )
+        return await self._async_after_app_choice()
+
     async def async_step_okin_receiver(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which Okin receiver it is, by the beds and remotes it came with."""
         if user_input is not None:
+            if user_input["choice"] == _FAMILY_NOT_SURE:
+                return await self._async_not_sure()
             self._selected_bed_type = user_input["choice"]
             self._selected_protocol_variant = None
             return await self._async_after_app_choice()
@@ -4928,7 +4934,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 {
                     vol.Required("choice"): SelectSelector(
                         SelectSelectorConfig(
-                            options=list(OKIN_RECEIVER_ROUTES),
+                            options=[*OKIN_RECEIVER_ROUTES, _FAMILY_NOT_SURE],
                             translation_key="okin_receiver_choice",
                             mode=SelectSelectorMode.LIST,
                         )
@@ -5356,7 +5362,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         #461 requires the replace action to route through confirmation. Naming
         the exact adapter matters: on a host with more than one, "remove the
-        bond" is ambiguous until it says which.
+        bond" is ambiguous until it says which. A setup dialog has no Back, so
+        keeping the bond is the menu's other answer rather than closing it.
         """
         assert self._manual_data is not None
         record = self._pairing_remove_record
@@ -5364,42 +5371,56 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._async_pairing_step(
                 self._pairing_origin_step or "bluetooth_pairing", None
             )
-
-        if user_input is not None:
-            address = self._manual_data.get(CONF_ADDRESS, "")
-            current = await async_read_local_bonds(address)
-            current_record = current.sole_bond
-            if current_record is None or not current_record.is_same_bond_as(record):
-                # The confirmation named one exact BlueZ record. If it changed
-                # while the dialog was open, never apply that stale approval to
-                # whatever now occupies the same deterministic object path.
-                # Identity, not equality: a bed that merely reconnects flips
-                # ``connected``/``trusted`` and is still the approved bond.
-                self._pairing_remove_record = None
-                return await self._async_pairing_step(
-                    self._pairing_origin_step or "bluetooth_pairing", None
-                )
-            self._pairing_mode = "replace_local"
-            # A previous proxy retry must not route the replacement away from
-            # the host bond the user just approved removing.
-            self._pairing_retry_source = None
-            self._pairing_origin_step = self._pairing_origin_step or "bluetooth_pairing"
-            return await self._async_start_pairing_operation(
-                address,
-                async_predict_path(
-                    self.hass,
-                    address,
-                    self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
-                ),
-            )
-
-        return self.async_show_form(
+        return self.async_show_menu(
             step_id="pairing_replace_confirm",
-            data_schema=vol.Schema({}),
+            menu_options=["pairing_replace_bond", "pairing_keep_bond"],
             description_placeholders={
                 "name": self._manual_data.get(CONF_NAME, "Unknown"),
                 "transport": record.adapter_address or record.adapter_path,
             },
+        )
+
+    async def async_step_pairing_replace_bond(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Replace the bond the confirmation named, if it is still that bond."""
+        assert self._manual_data is not None
+        record = self._pairing_remove_record
+        origin = self._pairing_origin_step or "bluetooth_pairing"
+        address = self._manual_data.get(CONF_ADDRESS, "")
+        current = await async_read_local_bonds(address)
+        current_record = current.sole_bond
+        if record is None or current_record is None or not current_record.is_same_bond_as(record):
+            # The confirmation named one exact BlueZ record. If it changed
+            # while the dialog was open, never apply that stale approval to
+            # whatever now occupies the same deterministic object path.
+            # Identity, not equality: a bed that merely reconnects flips
+            # ``connected``/``trusted`` and is still the approved bond.
+            self._pairing_remove_record = None
+            return await self._async_pairing_step(origin, None)
+        self._pairing_mode = "replace_local"
+        # A previous proxy retry must not route the replacement away from
+        # the host bond the user just approved removing.
+        self._pairing_retry_source = None
+        self._pairing_origin_step = origin
+        return await self._async_start_pairing_operation(
+            address,
+            async_predict_path(
+                self.hass,
+                address,
+                self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
+            ),
+        )
+
+    async def async_step_pairing_keep_bond(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Keep the existing bond and continue with it, as the pairing form offers."""
+        self._pairing_remove_record = None
+        # The pairing form re-reads the bond and offers "use it" only while it
+        # still can; otherwise it shows its choices again.
+        return await self._async_pairing_step(
+            self._pairing_origin_step or "bluetooth_pairing", {"action": "use_existing_bond"}
         )
 
     def _async_deferred_pairing_entry(self) -> ConfigFlowResult | None:

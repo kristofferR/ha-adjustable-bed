@@ -15,7 +15,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.okin_cst import OkinCstController
 from custom_components.adjustable_bed.binary_sensor import AdjustableBedControllerStateBinarySensor
@@ -132,7 +131,6 @@ def test_nectar_move_is_an_explicit_bed_choice(
 
     assert choice in choices
     assert resolve_bed_type_choice(choice) == (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
-    assert (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE) in ACTUATOR_GROUPS["okin"]
     assert bed_type_choice(BED_TYPE_OKIN_CST, VARIANT_AUTO) == BED_TYPE_OKIN_CST
     auto_detect = detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin)
     assert BED_TYPE_OKIN_CST in auto_detect.ambiguous_types
