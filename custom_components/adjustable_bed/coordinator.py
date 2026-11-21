@@ -708,7 +708,11 @@ class AdjustableBedCoordinator(
         )
 
     async def _async_reload_after_capability_change(self) -> None:
-        """Wait for commands to release the link, then reconcile entity platforms."""
+        """Wait for commands to release the link, then reconcile entity platforms.
+
+        The guard is released before the reload: the unload waits for every
+        admitted STOP, and a STOP needs the command lock the guard holds.
+        """
         try:
             loaded = loaded_runtime(self.hass, self.entry.entry_id)
             reload_guard = (
@@ -722,10 +726,12 @@ class AdjustableBedCoordinator(
                     reload_guard,
                 )
                 async with typed_reload_guard():
-                    await self._async_reload_if_capability_changed()
+                    reload = self._claim_capability_reload()
             else:
                 async with self.async_command_operation_guard():
-                    await self._async_reload_if_capability_changed()
+                    reload = self._claim_capability_reload()
+            if reload is not None:
+                await self._async_reload_capabilities(reload)
         finally:
             self._capability_reload_scheduled = False
 
@@ -746,15 +752,27 @@ class AdjustableBedCoordinator(
 
     async def _async_reload_if_capability_changed(self) -> None:
         """Reload if this disconnected coordinator still owns the loaded entry."""
+        reload = self._claim_capability_reload()
+        if reload is not None:
+            await self._async_reload_capabilities(reload)
+
+    def _claim_capability_reload(
+        self,
+    ) -> dict[tuple[str, str], RetainedAppState] | None:
+        """Take a pending reload this disconnected coordinator may run.
+
+        Returns the Starcode app state to carry over the reload, or None when
+        no reload is due.
+        """
         if (
             not self._pending_capability_reload
             or self._capability_reload_deferrals
             or self._shutting_down
             or self._pairing_transfer_active
         ):
-            return
+            return None
         if self._client is not None and self._client.is_connected:
-            return
+            return None
         loaded = loaded_runtime(self.hass, self.entry.entry_id)
         owns_loaded_child = False
         if isinstance(self.entry, ChildEntryView) and loaded is not None:
@@ -762,7 +780,7 @@ class AdjustableBedCoordinator(
             side = self.entry.data.get(CONF_SIDE)
             owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
         if loaded is not self and not owns_loaded_child:
-            return
+            return None
         from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         retained_states = {
@@ -773,12 +791,19 @@ class AdjustableBedCoordinator(
             and child.starcode_app_retained_state.address == child.address
         }
         self._pending_capability_reload = False
+        return retained_states
+
+    async def _async_reload_capabilities(
+        self, retained_states: dict[tuple[str, str], RetainedAppState]
+    ) -> None:
+        """Reload the entry and give Starcode children back their app state."""
         if not await self.hass.config_entries.async_reload(self.entry.entry_id):
             return
         if not retained_states:
             return
         await async_import_modules(self.hass, "beds.starcode.abm5_4")
         from .beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+        from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         reloaded = loaded_runtime(self.hass, self.entry.entry_id)
         for child in self._starcode_reload_coordinators(reloaded):

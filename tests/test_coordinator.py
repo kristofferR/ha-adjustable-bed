@@ -3187,6 +3187,54 @@ class TestStopAfterCancel:
 
         mock_disconnect.assert_awaited_once_with()
 
+    async def test_stop_during_capability_reload_is_answered(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """A STOP queued behind a pending capability reload is sent, and the reload ends.
+
+        The reload's unload waits for every admitted STOP, so the reload must
+        not hold the command lock the STOP needs.
+        """
+        del mock_bleak_client
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator._controller
+        controller.stop_all = AsyncMock()
+        hass.data.setdefault(DOMAIN, {})[mock_config_entry.entry_id] = coordinator
+
+        async def reload(_entry_id: str) -> bool:
+            await coordinator.async_shutdown()
+            return True
+
+        await coordinator._command_lock.acquire()
+        coordinator._client = None
+        coordinator._pending_capability_reload = True
+        with (
+            patch.object(coordinator, "async_ensure_connected", AsyncMock(return_value=True)),
+            patch.object(hass.config_entries, "async_reload", side_effect=reload) as reloaded,
+        ):
+            coordinator._schedule_pending_capability_reload()
+            await asyncio.sleep(0)
+            stop = asyncio.create_task(coordinator.async_stop_command())
+            await asyncio.sleep(0)
+            coordinator._command_lock.release()
+            # A shielded STOP cannot be cancelled, so wait without wait_for.
+            done, _ = await asyncio.wait({stop}, timeout=2)
+            assert stop in done, "STOP deadlocked behind the capability reload"
+            await stop
+            for _ in range(20):
+                if not coordinator._capability_reload_scheduled:
+                    break
+                await asyncio.sleep(0.01)
+
+        controller.stop_all.assert_awaited_once_with()
+        reloaded.assert_awaited_once_with(mock_config_entry.entry_id)
+        assert not coordinator._capability_reload_scheduled
+
     async def test_stop_command_when_not_connected(
         self,
         hass: HomeAssistant,
