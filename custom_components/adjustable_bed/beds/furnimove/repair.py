@@ -289,7 +289,7 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
                     options=options,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                     # Translates only the Okimat row; a handset keeps its own label.
-                    **({"translation_key": _OKIMAT_CST} if okimat else {}),
+                    translation_key=_OKIMAT_CST,
                 )
             )}),
         )
