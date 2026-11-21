@@ -66,6 +66,7 @@ from custom_components.adjustable_bed.config_flow import (
     BondRouteMismatchError,
     NotAdvertisingError,
     _default_motor_count,
+    _family_name,
     _is_valid_motor_count,
 )
 from custom_components.adjustable_bed.const import (
@@ -135,8 +136,11 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KEESON_VARIANT_ERGOMOTION,
+    LEGACY_BED_TYPE_MAPPING,
     LEGGETT_VARIANT_GEN2,
     MALOUF_LAYOUT_HILO,
+    NORDIC_UART_SERVICE_UUID,
+    OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
     OKIN_CST_VARIANT_CAREFREE,
@@ -157,6 +161,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.detection import (
     BED_TYPE_DISPLAY_NAMES,
     bed_type_choice,
+    bed_type_label,
     detect_bed_type,
 )
 from custom_components.adjustable_bed.discovery_settings import (
@@ -1572,6 +1577,26 @@ async def _open_options_form(hass: HomeAssistant, entry_id: str) -> Any:
     )
 
 
+async def _discover(hass: HomeAssistant, name: str, service_uuids: list[str] | None = None):
+    """Start a discovery flow for an advertisement."""
+    info = MagicMock()
+    info.name = name
+    info.address = "AA:BB:CC:DD:EE:01"
+    info.rssi = -60
+    info.manufacturer_data = {}
+    info.service_data = {}
+    info.service_uuids = service_uuids or []
+    info.source = "local"
+    info.device = MagicMock()
+    info.device.name = name
+    info.connectable = True
+    info.time = 0
+    info.tx_power = None
+    return await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info
+    )
+
+
 class TestBluetoothDiscoveryFlow:
     """Test Bluetooth discovery flow."""
 
@@ -1739,6 +1764,11 @@ class TestBluetoothDiscoveryFlow:
             data=mock_bluetooth_service_info_octo_star2,
         )
 
+        # Any module can advertise the short UUID, so the user confirms Octo first.
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": BED_TYPE_OCTO}
+        )
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
         result = await _past_app_question(hass, result)
@@ -1975,29 +2005,32 @@ class TestBluetoothDiscoveryFlow:
         # Every other app, Diagnostic included, is one answer away.
         assert list(options)[-1] == "another"
 
-    async def test_bluetooth_confirm_legacy_alias_default_stays_selectable(
+    async def test_bluetooth_disambiguation_offers_current_routes_not_compatibility_ids(
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info_ambiguous_okin: MagicMock,
         enable_custom_integrations,
     ):
-        """A legacy alias chosen by disambiguation opens the Okin question, whose
-        Keep saves the alias unchanged."""
+        """A detected compatibility ID is offered as its current route, whose
+        Okin question keeps that route."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": SOURCE_BLUETOOTH},
             data=mock_bluetooth_service_info_ambiguous_okin,
         )
         assert result["step_id"] == "bluetooth_disambiguate"
+        offered = set(select_options(result, "bed_type_choice"))
+        assert BED_TYPE_OKIN_UUID in offered
+        assert not offered & set(LEGACY_BED_TYPE_MAPPING)
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={"bed_type_choice": BED_TYPE_OKIMAT},
+            user_input={"bed_type_choice": BED_TYPE_OKIN_UUID},
         )
         assert result["step_id"] == "okin_family"
         assert "keep" in select_options(result, "choice")
         flow = hass.config_entries.flow._progress[result["flow_id"]]
-        assert flow._manual_data[CONF_BED_TYPE] == BED_TYPE_OKIMAT
+        assert flow._manual_data[CONF_BED_TYPE] == BED_TYPE_OKIN_UUID
         hass.config_entries.flow.async_abort(result["flow_id"])
 
     async def test_bluetooth_confirm_diagnostic_bed_type_creates_entry(
@@ -2375,7 +2408,7 @@ class TestBluetoothDiscoveryFlow:
         # Select a specific bed type from disambiguation
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={"bed_type_choice": BED_TYPE_OKIMAT},
+            user_input={"bed_type_choice": BED_TYPE_OKIN_UUID},
         )
 
         # Its family asks which app runs it
@@ -2405,6 +2438,71 @@ class TestBluetoothDiscoveryFlow:
         assert result["step_id"] == "select_app"
         assert suggested(result, CONF_BED_TYPE) is None
         hass.config_entries.flow.async_abort(result["flow_id"])
+
+    async def test_bluetooth_discovery_states_the_route_it_offers(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ):
+        """The card names the family of the app it lists, and the app the user chose."""
+        result = await _discover(hass, "400i")  # a name-only app candidate
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": "galaxy"}
+        )
+        flow = hass.config_entries.flow._progress[result["flow_id"]]
+        result = await flow.async_step_bluetooth_confirm()
+        assert result["description_placeholders"]["family"] != "Unsupported bed"
+        hass.config_entries.flow.async_abort(result["flow_id"])
+
+        result = await _discover(hass, "HMSoft", ["0000ffe0-0000-1000-8000-00805f9b34fb"])
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": BED_TYPE_MOTOSLEEP}
+        )
+        flow = hass.config_entries.flow._progress[result["flow_id"]]
+        result = await flow.async_step_bluetooth_confirm()
+        assert result["description_placeholders"]["family"] == _family_name(
+            flow._discovery_info, BED_TYPE_MOTOSLEEP
+        )
+        assert result["description_placeholders"]["family"] != _family_name(
+            flow._discovery_info, BED_TYPE_OCTO
+        )
+        hass.config_entries.flow.async_abort(result["flow_id"])
+
+    async def test_bluetooth_disambiguation_orders_candidates_by_likelihood(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ):
+        """Equal name-only candidates read alphabetically; a service's own route leads."""
+        result = await _discover(hass, "Smartbed")
+        labels = [bed_type_label(key) for key in select_options(result, "bed_type_choice")]
+        assert labels[:-1] == sorted(labels[:-1], key=str.lower)
+        hass.config_entries.flow.async_abort(result["flow_id"])
+
+        result = await _discover(hass, "ESP32", [NORDIC_UART_SERVICE_UUID])
+        keys = [key for key in select_options(result, "bed_type_choice") if key != "show_all"]
+        assert keys[0] == BED_TYPE_RICHMAT
+        assert keys[1:] == sorted(keys[1:], key=lambda key: bed_type_label(key).lower())
+        hass.config_entries.flow.async_abort(result["flow_id"])
+
+    @pytest.mark.parametrize(
+        ("name", "uuid"),
+        [("DA1458X", OCTO_STAR2_SERVICE_UUID), ("HMSoft", "00001234-0000-1000-8000-00805f9b34fb")],
+    )
+    async def test_an_uncertain_match_asks_before_its_app_question(
+        self, hass: HomeAssistant, enable_custom_integrations, name: str, uuid: str
+    ):
+        """Even one uncertain candidate goes through the chooser that says it may not be a bed."""
+        result = await _discover(hass, name, [uuid])
+        assert result["step_id"] == "bluetooth_disambiguate"
+        hass.config_entries.flow.async_abort(result["flow_id"])
+
+    async def test_an_unnamed_shared_service_is_not_offered_or_set_up(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ):
+        """An unnamed Nordic UART gadget aborts before the integration loads."""
+        result = await _discover(hass, "AA:BB:CC:DD:EE:01", [NORDIC_UART_SERVICE_UUID])
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "not_supported"
+        assert DOMAIN not in hass.config.components
 
     async def test_bluetooth_disambiguate_creates_entry_with_selected_type(
         self,

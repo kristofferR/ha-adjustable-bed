@@ -290,6 +290,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_LAYOUT_APP_BED_TYPES,
+    LEGACY_BED_TYPE_MAPPING,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
@@ -345,6 +346,7 @@ from .detection import (
     bed_type_label,
     detect_bed_type,
     detect_bed_type_detailed,
+    detect_new_bed,
     detect_richmat_remote_from_name,
     get_bed_type_options,
     is_mac_like_name,
@@ -430,6 +432,8 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 # Below it, or when detection is ambiguous (shared-UUID guesses such as OKIN
 # receivers), nothing is suggested and the user chooses.
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
+# Detection's confidence in a candidate only an app's scan name suggests.
+_NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {"super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
@@ -1159,13 +1163,14 @@ def _brand_first(choice: str, label: str) -> str:
     return f"{family.name}: {family.apps}"
 
 
-def _family_name(info: BluetoothServiceInfoBleak) -> str:
+def _family_name(info: BluetoothServiceInfoBleak, bed_type: str | None = None) -> str:
     """Name a discovered bed's family as its row in the bed-type list names it.
 
+    ``bed_type`` is the route the flow offers, when it already has one.
     A family row reads "<Family>: <its apps>" and another row "<Name> (<apps or
     models>)", so the part before the colon or parenthesis names the family.
     """
-    bed_type = detect_bed_type(info) or BED_TYPE_DIAGNOSTIC
+    bed_type = bed_type or detect_bed_type(info) or BED_TYPE_DIAGNOSTIC
     if (family := _row_family(bed_type)) is not None:
         return family
     return bed_type_label(bed_type).split(" (", 1)[0]
@@ -1501,7 +1506,8 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
             candidate not in _EXPLICIT_APP_HINTS for candidate in (result.ambiguous_types or ())
         )
     ):
-        return result.bed_type
+        # A new bed gets the current route; compatibility IDs stay with old entries.
+        return LEGACY_BED_TYPE_MAPPING.get(result.bed_type, result.bed_type)
     return None
 
 
@@ -3384,27 +3390,33 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         }
 
     def _prepare_disambiguation(self, detection_result: DetectionResult) -> bool:
-        """Prepare the focused bed-type chooser for an ambiguous detection."""
+        """Prepare the focused bed-type chooser for an ambiguous detection.
+
+        Every uncertain match asks here, even with one candidate, because the
+        chooser says the device may not be a bed. A new bed is offered current
+        routes, never a compatibility ID. The detected type leads when its own
+        evidence ranks it above a name-only candidate; otherwise every
+        candidate is equally likely and the list is alphabetical.
+        """
         self._disambiguation_types = None
         self._disambiguated_bed_type = None
 
         bed_type = detection_result.bed_type
-        if (
-            bed_type is None
-            or detection_result.confidence >= 0.7
-            or (not detection_result.ambiguous_types and bed_type != BED_TYPE_MOTION_BED)
-        ):
+        if bed_type is None or detection_result.confidence >= 0.7:
             return False
 
-        seen: set[str] = set()
-        disambiguation_types: list[str] = []
+        candidates: list[str] = []
         for candidate in (bed_type, *(detection_result.ambiguous_types or ())):
+            candidate = LEGACY_BED_TYPE_MAPPING.get(candidate, candidate)
             if candidate in VIBRADORM_FAMILY.asks:
                 candidate = BED_TYPE_VIBRADORM
-            if candidate not in seen:
-                seen.add(candidate)
-                disambiguation_types.append(candidate)
-        self._disambiguation_types = disambiguation_types
+            if candidate not in candidates:
+                candidates.append(candidate)
+        lead = candidates[:1] if detection_result.confidence > _NAME_ONLY_CONFIDENCE else []
+        self._disambiguation_types = [
+            *lead,
+            *sorted(candidates[len(lead) :], key=lambda key: bed_type_label(key).lower()),
+        ]
         return True
 
     async def _get_config_translation(self, key: str, default: str) -> str:
@@ -3812,11 +3824,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             return self.async_abort(reason="discovery_disabled")
 
-        # First-time setup can fail before any entry exists. Load the domain
-        # so the support action and its download route are already available.
-        await async_setup_component(self.hass, DOMAIN, {})
-
-        _LOGGER.info(
+        _LOGGER.debug(
             "Bluetooth discovery triggered for device: %s (name: %s, RSSI: %s)",
             discovery_info.address,
             discovery_info.name,
@@ -3841,7 +3849,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_abort(reason="already_configured")
 
         # Use detailed detection to get confidence and ambiguity info
-        detection_result = detect_bed_type_detailed(discovery_info)
+        detection_result = detect_new_bed(discovery_info)
         bed_type = detection_result.bed_type
 
         if bed_type is None:
@@ -3857,6 +3865,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 discovery_info.address,
             )
             return self.async_abort(reason="not_supported")
+
+        # First-time setup can fail before any entry exists. Load the domain
+        # so the support action and its download route are already available.
+        await async_setup_component(self.hass, DOMAIN, {})
 
         _LOGGER.info(
             "Detected supported bed: %s at %s (name: %s) with confidence %.1f",
@@ -3905,11 +3917,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_bluetooth_disambiguate(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle disambiguation when BLE detection is ambiguous.
+        """Ask which candidate app runs a device whose detection is uncertain.
 
-        Shows a focused list of 2-4 candidate bed types instead of the full
-        dropdown with 20+ options, making it easier for users to select the
-        correct type when the BLE service UUID matches multiple protocols.
+        Shows the candidates detection found, in ``_prepare_disambiguation``'s
+        order, instead of every app. The device may not be a bed, and every
+        app stays one choice away.
         """
         assert self._discovery_info is not None
         assert self._disambiguation_types is not None
@@ -3927,16 +3939,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _LOGGER.debug("User disambiguated bed type to: %s", selected)
             return await self.async_step_bluetooth_confirm()
 
-        # Build options for disambiguation - only the relevant 2-4 types
+        # Build options for disambiguation - only the detected candidates
         options: list[SelectOptionDict] = []
         for bed_type in self._disambiguation_types:
             display_name = bed_type_label(bed_type)
             options.append(SelectOptionDict(value=bed_type, label=display_name))
 
-        # Add "Show all bed types" fallback option with translated label
+        # Every app stays one choice away, with a translated label
         show_all_label = await self._get_config_translation(
             "step.bluetooth_disambiguate.data.show_all_option",
-            "Show all bed types...",
+            "Another app or remote: search every app",
         )
         options.append(SelectOptionDict(value="show_all", label=show_all_label))
 
@@ -3976,8 +3988,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         self._new_bed_origin = "discovered"
         staged = self._unasked_route
-        detection = detect_bed_type_detailed(self._discovery_info)
-        detected = self._disambiguated_bed_type or detection.bed_type
+        detection = detect_new_bed(self._discovery_info)
+        # A new bed gets the current route; compatibility IDs stay with old entries.
+        detected = self._disambiguated_bed_type or (
+            detection.bed_type and LEGACY_BED_TYPE_MAPPING.get(detection.bed_type, detection.bed_type)
+        )
         if user_input is None and staged is None:
             if self._disambiguated_bed_type is None and self._prepare_disambiguation(detection):
                 return await self.async_step_bluetooth_disambiguate()
@@ -4027,14 +4042,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # A bed type that runs only as one of its apps suggests none of them.
             route = None
         default = picker.shown(route) if isinstance(picker, _SearchableSelect) else route
-        if detection.confidence < 0.7 and detection.ambiguous_types:
-            # A paragraph of its own; translations carry no surrounding space.
-            detection_note = "\n\n" + await self._get_config_translation(
-                "step.bluetooth_confirm.data.uncertain",
-                "Detection is not certain, so check that the app below is yours.",
-            )
-        else:
-            detection_note = ""
         marker = (
             vol.Required(CONF_BED_TYPE, default=default)
             if default is not None
@@ -4046,8 +4053,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={
                 "name": self._discovery_info.name or "Unknown",
                 "address": self._discovery_info.address.upper(),
-                "family": _family_name(self._discovery_info),
-                "detection_note": detection_note,
+                "family": _family_name(self._discovery_info, detected),
             },
         )
 
