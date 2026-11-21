@@ -309,7 +309,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
 
     @property
     def memory_slot_names(self) -> tuple[str | None, ...]:
-        return ("Custom Mode",)
+        return ("Custom mode",)
 
     @property
     def held_control_options(self) -> tuple[str, ...]:

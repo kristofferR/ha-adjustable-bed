@@ -1345,8 +1345,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         if spec.translation_key is not None:
             self._attr_translation_key = spec.translation_key
             if spec.translation_placeholders is not None:
+                # "Save {preset}" sets the preset's name inside a sentence.
                 self._attr_translation_placeholders = {
-                    name: display_label(value)
+                    name: display_label(value, mid_sentence=name == "preset")
                     for name, value in spec.translation_placeholders.items()
                 }
 

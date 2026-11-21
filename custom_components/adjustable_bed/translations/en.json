@@ -2956,7 +2956,7 @@
         "name": "Linked motion down"
       },
       "adjustable_bed_speech": {
-        "name": "Voice: {action}"
+        "name": "{action}"
       },
       "smart_comfort_home": {
         "name": "Home"
@@ -3097,10 +3097,10 @@
         "name": "Cycle massage timer"
       },
       "smart_sleep_massage_head_strength": {
-        "name": "Cycle head massage strength"
+        "name": "Cycle head massage intensity"
       },
       "smart_sleep_massage_foot_strength": {
-        "name": "Cycle foot massage strength"
+        "name": "Cycle foot massage intensity"
       },
       "smart_sleep_head_up": {
         "name": "Head up"
@@ -3214,16 +3214,16 @@
         "name": "Elevation down"
       },
       "symphony_head_foot_up": {
-        "name": "Head and foot up"
+        "name": "Head + feet up"
       },
       "symphony_head_foot_down": {
-        "name": "Head and foot down"
+        "name": "Head + feet down"
       },
       "symphony_head_foot_lift_up": {
-        "name": "Head and foot lifting up"
+        "name": "Head + feet lifting up"
       },
       "symphony_head_foot_lift_down": {
-        "name": "Head and foot lifting down"
+        "name": "Head + feet lifting down"
       },
       "yamada_query_alarms": {
         "name": "Refresh alarms"
@@ -3244,10 +3244,10 @@
         "name": "Actuator down"
       },
       "bedgear_combined_up": {
-        "name": "Head and foot up"
+        "name": "Head + feet up"
       },
       "bedgear_combined_down": {
-        "name": "Head and foot down"
+        "name": "Head + feet down"
       },
       "starcode_abm5_4_light_on": {
         "name": "Turn floor light on"
@@ -3271,10 +3271,10 @@
         "name": "Cycle massage timer"
       },
       "onlysnore_massage_foot_strength_next": {
-        "name": "Cycle foot massage strength"
+        "name": "Cycle foot massage intensity"
       },
       "onlysnore_massage_head_strength_next": {
-        "name": "Cycle head massage strength"
+        "name": "Cycle head massage intensity"
       },
       "onlysnore_refresh": {
         "name": "Refresh status"
@@ -3532,10 +3532,10 @@
         "name": "Toggle light"
       },
       "ormatek_both_up": {
-        "name": "Head and feet up"
+        "name": "Head + feet up"
       },
       "ormatek_both_down": {
-        "name": "Head and feet down"
+        "name": "Head + feet down"
       },
       "adjustamattress_lift_head": {
         "name": "Lift head"
@@ -3885,16 +3885,16 @@
         "name": "Elevation"
       },
       "symphony_head_foot": {
-        "name": "Head and foot"
+        "name": "Head + feet"
       },
       "symphony_head_foot_lift": {
-        "name": "Head and foot lifting"
+        "name": "Head + feet lifting"
       },
       "bedgear_actuator": {
         "name": "Actuator"
       },
       "bedgear_combined": {
-        "name": "Head and foot"
+        "name": "Head + feet"
       },
       "ultramatic_head": {
         "name": "Head"
@@ -3942,7 +3942,7 @@
         "name": "Lift 3"
       },
       "ormatek_both": {
-        "name": "Head and feet"
+        "name": "Head + feet"
       },
       "betterliving2_all_sections": {
         "name": "All sections"
@@ -5097,7 +5097,7 @@
         "name": "Massage timer"
       },
       "sealy_massage_timer": {
-        "name": "Massage time remaining"
+        "name": "Massage remaining time"
       },
       "sealy_massage_head_level": {
         "name": "Head massage intensity"
@@ -5116,7 +5116,7 @@
         "name": "Massage timer"
       },
       "superior_sleep_timer_seconds": {
-        "name": "Remaining massage time"
+        "name": "Massage remaining time"
       },
       "superior_sleep_mode": {
         "name": "Massage mode"
@@ -6584,7 +6584,7 @@
         }
       },
       "smart_sleep_head_strength": {
-        "name": "Head massage strength",
+        "name": "Head massage intensity",
         "state": {
           "1": "Level 1",
           "2": "Level 2",
@@ -6593,7 +6593,7 @@
         }
       },
       "smart_sleep_foot_strength": {
-        "name": "Foot massage strength",
+        "name": "Foot massage intensity",
         "state": {
           "1": "Level 1",
           "2": "Level 2",
