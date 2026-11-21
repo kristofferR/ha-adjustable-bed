@@ -50,7 +50,9 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
     # Each app is an answer of the Richmat question and has its own searchable row.
     rows = {o['value']: o['label'] for o in get_bed_type_options()}
     for app, name in APP_NAMES.items():
-        assert rows['richmat_classic_apps:' + app] == f'{name} app'
+        # The current L&P app's row says so, beside its older version's own row.
+        suffix = ' (newer version)' if app == 'lp2' else ''
+        assert rows['richmat_classic_apps:' + app] == f'{name} app{suffix}'
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
         'luunarise2': 604, 'powercool': 586, 'lp2': 559,

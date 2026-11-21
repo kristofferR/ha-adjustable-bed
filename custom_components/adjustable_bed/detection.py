@@ -739,7 +739,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LOGICDATA_APP: "MOTIONrelax and Sleep Smart apps (LOGICDATA)",
     BED_TYPE_LOGICDATA_AIR_PUMP: "Logicdata Sleep Smart air mattress pump",
     BED_TYPE_MALOUF_APP: "Malouf Base / Lucid Base apps",
-    BED_TYPE_SBI: "SBI/Q-Plus (Costco) base, without the Q-Plus app",
+    BED_TYPE_SBI: "SBI/Q-Plus (Costco, without the Q-Plus app)",
     BED_TYPE_SCOTT_LIVING: "Scott Living",
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Fuzion (Climate 360, FlexFit)",

@@ -446,7 +446,7 @@ async def test_pairlink_option_flow_requires_current_local_source_and_exact_cred
 
     from custom_components.adjustable_bed import bluetooth_transport
     from custom_components.adjustable_bed.config_flow import (
-        _async_pairlink_settings_schema,
+        _pairlink_settings_schema,
         _validate_pairlink_option_values,
     )
 
@@ -468,7 +468,7 @@ async def test_pairlink_option_flow_requires_current_local_source_and_exact_cred
         lambda *_args, **_kwargs: SimpleNamespace(manufacturer_data=_manufacturer_data()),
     )
 
-    schema = await _async_pairlink_settings_schema(hass, {})
+    schema = _pairlink_settings_schema(hass, {})
     assert schema
     # The role choices are translated, in the words their help text uses.
     role = next(value for key, value in schema.items() if key.schema == CONF_PAIRLINK_ROLE)
