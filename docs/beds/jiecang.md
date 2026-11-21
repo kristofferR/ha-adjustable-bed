@@ -28,8 +28,8 @@ Brands using Jiecang actuators:
   the Sleep Smart Air Mattress app
 - Jiecang-branded controllers
 
-The Comfort Motion app works with any of these beds; it does not check the model
-or Bluetooth name. The ERGOBALANCE, Dream Motion and Dream Motion HD apps look
+The Comfort Motion app does not check the model or Bluetooth name; it works with
+G1 and G2 receivers, not G3. The ERGOBALANCE, Dream Motion and Dream Motion HD apps look
 the same over Bluetooth, so pick the app you use in setup (see
 [Choosing a profile](#choosing-a-profile)).
 

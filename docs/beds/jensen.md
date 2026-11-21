@@ -33,8 +33,10 @@ there too), then answer which app and bed you use: the Jensen Adjustable Sleep
 app with a JMC400 bed (this page; it then asks the PIN, motor count, whether
 massage motors are fitted and whether to read positions) or with a
 [LinOn](#linon) bed, or the [Svane Remote](svane.md) app with a Svane Bed or a
-JMC400 bed. Both apps work with JMC400 and LinOn beds, so the bed's name only
-suggests an answer, the same way in Bluetooth and manual setup. A LinON Entry box is JMC400 hardware, not a
+JMC400 bed. Both apps offer a JMC400 choice, and LinOn and Svane beds share
+Bluetooth services while needing different commands, so the bed's name only
+suggests an answer, the same way in Bluetooth and manual setup. Pick the choice
+for your app and your bed. A LinON Entry box is JMC400 hardware, not a
 LinOn bed. **Reconfigure** changes an existing bed's app or bed; existing
 entries keep their route until then. Reconfigure lists the JMC400 route by its
 own name, for an entry of another bed type to switch to it.

@@ -45,7 +45,7 @@ controls.
 | Memory Presets | Two recalls; no save | Two recalls; save for six named presets |
 | Massage | All/off, wave, timer and strength steps | All/off, steps and fixed choices |
 | Lights | Toggle | On/off and toggle; brightness shown, not settable |
-| Alarm / clock | Weekly alarms, five wake actions; flexible wake on model 67 | Weekly alarms, nine wake actions with the app's labels |
+| Alarm / clock | Weekly alarms set with a raw `week_mask`, five wake actions; flexible wake on model 67 | Weekly alarms by weekday or raw mask, nine wake actions with the app's labels |
 | Shared settings | Privacy, antisnore, sensitivity, local child mode | Same |
 
 ## Choosing a profile

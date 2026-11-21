@@ -52,7 +52,7 @@ so the name does not tell which app's controls your bed needs.
 |---------|--------------------|-------------|----------|------------|
 | Motor Control | ✅ Back and legs; head plus hip (K1) or lumbar (K2); bed height and tilt on the S4-Y | ✅ Back and legs | ✅ Per layout: back, waist/hip, head, legs, back and leg, lift, rise and fall | ✅ Your layout's controls, including split and linked sides |
 | Position Feedback | ❌ | ❌ | ❌ | ⚠️ Raw positions A–D (units unknown) |
-| Presets | ✅ Flat, Zero-G, Anti-Snore, TV on every route; relaxing bedtime on MotionFlex | ✅ Flat, Favourite, Anti-Snore, TV, Zero-G | ✅ Flat, TV, Zero Gravity, Anti Snore where your layout has them | ✅ The app's named presets, recall and save |
+| Presets | ✅ Flat, Zero-G, Anti-Snore, TV on every identified route (none on beds whose route is unknown); relaxing bedtime on MotionFlex | ✅ Flat, Favourite, Anti-Snore, TV, Zero-G | ✅ Flat, TV, Zero Gravity, Anti Snore where your layout has them | ✅ The app's named presets, recall and save |
 | Memory Presets | ✅ 2 numbered slots | ✅ 1 Favourite slot, saves for four stored presets | ✅ Five recalls and saves, plus clear buttons | ✅ As named in the app |
 | Massage | ⚠️ Home profiles only (zones, wave, K1 circulation, timers) | ✅ Back and leg levels 0–3, four modes, timers, steps, Off | ✅ Circulation (types 1–5), head/foot, wave, timers | ✅ Bed massage; TL-A air programs and pressure |
 | Lights | ⚠️ MotionFlex levels 0–10 and timers; timers only on HomeKobo and Sweet Night routes | ✅ Levels 0–10, timed lighting, Off | ⚠️ Light-duration buttons only | ✅ |

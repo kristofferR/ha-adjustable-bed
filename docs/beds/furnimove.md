@@ -39,7 +39,7 @@ OKIN Smart Remote app (`com.okin.okinsmartcomfort`) described here.
 | Sync / Child Lock | ✅ (buttons and their on/off state) |
 | Simultaneous movement | ✅ (`adjustable_bed.furnimove_move_simultaneously`) |
 | Rename | ✅ (`adjustable_bed.rename`) |
-| Pairing | Not required; Home Assistant asks the bed to pair in the background |
+| Pairing | Optional; Home Assistant may ask some receivers to pair in the background |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 100 ms refresh, then the handset's release) |
 
 ## Protocol Details

@@ -19,7 +19,7 @@ Nerum app profiles, with Bluetooth names beginning `okin` or `smartbed`
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | Head/back and foot; with 2, 3 or 4 motors chosen in setup, also both together, head tilt and lumbar |
+| Motor Control | Head/back and foot; with 2 motors chosen in setup, also both together; with 3, also head tilt; with 4, also lumbar |
 | Position Feedback | No |
 | Memory Presets | P1: M1; P2/P3: M1 and M2 |
 | Saving memory positions | ❌ |

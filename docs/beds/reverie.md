@@ -32,7 +32,7 @@
 | Under-bed Lights | ✅ (toggle, by model) | ✅ (brightness/RGB, by model) | ✅ (on/off, level, RGB) |
 | Zero-G / Anti-Snore / Flat | ✅ (by model) | ✅ (by model) | ✅ |
 | Routines and diagnostics | ✅ (per bed) | ✅ (per bed, by model) | ✅ |
-| Home Assistant joins the Pairlink network | ❌ | ❌ | ✅ (chosen in setup; needs a connected bed) |
+| Home Assistant joins the Pairlink network | ❌ | ❌ | ✅ (chosen in setup; needs a Linux Bluetooth adapter on the Home Assistant host and a paired, connected bed; see [Local peripheral role](#local-peripheral-role)) |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ |
 
 These features are not yet tested on hardware. Which ones you get depends on

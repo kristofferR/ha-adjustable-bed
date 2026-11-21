@@ -25,7 +25,7 @@ lumbar controls, as both apps do, even where a seat lacks that motor.
 | Position feedback | ❌ (raw counters only; no sliders) | Same |
 | Memory | Two slots, recall and save | Same |
 | Accessories | Per-seat cup power, base RGB/brightness/power, reading light power/brightness | Same |
-| Bluetooth rename | 1–16 plain characters | Same |
+| Bluetooth rename | 1–16 ASCII characters (no accented letters) | Same |
 | Massage / alarm / coupled control | ❌ | ❌ |
 
 ## Choosing a profile

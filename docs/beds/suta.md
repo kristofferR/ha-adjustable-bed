@@ -31,7 +31,7 @@ are not yet tested on hardware.
 | Lights | Some layouts only |
 | Local clock / alarm | P1 date, list, set and disable |
 | Heating | TEMP power, light, side setpoint and timer |
-| Split sides | MOON and TEMP: pick the side in setup; two paired beds each keep their own name |
+| Split sides | MOON and TEMP: each control names its side, and actions that need one take `logical_side`; two paired beds each keep their own name |
 
 ## Choosing a profile
 

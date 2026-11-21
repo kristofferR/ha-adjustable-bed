@@ -32,7 +32,7 @@ name.
 | Feature | Bed Control | Performance Series |
 |---------|-------------|--------------------|
 | Motor control | ✅ (Back, Legs, Head, Feet, Base, as the bed reports them) | ✅ |
-| Moving two sections together | ✅ (all 40 combinations) | ❌ |
+| Moving two sections together | ✅ (any two sections your bed has) | ❌ |
 | Flat | ✅ | ✅ |
 | All up | ✅ | ❌ |
 | Four memory recalls and stores | TD3/Advanced only | ✅ |

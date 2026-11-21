@@ -27,9 +27,9 @@
 | Lights | ✅ RGB strip on products with one; otherwise color and timer |
 | Alarms | ✅ One alarm; repeating alarms on products that have them |
 | Fan and heating | ✅ On products that have them |
-| Music | ✅ On products that have it |
+| Music | ✅ On products that have it, once the bed reports music support |
 | Sleep sensor | ✅ Live data, reports, device information and SXB settings from the separate sleep module |
-| Split sides | ✅ On products with two sides |
+| Split sides | ✅ On products with two sides, except on Nordic UART receivers |
 
 ## Protocol Details
 
