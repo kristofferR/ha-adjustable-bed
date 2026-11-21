@@ -963,6 +963,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                         icon=icon,
                         translation_key=key,
                         cancel_movement=False,
+                        # The bed's self-test is maintenance: there to enable.
+                        diagnostic=True,
                     )
                 )
         return unique_buttons(specs)

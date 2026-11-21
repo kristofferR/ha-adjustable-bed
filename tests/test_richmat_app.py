@@ -740,3 +740,23 @@ async def test_blanket_mode_readiness_requires_complete_declared_checksum_valid_
     c._notification(link, None, bytearray(complete[-1:]))
     assert c._blanket_mode_received.is_set()
     assert (c.blanket["f"], c.blanket["17"]) == (30, 35)
+
+
+async def test_a_tile_without_a_save_code_offers_no_save_and_the_reset_asks_first(coordinator):
+    """14 products flag their "Factory Reset" tile as savable; its action has no long press."""
+    product, detail = next(
+        (key, str(row[0]))
+        for key, p in PRODUCTS.items()
+        for row in p["versions"]["other"]["presets"]
+        if row[1]
+        and ACTIONS[str(row[0])]["enum"] == "deviceFunctionItemRelieveZeroGravitySetting"
+    )
+    assert ACTIONS[detail]["long"] == 0
+    c = controller(coordinator, product)
+    specs = {spec.key: spec for spec in c.controller_button_specs}
+    assert "richmat_app_save_" + detail not in specs
+    with pytest.raises(ValueError, match="no save control"):
+        await c.press(detail, save=True)
+    assert written(c) == []
+    reset = specs["richmat_app_" + detail]
+    assert reset.requires_confirmation and not reset.entity_registry_enabled_default

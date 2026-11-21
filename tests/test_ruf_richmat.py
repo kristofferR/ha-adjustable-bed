@@ -736,3 +736,11 @@ def test_a_layout_without_a_minute_timer_choice_keeps_its_buttons(kind, app, mod
     c = _timer_layout(kind, app, model)
     assert not c.supports_massage_timer
     assert button in {spec.key for spec in c.controller_button_specs}
+
+
+def test_a_factory_reset_asks_first_whatever_its_label_case() -> None:
+    """The TX app writes "Factory reset"; the name check missed it, so it never asked."""
+    c = make("tx", "3i")
+    assert next(x.label for x in c._controls() if x.code == 0x62) == "Factory reset"
+    spec = next(s for s in c.controller_button_specs if s.key == "richmat_mh_62")
+    assert spec.requires_confirmation and not spec.entity_registry_enabled_default

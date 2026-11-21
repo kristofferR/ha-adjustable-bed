@@ -612,6 +612,8 @@ async def test_detection_buttons_status_and_results() -> None:
     controller = make("revive", "CFRM0001", snapshot={**vers0("cfrm"), "detection": True})
     await controller.async_discover_capabilities()
     start = next(s for s in controller.controller_button_specs if s.key == "richmat_mh_start_detection")
+    # The self-test is maintenance, not a dashboard control.
+    assert start.diagnostic
     await start.press_fn(controller)
     assert frames(controller) == ["6e88c210c8"]
     controller._classifier.rx_type = "INIT"

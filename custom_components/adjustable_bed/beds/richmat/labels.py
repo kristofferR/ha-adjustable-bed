@@ -100,6 +100,8 @@ def function_label(enum: str) -> str:
     text += " "
     for old, new in _PHRASES:
         text = text.replace(old, new)
+    text = re.sub(r"\b(\d+) Min\b", r"\1 minutes", text)
+    text = re.sub(r"\b(\d+) Hour\b", r"\1 hours", text)
     text = text.strip()
     if text in _NAMES:
         return _NAMES[text]
