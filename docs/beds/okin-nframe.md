@@ -1,4 +1,4 @@
-# Okin N-frame
+# Okin and DewertOkin
 
 **Status:** Partly tested: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 
@@ -15,18 +15,17 @@ the Adjustable bed (Lumbar) app, Rize Home and Resident Adjustable Base.
 
 ## Known Models
 
-Symphony Sleep Sense's P3 branches and fixed split helpers use this codec.
-See the [Symphony profile](okin-soundwave.md#symphony-sleep-sense) for its
-independent product/selector choices, model gates, alarms and session behavior.
-Its P1 and SoundWave branches are separately vector-tested.
+Symphony Sleep Sense beds on its P3 format, and its split beds, also use this
+format; see the [Symphony profile](okin-soundwave.md#symphony-sleep-sense) for
+their setup choices, controls and alarms.
 
 | Profile | Models |
 |---|---|
-| [Okimat](#okimat) | Okimat beds, Lucid L600, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are unverified |
+| [Okimat](#okimat) | Okimat beds, Lucid L600, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are not fully checked |
 | [DewertOkin](#dewertokin) | A H Beard, Hankook Gallery, beds with the DewertOkin HE150 controller, DewertOkin Bluetooth RF-Gateway receivers; see [DewertOkin brands](#dewertokin-brands) |
 | [RF ECO BT stair lift](#rf-eco-bt-stair-lift) | Elda BTH / RF ECO BT / MEGAMAT staircase from [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344); Device Information model `MEGAMAT MBZ`, advertising as `OKIN-050226` |
 | [Customatic](#customatic-family) | Customatic Clarity, Jerome's C and Remedy bases |
-| [Leggett Okin](#leggett-okin-family) | Leggett & Platt Prodigy Comfort Elite and similar control boxes, marked `LP BED CONTROL`; confirmed hardware DewertOkin CU170 |
+| [Leggett Okin](#leggett-okin-family) | Leggett & Platt Prodigy Comfort Elite and similar control boxes, marked `LP BED CONTROL`; tested on a DewertOkin CU170 control box |
 | [OKIN SmartBed CB24](#okin-smartbed-cb24) | SmartBed by Okin receivers (Amada and other OKIN beds) with the CB24, CB24AB, CB27, CB27New, CB1221 or Dacheng profile |
 | [Okin DOT](#okin-dot) | DewertOkin "DOT PROTOCOL" receivers for the RF1058, RF34 and RF6707 handsets |
 | [SIMMONS](#simmons) | Beds controlled with the SIMMONS app, regular and inclined |
@@ -40,11 +39,11 @@ Its P1 and SoundWave branches are separately vector-tested.
 | [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
 | [Okin 64-Bit](#okin-64-bit) | Okin controllers with the Adjustable bed app, including `NORA_CON` / `NORACON` |
 | [Adjustable bed app](#adjustable-bed-app) | Beds controlled with Adjustable bed 1.2.1 |
-| [OKIN Motion Bed](#okin-motion-bed) | Beds controlled with OKIN Motion Bed, physical mappings unverified |
-| [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 app remote profiles, hardware models unverified |
-| [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed, hardware models unverified |
-| [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base, hardware models unverified |
-| [Ultramatic Smart Bed](#ultramatic-smart-bed) | Nordic UART app profile, hardware models unverified |
+| [OKIN Motion Bed](#okin-motion-bed) | Beds controlled with OKIN Motion Bed; which button moves which motor is not yet tested on hardware |
+| [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 remotes in the app; not yet tested on hardware |
+| [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed; not yet tested on hardware |
+| [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base; not yet tested on hardware |
+| [Ultramatic Smart Bed](#ultramatic-smart-bed) | Beds controlled with Ultramatic Smart Bed; not yet tested on hardware |
 | [Superior sleep](#superior-sleep-ss350--ss650) | SS350 and SS650 |
 | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
 
@@ -56,16 +55,16 @@ Customatic app profiles.
 
 | Analyzed | App | Package ID | Profile |
 |---|---|---|---|
-| ✅ | OKIN Motion Bed 1.0 (2), hardware unverified | `com.okin.motionbed` | [OKIN Motion Bed](#okin-motion-bed), explicit choice |
-| ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), unverified |
-| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), explicit Keeson profile |
-| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) unverified |
-| ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), unverified |
+| ✅ | OKIN Motion Bed 1.0 (2), not yet tested on hardware | `com.okin.motionbed` | [OKIN Motion Bed](#okin-motion-bed), chosen in setup |
+| ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), not fully checked |
+| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), not yet tested on hardware | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), a Keeson profile |
+| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) not fully checked |
+| ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), not fully checked |
 | ✅ | [Comfort Enhancement 3 / Comfort Plus3](https://play.google.com/store/apps/details?id=com.okin.apex) 1.4.0 (5) | `com.okin.apex` | [Comfort Enhancement 3](#comfort-enhancement-3) |
 | ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) 1.0.1 | `com.okin.bedding.rizeResident` | [Okin CST](#okin-cst) (Rize Resident) |
 | ✅ | [Customatic Technologies Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (5) | `com.okin.bedding.glory` | [Customatic Z-Series](#customatic-z-series) |
 | ✅ | [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (3) | `com.okin.bedding.tranquil` | [Jordan's Tranquil](#jordans-tranquil) |
-| ⚠️ | Jobs 賈伯斯 | `com.okin.bedding.jobs` | [Okimat](#okimat), unverified |
+| ⚠️ | Jobs 賈伯斯 | `com.okin.bedding.jobs` | [Okimat](#okimat), not fully checked |
 | ✅ | [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19) | `com.okin.okinsmartcomfort` | [Okimat](#okimat), [DewertOkin](#dewertokin), [RF ECO BT stair lift](#rf-eco-bt-stair-lift), [Okin DOT](#okin-dot) |
 | ✅ | [Customatic Clarity](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticclarity) 1.0.1 | `com.okin.bedding.customaticclarity` | [Customatic Clarity](#customatic-clarity) |
 | ✅ | [Customatic Jerome's](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticjeromes) 1.0.1 | `com.okin.bedding.customaticjeromes` | [Customatic Jerome's](#customatic-jeromes) |
@@ -97,10 +96,10 @@ Customatic app profiles.
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
 | ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | [eShine](#eshine) (E2000, E3000/E3100, E5000) |
 
-⚠️ Legacy analysis only: these apps have not been analyzed in full, so the
-profile listed for them is unverified and setup does not name them.
+⚠️ These apps are not fully checked, so the profile listed for them may not
+match your bed, and setup does not name them.
 
-Beds controlled with FurniMove handset IDs normally use the explicit
+Beds controlled with FurniMove handset IDs normally use the
 [FurniMove / OKIN Smart Remote](furnimove.md) app profile.
 
 ## Features
@@ -108,32 +107,32 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 | Feature | Okimat | DewertOkin | RF ECO BT stair | Customatic | Leggett Okin |
 |---|---|---|---|---|---|
 | Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
-| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ `customatic_move_simultaneously`, and `timed_move` calls on different motors run together | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
+| Simultaneous movement | ⚠️ Held motors move together; the app cannot do this (see [Controls](#okimat)) | ❌ | ❌ | ✅ `customatic_move_simultaneously`, and `timed_move` calls on different motors run together | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
 | Hold until release | ❌ | ❌ | ❌ | ✅ Renewable `timed_move` and `hold_control` | ✅ Renewable `timed_move` and `hold_control` |
-| Position feedback | Some receivers (FFE4 required) | ❌ | ❌ | ❌ | ❌ |
+| Position feedback | ⚠️ Some receivers | ❌ | ❌ | ❌ | ❌ |
 | Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
 | Other presets | Zero-G, anti-snore / quiet sleep where the handset has them | Zero-G, TV, Quiet Sleep | ❌ | Named memory-page controls | Snore |
-| Memory presets | ✅ 1-4 slots per handset, save key | ✅ 2 slots, no save | ❌ | ❌ Numbered slots; ✅ named held controls | ✅ Prodigy: four favorites incl. fixed Snore; U Series: two held memory controls and SET |
+| Memory presets | ✅ 1-4 slots per handset, save key | ✅ 2 slots, no save | ❌ | ❌ Numbered slots; ✅ named hold buttons | ✅ Prodigy: four favorites incl. fixed Snore; U Series: two held memory controls and SET |
 | Massage | ✅ Handsets with massage keys | ✅ Wave, head, foot, off | ❌ | ❌ | ✅ Head/foot up/down, on/off toggle, wave step |
-| Under-bed lights | ✅ Toggle, handsets with a light key | ✅ Toggle | ❌ | ✅ Clarity/Remedy toggle; ❌ Jerome's | ✅ Toggle; Prodigy CE adds a notification-backed light entity |
+| Under-bed lights | ✅ Toggle, handsets with a light key | ✅ Toggle | ❌ | ✅ Clarity/Remedy toggle; ❌ Jerome's | ✅ Toggle; Prodigy CE adds a light that shows its state |
 | Sync, child lock | ✅ Handsets with those keys | ❌ | ❌ | ❌ | ❌ |
-| Sleep and alarm timers | ❌ | ❌ | ❌ | ❌ | ✅ Native timers |
-| Control mode | ❌ | ❌ | ❌ | ❌ | ⚠️ Prodigy profiles; press-and-hold refused on Prodigy CE |
+| Sleep and alarm timers | ❌ | ❌ | ❌ | ❌ | ✅ The bed's own timers |
+| Control mode | ❌ | ❌ | ❌ | ❌ | ⚠️ Prodigy apps; Prodigy CE has no press-and-hold mode |
 | Device Information | ❌ | ❌ | ❌ | ✅ Five diagnostic sensors | ✅ Diagnostics |
-| BLE pairing | ✅ Required | ❌ | ✅ Requested | ❌ | ✅ Required |
+| BLE pairing | ✅ Required | ❌ | ✅ Asked for | ❌ | ✅ Required |
 
 The 40-bit profiles:
 
 | Feature | CB24 | DOT | SIMMONS | SleepEase | Sleepy's legacy CB25 | AdjustableM5X4 | eShine |
 |---|---|---|---|---|---|---|---|
-| Motor control | ✅ Head, feet | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, union | ✅ Head, foot; E5000 adds Head Tilt |
+| Motor control | ✅ Head, feet | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, both together | ✅ Head, foot; E5000 adds Head Tilt |
 | Position feedback | ❌ | ❌ | ❌ | ❌ | ✅ 0-100 % | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Lounge, TV, Anti-snore | ✅ Flat; Zero-G, Quiet Sleep, Anti-snore on RF1058 | ✅ Flat; Zero-G, TV/PC, Anti-snore on a regular bed | ✅ Held (P1) or one-shot (P2) recalls | ✅ Flat, TV, Zero-G, Anti-snore, Lounge | ✅ Flat, TV, Lounge, Zero-G, Anti-snore | ✅ Held Flat, Zero-G, Anti-snore, Reading, TV, Flat + Zero-G |
 | Memory presets | ✅ 3 slots, no save | ✅ RF1058 and RF34 codes, tap to recall | ✅ Custom Mode, saved by a 5.5 s hold | ✅ Two recalls | ✅ 2 slots with save | ✅ Memory A, named saves and reset | ❌ |
-| Massage | ✅ | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Behind the massage-on gate | ✅ E3000/E3100, E5000 |
-| Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ Per selector | ✅ E3000/E3100, E5000: held toggle with feedback |
+| Massage | ✅ | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Intensity, wave and timer once massage is on | ✅ E3000/E3100, E5000 |
+| Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ By selector | ✅ E3000/E3100, E5000: hold-to-use toggle that shows its state |
 | Alarms and clock | ❌ | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ | ✅ Next-occurrence alarm, clock sync |
-| Single-address sides | ✅ Legacy CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Left and right on one address | ✅ Older CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Hold until release | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
 | BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
@@ -909,7 +908,7 @@ controls it supports; held motors send the OR of their primary words.
 | `head_foot_down` | `0000000A 00000000` | Customatic Z-230 | `0C 02 00 00 00 0A 00 00 00 00 00 00 00 00` |
 | `massage_intensity_cycle` | `00000C00 00000000` | Customatic Z-230 | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
 
-Each app's literal action table, by the app's action names.
+Each app's action table, by the app's action names.
 
 #### Resident Adjustable Base keys
 
@@ -3663,8 +3662,8 @@ succeeds. This does not change pairing policy for other CST profiles.
 
 - Manual selection may be needed since the service UUID is shared with other Okin protocols.
 - The shared UUID and the official apps' common `OKIN-*` name filter do not
-  distinguish the nine product layouts. Select the matching **Protocol variant**
-  in the integration options. `Auto` preserves the MF900 profile for existing
+  distinguish the nine product layouts. Choose the matching app or product in
+  the Okin question, in setup or in **Reconfigure**. Automatic preserves the MF900 profile for existing
   entries.
 - Do not choose CST solely because diagnostics show both the CSS and Nordic DFU
   services. That connected GATT signature is also exposed by RF ECO BT stair
@@ -3700,7 +3699,7 @@ the product profile is therefore required for safe zoned massage controls.
 
 ###### Nectar Move profile
 
-Choose **Nectar Move** in setup or the Protocol variant options. No shared OKIN
+Choose **Nectar Move** in the Okin question, in setup or in Reconfigure. No shared OKIN
 name, UUID, or Device Information result selects it. The profile is opt-in and
 keeps the other CST application profiles unchanged.
 

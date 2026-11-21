@@ -318,7 +318,8 @@ COMMANDS: dict[str, FuzionCommand] = {
 COMMANDS["get_temperature_programs"] = COMMANDS["get_temperature_program_info"]
 
 # DiagnosticTest.testId, restricted to local bed hardware tests. The two
-# network tests and diagnostic file transfer are deliberately absent.
+# network tests, diagnostic file transfer and the base's actuator test are
+# deliberately absent.
 LOCAL_TESTS = (
     "power-health-test",
     "underbed-light-test",
@@ -328,7 +329,6 @@ LOCAL_TESTS = (
     "firmness-control-test",
     "footwarming-test",
     "box-level-connector-test",
-    "actuator-test",
     "heidi-fan-test",
     "heidi-heater-test",
     "heidi-precheck-test",

@@ -46,15 +46,15 @@ Brands using Richmat actuators:
 - Richmat HJA5 series
 - [Dream Sense Bed](#dream-sense-bed)
 - [Saatva](#saatva)
-- Saatva
 - Lucid L300
 - Classic Brands
 - Eshine (E6000)
 
 The catalog apps name their layouts themselves: an RMControl product code, a
 Richmat MH model (the first four characters of the Bluetooth name), an HJBed
-or Good Vibe Sleep product or a classic app's four-character layout. Shared services and Bluetooth names do not identify a layout, so each
-is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
+or Good Vibe Sleep product or a classic app's four-character layout. The
+Bluetooth name does not tell which layout a bed has, so you pick it in setup (see
+[Choosing a profile](#choosing-a-profile)).
 
 ## Apps
 
@@ -114,17 +114,17 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 
 | Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed | Classic apps | Eshine | Good Vibe Sleep | L&P legacy app | Casper Base | Hush Base |
 |---------|-----------------|---------|----------|-----------|------------|-------|------------|--------|-----------------|----------------|-------------|-----------|
-| Motor Control | ✅ (up to 7 motors) | ✅ Back/legs; BT6500 pillow/lumbar; FH head banks | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product | ✅ Exact app-labelled controls per selected layout | ✅ Head, feet, lumbar and pillow; global STOP | ✅ Exact app-labelled actions, with each product's gesture and operand | ⚠️ Layout-specific app buttons; no generic head, foot or lumbar axes | ✅ Product-specific; PRO back, legs and lumbar, MAX adds pillow | ✅ Product-specific back, legs, pillow, lumbar, combined and third motor |
-| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ Explicit 7.1.3 models, no release frame; legacy keeps finite pulses | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ✅ Keep buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds), release 50 ms after it ends); short, long and armed presses keep their gestures | ✅ ([renewable hold](../SERVICES.md#renewable-holds) and `hold_control`, then STOP) | ✅ Sustained-press controls only ([renewable hold](../SERVICES.md#renewable-holds)); short, long and short-and-long presses, and memory-mode controls while memory mode is on, keep their own gestures | ❌ Button gestures only | ❌ Finite pulses, then STOP | ❌ Finite pulses, then STOP |
+| Motor Control | ✅ (up to 7 motors) | ✅ Back/legs; BT6500 pillow/lumbar; FH head banks | ✅ Head, Feet | ✅ The product's motors, as in the app | ✅ Two motors; which ones depends on the model | ✅ Head, foot, combined, pillow, lumbar, tilt, foot box and sofa, by product | ✅ Your layout's controls, named as in the app | ✅ Head, feet, lumbar and pillow; Stop all | ✅ Your product's controls, named and pressed as in the app | ⚠️ Your layout's app buttons; no separate head, foot or lumbar covers | ✅ By product; PRO back, legs and lumbar, MAX adds pillow | ✅ Back, legs, pillow, lumbar, combined and a third motor, by product |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ Models chosen with the 7.1.3 app; the older route moves in steps | ✅ | ✅ Products whose app holds to move; others move in steps | ✅ | ✅ (controls the app holds) | ✅ Hold buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds)); other buttons press as in the app | ✅ ([renewable hold](../SERVICES.md#renewable-holds) and `hold_control`, then STOP) | ✅ Controls the app holds ([renewable hold](../SERVICES.md#renewable-holds)); other buttons press as in the app | ❌ | ❌ (moves in steps) | ❌ (moves in steps) |
 | [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks | ❌ (motor reports never populate position feedback or sliders) | ❌ No calibrated position controls; raw typed events remain visible | ❌ | ❌ Raw motor-number diagnostics only, not calibrated angles | ❌ Raw index, angle and height events only |
-| Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates | ❌ (named preset saves instead) | ✅ Product-specific short/long gestures and local memory mode | ⚠️ Only as the selected layout's named app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Product-specific recall and explicit save |
-| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Model-specific presets; Lounge only on legacy | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge actions where the product has them | ⚠️ Only as the selected layout's named app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ Product-specific, recall and save |
-| Massage | ✅ | ✅ Model-specific zone, mode and off actions; 20-minute **Massage: Timer** select | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage: Timer** select where the main page has several timers | ✅ App-labelled buttons; VER1 head/foot intensity numbers; **Massage: Timer** select where the model has more than one of the 10, 20 and 30 minute timers | ✅ Product-specific mode and intensity buttons; **Massage: Timer** select (10, 20, 30 minutes) | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off; **Massage: Timer** select (10, 20, 30 minutes or off) | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
-| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Model-specific toggle; legacy also off | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB | ✅ Light buttons; ordinary light or RGB page where the product and its reply allow | ✅ RGB strip for lighting-flag products, colour and timer otherwise |
-| Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ✅ Where the layout has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ❌ | ❌ (one-address Left/Right on stored L400SH and L300SH) | ❌ (one-address Left/Right on side-flag products) |
-| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
-| Other | | | | ✅ The product's other catalog controls as buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) | ✅ Music page, external snore trigger, sensor-name query; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ | ⚠️ Angle numbers on VER1 models; **Reached position** shows when a memory move ends | ⚠️ Raw travel, angle and height values; no move-to-position | ❌ (desks show height, range, unit and errors) | ❌ | ❌ (raw position messages only) | ❌ | ❌ (raw motor values in diagnostics only) | ❌ (raw values only) |
+| Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the product has them | ✅ The model's memory slots | ✅ Recall and save buttons by product, including memory 1–4 | ✅ Recall and save as in the app, including its memory and hold buttons | ❌ (named preset saves instead) | ✅ Recall and save as in the app, including its memory mode | ⚠️ Only as your layout's app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Recall and save, by product |
+| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ By model; Lounge only on the older route | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the product has them | ✅ The model's standard presets | ✅ By product | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge where the product has them | ⚠️ Only as your layout's app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ By product, recall and save |
+| Massage | ✅ | ✅ Zone, mode and off by model; 20-minute **Massage: Timer** select | ✅ Head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage: Timer** select where the main page has several timers | ✅ The app's buttons; head/foot intensity numbers on VER1 models; **Massage: Timer** select where the model has more than one of the 10, 20 and 30 minute timers | ✅ Mode and intensity buttons by product; **Massage: Timer** select (10, 20, 30 minutes) | ✅ Levels, patterns, timers and choices, as in the app | ✅ Head and foot strength, mode, off; **Massage: Timer** select (10, 20, 30 minutes or off) | ✅ Your product's controls; massage countdown | ⚠️ Only as your layout's app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
+| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Toggle by model; the older route also has off | ✅ (toggle) | ⚠️ RGB, **Always On** or a **1 through 15 minutes** timer, on products with a light strip once the bed answers | ✅ RGB light or colour buttons, light timeout, button lights | ✅ Lamp buttons; timeout and RGB on products that have them, once the bed answers | ✅ The layout's light controls; RGB and timer where the bed has them | ✅ (toggle) | ✅ Light buttons, RGB settings and duration, by product | ⚠️ Only as your layout's app buttons; no RGB | ✅ Light buttons; a light or RGB control where the product has one and the bed confirms it | ✅ RGB strip on products with one; colour and timer otherwise |
+| Split-King Sync | ✅ (on/off; shows the last command sent) | ❌ | ❌ | ✅ Where the product has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ✅ Where the layout has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ❌ | ❌ (stored L400SH and L300SH have left and right sides on one address) | ❌ (products with two sides get left and right on one address, except on Nordic UART receivers) |
+| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, on products that have it | ✅ On models with alarms | ✅ Single or repeating alarms on products that have them, once the bed answers a clock request | ✅ Runs one of the layout's buttons once, at the next occurrence of the chosen time | ❌ | ✅ Single and repeating alarms, slots 1–7, by product | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating on restored products that have it |
+| Other | | | | ✅ The product's other app controls as buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock setting, layout choice, left and right sides on one address | ✅ Aroma (its state may not be confirmed); desks: target height, unit, three recall buttons and a fourth or reset button | ⚠️ Eleven diagnostic sensors | ✅ Snore settings on products that have them; separate type 1 and type 2 sleep sensors with live values and reports; only the sides the product lists. ❌ Firmware updates, Wi-Fi and cloud | ⚠️ A diagnostic sensor, disabled by default; Stop ends the current action only (the bed has no stop-all command) | ✅ Music, a snore trigger, the sleep sensor's name; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
 
 ## Choosing a profile
 
@@ -1183,7 +1183,7 @@ list (timing in [Catalog app timing](#catalog-app-timing)):
 | Massage query | none | `6E 9A A0 00 A8` |
 | Button-light lock query | none | `6E 9A B0 00 B8` |
 
-The app's mattress literal ends in checksum `90`; the sender recomputes its
+The app's stored mattress frame ends in checksum `90`; the sender recomputes its
 checksum, so the bed receives the frame above.
 <!-- /generated -->
 
@@ -1958,7 +1958,7 @@ package-local catalog. A compiled layout is not hardware confirmation.
 2. Choose the four-character layout the app shows. The list is the chosen app's
    own; choose the layout explicitly even when the Bluetooth name looks like one.
    Four-character app aliases resolve to their package-local layouts, and the
-   diagnostic TEST and RMCS layouts are excluded.
+   factory-test TEST and RMCS layouts are excluded.
 3. Forty Winks and Superior `ZRS6` is a layout picker: choose `ZRS6:CORN` or
    `ZRS6:CPRN` to use the `CORN` or `CPRN` controls. The picker itself sends no
    bed command.
@@ -6720,7 +6720,7 @@ Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
 
 **App:** [Majestic Home](https://play.google.com/store/apps/details?id=com.richmat.majestichome) 1.0.4 (10400), `com.richmat.majestichome`
 
-**Status:** Not yet tested (hardware unverified; external beta).
+**Status:** Not yet tested
 
 #### Setup
 
@@ -7000,23 +7000,6 @@ restarts. Before that, only the controls both formats share are listed.
 | `2E` | `81` | `82` | `83` |
 | `2F` | `A6` | `A7` | `A8` |
 | `30` | `A9` | `AA` | `AB` |
-
-| Movement-test phase | Operand | Run, seconds | Rest, seconds |
-|---|---|---|---|
-| 1 | `24` | 10 | 5 |
-| 2 | `3F` | 10 | 5 |
-| 3 | `40` | 12 | 5 |
-| 4 | `25` | 12 | 5 |
-| 5 | `26` | 10 | 5 |
-| 6 | `41` | 10 | 5 |
-| 7 | `42` | 12 | 5 |
-| 8 | `27` | 12 | 5 |
-| 9 | `29` | 10 | 5 |
-| 10 | `3F` | 10 | 5 |
-| 11 | `40` | 12 | 5 |
-| 12 | `41` | 10 | 5 |
-| 13 | `42` | 12 | 5 |
-| 14 | `2A` | 12 | 5 |
 
 | Control | Press status | Framed short, mode 0 | Raw short | Long operand | Long threshold, ms |
 |---|---|---|---|---|---|
@@ -7808,8 +7791,7 @@ Framed initialization waits 300 ms after notification registration. Layouts
 with alarm actions query the alarm capability, followed by light and aroma
 queries, with 500 ms gaps. Alarm frames are 300 ms apart. Aroma settings
 are 150 ms apart, and fan settings are 300 ms apart. RGB is one write
-containing both color frames. Motor programs use chunks of at most 20 bytes,
-10 ms apart, without a STOP or acknowledgement.
+containing both color frames.
 
 #### Notifications
 
@@ -7822,12 +7804,10 @@ height and range values stay in diagnostics; they are not bed motor angles.
 
 Use `set_alarm` for the selected layout's wake actions and supported preset/massage
 combinations. The layout owns each selectable massage zone. Use `lp2` for color,
-light duration (0–300 seconds), aromatherapy, fans, explicit control gestures
-and RMCS movement programs. The head fan sends duration then intensity.
+light duration (0–300 seconds), aromatherapy, fans and explicit control
+gestures. The head fan sends duration then intensity.
 The foot fan sends its intensity twice and does not transmit a duration.
-Programming requires the RMCS layout and explicit confirmation. Program
-values are limited to 0–65535. The TEST layout offers one explicitly confirmed
-movement-test cycle, which can be stopped at any time. Generic `richmat_classic` actions provide
+Generic `richmat_classic` actions provide
 layout-bound massage popups, timer controls and table operations.
 
 #### Evidence
@@ -9218,12 +9198,6 @@ Settings provide alarm countdowns and combinations, RGB, lamp timers and the
 D1RM/D9RM/Y6RM timer utilities. A lamp capability reply reveals a timer number
 entity without a reload. Its value is a local requested setting, not readback.
 
-Power Cool's explicit TEST layout offers a finite 14-step motor diagnostic
-cycle. Its RMCS layout programs a 12-record motor schedule. Select these layouts
-deliberately and use `adjustable_bed.richmat_rise`. RMCS has no proven readback,
-abort, commit or acknowledgment command. Radio selection is a field in the
-program; the phone still sends it over BLE.
-
 #### Detection / Setup
 
 Search for **Luuna Rise** or **Power Cool Sleep System** in the Richmat app
@@ -9764,23 +9738,6 @@ proven long lock-labelled gestures remain available.
 | ZRS1 | none | none | none | 2 | zri0 | 3000 | visible |
 
  </details>
-
-| Power Cool TEST opcode | Refresh seconds | Rest seconds |
-|---|---|---|
-| `24` | 10 | 5 |
-| `3F` | 10 | 5 |
-| `40` | 12 | 5 |
-| `25` | 12 | 5 |
-| `26` | 10 | 5 |
-| `41` | 10 | 5 |
-| `42` | 12 | 5 |
-| `27` | 12 | 5 |
-| `29` | 10 | 5 |
-| `3F` | 10 | 5 |
-| `40` | 12 | 5 |
-| `41` | 10 | 5 |
-| `42` | 12 | 5 |
-| `2A` | 12 | 5 |
 <!-- /generated -->
 
 #### Position Feedback / Notifications
@@ -9803,11 +9760,8 @@ zero has distinct slider (`FFFF`) and Save (`0000`) encodings with unverified
 physical meaning. Y6RM's app timer labels differ from its resource names, so
 they are retained as app choices rather than asserted firmware durations.
 
-Power Cool RMCS sends its 89-byte selected program in 20-byte chunks, 10 ms
-apart, without adding a STOP. TEST uses the generated run/rest sequence and
-the admitted route's release. Diagnostic movement participates in HA's movement
-scheduler and cancellation. Ordinary holds use renewable leases where the
-selected gesture actually refreshes until release.
+Ordinary holds use renewable leases where the selected gesture actually
+refreshes until release.
 
 #### Notes
 
@@ -14449,23 +14403,6 @@ is listed only for the bed's own format, once that is known.
 | ZXRM | 3, 4, 5, 6, 7, 8 | 0 |
 | ZYRM | 4, 5, 6, 8, 10, 12, 13, 15, 16, 18 | 0 |
 | ZZRM | 1, 2, 3, 4, 5, 6 | 0 |
-
-| Movement-test phase | Operand | Run, seconds | Rest, seconds |
-|---|---|---|---|
-| 1 | 24 | 10 | 5 |
-| 2 | 3F | 10 | 5 |
-| 3 | 40 | 12 | 5 |
-| 4 | 25 | 12 | 5 |
-| 5 | 26 | 10 | 5 |
-| 6 | 41 | 10 | 5 |
-| 7 | 42 | 12 | 5 |
-| 8 | 27 | 12 | 5 |
-| 9 | 29 | 10 | 5 |
-| 10 | 3F | 10 | 5 |
-| 11 | 40 | 12 | 5 |
-| 12 | 41 | 10 | 5 |
-| 13 | 42 | 12 | 5 |
-| 14 | 2A | 12 | 5 |
 <!-- /generated -->
 
 #### Timing
@@ -14476,7 +14413,6 @@ Release waits 50 ms after continuous movement, or 150 ms after a tap. The
 original session and mode own cleanup, including cancellation. Catalog, address
 or transport changes cannot inherit an old release. Timing and idle changes
 still permit STOP on the same retained physical session.
-The movement test makes one finite traversal of the generated sequence.
 
 #### Notifications
 
@@ -14495,7 +14431,7 @@ Use `adjustable_bed.set_alarm` for layout-owned wake actions and massage
 combinations. It sends a relative-minute alarm in two writes, 300 ms apart.
 Use **Refresh bed features** to issue settings queries. The
 [`adjustable_bed.bedsmart`](../SERVICES.md#bedsmart) action offers RGB color, light timeout, aroma times,
-a confirmed finite movement test and the app's named BED commands. It
+and the app's named BED commands. It
 preflights all selected beds before writing. Alarm and feature controls never
 expand a layout from a shared UUID. There is no clock synchronization command.
 

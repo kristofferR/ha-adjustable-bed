@@ -11,7 +11,6 @@ import pytest
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.richmat_classic import lp2
 from custom_components.adjustable_bed.beds.richmat_classic.protocol import Worker
-from custom_components.adjustable_bed.beds.richmat_classic.rise import Schedule
 from custom_components.adjustable_bed.beds.richmat_classic.transport import Transport
 from tests.test_lp2_vectors import vectors
 
@@ -152,23 +151,6 @@ async def test_alarm_uses_shared_capability_and_two_frozen_parts(clock):
     assert c._receive.alarm_enabled is None
 
 
-async def test_motor_program_fragmentation_matches_default_literal(clock):
-    c, co = controller("RMCS")
-    rows = tuple((n, 0, 0) for n in (1, 2, 3, 4, 7, 8, 9, 10, 5, 6, 11, 12))
-    schedule = Schedule(rows, 0, 0, "ble", "new", 1, (1, 2, 3, 4))
-    await c.program_schedule(schedule)
-    expected = next(
-        expected.lower()
-        for action, _, expected in vectors("direct")
-        if action == "default UI configuration"
-    )
-    assert "".join(packets(co)) == expected
-    assert all(len(bytes.fromhex(p)) <= 20 for p in packets(co))
-    assert clock == [10] * (len(packets(co)) - 1)
-    with pytest.raises(ValueError, match="65535"):
-        await c.program_schedule(replace(schedule, rest=65536))
-
-
 def test_no_screen_selectors_and_confirmation_never_offers_hold():
     c, _ = controller("E3RM")
     assert c.controller_select_specs == ()
@@ -241,39 +223,28 @@ async def test_registered_service_validates_all_targets_before_first_write(hass)
     async_register_lp2_services(hass)
     a, first = target(
         family=lp2.Lp2Controller,
-        layout="RMCS",
-        program_schedule=AsyncMock(),
-        schedule_frame=lambda _s: b"",
+        _model=SimpleNamespace(modes=(0, 1)),
+        validate_action=MagicMock(return_value=()),
+        execute_action=AsyncMock(),
     )
-    b, second = target(family=lp2.Lp2Controller, layout="APRM", program_schedule=AsyncMock())
+    b, second = target(
+        family=lp2.Lp2Controller, _model=SimpleNamespace(modes=(0,)), execute_action=AsyncMock()
+    )
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(a, "both"), (b, "both")], []),
         ),
-        pytest.raises(ServiceValidationError, match="motor program"),
+        pytest.raises(ServiceValidationError, match="mode offered"),
     ):
         await hass.services.async_call(
             DOMAIN,
             "lp2",
-            {
-                "device_id": ["a", "b"],
-                "operation": "motor_program",
-                "confirm": True,
-                "schedule": {
-                    "records": [[i, 0, 0] for i in range(1, 13)],
-                    "rest": 0,
-                    "count": 0,
-                    "radio": "ble",
-                    "code": "new",
-                    "identifier": 1,
-                    "motors": [1, 2, 3, 4],
-                },
-            },
+            {"device_id": ["a", "b"], "operation": "control", "control": 1, "mode": 1},
             blocking=True,
         )
-    first.program_schedule.assert_not_awaited()
-    second.program_schedule.assert_not_awaited()
+    first.execute_action.assert_not_awaited()
+    second.execute_action.assert_not_awaited()
 
 
 def test_package_transport_falls_through_only_when_its_tuple_is_incomplete():
@@ -297,17 +268,6 @@ def test_package_transport_falls_through_only_when_its_tuple_is_incomplete():
     del channels["w1"][TRANSPORTS["w1"].notify_uuid]
     with pytest.raises(ValueError, match="incomplete"):
         lp2.select_transport(client)
-
-
-async def test_movement_test_cancellation_releases_before_any_next_phase(clock):
-    c, co = controller("TEST")
-
-    async def stop(_char, _data, **_kwargs):
-        co.cancel_command.set()
-
-    co.client.write_gatt_char.side_effect = stop
-    await c.diagnostic_cycle()
-    assert packets(co) == ["6e01002493", "6e01006edd"]
 
 
 def test_service_number_values_are_normalized_before_packet_building():

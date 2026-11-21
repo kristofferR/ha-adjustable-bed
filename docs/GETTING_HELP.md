@@ -35,8 +35,8 @@ You do not need to know whether the cause is configuration or a software bug.
 
 ### Connected OKIN receiver, but commands do nothing
 
-A successful connection or confirmed bond proves transport/security, not the
-selected command profile. Shared OKIN services and a box/handset label (for
+A working connection, or a successful pairing, does not mean the integration
+sends the commands your bed's app uses. Shared OKIN services and a box/handset label (for
 example CB3633 and RF52) cannot identify an app profile by themselves. Include:
 
 - The exact official app name, store link or Android package ID, and app version.
@@ -49,8 +49,8 @@ example CB3633 and RF52) cannot identify an app profile by themselves. Include:
 If reads now fail with **Insufficient authentication**, capture that failure
 separately: it blocks command validation and does not prove a different profile
 is needed. Use the integration's pairing repair on the same adapter/proxy that
-owns the bond when it is required. Do not delete entries, manually edit saved
-bond flags or cycle through unrelated profiles to identify the protocol.
+owns the bond when it is required. Do not delete entries, edit saved pairing settings by
+hand or try unrelated apps one by one to find the right one.
 For a disabled entry, a support bundle can target its device or its raw address;
 exactly one target is required. See the support-bundle steps below.
 
@@ -218,15 +218,15 @@ app, and capture error so we can track the request and identify what is missing.
 
 You don't need to configure anything first: the support bundle action works directly on any BLE device your Home Assistant can see:
 
-1. **Find your bed's MAC address:** go to **Settings > Devices & services > Add Integration > Adjustable Bed**, choose **"Browse unsupported Bluetooth devices"**, and select your bed from the list (or pick **"Enter address manually"** if you already know the address). The wizard shows the device's MAC address and scanner details; note the address. This step only inspects the device; it doesn't add anything.
+1. **Find your bed's MAC address:** go to **Settings > Devices & services > Add Integration > Adjustable Bed**, choose **"Browse unsupported Bluetooth devices"**, and select your bed from the list (or pick **"Enter the address yourself"** if you already know the address). The wizard shows the device's MAC address and scanner details; note the address. This step only inspects the device; it doesn't add anything.
 2. Go to **Developer Tools** → **Actions** → `adjustable_bed.generate_support_bundle`
-3. Leave the **Device** field empty and enter the MAC address in **Target Address**
+3. Leave the **Bed** field empty and enter the MAC address in **Target address**
 4. Click **Perform action**, then operate your physical remote during the capture (120 seconds by default) so the bundle records useful traffic
 5. A notification will appear with a **download link**; click it to save the file. The same JSON file is also written to your Home Assistant config folder as `adjustable_bed_support_bundle_*.json`.
 6. Open the file, remove anything you do not want to share (see
    [what the files share](#what-the-files-share)), then attach it to your issue
 
-**Alternative: add the bed as a diagnostic device:** if you'd rather have a persistent entry (for example, to re-run captures easily), open the same wizard, choose **"Pick any Bluetooth device"**, select your bed, and choose **"Unsupported bed (diagnostics only)"** as its app or remote. You can then run `generate_support_bundle` with that device selected in the **Device** field. "Unsupported bed (diagnostics only)" appears in the app question, which a discovered bed reaches through **"Another app or remote"**. The brand list, reached through **"My app isn't listed, or I don't know"**, does not offer it; its **"Not sure"** answer opens the diagnostics browser instead.
+**Alternative: add the bed as a diagnostic device:** if you'd rather have a persistent entry (for example, to re-run captures easily), open the same wizard, choose **"Pick any Bluetooth device"**, select your bed, and choose **"Unsupported bed (diagnostics only)"** as its app or remote. You can then run `generate_support_bundle` with that device selected in the **Bed** field. "Unsupported bed (diagnostics only)" appears in the app question, which a discovered bed reaches through **"Another app or remote"**. The brand list, reached through **"My app isn't listed, or I don't know"**, does not offer it; its **"Not sure"** answer opens the diagnostics browser instead.
 
 Then fill in the rest of the template with your bed manufacturer/model, remote model number, and any other details.
 

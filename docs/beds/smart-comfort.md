@@ -6,10 +6,9 @@
 
 ## Known Models
 
-Reclining sofas and seats selected by the system-reply codes below. Logical
-addresses describe transport targets, not physical left/right. A stored motor
-count does not hide controls: both apps bind head, reclining and lumbar in every
-recognized layout. Actual installed actuators remain hardware dependent.
+Reclining sofas and seats, identified by the codes they report (below). Seat
+addresses do not mean left and right. Every layout shows head, reclining and
+lumbar controls, as both apps do, even where a seat lacks that motor.
 
 ## Apps
 
@@ -22,12 +21,12 @@ recognized layout. Actual installed actuators remain hardware dependent.
 
 | Feature | SYNARGY | SYNERGY |
 |---|---|---|
-| Motor control | Head, reclining, lumbar, held Home | Same wire controls |
-| Position feedback | Raw counters only, no degree or percentage sliders | Same |
-| Memory | Two recall/save slots, with prepare | Same |
+| Motor control | Head, reclining, lumbar, hold-to-move Home | Same |
+| Position feedback | ❌ (raw counters only; no sliders) | Same |
+| Memory | Two slots, recall and save | Same |
 | Accessories | Per-seat cup power, base RGB/brightness/power, reading light power/brightness | Same |
-| BLE rename | 1..16 ASCII bytes | Same portable subset |
-| Massage / alarm / coupled control | No proved command | No proved command |
+| Bluetooth rename | 1–16 ASCII characters (no accented letters) | Same |
+| Massage / alarm / coupled control | ❌ | ❌ |
 
 ## Choosing a profile
 

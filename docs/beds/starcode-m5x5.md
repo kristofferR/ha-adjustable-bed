@@ -4,9 +4,9 @@
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-Select **AdjustableM5X5 app** for the artifact-verified behavior of
-`com.starcode.abm5_5` 1.2.3 (version code 6). The generic BOX25 route retains
-its other app contracts. ELEVATE lifts use the [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate)
+Select **AdjustableM5X5 app** in setup if you use AdjustableM5X5 1.2.3
+(`com.starcode.abm5_5`). The generic BOX25 route keeps the behavior of the other
+apps. ELEVATE lifts use the [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate)
 bed type, which joins this app's lift groups.
 
 ## Known Models
@@ -26,13 +26,13 @@ bed type, which joins this app's lift groups.
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ Head, foot, lumbar and the exact head + foot union |
-| Position Feedback | ✅ Head, foot and lumbar clamped percentages (sliders) |
+| Motor Control | ✅ Head, foot, lumbar, and head and foot together |
+| Position Feedback | ✅ Head, foot and lumbar as 0-100% sliders |
 | Presets | ✅ Flat, Ascent (TV), Zero Gravity, Anti-Snore, Lounge |
 | Memory Presets | ✅ M1 / M2 recall and save; save Ascent / Zero Gravity / Lounge; reset saved positions |
 | Massage | ✅ Head / foot / wave increase and decrease, toggle / off, 10/20/30-minute timer |
 | Lights | ✅ Feedback light on/off, cycle, palette, brightness 1–6, **Light mode 1** |
-| Alarm, EQ, sonic and kneading state | ⚠️ Read-only (no reachable setters were established) |
+| Alarm, EQ, sonic and kneading state | ⚠️ Shown, but cannot be changed |
 | Lift groups | ✅ One main plus three lifts |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 100 ms refresh, then STOP) |
 

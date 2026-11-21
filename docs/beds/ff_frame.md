@@ -1,4 +1,4 @@
-# FFFF frame (Solace, Woosa Sleep, BedSense, Motion Bed)
+# Solace, Woosa Sleep, BedSense and Motion Bed
 
 **Status:** Partly tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles need testing)
 
@@ -11,9 +11,9 @@ and the **Motion Bed** app (`motion_bed`). This guide covers the codec first, th
 one section per profile. See [Protocol codecs and app profiles](../design/protocol-codecs.md)
 for the architecture.
 
-The apps overlap but do not share one feature set. A shared name, UUID or frame
-never selects another app's profile: each bed type and variant is chosen
-explicitly or by its own name rules.
+The apps overlap, but each has its own features. Each bed type and variant is
+chosen in setup or by its own Bluetooth name rules; a name another app also uses
+never switches you to that app's controls.
 
 ## Known Models
 
@@ -27,8 +27,8 @@ explicitly or by its own name rules.
 - Motion Bed modular products: TL-B motor module, TL-A air massage, TL-W thermal
   control and the TL-Q hub
 
-Bluetooth names such as `QMS-MQ` and `QMS2` are shared across these apps and do
-not identify which app's layout a bed implements.
+Bluetooth names such as `QMS-MQ` and `QMS2` are used by several of these apps,
+so the name does not tell which app's controls your bed needs.
 
 ## Apps
 
@@ -43,23 +43,23 @@ not identify which app's layout a bed implements.
 
 - Bedsense Bases (`com.ore.bedsense`) is a different app and wire format; see its
   [profile](keeson.md#ore-comfort-bed-profiles).
-- Motion Bed and Woosa Sleep share a developer (`com.sn` prefix). The Motion Bed
-  report is used only by its own profile, never for Solace routing.
+- Motion Bed and Woosa Sleep share a developer (`com.sn` prefix) but are separate
+  profiles; Motion Bed never changes the Solace routes.
 
 ## Features
 
 | Feature | Solace name routes | Woosa Sleep | BedSense | Motion Bed |
 |---------|--------------------|-------------|----------|------------|
-| Motor Control | ✅ Back and legs; head plus hip (K1) or lumbar (K2); bed height and tilt on exact S4-Y | ✅ Back and legs | ✅ Per layout: back, waist/hip, head, legs, back and leg, lift, rise and fall | ✅ The selected layout's exact control pairs, including split and coupled sides |
-| Position Feedback | ❌ (preset-state replies are not positions) | ❌ | ❌ | ⚠️ Raw positions A–D only (unknown units) |
-| Presets | ✅ Flat, Zero-G, Anti-Snore, TV on every identified route; relaxing bedtime on MotionFlex | ✅ Flat, Favourite, Anti-Snore, TV, Zero-G | ✅ Flat, TV, Zero Gravity, Anti Snore where the app exposes them | ✅ Named app presets with state-dependent recall and programming |
-| Memory Presets | ✅ 2 numbered slots | ✅ 1 Favourite slot, saves for four stored presets | ✅ Five recalls and saves, explicit clear buttons | ✅ App-labelled |
+| Motor Control | ✅ Back and legs; head plus hip (K1) or lumbar (K2); bed height and tilt on the S4-Y | ✅ Back and legs | ✅ Per layout: back, waist/hip, head, legs, back and leg, lift, rise and fall | ✅ Your layout's controls, including split and linked sides |
+| Position Feedback | ❌ | ❌ | ❌ | ⚠️ Raw positions A–D (units unknown) |
+| Presets | ✅ Flat, Zero-G, Anti-Snore, TV on every identified route (none on beds whose route is unknown); relaxing bedtime on MotionFlex | ✅ Flat, Favourite, Anti-Snore, TV, Zero-G | ✅ Flat, TV, Zero Gravity, Anti Snore where your layout has them | ✅ The app's named presets, recall and save |
+| Memory Presets | ✅ 2 numbered slots | ✅ 1 Favourite slot, saves for four stored presets | ✅ Five recalls and saves, plus clear buttons | ✅ As named in the app |
 | Massage | ⚠️ Home profiles only (zones, wave, K1 circulation, timers) | ✅ Back and leg levels 0–3, four modes, timers, steps, Off | ✅ Circulation (types 1–5), head/foot, wave, timers | ✅ Bed massage; TL-A air programs and pressure |
 | Lights | ⚠️ MotionFlex levels 0–10 and timers; timers only on HomeKobo and Sweet Night routes | ✅ Levels 0–10, timed lighting, Off | ⚠️ Light-duration buttons only | ✅ |
 | Audio, clock and alarm | ⚠️ MotionFlex | ⚠️ Alarm only | ❌ | ✅ |
 | Sleep, thermal and hub controls | ❌ | ❌ | ❌ | ✅ Sleep angles, calibration, timers, reports; TL-W thermal; TL-Q modules |
-| Wi-Fi provisioning and cloud | ❌ | ❌ | ❌ | ❌ Excluded (outside the product boundary) |
-| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ Legacy S4-Y and unidentified entries | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ (no renewable route) |
+| Wi-Fi provisioning and cloud | ❌ | ❌ | ❌ | ❌ |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ on the older S4-Y route and on beds whose route is unknown | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ |
 
 ## Choosing a profile
 
@@ -159,10 +159,10 @@ Both app startup workers, serialized; equal offsets keep their order.
 | 8 | back, rise_and_fall | 41 |
 | 9 | back, hip, lift, legs | 49 |
 
-### Motion Bed callsites
+### Motion Bed actions
 
-714 app callsites over 190 distinct frames, each gated by layout, module and
-state.
+714 app actions over 190 distinct frames; which ones appear depends on the layout,
+module and state.
 <!-- /generated -->
 
 ## Wire codec

@@ -1011,7 +1011,7 @@ _FLOOR_PRODUCTS: Final[FieldCondition] = {
 }
 
 
-# Diagnostic layouts, and the ZRS6 screen that only picks another layout.
+# Factory-test layouts, and the ZRS6 screen that only picks another layout.
 _CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
 
 
@@ -1025,16 +1025,14 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MODEL_CHOICES.get(app, ()),
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
-    } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
+    } - _CLASSIC_EXCLUDED
     if app == "bedsmart":
         from .profiles.bedsmart import ALIASES, EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
         unavailable = EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
         codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
-        codes.add("TEST")
     if app == "lp2":
         codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
-        codes.update(("RMCS", "TEST"))
     if app in ("luunarise2", "powercool"):
         codes -= {"WFRM", "FWRM"}
     if app in APPS:
@@ -1066,7 +1064,7 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
-    excluded = _CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if data.get(CONF_PROTOCOL_VARIANT) == "powercool" else set())
+    excluded = _CLASSIC_EXCLUDED
     if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool"):
         excluded = excluded | {"WFRM", "FWRM"}
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
@@ -1074,9 +1072,9 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     if data.get(CONF_PROTOCOL_VARIANT) == "bedsmart":
         from .profiles.bedsmart import EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
-        excluded = (excluded - {"TEST"}) | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+        excluded = excluded | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
     if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
-        excluded = (excluded - {"RMCS", "TEST"}) | {"209A05", "6HRM", "QRRM", "ZRS3"}
+        excluded = excluded | {"209A05", "6HRM", "QRRM", "ZRS3"}
     if data.get(CONF_PROTOCOL_VARIANT) == "jerome2":
         from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
 

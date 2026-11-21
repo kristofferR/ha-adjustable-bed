@@ -13,16 +13,16 @@ architecture.
 
 ## Known Models
 
-BetterLiving2's two- and three-motor screen choices are explicit app profiles.
-Its shared Bluetooth names do not establish a particular actuator model.
+BetterLiving2 has two- and three-motor layouts; pick yours in setup. The
+Bluetooth name does not tell which one you have.
 
-Symphony Sleep Sense's selector 4 and fixed split P1 helpers use this codec.
-Its independent product/selector choices, lifecycle, alarm modes and supported
-controls are documented in the [Symphony profile](okin-soundwave.md#symphony-sleep-sense).
-The app is an explicit choice; a shared name or UUID does not identify it.
+Symphony Sleep Sense beds with control box selector 4, and its split P1 beds,
+also use this format; their controls are in the
+[Symphony profile](okin-soundwave.md#symphony-sleep-sense). Choose that app in
+setup; the Bluetooth name does not identify it.
 
-OrmatekTechnoSmart has explicit Techno Smart New and Techno Smart Lite app layouts.
-Its shared carriers identify the wire format; hardware compatibility remains unverified.
+OrmatekTechnoSmart has Techno Smart New and Techno Smart Lite layouts; pick yours
+in setup. They are not yet tested on hardware.
 
 Brands using Keeson/Ergomotion actuators:
 
@@ -48,13 +48,12 @@ Brands using Keeson/Ergomotion actuators:
 - Bases controlled by MaxCoil Una, Dynasty Bases, Bedsense Bases, Avanti Bases
   and AMERICANSTAR (app screens 2M, 3M and 4M, chosen by hand in the app)
 
-**Beautyrest BLACK app boundary:** The Android app
-`com.keeson.beautyrestblack` 1.2.1 (18) uses TCP and network services, with no
-reachable Bluetooth bed-control transport in that exact artifact. BLE hardware
-using independently identified Keeson protocols remains supported.
+**Beautyrest BLACK app:** the Android app `com.keeson.beautyrestblack` 1.2.1
+(18) controls the bed over the network, not Bluetooth, so it is not supported.
+Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 
 **DewertOkin/ORE brands** also using FFE5 protocol (31 apps):
-- Simon Li, Cherish Smart, Minghua, Heal Every Night (Simon Li, Heal Every Night and OKIN-Seating have [explicit profiles](#simon-li-heal-every-night-and-okin-seating-profiles))
+- Simon Li, Cherish Smart, Minghua, Heal Every Night (Simon Li, Heal Every Night and OKIN-Seating have [their own profiles](#simon-li-heal-every-night-and-okin-seating-profiles))
 - ORE: Dynasty, LevaSleep, American Star, Avanti, Comfort Furniture, Hestia Motion, Maxcoil, Power's Bedding, SFM, Ultramatic, Better Living, Koizumi
 - See [DewertOkin](okin-nframe.md#dewertokin) for full list
 
@@ -66,8 +65,8 @@ using independently identified Keeson protocols remains supported.
 | ✅ | [OrmatekTechnoSmart](https://play.google.com/store/apps/details?id=com.okin.ormatek) | `com.okin.ormatek` | [Techno Smart New / Lite](#ormatek-technosmart) |
 | ✅ | [Aging in Place / Dawn House](https://play.google.com/store/apps/details?id=com.keeson.agingplace) 1.1.0 (87) | `com.keeson.agingplace` | [Dawn House JSON](#aging-in-place--dawn-house) |
 | ✅ | [Enso Remote](https://play.google.com/store/apps/details?id=com.ore.sfm2) 2.3 | `com.ore.sfm2` | [Enso Remote](#enso-remote) |
-| ✅ (verified scope) | [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada) 1.0.1 (6) | `com.okin.yamada` | [Explicit P1/P2](#アシステック--yamada) |
-| ✅ | Somos / SomosBeds 1.0.0 (code 1) | `cn.com.somos` | [Five explicit products](#somos--somosbeds) |
+| ✅ | [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada) 1.0.1 (6) | `com.okin.yamada` | [P1/P2](#アシステック--yamada) |
+| ✅ | Somos / SomosBeds 1.0.0 (code 1) | `cn.com.somos` | [Five products](#somos--somosbeds) |
 | ✅ | [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6) | `com.ore.yorkfeng.comfortbaseble2` | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
 | ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [Ergomotion 4.0](#ergomotion-40); also [KSBT](#ksbt-family) |
 | ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` | [KSBT](#ksbt-family) |
@@ -90,38 +89,33 @@ using independently identified Keeson protocols remains supported.
 | ✅ | [Dynasty Bases](https://play.google.com/store/apps/details?id=com.ore.Dynasty) 1.0.2 (3) | `com.ore.Dynasty` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [Bedsense Bases](https://play.google.com/store/apps/details?id=com.ore.sfmc2bedsence) 1.1 (3) | `com.ore.sfmc2bedsence` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [Avanti Bases](https://play.google.com/store/apps/details?id=com.ore.AvantiBases) 1.0.5 (7) | `com.ore.AvantiBases` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
-| ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1), hardware unverified | `com.ore.americanstar` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
+| ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1), not yet tested on hardware | `com.ore.americanstar` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | ComfortFurniture 2.3 (10) | `com.ore.comfortfurniture` | [ComfortFurniture](#comfortfurniture) |
-| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [OKIN Comfort Bed](#okin-comfort-bed) |
-| ✅ | [ORE Ultramatic](https://play.google.com/store/apps/details?id=com.ore.ultramatic) 1.0.5 (9), hardware unverified | `com.ore.ultramatic` | [ORE Ultramatic](#ore-ultramatic) |
+| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), not yet tested on hardware | `com.ore.okincomfortbed` | [OKIN Comfort Bed](#okin-comfort-bed) |
+| ✅ | [ORE Ultramatic](https://play.google.com/store/apps/details?id=com.ore.ultramatic) 1.0.5 (9), not yet tested on hardware | `com.ore.ultramatic` | [ORE Ultramatic](#ore-ultramatic) |
 | ✅ | [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (11) | `com.ore.bedding.glideawaymontion` | [Glideaway Motion](#glideaway-motion) |
 | ✅ | [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (10) | `com.okin.adjustamattress` | [AdjustaMattress](#adjustamattress) |
 | ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
 | ✅ | [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4) | `com.ore.jalon.neworebeding_android` | [Jalon](#okincomfortbed-ⅱ-jalon) |
-| Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
+| Own guide | Tempur Sleeptracker-AI ([guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
 
-**iDealBed 6i app boundary:** iDealBed 6i Adjustable, acquired as iDealBed 6i
-Remote, `com.keeson.idealbed6iremote` 1.2.0 (11), controls beds over LAN UDP
-or cloud TCP. No direct BLE or Bluetooth Classic bed-control path was found
-in that exact Android app. Its network controls,
-Wi-Fi setup and cloud/account services are outside this Bluetooth-only
-integration. This finding does not apply to all iDealBed devices or to the
-separately supported [Idealbed BLE app](richmat.md#richmat-mh-apps)
-(`com.richmat.idealbed`). Choose a BLE profile only from independently identified
-hardware or app evidence, never from the iDealBed brand or this package name.
+**iDealBed 6i:** iDealBed 6i Adjustable (installed as iDealBed 6i Remote,
+`com.keeson.idealbed6iremote` 1.2.0 (11)) controls beds over the local network
+or the cloud, not Bluetooth, so it is not supported. This does not apply to every
+iDealBed bed or to the [Idealbed Bluetooth app](richmat.md#richmat-mh-apps)
+(`com.richmat.idealbed`). Choose a profile from your bed's app or controller, not
+from the iDealBed brand.
 
-**ComfortBaseForWifi is network-only:** ComfortBaseForWifi 3.7 (10)
-(`com.ore.jalon.comfortwifiandroid`) controls beds over TCP/HTTP and has no
-direct BLE path. Its Wi-Fi setup and cloud/account features are outside this
-Bluetooth-only integration. It is a different app from ComfortBase II (BLE).
-Do not choose a Keeson profile based on the ComfortBaseForWifi app name or its
-product list. For a bed independently identified as using BLE, follow its
-documented route, such as [BaseI4/I5](#base-basei4i5) for the confirmed GlideAway
-ComfortBase Odessa hardware.
+**ComfortBaseForWifi:** ComfortBaseForWifi 3.7 (10)
+(`com.ore.jalon.comfortwifiandroid`) controls beds over the network, not
+Bluetooth, so it is not supported. It is a different app from ComfortBase II
+(Bluetooth). Do not pick a Keeson profile from its name or product list. A bed
+that uses Bluetooth follows its own route, such as [BaseI4/I5](#base-basei4i5)
+for the GlideAway ComfortBase Odessa, which owners have confirmed.
 
 The eight apps of the [Keeson layout app family](#keeson-layout-app-family) (Tempur
 Curve, Q-Plus, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo
-Slim and TEMPUR AU) are also their own bed types with their app's exact keys and
+Slim and TEMPUR AU) are also their own bed types with their app's own keys and
 layouts; the "also" routes are the generic Keeson variants that drive the same beds.
 
 
@@ -132,22 +126,22 @@ layouts; the "also" routes are the generic Keeson variants that drive the same b
 | Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Hold Until Release | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Memory Presets | ⚠️ 4 exposed (slot 3 app-confirmed) | ✅ (remote-dependent 0x2000/0x4000/0x8000/0x10000) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 exposed (verification needed) | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
-| TV Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Anti-Snore Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Lounge Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Memory Presets | ⚠️ 4 shown; the app uses slot 3 | ✅ (depends on the remote) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 shown; not yet tested on hardware | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
+| TV Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Anti-Snore Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Lounge Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-The Sino column's anti-snore is the BetterLiving table. The app profiles list
+The Sino column's anti-snore comes from the BetterLiving app. The app profiles list
 their controls in their sections.
 
 Hold until release ([renewable holds](../SERVICES.md#renewable-holds)) is on
 every profile whose app streams a held key until release; the
 tables below mark each one. The Base, OKIN, Sino, JSON, KSBT CR, KSBT04C, Sleep
-Harmony, Purple, OKIN FFE, Rondure, Scott Living and Sleepy's BOX15 routes have no
-app evidence for it and keep finite pulses.
+Harmony, Purple, OKIN FFE, Rondure, Scott Living and Sleepy's BOX15 routes move
+in steps instead.
 
 ## Choosing a profile
 
@@ -172,7 +166,7 @@ use. Shared names and Bluetooth services never decide it.
 | Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app | The app | [Adjustable Lite](#adjustable-lite-profile), [Simon Li, Heal Every Night and OKIN-Seating](#simon-li-heal-every-night-and-okin-seating-profiles) |
 | Purple Smart Base, Member's Mark or Linx / Juna Sleep | Which of them | [Purple](#purple-variant), [Base](#base-basei4i5), [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health) |
 | Cool Base app (with fan) | | [Cool Base](#cool-base) |
-| No app: another Keeson remote route | The route and motor count; the Ergomotion route also asks whether to read positions | Any [Keeson route](#profile-summary), such as KSBT or KSBT03CR |
+| No app: another Keeson remote | The route and motor count; the Ergomotion route also asks whether to read positions | Any [Keeson route](#profile-summary), such as KSBT or KSBT03CR |
 | Keep the detected or saved controls | | The detected or chosen route |
 
 An app row in the bed-type list answers the question itself; the one
@@ -2802,7 +2796,7 @@ Commands are 32-bit values sent in little-endian byte order.
 
 ##### Side Selection (Split-King)
 
-For split-king beds, configure the protocol variant:
+For split-king beds, choose the side under **Bed model or remote**:
 
 | Variant | Value | Description |
 |---------|-------|-------------|
@@ -3583,10 +3577,10 @@ was found.
    and Both controls** in Configure when needed. P2 products do not offer this option.
    Remove the Left, Right and Both controls before changing from P1 to P2.
 
-For an existing Keeson entry, select **BaseI4/BaseI5 (Member's Mark)** or
-**Ergomotion (with position feedback)** before enabling side controls. Do this
+For an existing Keeson entry, select **Member's Mark base (BaseI4 / BaseI5)** or
+**Ergomotion base (reports positions)** before enabling side controls. Do this
 through **Reconfigure** in the entry's three-dot menu, under the Keeson
-question's **No app: another Keeson remote route** answer; Configure refuses a
+question's **No app: another Keeson remote** answer; Configure refuses a
 Keeson route change. An existing Ergomotion bed-type
 entry also offers the option. Auto is excluded from the menu because it may
 resolve to an incompatible JSON or P2 profile at connection time. Choose the
@@ -4254,7 +4248,7 @@ models P3 and P4 send [Okin N-frames](okin-nframe.md#framing-and-checksum), desc
 
 ##### AdjustaMattress setup and layout
 
-Choose the matching product layout and BLE model in **Protocol variant**. The 28
+Choose the matching product layout and model under **Bed model or remote**. The 28
 explicit choices (`P1_L0` to `P4_L6`) combine two independent dimensions.
 
 ###### AdjustaMattress models

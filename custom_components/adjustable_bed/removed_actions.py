@@ -152,6 +152,20 @@ REMOVALS: Final[tuple[Removal, ...]] = (
             "get_system_status",
         )
     ),
+    # Factory motor tests and motor programming, only in v5 betas.
+    *(
+        Removal(action, "operation", operation)
+        for action, operation in (
+            ("richmat_rise", "diagnostic_cycle"),
+            ("richmat_rise", "program_schedule"),
+            ("lp2", "motor_program"),
+            ("lp2", "movement_test"),
+            ("bedsmart", "movement_test"),
+        )
+    ),
+    Removal("richmat_rise", "schedule"),
+    Removal("lp2", "schedule"),
+    Removal("bedsmart", "confirm"),
 )
 
 ISSUE_ID: Final = "removed_actions"
