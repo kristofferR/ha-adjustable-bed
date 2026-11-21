@@ -89,6 +89,15 @@ opts in through `ExecutionCapabilities.hold`, or per held control through its
 - The dashboard card holds through `timed_move` or `hold_control`, renewing
   every 250 ms with a 750 ms lease. Releasing the control, leaving the page or
   hiding it stops the renewals and sends the usual STOP.
+- A `hold_control` request on a control without a declared hold is no
+  scheduler lease. The action runs the control's ordinary bounded hold, at most
+  30 seconds, so the bed gets the frames it always got; a renewal only moves
+  the action's own deadline. When that deadline passes with the hold still
+  running, the action cancels its own command as a STOP does, so the controller
+  runs its release, and no other command is touched. A press keeps the route it
+  started with, so its renewals never become a scheduler lease if the
+  controller's capabilities change mid-press. A renewal of an ended press moves
+  nothing, and an older generation is refused.
 
 ## Merged stream for concurrent motors
 
