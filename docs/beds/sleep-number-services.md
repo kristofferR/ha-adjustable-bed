@@ -233,7 +233,7 @@ are rejected so a request cannot silently move the wrong side.
 ## Local diagnostics and maintenance
 
 On Fuzion beds, reset saved positions with the **Reset saved positions**
-button, which asks before it runs. `sleep_number_command` offers neither
+button; the card asks before it runs. `sleep_number_command` offers neither
 `reset_articulation_presets` nor the MCR `preset_reset`, because an action runs
 without asking.
 

@@ -3081,11 +3081,11 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_STOP_ALL,
         handle_stop_all,
-        # Any side string: the handler stops the whole bed for one it cannot honour.
+        # Any side value: the handler stops the whole bed for one it cannot honour.
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Optional(ATTR_SIDE): cv.string,
+                vol.Optional(ATTR_SIDE): object,
             }
         ),
     )

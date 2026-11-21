@@ -1534,7 +1534,8 @@ class TestServices:
         stop.assert_awaited_once_with()
 
     @pytest.mark.parametrize(
-        ("side", "error"), [("left", "side_not_supported"), ("middle", "side_unavailable")]
+        ("side", "error"),
+        [("left", "side_not_supported"), ("middle", "side_unavailable"), (["left"], "side_unavailable")],
     )
     async def test_stop_all_with_a_side_stops_a_single_bed_whole(
         self,
@@ -1542,7 +1543,7 @@ class TestServices:
         mock_config_entry,
         mock_coordinator_connected,
         enable_custom_integrations,
-        side: str,
+        side: object,
         error: str,
     ):
         """A side the bed cannot honour stops the whole bed, then reports the side."""
