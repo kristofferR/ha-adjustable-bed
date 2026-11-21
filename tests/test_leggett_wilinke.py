@@ -131,12 +131,12 @@ class TestLeggettWilinkeController:
         mock_leggett_wilinke_config_entry,
         mock_coordinator_connected,  # noqa: ARG002
     ):
-        """The L&P write loop bypasses the shared helper but still reaches support bundles."""
+        """L&P writes reach support bundles."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
         command = coordinator.controller._build_command(0x6E)
-        with patch("custom_components.adjustable_bed.beds.leggett.wilinke.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.gatt_write.asyncio.sleep"):
             await coordinator.controller.write_command(command, repeat_count=3, repeat_delay_ms=50)
 
         (trace,) = coordinator.command_trace
@@ -302,7 +302,7 @@ class TestLeggettWilinkePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.leggett.wilinke.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.gatt_write.asyncio.sleep"):
             await coordinator.controller.preset_lounge()
 
         expected_cmd = coordinator.controller._build_command(0x59)

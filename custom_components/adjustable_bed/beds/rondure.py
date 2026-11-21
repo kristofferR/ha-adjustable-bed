@@ -23,7 +23,6 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..codec import keeson as codec
-from ..command_scheduler import note_frame_skipped, note_frame_written
 from ..const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
@@ -82,6 +81,8 @@ class RondureCommands:
 
 class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Rondure / 1500 Tilt Base beds."""
+
+    _write_with_response = False
 
     def __init__(
         self,
@@ -157,54 +158,6 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
             return keeson_profiles.encode(self.profile, command & 0xFFFFFFFF)
         selector = self.profile.split_sides["side_a" if variant == RONDURE_VARIANT_SIDE_A else "side_b"]
         return codec.frame(command & 0xFFFFFFFF, header=0xE6, side=selector)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        _LOGGER.debug(
-            "Writing command to Rondure bed (%s): %s (repeat: %d, delay: %dms)",
-            RONDURE_WRITE_CHAR_UUID,
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        self._record_command_trace(
-            RONDURE_WRITE_CHAR_UUID,
-            command,
-            response=False,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-        )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                note_frame_skipped()
-                return
-
-            try:
-                async with self._ble_lock:
-                    await self.client.write_gatt_char(
-                        RONDURE_WRITE_CHAR_UUID, command, response=False
-                    )
-                    note_frame_written(effective_cancel)
-            except BleakError:
-                _LOGGER.exception("Failed to write command")
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
 
     async def _send_command(self, command: int, repeat_count: int = 1) -> None:
         """Build and send a command packet."""
