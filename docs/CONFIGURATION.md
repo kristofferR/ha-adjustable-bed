@@ -47,7 +47,7 @@ The first screen lists the discovered beds, each named with its family, then:
 A discovered bed asks first which app or remote controls it, from its detected
 family: that family's own question, or the detected bed type's rows. **Another
 app or remote** opens the full app list for the same bed. The family question's
-**Keep** answer saves the detected route, after a screen that says its controls
+**Keep the detected or saved controls** answer saves the detected route, after a screen that says its controls
 are generic, whether it needs pairing, and that **Reconfigure** can choose the
 app later; its **Back** returns to the question. Detection never picks an app by
 itself, because a bed's name and Bluetooth services do not tell these apps
@@ -158,7 +158,7 @@ app and side settings from before the beds were combined.
 Every configured bed is checked against the integration's existing Bluetooth
 identity and app-profile metadata. Under **Settings > System > Repairs**, Home
 Assistant may suggest **A better profile may be available**, or ask you to **Check
-the profile or protocol variant** when several profiles fit. Weak or unknown identities
+the app or remote** when several profiles fit. Weak or unknown identities
 stay quiet. A shared Bluetooth service or a new app alone does not prove that
 another profile works better.
 
@@ -207,12 +207,12 @@ connecting; diagnostics record the actual adapter or proxy used.
 
 | Motors | Controllable Sections |
 |--------|----------------------|
-| 1 | A single controllable section, when offered by the selected profile |
+| 1 | A single section, such as a TV or bed lift or a stair lift; offered only where the app or remote has one motor |
 | 2 | Back + Legs |
 | 3 | Head + Back + Legs |
 | 4 | Head + Back + Legs + Feet |
 
-Standard OCTO reads its motor count from the bed. Its **OCTO motor count**
+Standard OCTO reads its motor count from the bed. Its **Octo motor count**
 setting defaults to **Automatic** and can be set to one to four motors.
 
 For other beds that show **Number of motors**, count the distinct moving sections
@@ -353,9 +353,7 @@ receive a larger bounded retry budget; see
 - Match the range supported by your bed. They control position conversion and validation, not the hardware's mechanical limits.
 
 **Timed Move**
-- `adjustable_bed.timed_move` treats the requested milliseconds as an elapsed movement ceiling, starting after connection and movement preparation. Linak completes its readiness handshake before this timer starts. Bluetooth write latency counts toward the ceiling instead of extending it.
-- Each controller keeps its existing repeat cadence and release sequence. Some controllers finish sooner; controller setup within the movement also consumes the budget. The service waits for STOP/release cleanup, so its total duration can include connection setup and cleanup in addition to the movement limit.
-- Transport errors and failed cleanup remain errors. Reaching the requested movement limit is normal completion.
+- `adjustable_bed.timed_move` moves for at most the time you give it, counted once the bed is connected and ready, so the whole action can take a little longer. See [the command lifecycle](COMMAND_LIFECYCLE.md) for the details.
 
 ### Finding new beds automatically
 
@@ -473,7 +471,7 @@ and Reconfigure's bed-type list keeps them by name.
 ### Keeson Models
 
 New setups answer the [Keeson question](beds/keeson.md#home-assistant-setup).
-Its answers save one of these, and **No app: another Keeson remote route**
+Its answers save one of these, and **No app: another Keeson remote**
 lists the remotes.
 
 | Choice | Use for |
@@ -583,9 +581,9 @@ its bed guide.
 3. Match any requested model or remote to your physical bed. Shared Bluetooth
    names and services do not always identify the right layout.
 
-Existing entries keep their selection until you change it. Beds added before
-4.1.0 whose bed type gained app profiles are asked, through a repair, which
-app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
+Existing entries keep their selection until you change it. A bed on a generic
+route that has since gained app profiles can be asked once, through a repair,
+which app it uses; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 For a combined bed with two addresses, settings belong to each physical bed.
 Each receiver's own app settings, such as its motor count, massage or light
 settings, are under **Configure > Change left side settings** or **Change

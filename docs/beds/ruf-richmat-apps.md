@@ -7,11 +7,11 @@
 ## Known Models
 
 - RUF uses the fixed six-button BQRM remote, including names recognized by its app.
-- W.Silver Products: 508 current selectors, including its B6RM, Y2RM, U1RM,
+- W.Silver Products: 508 remote models to choose from, including its B6RM, Y2RM, U1RM,
   A6RM, UFRM, A8RM, UVRM, O1RM, DIRM, FJRM, AWRM, AXRM, JPRM and ACRN choices.
-- AMERICANSTAR: 532 usable selectors; Bailey's Bed Control: 572 usable selectors;
-  TX: 495 usable selectors. Setup lists each app's own selectors. A selector
-  identifies the app layout, not a confirmed physical actuator count.
+- AMERICANSTAR: 532 remote models; Bailey's Bed Control: 572; TX: 495. Setup
+  lists each app's own models. The model sets which controls you get, as in the
+  app; it does not tell how many motors your bed has.
 - The separately selected sleep receiver advertises a name containing the
   case-sensitive text `HJ_Bed`. RUF does not expose that receiver.
 - The older AMERICANSTAR Comfort Bed profile is a different app and controller.
@@ -31,18 +31,18 @@
 
 | Feature | RUF | W.Silver / AMERICANSTAR / Bailey / TX |
 |---------|-----|--------------------------------------|
-| Motor Control | Head, foot, combined | Exact selected model's axes and buttons |
+| Motor Control | Head, foot, combined | The selected model's motors and buttons |
 | Memory Presets | No | Model-specific recall and separate save buttons |
-| Massage | No generic massage page | Model-specific buttons and reply/version-gated intensity sliders |
-| Lights | No generic light page | Model buttons, reply-gated RGB and timeout controls |
-| Position Feedback | No exposed motor sliders | App angle sliders when the model and protocol version provide them |
-| Diagnostics | Reply-gated | Reply-gated |
-| Waist Mattress | Powered initialization required | Powered initialization required |
-| Normal Mattress | No | Explicit opt-in plus powered initialization; W.Silver, AMERICANSTAR and TX only |
-| Countdown / Indexed Alarms | No | Model and reply-gated |
-| Weekly Alarms | No | Model `hasNewAlarm` plus a nonempty alarm position list |
-| Sleep Monitoring / Intervention | No | Separate receiver, explicit app selection |
-| App PIN / Authentication | No app handshake found | No app handshake found; OS or firmware link security remains unverified |
+| Massage | No | The model's buttons; intensity sliders once the bed reports them |
+| Lights | No | The model's buttons; color and timeout controls once the bed reports them |
+| Position Feedback | No | Angle sliders on models that report angles |
+| Diagnostics | Once the bed answers | Once the bed answers |
+| Waist Mattress | Appears once the powered mattress reports in | Appears once the powered mattress reports in |
+| Normal Mattress | No | W.Silver, AMERICANSTAR and TX only: choose it in setup; appears once the powered mattress reports in |
+| Countdown / Indexed Alarms | No | On models that have them, once the bed answers |
+| Weekly Alarms | No | On models with weekly alarms |
+| Sleep Monitoring / Intervention | No | Separate receiver, added as its own entry |
+| PIN or pairing | Not needed | Not needed |
 
 ## Detection / Setup
 

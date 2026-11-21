@@ -554,7 +554,7 @@ def render_richmat_mh_setup() -> str:
                 *(row(names[frame], frame) for frame in steps),
             ],
         ),
-        f"The app's mattress literal ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
+        f"The app's stored mattress frame ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
         "its checksum, so the bed receives the frame above.",
     )
 
@@ -1431,9 +1431,6 @@ def render_rise_commands() -> str:
             (", ".join(sorted(set(layouts))), *key) for key, layouts in sorted(groups.items())
         ]))
         lines.append("\n</details>\n")
-    lines.append(_table(("Power Cool TEST opcode", "Refresh seconds", "Rest seconds"), [
-        (_code_hex(code), str(seconds), "5") for code, seconds in rise_frames.DIAGNOSTIC_CYCLE
-    ]))
     return _block(*lines)
 
 

@@ -17,14 +17,13 @@ for the architecture.
   with 2, 4, 6, 8, 10 or 12 keys, chair layouts with 2, 4, 6 or 8 keys
 - Chairs and beds operated by the FSM Relax app on Limoss-style FFE0 receivers
 
-A shared FFE0 service or device name cannot identify either app's layout, so both
-app profiles are explicit choices.
+Setup cannot tell which app's layout a bed uses, so pick the app you use.
 
 ## Apps
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
-| ✅ | [Limoss Remote](https://play.google.com/store/apps/details?id=com.limoss.limossremote) 7.1.8 (44) | `com.limoss.limossremote` | [Limoss Remote](#limoss-remote); the [legacy route](#legacy-route) predates its audit |
+| ✅ | [Limoss Remote](https://play.google.com/store/apps/details?id=com.limoss.limossremote) 7.1.8 (44) | `com.limoss.limossremote` | [Limoss Remote](#limoss-remote); the [legacy route](#legacy-route) is the older route |
 | ✅ | Stawett | `com.stawett` | [Legacy route](#legacy-route) |
 | ✅ | [FSM Relax](https://play.google.com/store/apps/details?id=com.limoss.fsmrelax) 1.9 (20) | `com.limoss.fsmrelax` | [FSM Relax](#fsm-relax) |
 
@@ -32,15 +31,15 @@ app profiles are explicit choices.
 
 | Feature | Legacy route | Limoss Remote | FSM Relax |
 |---------|--------------|---------------|-----------|
-| Motor Control | ✅ (head/back and legs; 3/4 motors from the capability reply) | ✅ (literal motor channels 1–4, combined, lift and shift, per rendered layout) | ✅ (held app actions from the exact source tables) |
-| Position Feedback | ✅ (estimated angles from raw positions) | ⚠️ (raw signed values only; no unit, angle or slider) | ⚠️ (raw signed motor values only; no unit, angle, percentage or slider) |
-| Presets | ✅ Flat (both down, held) | ❌ (no named flat, zero-gravity or TV preset) | ❌ (no firmware Flat preset is inferred) |
-| Memory Presets | ✅ (software: saves raw positions, recalls by set-position) | ✅ (up to 8 app-local raw-position slots, device-reported capacity) | ✅ (up to 8 device-local slots, raw targets stored in HA) |
-| Massage | ✅ (vibration zones 1–6 toggles) | ✅ (held plus/minus controls when selected; no intensity feedback) | ⚠️ (held plus/minus actions in the bed layout; no six-zone toggle or measured state) |
-| Lights | ✅ (toggle) | ✅ (held under-bed light control when selected; no ON/OFF feedback) | ⚠️ (held control in the bed layout; no on/off state, RGB, brightness or timer) |
-| Calibration | ❌ | ✅ (confirmed, memory-capable receivers only) | ✅ (`fsm_relax_calibrate`, confirmation required) |
+| Motor Control | ✅ (head/back and legs; 3/4 motors from the capability reply) | ✅ (motors 1–4, combined, lift and shift, as your layout has them) | ✅ (the app's hold-to-move buttons) |
+| Position Feedback | ✅ (estimated angles from raw positions) | ⚠️ (raw values only; no angles or sliders) | ⚠️ (raw values only; no angles or sliders) |
+| Presets | ✅ Flat (both down, held) | ❌ | ❌ |
+| Memory Presets | ✅ (software: saves raw positions, recalls by set-position) | ✅ (up to 8 slots, as many as the receiver reports; positions kept in Home Assistant) | ✅ (up to 8 slots; positions kept in Home Assistant) |
+| Massage | ✅ (vibration zones 1–6 toggles) | ✅ (hold-to-adjust plus/minus when chosen in setup; intensity not shown) | ⚠️ (hold-to-adjust plus/minus in the bed layout; no zone toggles; state not shown) |
+| Lights | ✅ (toggle) | ✅ (hold-to-use under-bed light when chosen in setup; on/off state not shown) | ⚠️ (hold-to-use control in the bed layout; no on/off state, color, brightness or timer) |
+| Calibration | ❌ | ✅ (asks for confirmation; receivers with memory only) | ✅ (`fsm_relax_calibrate`, confirmation required) |
 | Hold until release | ❌ (finite pulses at the entry's pulse settings) | ✅ (renewable `hold_control`) | ✅ (renewable `hold_control`) |
-| Sync, PIN or bond | ❌ | ❌ | ❌ (no OS bond or pairing step) |
+| Pairing or PIN | Not needed | Not needed | Not needed |
 
 ## Choosing a profile
 

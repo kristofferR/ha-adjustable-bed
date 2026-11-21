@@ -2696,8 +2696,7 @@ richmat_rise:
       required: true
       selector:
         select:
-          options: [query, rgb, lamp_timer, massage_timer, massage_popup, diagnostic_cycle,
-            program_schedule]
+          options: [query, rgb, lamp_timer, massage_timer, massage_popup]
           translation_key: richmat_rise_operation
     rgb_color:
       selector:
@@ -2722,9 +2721,6 @@ richmat_rise:
         select:
           options: ['15', '30', '45', toggle]
           translation_key: richmat_rise_popup
-    schedule:
-      selector:
-        object:
     side:
       selector:
         select:
@@ -3831,7 +3827,7 @@ lp2:
       required: true
       selector:
         select:
-          options: [color, light_duration, aromatherapy, fan, motor_program, movement_test, control]
+          options: [color, light_duration, aromatherapy, fan, control]
           translation_key: lp2_operation
     rgb_color:
       selector:
@@ -3864,9 +3860,6 @@ lp2:
           min: 0
           max: 6
           mode: box
-    schedule:
-      selector:
-        object:
     confirm:
       selector:
         boolean:
@@ -3924,7 +3917,6 @@ bedsmart:
           - color
           - light_duration
           - aromatherapy
-          - movement_test
           - bed_command
           translation_key: bedsmart_operation
     rgb_color:
@@ -3940,9 +3932,6 @@ bedsmart:
     aroma_times:
       selector:
         object: null
-    confirm:
-      selector:
-        boolean: null
     duration_ms:
       selector:
         number:

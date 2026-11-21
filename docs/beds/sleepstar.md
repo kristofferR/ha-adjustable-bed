@@ -25,15 +25,15 @@
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ Head, feet, lumbar, Auxiliary 1, Auxiliary 2; shared STOP |
-| Position Feedback | ✅ 0-100% for five addressable parts; sixth feedback-only part retained in diagnostics |
-| Direct Position | ✅ Zones 0-4, one packet |
-| Presets | ✅ Flat, TV, Zero-G, Anti-Snore, Lounge, both-up |
-| Memory Presets | ✅ Two app-visible slots; recall 3 writes then STOP, save 55 writes |
-| Lighting | ✅ Discrete on/off/toggle, brightness 0-6; protocol API also retains color indices 0-7 |
-| Sonic Massage | ✅ Head, foot, and combined intensity 0-6; five modes; 10/20/30-minute timer |
-| Sleep Monitor | ⚠️ Query/config builders for anti-snore, sleep zone, daily/monthly reports |
-| Environment | ⚠️ Duration, address, and seven-register query builders |
-| Audio | ⚠️ Media, USB, noise, sonic type, volume, cutoff, reset, preset, and EQ protocol methods |
+| Position Feedback | ✅ 0-100% for the five motors |
+| Direct Position | ✅ Move a motor straight to a position |
+| Presets | ✅ Flat, TV, Zero-G, Anti-Snore, Lounge, back and legs up |
+| Memory Presets | ✅ Two slots, recall and save |
+| Lighting | ✅ On/off, brightness 0-6 |
+| Sonic Massage | ✅ Head, foot and combined intensity 0-6; five modes; 10/20/30-minute timer |
+| Sleep Monitor | ❌ Not available in Home Assistant |
+| Environment | ❌ Not available in Home Assistant |
+| Audio | ❌ Not available in Home Assistant |
 
 ## Protocol Details
 

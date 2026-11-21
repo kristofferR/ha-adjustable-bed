@@ -5,26 +5,24 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 > [!NOTE]
-> For **Rize Beds 1.4.2**, choose the explicit [Rize Beds profile](#rize-beds).
-> Existing Kaidi entries retain their legacy route until reconfigured.
-> For **ISleep com.kaidi_test4**, choose the explicit [ISleep profile](#isleep).
-> Its profile corrects movement lifecycle, side routing, massage
-> strengths and memory capacity independently of the legacy Kaidi route.
-> Existing entries do not change automatically. Reconfigure or add the explicit
-> ISleep profile and confirm product, actuator descriptor and room ID.
+> For **Rize Beds 1.4.2**, choose the [Rize Beds profile](#rize-beds). For the
+> **ISleep** app (`com.kaidi_test4`), choose the [ISleep profile](#isleep): it
+> moves the bed, picks sides, sets massage strength and counts memory slots the
+> way the app does, unlike the older Kaidi route. Existing Kaidi entries keep the
+> older route until you reconfigure them; for ISleep, confirm the product,
+> actuator descriptor and room ID when you do.
 
 ## Known Models
 
 - Rize Beds, Floyd Home and ISleep bases (Kaidi OEM)
 - Product names from the OEM apps: Remedy 3, Remedy 4, Contemporary 4,
   Contemporary 5, Tranquility II and the generic single/double layouts (see
-  [APK-backed product IDs](#apk-backed-product-ids))
+  [Product IDs](#product-ids))
 - Common Bluetooth name: `Mouselet`
 - Floyd Home beds advertising Kaidi product 139 (`TRANQUILITY_II`)
 - ISleep bases advertising one of eight products: 129, 130, 131, 132, 133, 134,
-  142 and 143, selected only through the explicit **ISleep app (Kaidi,
-  com.kaidi_test4)** setup profile. A name, MAC prefix or service UUID alone does
-  not select it.
+  142 and 143. Choose **ISleep app (Kaidi, com.kaidi_test4)** in setup; setup
+  does not pick it from the name.
 
 ## Apps
 
@@ -39,11 +37,9 @@
 
 - The original Rize/Floyd/ISleep apps use only the Seat command values; the legacy Bed values in the
   shared library are not used by any of them.
-- Rize Beds 1.4.2, Floyd Home and ISleep each have their own profile. Their
-  capabilities and control behavior come from their own accepted artifacts, not
-  from other apps sharing this transport. Rize/Floyd and existing Kaidi entries
-  retain their own route; selecting a shared transport does not identify which
-  app owns a bed.
+- Rize Beds 1.4.2, Floyd Home and ISleep each have their own profile with that
+  app's controls. Existing Rize/Floyd and Kaidi entries keep their route; pick
+  the app you use when you set up a bed.
 
 
 ## Features
@@ -52,32 +48,32 @@
 |---------|---------------|------------|--------|
 | Motor Control | ✅ (head and foot on every variant; back, waist/lumbar per product) | ✅ (head/back and feet; start, timed hold, release) | ✅ (upper/back and feet; head and waist per product; press, timed hold, release) |
 | Combined up/down | ❌ | ⚠️ (`hold_control` only) | ✅ (**All up** / **All down** buttons) |
-| Position Feedback | ❌ (direct targets are commands, not measured feedback) | ❌ (no position sliders or measured angles) | ❌ (no position, light or massage telemetry) |
+| Position Feedback | ❌ | ❌ | ❌ (light and massage state are not reported either) |
 | Direct Position Targets | ✅ (back/legs 0-100%, Seat 1, Seat 2, Seat 1+2) | ❌ | ❌ |
 | Flat / Zero G / Anti-Snore | ✅ (Seat 1, Seat 2, Seat 1+2) | ✅ | ✅ |
-| Book (TV) / Leisure (Lounge) | ⚠️ (product-gated) | ❌ | ❌ |
-| Memory Presets | ✅ (4 recall/save slots) | ✅ (three recall/save slots) | ✅ (three slots, recall and explicit program) |
-| Preset Programming | ❌ | ✅ (Zero gravity and Anti-snore overwrite, confirmed) | ❌ |
-| Massage | ⚠️ (start/stop and 15/30/45-minute timers on Seat 1, Seat 2, Seat 1+2; requires **Has massage**) | ❌ | ✅ (on/off, patterns 1/2/3, strengths 0-100, timer; optimistic state) |
-| Lights | ⚠️ (on/off, product-gated) | ✅ (under-bed, discrete on/off, no measured state feedback) | ✅ (discrete on/off) |
-| Battery Mode | ❌ | ✅ (binary diagnostic) | ❌ |
-| Single-address Left/Right | ✅ (`seat_1_2` only) | ❌ (no normal single-address Left/Right controls) | ⚠️ (products 130 and 143 only, when the actuator descriptor is not 2) |
-| Room enrollment | ❌ (provision in the official app) | ✅ (`assign_room` for an unassigned bed) | ✅ (explicit action for unprovisioned mode09 beds) |
-| Foreign-room reset | ❌ | ❌ (excluded for safety) | ❌ (mode07, excluded for safety) |
+| Book (TV) / Leisure (Lounge) | ⚠️ (some products) | ❌ | ❌ |
+| Memory Presets | ✅ (4 recall/save slots) | ✅ (three recall/save slots) | ✅ (three slots, recall and save) |
+| Preset Programming | ❌ | ✅ (save over Zero gravity and Anti-snore; asks for confirmation) | ❌ |
+| Massage | ⚠️ (start/stop and 15/30/45-minute timers on Seat 1, Seat 2, Seat 1+2; requires **Has massage**) | ❌ | ✅ (on/off, patterns 1/2/3, strengths 0-100, timer; shows the last command sent) |
+| Lights | ⚠️ (on/off, some products) | ✅ (under-bed on/off; state not reported) | ✅ (on/off) |
+| Battery Mode | ❌ | ✅ (diagnostic sensor) | ❌ |
+| Left and right sides on one address | ✅ (`seat_1_2` only) | ❌ | ⚠️ (products 130 and 143 only, when the actuator descriptor is not 2) |
+| Room enrollment | ❌ (set it up in the official app) | ✅ (`assign_room` for a bed with no room yet) | ✅ (an action for mode09 beds with no room yet) |
+| Resetting a bed from another room | ❌ | ❌ (left out for safety) | ❌ (mode07, left out for safety) |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ dual-seat (`seat_1_2`) beds | ❌ | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
 
 | Rize Beds 1.4.2 feature | Supported |
 |---|---|
-| Motor Control | ✅ (product/topology axes, plus app voice controls) |
+| Motor Control | ✅ (the motors your product has, plus the app's voice controls) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (three recall/save slots) |
-| Default Programming | ✅ (confirmed, one physical target) |
+| Default Programming | ✅ (asks for confirmation; one bed at a time) |
 | Massage | ✅ (patterns, head strength, timers; leg strength and mode4 per product) |
-| Lights | ✅ (discrete on/off) |
+| Lights | ✅ (on/off) |
 | Motion Sensor Commands | ✅ (extended products) |
-| Battery Mode | ✅ (extended products, live diagnostic) |
-| Native Sides | ✅ (products130/141, descriptor other than2) |
-| Room Enrollment | ✅ (unprovisioned mode09 only) |
+| Battery Mode | ✅ (extended products, diagnostic sensor) |
+| Left and right sides | ✅ (products 130/141, when the actuator descriptor is not 2) |
+| Room Enrollment | ✅ (mode09 beds with no room yet) |
 
 - Floyd Home: a battery event can arrive unsolicited; unknown battery mode is
   not interpreted as battery power. A reported battery mode blocks raising, but
@@ -272,7 +268,7 @@ can see a valid advertisement:
 - advertisement type
 - resolved Kaidi variant and the source used to resolve it
 
-##### APK-backed product IDs
+##### Product IDs
 
 The resolver recognizes these product IDs from Rize 1.3.0, ISleep 1.6.3,
 and Floyd 1.0.7; the [profile summary](#choosing-a-profile) lists the variant

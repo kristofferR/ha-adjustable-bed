@@ -15,9 +15,9 @@
 - Svane
 - Many OEM adjustable beds with Linak motors
 
-The analyzed apps contain no product-name or remote-code catalog. The integration
-therefore selects behavior from the live GATT services and actuator mask, not from
-a retail brand or guessed model name.
+The apps have no list of products or remotes. The integration learns which
+motors and features your bed has when it connects, not from the brand or model
+name.
 
 ## Apps
 
@@ -31,18 +31,18 @@ a retail brand or guessed model name.
 
 | Feature | Bed Control | Performance Series |
 |---------|-------------|--------------------|
-| Motor control and explicit release | ✅ (mask-selected Back, Legs, Head, Feet, Base) | ✅ |
-| Native two-section movement opcodes | ✅, all 40 combinations | ❌ |
+| Motor control | ✅ (Back, Legs, Head, Feet, Base, as the bed reports them) | ✅ |
+| Moving two sections together | ✅ (any two sections your bed has) | ❌ |
 | Flat | ✅ | ✅ |
 | All up | ✅ | ❌ |
 | Four memory recalls and stores | TD3/Advanced only | ✅ |
 | Position, reported speed and four status flags | Advanced only | ❌ |
-| All 104 protocol error codes | ✅ | ❌, notification payload is opaque |
+| Error messages | ✅ (all 104 error codes) | ❌ |
 | Massage | Off, modes, zones and intensity | Toggle, wave/frequency, intensity and impulse |
 | AUX/under-bed light | On/off light entity | Toggle button |
 | Automatic drive configuration | ✅ | ❌ |
 | BLE device rename | ✅ | ❌ |
-| Alarm event, recurrence and commit | Alarm model only | ❌ |
+| Alarms (time and repeat) | Alarm model only | ❌ |
 | Reset defaults (`4E 00`) | ✅ | ✅ |
 | Configuration factory reset (`7F 3E 80`) | ✅, disabled by default | ❌ |
 | Wake command | ✅ | ❌ |

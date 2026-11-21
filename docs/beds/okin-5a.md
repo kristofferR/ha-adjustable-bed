@@ -1,13 +1,13 @@
-# Okin 5A
+# Nectar, Mattress Firm 900, Sealy Posturematic and DewertOkin ELEVATE (Okin)
 
 **Status:** Tested on the Sealy Posturematic CB35 profile; the other profiles need testing
 
 **Credit:** Reverse engineering by [MaximumWorf](https://github.com/MaximumWorf) ([homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)), [David Delahoz](https://github.com/daviddelahoz) ([BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)) and [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 One wire codec (`5A 01 03 10 page key A5` key frames over two GATT transports)
-serves four profiles: legacy seven-byte Nectar beds, Mattress Firm 900 / iFlex
-Nordic UART bases, Sealy Posturematic CB35 beds and the DewertOkin ELEVATE lift
-accessory. The codec also builds the other StarCode frames that standalone
+serves five profiles: legacy seven-byte Nectar beds, Mattress Firm 900 / iFlex
+Nordic UART bases, Sealy Posturematic CB35 beds, the Sealy Posturematic app and
+the DewertOkin ELEVATE lift accessory. The codec also builds the other StarCode frames that standalone
 StarCode controllers send (see [StarCode frames](#starcode-frames)). This guide
 covers the codec first, then one section per profile. See
 [Protocol codecs and app profiles](../design/protocol-codecs.md) for the
@@ -15,11 +15,11 @@ architecture.
 
 > [!NOTE]
 > Two newer apps that share these names use a different wire format. The
-> Nectar Motion app is the explicit **Nectar Move** profile of
+> Nectar Motion app is the **Nectar Move** profile of
 > [Okin CST](okin-nframe.md#okin-cst), and beds using the official MFirm 900-O app
 > (`com.okin.bedding.rizemf900`) and advertising as `OKIN-XXXXXX` are
-> [Okin CST](okin-nframe.md#okin-cst) too. Neither is selected by an `OKIN-*` name, a
-> shared OKIN UUID or a Device Information value.
+> [Okin CST](okin-nframe.md#okin-cst) too. Setup does not pick either from the
+> Bluetooth name or services; choose it yourself.
 >
 > The Nectar Premier / Resident Adjustable Base uses neither: choose the
 > [Resident Adjustable Base](okin-nframe.md#resident-adjustable-base) app profile,
@@ -58,7 +58,7 @@ of this one (see [Nectar](#nectar)).
 | Feature | Nectar | Mattress Firm 900 / iFlex | Sealy Posturematic (CB35) | DewertOkin ELEVATE |
 |---------|--------|---------------------------|---------------------------|--------------------|
 | Motor Control | ✅ Head, Feet, Lumbar | ✅ Head, Foot, Lumbar | ✅ Head, Foot, Lumbar, Neck, Hips (Hips is the Head End Tilt cover) | ✅ Actuator 1, actuator 2 and both together |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ (no semantic notification parser in the apps) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Anti-Snore, Lounge; TV sends the Lounge key | ✅ Flat, Zero-G, Anti-Snore, Lounge, Incline; TV sends the Lounge key | ✅ Flat, Zero G, Anti-Snore, Lounge, Incline, TV | ✅ Flat (one-shot) |
 | Memory Presets | ⚠️ Recall of slots 1-2 only, no programming | ❌ (built-in presets instead) | ⚠️ Recall of Memory 1 and 2; no programming over BLE | ❌ |
 | Massage | ✅ Global on, wave and off; no intensity commands | ✅ On, toggle, wave, off, intensity up/down | ✅ Toggle, head/foot strength, mode step, stop | ❌ |
@@ -66,7 +66,7 @@ of this one (see [Nectar](#nectar)).
 | Group control with M5X5 / M1X12 mains | ❌ | ❌ | ❌ | ✅ (see [AdjustableM5X5 lifts](#adjustablem5x5-lifts)) |
 | Hold until release | ❌ (finite pulses) | ❌ (finite pulses) | ❌ (finite pulses) | ✅ (renewable `timed_move`, both routes) |
 | BLE Pairing / Authentication | ❌ Not required | ❌ Not required | ❌ Not required | ❌ Not required |
-| Hardware-confirmed | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
+| Tested on hardware | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
 
 ## Choosing a profile
 
@@ -429,6 +429,14 @@ Store), developed by Star Seeds Co LTD (DewertOkin).
 
 #### Setup
 
+For a Sealy Posturematic bed with this receiver (a Bluetooth name starting
+with `Star35`), use this profile: it is the one tested on a real bed, a Sealy
+Element. A discovered `Star35` bed offers it as the detected receiver. To add the
+bed yourself, choose **My app isn't listed, or I don't know**, then **Okin
+(other receivers)** and **Sealy Posturematic or DewertOkin Star bed**. The
+[Sealy Posturematic app](#sealy-posturematic-app) row follows the newer app and
+has not been tested yet.
+
 - Detection: a `Star35*` name with Nordic UART; see [Name encoding](#name-encoding).
 - Initialization: only the wake frame, followed by 100 ms; no Mattress Firm
   handshake. CB35 requires write without response (see the
@@ -532,6 +540,11 @@ protocol definition at
 **Status:** Not yet tested
 
 #### Setup
+
+This row has not been tested on a real bed yet. If the bed's Bluetooth name
+starts with `Star35`, the [Sealy Posturematic (CB35)](#sealy-posturematic-cb35)
+profile has been tested on a Sealy Element, so choose that one unless you want
+to help test this one.
 
 Choose **Sealy Posturematic**, then the product printed on the bed: Element,
 Ascent or Apex. Reconfigure changes that choice. Each physical bed keeps its
@@ -652,7 +665,7 @@ Use the shared actions in [Actions and Automations](../SERVICES.md).
 | `hold_control` | `device_id`, `control`, `duration` (seconds), optional `side` | Hold a head, foot, combined or preset control; ordinary STOP release |
 | `goto_preset` | `device_id`, `preset`, optional `duration` (seconds) and `side` | Recall memory 1 or 2, with ordinary STOP release |
 | `save_preset` | `device_id`, `preset`, optional `side` | Save slot 1 or 2 with finite programming and release |
-| `stop` | `device_id`, optional `side` | Ordinary STOP twice; does not promise interruption of every firmware preset |
+| `stop_all` | `device_id`, optional `side` | Ordinary STOP twice; does not promise interruption of every firmware preset |
 
 #### Evidence
 

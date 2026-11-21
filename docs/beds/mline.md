@@ -6,8 +6,8 @@
 
 ## Known Models
 
-The app offers three motor layouts. Its protocol selectors are not hardware model identifiers.
-Names containing SLEEP, SMARTBED or OKIN are candidates shared with other apps.
+The app offers three motor layouts; pick yours in setup. Beds whose Bluetooth
+name contains SLEEP, SMARTBED or OKIN may also belong to other apps.
 
 ## Apps
 
@@ -20,14 +20,14 @@ Names containing SLEEP, SMARTBED or OKIN are candidates shared with other apps.
 | Feature | Supported |
 |---|---|
 | Motor control | Head and foot; neck and lumbar by selected layout; combined head/foot on two-motor layout |
-| Position feedback | No motor angles or percentages |
-| Presets / memory | Flat, Zero G, anti-snore, two memory recalls; no proven memory-save frame |
-| Light | One-shot light action; no observed on/off state |
-| Massage | Optional registered-route controls: start, cycle wave, intensity and timer |
+| Position feedback | ❌ |
+| Presets / memory | Flat, Zero G, anti-snore, two memory recalls; no memory save |
+| Light | One light button; on/off state not shown |
+| Massage | If chosen in setup: start, cycle wave, intensity and timer; no massage off |
 | Clock / alarm | Clock sync, recurring or one-shot alarm, disable and query |
-| Sleep sensor | Heart, breath and motion; the source's unnamed boolean is in diagnostics |
-| Privacy / anti-snore settings | Sleep protocol only |
-| Raw history | Explicit bounded transfer and separate acknowledgement on the same connection |
+| Sleep sensor | Heart rate, breathing and motion |
+| Privacy / anti-snore settings | Sleep sensor only |
+| Sleep history | Raw download through an action, which you then acknowledge |
 
 ## Choosing a profile
 

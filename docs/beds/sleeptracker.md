@@ -5,8 +5,8 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 The **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** selection
-implements the direct BLE path in Tempur Sleeptracker-AI
-`com.fullpower.applications.horizon` **3.6.2 (262)**.
+controls the bed directly over Bluetooth, as Tempur Sleeptracker-AI
+`com.fullpower.applications.horizon` **3.6.2 (262)** does.
 
 ## Known Models
 
@@ -29,14 +29,14 @@ implements the direct BLE path in Tempur Sleeptracker-AI
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ Back, legs, lumbar (layout-dependent; generic layout back and legs) |
-| Position Feedback | ❌ (no position, angle, percentage or height feedback is established) |
+| Position Feedback | ❌ |
 | Presets | ✅ Flat, Zero G, Anti-Snore, TV, favorite 1 / favorite 2 (layout-dependent) |
 | Preset save | ✅ Zero G, Anti-Snore, TV and favorites; Flat cannot be saved; processor types 5, 6 and 7 disable saving |
 | Massage | ✅ Pattern on all layouts; head/foot steps on supported layouts; premium 28/40 Hz, wave, wind-down, strength and pattern selects |
-| Safety light | ✅ App-specific toggle button and reported-state sensor |
+| Safety light | ✅ Toggle button and a sensor showing its state |
 | ActiveBreeze climate | ✅ Left/right Off / Cool / Heat, levels 0–3, Constant / Curve |
 | Automation actions | ✅ Five [typed actions](../SERVICES.md#sleeptracker-smart-bed) |
-| One-address left/right pairing | ❌ (two-address pairs only) |
+| Pairing two sides | ⚠️ Only two beds with their own Bluetooth addresses; one address cannot be split into sides |
 
 ## Protocol Details
 

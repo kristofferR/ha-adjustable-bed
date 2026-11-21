@@ -44,8 +44,6 @@ def _target(*, invalid: bool = False, bed_type: str = BED_TYPE_REVERIE_NIGHTSTAN
         async_set_comfort=AsyncMock(),
         validate_routine=MagicMock(),
         async_start_routine=AsyncMock(),
-        validate_diagnostic=MagicMock(),
-        async_start_diagnostic=AsyncMock(),
     )
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     # A lightweight double: no scheduler reservation API, so no prepared dispatch.
@@ -259,7 +257,7 @@ async def test_deferred_actions_preflight_pair_connection_policy(
             await hass.services.async_call(DOMAIN, service, data, blocking=True)
             first.async_execute_controller_command.assert_awaited_once()
             pair.async_execute_controller_command.assert_awaited_once()
-    method = "async_start_routine" if service == "reverie_run_routine" else "async_start_diagnostic"
+    method = "async_start_routine"
     rejected = mode == "sequential" and not local_role
     assert getattr(first_controller, method).await_count == (0 if rejected else 1)
     assert getattr(left_controller, method).await_count == (0 if rejected else 1)

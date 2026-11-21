@@ -16,10 +16,9 @@ Most adjustable beds use Bluetooth Low Energy (BLE) to communicate with their re
 
 Home Assistant ranks the available Bluetooth paths each time it connects. The
 strongest signal is not always the path that can successfully establish a link.
-When more than one usable path is available, the integration allows at least
-five connection attempts and caps the exponential backoff at twice the base
-delay. This gives HA time to penalize failed paths and select an alternative
-within the same request. Single-path connections keep the normal three attempts.
+When more than one adapter or proxy can reach the bed, the integration tries a
+few more times, so Home Assistant can switch to another path when one keeps
+failing.
 
 The integration continues to use HA's routing, connection slots, and pairing
 ownership. It does not transfer bonds between proxies, force a particular route,
@@ -214,7 +213,7 @@ then use [Combine two beds into one](CONFIGURATION.md#two-independent-frames).
 
 After setup, you can adjust additional settings via **Settings > Devices & services > Adjustable Bed > Configure** (gear icon), then **Change settings**:
 
-- **Bed type, app or route** - Change it with
+- The app, model or remote is not here: change it with
   [Reconfigure](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
   in the entry's three-dots menu if the detected one is wrong
 - **Movement per tap** - How far a tap moves
@@ -258,17 +257,10 @@ If your bed doesn't appear in Home Assistant at all (not visible to any adapter 
 
 ## Motor Count Configuration
 
-| Motors | Sections |
-|--------|----------|
-| 1 (Standard OCTO lift only) | TV/bed lift; `RTV` is detected automatically |
-| 2 (most common) | Back + Legs |
-| 3 | Head + Back + Legs |
-| 4 | Head + Back + Legs + Feet |
-
-**How to determine:** Count the distinct moving sections when using your remote, or check your bed's manual.
-
-Controller-specific layouts can expose additional axes. Malouf/Lucid and the
-explicit app profiles use their own layout settings; see [Configuration](CONFIGURATION.md).
+Where setup asks for **Number of motors**, count the distinct moving sections
+when using your remote, or check your bed's manual. See
+[Motor Count Details](CONFIGURATION.md#motor-count-details) for what each count
+controls. Many apps and remotes set the count themselves and do not ask.
 
 ---
 

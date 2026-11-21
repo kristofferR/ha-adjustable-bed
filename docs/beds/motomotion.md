@@ -1,4 +1,4 @@
-# HHC `$#` frames (MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion)
+# MotoMotion, MotoSleep, Power Bob, Bedgear and L2 Motion
 
 **Status:** Partly tested (existing MotoSleep HHC support user tested in [#51](https://github.com/kristofferR/ha-adjustable-bed/issues/51) and [#445](https://github.com/kristofferR/ha-adjustable-bed/issues/445); MotoMotion, Power Bob and the other MotoSleep models need testing)
 
@@ -6,10 +6,9 @@
 
 ## Known Models
 
-- **MotoMotion:** the app selects 17 primary routes: 13 panel classes and four
-  aliases. Case-sensitive local names containing `SOFA` with length 15, `BT201`
-  with length 9, or containing `MOTO` are scan candidates. These are contains
-  tests, not prefixes.
+- **MotoMotion:** 17 panel layouts (13 panels and four aliases). Setup finds
+  devices whose Bluetooth name contains `SOFA` (15 characters long), `BT201`
+  (9 characters long) or `MOTO`, anywhere in the name and case-sensitive.
 - **MotoSleep / Power Bob:** beds with HHC (Hangzhou Huaci) controllers and
   Power Bob. Device names contain "HHC" (e.g., `HHC3611243CDEF`,
   `HHC0069815CDEF`).
@@ -18,9 +17,8 @@
 - Dedicated MotoSleep model pages: WR1140, the WRS14 series (WRS14Dmm,
   WRS14ms), WRS16ms, WRS18ms, WRS20ms, WRS20ms Swing, WRS23ms, WRS27ms, WRC30Mms
   and WR219.
-- No physical brand/model equivalence is inferred between the apps' selectors.
-  MotoMotion, MotoSleep and Power Bob remain separate app profiles, and none
-  treats every device using the shared HHC UUID as one universal bed.
+- MotoMotion, MotoSleep and Power Bob are separate app profiles; pick the app
+  you use. A model in one app is not assumed to match a model in another.
 
 ## Apps
 
@@ -36,19 +34,19 @@
 
 | Feature | MotoMotion | MotoSleep | Power Bob | Legacy route | Bedgear |
 |---------|------------|-----------|-----------|--------------| --- |
-| Motor Control | ✅ App-labelled headrest, lumbar, main, back, legrest and tilt controls, selected by panel | ✅ Profile-specific: back, legs, head, feet, lumbar, neck, tilt, neutral auxiliary pairs | ✅ Profile-specific: back, legs, lumbar, tilt, neutral auxiliary pairs | ✅ Back and legs | ✅ Name-selected motor zones |
-| Position Feedback | ❌ No measured motor angle/percentage response | ❌ | ❌ | ❌ | ❌ |
-| Memory Presets | ✅ 0–4 slots, with panel-specific recall and programming | ✅ 2 slots on most profiles; none on WR219 and the smallest panels | ✅ 2 slots on most profiles; none on the smallest panels | ❌ | ✅ 0 or 2 slots; Panel E snore save |
-| Zero-G / Anti-Snore / TV / Flat | Home only | ✅ Profile-specific | ✅ Profile-specific | Flat | ✅ Layout-specific |
+| Motor Control | ✅ Headrest, lumbar, main, back, legrest and tilt, by panel, named as in the app | ✅ By model: back, legs, head, feet, lumbar, neck, tilt, auxiliary pairs | ✅ By model: back, legs, lumbar, tilt, auxiliary pairs | ✅ Back and legs | ✅ Motor zones, by model name |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Memory Presets | ✅ 0–4 slots, recall and save, by panel | ✅ 2 slots on most profiles; none on WR219 and the smallest panels | ✅ 2 slots on most profiles; none on the smallest panels | ❌ | ✅ 0 or 2 slots; Panel E snore save |
+| Zero-G / Anti-Snore / TV / Flat | Home only | ✅ By model | ✅ By model | Flat | ✅ By layout |
 | Swing | ❌ | ✅ WRS20ms Swing and WR219 | ❌ | ❌ | ❌ |
-| Massage | ✅ Name-selected level controls | ✅ Profile-specific head/foot toggles, intensity steps, stop | ✅ Profile-specific head/foot toggles, intensity steps, stop | ❌ | ✅ Layout-specific buttons |
-| Heat | ✅ Name/panel-selected level or cycle controls | ❌ | ❌ | ❌ | ❌ |
-| Lights | ✅ Panel light cycle/toggle, RGB and timer where admitted | ✅ Under-bed `$A` toggle or RGB, profile-specific | ✅ RGB settings; `$A` toggle, profile-specific | ❌ | ✅ Toggle, RGB and shutdown minutes where admitted |
-| Split-King Sync | ❌ | ✅ Current MotoSleep HHC MainPanel profiles F, G, H, WR1140 and `New` variants | ❌ | ❌ | ✅ Source-gated bed synchronization |
-| Music / Audio | ✅ ASCII or binary equalizer controls; binary playback buttons | ❌ Excluded, see [Notes](#notes) | ❌ Excluded | ❌ | ❌ Excluded |
-| User postures | ✅ Local measurements, four generated/custom raw Hall target postures, fine tuning | ❌ | ❌ | ❌ | ❌ |
-| Side selection | ✅ Left/right when `SOFA` name index 10 is `S`; retained per address and exact profile across reconnections, with paired child routing taking precedence | ❌ | ❌ | ❌ | ❌ No app wire side selector; HA can pair two receivers |
-| Binding | ✅ Eight-byte application binding and explicit application unbinding | ❌ | ❌ | ❌ | Received bed sync state/toggle, no ownership or authentication exchange |
+| Massage | ✅ Level controls, by model name | ✅ Head/foot toggles, intensity steps, stop, by model | ✅ Head/foot toggles, intensity steps, stop, by model | ❌ | ✅ Buttons, by layout |
+| Heat | ✅ Level or cycle controls, by model | ❌ | ❌ | ❌ | ❌ |
+| Lights | ✅ Light cycle or toggle; RGB and timer where the panel has them | ✅ Under-bed toggle or RGB, by model | ✅ RGB settings; toggle, by model | ❌ | ✅ Toggle, RGB and shutdown minutes where the layout has them |
+| Split-King Sync | ❌ | ✅ Panels F, G, H, WR1140 and the `New` variants | ❌ | ❌ | ✅ On layouts that have it |
+| Music / Audio | ✅ Equalizer controls; playback buttons on some panels | ❌ Not supported, see [Notes](#notes) | ❌ Not supported | ❌ | ❌ Not supported |
+| User postures | ✅ Measure positions, four saved postures, fine tuning | ❌ | ❌ | ❌ | ❌ |
+| Side selection | ✅ Left/right on sofas whose name has `S` as its 11th character; remembered across reconnects | ❌ | ❌ | ❌ | ❌ No side choice; two receivers can be paired in Home Assistant |
+| Binding | ✅ Bind and unbind, as the app does | ❌ | ❌ | ❌ | Not needed |
 
 ## Choosing a profile
 

@@ -9,7 +9,7 @@ body:
         Thanks for taking the time to request support for a new bed! The information you provide helps us implement the protocol correctly.
 
         **Before submitting:**
-        - Check the [Supported Actuators guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/SUPPORTED_ACTUATORS.md) to see if your bed might already be supported under a different actuator brand name
+        - Check the [brand lookup](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/SUPPORTED_ACTUATORS.md) to see if your bed might already be supported under another brand name
         - See the [Getting Help Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/GETTING_HELP.md#requesting-support-for-a-new-bed) for more details
 
   - type: input
@@ -55,9 +55,9 @@ body:
       description: |
         **A support bundle helps us investigate compatibility** (service UUIDs, GATT structure, device name, advertisements). If capture fails, describe the error instead so the request can still be tracked.
 
-        1. Find your bed's MAC address: Settings → Devices & Services → Add Integration → Adjustable Bed → "Browse unsupported BLE devices", then select your bed (this only inspects the device, it doesn't add anything)
+        1. Find your bed's MAC address: Settings → Devices & Services → Add Integration → Adjustable Bed → "Browse unsupported Bluetooth devices", then select your bed (this only inspects the device, it doesn't add anything)
         2. Go to Developer Tools → Actions
-        3. Search for `adjustable_bed.generate_support_bundle`, leave the device empty, and enter the MAC address in "Target Address"
+        3. Search for `adjustable_bed.generate_support_bundle`, leave "Bed" empty, and enter the MAC address in "Target address"
         4. Click "Perform action" and operate your physical remote during the capture
         5. Click the **download link** in the notification that appears
         6. Open the file and remove anything you do not want to share

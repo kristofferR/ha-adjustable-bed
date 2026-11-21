@@ -37,6 +37,13 @@ ahead of it, and what happens when the bed cannot be reached.
 - Position and light reads yield to commands and STOP. A seek finishes the
   controller's read preparation before its feedback timeout starts, and stale
   feedback never stands in for a failed read.
+- A seek steered by position reports needs a fresh one for the axis it moves:
+  from the current connection and normally at most three seconds old, unless
+  the controller sets its own limit. A notification-only controller can use a
+  recent report when a read returns none, but needs a new report after moving
+  and never reuses one to confirm a stall or start another burst. When reports
+  stop, the controller's movement cleanup runs and the seek fails; last-known
+  values never authorize more movement.
 - A timed movement starts its budget after connecting and after the
   controller's movement preparation. STOP and cleanup can extend the total
   time of the action.
