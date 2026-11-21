@@ -418,17 +418,36 @@ async def test_partial_refresh_capability_change_persists_and_reconciles_after_f
         reload.assert_awaited_once_with(coordinator.entry.entry_id)
 
 
-async def test_both_sides_pending_reload_the_pair_once(hass):
-    """One reload rebuilds both sides, so a second pending side does not reload again."""
+async def test_a_capability_reload_fences_the_pair_until_it_finishes(hass):
+    """While one side's reload replaces the pair, the other side neither reloads
+    again, reconnects for its own pending reload, nor writes an ordinary command."""
     pair, children, _ = await pair_runtime(hass)
-    with patch.object(
-        hass.config_entries, "async_reload", new=AsyncMock(return_value=True)
-    ) as reload:
-        for child in children.values():
-            child._client = None
-            child._pending_capability_reload = True
-        for child in children.values():
-            child._schedule_pending_capability_reload()
+    left, right = children[const.SIDE_LEFT], children[const.SIDE_RIGHT]
+    reloading, finish = asyncio.Event(), asyncio.Event()
+
+    async def reload(_entry_id):
+        reloading.set()
+        await finish.wait()
+        return True
+
+    async def command(_controller):
+        raise AssertionError("an ordinary command reached the bed during the reload")
+
+    with patch.object(hass.config_entries, "async_reload", side_effect=reload) as reloaded:
+        left._client = None
+        left._pending_capability_reload = True
+        left._schedule_pending_capability_reload()
+        await asyncio.wait_for(reloading.wait(), 1)
+
+        right._client = None
+        right._pending_capability_reload = True
+        right._schedule_pending_capability_reload()
+        # Not async_block_till_done: it would wait for the blocked reload.
+        for _ in range(5):
+            await asyncio.sleep(0)
+        assert right._capability_reload_blocks_connection()
+        await right.async_execute_controller_command(command, cancel_running=False)
+
+        finish.set()
         await hass.async_block_till_done()
-    reload.assert_awaited_once_with(pair.entry.entry_id)
-    assert not any(child._pending_capability_reload for child in children.values())
+    reloaded.assert_awaited_once_with(pair.entry.entry_id)

@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.beds.serta_mp_remote import (
 from custom_components.adjustable_bed.button import _combined_motor_buttons_for
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.errors import BedNotConnectedError
 from custom_components.adjustable_bed.services import async_register_services
 
 from .entry_entities import async_add_entry_entities
@@ -298,7 +299,7 @@ async def test_actual_auto_fallback_publishes_finite_both_and_registered_press_e
 
         monkeypatch.setattr(target, "async_connect", connect)
     monkeypatch.setattr(right, "async_ensure_connected", exhausted)
-    with pytest.raises(ConnectionError, match="Not connected"):
+    with pytest.raises(BedNotConnectedError):
         await pair.async_execute_controller_command(lambda c: c.move_head_up(), side="right")
     monkeypatch.setattr(right, "async_ensure_connected", AsyncMock(return_value=True))
     assert pair.connection_mode == "sequential"

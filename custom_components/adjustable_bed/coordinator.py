@@ -565,6 +565,9 @@ class AdjustableBedCoordinator(
         # become readable on a later connection; the dialects expose different lights.
         self._box25_dialect: type[BedController] | None = None
         self._capability_reload_scheduled = False
+        # Set on every coordinator of the entry while a capability reload
+        # replaces them: only STOP reaches the bed until the unload is done.
+        self._capability_reload_running = False
         self._capability_reload_deferrals = 0
         self._shutting_down = False
         self._pairing_transfer_active = False
@@ -733,7 +736,13 @@ class AdjustableBedCoordinator(
                 async with self.async_command_operation_guard():
                     reload = self._claim_capability_reload()
             if reload is not None:
-                await self._async_reload_capabilities(reload)
+                coordinators, retained_states = reload
+                try:
+                    await self._async_reload_capabilities(retained_states)
+                finally:
+                    # Only matters if the unload failed and these stay loaded.
+                    for child in coordinators:
+                        child._capability_reload_running = False
         finally:
             self._capability_reload_scheduled = False
 
@@ -754,14 +763,21 @@ class AdjustableBedCoordinator(
 
     def _claim_capability_reload(
         self,
-    ) -> dict[tuple[str, str], RetainedAppState] | None:
+    ) -> (
+        tuple[
+            tuple[AdjustableBedCoordinator, ...],
+            dict[tuple[str, str], RetainedAppState],
+        ]
+        | None
+    ):
         """Take a pending reload this disconnected coordinator may run.
 
-        Returns the Starcode app state to carry over the reload, or None when
-        no reload is due.
+        Returns the entry's coordinators the reload replaces and the Starcode
+        app state to carry over, or None when no reload is due.
         """
         if (
             not self._pending_capability_reload
+            or self._capability_reload_running
             or self._capability_reload_deferrals
             or self._shutting_down
             or self._pairing_transfer_active
@@ -787,12 +803,13 @@ class AdjustableBedCoordinator(
             and isinstance(child.starcode_app_retained_state, RetainedAppState)
             and child.starcode_app_retained_state.address == child.address
         }
-        # The reload rebuilds every side of the entry, so it also answers the
-        # other side's pending reload: one reload, not two in a row.
         self._pending_capability_reload = False
+        # The reload rebuilds every side of the entry: the other side's pending
+        # reload waits for it instead of reloading the new runtime again, and
+        # ordinary commands no longer reach the bed while the old runtime unloads.
         for child in coordinators:
-            child._pending_capability_reload = False
-        return retained_states
+            child._capability_reload_running = True
+        return coordinators, retained_states
 
     async def _async_reload_capabilities(
         self, retained_states: dict[tuple[str, str], RetainedAppState]
@@ -2257,7 +2274,12 @@ class AdjustableBedCoordinator(
                 if scheduler_managed
                 else self._cancel_counter > entry_cancel_count
             )
-            if preemptible and cancelled_while_waiting:
+            # A capability reload replacing this runtime lets only STOP through,
+            # as when it held this lock until the unload had finished.
+            reloading = self._capability_reload_running and not (
+                command_context is not None and command_context.kind is CommandKind.STOP
+            )
+            if (preemptible and cancelled_while_waiting) or reloading:
                 _LOGGER.debug("Controller %s cancelled while waiting for lock", operation_name)
                 if (
                     not preserve_idle_deadline

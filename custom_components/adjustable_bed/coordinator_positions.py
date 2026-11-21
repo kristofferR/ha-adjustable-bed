@@ -657,8 +657,9 @@ class CoordinatorPositionsMixin:
             # Cancel disconnect timer during seeking
             self._hold_link_for_command()
 
-            # Check if cancelled while waiting for lock
-            if cancel_event.is_set():
+            # Check if cancelled while waiting for lock, or a capability reload
+            # replacing this runtime took the lane first.
+            if cancel_event.is_set() or self._capability_reload_running:
                 _LOGGER.debug("Position seek cancelled while waiting for lock")
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()

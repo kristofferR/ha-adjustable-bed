@@ -26,11 +26,11 @@ ahead of it, and what happens when the bed cannot be reached.
 
 ## One writer at a time
 
-- Every control and action goes through the device's command scheduler. A
+- Every command for the bed goes through the device's command scheduler. A
   command is admitted for the resources it controls: a motor, a side or the
   whole bed. A command that cancels running work, as movements and presets
-  do, replaces the running or queued command for the same resource; others
-  queue behind it. Exactly one operation holds the writer at a time. The
+  do, replaces running or queued commands whose resources overlap its own;
+  others queue behind it. Exactly one operation holds the writer at a time. The
   Connect and Disconnect buttons act on the link directly, outside the queue.
 - The scheduler treats controller operations as opaque and never retries one
   after a transport error.
@@ -49,8 +49,9 @@ ahead of it, and what happens when the bed cannot be reached.
   that is. The write in flight and that command's own cleanup finish first:
   the controller sends its protocol STOP or release with a fresh cancel event.
   Then the STOP's own frames go out, ahead of anything queued. A bed-wide
-  STOP covers every resource; a motor or side STOP does not cancel running
-  work on other resources, such as lights or configuration.
+  STOP covers every resource; a motor or side STOP spares running work whose
+  declared resources do not overlap it. A command declared for the whole bed
+  overlaps every STOP.
 - When the command holding the writer is still connecting, the STOP waits for
   that connect. Nothing moves meanwhile, and the STOP then uses the new link.
 - An admitted STOP outlives its caller: cancelling the action does not cancel
