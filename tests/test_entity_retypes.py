@@ -341,7 +341,7 @@ async def test_a_replacement_the_controller_still_expects_keeps_its_line(
     async_carry_over_retyped_entities(hass, entry, _runtime())
     await hass.async_block_till_done()
     light = ("light", f"{ADDRESS}_under_bed_lights")
-    ledger = EntityLedger(hass, entry, SimpleNamespace())
+    ledger = EntityLedger(hass, entry, _runtime())
     ledger.platforms_forwarded(["light"])
     ledger.platform_finished("light")
     issues = ir.async_get(hass)
@@ -396,7 +396,7 @@ async def test_the_repair_goes_once_nothing_names_the_old_entity(hass: HomeAssis
 
     # The user points the automation at the light; the next startup clears both.
     with patch(
-        "homeassistant.components.automation.automations_with_entity", return_value=[]
+        "custom_components.adjustable_bed.entity_retypes.entity_users", return_value=set()
     ):
         async_carry_over_retyped_entities(hass, entry, _runtime())
         await hass.async_block_till_done()
@@ -494,7 +494,7 @@ async def test_a_resolved_line_goes_even_if_the_issue_was_not_saved(hass: HomeAs
     assert light is not None
     registry.async_update_entity_options(light.entity_id, DOMAIN, {})
     with patch(
-        "homeassistant.components.automation.automations_with_entity", return_value=[]
+        "custom_components.adjustable_bed.entity_retypes.entity_users", return_value=set()
     ):
         async_carry_over_retyped_entities(hass, entry, _runtime())
         await hass.async_block_till_done()

@@ -125,6 +125,11 @@ from .profile_review import (
     v5_profile_review_mark,
 )
 from .removed_actions import async_report_removed_calls
+from .removed_entities import (
+    async_forget_removed_entities,
+    async_report_removed_entities,
+    async_setup_removed_entities,
+)
 from .repairs import (
     async_refresh_combine_beds_issue,
     async_setup_combine_beds_issue,
@@ -250,6 +255,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await async_setup_beta_feedback(hass)
     await async_setup_upgrade_notice(hass)
     async_report_removed_calls(hass)
+    await async_setup_removed_entities(hass)
     return True
 
 
@@ -1639,6 +1645,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     async_track_combine_beds_issue(hass, entry)
     async_refresh_furnimove_layout_issues(hass, entry)
     async_refresh_profile_review_issue(hass, entry)
+    async_report_removed_entities(hass, entry)
     await async_register_services(hass)
 
     # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
@@ -1813,6 +1820,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     to the entry that raised it.
     """
     await async_remove_position_estimates(hass, entry.entry_id)
+    async_forget_removed_entities(hass, entry.entry_id)
     # Unpair and combine restore other entries for the same beds first, so only
     # addresses nobody else owns lose their app state.
     owned = {

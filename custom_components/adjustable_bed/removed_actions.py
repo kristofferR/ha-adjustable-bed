@@ -15,10 +15,10 @@ from typing import Final
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.start import async_at_started
 from homeassistant.loader import async_get_integration
 
+from .automation_references import automation_configs
 from .beta_feedback import breaking_changes_url
 from .const import DOMAIN
 
@@ -178,25 +178,10 @@ def _calls(config: object) -> Iterator[tuple[str, Mapping[object, object]]]:
             yield from _calls(value)
 
 
-def _configs(hass: HomeAssistant) -> Iterator[tuple[str, object]]:
-    """Yield each automation and script with its config as written and as loaded."""
-    for domain in ("automation", "script"):
-        component = hass.data.get(domain)
-        if not isinstance(component, EntityComponent):
-            continue
-        for entity in component.entities:
-            # The loaded sequence holds what a blueprint expands to.
-            script = getattr(entity, "action_script", None) or getattr(entity, "script", None)
-            yield entity.entity_id, (
-                getattr(entity, "raw_config", None),
-                getattr(script, "sequence", None),
-            )
-
-
 def removed_calls(hass: HomeAssistant) -> dict[str, set[str]]:
     """Return each removed call's line with the automations and scripts that make it."""
     callers: dict[str, set[str]] = {}
-    for entity_id, config in _configs(hass):
+    for entity_id, config in automation_configs(hass):
         for action, data in _calls(config):
             matched = [removal for removal in REMOVALS if removal.matches(action, data)]
             # A field's own row says more than its action's.
