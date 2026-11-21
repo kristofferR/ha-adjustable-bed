@@ -689,8 +689,8 @@ there is no manufacturer-selected dialect.
 - Detection: high-confidence automatic discovery requires the `ELEVATE*` name
   **plus** Nordic UART. Nordic UART by itself is intentionally not treated as a
   bed signature because many unrelated devices use it.
-- Adjustable Comfort M1X12 lift groups require the explicit **Adjustable Comfort
-  M1X12 ELEVATE** variant of `star_elevate`; see the
+- Adjustable Comfort M1X12 lift groups require lifts set up as **Adjustable Comfort
+  M1X12 app, Elevate lift**; see the
   [M1X12 guide](starcode-m1x12.md).
 - Session: the analyzed apps enable RX notifications and then send the one-time
   keep-connected (wake) frame.

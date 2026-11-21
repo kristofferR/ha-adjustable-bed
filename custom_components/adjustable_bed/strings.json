@@ -426,7 +426,7 @@
           "ergomotion4_massage_keys": "The extra motors and massage your product has. Leave a feature off if the app does not show it.",
           "ergomotion4_product_name": "The product name exactly as the app shows it.",
           "fsm_relax_memory_names": "One name per memory, M1 to M8. Leave a name empty to use its default name.",
-          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin ELEVATE.",
+          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin Elevate lift (two motors).",
           "starcode_m1x12_profile": "The profile that matches the bed's Bluetooth name.",
           "starcode_lift_entries": "Lifts this bed controls, from the beds already set up here: up to three AdjustableM5X5 or DewertOkin ELEVATE lifts when this bed runs the AdjustableM5X5 app, or up to two ELEVATE lifts set to Adjustable Comfort M1X12 when it runs that app. Each lift keeps its own Bluetooth address and controls.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
@@ -705,7 +705,7 @@
       },
       "richmat_family": {
         "title": "Which Richmat app controls this bed?",
-        "description": "Richmat apps share the bed's Bluetooth names and services, so the name doesn't choose one. Choose the app you use on your phone. Without one of these apps, choose the Richmat remote controls.",
+        "description": "Richmat apps share the bed's Bluetooth names and services, so the name doesn't choose one. Choose the app you use on your phone. Without one of these apps, choose the option for a Richmat remote.",
         "data": {
           "choice": "App"
         }
@@ -829,7 +829,7 @@
       "motion_bed_profile": "Enter the bed's Bluetooth name exactly as the Motion Bed app shows it, or turn off the restored profile.",
       "starcode_profile_mismatch": "Choose the bed class that matches the start of the bed's Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 or DewertOkin ELEVATE entries with different Bluetooth addresses.",
-      "starcode_elevate_bed_type": "ELEVATE lifts use the DewertOkin ELEVATE bed type. Set them up with it, then select them as lifts here.",
+      "starcode_elevate_bed_type": "Set up ELEVATE lifts as **DewertOkin Elevate lift (two motors)**, then select them as lifts here.",
       "fsm_relax_invalid": "Check the FSM Relax settings: choose a layout and give each of the eight memories a name of at most 80 characters.",
       "limoss_remote_product_required": "Select bed or chair for this app profile.",
       "limoss_remote_feature_update_failed": "Home Assistant could not send the commands that turn the light or massage off. Settings were not saved. Check that the bed is in range and try again.",
@@ -844,8 +844,8 @@
       "sleeptracker_restricted_unit": "A restricted session uses processor unit 0. Set the unit to 0.",
       "isleep_profile": "Choose the ISleep product and enter a whole-number room ID.",
       "starcode_m1x12_profile_mismatch": "Choose the profile that matches the bed's Bluetooth name.",
-      "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
-      "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
+      "starcode_invalid_m1x12_lifts": "Select up to two different lifts set up as Adjustable Comfort M1X12 app, Elevate lift, each with its own Bluetooth address.",
+      "starcode_m1x12_elevate_reconfigure": "Reconfigure this lift as **Adjustable Comfort M1X12 app, Elevate lift** before linking it.",
       "keeson_app_layout": "Choose a layout the selected app offers.",
       "doublesleep_profile": "Choose the SleepEase model the app shows.",
       "gmmotor_product": "Choose the product the GM Control app shows for this bed.",
@@ -1043,7 +1043,7 @@
           "motion_bed_restored": "Turn on only if the app restored this profile from a backup.",
           "motion_bed_movement": "Automatic follows the bed's name. Change it only if the movement buttons are wrong.",
           "starcode_lift_entries": "Lifts this bed controls, from the beds already set up here: up to three AdjustableM5X5 or DewertOkin ELEVATE lifts when this bed runs the AdjustableM5X5 app, or up to two ELEVATE lifts set to Adjustable Comfort M1X12 when it runs that app. Each lift keeps its own Bluetooth address and controls.",
-          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin ELEVATE.",
+          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin Elevate lift (two motors).",
           "sleeptracker_unit_number": "Leave at 0 unless the bed has more than one processor. Then use the number the app shows for this one.",
           "sleeptracker_snapshot_side": "The part of the bed this processor reports on. Leave at Left side for a single bed.",
           "sleeptracker_processor_type": "Leave at 0. Change it only if the app cannot save presets on this bed: types 5, 6 and 7 turn preset saving off here too.",
@@ -1280,7 +1280,7 @@
           "ergomotion4_model_keys": "The remote and preset buttons your product has, in the order the app lists them.",
           "ergomotion4_massage_keys": "The extra motors and massage your product has. Leave a feature off if the app does not show it.",
           "ergomotion4_product_name": "The product name exactly as the app shows it.",
-          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin ELEVATE.",
+          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin Elevate lift (two motors).",
           "starcode_m1x12_profile": "The profile that matches the bed's Bluetooth name.",
           "starcode_lift_entries": "Lifts this bed controls, from the beds already set up here: up to three AdjustableM5X5 or DewertOkin ELEVATE lifts when this bed runs the AdjustableM5X5 app, or up to two ELEVATE lifts set to Adjustable Comfort M1X12 when it runs that app. Each lift keeps its own Bluetooth address and controls.",
           "serta_mp_memory_1_head": "Only if you changed memory 1 in the app: its head angle, in degrees.",
@@ -1449,7 +1449,7 @@
           "ergomotion4_model_keys": "The remote and preset buttons your product has, in the order the app lists them.",
           "ergomotion4_massage_keys": "The extra motors and massage your product has. Leave a feature off if the app does not show it.",
           "ergomotion4_product_name": "The product name exactly as the app shows it.",
-          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin ELEVATE.",
+          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin Elevate lift (two motors).",
           "starcode_m1x12_profile": "The profile that matches the bed's Bluetooth name.",
           "starcode_lift_entries": "Lifts this bed controls, from the beds already set up here: up to three AdjustableM5X5 or DewertOkin ELEVATE lifts when this bed runs the AdjustableM5X5 app, or up to two ELEVATE lifts set to Adjustable Comfort M1X12 when it runs that app. Each lift keeps its own Bluetooth address and controls.",
           "serta_mp_memory_1_head": "Only if you changed memory 1 in the app: its head angle, in degrees.",
@@ -1606,7 +1606,7 @@
       "motion_bed_profile": "Enter the bed's Bluetooth name exactly as the Motion Bed app shows it, or turn off the restored profile.",
       "starcode_profile_mismatch": "Choose the bed class that matches the start of the bed's Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 or DewertOkin ELEVATE entries with different Bluetooth addresses.",
-      "starcode_elevate_bed_type": "ELEVATE lifts use the DewertOkin ELEVATE bed type. Set them up with it, then select them as lifts here.",
+      "starcode_elevate_bed_type": "Set up ELEVATE lifts as **DewertOkin Elevate lift (two motors)**, then select them as lifts here.",
       "fsm_relax_invalid": "Check the FSM Relax settings: choose a layout and give each of the eight memories a name of at most 80 characters.",
       "invalid_pulse_count_range": "For this app, Movement per tap must be between 1 and 600.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
@@ -1619,8 +1619,8 @@
       "isleep_profile": "Choose the ISleep product and enter a whole-number room ID.",
       "isleep_unpair_first": "Separate the combined bed first, then choose this ISleep product, which has no separate sides.",
       "starcode_m1x12_profile_mismatch": "Choose the profile that matches the bed's Bluetooth name.",
-      "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
-      "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
+      "starcode_invalid_m1x12_lifts": "Select up to two different lifts set up as Adjustable Comfort M1X12 app, Elevate lift, each with its own Bluetooth address.",
+      "starcode_m1x12_elevate_reconfigure": "Reconfigure this lift as **Adjustable Comfort M1X12 app, Elevate lift** before linking it.",
       "casper_pairing_needs_connection": "Home Assistant could not connect to the bed to check whether it supports Left/Right/Both controls. Close the bed's phone app, make sure the bed is powered and in range, then submit to try again.",
       "doublesleep_profile": "Choose the SleepEase model the app shows.",
       "gmmotor_product": "Choose the product the GM Control app shows for this bed.",
@@ -10991,21 +10991,21 @@
         "step": {
           "init": {
             "title": "Review the app for {target}",
-            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep the current setup dismisses this notice for this physical bed across restarts and updates.",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep the current setup dismisses this notice for this physical bed across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the app for {target}",
-            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep the current setup dismisses this notice for this physical bed across restarts and updates.",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep the current setup dismisses this notice for this physical bed across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "processor": {
             "title": "Add the Tempur Sleeptracker processor",
-            "description": "The Tempur Sleeptracker-AI app talks to a separate processor, not to **{target}** ({address}).\n\n1. Open **Settings > Devices & services > Add integration > Adjustable Bed**.\n2. Choose the Sleeptracker processor (it may be offered automatically), then choose **Tempur Sleeptracker-AI**.\n3. Check its controls, then update dashboards and automations to the new entities.\n\n[Processor setup guide]({processor_guide_url})\n\nSubmit to dismiss this notice. Your current setup stays as it is."
+            "description": "The Tempur Sleeptracker-AI app talks to a separate processor, not to **{target}** ({address}).\n\n1. Open **Settings > Devices & services > Add integration > Adjustable Bed**.\n2. Choose the Sleeptracker processor (it may be offered automatically), then choose **Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)**.\n3. Check its controls, then update dashboards and automations to the new entities.\n\n[Processor setup guide]({processor_guide_url})\n\nSubmit to dismiss this notice. Your current setup stays as it is."
           }
         },
         "error": {

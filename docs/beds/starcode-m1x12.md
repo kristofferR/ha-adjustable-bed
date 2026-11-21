@@ -12,8 +12,8 @@ ELEVATE entries keep their current behavior until you reconfigure them.
 
 - StarCode `STAR25*` beds operated with Adjustable Comfort M1X12, in three
   layouts: CB25, F23 and kneading (see [Configuration and groups](#configuration-and-groups))
-- Up to two [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts per main, configured as
-  the **Adjustable Comfort M1X12 ELEVATE** variant
+- Up to two [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts per main, set up as
+  **Adjustable Comfort M1X12 app, Elevate lift**
 
 ## Apps
 
@@ -111,7 +111,7 @@ An M1X12 main entry can link up to two independent ELEVATE entries.
 
 Choose the **StarCode apps** row, then **Adjustable Comfort M1X12 app**, then enter the exact Bluetooth name and choose CB25, F23 or kneading. Specific F23 and kneading prefixes take precedence over generic `STAR25`; the app identity is not inferred from Nordic UART, manufacturer, firmware or the name alone. Existing AdjustableM5X5 entries retain their current controller and configuration.
 
-An M1X12 main can include up to **two separately configured ELEVATE accessories**. Each ELEVATE entry must be explicitly reconfigured to **Adjustable Comfort M1X12 ELEVATE** before it can be linked. Linking never changes that entry. Existing ELEVATE defaults and AdjustableM5X5 groups keep their current behavior. These entries remain independent devices and do not become Left/Right paired beds. The M1X12 profile and accessory list belong to one physical side and cannot be changed from a shared two-address pair form.
+An M1X12 main can include up to **two separately configured ELEVATE accessories**. Each ELEVATE entry must be explicitly reconfigured to **Adjustable Comfort M1X12 app, Elevate lift** before it can be linked. Linking never changes that entry. Existing ELEVATE defaults and AdjustableM5X5 groups keep their current behavior. These entries remain independent devices and do not become Left/Right paired beds. The M1X12 profile and accessory list belong to one physical side and cannot be changed from a shared two-address pair form.
 
 The optional manufacturer read selects its normal command framing only inside the chosen M1X12 profile. The required Device Information 2A28 characteristic supplies the firmware version state; firmware text does not select capabilities.
 
