@@ -260,16 +260,17 @@ def _cover_template(spec: MotorControlSpec) -> AdjustableBedCoverEntityDescripti
     """The template whose icon matches the motor the user sees.
 
     The translation key names what the user sees ("keeson_back" is "Back"), so it
-    decides first, also by a trailing motor name after a prefix that names no
-    other motor ("back_legs" is two motors and gets the generic icon). The
-    internal key decides only when the translation key names no known motor.
+    decides first, also by a trailing motor name ("foot_end_tilt" is a tilt)
+    unless another motor name comes right before it ("back_legs" is two motors
+    and gets the generic icon). The internal key decides only when the
+    translation key names no known motor.
     """
     parts = spec.translation_key.split("_")
     for start in range(len(parts)):
-        if any(part in _COVER_TEMPLATES for part in parts[:start]):
-            break
         template = _COVER_TEMPLATES.get("_".join(parts[start:]))
         if template is not None:
+            if start and parts[start - 1] in _COVER_TEMPLATES:
+                break
             return template
     return _COVER_TEMPLATES.get(spec.key)
 
