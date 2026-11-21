@@ -1849,7 +1849,7 @@ class OctoController(BedController, OctoPacketCodec):
     async def enroll_pin(self, pin: str) -> None:
         """Set a four-digit PIN on an active receiver that does not have one."""
         if len(pin) != 4 or not pin.isascii() or not pin.isdecimal():
-            raise ValueError("OCTO PIN must contain exactly four ASCII digits")
+            raise ValueError("Enter a PIN of exactly four digits")
         if not self._session_ready or not self._pin_feature_active:
             raise ValueError("OCTO PIN control is not available")
         if self._has_pin is not False or self._pin_locked is not False:
