@@ -47,6 +47,9 @@
  "binary_sensor:cheerssleep_right_asleep": {
   "card_section": "hidden"
  },
+ "binary_sensor:ergomotion4_light": {
+  "card_section": "hidden"
+ },
  "binary_sensor:floyd_battery_mode": {
   "card_section": "hidden"
  },
@@ -118,6 +121,9 @@
  },
  "binary_sensor:rize_home_active": {
   "card_section": "massage"
+ },
+ "binary_sensor:sleeptracker_light_on": {
+  "card_section": "lighting"
  },
  "binary_sensor:sleeptracker_wind_down_running": {
   "card_section": "massage"
@@ -1858,6 +1864,10 @@
  },
  "button:sleeptracker_light_off": {
   "card_section": "lighting"
+ },
+ "button:sleeptracker_light_toggle": {
+  "card_section": "lighting",
+  "card_role": "toggle"
  },
  "button:sleeptracker_local_animation": {
   "card_section": "massage"
