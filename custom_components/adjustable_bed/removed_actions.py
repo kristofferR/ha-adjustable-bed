@@ -183,6 +183,8 @@ REMOVALS: Final[tuple[Removal, ...]] = (
     Removal("richmat_rise", "schedule"),
     Removal("lp2", "schedule"),
     Removal("bedsmart", "confirm"),
+    # Beta 8 only; the bed's preset, memory and save buttons replace it.
+    Removal("symphony_preset"),
 )
 
 ISSUE_ID: Final = "removed_actions"
