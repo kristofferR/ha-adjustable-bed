@@ -218,7 +218,7 @@ app, and capture error so we can track the request and identify what is missing.
 
 You don't need to configure anything first: the support bundle action works directly on any BLE device your Home Assistant can see:
 
-1. **Find your bed's MAC address:** go to **Settings > Devices & services > Add Integration > Adjustable Bed**, choose **"Browse unsupported Bluetooth devices"**, and select your bed from the list (or pick **"Enter address manually"** if you already know the address). The wizard shows the device's MAC address and scanner details; note the address. This step only inspects the device; it doesn't add anything.
+1. **Find your bed's MAC address:** go to **Settings > Devices & services > Add Integration > Adjustable Bed**, choose **"Browse unsupported Bluetooth devices"**, and select your bed from the list (or pick **"Enter the address yourself"** if you already know the address). The wizard shows the device's MAC address and scanner details; note the address. This step only inspects the device; it doesn't add anything.
 2. Go to **Developer Tools** → **Actions** → `adjustable_bed.generate_support_bundle`
 3. Leave the **Bed** field empty and enter the MAC address in **Target address**
 4. Click **Perform action**, then operate your physical remote during the capture (120 seconds by default) so the bundle records useful traffic
