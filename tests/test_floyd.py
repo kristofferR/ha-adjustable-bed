@@ -318,7 +318,7 @@ async def test_service_validates_all_targets_before_overwrite(hass, floyd: Floyd
     second.capability_controller = SimpleNamespace(supports_floyd_actions=False, requires_disconnected_transport=False)
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(
         [(first, "both"), (second, "both")], [],
-    )), pytest.raises(ServiceValidationError, match="Floyd Home"):
+    )), pytest.raises(ServiceValidationError, match="does not support this action"):
         await hass.services.async_call(DOMAIN, "floyd_action", {
             "device_id": ["one", "two"], "action": "save_zero_g", "confirm": True,
         }, blocking=True)

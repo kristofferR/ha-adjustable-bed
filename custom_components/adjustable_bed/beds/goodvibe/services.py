@@ -538,7 +538,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
             await target.async_execute_goodvibe_request(plan, dispatch=dispatch)
 
         await _execute_preflighted(
-            targets, [], _family_command(GoodVibeController, "Power Bob Base configuration", execute_bob),
+            targets, [], _family_command(GoodVibeController, execute_bob),
             resource="configuration", admissions=admissions,
         )
         return
@@ -552,7 +552,6 @@ async def handle_goodvibe(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         GoodVibeController,
-        "Good Vibe Sleep configuration",
         execute,
         validate=validate,
         admissions=admissions,

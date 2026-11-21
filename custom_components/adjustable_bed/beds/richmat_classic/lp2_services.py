@@ -187,7 +187,6 @@ async def handle_settings(call: ServiceCall) -> None:
     preflighted = await _preflight_capability(
         targets,
         Lp2Controller,
-        "Bed settings",
         validate=validate,
     )
     try:
@@ -235,7 +234,7 @@ async def handle_settings(call: ServiceCall) -> None:
         await _execute_preflighted(
             targets,
             preflighted,
-            _family_command(Lp2Controller, "Bed settings", execute),
+            _family_command(Lp2Controller, execute),
             cancel_running=movement,
             resource=resource,
             admissions=admissions,

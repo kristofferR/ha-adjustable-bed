@@ -456,6 +456,18 @@ async def test_set_alarm_rejects_a_slot_that_is_not_a_whole_number(
             DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False, "slot": slot}, blocking=True
         )
     assert raised.value.translation_key == "whole_number_required"
+
+
+@pytest.mark.parametrize("action", ["goto_preset", "save_preset"])
+async def test_memory_actions_refuse_a_fractional_slot(
+    hass: HomeAssistant, resolve, action
+) -> None:
+    """Memory 1.7 is a mistake, not memory 1."""
+    with pytest.raises(ServiceValidationError) as raised:
+        await hass.services.async_call(
+            DOMAIN, action, {"device_id": "bed", "preset": 1.7}, blocking=True
+        )
+    assert raised.value.translation_key == "whole_number_required"
     resolve.assert_not_called()
 
 
