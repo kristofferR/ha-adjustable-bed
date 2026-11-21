@@ -150,6 +150,9 @@ REMOVALS: Final[tuple[Removal, ...]] = (
             "set_heidi_mode",
             "get_heidi_presence",
             "get_system_status",
+            # Resetting saved positions needs the button's confirmation.
+            "preset_reset",
+            "reset_articulation_presets",
         )
     ),
     # Factory motor tests and motor programming, only in v5 betas.

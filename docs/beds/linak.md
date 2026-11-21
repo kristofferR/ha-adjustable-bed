@@ -43,7 +43,7 @@ name.
 | Automatic drive configuration | ✅ | ❌ |
 | BLE device rename | ✅ | ❌ |
 | Alarms (time and repeat) | Alarm model only | ❌ |
-| Reset defaults (`4E 00`) | ✅ | ✅ |
+| Reset defaults (`4E 00`) | ✅, disabled by default | ✅ |
 | Configuration factory reset (`7F 3E 80`) | ✅, disabled by default | ❌ |
 | Wake command | ✅ | ❌ |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 100 ms refresh, then the release) | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, then the release) |
@@ -390,7 +390,7 @@ byte-level command tables above remain exhaustive.
 | Four favorite recalls and stores with model gating | Buttons and generic preset services |
 | Massage zones, modes and all intensity actions | Capability-gated buttons |
 | AUX/light toggle | Native controller action; legacy toggle button, modern on/off entity |
-| Defaults reset and configuration factory reset | Separate buttons; factory reset disabled by default |
+| Defaults reset and configuration factory reset | Separate buttons, both disabled by default |
 | Automatic drive configuration | Assumed-state switch, disabled by default |
 | Device rename | `rename` action plus advertising refresh disconnect |
 | Alarm event, commit and notification states | `set_alarm` action and diagnostic sensor |

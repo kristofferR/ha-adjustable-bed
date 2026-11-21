@@ -62,6 +62,10 @@ SCRIPTS = {
                     "action": "adjustable_bed.sleep_number_command",
                     "data": {"command": "kid_outlet", "parameters": {"device": 2, "outlet_on": True}},
                 },
+                {
+                    "action": "adjustable_bed.sleep_number_command",
+                    "data": {"command": "preset_reset", "parameters": {"side": "left"}},
+                },
             ]
         }
     }
@@ -92,6 +96,7 @@ async def test_repair_names_each_caller_and_its_replacement(hass: HomeAssistant)
                 "- `adjustable_bed.reverie_test`: script.report",
                 "- `adjustable_bed.rmcontrol_alarm` `operation: sync` → "
                 "`adjustable_bed.sync_clock`: script.report",
+                "- `adjustable_bed.sleep_number_command` `command: preset_reset`: script.report",
                 "- `adjustable_bed.sleep_number_command` `parameters.device: 2` → "
                 "`parameters.device: 0`: script.report",
             )

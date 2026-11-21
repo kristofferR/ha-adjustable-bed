@@ -383,10 +383,11 @@ async def test_delivery_accounting():
             await c.move_head_up()
         assert context.frames_written == 2
         assert context.cleanup_stop_sent
-        # Explicit STOP's own frames count, unlike the movement's cleanup.
+        # Explicit STOP's own frames count, unlike the movement's cleanup:
+        # the ordinary and the one-touch STOP, twice each.
         with virtual_clock():
             await c.stop_all()
-        assert context.frames_written == 4
+        assert context.frames_written == 6
         co.cancel_command.set()
         await c.lights_on()
         assert state.get(UNDER_BED_LIGHTS_ON) is None
@@ -401,7 +402,7 @@ async def test_delivery_accounting():
         client.write_gatt_char = AsyncMock(side_effect=partial)
         with pytest.raises(ConnectionError), virtual_clock():
             await c.massage_on()
-        assert context.frames_written == 5
+        assert context.frames_written == 7
         client.write_gatt_char = original
     finally:
         _CURRENT_COMMAND_CONTEXT.reset(token)

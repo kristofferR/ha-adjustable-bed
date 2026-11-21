@@ -257,13 +257,8 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and send STOP at the end."""
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             await self._send_command(command)
-        finally:
-            try:
-                await self._send_stop()
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     async def _send_stop(self) -> None:
         """Release the active key; app subclasses may own a release schedule."""
@@ -335,14 +330,11 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
         if (word := commands.get(memory_num)) is not None:
             await self._press(word)
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported - use set commands)."""
-        _LOGGER.warning(
-            "OKIN 64-bit beds don't support programming memory presets directly. "
-            "Memory positions are programmed by sending set commands at the desired position."
-        )
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
         await self._press(self.profile.keys["zero_g"])

@@ -118,6 +118,32 @@ async def test_release_even_when_write_fails_and_no_retry(coordinator, clocked):
     assert len(written(c)) == 2 and written(c)[-1] == "6e01006edd"
 
 
+async def test_a_second_cancel_cannot_interrupt_the_release(coordinator, clocked):
+    c = controller(coordinator)
+    moving, releasing, release_done = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    finish_release = asyncio.Event()
+
+    async def write(_char, frame, **_kwargs):
+        if frame.hex() == "6e01006edd":
+            releasing.set()
+            await finish_release.wait()
+            release_done.set()
+        else:
+            moving.set()
+            await asyncio.Event().wait()
+
+    coordinator.client.write_gatt_char.side_effect = write
+    task = asyncio.create_task(c.hold_control("richmat_app_cb18d1", 1000))
+    await moving.wait()
+    task.cancel()
+    await releasing.wait()
+    task.cancel()
+    finish_release.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert release_done.is_set()
+
+
 async def test_save_tap_uses_long_opcode_without_stop(coordinator, clocked):
     c = controller(coordinator)
     await c.press("caf951", save=True)

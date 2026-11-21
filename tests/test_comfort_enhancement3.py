@@ -681,7 +681,9 @@ async def test_two_address_card_release_stays_on_original_side(hass):
         patches.enter_context(
             patch(
                 "custom_components.adjustable_bed.services._resolve_sided_targets",
-                side_effect=lambda _hass, _ids, side=None: ([(paired, side or "both")], []),
+                side_effect=lambda _hass, _ids, side=None, *, problems=None: (
+                    [(paired, side or "both")], []
+                ),
             )
         )
         await async_register_services(hass)
