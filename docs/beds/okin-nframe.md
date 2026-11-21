@@ -908,7 +908,7 @@ controls it supports; held motors send the OR of their primary words.
 | `head_foot_down` | `0000000A 00000000` | Customatic Z-230 | `0C 02 00 00 00 0A 00 00 00 00 00 00 00 00` |
 | `massage_intensity_cycle` | `00000C00 00000000` | Customatic Z-230 | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
 
-Each app's literal action table, by the app's action names.
+Each app's action table, by the app's action names.
 
 #### Resident Adjustable Base keys
 

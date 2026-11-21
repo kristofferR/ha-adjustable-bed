@@ -159,10 +159,10 @@ Both app startup workers, serialized; equal offsets keep their order.
 | 8 | back, rise_and_fall | 41 |
 | 9 | back, hip, lift, legs | 49 |
 
-### Motion Bed callsites
+### Motion Bed actions
 
-714 app callsites over 190 distinct frames, each gated by layout, module and
-state.
+714 app actions over 190 distinct frames; which ones appear depends on the layout,
+module and state.
 <!-- /generated -->
 
 ## Wire codec

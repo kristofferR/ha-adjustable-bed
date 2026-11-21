@@ -554,7 +554,7 @@ def render_richmat_mh_setup() -> str:
                 *(row(names[frame], frame) for frame in steps),
             ],
         ),
-        f"The app's mattress literal ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
+        f"The app's stored mattress frame ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
         "its checksum, so the bed receives the frame above.",
     )
 

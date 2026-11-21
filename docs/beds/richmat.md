@@ -1183,7 +1183,7 @@ list (timing in [Catalog app timing](#catalog-app-timing)):
 | Massage query | none | `6E 9A A0 00 A8` |
 | Button-light lock query | none | `6E 9A B0 00 B8` |
 
-The app's mattress literal ends in checksum `90`; the sender recomputes its
+The app's stored mattress frame ends in checksum `90`; the sender recomputes its
 checksum, so the bed receives the frame above.
 <!-- /generated -->
 
@@ -6688,7 +6688,7 @@ Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
 
 **App:** [Majestic Home](https://play.google.com/store/apps/details?id=com.richmat.majestichome) 1.0.4 (10400), `com.richmat.majestichome`
 
-**Status:** Not yet tested (hardware unverified; external beta).
+**Status:** Not yet tested
 
 #### Setup
 
