@@ -241,10 +241,6 @@ async def generate_support_bundle(
     redact_sleep_number_sessions(report)
     redact_sleeptracker_sessions(report)
     redact_pairlink_frames(report)
-    candidates = {
-        str(device["address"])
-        for device in bluetooth_info.get("nearby_devices", {}).get("devices", [])
-    }
     # Log lines repeat the names users typed. A name a device advertises stays:
     # detection matches it, and the address policy already covers its suffix.
     typed = {other.title for other in hass.config_entries.async_entries(DOMAIN)}
@@ -257,7 +253,7 @@ async def generate_support_bundle(
                 {**log, "message": names.sub(lambda match: "*" * len(match.group(0)), log["message"])}
                 for log in report[section]
             ]
-    return redact_bundle(report, addresses=known | candidates)  # type: ignore[no-any-return]
+    return redact_bundle(report)  # type: ignore[no-any-return]
 
 
 def _advertised_names(data: Any) -> Iterator[str]:

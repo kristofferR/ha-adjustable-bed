@@ -711,9 +711,7 @@ class BLEDiagnosticRunner:
         try:
             value = await self._read_gatt_char(target)
             controller = self.coordinator.controller if self.coordinator is not None else None
-            control_uuid: str | None = None
-            with contextlib.suppress(Exception):  # some controllers resolve it on connect
-                control_uuid = controller.control_characteristic_uuid.lower() if controller else None
+            control_uuid = controller.control_characteristic_uuid.lower() if controller else None
             if char_info.uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
                 char_info.read_result = {
                     "hex": "**REDACTED**",

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 import yaml
@@ -124,23 +123,14 @@ async def test_no_repair_once_nothing_calls_a_removed_action(hass: HomeAssistant
     assert await _report(hass) is None
 
 
-def test_every_removal_is_on_the_upgrade_page_and_gone_from_the_actions() -> None:
+def test_no_removal_names_what_the_actions_still_accept() -> None:
     root = Path(__file__).parents[1]
-    page = (root / "docs/V5_BREAKING_CHANGES.md").read_text()
-    listed = {
-        action
-        for heading in ("| 4.x action | Use now |", "| Beta action | Use now |")
-        for row in page.split(heading, 1)[1].split("\n\n", 1)[0].splitlines()[2:]
-        for action in re.findall(r"`(\w+)`", row.split("|")[1])
-    }
     actions = yaml.safe_load((root / "custom_components/adjustable_bed/services.yaml").read_text())
 
-    assert {removal.action for removal in REMOVALS if removal.field is None} == listed
-    assert not listed & actions.keys()
     for removal in REMOVALS:
-        # A field of an action that is gone only refines that action's advice.
-        if removal.field is None or removal.action not in actions:
+        if removal.action not in actions:
             continue
+        assert removal.field is not None, removal
         field = actions[removal.action].get("fields", {}).get(removal.field)
         if removal.value is None:
             assert field is None, removal

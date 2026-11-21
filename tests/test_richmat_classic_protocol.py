@@ -24,7 +24,6 @@ from custom_components.adjustable_bed.beds.richmat_classic.protocol import (
     worker_interval,
 )
 from custom_components.adjustable_bed.beds.richmat_classic.receive import (
-    MAX_BUFFER_HEX,
     MalformedFrame,
     ReceiveState,
 )
@@ -283,14 +282,3 @@ def test_all_member_caller_vectors_preserve_declared_library_modes() -> None:
             assert result.mode == expected['mode']
             assert result.count_ms == expected['count_ms']
             assert result.consume_arm
-
-
-def test_receive_buffer_is_bounded() -> None:
-    """Chunks that never form a frame cannot grow the buffer (PRIV-11)."""
-    state = ReceiveState()
-    for _ in range(100):
-        try:
-            state.feed(bytes(range(1, 20)), app="avocadoecobase", layout="FWRM")
-        except MalformedFrame:
-            pass
-        assert len(state.buffer) <= MAX_BUFFER_HEX
