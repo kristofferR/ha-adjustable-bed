@@ -10,6 +10,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.richmat_classic import bedsmart, lp2
+from custom_components.adjustable_bed.beds.richmat_classic.layout_repair import REMOVED_LAYOUTS
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
     load_catalog,
     resolve_layout,
@@ -350,7 +351,7 @@ def test_parser_fragmentation_and_app_buffer_rules(chunks, alarm, light):
 def test_all_layouts_expose_only_supported_source_gestures():
     catalog = load_catalog("bedsmart")
     assert len(catalog.models) == 558
-    for layout in catalog.models.keys() - EXCLUDED_LAYOUTS:
+    for layout in catalog.models.keys() - EXCLUDED_LAYOUTS - REMOVED_LAYOUTS:
         c, _ = controller(layout)
         assert c.alarm_capability is not None or not c._alarm_actions()
         assert all(not (s.requires_confirmation and s.hold) for s in c.controller_button_specs)
@@ -359,8 +360,11 @@ def test_all_layouts_expose_only_supported_source_gestures():
             "reset" in s.name.lower() or "music" in s.name.lower()
             for s in c.controller_button_specs
         )
-    for layout in EXCLUDED_LAYOUTS:
+    for layout in EXCLUDED_LAYOUTS - REMOVED_LAYOUTS:
         with pytest.raises(HomeAssistantError):
+            controller(layout)
+    for layout in REMOVED_LAYOUTS:
+        with pytest.raises(ValueError, match="factory test"):
             controller(layout)
 
 
