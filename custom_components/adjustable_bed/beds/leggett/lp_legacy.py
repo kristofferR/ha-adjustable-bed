@@ -194,7 +194,7 @@ class LeggettLpLegacyController(ProfileExecution[RichmatProfile], BedController)
         """Run one exact app gesture; callers must hold the coordinator command lock."""
         control = next((item for item in self._layout.controls if item.key == control_id), None)
         if control is None or gesture not in self._gestures(control):
-            raise ValueError("Control gesture is not proven for this LP profile and packet mode")
+            raise ValueError("This bed model does not offer that control")
         packet = self._packet(control.press)
         assert packet is not None
         release = control.release

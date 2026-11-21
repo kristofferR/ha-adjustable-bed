@@ -357,7 +357,7 @@ async def test_exact_manufacturer_string_gates_zseries_alarm_page(manufacturer, 
     assert controller.clock_alarm_preset_options == (("massage", "memory_1") if available else ())
     assert controller.protocol_diagnostics["zseries_manufacturer"] == manufacturer.decode()
     if not available:
-        with pytest.raises(ValueError, match="manufacturer"):
+        with pytest.raises(ValueError, match="controller has no alarm"):
             await controller.configure_clock_alarm(enabled=True, hour=7, minute=45, preset="massage")
         assert written(controller) == []
 

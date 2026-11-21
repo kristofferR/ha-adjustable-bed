@@ -1511,7 +1511,7 @@ class TestOctoCommands:
         controller = OctoController(coordinator)
 
         controller.validate_hold_control("back_up", 60_000)
-        with pytest.raises(ValueError, match="100..60000"):
+        with pytest.raises(ValueError, match="0.1 to 60 seconds"):
             controller.validate_hold_control("back_up", 60_001)
 
     @pytest.mark.parametrize(

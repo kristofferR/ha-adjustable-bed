@@ -165,11 +165,11 @@ COMFORT_MOTION: Final = JiecangProfile(
     ),
     name_rule=NameRule(
         r"[._0-9A-Za-z]{1,18}",
-        "Comfort Motion names use 1..18 ASCII letters, digits, dot or underscore",
+        "Use a name of 1 to 18 characters, using only unaccented letters, digits, dots and underscores",
     ),
 )
 _DREAM_NAME: Final = NameRule(
-    r"[0-9A-Za-z]{1,20}", "Name must contain 1..20 ASCII letters or digits"
+    r"[0-9A-Za-z]{1,20}", "Use a name of 1 to 20 characters, using only unaccented letters and digits"
 )
 _DREAM_BOOTSTRAP: Final = _repeat_pairs(
     (0, QUERY_SOFTWARE),
@@ -235,7 +235,7 @@ DREAMHD: Final = JiecangProfile(
         (1600, QUERY_ALARM),
         (1800, QUERY_SOFTWARE),
     ),
-    name_rule=NameRule(r"[ -~]{1,20}", "Name must contain 1..20 printable ASCII characters"),
+    name_rule=NameRule(r"[ -~]{1,20}", "Use a name of 1 to 20 characters, using only unaccented letters, digits, spaces and common symbols"),
 )
 APP_PROFILES: Final[dict[str, JiecangProfile]] = {
     "comfort_motion": COMFORT_MOTION,

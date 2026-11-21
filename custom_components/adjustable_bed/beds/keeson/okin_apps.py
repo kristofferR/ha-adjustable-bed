@@ -357,7 +357,7 @@ class OkinAppKeesonController(KeesonController):
         """Hold one app control for ``duration_ms``, then release it like a touch-up."""
         key = self._held_key(control)
         if isinstance(duration_ms, bool) or not HOLD_MIN_MS <= duration_ms <= HOLD_MAX_MS:
-            raise ValueError("Hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
         context = current_command_context()
         if self._is_simon and control in _SIMON_MEMORY and context and context.lease:
             # Holding a Simon Li memory key past SIMON_MEMORY_SAVE_HOLD_MS saves it.
@@ -898,7 +898,7 @@ class OkinAppKeesonController(KeesonController):
             await self.massage_off()
             return
         if minutes not in HEAL_TIMER_OPTIONS:
-            raise ValueError("The app offers 10, 20 or 30 minutes")
+            raise ValueError("Choose 10, 20 or 30 minutes")
         session = self._session
         # Zero levels become one, then timer1, the wave, head and foot follow.
         wave, head, foot = session.wave or 1, session.head or 1, session.foot or 1

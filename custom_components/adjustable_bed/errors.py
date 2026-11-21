@@ -71,15 +71,28 @@ class BedCommandFailedError(HomeAssistantError, BleakError):
         super().__init__(message, **keywords)
 
 
+class BedCommandTimedOutError(HomeAssistantError, TimeoutError):
+    """A command that did not finish in time, shown with the integration's wording.
+
+    Still a ``TimeoutError``, so code that handles one keeps doing so.
+    """
+
+    def __init__(self) -> None:
+        message, keywords = keyed("bed_command_timed_out")
+        super().__init__(message, **keywords)
+
+
 @contextmanager
 def bluetooth_errors_translated() -> Iterator[None]:
-    """Raise a Bluetooth error that ends a command as ``BedCommandFailedError``."""
+    """Raise a Bluetooth error or a timeout that ends a command in the integration's wording."""
     try:
         yield
     except HomeAssistantError:
         raise
     except BleakError as err:
         raise BedCommandFailedError(err) from err
+    except TimeoutError as err:
+        raise BedCommandTimedOutError from err
 
 
 def invalid(key: str, **placeholders: object) -> ServiceValidationError:

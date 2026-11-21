@@ -2285,7 +2285,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         if isinstance(duration_ms, bool) or not isinstance(duration_ms, int):
             raise ValueError("Pairlink hold duration must be an integer number of milliseconds")
         if not 100 <= duration_ms <= 60_000:
-            raise ValueError("Pairlink hold duration must be between 100 and 60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -2442,12 +2442,12 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         if isinstance(memory_num, bool) or not isinstance(memory_num, int):
             raise ValueError("Pairlink memory slot must be an integer")
         if not 1 <= memory_num <= 4 or not self._has_supported_model:
-            raise ValueError("Pairlink memory recall supports slots 1 through 4")
+            raise ValueError("Choose memory position 1 to 4")
         await self._move(40 + memory_num, 0)
 
     async def program_memory(self, memory_num: int) -> None:
         del memory_num
-        raise ValueError("Pairlink memory save is not a reachable app action")
+        raise ValueError("This bed cannot save memory positions")
 
     async def lights_on(self) -> None:
         await self._move(92, 0)
@@ -2563,7 +2563,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
 
     def validate_comfort_request(self, request: ReverieComfortRequest) -> None:
         if not self._has_supported_model:
-            raise ValueError("Pairlink comfort is unavailable for the selected model")
+            raise ValueError("This bed model has no comfort settings")
         validate_comfort_request(
             request,
             supported_fields=frozenset(self._comfort_field_names),
@@ -2583,7 +2583,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 getattr(request, name) for name in self._comfort_field_names
             )
         ):
-            raise ValueError("Forced Pairlink comfort requires every supported value")
+            raise ValueError("To force the settings, enter a value for every comfort setting")
 
     def comfort_runtime_identity(self) -> PairlinkRuntime:
         """Return the entry-owned runtime key for preflight plan routing."""
@@ -2700,16 +2700,16 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         self, steps: RoutineSteps
     ) -> None:
         if not self._has_supported_model:
-            raise ValueError("Pairlink routines are unavailable for the selected model")
+            raise ValueError("This bed model has no routines")
         for request, duration_minutes in steps:
             if duration_minutes is not None and (
                 isinstance(duration_minutes, bool) or not isinstance(duration_minutes, int)
             ):
-                raise ValueError("Pairlink routine duration must be an integer number of minutes")
+                raise ValueError("Enter the routine duration in whole minutes")
             if request is None:
                 continue
             if request.force:
-                raise ValueError("Pairlink routine steps use ordinary comfort dispatch")
+                raise ValueError("This bed model runs routine steps as comfort settings. Use the comfort settings action instead")
             self.validate_comfort_request(request)
 
     async def async_start_routine(

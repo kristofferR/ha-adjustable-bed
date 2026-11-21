@@ -165,7 +165,7 @@ def test_dynamic_and_auxiliary_packet_vectors():
 
 @pytest.mark.parametrize("name", ["", "Bed 1", "Béd", "A" * 21])
 def test_rename_ui_validation(name):
-    with pytest.raises(ValueError, match="ASCII"):
+    with pytest.raises(ValueError, match="unaccented"):
         DREAMASK.name_rule.encode(name)
 
 

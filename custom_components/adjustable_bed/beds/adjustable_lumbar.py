@@ -491,7 +491,7 @@ class AdjustableLumbarController(
             or not isinstance(duration_ms, int)
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Duration must be a positive integer, at most 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Stream a control every 100 ms for the hold, then release it."""

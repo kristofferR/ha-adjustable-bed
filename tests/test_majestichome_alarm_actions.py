@@ -446,7 +446,7 @@ async def test_finite_public_rejects_short_duration(hass, runtime, protocol_time
         if service == "timed_move"
         else {"control": "head_up", "duration": 0.1}
     )
-    with pytest.raises(ServiceValidationError, match="200"):
+    with pytest.raises(ServiceValidationError, match="0.2"):
         await hass.services.async_call(
             const.DOMAIN, service, {"device_id": "bed", **data}, blocking=True
         )
@@ -877,7 +877,7 @@ async def test_new_requires_explicit_id_before_import_even_with_partial_records(
     client.write_gatt_char.reset_mock()
     with (
         patch.object(services, "async_import_modules", AsyncMock()) as importing,
-        pytest.raises(ServiceValidationError, match="explicit alarm ID"),
+        pytest.raises(ServiceValidationError, match="full alarm list"),
     ):
         await settings(hass, "new")
     importing.assert_not_awaited()

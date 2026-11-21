@@ -465,7 +465,7 @@ async def test_linked_motion_refuses_narrowed_enabled_axis_ranges_after_restore(
     bed.restore_persisted_app_state({"ranges": {axis: list(limits)}, "range_enabled": {axis: True}})
     bed.write_command = AsyncMock()
     for direction in ("up", "down"):
-        with pytest.raises(ValueError, match="Linked movement"):
+        with pytest.raises(ValueError, match="cannot move together"):
             await bed.hold_control("gearing_" + direction, 1000)
     bed.write_command.assert_not_awaited()
 

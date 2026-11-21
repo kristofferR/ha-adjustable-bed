@@ -468,7 +468,7 @@ class VMatBasicController(BedController):
 
     def _require(self, profile: str) -> None:
         if self.profile.key != profile:
-            raise ValueError(f"This control requires the {profile} app profile")
+            raise ValueError("This bed model does not offer that control")
 
     def _setting(self, level: int | None = None, minutes: int | None = None) -> None:
         if level is not None:
@@ -598,7 +598,7 @@ class VMatBasicController(BedController):
         packet = vmat_profiles.rename(name)
         # A single default-MTU ATT write supports twenty bytes; no fragmentation is proven.
         if len(packet) > 20:
-            raise ValueError("Encoded device name exceeds the safe twenty-byte write payload")
+            raise ValueError("This name is too long. Use a shorter name")
         await self._write(vmat_profiles.GAP_SERVICE, vmat_profiles.NAME_CHAR, packet)
         self.forward_controller_state_update(DEVICE_NAME, packet.decode("utf-8"))
 
