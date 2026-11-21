@@ -4083,9 +4083,8 @@ class TestCombinedPositionSliders:
 
         entity = PairedBedCombinedPositionNumber(coord, _build_position_description(back))
         assert entity.native_value == 25.0
+        # One side's angle is not the whole bed's.
         right.position_data.clear()
-        assert entity.native_value == 20.0
-        left.position_data.clear()
         assert entity.native_value is None
 
         await entity.async_set_native_value(40)

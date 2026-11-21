@@ -722,7 +722,7 @@ class PairedBedCombinedPositionNumber(RenamesInPlace, PlacedInCard, NumberEntity
     """A 'both sides' position slider on the paired parent device.
 
     Reports the mean of the sides' positions, so the slider sits between them
-    while they differ. Setting it seeks both sides to the same target through
+    while they differ, and nothing while a side has not reported. Setting it seeks both sides to the same target through
     the parent (side=both), which takes the pair command lock.
     """
 
@@ -772,17 +772,20 @@ class PairedBedCombinedPositionNumber(RenamesInPlace, PlacedInCard, NumberEntity
 
     @property
     def native_value(self) -> float | None:
-        """Return the mean position of the sides that report one."""
+        """Return the mean position, unknown until every side reports one.
+
+        One side's angle is not the whole bed's.
+        """
         max_angle = self.entity_description.max_angle
         position_key = self.entity_description.position_key
         positions = [
-            min(max_angle, max(0.0, float(position)))
-            for child in self._coordinator.children.values()
-            if (position := child.position_data.get(position_key)) is not None
+            child.position_data.get(position_key) for child in self._coordinator.children.values()
         ]
-        if not positions:
+        if not positions or None in positions:
             return None
-        return sum(positions) / len(positions)
+        return sum(min(max_angle, max(0.0, float(position))) for position in positions) / len(
+            positions
+        )
 
     async def async_set_native_value(self, value: float) -> None:
         """Seek both sides to the target position."""
