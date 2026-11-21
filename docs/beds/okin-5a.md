@@ -18,8 +18,8 @@ architecture.
 > Nectar Motion app is the explicit **Nectar Move** profile of
 > [Okin CST](okin-nframe.md#okin-cst), and beds using the official MFirm 900-O app
 > (`com.okin.bedding.rizemf900`) and advertising as `OKIN-XXXXXX` are
-> [Okin CST](okin-nframe.md#okin-cst) too. Neither is selected by an `OKIN-*` name, a
-> shared OKIN UUID or a Device Information value.
+> [Okin CST](okin-nframe.md#okin-cst) too. Setup does not pick either from the
+> Bluetooth name or services; choose it yourself.
 >
 > The Nectar Premier / Resident Adjustable Base uses neither: choose the
 > [Resident Adjustable Base](okin-nframe.md#resident-adjustable-base) app profile,
@@ -58,7 +58,7 @@ of this one (see [Nectar](#nectar)).
 | Feature | Nectar | Mattress Firm 900 / iFlex | Sealy Posturematic (CB35) | DewertOkin ELEVATE |
 |---------|--------|---------------------------|---------------------------|--------------------|
 | Motor Control | ✅ Head, Feet, Lumbar | ✅ Head, Foot, Lumbar | ✅ Head, Foot, Lumbar, Neck, Hips (Hips is the Head End Tilt cover) | ✅ Actuator 1, actuator 2 and both together |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ (no semantic notification parser in the apps) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Anti-Snore, Lounge; TV sends the Lounge key | ✅ Flat, Zero-G, Anti-Snore, Lounge, Incline; TV sends the Lounge key | ✅ Flat, Zero G, Anti-Snore, Lounge, Incline, TV | ✅ Flat (one-shot) |
 | Memory Presets | ⚠️ Recall of slots 1-2 only, no programming | ❌ (built-in presets instead) | ⚠️ Recall of Memory 1 and 2; no programming over BLE | ❌ |
 | Massage | ✅ Global on, wave and off; no intensity commands | ✅ On, toggle, wave, off, intensity up/down | ✅ Toggle, head/foot strength, mode step, stop | ❌ |
@@ -66,7 +66,7 @@ of this one (see [Nectar](#nectar)).
 | Group control with M5X5 / M1X12 mains | ❌ | ❌ | ❌ | ✅ (see [AdjustableM5X5 lifts](#adjustablem5x5-lifts)) |
 | Hold until release | ❌ (finite pulses) | ❌ (finite pulses) | ❌ (finite pulses) | ✅ (renewable `timed_move`, both routes) |
 | BLE Pairing / Authentication | ❌ Not required | ❌ Not required | ❌ Not required | ❌ Not required |
-| Hardware-confirmed | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
+| Tested on hardware | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
 
 ## Choosing a profile
 
