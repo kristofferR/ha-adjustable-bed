@@ -10,14 +10,15 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ...codec import limoss as codec
 from ...const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
+from ...errors import invalid
 from ...profiles.limoss import LEGACY, LimossProfile
 from ..base import BedController, ProfileExecution
 
@@ -401,21 +402,49 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True if positions have been saved to recall."""
-        return len(self._memory_positions) > 0
+        """Every reported slot can be recalled; one nothing was saved to raises."""
+        return self.memory_slot_count > 0
 
     @property
     def supports_memory_programming(self) -> bool:
         """Return True - Limoss supports saving positions via SetPos."""
         return True
 
+    @property
+    def persisted_app_state(self) -> dict[str, Any]:
+        """Saved memories, which outlive this controller and every reconnect."""
+        return {
+            "memory": {
+                str(slot): dict(positions) for slot, positions in self._memory_positions.items()
+            }
+        }
+
+    def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:
+        memory = state.get("memory", {})
+        if not isinstance(memory, dict):
+            raise TypeError("Stored Limoss memories are not a mapping")
+        restored: dict[int, dict[str, int]] = {}
+        for slot, positions in memory.items():
+            if not isinstance(slot, str) or not slot.isdigit() or not isinstance(positions, dict):
+                raise ValueError("Invalid stored Limoss memory slot")
+            if not all(
+                motor in MOTORS and type(raw) is int and 0 <= raw <= 0xFFFFFFFF
+                for motor, raw in positions.items()
+            ):
+                raise ValueError("Invalid stored Limoss memory position")
+            restored[int(slot)] = dict(positions)
+        self._memory_positions = restored
+
+    def validate_memory_recall(self, memory_num: int) -> None:
+        """Refuse a slot nothing was saved to before any side moves."""
+        super().validate_memory_recall(memory_num)
+        if not self._memory_positions.get(memory_num):
+            raise invalid("memory_slot_empty", device_name=self._coordinator.name, preset=memory_num)
+
     async def preset_memory(self, memory_num: int) -> None:
         """Recall a saved memory by sending each motor's stored raw position."""
-        positions = self._memory_positions.get(memory_num)
-        if not positions:
-            _LOGGER.warning("No positions saved in Limoss memory slot %d (save first)", memory_num)
-            return
-
+        self.validate_memory_recall(memory_num)
+        positions = self._memory_positions[memory_num]
         for motor_name, raw_pos in positions.items():
             index = MOTORS.get(motor_name)
             if index is None:
@@ -426,11 +455,11 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
     async def program_memory(self, memory_num: int) -> None:
         """Save current motor positions to a memory slot."""
         if not self._last_positions_raw:
-            _LOGGER.warning(
-                "No position data available to save to Limoss memory slot %d", memory_num
+            raise invalid(
+                "memory_position_unknown", device_name=self._coordinator.name, preset=memory_num
             )
-            return
         self._memory_positions[memory_num] = dict(self._last_positions_raw)
+        self._coordinator.save_app_state(self)
         _LOGGER.info(
             "Saved Limoss positions to memory slot %d: %s",
             memory_num,

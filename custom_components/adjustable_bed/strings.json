@@ -9724,6 +9724,12 @@
     "memory_programming_not_supported": {
       "message": "{device_name} cannot save memory presets."
     },
+    "memory_slot_empty": {
+      "message": "Memory {preset} on {device_name} is empty. Save a position to it first."
+    },
+    "memory_position_unknown": {
+      "message": "{device_name} has not reported its position yet, so memory {preset} was not saved. Move the bed a little, then save again."
+    },
     "invalid_preset_number": {
       "message": "{device_name} has memory presets 1 to {max_preset}, so preset {requested_preset} is not available. Choose one of those."
     },
