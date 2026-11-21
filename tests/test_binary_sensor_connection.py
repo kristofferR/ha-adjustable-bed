@@ -30,7 +30,7 @@ def _attrs(
         is_connected=is_connected,
         last_disconnect_reason=last_disconnect_reason,
     )
-    fake_self = SimpleNamespace(_coordinator=coordinator)
+    fake_self = SimpleNamespace(_coordinator=coordinator, _base_attributes=dict)
     fget = AdjustableBedConnectionSensor.extra_state_attributes.fget
     assert fget is not None
     return fget(fake_self)

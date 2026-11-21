@@ -105,6 +105,10 @@ class AdjustableBedEntity(RenamesInPlace, PlacedInCard):
         if side is not None:
             self._attr_extra_state_attributes = {"bed_side": side}
 
+    def _base_attributes(self) -> dict[str, Any]:
+        """Start an ``extra_state_attributes`` override, keeping a paired side's ``bed_side``."""
+        return dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+
     def _side_scope(self) -> AbstractContextManager[None]:
         """Bind this entity's side to a shared controller around a direct read."""
         return controller_side_scope(self._coordinator)

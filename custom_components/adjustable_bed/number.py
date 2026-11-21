@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant, callback
 
 from .bed_traits import bed_type_has_position_feedback
 from .beds.entity_specs import ControllerNumberSpec, PositionNumberSpec
-from .beds.octo.runtime import octo_controller
+from .beds.octo.runtime import octo_controls_locked
 from .card import (
     CARD_CLIMATE,
     CARD_FIRMNESS,
@@ -541,10 +541,9 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
     def available(self) -> bool:
         """Respect Octo's PIN gate for live settings."""
         controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
         return (
             super().available
-            and (octo is None or octo.normal_controls_available)
+            and not octo_controls_locked(controller)
             and (
                 controller is None
                 or self.entity_description.key not in controller.unavailable_controller_entity_keys
@@ -1029,7 +1028,7 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return side metadata for the configured Sleep Number setting."""
-        attrs: dict[str, Any] = {}
+        attrs = self._base_attributes()
         side = self._coordinator.controller_state.get(SLEEP_NUMBER_SIDE)
         if side is not None:
             attrs["side"] = side
@@ -1098,7 +1097,7 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the side served by this number entity."""
-        return {"side": self.entity_description.side}
+        return {**self._base_attributes(), "side": self.entity_description.side}
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the side-specific value through the controller."""
