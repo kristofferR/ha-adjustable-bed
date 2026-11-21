@@ -1687,16 +1687,16 @@
         "name": "Flat"
       },
       "preset_zero_g": {
-        "name": "Zero Gravity"
+        "name": "Zero gravity"
       },
       "sync_positions": {
-        "name": "Sync Both Sides"
+        "name": "Sync both sides"
       },
       "child_lock_toggle": {
-        "name": "Child Lock"
+        "name": "Child lock"
       },
       "preset_anti_snore": {
-        "name": "Anti-Snore"
+        "name": "Anti-snore"
       },
       "preset_tv": {
         "name": "TV"
@@ -1717,7 +1717,7 @@
         "name": "Incline"
       },
       "preset_both_up": {
-        "name": "Back + Legs Up"
+        "name": "Back + legs up"
       },
       "octo_all_down": {
         "name": "All motors down"
@@ -1726,13 +1726,13 @@
         "name": "Yoga"
       },
       "preset_relaxing_bedtime": {
-        "name": "Relaxing Bedtime"
+        "name": "Relaxing bedtime"
       },
       "solace_music_toggle": {
         "name": "Music"
       },
       "solace_music_off": {
-        "name": "Music Off"
+        "name": "Music off"
       },
       "preset_memory_1": {
         "name": "Memory 1"
@@ -1753,118 +1753,118 @@
         "name": "Memory 6"
       },
       "program_memory_1": {
-        "name": "Save to Memory 1"
+        "name": "Save to memory 1"
       },
       "program_memory_2": {
-        "name": "Save to Memory 2"
+        "name": "Save to memory 2"
       },
       "program_memory_3": {
-        "name": "Save to Memory 3"
+        "name": "Save to memory 3"
       },
       "program_memory_4": {
-        "name": "Save to Memory 4"
+        "name": "Save to memory 4"
       },
       "program_memory_5": {
-        "name": "Save to Memory 5"
+        "name": "Save to memory 5"
       },
       "program_memory_6": {
-        "name": "Save to Memory 6"
+        "name": "Save to memory 6"
       },
       "control_mode_press_and_hold": {
-        "name": "Use Press-and-Hold Controls"
+        "name": "Use press-and-hold controls"
       },
       "control_mode_press_and_release": {
-        "name": "Use Press-and-Release Controls"
+        "name": "Use press-and-release controls"
       },
       "wake_controller": {
         "name": "Wake controller"
       },
       "reset_defaults": {
-        "name": "Reset Defaults"
+        "name": "Reset defaults"
       },
       "factory_reset": {
-        "name": "Factory Reset"
+        "name": "Factory reset"
       },
       "massage_impulse_toggle": {
-        "name": "Massage: Impulse"
+        "name": "Massage impulse"
       },
       "massage_wave_frequency_up": {
-        "name": "Massage: Wave Frequency Up"
+        "name": "Massage wave frequency up"
       },
       "massage_wave_frequency_down": {
-        "name": "Massage: Wave Frequency Down"
+        "name": "Massage wave frequency down"
       },
       "massage_all_off": {
-        "name": "Massage: Off"
+        "name": "Massage off"
       },
       "massage_all_toggle": {
-        "name": "Massage: Toggle"
+        "name": "Massage toggle"
       },
       "massage_all_up": {
-        "name": "Massage: Intensity Up"
+        "name": "Massage intensity up"
       },
       "massage_all_down": {
-        "name": "Massage: Intensity Down"
+        "name": "Massage intensity down"
       },
       "massage_head_toggle": {
-        "name": "Massage: Head Toggle"
+        "name": "Massage head toggle"
       },
       "massage_head_up": {
-        "name": "Massage: Head Up"
+        "name": "Massage head up"
       },
       "massage_head_down": {
-        "name": "Massage: Head Down"
+        "name": "Massage head down"
       },
       "massage_foot_toggle": {
-        "name": "Massage: Foot Toggle"
+        "name": "Massage foot toggle"
       },
       "massage_foot_up": {
-        "name": "Massage: Foot Up"
+        "name": "Massage foot up"
       },
       "massage_foot_down": {
-        "name": "Massage: Foot Down"
+        "name": "Massage foot down"
       },
       "massage_mode_step": {
-        "name": "Massage: Mode"
+        "name": "Massage mode"
       },
       "massage_timer_step": {
-        "name": "Massage: Timer"
+        "name": "Massage timer"
       },
       "massage_wave_next": {
-        "name": "Massage: Wave Next"
+        "name": "Massage wave next"
       },
       "massage_wave_previous": {
-        "name": "Massage: Wave Previous"
+        "name": "Massage wave previous"
       },
       "massage_intensity_level_1": {
-        "name": "Massage: Intensity Level 1"
+        "name": "Massage intensity level 1"
       },
       "massage_intensity_level_2": {
-        "name": "Massage: Intensity Level 2"
+        "name": "Massage intensity level 2"
       },
       "massage_intensity_level_3": {
-        "name": "Massage: Intensity Level 3"
+        "name": "Massage intensity level 3"
       },
       "massage_circulation_full_body": {
-        "name": "Massage: Full Body Loop"
+        "name": "Massage full body loop"
       },
       "massage_circulation_head": {
-        "name": "Massage: Head Loop"
+        "name": "Massage head loop"
       },
       "massage_circulation_leg": {
-        "name": "Massage: Leg Loop"
+        "name": "Massage leg loop"
       },
       "massage_circulation_hip": {
-        "name": "Massage: Hip Loop"
+        "name": "Massage hip loop"
       },
       "toggle_light": {
-        "name": "Toggle Light"
+        "name": "Toggle light"
       },
       "light_cycle": {
-        "name": "Light Cycle"
+        "name": "Light cycle"
       },
       "stop": {
-        "name": "Stop All"
+        "name": "Stop all"
       },
       "disconnect": {
         "name": "Disconnect"
@@ -1873,43 +1873,43 @@
         "name": "Connect"
       },
       "head_up": {
-        "name": "Head Up"
+        "name": "Head up"
       },
       "head_down": {
-        "name": "Head Down"
+        "name": "Head down"
       },
       "legs_up": {
-        "name": "Legs Up"
+        "name": "Legs up"
       },
       "legs_down": {
-        "name": "Legs Down"
+        "name": "Legs down"
       },
       "stop_both": {
-        "name": "Stop Both Sides"
+        "name": "Stop both sides"
       },
       "back_up": {
-        "name": "Back Up"
+        "name": "Back up"
       },
       "back_down": {
-        "name": "Back Down"
+        "name": "Back down"
       },
       "back_legs_up": {
-        "name": "Back + Legs Up"
+        "name": "Back + legs up"
       },
       "back_legs_down": {
-        "name": "Back + Legs Down"
+        "name": "Back + legs down"
       },
       "feet_up": {
-        "name": "Feet Up"
+        "name": "Feet up"
       },
       "feet_down": {
-        "name": "Feet Down"
+        "name": "Feet down"
       },
       "lumbar_up": {
-        "name": "Lumbar Up"
+        "name": "Lumbar up"
       },
       "lumbar_down": {
-        "name": "Lumbar Down"
+        "name": "Lumbar down"
       },
       "remote_action": {
         "name": "Remote action"
@@ -2182,13 +2182,13 @@
         "name": "Memory 7"
       },
       "program_memory_7": {
-        "name": "Save Memory 7"
+        "name": "Save memory 7"
       },
       "preset_memory_8": {
         "name": "Memory 8"
       },
       "program_memory_8": {
-        "name": "Save Memory 8"
+        "name": "Save memory 8"
       },
       "coolbase_left_fan": {
         "name": "Cycle left fan"
@@ -2545,409 +2545,409 @@
         "name": "Release held control"
       },
       "motion_bed_left_legs_down": {
-        "name": "Left legs Down"
+        "name": "Left legs down"
       },
       "motion_bed_tilt_down": {
-        "name": "Tilt Down"
+        "name": "Tilt down"
       },
       "pillow_down": {
-        "name": "Pillow Down"
+        "name": "Pillow down"
       },
       "keeson_back_up": {
-        "name": "Back Up"
+        "name": "Back up"
       },
       "starcode_union_up": {
-        "name": "Head and foot together Up"
+        "name": "Head and foot together up"
       },
       "auxiliary_1_down": {
-        "name": "Auxiliary 1 Down"
+        "name": "Auxiliary 1 down"
       },
       "bedsense_waist_down": {
-        "name": "Waist Down"
+        "name": "Waist down"
       },
       "motion_bed_left_legs_up": {
-        "name": "Left legs Up"
+        "name": "Left legs up"
       },
       "motion_bed_back_down": {
-        "name": "Back Down"
+        "name": "Back down"
       },
       "bedsense_back_up": {
-        "name": "Back Up"
+        "name": "Back up"
       },
       "motion_bed_right_back_down": {
-        "name": "Right back Down"
+        "name": "Right back down"
       },
       "stair_down": {
-        "name": "Stair Down"
+        "name": "Stair down"
       },
       "starcode_m1x12_part_2_down": {
-        "name": "Foot Down"
+        "name": "Foot down"
       },
       "motion_bed_right_legs_down": {
-        "name": "Right legs Down"
+        "name": "Right legs down"
       },
       "starcode_union_down": {
-        "name": "Head and foot together Down"
+        "name": "Head and foot together down"
       },
       "motion_bed_back_legs_down": {
-        "name": "Back and legs Down"
+        "name": "Back and legs down"
       },
       "motion_bed_right_back_up": {
-        "name": "Right back Up"
+        "name": "Right back up"
       },
       "elevate_actuator_1_up": {
-        "name": "Lift actuator 1 Up"
+        "name": "Lift actuator 1 up"
       },
       "auxiliary_2_up": {
-        "name": "Auxiliary 2 Up"
+        "name": "Auxiliary 2 up"
       },
       "hip_down": {
-        "name": "Hip Down"
+        "name": "Hip down"
       },
       "motion_bed_head_up": {
-        "name": "Head Up"
+        "name": "Head up"
       },
       "bedsense_head_up": {
-        "name": "Head Up"
+        "name": "Head up"
       },
       "pillow_up": {
-        "name": "Pillow Up"
+        "name": "Pillow up"
       },
       "motion_bed_left_back_down": {
-        "name": "Left back Down"
+        "name": "Left back down"
       },
       "bedsense_head_down": {
-        "name": "Head Down"
+        "name": "Head down"
       },
       "elevate_actuator_1_down": {
-        "name": "Lift actuator 1 Down"
+        "name": "Lift actuator 1 down"
       },
       "bedsense_legs_down": {
-        "name": "Legs Down"
+        "name": "Legs down"
       },
       "motion_bed_lift_down": {
-        "name": "Lift Down"
+        "name": "Lift down"
       },
       "both_up": {
-        "name": "Back and legs Up"
+        "name": "Back and legs up"
       },
       "starcode_m1x12_part_2_up": {
-        "name": "Foot Up"
+        "name": "Foot up"
       },
       "motion_bed_right_legs_up": {
-        "name": "Right legs Up"
+        "name": "Right legs up"
       },
       "head_end_tilt_down": {
-        "name": "Head End Tilt Down"
+        "name": "Head end tilt down"
       },
       "starcode_m1x12_part_1_down": {
-        "name": "Head Down"
+        "name": "Head down"
       },
       "both_down": {
-        "name": "Back and legs Down"
+        "name": "Back and legs down"
       },
       "starcode_m1x12_part_1_up": {
-        "name": "Head Up"
+        "name": "Head up"
       },
       "motion_bed_lift_up": {
-        "name": "Lift Up"
+        "name": "Lift up"
       },
       "starcode_m1x12_part_4_down": {
-        "name": "Lumbar Down"
+        "name": "Lumbar down"
       },
       "head_end_tilt_up": {
-        "name": "Head End Tilt Up"
+        "name": "Head end tilt up"
       },
       "head_feet_up": {
-        "name": "Head + Feet Up"
+        "name": "Head + feet up"
       },
       "bedsense_back_down": {
-        "name": "Back Down"
+        "name": "Back down"
       },
       "motion_bed_left_back_up": {
-        "name": "Left back Up"
+        "name": "Left back up"
       },
       "motion_bed_lumbar_down": {
-        "name": "Lumbar Down"
+        "name": "Lumbar down"
       },
       "tilt_up": {
-        "name": "Tilt Up"
+        "name": "Tilt up"
       },
       "auxiliary_2_down": {
-        "name": "Auxiliary 2 Down"
+        "name": "Auxiliary 2 down"
       },
       "hip_up": {
-        "name": "Hip Up"
+        "name": "Hip up"
       },
       "tilt_down": {
-        "name": "Tilt Down"
+        "name": "Tilt down"
       },
       "bedsense_waist_up": {
-        "name": "Waist Up"
+        "name": "Waist up"
       },
       "keeson_legs_down": {
-        "name": "Legs Down"
+        "name": "Legs down"
       },
       "all_motors_up": {
         "name": "All motors up"
       },
       "motion_bed_tilt_up": {
-        "name": "Tilt Up"
+        "name": "Tilt up"
       },
       "head_feet_down": {
-        "name": "Head + Feet Down"
+        "name": "Head + feet down"
       },
       "elevate_actuator_2_down": {
-        "name": "Lift actuator 2 Down"
+        "name": "Lift actuator 2 down"
       },
       "motion_bed_legs_up": {
-        "name": "Legs Up"
+        "name": "Legs up"
       },
       "starcode_m1x12_part_4_up": {
-        "name": "Lumbar Up"
+        "name": "Lumbar up"
       },
       "elevate_both_down": {
-        "name": "Lift Down"
+        "name": "Lift down"
       },
       "all_motors_down": {
         "name": "All motors down"
       },
       "motion_bed_hip_down": {
-        "name": "Hip Down"
+        "name": "Hip down"
       },
       "motion_bed_legs_down": {
-        "name": "Legs Down"
+        "name": "Legs down"
       },
       "neck_up": {
-        "name": "Neck Up"
+        "name": "Neck up"
       },
       "neck_down": {
-        "name": "Neck Down"
+        "name": "Neck down"
       },
       "keeson_legs_up": {
-        "name": "Legs Up"
+        "name": "Legs up"
       },
       "motion_bed_lumbar_up": {
-        "name": "Lumbar Up"
+        "name": "Lumbar up"
       },
       "motion_bed_head_down": {
-        "name": "Head Down"
+        "name": "Head down"
       },
       "motion_bed_back_up": {
-        "name": "Back Up"
+        "name": "Back up"
       },
       "motion_bed_back_legs_up": {
-        "name": "Back and legs Up"
+        "name": "Back and legs up"
       },
       "keeson_back_down": {
-        "name": "Back Down"
+        "name": "Back down"
       },
       "stair_up": {
-        "name": "Stair Up"
+        "name": "Stair up"
       },
       "motion_bed_hip_up": {
-        "name": "Hip Up"
+        "name": "Hip up"
       },
       "bedsense_legs_up": {
-        "name": "Legs Up"
+        "name": "Legs up"
       },
       "auxiliary_1_up": {
-        "name": "Auxiliary 1 Up"
+        "name": "Auxiliary 1 up"
       },
       "elevate_actuator_2_up": {
-        "name": "Lift actuator 2 Up"
+        "name": "Lift actuator 2 up"
       },
       "elevate_both_up": {
-        "name": "Lift Up"
+        "name": "Lift up"
       },
       "waist_down": {
-        "name": "Waist Down"
+        "name": "Waist down"
       },
       "bed_height_down": {
-        "name": "Bed Height Down"
+        "name": "Bed height down"
       },
       "richmat_mh_lumbar_2_up": {
-        "name": "Lumbar 2 Up"
+        "name": "Lumbar 2 up"
       },
       "richmat_mh_lumbar_2_down": {
-        "name": "Lumbar 2 Down"
+        "name": "Lumbar 2 down"
       },
       "bedsense_hip_down": {
-        "name": "Hip Down"
+        "name": "Hip down"
       },
       "limoss_remote_motor_2_up": {
-        "name": "Motor 2 Up"
+        "name": "Motor 2 up"
       },
       "bedsense_hip_up": {
-        "name": "Hip Up"
+        "name": "Hip up"
       },
       "hjbed_foot_box_down": {
-        "name": "Foot box Down"
+        "name": "Foot box down"
       },
       "tv_lift_up": {
-        "name": "TV Lift Up"
+        "name": "TV lift up"
       },
       "bedsense_back_and_leg_up": {
-        "name": "Back and leg Up"
+        "name": "Back and leg up"
       },
       "right_legs_down": {
-        "name": "Right legs Down"
+        "name": "Right legs down"
       },
       "right_legs_up": {
-        "name": "Right legs Up"
+        "name": "Right legs up"
       },
       "bedsense_lift_down": {
-        "name": "Lift Down"
+        "name": "Lift down"
       },
       "malouf_full_tilt_up": {
-        "name": "Full tilt Up"
+        "name": "Full tilt up"
       },
       "limoss_remote_motor_2_down": {
-        "name": "Motor 2 Down"
+        "name": "Motor 2 down"
       },
       "both_backs_down": {
-        "name": "Both backs Down"
+        "name": "Both backs down"
       },
       "hjbed_foot_box_up": {
-        "name": "Foot box Up"
+        "name": "Foot box up"
       },
       "richmat_mh_motor_6_up": {
-        "name": "Motor 6 Up"
+        "name": "Motor 6 up"
       },
       "malouf_full_tilt_down": {
-        "name": "Full tilt Down"
+        "name": "Full tilt down"
       },
       "bedsense_rise_and_fall_up": {
-        "name": "Rise and fall Up"
+        "name": "Rise and fall up"
       },
       "auxiliary_down": {
-        "name": "Auxiliary Down"
+        "name": "Auxiliary down"
       },
       "right_back_down": {
-        "name": "Right back Down"
+        "name": "Right back down"
       },
       "richmat_mh_pillow_lumbar_down": {
-        "name": "Pillow and lumbar Down"
+        "name": "Pillow and lumbar down"
       },
       "tv_lift_down": {
-        "name": "TV Lift Down"
+        "name": "TV lift down"
       },
       "foot_end_tilt_up": {
-        "name": "Foot End Tilt Up"
+        "name": "Foot end tilt up"
       },
       "waist_up": {
-        "name": "Waist Up"
+        "name": "Waist up"
       },
       "bedsense_rise_and_fall_down": {
-        "name": "Rise and fall Down"
+        "name": "Rise and fall down"
       },
       "richmat_mh_motor_5_up": {
-        "name": "Motor 5 Up"
+        "name": "Motor 5 up"
       },
       "limoss_remote_motor_1_up": {
-        "name": "Motor 1 Up"
+        "name": "Motor 1 up"
       },
       "richmat_mh_pillow_lumbar_up": {
-        "name": "Pillow and lumbar Up"
+        "name": "Pillow and lumbar up"
       },
       "richmat_mh_motor_6_down": {
-        "name": "Motor 6 Down"
+        "name": "Motor 6 down"
       },
       "both_legs_down": {
-        "name": "Both legs Down"
+        "name": "Both legs down"
       },
       "bed_height_up": {
-        "name": "Bed Height Up"
+        "name": "Bed height up"
       },
       "malouf_tilt_head_down": {
-        "name": "Head tilt Down"
+        "name": "Head tilt down"
       },
       "limoss_remote_motor_3_up": {
-        "name": "Motor 3 Up"
+        "name": "Motor 3 up"
       },
       "keeson_head_up": {
-        "name": "Head Up"
+        "name": "Head up"
       },
       "malouf_tilt_head_up": {
-        "name": "Head tilt Up"
+        "name": "Head tilt up"
       },
       "hjbed_sofa_travel_down": {
-        "name": "Sofa travel Down"
+        "name": "Sofa travel down"
       },
       "octo_motors_1_2_up": {
-        "name": "Motors 1 + 2 Up"
+        "name": "Motors 1 + 2 up"
       },
       "bedsense_lift_up": {
-        "name": "Lift Up"
+        "name": "Lift up"
       },
       "foot_end_tilt_down": {
-        "name": "Foot End Tilt Down"
+        "name": "Foot end tilt down"
       },
       "auxiliary_up": {
-        "name": "Auxiliary Up"
+        "name": "Auxiliary up"
       },
       "limoss_remote_motor_4_up": {
-        "name": "Motor 4 Up"
+        "name": "Motor 4 up"
       },
       "motor_3_up": {
-        "name": "Motor 3 Up"
+        "name": "Motor 3 up"
       },
       "limoss_remote_motor_4_down": {
-        "name": "Motor 4 Down"
+        "name": "Motor 4 down"
       },
       "octo_motors_1_2_down": {
-        "name": "Motors 1 + 2 Down"
+        "name": "Motors 1 + 2 down"
       },
       "both_legs_up": {
-        "name": "Both legs Up"
+        "name": "Both legs up"
       },
       "limoss_remote_motor_3_down": {
-        "name": "Motor 3 Down"
+        "name": "Motor 3 down"
       },
       "richmat_mh_motor_5_down": {
-        "name": "Motor 5 Down"
+        "name": "Motor 5 down"
       },
       "keeson_head_down": {
-        "name": "Head Down"
+        "name": "Head down"
       },
       "motor_3_down": {
-        "name": "Motor 3 Down"
+        "name": "Motor 3 down"
       },
       "both_backs_up": {
-        "name": "Both backs Up"
+        "name": "Both backs up"
       },
       "hjbed_sofa_travel_up": {
-        "name": "Sofa travel Up"
+        "name": "Sofa travel up"
       },
       "bedsense_back_and_leg_down": {
-        "name": "Back and leg Down"
+        "name": "Back and leg down"
       },
       "limoss_remote_motor_1_down": {
-        "name": "Motor 1 Down"
+        "name": "Motor 1 down"
       },
       "right_back_up": {
-        "name": "Right back Up"
+        "name": "Right back up"
       },
       "set_tv_lift_reference": {
         "name": "Set TV lift reference"
       },
       "ruf_richmat_mattress_left_pillow_up": {
-        "name": "Left mattress pillow Up"
+        "name": "Left mattress pillow up"
       },
       "ruf_richmat_mattress_left_pillow_down": {
-        "name": "Left mattress pillow Down"
+        "name": "Left mattress pillow down"
       },
       "ruf_richmat_mattress_right_pillow_up": {
-        "name": "Right mattress pillow Up"
+        "name": "Right mattress pillow up"
       },
       "ruf_richmat_mattress_right_pillow_down": {
-        "name": "Right mattress pillow Down"
+        "name": "Right mattress pillow down"
       },
       "ruf_richmat_lift_up": {
-        "name": "Lift Up"
+        "name": "Lift up"
       },
       "ruf_richmat_lift_down": {
-        "name": "Lift Down"
+        "name": "Lift down"
       },
       "paramount_gearing_up": {
         "name": "Linked motion up"
@@ -3576,7 +3576,7 @@
     },
     "cover": {
       "tv_lift": {
-        "name": "TV Lift"
+        "name": "TV lift"
       },
       "head": {
         "name": "Head"
@@ -3597,7 +3597,7 @@
         "name": "Legs"
       },
       "back_legs": {
-        "name": "Back + Legs"
+        "name": "Back + legs"
       },
       "octo_motors_1_2": {
         "name": "Motors 1 + 2"
@@ -3606,7 +3606,7 @@
         "name": "Feet"
       },
       "head_feet": {
-        "name": "Head + Feet"
+        "name": "Head + feet"
       },
       "lumbar": {
         "name": "Lumbar"
@@ -3630,16 +3630,16 @@
         "name": "Auxiliary 2"
       },
       "head_end_tilt": {
-        "name": "Head End Tilt"
+        "name": "Head end tilt"
       },
       "foot_end_tilt": {
-        "name": "Foot End Tilt"
+        "name": "Foot end tilt"
       },
       "hip": {
         "name": "Hip"
       },
       "bed_height": {
-        "name": "Bed Height"
+        "name": "Bed height"
       },
       "stair": {
         "name": "Stair"
@@ -3654,22 +3654,22 @@
         "name": "Legs"
       },
       "head_left": {
-        "name": "Left: Head"
+        "name": "Left head"
       },
       "head_right": {
-        "name": "Right: Head"
+        "name": "Right head"
       },
       "back_left": {
-        "name": "Left: Back"
+        "name": "Left back"
       },
       "back_right": {
-        "name": "Right: Back"
+        "name": "Right back"
       },
       "legs_left": {
-        "name": "Left: Legs"
+        "name": "Left legs"
       },
       "legs_right": {
-        "name": "Right: Legs"
+        "name": "Right legs"
       },
       "waist": {
         "name": "Waist"
@@ -3992,25 +3992,25 @@
         "name": "Anti-snore intervention time"
       },
       "head_angle": {
-        "name": "Head Angle"
+        "name": "Head angle"
       },
       "back_angle": {
-        "name": "Back Angle"
+        "name": "Back angle"
       },
       "legs_angle": {
-        "name": "Legs Angle"
+        "name": "Legs angle"
       },
       "feet_angle": {
-        "name": "Feet Angle"
+        "name": "Feet angle"
       },
       "massage_head_level": {
-        "name": "Massage: Head Level"
+        "name": "Massage head level"
       },
       "massage_foot_level": {
-        "name": "Massage: Foot Level"
+        "name": "Massage foot level"
       },
       "massage_timer_mode": {
-        "name": "Massage: Timer Mode"
+        "name": "Massage timer mode"
       },
       "reverie_head_massage_intensity": {
         "name": "Head massage strength"
@@ -5136,15 +5136,15 @@
     },
     "light": {
       "under_bed_lights": {
-        "name": "Under Bed Lights"
+        "name": "Under-bed lights"
       }
     },
     "switch": {
       "under_bed_lights": {
-        "name": "Under Bed Lights"
+        "name": "Under-bed lights"
       },
       "synchro_mode": {
-        "name": "Controller Sync"
+        "name": "Controller sync"
       },
       "linak_automatic_drive": {
         "name": "Automatic drive"
@@ -5368,7 +5368,7 @@
         "name": "RGB motion"
       },
       "ble_connection": {
-        "name": "BLE Connection"
+        "name": "BLE connection"
       },
       "reverie_pairlink_low_battery": {
         "name": "Low battery"
@@ -5595,40 +5595,40 @@
     },
     "number": {
       "back_position": {
-        "name": "Back Position"
+        "name": "Back position"
       },
       "legs_position": {
-        "name": "Legs Position"
+        "name": "Legs position"
       },
       "head_position": {
-        "name": "Head Position"
+        "name": "Head position"
       },
       "feet_position": {
-        "name": "Feet Position"
+        "name": "Feet position"
       },
       "lumbar_position": {
-        "name": "Lumbar Position"
+        "name": "Lumbar position"
       },
       "auxiliary_1_position": {
-        "name": "Auxiliary 1 Position"
+        "name": "Auxiliary 1 position"
       },
       "auxiliary_2_position": {
-        "name": "Auxiliary 2 Position"
+        "name": "Auxiliary 2 position"
       },
       "massage_head_intensity": {
-        "name": "Massage: Head Intensity"
+        "name": "Massage head intensity"
       },
       "massage_intensity": {
-        "name": "Massage: Intensity"
+        "name": "Massage intensity"
       },
       "massage_foot_intensity": {
-        "name": "Massage: Foot Intensity"
+        "name": "Massage foot intensity"
       },
       "massage_wave_intensity": {
-        "name": "Massage: Wave Intensity"
+        "name": "Massage wave intensity"
       },
       "light_level": {
-        "name": "Light Level"
+        "name": "Light level"
       },
       "reverie_massage_wave": {
         "name": "Massage wave"
@@ -5646,28 +5646,28 @@
         "name": "Massage timer"
       },
       "fan_level": {
-        "name": "Fan Level"
+        "name": "Fan level"
       },
       "sleep_number_setting": {
-        "name": "Sleep Number Setting"
+        "name": "Sleep Number setting"
       },
       "sleep_number_setting_left": {
-        "name": "Sleep Number Setting Left"
+        "name": "Sleep Number setting left"
       },
       "sleep_number_setting_right": {
-        "name": "Sleep Number Setting Right"
+        "name": "Sleep Number setting right"
       },
       "back_position_left": {
-        "name": "Left: Back Position"
+        "name": "Left back position"
       },
       "back_position_right": {
-        "name": "Right: Back Position"
+        "name": "Right back position"
       },
       "legs_position_left": {
-        "name": "Left: Legs Position"
+        "name": "Left legs position"
       },
       "legs_position_right": {
-        "name": "Right: Legs Position"
+        "name": "Right legs position"
       },
       "massage_right_intensity": {
         "name": "Right massage intensity"
@@ -5993,7 +5993,7 @@
         }
       },
       "massage_timer": {
-        "name": "Massage: Timer"
+        "name": "Massage timer"
       },
       "massage_left_timer": {
         "name": "Left massage timer"
@@ -6002,34 +6002,34 @@
         "name": "Right massage timer"
       },
       "light_timer": {
-        "name": "Light Timer"
+        "name": "Light timer"
       },
       "thermal_timer": {
-        "name": "Climate Timer"
+        "name": "Climate timer"
       },
       "thermal_timer_left": {
-        "name": "Climate Timer Left"
+        "name": "Climate timer left"
       },
       "thermal_timer_right": {
-        "name": "Climate Timer Right"
+        "name": "Climate timer right"
       },
       "footwarming_timer": {
-        "name": "Footwarming Timer"
+        "name": "Footwarming timer"
       },
       "footwarming_timer_left": {
-        "name": "Footwarming Timer Left"
+        "name": "Footwarming timer left"
       },
       "footwarming_timer_right": {
-        "name": "Footwarming Timer Right"
+        "name": "Footwarming timer right"
       },
       "foundation_preset": {
-        "name": "Foundation Preset"
+        "name": "Foundation preset"
       },
       "foundation_preset_left": {
-        "name": "Foundation Preset Left"
+        "name": "Foundation preset left"
       },
       "foundation_preset_right": {
-        "name": "Foundation Preset Right"
+        "name": "Foundation preset right"
       },
       "vibradorm_app_mood_palette": {
         "name": "Mood light palette"
@@ -6671,19 +6671,19 @@
         "name": "Climate"
       },
       "sleep_number_thermal_climate_left": {
-        "name": "Climate Left"
+        "name": "Climate left"
       },
       "sleep_number_thermal_climate_right": {
-        "name": "Climate Right"
+        "name": "Climate right"
       },
       "footwarming_climate": {
         "name": "Footwarming"
       },
       "footwarming_climate_left": {
-        "name": "Footwarming Left"
+        "name": "Footwarming left"
       },
       "footwarming_climate_right": {
-        "name": "Footwarming Right"
+        "name": "Footwarming right"
       }
     }
   },
