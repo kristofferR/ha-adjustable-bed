@@ -4439,8 +4439,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if octo_split_note is not None:
             notes["setup_note"] = f"\n\n{octo_split_note}"
         if info is not None and self._new_bed_origin == "discovered":
-            # A one-click "this isn't my bed" report, built from the live
-            # (unredacted) advertisement because the user chooses to open it.
+            # A one-click "this isn't my bed" report. The issue is public, so
+            # build_misidentified_issue_url keeps only the address prefix.
             detection = detect_bed_type_detailed(info)
             try:
                 integration = await async_get_integration(self.hass, DOMAIN)
@@ -4455,9 +4455,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 integration_version=version,
                 ha_version=HA_VERSION,
             )
-            notes["report_note"] = (
-                f"\n\nWrong device, or not a bed? [Report a misidentified device]({url})"
+            report = await self._get_config_translation(
+                "step.finish_settings.data_description.report_misidentified",
+                "Wrong device, or not a bed? [Report a misidentified device]({url})",
             )
+            notes["report_note"] = "\n\n" + report.format(url=url)
         return notes
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:

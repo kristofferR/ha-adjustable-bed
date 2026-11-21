@@ -538,3 +538,21 @@ def test_disable_anti_snore_is_an_extra_and_sonic_sources_sit_together(driver):
         assert not any(s.entity_registry_enabled_default for s in sources if s is not None)
     else:
         assert sources == [None, None]
+
+
+def test_diagnostics_leave_out_vital_signs_and_reports():
+    """Heart rate, breathing, presence and reports stay out of support files (PRIV-2)."""
+    bed = Bed()
+    bed.bed.parser._live("left", [62, 15, 3, 0, 1])
+    bed.bed.parser.state["left_sensitivity"] = 4
+    bed.bed.parser.state["last_json"] = {"cmd": "q_realtime", "val": {"L": [0, 3, 62, 15]}}
+    bed.bed.parser.state["right_report"] = {"standardHR": 61}
+
+    state = bed.bed.protocol_diagnostics["state"]
+
+    assert isinstance(state, dict)
+    assert state["left_sensitivity"] == 4
+    for key in ("left_heart_rate", "left_breath_rate", "left_status", "left_raw", "left_history"):
+        assert key not in state
+    assert "last_json" not in state
+    assert "right_report" not in state
