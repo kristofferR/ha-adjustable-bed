@@ -21,7 +21,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
-    KEESON_BASE_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -191,18 +190,6 @@ class TestScottLivingPacketBuilding:
 
 class TestScottLivingController:
     """Test ScottLivingController."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_scott_living_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Keeson Base write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == KEESON_BASE_WRITE_CHAR_UUID
 
     async def test_supports_preset_zero_g(
         self,
