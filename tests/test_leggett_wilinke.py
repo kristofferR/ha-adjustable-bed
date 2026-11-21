@@ -62,7 +62,7 @@ class TestLeggettWilinkeController:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller reports correct characteristic UUID."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -74,7 +74,7 @@ class TestLeggettWilinkeController:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test command building produces correct WiLinke 5-byte format."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -91,7 +91,7 @@ class TestLeggettWilinkeController:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test checksum calculation: (0x6E + 0x01 + 0x00 + cmd) & 0xFF."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -111,7 +111,7 @@ class TestLeggettWilinkeController:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
         """Test writing a command to the bed."""
@@ -129,7 +129,7 @@ class TestLeggettWilinkeController:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """L&P writes reach support bundles."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -150,7 +150,7 @@ class TestLeggettWilinkeController:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
         """Test writing command when not connected raises error."""
@@ -170,7 +170,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller reports zero gravity preset support."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -181,7 +181,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller reports anti-snore preset support."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -192,7 +192,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller reports TV preset support."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -203,7 +203,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller reports lounge preset support."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -214,7 +214,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test L&P WiLinke beds don't have lumbar support."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -225,7 +225,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test L&P WiLinke beds don't have pillow support."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -236,7 +236,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller reports light support."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -247,7 +247,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test lights are toggle-only (no discrete on/off)."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -258,7 +258,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller reports 2 memory slots."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -269,7 +269,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller supports memory programming."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -280,7 +280,7 @@ class TestLeggettWilinkeCapabilities:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test controller reports discrete motor control (uses buttons not covers)."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)
@@ -376,7 +376,7 @@ class TestLeggettWilinkePositionNotifications:
         self,
         hass: HomeAssistant,
         mock_leggett_wilinke_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
     ):
         """Test read_positions does nothing (not supported)."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_wilinke_config_entry)

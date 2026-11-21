@@ -483,7 +483,7 @@ class SleepysBox25Controller(BedController):
             except BleakError:
                 pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Request the shared BOX25 status frame used for motor positions."""
         await self.write_command(Box25Commands.QUERY_STATUS)
 
@@ -505,7 +505,7 @@ class SleepysBox25Controller(BedController):
         pos = max(0, min(100, int(position)))
         await self._write_motor_command(star.position_target(zone, pos))
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Convert angle to position (0-100 percentage-based)."""
         return int(max(0, min(100, angle)))
 

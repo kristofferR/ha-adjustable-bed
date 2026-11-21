@@ -159,4 +159,4 @@ no light level, memory or position feedback for LinOn beds.
 - The position anchors come from one JMC400.
 - JMC400 lights, fan and device memory have no hardware confirmation yet.
 - Massage wave only has an effect while head or foot massage runs.
-- LinOn control comes from app evidence only; no LinOn bed has been tested.
+- LinOn control follows the app; no LinOn bed has been tested.

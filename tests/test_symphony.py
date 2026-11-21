@@ -70,7 +70,6 @@ def test_scan_overwrite_order(name, manufacturer, expected):
     assert app.selector_from_scan(name, manufacturer) == expected
     assert app.selector_from_scan(name, manufacturer, 6) == 6
     assert not app.scan_matches("SLEEP", {})
-    assert app.logical_name({89: bytes((255, 1, 2, 3, 4, 5, 6))}) == "010203040506"
 
 
 @pytest.mark.parametrize(

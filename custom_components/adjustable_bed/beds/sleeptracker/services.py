@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
 from ...errors import rejected
@@ -97,9 +96,9 @@ def _frequency(value: object) -> int:
 
 
 def async_register_sleeptracker_services(hass: HomeAssistant) -> None:
-    from ...services import CONF_DEVICE_ID, SIDE_FIELD
+    from ...services import CONF_DEVICE_ID, DEVICE_IDS, SIDE_FIELD
 
-    common = {vol.Required(CONF_DEVICE_ID): cv.ensure_list, **SIDE_FIELD}
+    common = {vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD}
     schemas = {
         "sleeptracker_preset": {
             vol.Required("preset"): vol.In(PRESETS),

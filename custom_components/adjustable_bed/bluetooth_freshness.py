@@ -184,7 +184,7 @@ def _async_sighting_from_scanner(
         scanner_devices = bluetooth.async_scanner_devices_by_address(
             hass, address, connectable=connectable
         )
-    except Exception:  # noqa: BLE001 - fall back to the merged history
+    except Exception:
         _LOGGER.debug("Per-scanner freshness lookup failed for %s", address, exc_info=True)
         return None
 
@@ -216,7 +216,7 @@ def _async_sighting(
         service_info = bluetooth.async_last_service_info(
             hass, address, connectable=connectable
         )
-    except Exception:  # noqa: BLE001 - absence of a manager is "no evidence"
+    except Exception:
         _LOGGER.debug("Could not read advertisement history for %s", address, exc_info=True)
         return None
     if service_info is None:

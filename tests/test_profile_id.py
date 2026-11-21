@@ -475,7 +475,7 @@ async def _build_or_error(tool: Any, scenario: Any, layout: dict[str, Any]) -> t
         client = tool.FakeClient(tool.Recorder(clock), layout, scenario.replies)
         try:
             return type(await tool._build(scenario, client))
-        except Exception as err:  # noqa: BLE001 - a build error must match too
+        except Exception as err:
             return type(err)
 
 

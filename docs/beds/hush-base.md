@@ -101,13 +101,13 @@ each operation sends; Hush sends a single alarm's low frame first (see the
 | `sensor_query_anti_snore` | SXB `q_antiSnore` null |
 | `sensor_anti_snore` | SXB `s_antiSnore` with both `L` and `R` `[enable,8,4]`; no angle semantics assigned |
 
-The live request survives link loss/controller replacement through HA's per-address app-state store. Explicit stop/disconnect clears it. Reports accept the proven gzip/zlib wrappers and single/multi algorithm schemas. Values are device data, without medical interpretation.
+The live request survives link loss/controller replacement through HA's per-address app-state store. Explicit stop/disconnect clears it. Reports accept the app's gzip/zlib wrappers and single/multi algorithm schemas. Values are device data, without medical interpretation.
 
 ## Position Feedback / Notifications
 
 The diagnostic state retains capability events, alarms, RGB, music, raw motor/desk, lock, heating, fan, blanket and atomization values. Sleep entries expose left/right live values, report data, device time, sensitivity and anti-snore settings.
 
-- No raw axis is assigned a physical motor or calibrated unit without evidence.
+- Raw axis values are not assigned to a physical motor or a unit.
 - The [Hush Base profile](richmat.md#hush-base) lists the bed notifications, their
   framing and checksums.
 

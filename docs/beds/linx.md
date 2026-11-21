@@ -75,7 +75,7 @@ The JSON carrier has no terminator, checksum or encryption. Control commands
 use the app's Gson field order; requests use its JSONObject insertion order.
 The AA instruction builder uses a finite key switch and a complemented byte sum;
 unsupported values produce its zero payload. The two special memory-like words
-set an additional high byte. These formulas establish no alarm-choice names.
+set an additional high byte. These formulas give no alarm-choice names.
 
 UART startup sends ASCII text, not decoded hex. Its checksum passes through
 Java decimal-string and hexadecimal conversions, then makes a single underflow

@@ -492,7 +492,7 @@ not motor position feedback, and no motor positions are decoded.
 - Presets and memory recall are sent once or repeated, then released as the
   profile specifies. Memory save is never followed by a release.
 - Massage stop is a separate frame and is not a movement release.
-- Physical emergency-stop semantics are unproven.
+- Whether this works as a physical emergency stop is not known.
 
 ### Vectors
 
@@ -586,7 +586,7 @@ the G1 (T1) and G3 (T3) services; neither app has a name, manufacturer-data or
 service-data filter. Detection turns either service into `comfort_motion`, whose
 profile review and Jiecang question offer the
 [LOGICDATA app](#logicdata-app-family). A bed that lands on `jiecang` by its name
-alone has no evidence of being a MOTIONrelax bed.
+alone is not known to be a MOTIONrelax bed.
 
 A MOTIONrelax bed that still runs this route, for example one whose services were
 missing from the advertisement, differs from the apps. This route:
@@ -629,7 +629,7 @@ Reconfigure's bed-type list, which then asks the app, packet family and layout.
 - Writable name roles are rediscovered per connection; G2 alone cannot reuse an
   old G1 name handle.
 - Write response mode comes from the discovered characteristic properties.
-- Comfort Motion sends only its frozen frames and the raw rename.
+- Comfort Motion sends only the app's frames and the raw rename.
 
 #### Controls
 
@@ -786,7 +786,7 @@ light controls; HA answers clock requests with the clock frame.
 - `adjustable_bed.set_alarm` writes the app's weekly alarm configuration.
   It accepts a time, weekdays, wake preset and massage levels. Storing that
   configuration is separate from executing the Android app's local wake routine.
-- `adjustable_bed.jiecang_wake` executes the proven wake packet sequence. Use a
+- `adjustable_bed.jiecang_wake` executes the app's wake packet sequence. Use a
   Home Assistant time trigger when local scheduling is required. Yoga can be
   encoded in the alarm configuration but is not an implemented wake choice in any
   app's executor.
@@ -956,7 +956,7 @@ queries, without a light-status query.
   the layout is not split series.
 - Connection resets light visibility and cached color.
 - Automatic-light status treats zero as off and any nonzero value as on. Its
-  physical sensor meaning has not been established.
+  physical sensor meaning is not known.
 - Late capability and RGB replies add the corresponding controls without
   reloading HA. Repeated negative and positive feature replies retire and
   recreate the RGB, brightness, timer, automatic-light and Yoga controls as their
@@ -1024,7 +1024,7 @@ configurations retain their previous behavior.
   GATT is ambiguous, select one explicitly. Explicit T1, T2 and T3 choices are
   available.
 - Writes use a response when the characteristic advertises `write`, otherwise
-  write-without-response. No PIN or pairing flow is inferred from these artifacts.
+  write-without-response. The apps use no PIN or pairing flow.
 - For two separately addressed beds, configure each side before combining them.
   Shared paired-bed options preserve each side's app, packet family, layout and
   transport. Separate the combined bed temporarily to change those per-side settings.
@@ -1166,8 +1166,8 @@ preserves that and only guards field bounds. Status replies `05`/`06` (any heade
 
 #### Evidence
 
-Every LOGICDATA profile sends only its frozen frames
-(`tests/test_logicdata_vectors.py`).
+Based on the MOTIONrelax phone, MOTIONrelax tablet and Sleep Smart Air Mattress
+apps (`tests/test_logicdata_vectors.py`).
 
 ### MOTIONrelax phone and tablet
 
@@ -1253,7 +1253,7 @@ being answered. The tablet decodes neither clock nor alarm replies.
 
 #### Evidence
 
-Both profiles send only their frozen frames.
+Based on MOTIONrelax phone 1.0.6 (7) and MOTIONrelax tablet 1.0.4 (5).
 
 ### Sleep Smart Air Mattress (bed)
 
@@ -1272,7 +1272,7 @@ Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
 |---|---|
 | Command family | `p1` for the Vienna and Toronto beds; `p2` for the Middle Rail bed |
 | Layout | `standard_2` (standard series) or `split_series` (split series) |
-| Massage | Enable when the bed has massage. The app's massage tab is reachable for every bed profile |
+| Massage | Enable when the bed has massage. The app shows its massage tab for every bed profile |
 | Light | Enable for under-bed lighting |
 | Transport | `auto`, `t1`, `t2` or `t3`, as for MOTIONrelax |
 
@@ -1331,7 +1331,7 @@ No positions, firmware, model or calibration are reported.
 
 #### Evidence
 
-Sleep Smart sends only its frozen frames.
+Based on Sleep Smart Air Mattress 1.0.0 (1).
 
 ## Notes
 

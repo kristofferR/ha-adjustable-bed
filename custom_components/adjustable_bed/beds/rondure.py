@@ -20,8 +20,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
 from ..codec import keeson as codec
 from ..const import (
     RONDURE_VARIANT_BOTH,
@@ -166,18 +164,13 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
 
     async def _move_with_stop(self, command: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_packet(RondureCommands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             packet = self._build_packet(command)
             await self.write_command(packet, repeat_count=25, repeat_delay_ms=50)
-        finally:
-            try:
-                stop_packet = self._build_packet(RondureCommands.STOP)
-                await self.write_command(
-                    stop_packet,
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -277,17 +270,11 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset (not supported on Rondure beds)."""
-        _LOGGER.warning(
-            "Memory presets are not supported on Rondure beds (requested: M%d)",
-            memory_num,
-        )
+        raise self.not_supported("memory presets")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Rondure beds)."""
-        _LOGGER.warning(
-            "Memory programming is not supported on Rondure beds (requested: M%d)",
-            memory_num,
-        )
+        raise self.not_supported("saving memory presets")
 
     # Massage methods
     async def massage_head_toggle(self) -> None:

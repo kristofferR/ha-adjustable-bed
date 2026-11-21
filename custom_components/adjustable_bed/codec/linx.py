@@ -102,29 +102,6 @@ def instruction(key: int) -> bytes:
     return body + bytes((~sum(body[5:11]) & 255, 0xF3, 0x55))
 
 
-ALARM_KEY_CONVERSION: Final = {
-    1000: 4096,
-    2000: 8192,
-    4000: 16384,
-    8000: 32768,
-    10000: 65536,
-    40000: 262144,
-    80000: 524288,
-    100000: 1048576,
-    4000000: 67108864,
-}
-
-
-def alarm_recall(device: str, position_key: str, *, uart: bool) -> bytes:
-    """Known serialization only. Alarm choices come from an account catalog, so none are exposed."""
-    value = int(position_key, 10)
-    if uart:
-        return instruction(ALARM_KEY_CONVERSION.get(value, value))
-    return _json(
-        {"cmd": {"ctrm": 1, "key": f"{value:08d}", "keykt": 0, "km": 1}, "code": 2, "dvid": device}
-    )
-
-
 def startup_query(name: str) -> bytes:
     """Preserve the decimal/hex detour and single underflow correction of P3."""
     body = ("7D0E00" + (name[-8:] if len(name) >= 8 else "") + "AB54").encode("ascii")

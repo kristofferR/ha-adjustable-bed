@@ -47,7 +47,6 @@ MALOUF: Final = PersonalComfortProfile(
     execution=STREAM_HOLD,
     stop=None,
     motor_repeat_ms=200,
-    quiet_release=False,
     codes={
         "head_up": 0x24,
         "head_down": 0x25,

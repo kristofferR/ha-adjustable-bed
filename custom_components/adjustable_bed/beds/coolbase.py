@@ -464,7 +464,14 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
         elif state.get("feet") is False:
             cmd0 += CoolBaseCommands.MOTOR_FEET_DOWN
 
-        try:
+        async def release() -> None:
+            self._motor_state = {}
+            await self.write_command(
+                self._build_command(),  # All zeros = stop
+                cancel_event=asyncio.Event(),
+            )
+
+        async with self.releasing(release):
             if cmd0:
                 await self.write_command(
                     self._build_command(cmd0=cmd0),
@@ -475,15 +482,6 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
                     or self._coordinator.motor_pulse_count,
                     repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
                 )
-        finally:
-            self._motor_state = {}
-            try:
-                await self.write_command(
-                    self._build_command(),  # All zeros = stop
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -556,15 +554,11 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
         if command := commands.get(memory_num):
             await self.write_command(self._build_command_from_value(command))
         else:
-            _LOGGER.warning(
-                "Cool Base memory slot %d not supported (valid: %s)",
-                memory_num,
-                sorted(commands),
-            )
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported)."""
-        _LOGGER.warning("Cool Base doesn't support programming memory presets")
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""

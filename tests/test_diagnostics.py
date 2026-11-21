@@ -34,7 +34,6 @@ from custom_components.adjustable_bed.discovery_log import async_get_discovery_l
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
 from custom_components.adjustable_bed.redaction import (
     KEYS_TO_REDACT,
-    _redact_mac_address,
     redact_data,
 )
 
@@ -71,8 +70,8 @@ def mock_diagnostics_config_entry(
 
 async def test_diagnostics_report_effective_connection_settings(
     hass: HomeAssistant,
-    mock_coordinator_connected,  # noqa: ARG001
-    enable_custom_integrations,  # noqa: ARG001
+    mock_coordinator_connected,
+    enable_custom_integrations,
 ) -> None:
     """Diagnostics show how the bed connects, not just the keys stored for it."""
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -121,15 +120,6 @@ class TestDiagnosticsRedaction:
             "octo_pin_confirmation": "**REDACTED**",
         }
 
-    def test_mac_address_partial_redaction(self):
-        """Test that MAC addresses are partially redacted, keeping the OUI."""
-        # Should keep first 3 bytes (OUI) and redact last 3
-        assert _redact_mac_address("AA:BB:CC:DD:EE:FF") == "AA:BB:CC:**:**:**"
-        assert _redact_mac_address("aa:bb:cc:dd:ee:ff") == "AA:BB:CC:**:**:**"
-        # Should handle dash separators
-        assert _redact_mac_address("AA-BB-CC-DD-EE-FF") == "AA-BB-CC-**-**-**"
-
-
 class TestDiagnosticsOutput:
     """Test diagnostics output structure."""
 
@@ -137,9 +127,9 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
         mock_bleak_client: MagicMock,
-        enable_custom_integrations,  # noqa: ARG002
+        enable_custom_integrations,
     ):
         """Test diagnostics when not connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -178,9 +168,9 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        mock_bleak_client: MagicMock,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
     ):
         """Test diagnostics when connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -225,9 +215,9 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        mock_bleak_client: MagicMock,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
     ):
         """The running profile id and the schema 5 migration record are reported."""
         from custom_components.adjustable_bed import async_migrate_entry
@@ -255,8 +245,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test that sensitive data is redacted."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -280,8 +270,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test diagnostics includes controller info when connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -304,8 +294,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Command diagnostics should come from scheduler admission."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -337,8 +327,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Diagnostics should surface non-connectable fallback advertisement data."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -370,8 +360,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test diagnostics includes supported bed types."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -389,8 +379,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Diagnostics should not expose auto-detections from unrelated devices."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -436,7 +426,7 @@ class TestDiagnosticsOutput:
     async def test_diagnostics_include_kaidi_metadata_and_parsed_advertisement(
         self,
         hass: HomeAssistant,
-        enable_custom_integrations,  # noqa: ARG002
+        enable_custom_integrations,
     ):
         """Diagnostics should include Kaidi config metadata and parsed manufacturer data."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

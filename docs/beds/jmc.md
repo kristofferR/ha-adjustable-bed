@@ -257,7 +257,7 @@ rejection is logged as a warning.
 
 #### Evidence
 
-- Adjustable Sleep 2.0.29 (98) and 2.0.37 (106): the profile sends only its frozen frames.
+- Based on Adjustable Sleep 2.0.29 (98) and 2.0.37 (106).
 - The JMC400 support bundle and capture in
   [#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631): the
   position byte order, the anchors, and the go-to and massage frames.
@@ -308,8 +308,7 @@ are kept as the opaque position a memory save stores; byte 1 is ignored.
 
 #### Evidence
 
-- Svane Remote 1.8 (8): the JMC400 route
-  sends only its frozen frames.
+- The JMC400 route is based on Svane Remote 1.8 (8).
 
 ## Notes
 

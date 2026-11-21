@@ -117,11 +117,11 @@ async def leased_hold(
             clock = tool.FakeClock(frozen)
             recorder = tool.Recorder(clock)
             with tool.deterministic_process_state(), tool.virtual_time(clock):
-                controller = await tool._build(  # noqa: SLF001
+                controller = await tool._build(
                     scenario, tool.FakeClient(recorder, layout, scenario.replies)
                 )
-                await tool._connect(controller, recorder, clock)  # noqa: SLF001
-                coordinator = controller._coordinator  # noqa: SLF001
+                await tool._connect(controller, recorder, clock)
+                coordinator = controller._coordinator
                 cancel = coordinator.cancel_command
                 cancel.clear()
                 context = CommandContext(

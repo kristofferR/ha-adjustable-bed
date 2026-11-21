@@ -334,9 +334,9 @@ entities, including the light colors, are separate.
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Motor directions and app buttons that can be held | 100 to 60000 ms. Motion sensor actions end after five seconds. BOX25 voice positions run once |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Axes, presets, memories, light and massage controls by model, listed in the guide | At most 30 seconds. Memory recalls take under 5 seconds; save with `save_preset` |
 | [Leggett Okin app profiles](beds/okin-nframe.md#leggett-okin-family) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | |
-| [Jordan's Serenity](beds/okin-nframe.md#reachable-commands) | 31 of the app's controls | |
-| [Jordan's Tranquil](beds/okin-nframe.md#reachable-commands-1) | 30 of the app's controls | |
-| [Customatic Z-Series](beds/okin-nframe.md#reachable-commands-2) | The Z-230 or Z-280 controls | A Z-230 refuses Z-280-only controls and the other way round |
+| [Jordan's Serenity](beds/okin-nframe.md#app-commands) | 31 of the app's controls | |
+| [Jordan's Tranquil](beds/okin-nframe.md#app-commands-1) | 30 of the app's controls | |
+| [Customatic Z-Series](beds/okin-nframe.md#app-commands-2) | The Z-230 or Z-280 controls | A Z-230 refuses Z-280-only controls and the other way round |
 | [SIMMONS](beds/okin-nframe.md#simmons) | `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed | Holding `memory` for 5 seconds saves Custom Mode, as in the app; not yet confirmed on a real bed |
 | [AdjustaMattress](beds/keeson.md#adjustamattress) | The app's control names, such as `headUp`, `footDown`, `unionUp`, `neckTiltUp`, `lumbarDown`, `flatPosition`, `zeroGravity`, `m1`, `underbedLighting`, `headStrengthAdd`, `timer10`, by model and layout | |
 | [Adjustable bed (Lumbar)](beds/okin-nframe.md#timing-and-controls) | `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up`, `massage_down` | Not yet confirmed on a real bed whether a save stores the position |
@@ -815,8 +815,9 @@ reported.
 ### FSM Relax app actions
 
 
-[`hold_control`](#hold_control) takes one of the bed's `command_XX` controls,
-listed in its diagnostics, with a `duration` in seconds. `goto_preset` recalls
+[`hold_control`](#hold_control) takes one of the bed's `command_XX` controls
+with a `duration` in seconds. The guide's
+[FSM Relax services](beds/limoss.md#services-1) explain the names. `goto_preset` recalls
 a memory up to the number the bed reports, and accepts an optional `duration`.
 `fsm_relax_calibrate` needs `confirmed: true` and sends the calibration once.
 The Save and Memory buttons cover up to eight memories, as many as the bed
@@ -1364,8 +1365,9 @@ off. `sleep_name` reads the name of the Rise or Rise Pro Light sleep sensor, and
 `adjustable_bed.richmat_rise` uses the app and layout chosen in setup. Use
 `query` to read the alarm and lamp settings, `alarm` and `cancel_alarm` for the
 one-time alarm, `rgb` for the light color, and `lamp_timer` with `seconds` (0 to
-300) and optional `timer_save`. `actions` lists alarm actions such as `node_1`,
-from the bed's diagnostics; only your layout's choices are accepted. `time` is
+300) and optional `timer_save`. `actions` lists alarm actions such as `node_1`;
+the guide's [Alarm actions](beds/richmat.md#alarm-actions) explains the names,
+and only your layout's choices are accepted. `time` is
 the next time of day it occurs; leave it out for 24 hours from now. A position
 and massage combination the layout does not have is refused before anything is
 sent. The bed does not report the alarm back.
@@ -1617,8 +1619,9 @@ anti-snore movement runs on the left.
 
 The [Motion Bed guide](beds/ff_frame.md#services-2) covers all of the Motion
 Bed actions, including the alarm, sleep calibration and reports, hub modules, air
-pressure, heating schedules and audio. The control names for `motion_bed_action`
-are listed in the bed's diagnostics. Changes the bed stores need `confirmed:
+pressure, heating schedules and audio. The guide lists the
+[control names](beds/ff_frame.md#control-names-for-motion_bed_action) for
+`motion_bed_action`. Changes the bed stores need `confirmed:
 true`. Selecting one side's device acts on that side.
 
 ## MotoMotion

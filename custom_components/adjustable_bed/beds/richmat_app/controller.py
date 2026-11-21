@@ -21,6 +21,7 @@ from ...profiles.richmat import RICHMAT_APP, RichmatProfile
 from ...state_keys import HEAT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..catalog_buttons import (
     Kind,
     catalog_button,
@@ -621,7 +622,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 tick = max(tick + 1, int((monotonic() - start + 1e-9) / TICK) + 1)
         finally:
             if fired:
-                await self._stop_side(link, side)
+                await settled(self._stop_side(link, side))
 
     @property
     def held_control_options(self) -> tuple[str, ...]:

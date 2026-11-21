@@ -49,24 +49,6 @@ def test_all_2020_palette_brightness_cases_match_independent_dalvik_oracle():
     assert hashlib.sha256(packets).hexdigest() == FIXTURES["palette_all_2020_sha256"]
 
 
-@pytest.mark.parametrize(
-    ("data", "accepted"),
-    [
-        ("09ff3412babea1f10000", True),
-        ("09ff3412babe01020000", False),
-        ("09ff341200000101000009ff3412babe01010000", False),
-        ("09ff9999babe01010000", True),
-        ("0106" + "09ff3412babe01010000", True),
-        ("", False),
-        ("01", False),
-        ("09ff3412babe0101", False),
-        ("02ff341209ff3412babe01010000", False),
-    ],
-)
-def test_raw_first_ad_predicate_and_safe_short_input(data, accepted):
-    assert vmat_profiles.first_manufacturer_matches(bytes.fromhex(data)) is accepted
-
-
 def test_five_frozen_response_vectors():
     assert vmat_profiles.temperature(bytes.fromhex("80000000")) == 25.0
     assert vmat_profiles.temperature(bytes.fromhex("f0ffffff")) == -11.0

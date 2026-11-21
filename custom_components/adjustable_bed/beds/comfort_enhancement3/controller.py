@@ -88,23 +88,6 @@ _WAKE_PRESETS: Final = {
 WAKE_SLOTS: Final = 99
 
 
-def selected_time(now: datetime, hour: int, minute: int, next_day: bool) -> datetime:
-    """The app selects the current or next calendar day; no past-time rollover."""
-    if (
-        type(hour) is not int
-        or type(minute) is not int
-        or not 0 <= hour < 24
-        or not 0 <= minute < 60
-    ):
-        raise ValueError("Choose a valid hour and minute")
-    # DateTime in the app normalizes out-of-range fields. HA exposes only valid
-    # time inputs and still normalizes the selected day across month/year ends.
-    selected = now.replace(hour=0, minute=0, second=0, microsecond=0, fold=0) + timedelta(
-        days=int(next_day), hours=hour, minutes=minute
-    )
-    return datetime.fromtimestamp(selected.timestamp(), selected.tzinfo)
-
-
 def wake_frames(
     index: int,
     slot: int,

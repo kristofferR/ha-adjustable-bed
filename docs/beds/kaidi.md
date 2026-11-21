@@ -418,11 +418,10 @@ The join reply, the own address and a matching ping reply; see
 #### Evidence
 
 The Seat tables are the frames the pre-v5 controller sent, from the Rize 1.3.0,
-ISleep 1.6.3 and Floyd 1.0.7 bundles; the Seat profiles send only their frozen
-payloads. The mappings and capability gates are in
+ISleep 1.6.3 and Floyd 1.0.7 bundles. The mappings and capability gates are in
 [`profiles/kaidi.py`](../../custom_components/adjustable_bed/profiles/kaidi.py),
-with [focused tests](../../tests/test_kaidi.py). This documents the shipped
-implementation, not new physical validation.
+with [focused tests](../../tests/test_kaidi.py). Not newly tested on
+hardware.
 
 ### Floyd Home
 
@@ -446,7 +445,7 @@ implementation, not new physical validation.
 | Product 139 offset, type `02` | 17/25 |
 | Product 139 offset, type `09` | 15 |
 | Type `09` company | `4b44` at offset 11 (little endian) |
-| Actuator fields | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 0xF0 <= 5` (the artifact's checks) |
+| Actuator fields | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 0xF0 <= 5` (the app's checks) |
 | RSSI | at least -92 dBm |
 
 - HA rejects short data rather than reproducing the app's out-of-bounds reads.
@@ -471,7 +470,7 @@ implementation, not new physical validation.
 - HA/Bleak handles the CCCD and chooses a supported write mode from discovered
   properties. Physical GATT properties and actual write mode still need user
   captures.
-- No reachable read, MTU negotiation, Bluetooth bond, PIN exchange or
+- No read, MTU negotiation, Bluetooth bond, PIN exchange or
   encryption protocol is added.
 
 ##### Room assignment
@@ -578,7 +577,7 @@ event replies; see [Responses](#responses).
 
 | Action | Parameters and behavior |
 | --- | --- |
-| `zero_g`, `flat`, `anti_snore`, `memory_1` to `memory_3` | `internal_side: first` is normal UI behavior. `both` and `second` are conditional preset selectors proven reachable through the installed Android alarm receiver, with hardware effects unverified. They do not imply internal-side movement capability. |
+| `zero_g`, `flat`, `anti_snore`, `memory_1` to `memory_3` | `internal_side: first` is normal UI behavior. `both` and `second` are conditional preset selectors the app's alarm receiver can send; their effect on the bed is not yet tested. They do not imply internal-side movement capability. |
 | `save_zero_g`, `save_anti_snore` | Requires `confirm: true`, `internal_side: first`. Overwrites the built-in preset with the current position. |
 | `assign_room` | Requires `confirm: true`, a nonzero 32-bit `room_id`, and exactly one standalone bed with an advertisement proving unassigned membership (type `09` or explicit room zero). Assigns **local BLE room membership**, disconnects, authenticates again, pings that node and sends addition confirmation. |
 | `confirm_add` | Requires `confirm: true`, `internal_side: first`. Retry addition confirmation if assignment succeeded but its reconnect was interrupted. |
@@ -594,9 +593,8 @@ event replies; see [Responses](#responses).
 
 #### Evidence
 
-Floyd Home 1.0.7, product 139; Floyd Home sends only its frozen
-payloads. Its capabilities and commands come from this app's reachable paths;
-only the transport is shared with the Seat profiles.
+Based on Floyd Home 1.0.7, product 139. Its capabilities and commands come from
+this app; only the transport is shared with the Seat profiles.
 
 ### ISleep
 
@@ -617,7 +615,7 @@ layout, massage, feedback and movement timing. Detection: none.
 | Advertisement modes | 01/02/09 |
 | Products | The eight allowed products above |
 | Mode09 company gate | `4B44` |
-| Actuator masks | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 240 <= 5` (the artifact's exact masks) |
+| Actuator masks | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 240 <= 5` (the app's masks) |
 
 - Truncated alternate mode 02 records are rejected safely.
 - Keep the existing numeric room ID to adopt a provisioned bed. Existing rooms
@@ -671,7 +669,7 @@ entities.
 
 - Requires the selected physical MAC's unprovisioned advertisement and matching
   product.
-- Sends the enrollment frame once, waits up to the artifact's eight seconds,
+- Sends the enrollment frame once, waits up to the app's eight seconds,
   and disconnects on either result.
 - Only an accepted reply saves a pending enrollment acknowledgment.
 - The next control authenticates the selected room, obtains a live roster match
@@ -688,7 +686,7 @@ entities.
   room transfer/reset, then select that room in HA.
 - HA config entries replace the phone's random room generator, SQL row
   allocation, role-conflict dialogs and room labels. HA does not reproduce the
-  proven SQL collision or optimistic success bugs.
+  app's SQL collision or optimistic success bugs.
 
 ##### Paired beds
 
@@ -800,7 +798,7 @@ single column.
 
 #### Timing
 
-- Five-second response deadlines are HA failure bounds, not artifact repeat
+- Five-second response deadlines are HA failure bounds, not the app's repeat
   timings.
 - Enrollment waits up to eight seconds.
 - The configured pulse count at 100ms per count bounds the HA gesture; it does
@@ -826,8 +824,7 @@ see [Responses](#responses).
 
 #### Evidence
 
-ISleep 1.6.3 (45); ISleep sends only its frozen
-payloads. HA never resets an existing room.
+Based on ISleep 1.6.3 (45). HA never resets an existing room.
 
 ### Rize Beds
 
@@ -999,7 +996,7 @@ suppression or reconnect into a new session to send an old release.
 #### Notifications
 
 Join/enrollment replies, own address, roster changes and current-MAC ping
-replies establish authenticated live routing. Advertised or persisted virtual
+replies confirm authenticated live routing. Advertised or persisted virtual
 addresses never authorize a write. A zero address from a live ping is valid.
 
 Only the power flag on channel 20 is decoded as bed feedback. Its query runs
@@ -1023,9 +1020,8 @@ the app's phone alarms introduce no on-bed alarm protocol.
 
 #### Evidence
 
-Rize Beds 1.4.2 (57), with 225 frozen vectors, including the 48
-topology/confirmation branch probes. The codec reproduces these
-literals byte for byte. This profile uses its own product gates and command
+Based on Rize Beds 1.4.2 (57); its 225 test vectors include 48
+topology/confirmation branch probes. This profile uses its own product gates and command
 table. How the bed responds still needs testing by owners.
 
 
@@ -1236,8 +1232,8 @@ validation belongs to reports from owners.
 
 **Status:** Not yet tested
 
-Uses the [KomfyD and ComfyDS](#komfyd-and-comfyds) controls with its own frozen
-command table and the following individually established differences.
+Uses the [KomfyD and ComfyDS](#komfyd-and-comfyds) controls with its own
+command table and the following differences.
 
 #### Setup
 
@@ -1252,7 +1248,7 @@ The app calls H/F steps and the timer “massage”. Their physical mapping and
 absolute range remain unknown, so HA keeps neutral step/timer labels. The four
 memory recalls/saves remain first-bank commands regardless of bed side. If a
 ComfyDS record has no saved side, choose a side before using H/F: that precise
-fallback is unestablished for this app. KomfyD explicitly falls back to right.
+fallback is unknown for this app. KomfyD explicitly falls back to right.
 
 #### Timing
 
@@ -1261,7 +1257,7 @@ long-save gesture, reading current command/destination/source on a later tick.
 Short release attempts a write before replacing the callback; queued bytes are
 not retracted by callback destruction. HA preserves the bed command effects
 under one admitted session-owned operation and cancels those unsafe incidentals.
-It does not claim these extra accepted details are proven KomfyD differences.
+These details are not known to differ from KomfyD.
 
 #### Notifications
 

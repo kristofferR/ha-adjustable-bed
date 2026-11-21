@@ -1,8 +1,8 @@
 """Hush Base 1.0.5 product specifications.
 
 Exact package-local ordered memberships; no transport-to-profile inference.
-Generated outside this repository from the accepted report's PRODUCT-JOINS,
-not the Casper catalog; no generator is checked in, so edits are by hand.
+Data extracted from the Hush Base app outside this repository, not from the Casper
+catalog; not edited by hand.
 """
 
 from typing import Final

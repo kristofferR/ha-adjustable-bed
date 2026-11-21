@@ -93,17 +93,15 @@ class OkinNFrameController(BedController):
         """Send STOP with a fresh cancel event so a stop request cannot suppress it."""
         await self.write_command(self._build_command(0), cancel_event=asyncio.Event())
 
-    async def _tap_then_stop(self, command_value: int, tap: Tap, context: str) -> None:
+    async def _tap_then_stop(self, command_value: int, tap: Tap) -> None:
         """Send a fixed burst, then its STOP even if the burst is cancelled or fails."""
-        try:
-            await self.write_command(
-                self._build_command(command_value),
-                repeat_count=tap.repeats,
-                repeat_delay_ms=tap.repeat_ms,
-            )
-        finally:
-            if tap.releases:
-                try:
-                    await self._send_stop()
-                except TimeoutError, BleakError:
-                    _LOGGER.debug("Failed to send STOP after %s", context, exc_info=True)
+        burst = self.write_command(
+            self._build_command(command_value),
+            repeat_count=tap.repeats,
+            repeat_delay_ms=tap.repeat_ms,
+        )
+        if not tap.releases:
+            await burst
+            return
+        async with self.releasing(self._send_stop):
+            await burst
