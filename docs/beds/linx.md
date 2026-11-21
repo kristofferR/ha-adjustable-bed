@@ -8,8 +8,8 @@
 
 - Linx 2.5 Q, app model 9, Quest controls.
 - Orbes BR 40+ Slim Q VAVE Linx, app model 10, RestoreOrRelax controls.
-- Current setup scans for the case-sensitive substring `KSWF07D`. A shared name
-  or service cannot establish the model or the saved BLE route.
+- Setup finds beds whose Bluetooth name contains `KSWF07D` (case-sensitive).
+  The name does not tell the two models apart, so pick yours in setup.
 
 ## Apps
 
@@ -21,14 +21,14 @@
 
 | Feature | Quest | Orbes |
 |---|---|---|
-| Motor control | Head, feet, explicit both | Head, feet, explicit both |
+| Motor control | Head, feet, both together | Head, feet, both together |
 | Position feedback | None | None |
 | Presets | Flat, Zero G, M1–M4 recall | Flat, Zero G, Sleep / anti-snore |
 | Memory programming | None | None |
-| Light | One-shot action | One-shot action |
+| Light | One light button | One light button |
 | Massage | Head massage, foot massage, cycle massage timer, mode | None |
 | Device-resident alarms | Turn off any of six slots with `set_alarm` | Same |
-| Manual snore intervention | Parameterized BLE action and status follow-up | Same |
+| Manual snore intervention | An action that starts it and then reads its status | Same |
 | Diagnostics | Self-check; result sensor on A00A, firmware version on UART | Same |
 
 Turning an alarm on, or editing one, needs the alarm choices the app downloads

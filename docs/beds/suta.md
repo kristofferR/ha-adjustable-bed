@@ -7,30 +7,31 @@
 ## Known Models
 
 SUTA bed frames, RBHC, MOON mattresses and TEMP heating controllers. The exact
-Bluetooth name selects the panel. Legacy Dreams Sleepmotion / SUTA-B202B
-(WLT8016_S106) hardware reports do not verify other models or new controls.
+Bluetooth name selects the panel. Owners have tested Dreams Sleepmotion /
+SUTA-B202B (WLT8016_S106) bed frames; the other models and the newer controls
+are not yet tested on hardware.
 
 ## Apps
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | SUTA Smart Home 3.20.0 (80) | `com.shuta.smart_home` |
-| ✅ | SUTA legacy stub, historical evidence | `com.shuta.suta_old` |
+| ✅ | SUTA (older app) | `com.shuta.suta_old` |
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Motor control | Only axes and combined commands on the selected panel |
+| Motor control | The motors and combined moves your panel has |
 | Position feedback | RBHC BACK and FOOT signed degrees only |
-| Memory | Exact model-specific recall/program slots, M8 remains a named recall |
-| Presets | Model-specific, including named conversion actions |
-| Massage | Model-specific P1 zones (head, foot and overall level numbers, 0-3) or MOON side controls (left and right intensity numbers, 1-3, and left and right massage timer selects, 10, 20 or 30 minutes) |
+| Memory | Recall and save slots by model; M8 is a recall button |
+| Presets | By model, including named conversion actions |
+| Massage | P1 zones by model (head, foot and overall level numbers, 0-3) or MOON side controls (left and right intensity numbers, 1-3, and left and right massage timer selects, 10, 20 or 30 minutes) |
 | Fans | F260 app steps |
-| Lights | Only layouts with a complete proven schedule |
+| Lights | Some layouts only |
 | Local clock / alarm | P1 date, list, set and disable |
 | Heating | TEMP power, light, side setpoint and timer |
-| Split sides | Explicit MOON/TEMP payload side; two-address pairs retain each bed's name |
+| Split sides | MOON and TEMP: pick the side in setup; two paired beds each keep their own name |
 
 ## Choosing a profile
 
