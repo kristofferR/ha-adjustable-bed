@@ -80,88 +80,45 @@ def _mask_match(match: re.Match[str]) -> str:
     return f"{prefix}{sep}**{sep}**{sep}**"
 
 
-def _ascii_hex(text: str) -> str:
-    """Match ``text`` written as ASCII in a hex payload, in any letter case."""
-    return "".join(
-        f"3{char}" if char.isdigit() else f"(?:4|6){ord(char.upper()) - 0x40:x}"
-        for char in text
-    )
+def redact_text(text: str) -> str:
+    """Keep only the manufacturer prefix of every Bluetooth address in ``text``."""
+    return MAC_ADDRESS_PATTERN.sub(_mask_match, text)
 
 
-def _device_half_pattern(addresses: Iterable[str]) -> re.Pattern[str] | None:
-    """Match the device-specific half of known addresses in any other form.
-
-    Names, advertisement data and frames can carry it without separators, in
-    reverse byte order or as ASCII text, raw or hex-encoded.
-    """
-    forms: set[str] = set()
-    for address in addresses:
-        match = MAC_ADDRESS_PATTERN.fullmatch(address.strip()) if isinstance(address, str) else None
-        if match is None:
-            continue
-        tail = match.group(0)[9:].replace(match.group(2), "").lower()
-        octets = [tail[index : index + 2] for index in (0, 2, 4)]
-        for ordered in (octets, octets[::-1]):
-            forms.add("[:\\-_]?".join(ordered))
-            forms.add("(?:3a|2d|5f)?".join(_ascii_hex(octet) for octet in ordered))
-    if not forms:
-        return None
-    return re.compile(f"(?i){'|'.join(sorted(forms))}")
-
-
-def _redact_text(text: str, device_half: re.Pattern[str] | None) -> str:
-    text = MAC_ADDRESS_PATTERN.sub(_mask_match, text)
-    if device_half is not None:
-        text = device_half.sub(lambda match: "*" * len(match.group(0)), text)
-    return text
-
-
-def redact_text(text: str, addresses: Iterable[str]) -> str:
-    """Apply the address policy of ``redact_bundle`` to one string."""
-    return _redact_text(text, _device_half_pattern(addresses))
-
-
-def _redact(data: Any, keys: set[str], device_half: re.Pattern[str] | None, depth: int) -> Any:
+def _redact(data: Any, keys: set[str], depth: int) -> Any:
     if depth > 20:  # Prevent infinite recursion
         return data
     if isinstance(data, dict):
         result: dict[Any, Any] = {}
         for key, value in data.items():
             key_lower = key.lower() if isinstance(key, str) else key
-            out_key = _redact_text(key, device_half) if isinstance(key, str) else key
+            out_key = redact_text(key) if isinstance(key, str) else key
             if key in keys or key_lower in keys:
                 result[out_key] = REDACTED
             elif isinstance(key, str) and _is_health_key(key):
                 result[out_key] = f"<{type(value).__name__}>"
             else:
-                result[out_key] = _redact(value, keys, device_half, depth + 1)
+                result[out_key] = _redact(value, keys, depth + 1)
         return result
     if isinstance(data, list | tuple):
-        return [_redact(item, keys, device_half, depth + 1) for item in data]
+        return [_redact(item, keys, depth + 1) for item in data]
     if isinstance(data, str):
-        return _redact_text(data, device_half)
+        return redact_text(data)
     return data
 
 
-def redact_data(data: Any, *, addresses: Iterable[str] = ()) -> Any:
+def redact_data(data: Any) -> Any:
     """Redact the diagnostics download.
 
     Removes names, typed text, serials and credentials, keeps only the
     manufacturer prefix of every Bluetooth address and hides health readings.
-    ``addresses`` are scrubbed in every other form too (see ``redact_bundle``).
     """
-    return _redact(data, KEYS_TO_REDACT, _device_half_pattern(addresses), 0)
+    return _redact(data, KEYS_TO_REDACT, 0)
 
 
-def redact_bundle(data: Any, *, addresses: Iterable[str]) -> Any:
-    """Redact a support bundle: the diagnostics policy, but device names stay.
-
-    Every Bluetooth address keeps only its manufacturer prefix. The device half
-    of each address in ``addresses`` is also starred wherever it appears without
-    separators, in reverse byte order or as ASCII (names, advertisement data,
-    frames, logs). Health and presence readings keep their key only.
-    """
-    return _redact(data, _BUNDLE_KEYS_TO_REDACT, _device_half_pattern(addresses), 0)
+def redact_bundle(data: Any) -> Any:
+    """Redact a support bundle: the diagnostics policy, but device names stay."""
+    return _redact(data, _BUNDLE_KEYS_TO_REDACT, 0)
 
 
 def names_pattern(names: Iterable[str]) -> re.Pattern[str] | None:

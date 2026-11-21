@@ -94,9 +94,6 @@ class Receive:
                 if len(chunk) < sleep_envelope.HEADER_SIZE:
                     raise ValueError("Truncated SXB report fragment")
                 chunk = chunk[sleep_envelope.HEADER_SIZE :]
-            if len(self.pending) + len(chunk) > MAX_REPORT_BYTES:
-                self.pending.clear()
-                raise ValueError("Oversized sensor report")
             self.pending.extend(chunk)
             if len(self.pending) < self.report_size:
                 return None
