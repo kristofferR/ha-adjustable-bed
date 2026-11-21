@@ -6627,6 +6627,76 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
     assert [call.kwargs["octo_pin"] for call in probe.call_args_list] == ["1111", "1234"]
 
 
+async def test_octo_setup_can_finish_when_the_pin_check_is_inconclusive(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info_octo_rc2: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """A sleeping bed does not loop forever, and a PIN the bed refused is never saved."""
+    from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus
+    from custom_components.adjustable_bed.config_flow import CapabilityReport
+
+    def action_offered(result: Any) -> bool:
+        return "action" in {marker.schema for marker in result["data_schema"].schema}
+
+    with patch.object(
+        AdjustableBedConfigFlow,
+        "_probe_capabilities",
+        AsyncMock(
+            side_effect=[
+                CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.REQUIRED),
+                CapabilityReport(connected=True, octo_pin_status=OctoPinStatus.REJECTED),
+                CapabilityReport(connected=False, octo_pin_status=OctoPinStatus.INCONCLUSIVE),
+            ]
+        ),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_octo_rc2,
+        )
+        result = await _settings(
+            hass,
+            result,
+            {
+                CONF_NAME: "Octo PIN test",
+                "advanced": {CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD},
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
+                CONF_OCTO_PIN: "",
+            },
+        )
+        result = await _advance_progress(hass, result)
+        # The bed says it needs a PIN: no way past this but a PIN.
+        assert result["errors"] == {"base": "octo_pin_required"}
+        assert not action_offered(result)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_OCTO_PIN: "1111"}
+        )
+        result = await _advance_progress(hass, result)
+        assert result["errors"] == {"base": "octo_pin_rejected"}
+        assert not action_offered(result)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_OCTO_PIN: "1111"}
+        )
+        result = await _advance_progress(hass, result)
+        assert result["step_id"] == "verify_octo_pin"
+        assert result["errors"] == {"base": "octo_pin_inconclusive"}
+        assert action_offered(result)
+        # The bed already refused these, so finishing without a verdict cannot save them.
+        for refused in ("1111", ""):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {CONF_OCTO_PIN: refused, "action": "finish"}
+            )
+            assert result["errors"][CONF_OCTO_PIN] == "octo_pin_rejected"
+            assert not hass.config_entries.async_entries(DOMAIN)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_OCTO_PIN: "1234", "action": "finish"}
+        )
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_OCTO_PIN] == "1234"
+
+
 @pytest.mark.parametrize("cancel", [False, True])
 async def test_octo_probe_authenticates_on_owned_connection_and_disconnects(
     hass: HomeAssistant,

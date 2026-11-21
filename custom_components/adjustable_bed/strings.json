@@ -484,6 +484,7 @@
         "description": "Checked PIN access for **{name}** without moving the bed.\n\n{result}",
         "data": {
           "octo_pin": "Octo PIN",
+          "action": "What next",
           "outcome_accepted": "PIN check: accepted",
           "outcome_not_required": "PIN check: not required",
           "outcome_required": "PIN check: required",
@@ -496,7 +497,7 @@
           "outcome_not_required": "This bed does not require a PIN. Submit to finish setup.",
           "outcome_required": "The bed requires a PIN. Enter it below and submit to check again.",
           "outcome_rejected": "The bed rejected the PIN. Correct it below and submit to check again.",
-          "outcome_inconclusive": "PIN verification could not be completed. This does not mean the PIN is wrong. Wake the bed, close other apps connected to it, and check that your Bluetooth adapter or proxy is available. Submit to retry; the entry has not been saved."
+          "outcome_inconclusive": "The PIN could not be checked. This does not mean the PIN is wrong. Wake the bed, close other apps connected to it and choose **Check again**, or choose **Finish setup anyway**. If the PIN turns out to be wrong, the bed ignores commands until you correct it under **Configure**."
         }
       },
       "vibradorm": {
@@ -810,7 +811,7 @@
       "invalid_characteristic_uuid": "Enter the full Bluetooth characteristic ID, in the form 0000fff1-0000-1000-8000-00805f9b34fb.",
       "octo_pin_required": "A PIN is required.",
       "octo_pin_rejected": "The bed rejected this PIN.",
-      "octo_pin_inconclusive": "PIN access has not been verified.",
+      "octo_pin_inconclusive": "The PIN could not be checked.",
       "malouf_app_required": "Choose the app you use and the bed model it shows.",
       "furnimove_remote_required": "Choose the handset ID printed on your remote or shown in the FurniMove app.",
       "vibradorm_app_required": "Choose the bed app.",

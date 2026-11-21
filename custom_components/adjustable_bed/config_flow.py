@@ -2244,9 +2244,10 @@ _OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
     OctoPinStatus.REQUIRED: "The bed requires a PIN. Enter it below and submit to check again.",
     OctoPinStatus.REJECTED: "The bed rejected the PIN. Correct it below and submit to check again.",
     OctoPinStatus.INCONCLUSIVE: (
-        "PIN verification could not be completed. This does not mean the PIN is wrong. "
-        "Wake the bed, close other apps connected to it, and check that your Bluetooth "
-        "adapter or proxy is available. Submit to retry; the entry has not been saved."
+        "The PIN could not be checked. This does not mean the PIN is wrong. Wake the bed, "
+        "close other apps connected to it and choose **Check again**, or choose **Finish "
+        "setup anyway**. If the PIN turns out to be wrong, the bed ignores commands until "
+        "you correct it under **Configure**."
     ),
 }
 
@@ -3323,6 +3324,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # confirmation of a result the user never saw.
         self._verify_form_shown: bool = False
         self._octo_pin_form_shown: bool = False
+        # PINs the bed refused in this flow (an empty PIN it said it needs).
+        self._octo_refused_pins: set[str] = set()
         # The result step whose guided-change check failed; the failure form
         # hands its Try again or Keep back to it.
         self._migration_failed_from: Literal["verify_connection", "pairing_result"] | None = None
@@ -7040,7 +7043,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_verify_octo_pin(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Finish only after PIN acceptance, or let the user correct and retry."""
+        """Finish after PIN acceptance, or let the user correct and retry.
+
+        A check that could not reach a verdict (a sleeping or out-of-range bed)
+        also offers to finish without it. Only a PIN the bed itself refused
+        blocks setup, and such a PIN is never saved.
+        """
         assert self._pending_entry is not None
         result = self.operation.result
         report = result.payload if result is not None else None
@@ -7049,10 +7057,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if isinstance(report, CapabilityReport) and report.octo_pin_status is not None
             else OctoPinStatus.INCONCLUSIVE
         )
+        if status in (OctoPinStatus.REQUIRED, OctoPinStatus.REJECTED):
+            self._octo_refused_pins.add(self._pending_entry.get(CONF_OCTO_PIN, ""))
         errors: dict[str, str] = {}
         if user_input is not None and self._octo_pin_form_shown:
+            title = self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed")
             if status.allows_setup:
-                title = self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed")
                 if self._migration is not None:
                     # Reconfigure saves only after its review is applied.
                     return await self._async_create_selected_app_entry(
@@ -7060,8 +7070,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                 return self.async_create_entry(title=title, data=self._pending_entry)
             pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, ""))
+            finish = (
+                status is OctoPinStatus.INCONCLUSIVE and user_input.get("action") == "finish"
+            )
             if not is_valid_octo_pin(pin):
                 errors[CONF_OCTO_PIN] = "invalid_pin"
+            elif finish and pin in self._octo_refused_pins:
+                errors[CONF_OCTO_PIN] = "octo_pin_rejected"
+            elif finish:
+                self._pending_entry[CONF_OCTO_PIN] = pin
+                if self._migration is not None:
+                    return await self._async_create_selected_app_entry(
+                        title=title, data=self._pending_entry
+                    )
+                return self.async_create_entry(title=title, data=self._pending_entry)
             else:
                 self._pending_entry[CONF_OCTO_PIN] = pin
                 self._octo_pin_form_shown = False
@@ -7074,6 +7096,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             schema[
                 vol.Optional(CONF_OCTO_PIN, default=self._pending_entry.get(CONF_OCTO_PIN, ""))
             ] = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
+        if status is OctoPinStatus.INCONCLUSIVE:
+            schema[vol.Required("action", default="retry")] = SelectSelector(
+                SelectSelectorConfig(
+                    options=["retry", "finish"],
+                    mode=SelectSelectorMode.LIST,
+                    translation_key="verify_action",
+                )
+            )
         self._octo_pin_form_shown = True
         return self.async_show_form(
             step_id="verify_octo_pin",
