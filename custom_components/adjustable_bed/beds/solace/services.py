@@ -5,7 +5,6 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
 from ...errors import invalid
@@ -14,6 +13,7 @@ from ...services import (
     ATTR_ACTION,
     ATTR_TRACK,
     ATTR_VOLUME,
+    DEVICE_IDS,
     SIDE_FIELD,
     _call_targets,
     _preflight_and_execute,
@@ -69,7 +69,7 @@ def async_register_solace_services(hass: HomeAssistant) -> None:
         handle_solace_audio,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_ACTION): vol.In(SOLACE_AUDIO_ACTIONS),
                 vol.Optional(ATTR_TRACK): vol.All(vol.Coerce(int), vol.Range(min=1, max=5)),
                 vol.Optional(ATTR_VOLUME): vol.All(vol.Coerce(int), vol.Range(min=1, max=5)),

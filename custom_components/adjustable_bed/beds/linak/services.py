@@ -5,7 +5,6 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
 from ...errors import invalid
@@ -16,6 +15,7 @@ from ...services import (
     ATTR_FIRST_MOTOR,
     ATTR_SECOND_DIRECTION,
     ATTR_SECOND_MOTOR,
+    DEVICE_IDS,
     MAX_TIMED_MOVE_DURATION_MS,
     MIN_TIMED_MOVE_DURATION_MS,
     SIDE_FIELD,
@@ -78,7 +78,7 @@ def async_register_linak_services(hass: HomeAssistant) -> None:
         handle_linak_move_simultaneously,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_FIRST_MOTOR): vol.In(LINAK_MOTOR_OPTIONS),
                 vol.Required(ATTR_FIRST_DIRECTION): vol.In(LINAK_DIRECTION_OPTIONS),
                 vol.Required(ATTR_SECOND_MOTOR): vol.In(LINAK_MOTOR_OPTIONS),

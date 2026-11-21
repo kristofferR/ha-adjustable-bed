@@ -3055,7 +3055,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_goto_preset,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
                 vol.Optional(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
@@ -3068,7 +3068,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_save_preset,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
                 **SIDE_FIELD,
             }
@@ -3080,7 +3080,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_stop_all,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 **SIDE_FIELD,
             }
         ),
@@ -3091,7 +3091,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_set_position,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_MOTOR): vol.In(POSITION_MOTOR_OPTIONS),
                 # No max cap here - per-motor validation handles bed-specific limits
                 vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0)),
@@ -3105,7 +3105,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_set_positions,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_POSITIONS): vol.All(
                     [
                         {
@@ -3127,7 +3127,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_timed_move,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_MOTOR): vol.In(TIMED_MOVE_MOTOR_OPTIONS),
                 vol.Required(ATTR_DIRECTION): vol.In(["up", "down"]),
                 vol.Required(ATTR_DURATION_MS): vol.All(
