@@ -20,6 +20,7 @@ from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -580,7 +581,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 tick = max(tick + 1, int((monotonic() - start + 1e-9) / TICK) + 1)
         finally:
             if fired:
-                await self._stop_side(link, side)
+                await settled(self._stop_side(link, side))
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
