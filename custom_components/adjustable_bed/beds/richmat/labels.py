@@ -173,13 +173,8 @@ _RESOURCE_WORDS: Final[dict[str, str]] = {
 
 
 # Resources whose words alone mislead: the remote's Set key arms programming and
-# saves nothing itself; the later "massage off" keys repeat the first.
-_RESOURCE_NAMES: Final[dict[str, str]] = {
-    "com_set_old": "Program",
-    "k_set_old": "Program",
-    "com_msg_off2": "Massage off",
-    "com_msg_off3": "Massage off",
-}
+# saves nothing itself.
+_RESOURCE_NAMES: Final[dict[str, str]] = {"com_set_old": "Program", "k_set_old": "Program"}
 
 
 def resource_label(name: str) -> str:
@@ -393,6 +388,13 @@ def richmat_mh_name(code: int, label: str, *, massage_page: bool = False) -> tup
     if code in _MH_UNCLEAR:
         return MH_CODES[code][1], False
     if code not in MH_CODES:
+        # A massage page's plain on/off or off button says what it does even where
+        # other layouts give its code another use (VERM's 61 "Start Stop", "All Off").
+        core = [w for w in words if w not in _FEATURE_WORDS[MASSAGE]]
+        if core and core[-1].isdigit():
+            core.pop()
+        if massage_page and core in (["on/off"], ["off"]):
+            return _with_feature(MASSAGE, core), True
         return _with_feature(MASSAGE if massage_page else OTHER, shown), False
     feature, name = MH_CODES[code]
     known = _words(name)

@@ -794,3 +794,29 @@ async def test_heat_levels_are_one_select(delays, app, stop_after):
             [f"6e0100{code}", "6e01006edd"],
             [stop_after],
         )
+
+
+def test_a_level_number_without_zero_shows_unknown_until_a_level_is_sent() -> None:
+    from dataclasses import replace
+
+    from custom_components.adjustable_bed.number import (
+        MASSAGE_NUMBER_DESCRIPTIONS,
+        AdjustableBedMassageNumber,
+    )
+    from custom_components.adjustable_bed.state_keys import massage_intensity
+
+    coordinator = MagicMock()
+    coordinator.controller_state, coordinator.entity_side, coordinator.device_info = {}, None, {}
+    description = replace(MASSAGE_NUMBER_DESCRIPTIONS[0], native_min_value=1, native_max_value=3)
+    number = AdjustableBedMassageNumber(coordinator, description)
+    # 0 is no level of these beds: nothing sent yet is unknown, not off.
+    assert number.native_value is None
+    coordinator.controller_state[massage_intensity("all")] = 2
+    assert number.native_value == 2
+
+
+@pytest.mark.parametrize(("app", "shape"), [("wsilver2", "massage_all_toggle"), ("americanstar", "massage_all_off")])
+def test_a_massage_stop_keeps_its_button_where_other_layouts_use_its_code_as_a_timer(app, shape):
+    """VERM's only massage stop is code 61 ("Start Stop", "All Off"), a 30-minute timer elsewhere."""
+    spec = next(s for s in make(app, "verm").controller_button_specs if s.key == "richmat_mh_61")
+    assert spec.translation_key == shape and spec.entity_registry_enabled_default
