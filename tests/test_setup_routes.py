@@ -200,7 +200,7 @@ async def test_a_discovered_okimat_asks_the_okin_question_with_another_app(
     )
     assert result["step_id"] == "okin_family"
     choices = list(select_options(result, "choice"))
-    assert choices[-2:] == ["another", "keep"]
+    assert choices[-2:] == ["another", "keep_detected"]
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "another"})
     assert result["step_id"] == "select_app"
     hass.config_entries.flow.async_abort(result["flow_id"])

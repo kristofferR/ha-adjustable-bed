@@ -238,6 +238,21 @@ async def test_the_brand_list_names_families_and_their_apps(hass, enable_custom_
     assert list(rows)[-1] == _STRINGS["config"]["step"]["select_family"]["data"]["not_sure"]
 
 
+async def test_typed_text_that_matches_no_row_gets_one_short_error(
+    hass, enable_custom_integrations
+):
+    """The searchable list never answers free text with every row it has."""
+    from homeassistant.data_entry_flow import InvalidData
+
+    result = await app_question(hass)
+    with pytest.raises(InvalidData) as raised:
+        await hass.config_entries.flow.async_configure(
+            result["flow_id"], {const.CONF_BED_TYPE: "Tempur"}
+        )
+    assert raised.value.schema_errors == {const.CONF_BED_TYPE: "choice_not_listed"}
+    assert _STRINGS["config"]["error"]["choice_not_listed"]
+
+
 async def test_not_sure_runs_diagnostics(hass, enable_custom_integrations):
     result = await brand_list(hass)
     with patch(PATCH_DISCOVERED, return_value=[]):
@@ -335,19 +350,19 @@ async def test_a_discovered_family_asks_its_question_with_another_app_and_keep(
     result = await discovered(hass, mock_bluetooth_service_info_okimat)
     assert result["step_id"] == "okin_family"
     choices = list(select_options(result, "choice"))
-    assert choices[-2:] == ["another", "keep"]
+    assert choices[-2:] == ["another", "keep_detected"]
     for selector in ("okin_family_choice", "jensen_family_choice", "remacro_family_choice"):
         assert _STRINGS["selector"][selector]["options"]["another"]
     # Keep explains what it sets up; Back returns to the same question.
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep_detected"})
     assert result["step_id"] == "keep_detected"
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"next_step_id": "keep_back"}
     )
     assert result["step_id"] == "okin_family"
-    assert list(select_options(result, "choice"))[-2:] == ["another", "keep"]
+    assert list(select_options(result, "choice"))[-2:] == ["another", "keep_detected"]
     # Keep saves the detected route, then its own questions and settings follow.
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep_detected"})
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"next_step_id": "keep_continue"}
     )

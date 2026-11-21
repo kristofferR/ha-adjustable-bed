@@ -1032,7 +1032,12 @@ class _SearchableSelect(SelectSelector):
         listed: Any = SelectSelector(
             SelectSelectorConfig(options=[*self._choices, *self._labels, *self._accepted])
         )
-        value = listed(cast(Any, super()).__call__(data))
+        try:
+            value = listed(cast(Any, super()).__call__(data))
+        except vol.Invalid as err:
+            # The frontend shows this as the translated error under the field,
+            # not as every row the list has.
+            raise vol.Invalid("choice_not_listed") from err
         return self._choices.get(value, value)
 
 

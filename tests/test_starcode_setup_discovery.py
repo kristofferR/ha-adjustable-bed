@@ -218,7 +218,7 @@ async def test_real_discovery_preserves_receiver_choice_and_blocks_show_all_auto
     if receiver == const.BED_TYPE_SLEEPYS_BOX25:
         # The Sleepy's question asks the app, and Keep saves the chosen receiver.
         assert result["step_id"] == "sleepys_family"
-        assert "keep" in select_options(result, "choice")
+        assert "keep_detected" in select_options(result, "choice")
         flow = hass.config_entries.flow._progress[result["flow_id"]]
         assert flow._manual_data[const.CONF_BED_TYPE] == receiver
     else:
