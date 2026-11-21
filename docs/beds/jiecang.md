@@ -629,7 +629,7 @@ Reconfigure's bed-type list, which then asks the app, packet family and layout.
 - Writable name roles are rediscovered per connection; G2 alone cannot reuse an
   old G1 name handle.
 - Write response mode comes from the discovered characteristic properties.
-- Comfort Motion sends only its frozen frames and the raw rename.
+- Comfort Motion sends only the app's frames and the raw rename.
 
 #### Controls
 
@@ -1166,8 +1166,8 @@ preserves that and only guards field bounds. Status replies `05`/`06` (any heade
 
 #### Evidence
 
-Every LOGICDATA profile sends only its frozen frames
-(`tests/test_logicdata_vectors.py`).
+Based on the MOTIONrelax phone, MOTIONrelax tablet and Sleep Smart Air Mattress
+apps (`tests/test_logicdata_vectors.py`).
 
 ### MOTIONrelax phone and tablet
 
@@ -1253,7 +1253,7 @@ being answered. The tablet decodes neither clock nor alarm replies.
 
 #### Evidence
 
-Both profiles send only their frozen frames.
+Based on MOTIONrelax phone 1.0.6 (7) and MOTIONrelax tablet 1.0.4 (5).
 
 ### Sleep Smart Air Mattress (bed)
 
@@ -1331,7 +1331,7 @@ No positions, firmware, model or calibration are reported.
 
 #### Evidence
 
-Sleep Smart sends only its frozen frames.
+Based on Sleep Smart Air Mattress 1.0.0 (1).
 
 ## Notes
 

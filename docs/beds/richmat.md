@@ -712,7 +712,7 @@ release.
 
 #### Evidence
 
-The Richmat remotes send only their frozen frames. The GGRM catalog actions are
+The GGRM catalog actions are
 from the Revive Control, Blvd Home and HARMONY GGRM tables ( with the `main_6e` release and
 its 120 ms delay); the other frames are the pre-v5 controller's.
 
@@ -902,7 +902,7 @@ interval are in [Fixed-table routes](#fixed-table-routes).
 
 #### Evidence
 
-L&P MlRM sends only its frozen frames, the pre-v5 controller's.
+L&P MlRM sends the pre-v5 controller's frames.
 
 ### RMControl
 

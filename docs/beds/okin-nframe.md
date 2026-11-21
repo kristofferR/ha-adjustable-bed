@@ -1224,8 +1224,7 @@ channel.
 
 #### Evidence
 
-Okimat sends only its frozen frames. FurniMove handset evidence comes from
-FurniMove 2.2.0.
+The handset tables are based on FurniMove 2.2.0.
 
 ### DewertOkin
 
@@ -1267,7 +1266,7 @@ release.
 
 #### Evidence
 
-DewertOkin sends only its frozen frames, the pre-v5 controller's.
+DewertOkin sends the pre-v5 controller's frames.
 
 #### DewertOkin brands
 
@@ -1580,9 +1579,9 @@ constant-true connection check.
 
 #### Evidence
 
-Each Customatic profile sends only its frozen frames. Physical
-verification of movement labels, save and reset effects, light behavior and
-write-property compatibility is deferred to users after release.
+Based on the Customatic Clarity, Jerome's and Remedy apps. Movement labels,
+save and reset effects, light behavior and write-property compatibility still
+need testing by owners.
 
 ### Customatic Clarity
 
@@ -1770,8 +1769,8 @@ ranges before writing; see their action descriptions for fields.
 
 #### Evidence
 
-Each Leggett profile sends only its frozen frames, plus the CU170 stop on Prodigy
-CE.
+Based on the Prodigy 2L, Prodigy 2, Prodigy CE and U Series apps, plus the CU170
+stop on Prodigy CE.
 
 ### Prodigy 2L
 
@@ -3549,13 +3548,12 @@ data:
 
 #### Evidence
 
-eShine sends only its frozen frames: its key frames, requests, clock and
-alarm frames are frozen in `tests/okin_nframe_vectors.py`.
+Based on eShine 1.1.8 (22); its key, request, clock and alarm frames are in
+`tests/okin_nframe_vectors.py`.
 
-- All physical behavior remains unverified, including STOP scope and long-hold
-  preset persistence. Do not infer either from the shared transport.
-- No WiFi/cloud/account/OTA management is included.
-- Real users may validate physical behavior.
+- Not yet tested on hardware, including what STOP stops and whether a long-hold
+  preset save is kept.
+- Wi-Fi, cloud, account and firmware update features are not supported.
 
 ###### eShine analysis provenance
 

@@ -961,11 +961,10 @@ the last column.
 
 #### Evidence
 
-- Caresse and Werkmeister send only their frozen frames
-  (`caresse` and `werkmeister` in `tests/vibradorm_vectors.py`).
-- Hardware operation, on-air packet delivery, peripheral security and physical
-  effects remain unverified. Real-user checks are deferred
-  external validation, not missing static implementation evidence.
+- Based on Caresse Remote 0.3 and Werkmeister Unterfederung 0.2 (`caresse` and
+  `werkmeister` in `tests/vibradorm_vectors.py`).
+- Not yet tested on hardware: delivery, pairing security and how the bed moves
+  still need confirming by owners.
 
 ### VMAT
 
@@ -1252,11 +1251,9 @@ Late replies cannot restart released movement. No partner selector is proven.
 
 #### Evidence
 
-This explicit profile implements the accepted `de.vibradorm.vmat` 1.11 (49)
-application contract and sends only its frozen frames (`vmat` in
-`tests/vibradorm_vectors.py`, with the artifact vectors in
-`tests/fixtures/vibradorm_vmat_vectors.json`). App behavior is artifact verified;
-physical operation remains unverified.
+Based on `de.vibradorm.vmat` 1.11 (49) (`vmat` in `tests/vibradorm_vectors.py`,
+with the app's vectors in `tests/fixtures/vibradorm_vmat_vectors.json`). Not yet
+tested on hardware.
 
 #### Issue #403 reconciliation
 
@@ -1537,11 +1534,9 @@ Rename:
 
 #### Evidence
 
-The protocol comes from the accepted `com.vibradorm.vmatbasic` 2.4.3 APK,
-version code 14. Each product sends only its frozen frames (`basic`, `cbi` and
-`xtbox` in `tests/vibradorm_vectors.py`, which are its artifact vectors in
-`tests/fixtures/vmatbasic-vectors.json`). Current code and focused executed tests
-cover the accepted behavior. Hardware status: needs testing.
+Based on `com.vibradorm.vmatbasic` 2.4.3 (14) (`basic`, `cbi` and `xtbox` in
+`tests/vibradorm_vectors.py`, with the app's vectors in
+`tests/fixtures/vmatbasic-vectors.json`). Not yet tested on hardware.
 
 ## Notes
 
