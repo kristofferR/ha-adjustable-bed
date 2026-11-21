@@ -374,7 +374,7 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
             or not isinstance(duration_ms, int)
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Duration must be an integer from 1 to 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)

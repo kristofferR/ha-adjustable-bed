@@ -135,10 +135,10 @@ async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None
             from .controller import SvaneController
 
             if not isinstance(controller, SvaneController):
-                raise ValueError("Svane controller changed before held command admission")
+                raise ValueError("The bed's connection changed while the action was starting. Try again")
             admission = admissions.get(id(controller.session))
             if admission is None:
-                raise ValueError("Svane physical session changed before held command admission")
+                raise ValueError("The bed's connection changed while the action was starting. Try again")
             with admission.activate(controller):
                 await controller.hold_control(control, duration_ms)
 

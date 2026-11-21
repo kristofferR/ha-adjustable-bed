@@ -729,7 +729,7 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
     async def program_memory(self, memory_num: int) -> None:
         slot = self._slot(memory_num)
         if not self.supports_memory_programming:
-            raise ValueError("Saving requires one to four reported motors")
+            raise ValueError("The bed has not reported its motors yet. Reconnect it and try again")
         assert self.capabilities is not None
         count = self.capabilities.effective_motor_count(self.product_selection)
         positions: list[tuple[int, int]] = []
@@ -830,7 +830,7 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options:
-            raise ValueError("Control is not rendered by the current app layout")
+            raise ValueError("This remote does not offer that control")
         await self._held(
             (codec.flagged(REMOTE_CHANNELS[control], self.reverse_motors),),
             duration_ms,
@@ -858,14 +858,14 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
     def validate_memory_recall(self, memory_num: int) -> None:
         slot = self._slot(memory_num)
         if not self.supports_memory_presets:
-            raise ValueError("Recalling requires one to four reported motors")
+            raise ValueError("The bed has not reported its motors yet. Reconnect it and try again")
         memory = self.memories.slots.get(slot)
         if memory is None or not any(motor == 0 for motor, _ in memory.positions):
-            raise ValueError("Save this memory before recall")
+            raise ValueError("Save this memory position before recalling it")
         assert self.capabilities is not None
         count = self.capabilities.effective_motor_count(self.product_selection)
         if any(motor >= count for motor, _ in memory.positions):
-            raise ValueError("Stored memory belongs to a different reported motor layout")
+            raise ValueError("This memory position was saved with a different motor setup. Save it again first")
 
     async def hold_calibration(self, duration_ms: int, *, confirmed: bool) -> None:
         if confirmed is not True or self.memory_slot_count == 0:
@@ -920,28 +920,28 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
         raise ValueError("There is no flat preset in this app")
 
     async def move_head_up(self) -> None:
-        raise ValueError("Use the literal app channel controls")
+        raise ValueError("Use this remote's own channel controls instead")
 
     async def move_head_down(self) -> None:
-        raise ValueError("Use the literal app channel controls")
+        raise ValueError("Use this remote's own channel controls instead")
 
     async def move_back_up(self) -> None:
-        raise ValueError("Use the literal app channel controls")
+        raise ValueError("Use this remote's own channel controls instead")
 
     async def move_back_down(self) -> None:
-        raise ValueError("Use the literal app channel controls")
+        raise ValueError("Use this remote's own channel controls instead")
 
     async def move_legs_up(self) -> None:
-        raise ValueError("Use the literal app channel controls")
+        raise ValueError("Use this remote's own channel controls instead")
 
     async def move_legs_down(self) -> None:
-        raise ValueError("Use the literal app channel controls")
+        raise ValueError("Use this remote's own channel controls instead")
 
     async def move_feet_up(self) -> None:
-        raise ValueError("Use the literal app channel controls")
+        raise ValueError("Use this remote's own channel controls instead")
 
     async def move_feet_down(self) -> None:
-        raise ValueError("Use the literal app channel controls")
+        raise ValueError("Use this remote's own channel controls instead")
 
     async def move_head_stop(self) -> None:
         await self.stop_all()

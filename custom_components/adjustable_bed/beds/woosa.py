@@ -221,7 +221,7 @@ class WoosaController(SolaceController):
         if memory_num != 1:
             raise ValueError("Woosa has one numbered Favourite memory")
         if not self._preset_is_selected("memory_1"):
-            raise ValueError("Woosa has not reported a saved Favourite position")
+            raise ValueError("The bed has no saved Favourite position yet. Save one first")
         await self._send_preset(SolaceCommands.PRESET_MEMORY_1)
 
     async def program_memory(self, memory_num: int) -> None:

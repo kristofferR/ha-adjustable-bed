@@ -332,7 +332,7 @@ class TestPowerLayerPresets:
         await coordinator.async_connect()
 
         assert coordinator.controller.supports_memory_programming is False
-        with pytest.raises(ValueError, match="physical remote"):
+        with pytest.raises(ValueError, match="on the remote"):
             await coordinator.controller.program_memory(1)
 
 

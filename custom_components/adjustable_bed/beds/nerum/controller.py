@@ -201,7 +201,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self._held() or not 1 <= duration_ms <= 60000:
-            raise ValueError("Choose an available Nerum control and a hold of 1 to 60000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -385,12 +385,12 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
 
     async def sync_clock(self) -> None:
         if not self.supports_clock_sync:
-            raise ValueError("Nerum P1 has no clock output")
+            raise ValueError("This bed has no clock")
         await self.write_command(app.clock(self.profile.key, dt_util.now()))
 
     def validate_alarm_bank(self, bank: tuple[app.Alarm, app.Alarm, app.Alarm]) -> None:
         if self.profile.key == "p1" or len(bank) != 3:
-            raise ValueError("Nerum P2/P3 requires exactly three alarm records")
+            raise ValueError("Enter all three alarms")
         # A reported wake type round-trips: P2 stores its byte, P3 its wake code.
         kinds = range(256) if self.profile.key == "p2" else {0, *app.WAKE_CODES}
         if any(
@@ -400,7 +400,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
             or a.kind not in kinds
             for a in bank
         ):
-            raise ValueError("Invalid Nerum alarm fields")
+            raise ValueError("Check the alarm times, weekdays and wake actions, then try again")
 
     async def set_alarms(self, bank: tuple[app.Alarm, app.Alarm, app.Alarm]) -> None:
         self.validate_alarm_bank(bank)

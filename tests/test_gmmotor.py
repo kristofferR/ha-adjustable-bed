@@ -140,7 +140,7 @@ async def test_write_uses_selected_role_no_retry_and_att_limit() -> None:
 async def test_secondary_gates_are_exact_not_legacy_capabilities() -> None:
     ctrl = controller("FTRN")
     assert ctrl.profile.repeat_alarm and ctrl.profile.sleep_kind == "none"
-    with pytest.raises(ValueError, match="BLE sleep"):
+    with pytest.raises(ValueError, match="no sleep sensor"):
         ctrl.validate_gmmotor_request(Request("sleep_name"))
     ctrl.write_command = AsyncMock()
     ctrl.validate_gmmotor_request(Request("light_color"))
@@ -163,14 +163,14 @@ async def test_alarm_and_snore_pages_require_their_actual_admission_paths() -> N
     countdown.validate_gmmotor_request(Request("alarm_at", mode=mode, hour=7))
     repeat = controller("FTRN")
     repeat._accept(Event("clock_capability"))
-    with pytest.raises(ValueError, match="repeat-alarm page"):
+    with pytest.raises(ValueError, match="repeating alarm operation"):
         repeat.validate_gmmotor_request(
             Request("alarm_at", mode=repeat.profile.alarm_choices[0][0])
         )
     snore = controller("HNRN")
     snore.validate_gmmotor_request(Request("snore_query"))
     snore.validate_gmmotor_request(Request("snore_time", value=5))
-    with pytest.raises(ValueError, match="slider range"):
+    with pytest.raises(ValueError, match="anti-snore value"):
         snore.validate_gmmotor_request(Request("snore_count", value=0))
 
 

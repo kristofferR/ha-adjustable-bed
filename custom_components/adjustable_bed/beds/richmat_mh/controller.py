@@ -478,8 +478,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             raise ValueError(f"Unknown Richmat MH app: {app}")
         self._app = app
         self.profile = self._wire_profiles[app]
-        data = getattr(getattr(coordinator, "entry", None), "data", None)
-        data = data if isinstance(data, Mapping) else {}
+        data = coordinator.entry.data
         stored_name = data.get(CONF_BLE_DEVICE_NAME)
         name = device_name if not is_mac_like_name(device_name) else None
         if name is None and isinstance(stored_name, str) and not is_mac_like_name(stored_name):
@@ -807,7 +806,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
     async def set_massage_timer(self, minutes: int) -> None:
         code = self._massage_timer_codes.get(minutes)
         if code is None:
-            raise ValueError("Choose a massage timer this layout offers")
+            raise ValueError("Choose a massage timer this bed model offers")
         # The bed reports no timer.
         with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
             await self.tap(code)
@@ -1366,12 +1365,12 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if unknown or len(set(massage)) != len(massage):
             raise ValueError("Massage choices must be distinct options from this model's alarm page")
         if position is None and not massage:
-            raise ValueError("Choose a position or a massage, as the app requires")
+            raise ValueError("Choose a position or a massage for the alarm")
         # The app reads the selected massage rows in their page order.
         ordered = tuple(ALARM_OPTION_CODES[m] for m in massages if m in massage)
         action = alarm_action(ALARM_OPTION_CODES[position] if position else None, ordered)
         if action is None:
-            raise ValueError("The app sends nothing for this position and massage combination")
+            raise ValueError("This bed has no alarm for that position and massage combination. Choose another")
         return action
 
     async def richmat_mh_alarm(
@@ -1629,9 +1628,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if snapshot is None or snapshot == self._stored_snapshot:
             return
         self._stored_snapshot = dict(snapshot)
-        remember = getattr(self._coordinator, "remember_richmat_mh_snapshot", None)
-        if callable(remember):
-            remember(snapshot)
+        self._coordinator.remember_richmat_mh_snapshot(snapshot)
 
     # ------------------------------------------------------------ notifications
 

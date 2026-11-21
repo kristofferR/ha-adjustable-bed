@@ -65,7 +65,7 @@ async def _hold_limoss_remote(
 
     def validate(controller: LimossRemoteController) -> None:
         if control not in controller.held_control_options:
-            raise ValueError(f"The selected profile does not support combination '{control}'")
+            raise ValueError(f"This remote has no '{control}' combination")
         if lease is not None and controller.execution.hold is None:
             raise invalid("hold_renewal_not_supported", device_name=controller._coordinator.name)
 
@@ -254,7 +254,7 @@ async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
     def validate(controller: LimossRemoteController) -> None:
         if call.data["confirmed"] is not True or controller.memory_slot_count == 0:
             raise ValueError(
-                "Calibration requires explicit confirmation and a memory-capable profile"
+                "Turn on Confirm to calibrate. Calibration needs a remote with memory positions"
             )
 
     await _execute_limoss_remote(

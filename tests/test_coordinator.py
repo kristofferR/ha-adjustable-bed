@@ -69,7 +69,11 @@ from custom_components.adjustable_bed.const import (
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.errors import BedCommandFailedError, BedNotConnectedError
+from custom_components.adjustable_bed.errors import (
+    BedCommandFailedError,
+    BedCommandTimedOutError,
+    BedNotConnectedError,
+)
 from custom_components.adjustable_bed.state_keys import (
     LIGHT_LEVEL,
     LIGHT_TIMER_MINUTES,
@@ -1064,6 +1068,24 @@ class TestCoordinatorWriteCommand:
             )
         assert isinstance(raised.value, BedCommandFailedError)
         assert raised.value.translation_key == "bluetooth_command_failed"
+
+    async def test_command_timeout_is_translated(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A command that times out reaches the user as one translated message."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.side_effect = TimeoutError
+
+        with pytest.raises(BedCommandTimedOutError) as raised:
+            await coordinator.async_execute_controller_command(
+                lambda controller: controller.write_command(bytes([0x01, 0x00]))
+            )
+        assert raised.value.translation_key == "bed_command_timed_out"
 
     async def test_execute_controller_command_auth_failure_clears_bond_marker(
         self,

@@ -201,7 +201,7 @@ async def test_invalid_commands_write_nothing(controller, command, parameters):
 
 
 async def test_bound_side_cannot_be_overridden(controller):
-    with pytest.raises(ValueError, match="override"), controller.side_scope("left"):
+    with pytest.raises(ValueError, match="targeted side"), controller.side_scope("left"):
         await controller.async_execute_sleep_number_command(
             "position", {"side": "right", "axis": "head", "position": 20}
         )

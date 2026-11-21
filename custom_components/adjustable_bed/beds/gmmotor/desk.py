@@ -46,7 +46,7 @@ class GmmotorDeskController(GmmotorController):
             or type(duration_ms) is not int
             or not 0 <= duration_ms <= 60000
         ):
-            raise ValueError("Invalid GM Control desk control/duration")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     def controller_button_available(self, key: str) -> bool:
         return key in _DESK_ACTIONS
@@ -110,7 +110,7 @@ class GmmotorDeskController(GmmotorController):
 
     def validate_gmmotor_request(self, request: Request) -> None:
         if request.operation not in ("desk_height", "desk_unit", "desk_query", "refresh"):
-            raise ValueError("This GM Control route admits only dedicated desk operations")
+            raise ValueError("This device is a desk and offers only desk operations")
         if request.operation == "desk_height":
             lower, upper = self._height_bounds(request.unit)
             if not lower <= request.height <= upper:

@@ -337,7 +337,7 @@ class Ergomotion4Controller(AppController):
     def _frame(self, mask: int) -> bytes:
         if self.product.protocol == "P2":
             if self.command_side in ("left", "right"):
-                raise ValueError("Ergomotion 4.0 P2 has no side selector")
+                raise ValueError("This bed has no sides. Leave out the side")
             return p2_frame(mask)
         if self.command_side in ("left", "right"):
             return codec.side_frame(mask & 0xFFFFFFFF, cast(codec.Side, self.command_side))
@@ -455,13 +455,13 @@ class Ergomotion4Controller(AppController):
         name = name.strip("".join(chr(value) for value in range(33)))
         units = len(name.encode("utf-16-le")) // 2
         if not name or units > 16:
-            raise ValueError("Use a nonempty name of at most 16 UTF-16 units")
+            raise ValueError("Use a name of 1 to 16 characters. Emoji count as two")
         return codec.rename(name.encode("utf-8")[: min(units, 15)])
 
     async def _run_action(self, key: str) -> None:
         if key in ("meditation_start", "meditation_stop"):
             if not self._meditation_allowed:
-                raise ValueError("The selected product and Bluetooth name do not admit meditation")
+                raise ValueError("This bed model has no meditation mode")
             code = (
                 0x48000000
                 if self.product.style == "M14"

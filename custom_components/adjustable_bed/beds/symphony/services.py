@@ -93,7 +93,7 @@ async def _dispatch(
         controller = await _get_controller_for_service(target)
         opened.append((target, target))
         if not isinstance(controller, SymphonyController):
-            raise ValueError("Every target must use Symphony Sleep Sense")
+            raise ValueError("This action works only with Sleep Sense beds. Remove the other beds from the action")
         if alarm:
             assert alarm_sides is not None
             address = target.address.upper()
@@ -111,7 +111,7 @@ async def _dispatch(
 
             async def prepare(current: BedController) -> None:
                 if not isinstance(current, SymphonyController):
-                    raise ValueError("The Symphony profile changed")
+                    raise ValueError("The bed's settings changed while the action was starting. Try again")
                 await current.prepare_alarm()
 
             await target.async_execute_controller_query(

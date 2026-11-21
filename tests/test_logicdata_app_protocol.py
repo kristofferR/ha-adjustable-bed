@@ -122,7 +122,7 @@ def test_rename_profiles_and_safe_ascii_subset():
     assert profiles.rename_schedule(TABLET, "t1", "BED") == ((0, b"BED"), (500, b"BED"))
     assert profiles.rename_schedule(PHONE, "t1", "Bedroom 1") == ((0, b"Bedroom 1"),)
     for name in ("", "Béd", "\x01BED", "A" * 256):
-        with pytest.raises(ValueError, match="printable ASCII"):
+        with pytest.raises(ValueError, match="common symbols"):
             profiles.rename_schedule(TABLET, "t3", name)
     with pytest.raises(ValueError, match="no rename"):
         profiles.rename_schedule(PHONE, "t2", "BED")

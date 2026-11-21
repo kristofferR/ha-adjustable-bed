@@ -731,8 +731,8 @@ sections list what differs.
 
 - Detection: none. The apps use the same Bluetooth services, so a service UUID
   cannot determine which app's release behavior or layout applies. No pairing,
-  PIN or device-name pattern is inferred from these apps. Layout, massage and
-  light are user choices, never inferred from the name or a shared service.
+  PIN or device-name pattern comes from these apps. Layout, massage and light are
+  your choices; the name or a shared service never sets them.
 - Automatic transport selection uses a coherent GATT service and its
   corresponding write, notification and name channels, trying G3, then G1, then
   G2. Explicit G1/G2/G3 overrides are available.

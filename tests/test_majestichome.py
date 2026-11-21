@@ -229,13 +229,13 @@ async def test_alarm_modes_allocator_and_unknown_received_toggle_fields(clock):
     obj, c = make()
     await obj.start_notify()
     notify(c, "6e09010078")
-    with pytest.raises(ValueError, match="explicit alarm ID"):
+    with pytest.raises(ValueError, match="full alarm list"):
         obj.prepare(Request("new"))
     for key in obj.layout.alarms:
         packet = obj.prepare(Request("set", number=7, preset=key, weekdays=(0, 6))).packets[0]
         assert packet[10] == obj.layout.control(key).code and packet[11] == 131
     obj.alarms[1] = Alarm(1, 99, 22, 45, 250, 131)
-    with pytest.raises(ValueError, match="explicit alarm ID"):
+    with pytest.raises(ValueError, match="full alarm list"):
         obj.prepare(Request("new"))
     assert obj.prepare(Request("new", number=2)).packets[0][6] == 2
     toggle = obj.prepare(Request("toggle", number=1, enabled=False)).packets[0]

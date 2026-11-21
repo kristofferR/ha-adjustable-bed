@@ -150,7 +150,7 @@ def validate_diagnostic_action(
     action: DiagnosticAction,
 ) -> None:
     if action is DiagnosticAction.REFRESH_MASSAGE and controller.wire == "P1":
-        raise ValueError("This profile has no massage status query")
+        raise ValueError("This bed cannot report its massage status")
 
 
 async def execute_diagnostic_action(
@@ -264,7 +264,7 @@ async def _massage(
     def prepare(controller: BetterLiving2Controller) -> None:
         selection.check()
         if controller.wire != "P1":
-            raise ValueError("Absolute paired massage levels require BetterLiving2 P1")
+            raise ValueError("This bed model cannot set both massage levels at once")
         layouts[id(controller._coordinator)] = controller.layout
 
     async def execute(controller: BetterLiving2Controller) -> None:

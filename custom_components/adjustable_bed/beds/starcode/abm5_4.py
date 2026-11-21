@@ -106,7 +106,7 @@ def _controller(controller: BedController) -> StarcodeAbm5_4Controller:
     if not isinstance(target, StarcodeAbm5_4Controller):
         raise TypeError("Requires an AdjustableM5X4 profile")
     if controller.command_side is not None:
-        raise ValueError("This app has no one-address side selector")
+        raise ValueError("This bed has no sides. Leave out the side")
     return target
 
 
@@ -550,7 +550,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         response: bool | None = None,
     ) -> None:
         if self.command_side is not None:
-            raise ValueError("This app has no one-address side selector")
+            raise ValueError("This bed has no sides. Leave out the side")
         target = client or self.client
         if (
             target is None
@@ -688,17 +688,17 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         if self.command_selector not in _POSITIVE_SELECTORS or not (
             self._light_on if light else self._massage_on
         ):
-            raise ValueError("The app requires observed own-address active state for this control")
+            raise ValueError("Turn on the light or massage first, on a bed model that has it, then try again")
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if self.command_side is not None:
-            raise ValueError("This app has no one-address side selector")
+            raise ValueError("This bed has no sides. Leave out the side")
         if (
             control not in self.held_control_options
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Unsupported app held control or duration")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
         if control in _MASSAGE:
             self._require_positive()
 
@@ -746,7 +746,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         elif action.startswith("save_") and action[5:] in _SAVES:
             await self._stream(_SAVES[action[5:]], STARCODE_ABM5_4_SAVE_HOLD_MS, release="preset")
         else:
-            raise ValueError("Unreachable app action")
+            raise ValueError("This bed does not offer that action")
 
     async def release_massage(self) -> None:
         """A disabled custom hit still schedules STOP100ms and query300ms."""
@@ -772,7 +772,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
     async def set_app_timer(self, option: str) -> None:
         self._require_positive()
         if option not in ("10", "20", "30"):
-            raise ValueError("App timer has only 10/20/30 minutes, no Off frame")
+            raise ValueError("Choose a timer of 10, 20 or 30 minutes. This bed cannot turn the timer off")
         await self._once("changeMassageTime", int(option) // 10, massage_release=True)
 
     async def set_app_brightness(self, value: float) -> None:
@@ -783,9 +783,9 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             or isinstance(value, float)
             and not value.is_integer()
         ):
-            raise ValueError("Brightness is an exact integer app level")
+            raise ValueError("Choose a whole-number brightness")
         if not 1 <= value <= 6:
-            raise ValueError("Brightness is outside 1..6")
+            raise ValueError("Choose a brightness from 1 to 6")
         if not self._accept_light_action():
             return
         self._level = int(value)
@@ -882,12 +882,12 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
 
     async def preset_memory(self, memory_num: int = 1) -> None:
         if memory_num != 1:
-            raise ValueError("Both app memory images recall only Memory A")
+            raise ValueError("This bed has only memory position A (1)")
         await self.hold_control("memory_1", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def program_memory(self, memory_num: int = 1) -> None:
         if memory_num != 1:
-            raise ValueError("Only Memory A save is reachable")
+            raise ValueError("This bed can save only memory position A (1)")
         await self._stream("saveM1", STARCODE_ABM5_4_SAVE_HOLD_MS, release="stop")
 
     async def stop_all(self) -> None:

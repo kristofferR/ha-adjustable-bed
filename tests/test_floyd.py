@@ -100,7 +100,7 @@ async def test_all_exported_alarm_selectors(floyd: FloydController, selector: st
 
 @pytest.mark.parametrize(("action", "parameter"), [("save_zero_g", 1), ("save_anti_snore", 4)])
 async def test_confirmed_overwrite_retains_parameter(floyd: FloydController, action: str, parameter: int) -> None:
-    with pytest.raises(ValueError, match="confirm"):
+    with pytest.raises(ValueError, match="Confirm"):
         await floyd.floyd_action(action, "first", False, None)
     assert not writes(floyd)
     await floyd.floyd_action(action, "first", True, None)
@@ -206,7 +206,7 @@ async def test_assignment_and_confirmation_vectors(floyd: FloydController) -> No
     floyd._send = assign
     await floyd.floyd_action("assign_room", "first", True, 0x12345678)
     assert floyd._room_id == 0x12345678 and not floyd._session_ready
-    with pytest.raises(ValueError, match="unassigned"):
+    with pytest.raises(ValueError, match="no room and is ready to join"):
         await floyd.floyd_action("assign_room", "first", True, 1)
     floyd._session_ready = True
     floyd._target_vaddr = 1
@@ -620,7 +620,7 @@ async def test_timed_preflight_battery_failure_prevents_every_target(hass, floyd
 def test_assignment_requires_positive_unassigned_evidence(floyd: FloydController, payload: str) -> None:
     floyd._room_id = None
     floyd._manufacturer_data = {}
-    with pytest.raises(ValueError, match="advertisement proving"):
+    with pytest.raises(ValueError, match="no room and is ready to join"):
         floyd.validate_floyd_action("assign_room", "first", True, 123)
     floyd._manufacturer_data = {0xFFFF: bytes.fromhex(payload)}
     floyd.validate_floyd_action("assign_room", "first", True, 123)

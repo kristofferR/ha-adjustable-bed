@@ -296,7 +296,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a supported BED hold up to 30 seconds")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
 
     def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:
         self.validate_hold_control(f"{motor}_{direction}", duration_ms)

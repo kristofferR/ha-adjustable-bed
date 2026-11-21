@@ -20,8 +20,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
 from ..codec import keeson as codec
 from ..const import (
     RONDURE_VARIANT_BOTH,

@@ -899,7 +899,7 @@ async def handle_save_preset(call: ServiceCall) -> None:
             not controller.supports_memory_programming
             or not 1 <= preset <= controller.memory_slot_count
         ):
-            raise ValueError("The fresh Limoss Remote profile cannot program this memory slot")
+            raise ValueError("This remote cannot save to that memory position. Choose another position")
 
     async with _limoss_remote_reload_transaction(targets):
         await _preflight_live_limoss_remote(targets, validate_remote_slot)

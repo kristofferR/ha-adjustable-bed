@@ -271,13 +271,13 @@ async def test_memory_preflight_offline_and_bound_views_preserve_device_local_ru
         controller._quarantine()
         target._client = None
         with (
-            pytest.raises(ValueError, match="quarantined"),
+            pytest.raises(ValueError, match="Reconnect the bed so it reports"),
             controller.side_scope(const.SIDE_RIGHT),
         ):
             controller.validate_memory_recall(8)
         target._client = make_controller().client
         target.client.is_connected = False
-        with pytest.raises(ConnectionError, match="subscription"):
+        with pytest.raises(ConnectionError, match="Reconnect the bed so it reports"):
             await controller.recall_memory(8, hold_ms=120)
         target.client.write_gatt_char.assert_not_called()
     finally:

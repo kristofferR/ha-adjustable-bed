@@ -80,7 +80,7 @@ async def test_actual_combined_memory_button_rejects_unsaved_side_before_any_dis
     button = memory_button(pair, children, slot)
     with (
         patch.object(pair, "async_execute_controller_command", wraps=pair.async_execute_controller_command) as dispatch,
-        pytest.raises(ValueError, match="save this local slot"),
+        pytest.raises(ValueError, match="Save this memory position"),
     ):
         await button.async_press()
     dispatch.assert_not_awaited()
@@ -110,7 +110,7 @@ async def test_invalid_combined_slot_rejects_before_ready_sibling_dispatch(mixed
     controllers[multi_side].session.multi_slots[1] = (b"head", b"")
     with (
         patch.object(pair, "async_execute_controller_command", wraps=pair.async_execute_controller_command) as dispatch,
-        pytest.raises(ValueError, match="nonempty raw axes"),
+        pytest.raises(ValueError, match="not saved completely"),
     ):
         await memory_button(pair, children, 1).async_press()
     dispatch.assert_not_awaited()
@@ -142,7 +142,7 @@ async def test_offline_slot_preflight_does_not_open_either_connection(mixed_pair
         child._controller = None
     with (
         patch.object(pair, "async_execute_controller_command", wraps=pair.async_execute_controller_command) as dispatch,
-        pytest.raises(ValueError, match="save this local slot"),
+        pytest.raises(ValueError, match="Save this memory position"),
     ):
         await button.async_press()
     dispatch.assert_not_awaited()
