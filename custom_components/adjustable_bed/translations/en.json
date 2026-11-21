@@ -11,22 +11,21 @@
       },
       "bluetooth_disambiguate": {
         "title": "Choose the bed type",
-        "description": "Multiple bed types use the same Bluetooth identifier as **{name} ({address})**.\n\nSelect which type matches your bed:",
+        "description": "**{name} ({address})** may be one of these beds, or it may not be a bed at all.\n\nChoose the app you use on your phone, or the remote if you don't use an app:",
         "data": {
           "bed_type_choice": "Bed type",
           "show_all_option": "Another app or remote: search every app"
         },
         "data_description": {
-          "bed_type_choice": "If unsure, try the first one. You can change it later in Reconfigure."
+          "bed_type_choice": "If none of these is yours, search every app. If this is not a bed, close this window and ignore the device. You can change the app later in Reconfigure."
         }
       },
       "bluetooth_confirm": {
         "title": "Set up {name}?",
-        "description": "Found **{name}** ({address}), detected as **{family}**. Choose the app you use on your phone, or the remote if you don't use an app.{detection_note}",
+        "description": "Found **{name}** ({address}), detected as **{family}**. Choose the app you use on your phone, or the remote if you don't use an app.",
         "data": {
           "bed_type": "App or remote",
-          "another": "Another app or remote: search every app",
-          "uncertain": "Detection is not certain, so check that the app below is yours."
+          "another": "Another app or remote: search every app"
         },
         "data_description": {
           "bed_type": "Your choice sets the bed's controls. You can change it later in Reconfigure."
@@ -780,8 +779,8 @@
       "already_configured": "This Bluetooth address already belongs to an Adjustable Bed entry. Check both active and ignored Adjustable Bed entries under Settings > Devices & services, then reload or reconfigure that entry instead of adding it again.",
       "configured_retrying_suffix": "(already added, still starting)",
       "configured_retrying": "**{name}** is already configured at `{address}`, but Home Assistant is still retrying its previous setup.\n\nOpen the existing bed under **Settings > Devices & services** and reload it, or open **Reconfigure** from its three-dot menu, instead of adding it again. If it keeps failing, run **Adjustable Bed: Create support bundle** for that bed from **Developer tools > Actions**.",
-      "not_supported": "Device is not supported. The required Bluetooth service was not found.",
-      "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
+      "not_supported": "This device is not a bed the integration recognizes. If it is a bed, add the integration and set it up by app or remote.",
+      "discovery_disabled": "Finding new beds automatically is turned off. To turn it back on, add the integration and choose Find new beds automatically.",
       "diagnostic_browser_ready": "**{name}** ({address})\n\nFound by: {source}. {connectable}\n\nTo capture its data for a support request, open **Developer tools > Actions**, choose **Adjustable Bed: Create support bundle**, and enter `{address}` as the **Target address**.",
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
       "migration_entry_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
@@ -10123,6 +10122,9 @@
     },
     "bed_not_connected": {
       "message": "The bed is not connected. Check that it is powered on and in range, then try again."
+    },
+    "bluetooth_command_failed": {
+      "message": "Bluetooth could not send the command to the bed ({error}). Check that it is powered on and in range, then try again."
     },
     "bed_missing_service": {
       "message": "The bed does not offer the Bluetooth service this profile needs. Check the bed model in its settings."

@@ -366,7 +366,8 @@ async def test_a_discovered_family_asks_its_question_with_another_app_and_keep(
         result["flow_id"], {"next_step_id": "keep_continue"}
     )
     flow = hass.config_entries.flow._progress[result["flow_id"]]
-    assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIMAT
+    # A new bed gets the current route, not the compatibility ID detection names.
+    assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_UUID
     assert result["step_id"] == "profile_questions"
     hass.config_entries.flow.async_abort(result["flow_id"])
 

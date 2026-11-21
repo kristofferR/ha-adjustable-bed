@@ -170,7 +170,9 @@ Every other saved setting, bed type and ID loads unchanged.
   Bluetooth name is spelled the way beds of its app advertise it. A bed that
   advertises an unusual spelling of an app-only name, for example lowercase
   `a0rm1234`, may no longer be offered; add it manually or pick the app in
-  Reconfigure.
+  Reconfigure. A device that advertises only a shared Bluetooth service and no
+  name, or only a name starting with `TEST`, is no longer offered either; add
+  it from the integration by its app.
 
 ## Entities
 
