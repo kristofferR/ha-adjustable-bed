@@ -83,9 +83,12 @@ REMOVALS: Final[tuple[Removal, ...]] = (
     # A call matching one of these is listed by it, not by its action's row.
     Removal("rmcontrol_alarm", "operation", "sync", f"{DOMAIN}.sync_clock"),
     Removal("rmcontrol_alarm", "operation", "query"),
-    *(
-        Removal("rmcontrol_alarm", "operation", operation, f"{DOMAIN}.set_alarm enabled: false")
-        for operation in ("cancel_single", "delete")
+    Removal("rmcontrol_alarm", "operation", "cancel_single", f"{DOMAIN}.set_alarm enabled: false"),
+    Removal(
+        "rmcontrol_alarm",
+        "operation",
+        "delete",
+        f"{DOMAIN}.set_alarm enabled: false, slot: <its alarm_id>",
     ),
     # Only in v5 betas.
     *_actions(
@@ -157,7 +160,11 @@ ISSUE_ID: Final = "removed_actions"
 def _calls(config: object) -> Iterator[tuple[str, Mapping[object, object]]]:
     """Yield each call of this integration's actions in a config, with its data."""
     if isinstance(config, Mapping):
-        action = config.get("action", config.get("service"))
+        # Older configs may still name a literal action in service_template.
+        action = next(
+            (config[key] for key in ("action", "service", "service_template") if key in config),
+            None,
+        )
         if isinstance(action, str) and action.startswith(f"{DOMAIN}."):
             data: dict[object, object] = {}
             for key in ("data", "data_template"):

@@ -42,7 +42,7 @@ AUTOMATIONS = {
             "id": "quiet",
             "alias": "Quiet",
             "trigger": {"platform": "event", "event_type": "quiet"},
-            "action": {"action": "adjustable_bed.goodvibe", "data": {"operation": "sync"}},
+            "action": {"service_template": "adjustable_bed.goodvibe", "data": {"operation": "sync"}},
         },
     ]
 }
