@@ -526,7 +526,12 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             "remembered_module_capabilities": dict(self._module_capabilities),
             "actions": [{"key": action.key, "name": action.name, "kind": action.kind}
                         for action in self.actions],
-            **self._state.to_updates(),
+            # Nightly sleep reports stay out of files users post publicly.
+            **{
+                key: value
+                for key, value in self._state.to_updates().items()
+                if key != "fall_timer" and not key.startswith(("day_", "app_day_", "month_"))
+            },
         }
 
     @property

@@ -38,7 +38,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`estimate_set_reference`](#estimated-positions) | Set estimated position reference | Confirm the selected motors are flat now. Their estimates start again at 0%. |
 | [`estimate_confirm_unchanged`](#estimated-positions) | Confirm estimated position | Trust the estimate restored after a restart because the bed has not moved since. |
 | [`estimate_mark_unknown`](#estimated-positions) | Forget estimated position | Report a movement the integration could not see, such as the remote or the bed's app. |
-| [`generate_support_bundle`](#support-bundle) | Create support bundle | Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. The file lists up to 30 nearby Bluetooth devices with their names and addresses. |
+| [`generate_support_bundle`](#support-bundle) | Create support bundle | Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. Bluetooth addresses keep only their manufacturer prefix, and PINs, typed names, health readings and other nearby devices are left out. |
 | [`agingplace_action`](#agingplace_action) | Aging in Place: run control | Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control. |
 | [`agingplace_set_setting`](#agingplace_set_setting) | Aging in Place: settings | Set light brightness, massage duration or motion light duration. |
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Press one of the selected BedTech model's buttons, on the sleeper side the app uses for it. Movement repeats for the configured number of pulses. |
@@ -521,8 +521,8 @@ described in [Estimated positions](ESTIMATED_POSITIONS.md#actions).
 
 
 `generate_support_bundle` captures configuration, connection and pairing
-evidence, GATT data, notifications, nearby advertisements, and recent command
-trace. `capture_duration` is 10–300 seconds (default 120); `include_logs` defaults
+evidence, GATT data, notifications, advertisements of nearby beds, and recent
+command trace. Only an administrator can run it. `capture_duration` is 10–300 seconds (default 120); `include_logs` defaults
 to `true`. Provide exactly one configured `device_id` or raw `target_address`.
 Logs include recent in-memory HA Bluetooth records and live Bluetooth messages
 from reachable ESPHome proxies, plus the latest setup/pairing attempt for the

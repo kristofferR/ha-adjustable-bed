@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import parse_qs, urlparse
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 
@@ -9,6 +11,7 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.unsupported import (
     UnsupportedDeviceInfo,
     async_clear_unsupported_device_issues,
+    build_misidentified_issue_url,
 )
 
 
@@ -92,3 +95,23 @@ def test_misidentified_details_without_versions() -> None:
 
     assert "| Integration version | `unknown` |" in details
     assert "| Home Assistant | `unknown` |" in details
+
+
+def test_misidentified_report_never_publishes_the_device_identity() -> None:
+    """The public issue has a neutral title and only the address prefix (PRIV-7)."""
+    device_info = UnsupportedDeviceInfo(
+        address="AA:BB:CC:DD:EE:FF",
+        name="Anna's phone DDEEFF",
+        service_uuids=[],
+        manufacturer_data={0x004C: bytes.fromhex("0102ffeedd")},
+    )
+
+    url = build_misidentified_issue_url(device_info, "richmat", 0.8, ["name"])
+    query = parse_qs(urlparse(url).query)
+
+    assert query["title"] == ["[Misidentified] Detected as richmat"]
+    details = query["details"][0]
+    assert "AA:BB:CC:**:**:**" in details
+    assert "DD:EE:FF" not in details
+    assert "DDEEFF" not in details
+    assert "ffeedd" not in details

@@ -51,11 +51,11 @@ async def test_new_report_replaces_receiver_context_before_notification():
     await rig.controller.async_execute_motion_bed_write(MotionBedWrite("sleep_report", (STOP,), "month_report"))
     await rig.controller.async_execute_motion_bed_write(MotionBedWrite("sleep_report", (STOP,), "day_report", historical_day=True))
     rig.controller._handle_notification(bytes.fromhex("FFFFFFFF02000414010A1403010203040506"))
-    assert rig.controller.protocol_diagnostics["month_days"] is None
-    assert rig.controller.protocol_diagnostics["day_total"] == 3
+    assert rig.controller._state.to_updates()["month_days"] is None
+    assert rig.controller._state.to_updates()["day_total"] == 3
     await rig.controller.async_execute_motion_bed_write(MotionBedWrite("sleep_report", (STOP,), "month_report"))
     rig.controller._handle_notification(bytes.fromhex("FFFFFFFF02000414010A1403010203040506"))
-    assert rig.controller.protocol_diagnostics["day_total"] is None
+    assert rig.controller._state.to_updates()["day_total"] is None
 
 
 @pytest.mark.parametrize("module,expected", [("motor", STOP), ("air", SOURCE_COMMANDS["QinangFragment:302"]), ("thermal", build_thermal_gear(4))])
@@ -139,8 +139,8 @@ async def test_registered_report_service_keeps_new_receiver_on_actual_scheduler(
         for kind in ("month", "day"):
             await hass.services.async_call(DOMAIN, "motion_bed_sleep_report", {"device_id": "bed", "kind": kind}, blocking=True)
     coord.controller._handle_notification(bytes.fromhex("FFFFFFFF02000414010A1403010203040506"))
-    assert coord.controller.protocol_diagnostics["month_days"] is None
-    assert coord.controller.protocol_diagnostics["day_total"] == 3
+    assert coord.controller._state.to_updates()["month_days"] is None
+    assert coord.controller._state.to_updates()["day_total"] == 3
     assert len(coord.client.write_gatt_char.await_args_list) == 2
 
 

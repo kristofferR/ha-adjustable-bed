@@ -23,8 +23,9 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
+from ...app_state_store import jensen_memory_store_key
 from ...codec import jmc
-from ...const import CONF_JENSEN_PIN, DOMAIN
+from ...const import CONF_JENSEN_PIN
 from ...execution import ExecutionCapabilities
 from ...profiles.jmc import JENSEN, JmcProfile
 from ...state_keys import (
@@ -70,7 +71,6 @@ _IDLE_MOTION_STATES = frozenset({0x00, 0xFF})
 # keeps the app's favourites as stored positions.
 _DEVICE_MEMORY_BOX_TYPE = 4
 _APP_MEMORY_SLOT_COUNT = 4
-_MEMORY_STORE_KEY = f"{DOMAIN}.jensen_memory"
 _MEMORY_STORE_VERSION = 1
 
 _LEVEL_MAX = 10
@@ -206,6 +206,12 @@ class JensenController(BedController):
     def requires_notification_channel(self) -> bool:
         """Jensen uses notifications for config reads and PIN-gated handshakes."""
         return True
+
+    def _format_command_trace_payload(self, command: bytes) -> dict[str, object] | None:
+        """Redact the PIN frame from logs and support bundles."""
+        if command[:1] == bytes((jmc.PIN,)):
+            return {"hex": "**REDACTED**", "length": len(command), "ascii_preview": None}
+        return super()._format_command_trace_payload(command)
 
     def _build_pin_unlock_command(self) -> bytes:
         """Build the PIN frame, falling back to the default for an invalid PIN."""
@@ -365,9 +371,10 @@ class JensenController(BedController):
 
     def _memory_store(self) -> Store[dict[str, list[int]]]:
         # One file per bed, so the two sides of a pair never overwrite each other.
-        address = self._coordinator.address.replace(":", "_").lower()
         return Store(
-            self._coordinator.hass, _MEMORY_STORE_VERSION, f"{_MEMORY_STORE_KEY}.{address}"
+            self._coordinator.hass,
+            _MEMORY_STORE_VERSION,
+            jensen_memory_store_key(self._coordinator.address),
         )
 
     async def _save_memory_slots(self) -> None:

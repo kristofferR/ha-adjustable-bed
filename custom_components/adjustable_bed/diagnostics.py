@@ -134,7 +134,7 @@ async def _async_paired_diagnostics(
         "profile_migration": entry.data.get(CONF_PROFILE_MIGRATION),
         "sides": sides,
     }
-    return redact_data(data)
+    return redact_data(data, addresses=[child.address for child in coordinator.children.values()])
 
 
 async def async_get_config_entry_diagnostics(
@@ -314,4 +314,4 @@ async def async_get_config_entry_diagnostics(
     data["reachability"] = connection_reachability(hass, coordinator.address) if coordinator else None
 
     # Redact sensitive data (partial MAC redaction - keeps OUI for debugging)
-    return redact_data(data)  # type: ignore[no-any-return]
+    return redact_data(data, addresses=entry_addresses)  # type: ignore[no-any-return]

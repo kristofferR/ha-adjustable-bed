@@ -14,6 +14,7 @@ from freezegun.api import FrozenDateTimeFactory
 from homeassistant.components import persistent_notification as pn
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
@@ -23,13 +24,16 @@ from custom_components.adjustable_bed.beta_feedback import (
     BUG_REPORT_URL,
     NOTIFICATION_ID,
     STORAGE_KEY,
+    UPGRADE_ISSUE_ID,
     async_setup_beta_feedback,
+    async_setup_upgrade_notice,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_MOTOR_COUNT,
+    CONF_PROFILE_MIGRATION,
     DOMAIN,
 )
 
@@ -311,3 +315,66 @@ async def test_several_entries_arm_one_request(
     assert arm.call_count == 1
     await _advance(hass, freezer, timedelta(hours=24))
     assert len(asked) == 1
+
+
+async def _upgrade(hass: HomeAssistant, version: str, from_version: int | None) -> None:
+    """Start ``version`` with one entry, migrated from ``from_version`` or new."""
+    data: dict[str, Any] = {CONF_ADDRESS: "AA:BB:CC:DD:EE:09", CONF_BED_TYPE: BED_TYPE_LINAK}
+    if from_version is not None:
+        data[CONF_PROFILE_MIGRATION] = {"from_version": from_version, "from_minor_version": 3}
+    if not hass.config_entries.async_entries(DOMAIN):
+        MockConfigEntry(domain=DOMAIN, data=data).add_to_hass(hass)
+    with _running(version):
+        await async_setup_upgrade_notice(hass)
+        await hass.async_block_till_done()
+
+
+def _upgrade_issue(hass: HomeAssistant) -> ir.IssueEntry | None:
+    return ir.async_get(hass).async_get_issue(DOMAIN, UPGRADE_ISSUE_ID)
+
+
+async def test_a_stable_upgrade_from_4x_links_what_changed_once(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    await _upgrade(hass, "5.0.0", 4)
+
+    issue = _upgrade_issue(hass)
+    assert issue is not None
+    assert issue.learn_more_url == (
+        "https://github.com/kristofferR/ha-adjustable-bed/blob/v5.0.0/docs/V5_BREAKING_CHANGES.md"
+    )
+    assert issue.translation_placeholders == {"version": "5"}
+
+    # Ignored and gone: a later start, or a later 5.x, never raises it again.
+    ir.async_delete_issue(hass, DOMAIN, UPGRADE_ISSUE_ID)
+    await _upgrade(hass, "5.0.1", 4)
+    assert _upgrade_issue(hass) is None
+
+
+@pytest.mark.parametrize(
+    ("version", "from_version", "beta_ran"),
+    [
+        # A fresh v5 install has nothing migrated.
+        ("5.0.0", None, False),
+        ("5.0.0", 5, False),
+        # The beta's own notice links the page.
+        ("5.0.0b9", 4, False),
+        ("5.0.0", 4, True),
+    ],
+)
+async def test_no_upgrade_notice_without_a_4x_upgrade(
+    hass: HomeAssistant,
+    hass_storage: dict[str, Any],
+    version: str,
+    from_version: int | None,
+    beta_ran: bool,
+) -> None:
+    if beta_ran:
+        hass_storage[STORAGE_KEY] = {
+            "version": 1,
+            "key": STORAGE_KEY,
+            "data": {"5": {"installed_at": "2026-11-01T00:00:00+00:00", "dismissed": True}},
+        }
+    await _upgrade(hass, version, from_version)
+
+    assert _upgrade_issue(hass) is None

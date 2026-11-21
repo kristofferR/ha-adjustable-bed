@@ -20,6 +20,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
+# Imported first: it stops on a Home Assistant too old for the imports below.
+from . import minimum_home_assistant  # noqa: F401
 from .bed_traits import bed_type_has_position_feedback, default_connection_mode
 from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
 from .beds.remacro.discovery import (
@@ -36,7 +38,7 @@ from .beds.reverie.pairlink_local_setup import (
     release_pairlink_local_profile_lease,
     release_pairlink_local_reservations,
 )
-from .beta_feedback import async_setup_beta_feedback
+from .beta_feedback import async_setup_beta_feedback, async_setup_upgrade_notice
 from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -122,6 +124,7 @@ from .profile_review import (
     profile_review_mark,
     v5_profile_review_mark,
 )
+from .removed_actions import async_report_removed_calls
 from .repairs import (
     async_refresh_combine_beds_issue,
     async_setup_combine_beds_issue,
@@ -245,6 +248,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     await async_register_services(hass)
     await async_setup_beta_feedback(hass)
+    await async_setup_upgrade_notice(hass)
+    async_report_removed_calls(hass)
     return True
 
 
@@ -280,6 +285,51 @@ def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:
             for child in children
         ]
     return migrated
+
+
+# What 4.x ran with when an entry had not saved the setting. v5 falls back to
+# each bed type's own default instead, so a 4.x entry saves 4.x's value first.
+_V4_RUNTIME_DEFAULTS: Final[dict[str, bool]] = {
+    "disconnect_after_command": False,
+    CONF_DISABLE_ANGLE_SENSING: True,
+}
+
+
+def migrate_v4_runtime_defaults(data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return 4.x entry data with the values 4.x ran with saved where it had none.
+
+    4.x read both from the data of the bed that ran: a standalone entry, a
+    one-address pair, or a two-address side over its pair's data (options that
+    reached the side still win). A two-address pair's own data held neither,
+    so only its sides are filled. An original entry a pair restores on unpair is
+    filled on its own. Diagnostic entries from 1.4.6 to 2.5.3, for example,
+    saved no handoff.
+    """
+    migrated = dict(data)
+    children = migrated.get(CONF_PAIR_CHILDREN)
+    separate = isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+    if not separate:
+        for key, value in _V4_RUNTIME_DEFAULTS.items():
+            migrated.setdefault(key, value)
+    if isinstance(children, list):
+        migrated[CONF_PAIR_CHILDREN] = [
+            _v4_side_defaults(child, data, fill=separate) if isinstance(child, Mapping) else child
+            for child in children
+        ]
+    return migrated
+
+
+def _v4_side_defaults(
+    child: Mapping[str, Any], pair: Mapping[str, Any], *, fill: bool
+) -> dict[str, Any]:
+    side = dict(child)
+    if fill:
+        for key, value in _V4_RUNTIME_DEFAULTS.items():
+            if key not in pair:
+                side.setdefault(key, value)
+    if isinstance(origin := side.get(KEY_ORIGIN_DATA), Mapping):
+        side[KEY_ORIGIN_DATA] = migrate_v4_runtime_defaults(origin)
+    return side
 
 
 def _with_migration_record(
@@ -871,10 +921,11 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if entry.version == 4:
         # v4 -> v5.1: store the profile id each entry and paired side runs, and a
         # record of where it came from. The saved bed type, variant and app keys
-        # are not touched. Schema 5 entries cannot load on 4.x; restoring a Home
+        # are not touched; a connection or position setting 4.x ran with by
+        # default is saved. Schema 5 entries cannot load on 4.x; restoring a Home
         # Assistant backup is the only way back.
         data = migrate_v5_data(
-            entry.data,
+            migrate_v4_runtime_defaults(entry.data),
             entry.options,
             from_version=original_version[0],
             from_minor_version=original_version[1],
@@ -1778,11 +1829,16 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     for other in hass.config_entries.async_entries(DOMAIN):
         if other.entry_id != entry.entry_id and addresses.intersection(_entry_addresses(other)):
             async_refresh_remacro_issues(hass, other)
-    from .app_state_store import async_remove_app_states
+    from homeassistant.helpers.storage import Store
+
+    from .app_state_store import async_remove_app_states, pairlink_sdk_store_key
 
     # Re-adding a bed must not restore the removed entry's app state or session.
     try:
         await async_remove_app_states(hass, unowned)
+        # Pairlink keys its metadata by entry, so no other entry ever reads it.
+        for address in (None, *addresses):
+            await Store(hass, 1, pairlink_sdk_store_key(entry.entry_id, address)).async_remove()
     except OSError:
         _LOGGER.warning("Could not delete stored app preferences for %s", sorted(unowned), exc_info=True)
     hass.loop.call_soon(async_refresh_combine_beds_issue, hass)
