@@ -298,8 +298,9 @@ status snapshot, independent of the configured snapshot side.
 
 ### Lighting
 
-- Lighting uses the app-specific toggle button and reported-state sensor; an
-  assumed-state light and duplicate generic toggle button are not exposed.
+- The safety light is one **Under Bed Lights** light. It shows the state the
+  bed reports and sends the app's toggle when that state differs from the one
+  asked for; no toggle button or separate light reading is exposed.
 - Identify split light sends the app's literal unit-1 light request at 1500 ms,
   bounded to four cycles by HA, and sends explicit light off during cleanup.
 - Restricted sessions also expose response-driven local light identification
