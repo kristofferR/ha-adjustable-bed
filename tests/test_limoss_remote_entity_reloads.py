@@ -421,7 +421,7 @@ async def test_partial_refresh_capability_change_persists_and_reconciles_after_f
 
 async def test_a_capability_reload_fences_the_pair_until_it_finishes(hass):
     """While one side's reload replaces the pair, the other side neither reloads
-    again, reconnects for its own pending reload, nor writes an ordinary command."""
+    again, drops or reopens its link, nor writes an ordinary command."""
     pair, children, _ = await pair_runtime(hass)
     left, right = children[const.SIDE_LEFT], children[const.SIDE_RIGHT]
     reloading, finish = asyncio.Event(), asyncio.Event()
@@ -439,6 +439,12 @@ async def test_a_capability_reload_fences_the_pair_until_it_finishes(hass):
         left._pending_capability_reload = True
         left._schedule_pending_capability_reload()
         await asyncio.wait_for(reloading.wait(), 1)
+
+        # A sequential pair releasing the right link for a left command would
+        # leave a right STOP nothing to reach: the link stays until the unload.
+        assert right.is_connected
+        assert await right.async_disconnect() is False
+        assert right.is_connected
 
         right._client = None
         right._pending_capability_reload = True
