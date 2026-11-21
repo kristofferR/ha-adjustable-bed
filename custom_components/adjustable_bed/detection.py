@@ -743,7 +743,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SCOTT_LIVING: "Scott Living",
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Fuzion (Climate 360, FlexFit)",
-    BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number BAM/MCR (older i8, 360 FlexFit 2)",
+    BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number older base (i8, 360 FlexFit 2)",
     BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite BOX15 receiver",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite BOX24 receiver",

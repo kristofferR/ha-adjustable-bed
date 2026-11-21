@@ -597,7 +597,7 @@ beds, Reconfigure that bed, then combine them again.
 | Adjustable bed (Lumbar) | [Automatic, or the layout your bed uses](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/keeson.md#adjustamattress). Four models and seven layouts; the layout sets the controls. Each bed of a combined pair keeps its own. |
 | BedSense | [Layout, or the Bluetooth-name layout rule](beds/ff_frame.md#bedsense). |
-| BedTech | [The exact model, or **Legacy BedTech controls**](beds/richmat.md#bedtech). Existing entries keep the legacy controls until you choose a model. |
+| BedTech | [The exact model, or **Older BedTech controls, without a model**](beds/richmat.md#bedtech). Existing entries keep the legacy controls until you choose a model. |
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it sets the layout. |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | CheersSleep | See the [setup steps](beds/cheerssleep.md#cheerssleep-profile). |

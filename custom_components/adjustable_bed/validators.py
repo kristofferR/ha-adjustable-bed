@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
+from typing import Any, Final
 
 from homeassistant.core import HomeAssistant
 
@@ -146,13 +146,24 @@ def is_valid_octo_pin(pin: str) -> bool:
     return pin == "" or (len(pin) == 4 and pin.isascii() and pin.isdigit())
 
 
+# What a user can tell the Smart Sleep app's two control sets apart by.
+SMART_SLEEP_CONTROLS: Final = {"p1": "Older bed controls", "p2": "Newer bed controls"}
+# The M Line app picks its commands by the Bluetooth name, which users can read.
+MLINE_PROTOCOL_LABELS: Final = {
+    "sleep": "Bluetooth name contains SLEEP",
+    "smart": "Bluetooth name contains SMART",
+    "smartsainuo": "Bluetooth name contains SMART, other receiver",
+    "okin": "Bluetooth name contains OKIN",
+    "unknown": "Any other Bluetooth name",
+}
+
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "linx": LINX_TRANSPORTS,
     "nerum": {"p1": "Receiver type P1 (one memory)", "p2": "Receiver type P2 (two memories, alarms)", "p3": "Receiver type P3 (two memories, alarms)"},
     **{app: legacy_choices(app) for app in LEGACY_APPS},
-    "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
+    "smart_sleep": SMART_SLEEP_CONTROLS,
     "comfort_enhancement3": APEX_CHOICES,
     "symphony_sleep": {"box1": "Box 1 (P1)", "box2": "Box 2 (P2)", "fallback": "Box 1, without position readings"},
     "bedtech": BEDTECH_VARIANTS,
@@ -180,7 +191,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "super_colchones": SUPER_COLCHONES_VARIANTS,
     "personal_comfort": PERSONAL_COMFORT_ROUTES,
     "mlily_remote": MLILY_REMOTE_PROFILES,
-    "mline": {"auto": AUTOMATIC_LABEL, **{key: key.title() for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")}},
+    "mline": {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,

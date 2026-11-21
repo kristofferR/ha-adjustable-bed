@@ -10799,7 +10799,7 @@
         "dreamhd": "Dream Motion HD app",
         "comfort_motion": "Comfort Motion app",
         "legacy_jiecang": "No app: Glide or Comfort Motion remote",
-        "legacy_lierda": "No app: Comfort Motion / Lierda remote (legacy Lierda controls)",
+        "legacy_lierda": "No app: Comfort Motion remote with a Lierda receiver",
         "logicdata_app": "LOGICDATA app: MOTIONrelax, or the Sleep Smart Air Mattress bed base",
         "another": "Another app or remote: search every app",
         "keep": "Keep the current setup",
@@ -10955,7 +10955,7 @@
     "sleep_number_family_choice": {
       "options": {
         "fuzion": "Fuzion base: Climate 360, FlexFit or FlexFit Smart",
-        "mcr": "Older BAM/MCR base: i8 or 360 FlexFit 2",
+        "mcr": "Older base: i8 or 360 FlexFit 2",
         "another": "Another app or remote: search every app",
         "keep": "Keep the current setup",
         "keep_detected": "Keep the detected controls"

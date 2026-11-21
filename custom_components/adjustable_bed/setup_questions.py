@@ -264,6 +264,7 @@ from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
+from .validators import MLINE_PROTOCOL_LABELS, SMART_SLEEP_CONTROLS
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -1638,9 +1639,7 @@ def _mline_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
 
 
 def _mline_protocols(_data: Mapping[str, Any]) -> Mapping[str, str]:
-    return {"auto": "Use Bluetooth name and manufacturer data", "sleep": "Sleep",
-            "smart": "Smart", "smartsainuo": "Smart Sainuo", "okin": "Okin",
-            "unknown": "Unmatched-name fallback"}
+    return {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS}
 
 
 def _personal_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
@@ -2330,7 +2329,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
         questions=(
-            Question(CONF_PROTOCOL_VARIANT, {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"}, "p1"),
+            Question(CONF_PROTOCOL_VARIANT, SMART_SLEEP_CONTROLS, "p1"),
             Question(CONF_PRODUCT_TYPE, _smart_sleep_models, "0", searchable=True),
         ),
         normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,

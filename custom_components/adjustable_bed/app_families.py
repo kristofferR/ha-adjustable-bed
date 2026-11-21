@@ -1358,7 +1358,7 @@ SLEEP_NUMBER_FAMILY: Final = AppFamily(
     step="sleep_number_family",
     row=BED_TYPE_SLEEP_NUMBER,
     name="Sleep Number",
-    apps="SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases",
+    apps="SleepIQ app, Fuzion (Climate 360, FlexFit) and older (i8, 360 FlexFit 2) bases",
     answers={
         "fuzion": Answer(BED_TYPE_SLEEP_NUMBER),
         "mcr": Answer(BED_TYPE_SLEEP_NUMBER_MCR),

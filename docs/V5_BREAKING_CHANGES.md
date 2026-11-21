@@ -612,7 +612,7 @@ runs the bed. Rows that left the top-level list keep their bed type and ID.
 | Remacro | Slumberland, The Brick or Jerome's, using the model the bed advertises |
 | Reverie | The Nightstand app or the Protocol 110 or 108 receiver, then the model. Pairlink keeps its own row |
 | Richmat | RMControl, the Richmat MH apps, the classic apps, SleepFunction, SVEN & SON and Richmat remotes. Each app is also its own searchable row |
-| Sleep Number | Fuzion (Climate 360, FlexFit) or BAM/MCR (i8, 360 FlexFit 2). A Fuzion bed then asks its side |
+| Sleep Number | Fuzion (Climate 360, FlexFit) or an older base (i8, 360 FlexFit 2). A Fuzion bed then asks its side |
 | Sleepy's Elite | The MFRM Sleepy's Elite app, or the BOX15, BOX24 or BOX25 receiver |
 | Solace | HomeKobo, Sealy MotionFlex or Sweet Night; Woosa Sleep; Motion Bed; or BedSense |
 | StarCode | AdjustableM5X4, AdjustableM5X5 or Adjustable Comfort M1X12 |

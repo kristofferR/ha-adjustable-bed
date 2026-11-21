@@ -725,7 +725,7 @@ its 120 ms delay); the other frames are the pre-v5 controller's.
 #### Setup
 
 Choose **BedTech app (newer app)**, then the exact model. Detection cannot select a model.
-Existing entries keep **Legacy BedTech controls**, including their field-reported
+Existing entries keep **Older BedTech controls, without a model**, including their field-reported
 `^` release and old pillow mapping. Select an explicit model to use the app's
 controls and release behavior. No automatic migration changes a working bed.
 
