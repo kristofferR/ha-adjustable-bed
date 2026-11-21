@@ -252,3 +252,26 @@ async def test_cover_without_hold_publishes_a_side_wide_stop() -> None:
     await cover.async_stop_cover()
     assert coordinator.async_stop_motor.await_args.args[1] == "motor:*"
     assert coordinator.async_stop_motor.await_args.kwargs["stream_member"] is False
+
+
+@pytest.mark.parametrize(
+    ("key", "translation_key", "icon"),
+    [
+        # The Richmat MH back motor is "head" internally but shown as "Back".
+        ("head", "back", "mdi:human-handsup"),
+        # A bed prefix in the translation key still names the motor shown.
+        ("tilt", "keeson_head", "mdi:head"),
+        # Two motors at once get the generic icon, not half of the pair.
+        ("both", "back_legs", "mdi:bed-outline"),
+        # A name with no known motor falls back to the internal key.
+        ("head", "smart_sleep_headrest", "mdi:head"),
+    ],
+)
+def test_cover_icon_follows_the_motor_the_user_sees(
+    key: str, translation_key: str, icon: str
+) -> None:
+    """The icon matches the shown name, not the controller's internal motor key."""
+    spec = MotorControlSpec(
+        key=key, translation_key=translation_key, open_fn=_noop, close_fn=_noop, stop_fn=_noop
+    )
+    assert _build_cover_description(spec).icon == icon
