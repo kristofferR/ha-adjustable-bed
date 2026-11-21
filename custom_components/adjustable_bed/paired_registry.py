@@ -661,12 +661,9 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             await hass.config_entries.async_add(single)
 
         ownership.apply(hass)
-        # A position of both sides becomes one on each bed, each with its own
-        # button. Retire the pair's first so those can take the entity ID it
-        # frees; a rollback recreates it under its old ID.
-        for row in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
-            if row.domain == "button" and row.unique_id.startswith(saved_position_prefix):
-                ent_reg.async_remove(row.entity_id)
+        # A position of both sides becomes one on each bed with its own new
+        # button. The pair's button stays until the pair is removed, so a
+        # rollback finds it untouched.
 
         # Load the restored entries only after their existing device and entity
         # rows belong to them. The setup paths now adopt those rows in place.

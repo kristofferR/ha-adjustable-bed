@@ -2470,6 +2470,24 @@ class TestPairBedsConversion:
         pair = next(e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data))
         before = ent_reg.async_get("button.my_reading")
         assert before is not None and before.config_entry_id == pair.entry_id
+        # A position of both sides keeps its pair button until the split commits.
+        pair_estimates = pe.position_estimates(hass, pair.entry_id)
+        assert pair_estimates is not None
+        pair_estimates.beds[RIGHT_ADDR].configure({"back": (20.0, 10.0)})
+        pair_estimates.beds[RIGHT_ADDR].set_reference()
+        both_id = pair_estimates.save_position(
+            "TV", pair_estimates.beds.values(), button=True
+        ).id
+        await hass.async_block_till_done()
+        both = ent_reg.async_get_entity_id(
+            "button", DOMAIN, f"{pair.data[CONF_PAIR_ID]}_saved_position_{both_id}"
+        )
+        assert both is not None
+        ent_reg.async_update_entity(
+            both, new_entity_id="button.my_tv", disabled_by=er.RegistryEntryDisabler.USER
+        )
+        both_before = ent_reg.async_get("button.my_tv")
+        assert both_before is not None
 
         with (
             patch.object(
@@ -2491,6 +2509,15 @@ class TestPairBedsConversion:
             er.RegistryEntryDisabler.USER,
         )
         assert after.device_id == before.device_id
+        # A both-sides position's pair button is untouched until the split commits.
+        both_after = ent_reg.async_get("button.my_tv")
+        assert both_after is not None
+        assert (both_after.id, both_after.unique_id, both_after.disabled_by) == (
+            both_before.id,
+            both_before.unique_id,
+            er.RegistryEntryDisabler.USER,
+        )
+        assert both_after.modified_at == both_before.modified_at
         restored_pair = hass.config_entries.async_get_entry(pair.entry_id)
         assert restored_pair is not None and restored_pair.state == ConfigEntryState.LOADED
 
