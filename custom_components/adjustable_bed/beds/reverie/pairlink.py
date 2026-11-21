@@ -23,6 +23,7 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.storage import Store
 
+from ...app_state_store import pairlink_sdk_store_key
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_SIDE
@@ -255,11 +256,11 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             runtime._sdk_state = PairlinkSdkState(
                 lambda: Store(
                     coordinator.hass, 1,
-                    f"adjustable_bed.pairlink_sdk.{coordinator.entry.entry_id}"
-                    + (
-                        f".{normalize_mac(coordinator.address)}"
+                    pairlink_sdk_store_key(
+                        coordinator.entry.entry_id,
+                        coordinator.address
                         if coordinator.entry.data.get(CONF_SIDE) in ("left", "right")
-                        else ""
+                        else None,
                     ),
                 ),
                 self._async_sdk_metadata_effect,

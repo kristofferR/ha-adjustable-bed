@@ -31,6 +31,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SBI,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
+    CONF_CONNECTION_MODE,
+    CONF_DISABLE_ANGLE_SENSING,
     CONF_JIECANG_APP_PROFILE,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LOGICDATA_APP_PROFILE,
@@ -80,6 +82,22 @@ from tests.codec_families import families
 from tests.codec_families._standalone import STANDALONE
 
 ADDRESS = "AA:BB:CC:DD:EE:01"
+# What 4.4.2's setup saved on every bed. Schema 5.6 turns it into the connection
+# mode and drops a position choice equal to the route's own (test_entry_migration
+# covers that); everything else must come through untouched.
+V4_CONNECTION: dict[str, Any] = {
+    "disconnect_after_command": False,
+    "idle_disconnect_seconds": 40,
+    CONF_DISABLE_ANGLE_SENSING: True,
+}
+
+
+def _without_connection(data: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in data.items()
+        if key not in (*V4_CONNECTION, CONF_CONNECTION_MODE)
+    }
 WIRE_SNAPSHOT = Path(__file__).resolve().parent.parent / "scripts" / "wire_snapshot.py"
 _APP_CHOICES = {
     CONF_JIECANG_APP_PROFILE: JIECANG_APP_PROFILES,
@@ -187,7 +205,11 @@ def test_resolver_needs_a_bed_type() -> None:
 async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant) -> None:
     """Each former bed type, variant and app key migrates with its fields untouched."""
     for index, data in enumerate(former_routes()):
-        stored = {CONF_ADDRESS: f"AA:BB:CC:{index >> 8:02X}:{index & 0xFF:02X}:01", **data}
+        stored = {
+            CONF_ADDRESS: f"AA:BB:CC:{index >> 8:02X}:{index & 0xFF:02X}:01",
+            **V4_CONNECTION,
+            **data,
+        }
         entry = MockConfigEntry(
             domain=DOMAIN, data=dict(stored), options={"motor_pulse_count": 7}, version=4, minor_version=3
         )
@@ -205,7 +227,8 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         octo = data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
         assert migrated.pop(CONF_OCTO_MOTOR_COUNT_OVERRIDE, None) == ("auto" if octo else None)
         assert record.pop("octo_motor_count_override", None) == (["data"] if octo else None)
-        assert migrated == stored
+        record.pop("settings_5_6", None)
+        assert _without_connection(migrated) == _without_connection(stored)
         assert dict(entry.options) == {"motor_pulse_count": 7}
         assert profile_id == resolve_profile_id(data)
         assert record == {
@@ -227,6 +250,7 @@ async def test_classic_richmat_entries_from_4x_keep_their_app_settings(
         CONF_PROTOCOL_VARIANT: "fortywinks",
         CONF_PRODUCT_TYPE: "CORN",
         CONF_RICHMAT_CLASSIC_THIRD_SERVICE: True,
+        **V4_CONNECTION,
     }
     entry = MockConfigEntry(domain=DOMAIN, data=dict(stored), version=4, minor_version=3)
     entry.add_to_hass(hass)
@@ -236,7 +260,7 @@ async def test_classic_richmat_entries_from_4x_keep_their_app_settings(
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == "richmat_classic_apps:fortywinks"
     assert migrated.pop(CONF_PROFILE_MIGRATION)["profile_id"] == "richmat_classic_apps:fortywinks"
-    assert migrated == stored
+    assert _without_connection(migrated) == _without_connection(stored)
 
 
 @pytest.mark.parametrize(
@@ -262,7 +286,7 @@ async def test_beds_from_main_migrate_from_4x_with_their_settings(
     hass: HomeAssistant, stored: dict[str, Any], profile_id: str
 ) -> None:
     """A 4.x entry for a bed that arrived on main gains its id and keeps its data."""
-    stored = {CONF_ADDRESS: ADDRESS, **stored}
+    stored = {CONF_ADDRESS: ADDRESS, **V4_CONNECTION, **stored}
     entry = MockConfigEntry(domain=DOMAIN, data=dict(stored), version=4, minor_version=3)
     entry.add_to_hass(hass)
 
@@ -271,7 +295,7 @@ async def test_beds_from_main_migrate_from_4x_with_their_settings(
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == profile_id
     assert migrated.pop(CONF_PROFILE_MIGRATION)["profile_id"] == profile_id
-    assert migrated == stored
+    assert _without_connection(migrated) == _without_connection(stored)
 
 
 async def test_migration_keeps_entry_device_and_entity_identities(hass: HomeAssistant) -> None:
@@ -302,7 +326,8 @@ async def test_migration_keeps_entry_device_and_entity_identities(hass: HomeAssi
 
 
 def _side(side: str, address: str, **fields: Any) -> dict[str, Any]:
-    return {CONF_SIDE: side, CONF_ADDRESS: address, **fields}
+    # 4.4.2's pairing copied each original's settings onto its side.
+    return {CONF_SIDE: side, CONF_ADDRESS: address, **V4_CONNECTION, **fields}
 
 
 async def test_paired_migration_gives_each_side_its_own_id(hass: HomeAssistant) -> None:
@@ -326,8 +351,12 @@ async def test_paired_migration_gives_each_side_its_own_id(hass: HomeAssistant) 
 
     assert entry.data[CONF_PROFILE_ID] == "jiecang_app@dreamask"
     children = {child[CONF_SIDE]: child for child in entry.data[CONF_PAIR_CHILDREN]}
-    assert children["left"] == {**left, CONF_PROFILE_ID: "jiecang_app@dreamask"}
-    assert children["right"] == {**right, CONF_PROFILE_ID: "logicdata_app@phone"}
+    assert _without_connection(children["left"]) == _without_connection(
+        {**left, CONF_PROFILE_ID: "jiecang_app@dreamask"}
+    )
+    assert _without_connection(children["right"]) == _without_connection(
+        {**right, CONF_PROFILE_ID: "logicdata_app@phone"}
+    )
     record = entry.data[CONF_PROFILE_MIGRATION]
     assert record["sides"] == {
         "left": {

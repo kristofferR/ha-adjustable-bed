@@ -66,9 +66,12 @@ body:
         2. Search for `adjustable_bed.generate_support_bundle`
         3. Select your bed device (the affected Left/Right child for a two-address combined bed) and click "Perform action"
         4. Click the **download link** in the notification that appears
-        5. Drag and drop the JSON file here
+        5. Open the file and remove anything you do not want to share
+        6. Drag and drop the JSON file here
 
         **Alternative:** Under Settings > Devices & services > Adjustable Bed, choose Download diagnostics in the entry's three-dots menu
+
+        **Issues are public.** Open the file in a text editor first and remove anything you do not want to share. The file leaves out PINs, typed names, health readings and other nearby devices, and keeps only the manufacturer prefix of Bluetooth addresses. See [what the files share](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/GETTING_HELP.md#what-the-files-share).
       placeholder: "Attach the bundle or diagnostics, or explain why capture was not possible"
     validations:
       required: true
@@ -82,7 +85,7 @@ body:
         1. Under Settings > Devices & services > Adjustable Bed, choose Enable debug logging in the three-dots menu
         2. Reproduce the issue
         3. Disable debug logging (browser downloads the log file)
-        4. Paste or attach the relevant entries
+        4. The download is Home Assistant's whole log and is not redacted: paste only the Adjustable Bed and Bluetooth entries, without anything you do not want to share
       render: text
       placeholder: "Paste debug log entries here (optional: the support bundle already includes logs)"
     validations:
