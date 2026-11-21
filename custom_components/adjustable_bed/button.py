@@ -456,6 +456,8 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="reset_defaults",
         icon="mdi:restore",
         entity_category=EntityCategory.CONFIG,
+        # One press resets the bed's settings, so it is opt-in like Factory reset.
+        entity_registry_enabled_default=False,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.reset_defaults(),
         is_supported=lambda c: c.supports_reset_defaults,

@@ -195,6 +195,8 @@ Every other saved setting, bed type and ID loads unchanged.
 - **Refresh and query buttons are diagnostic** and disabled by default where
   the bed reports the value itself. So is the generic **Wake controller**
   button.
+- **Linak's Reset defaults button is disabled by default** on new installs,
+  because one press resets the bed. A button you already have stays as it is.
 - **No device shows one name twice**, and a paired bed's Left, Right and Both
   entities are named from their devices, as Home Assistant 2026.11 does, so
   the card no longer shows doubled names such as "Bed Left Back".
