@@ -18,9 +18,18 @@ from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button, classify, own_label, save_name, unique_buttons
+from ..catalog_buttons import (
+    Kind,
+    catalog_button,
+    classify,
+    massage_timer_minutes,
+    own_label,
+    save_name,
+    unique_buttons,
+)
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -686,6 +695,56 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             raise ValueError("This product has no such memory slot")
         await self.press(detail, save=True)
 
+    def _shown_label(self, detail: str) -> str:
+        """The product's label for an action, from its preset tile or its massage page."""
+        tile = any(row[0] == detail for row in self.route["presets"])
+        selector = "0xdd2d" if self.version == 1 else "0x1230d"
+        return self._detail_label(
+            detail, selector if tile else ("0xf761" if self.version == 1 else "0xeea5")
+        )
+
+    @property
+    def _massage_timers(self) -> dict[int, str]:
+        """The product's fixed massage timer actions, by the minutes their labels show.
+
+        They are one timer select; a product with a single duration keeps its button.
+        """
+        timers: dict[int, str] = {}
+        for detail in sorted(self._allowed()):
+            enum = ACTIONS[detail]["enum"]
+            if massage_timer_minutes(enum) is None:
+                continue
+            name, _clear = richmat_app_name(enum, self._shown_label(detail))
+            amount, unit = name.removeprefix("Massage timer ").split()
+            timers.setdefault(int(amount) * (60 if unit == "hours" else 1), detail)
+        return timers if len(timers) > 1 else {}
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timers)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows the product's massage timers.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self._massage_timers)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No timer action turns the timer off.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        detail = self._massage_timers.get(minutes)
+        if detail is None:
+            raise ValueError("Choose a massage timer this product offers")
+        # The bed reports no timer.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.press(detail)
+
     def _saves(self, detail: str) -> bool:
         """Whether a preset tile saves: the app flags it and the action has a long-press code."""
         return bool(ACTIONS[detail]["long"]) and any(
@@ -701,12 +760,9 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         rows: list[ControllerButtonSpec | None] = []
         motors = {str(d) for m in self.route["motors"] for d in m[1:3]}
-        selector = "0xdd2d" if self.version == 1 else "0x1230d"
-        for detail in sorted(self._allowed() - motors):
-            tile = any(row[0] == detail for row in self.route["presets"])
-            label = self._detail_label(
-                detail, selector if tile else ("0xf761" if self.version == 1 else "0xeea5")
-            )
+        # The massage timer select sends the timer actions.
+        for detail in sorted(self._allowed() - motors - set(self._massage_timers.values())):
+            label = self._shown_label(detail)
             enum = ACTIONS[detail]["enum"]
             meaning = action_name(ACTIONS[detail])
             clear = True

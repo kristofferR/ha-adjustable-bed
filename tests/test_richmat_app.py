@@ -760,3 +760,26 @@ async def test_a_tile_without_a_save_code_offers_no_save_and_the_reset_asks_firs
     assert written(c) == []
     reset = specs["richmat_app_" + detail]
     assert reset.requires_confirmation and not reset.entity_registry_enabled_default
+
+
+async def test_every_massage_timer_choice_sends_what_its_button_sent(coordinator, clocked):
+    """10/20/30 Min (or 2h/3h/5h) are one select; each option is its old button's frames."""
+    checked = 0
+    for product in PRODUCTS:
+        for version in (0, 1):
+            c = controller(coordinator, product)
+            c.version = version
+            if not c.supports_massage_timer:
+                continue
+            assert c.auto_enable_massage and not c.massage_timer_can_turn_off
+            keys = {spec.key for spec in c.controller_button_specs}
+            for minutes, detail in c._massage_timers.items():
+                assert "richmat_app_" + detail not in keys
+                coordinator.client.write_gatt_char.reset_mock()
+                await c.press(detail)
+                button = written(c)
+                coordinator.client.write_gatt_char.reset_mock()
+                await c.set_massage_timer(minutes)
+                assert written(c) == button and button
+                checked += 1
+    assert checked > 1000
