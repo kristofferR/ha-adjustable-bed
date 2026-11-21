@@ -117,13 +117,6 @@ def scan_matches(name: str | None) -> bool:
         or name[:4].upper() in LAYOUTS
     )
 
-# The explicit movement-test screen's sequence, once per HA request.
-DIAGNOSTIC_CYCLE: Final = (
-    (0x24, 10), (0x3F, 10), (0x40, 12), (0x25, 12), (0x26, 10),
-    (0x41, 10), (0x42, 12), (0x27, 12), (0x29, 10), (0x3F, 10),
-    (0x40, 12), (0x41, 10), (0x42, 12), (0x2A, 12),
-)
-
 # Preset + all/head/foot massage, as selected by the alarm page.
 ALARM_COMBINATIONS: Final = {
     0x58: (0x77, 0x7A, 0x7D),
