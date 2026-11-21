@@ -286,6 +286,8 @@ MH_CODES: Final[dict[int, tuple[str, str]]] = {
     0xB8: (MUSIC, "Music switch"),
     0x50: (LIGHT, "Light"),
     0x75: (LIGHT, "Under-bed light off"),
+    # The motor page's lock key: the smart set lock (its dedicated switch sends it too).
+    0x84: (OTHER, "Smart set lock on/off"),
 }
 # Codes whose catalogs name them without saying what they do.
 _MH_UNCLEAR: Final = frozenset({0xB8})
@@ -327,6 +329,8 @@ _SAME: Final[dict[str, str]] = {
     "all": "",
     "both": "",
     "level": "",
+    "switch": "on/off",
+    "toggle": "on/off",
 }
 _TOGGLES: Final = re.compile(r"\b(?:on[ /]?off|start[ /]?stop)\b")
 _PLAY: Final = re.compile(r"\b(?:pause[ /]?start|start[ /]?pause|pause[ /]?play|play[ /]?pause|pause)\b")
@@ -372,12 +376,13 @@ def richmat_mh_name(code: int, label: str, *, massage_page: bool = False) -> tup
         number, unit = duration[1] or duration[4], duration[2] or duration[3]
         return _with_feature(_MH_TIMERS[code], ["timer", number, unit]), True
     shown = _words(label, fillers=True)
-    if code not in MH_CODES or code in _MH_UNCLEAR:
-        feature = MH_CODES[code][0] if code in MH_CODES else MASSAGE if massage_page else OTHER
-        return _with_feature(feature, shown), False
+    if code in _MH_UNCLEAR:
+        return MH_CODES[code][1], False
+    if code not in MH_CODES:
+        return _with_feature(MASSAGE if massage_page else OTHER, shown), False
     feature, name = MH_CODES[code]
     known = _words(name)
-    own = _FEATURE_WORDS[feature]
+    own = _FEATURE_WORDS.get(feature, frozenset())
     core = [w for w in words if w not in own]
     # An app's counter ("All Off2") repeats its control.
     if core and core[-1].isdigit() and not any(w.isdigit() for w in known):

@@ -352,7 +352,6 @@ _BUTTON_GROUP_NAMES: Final = {
     "FLAT": "Flat",
     "UBL1": "Light",
     "UBL2": "Light off",
-    "LOCK": "Lock",
     "SYNC": "Sync",
     "UBL": "Light",
     "BTN_LED": "Button light off",

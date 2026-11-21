@@ -20,7 +20,7 @@ from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button, own_label, save_name, unique_buttons
+from ..catalog_buttons import Kind, catalog_button, classify, own_label, save_name, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -84,6 +84,11 @@ def select_link(client: BleakClient) -> Link:
     if selected.rx is None:
         raise ValueError("Richmat app requires its selected writable and notification characteristics")
     return Link(client, selected.tx, selected.rx, selected.query_single)
+
+
+_RESETS: Final = frozenset(
+    {"deviceFunctionItemRelieveZeroGravitySetting", "deviceFunctionItemRelieveSnoreSetting"}
+)
 
 
 def action_name(action: Action) -> str:
@@ -698,29 +703,30 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         motors = {str(d) for m in self.route["motors"] for d in m[1:3]}
         selector = "0xdd2d" if self.version == 1 else "0x1230d"
         for detail in sorted(self._allowed() - motors):
-            preset = any(row[0] == detail for row in self.route["presets"])
+            tile = any(row[0] == detail for row in self.route["presets"])
             label = self._detail_label(
-                detail, selector if preset else ("0xf761" if self.version == 1 else "0xeea5")
+                detail, selector if tile else ("0xf761" if self.version == 1 else "0xeea5")
             )
             enum = ACTIONS[detail]["enum"]
             meaning = action_name(ACTIONS[detail])
             clear = True
-            if preset:
+            # A preset row can hold a timer or a massage control: the action says which.
+            if (shape := classify(meaning)) is not None and shape.kind in (Kind.PRESET, Kind.MEMORY):
                 name = preset_name(label)
                 if name in SHARED_PRESETS and name != preset_name(meaning):
                     # The tile shows another preset's name: the action says which it is.
                     name = preset_name(meaning)
             else:
                 name, clear = richmat_app_name(enum, label)
-            reset = enum == "deviceFunctionItemRelieveZeroGravitySetting" or not clear
+            # The app's "relieve setting" actions reset a stored position: they ask first.
+            reset = enum in _RESETS
             spec = catalog_button(
                 "richmat_app_" + detail,
                 name,
                 partial(_press, detail=detail),
                 meaning=meaning,
-                # Resetting a setting the catalog does not explain asks first.
                 requires_confirmation=reset,
-                enabled=not reset,
+                enabled=clear and not reset,
             )
             rows.append(spec if clear or spec is None else own_label(spec))
             if spec is not None and self._saves(detail):
