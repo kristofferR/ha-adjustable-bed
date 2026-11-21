@@ -28,9 +28,10 @@ ahead of it, and what happens when the bed cannot be reached.
 
 - Every control and action goes through the device's command scheduler. A
   command is admitted for the resources it controls: a motor, a side or the
-  whole bed. A new command for the same resource replaces the running or
-  queued one; others queue behind it. Exactly one operation holds the writer
-  at a time.
+  whole bed. A command that cancels running work, as movements and presets
+  do, replaces the running or queued command for the same resource; others
+  queue behind it. Exactly one operation holds the writer at a time. The
+  Connect and Disconnect buttons act on the link directly, outside the queue.
 - The scheduler treats controller operations as opaque and never retries one
   after a transport error.
 - Position and light reads yield to commands and STOP. A seek finishes the
@@ -47,8 +48,9 @@ ahead of it, and what happens when the bed cannot be reached.
 - It cancels the motion holding the writer on its bed or side, whichever motor
   that is. The write in flight and that command's own cleanup finish first:
   the controller sends its protocol STOP or release with a fresh cancel event.
-  Then the STOP's own frames go out, ahead of anything queued. Commands on
-  other resources, such as lights or configuration, are not cancelled.
+  Then the STOP's own frames go out, ahead of anything queued. A bed-wide
+  STOP covers every resource; a motor or side STOP does not cancel running
+  work on other resources, such as lights or configuration.
 - When the command holding the writer is still connecting, the STOP waits for
   that connect. Nothing moves meanwhile, and the STOP then uses the new link.
 - An admitted STOP outlives its caller: cancelling the action does not cancel
@@ -78,10 +80,11 @@ opts in through `ExecutionCapabilities.hold`, or per held control through its
   An ended or superseded generation is refused, including a late renewal, so a
   stale request can never start motion. Leases live only in memory.
 - A hold runs for at most its ceiling: 30 seconds for a stream hold, 10 seconds
-  for a latched one (`ExecutionCapabilities.hold_ceiling_ms`). The clock starts
-  when the controller operation begins, after connecting, and every renewal is
-  clamped to it. At the ceiling the hold ends as at expiry; a write already in
-  flight completes first.
+  for a latched one (`ExecutionCapabilities.hold_ceiling_ms`), and every
+  renewal is clamped to it. For a serial hold the clock starts when the
+  controller operation begins, after connecting, and at the ceiling the hold
+  ends as at expiry, after any write already in flight. A merged-stream
+  member's ceiling counts from its request.
 - The dashboard card holds through `timed_move` or `hold_control`, renewing
   every 250 ms with a 750 ms lease. Releasing the control, leaving the page or
   hiding it stops the renewals and sends the usual STOP.
@@ -135,18 +138,21 @@ one, and a command cut off between frames shows unknown.
   five seconds after a drop.
 - Beds that ask for recovery (Good Vibe with monitoring, Hush sleep sensors)
   retry five seconds after a drop and keep retrying while the bed stays away.
-  The wait doubles after each failed attempt, up to five minutes; a successful
-  connect or a new command brings it back to five seconds.
+  The first retries come five seconds apart, then the wait doubles after each
+  failure, up to five minutes. A successful connect or a new command sets the
+  next wait back to five seconds; a retry already scheduled keeps its time.
 - A drop ends every hold lease. What the bed itself does when its link drops is
   up to the bed.
 - Occupancy polls read only over an open, ready link and never connect.
 
 ## When the bed cannot be reached
 
-- A control or action fails with "The bed is not connected. Check that it is
-  powered on and in range, then try again." Home Assistant logs it as one line,
-  without a traceback. A Bluetooth error that ends a command reads "Bluetooth
-  could not send the command to the bed", followed by the error.
+- A control, or an action past its checks, fails with "The bed is not
+  connected. Check that it is powered on and in range, then try again." An
+  action's checks report instead that they could not connect to the bed. A
+  Bluetooth error that ends a command reads "Bluetooth could not send the
+  command to the bed", followed by the error. For dashboard controls and
+  automations, Home Assistant logs these as one line, without a traceback.
 - The failed connect is logged as one warning per outage, naming the attempts
   and the last error. Repeats go to debug until the bed connects again,
   including the setup retries after a restart.

@@ -14,13 +14,12 @@ from collections.abc import Callable, Collection, Coroutine
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
-from bleak.exc import BleakError
 from homeassistant.core import callback
 
 from .bed_traits import bed_type_has_position_feedback
 from .command_scheduler import CommandKind, current_command_context
 from .const import POSITION_FEEDBACK_TIMEOUT
-from .errors import BedCommandFailedError, BedNotConnectedError
+from .errors import BedNotConnectedError, bluetooth_errors_translated
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,
@@ -595,7 +594,7 @@ class CoordinatorPositionsMixin:
         """Schedule one position target with axis-scoped replacement."""
 
         async def operation() -> None:
-            try:
+            with bluetooth_errors_translated():
                 await self._async_seek_position_serial(
                     position_key,
                     target_angle,
@@ -603,10 +602,6 @@ class CoordinatorPositionsMixin:
                     move_down_fn,
                     move_stop_fn,
                 )
-            except BedCommandFailedError:
-                raise
-            except BleakError as err:
-                raise BedCommandFailedError(err) from err
 
         await self._async_schedule_command_operation(
             operation,

@@ -19,6 +19,7 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
@@ -40,6 +41,7 @@ from custom_components.adjustable_bed.const import (
     SVANE_VARIANT_MULTI,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.errors import BedCommandFailedError
 from custom_components.adjustable_bed.profiles.okin_nframe import (
     CUSTOMATIC_PROFILES,
     LEGGETT_PROFILES,
@@ -312,3 +314,20 @@ async def test_neither_motor_starves_the_other(bed: Bed, churned: int) -> None:
     assert min(gaps[1:-1]) >= bed.family.min_gap_ms, gaps
     bed.coordinator._command_scheduler.request_cancel()
     await asyncio.gather(steady, *churn, return_exceptions=True)
+
+
+@pytest.mark.parametrize("bed", ["clarity"], indirect=True)
+async def test_a_failed_stream_write_reaches_the_member_translated(bed: Bed) -> None:
+    """A streamed move that loses its write gets the integration's Bluetooth error."""
+    move = bed.move("back")
+    async with asyncio.timeout(3):
+        while not bed.writes:
+            await asyncio.sleep(0.001)
+    client = bed.coordinator._client
+    assert client is not None
+    client.write_gatt_char = AsyncMock(side_effect=BleakError("write failed"))
+
+    with pytest.raises(BleakError, match="write failed") as raised:
+        await asyncio.wait_for(move, 2)
+    assert isinstance(raised.value, BedCommandFailedError)
+    assert raised.value.translation_key == "bluetooth_command_failed"

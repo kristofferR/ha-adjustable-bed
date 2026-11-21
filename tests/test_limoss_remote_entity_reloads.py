@@ -416,3 +416,19 @@ async def test_partial_refresh_capability_change_persists_and_reconciles_after_f
         coordinator._schedule_pending_capability_reload()
         await hass.async_block_till_done()
         reload.assert_awaited_once_with(coordinator.entry.entry_id)
+
+
+async def test_both_sides_pending_reload_the_pair_once(hass):
+    """One reload rebuilds both sides, so a second pending side does not reload again."""
+    pair, children, _ = await pair_runtime(hass)
+    with patch.object(
+        hass.config_entries, "async_reload", new=AsyncMock(return_value=True)
+    ) as reload:
+        for child in children.values():
+            child._client = None
+            child._pending_capability_reload = True
+        for child in children.values():
+            child._schedule_pending_capability_reload()
+        await hass.async_block_till_done()
+    reload.assert_awaited_once_with(pair.entry.entry_id)
+    assert not any(child._pending_capability_reload for child in children.values())

@@ -185,7 +185,7 @@ from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     is_mac_like_name,
 )
-from .errors import BedCommandFailedError, BedNotConnectedError
+from .errors import BedCommandFailedError, BedNotConnectedError, bluetooth_errors_translated
 from .execution import HOLD_CEILING_MS
 from .import_executor import async_import_modules
 from .pairing import (
@@ -737,8 +737,8 @@ class AdjustableBedCoordinator(
         finally:
             self._capability_reload_scheduled = False
 
-    def _starcode_reload_coordinators(self, loaded: object) -> tuple[AdjustableBedCoordinator, ...]:
-        """Find the exact standalone or physical children of this loaded entry."""
+    def _entry_reload_coordinators(self, loaded: object) -> tuple[AdjustableBedCoordinator, ...]:
+        """Find this entry's standalone coordinator or its children in a loaded pair."""
         from .paired_coordinator import PairedBedCoordinator
 
         if isinstance(loaded, AdjustableBedCoordinator):
@@ -751,12 +751,6 @@ class AdjustableBedCoordinator(
                 and child.entry.entry_id == self.entry.entry_id
             )
         return ()
-
-    async def _async_reload_if_capability_changed(self) -> None:
-        """Reload if this disconnected coordinator still owns the loaded entry."""
-        reload = self._claim_capability_reload()
-        if reload is not None:
-            await self._async_reload_capabilities(reload)
 
     def _claim_capability_reload(
         self,
@@ -785,14 +779,19 @@ class AdjustableBedCoordinator(
             return None
         from .beds.starcode.abm5_4_profiles import RetainedAppState
 
+        coordinators = self._entry_reload_coordinators(loaded)
         retained_states = {
             (child.entry.entry_id, child.address): child.starcode_app_retained_state
-            for child in self._starcode_reload_coordinators(loaded)
+            for child in coordinators
             if child.bed_type == BED_TYPE_STARCODE_ABM5_4
             and isinstance(child.starcode_app_retained_state, RetainedAppState)
             and child.starcode_app_retained_state.address == child.address
         }
+        # The reload rebuilds every side of the entry, so it also answers the
+        # other side's pending reload: one reload, not two in a row.
         self._pending_capability_reload = False
+        for child in coordinators:
+            child._pending_capability_reload = False
         return retained_states
 
     async def _async_reload_capabilities(
@@ -808,7 +807,7 @@ class AdjustableBedCoordinator(
         from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         reloaded = loaded_runtime(self.hass, self.entry.entry_id)
-        for child in self._starcode_reload_coordinators(reloaded):
+        for child in self._entry_reload_coordinators(reloaded):
             retained = retained_states.get((child.entry.entry_id, child.address))
             fresh = child.starcode_app_retained_state
             if (
@@ -2021,10 +2020,8 @@ class AdjustableBedCoordinator(
                         )
 
                 # Use controller's stop_all method which knows the correct protocol
-                try:
+                with bluetooth_errors_translated():
                     await controller.stop_all()
-                except BleakError as err:
-                    raise BedCommandFailedError(err) from err
                 _LOGGER.info("Stop command sent")
             finally:
                 if (
@@ -2611,9 +2608,11 @@ class AdjustableBedCoordinator(
                 operation_name="merged stream",
             )
 
-        return await self._command_scheduler.execute_stream_member(
-            member, resources, runner, expected_stop_epoch=expected_stop_epoch
-        )
+        # Members receive the stream's own errors, past the executor.
+        with bluetooth_errors_translated():
+            return await self._command_scheduler.execute_stream_member(
+                member, resources, runner, expected_stop_epoch=expected_stop_epoch
+            )
 
     def claim_hold_lease(
         self,

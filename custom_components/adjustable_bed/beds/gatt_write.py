@@ -199,11 +199,11 @@ class GattWriter(ABC):
                         note_frame_skipped()
                         return
                     client = self.client
-                    if expected_client is not None and client is not expected_client:
-                        raise ConnectionError("Command belongs to a previous BLE connection")
                     if client is None or not client.is_connected:
                         _LOGGER.debug("Cannot write command: BLE client disconnected during write")
                         raise BedNotConnectedError
+                    if expected_client is not None and client is not expected_client:
+                        raise ConnectionError("Command belongs to a previous BLE connection")
                     if wall_clock_pacing:
                         write_started = asyncio.get_running_loop().time()
                     if before_write is not None:
