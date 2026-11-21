@@ -87,7 +87,7 @@ def make_controller_mock(**overrides: object) -> MagicMock:
             continue
         try:
             default = member.fget(controller)
-        except Exception:  # noqa: BLE001 - property needs real state; leave it a Mock
+        except Exception:
             continue
         # The default seek policy is seeded as one instance, so a test can tune
         # it in place or replace it.

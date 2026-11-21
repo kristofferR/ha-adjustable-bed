@@ -278,7 +278,8 @@ def _resolve_sided_target(
     ``inferred_side`` is the left/right of a targeted paired child sub-device
     (matched by its MAC identifier), or ``None`` for a single bed or the
     paired parent device. Lets a caller targeting one side's device act on
-    just that side without passing ``side`` explicitly.
+    just that side without passing ``side`` explicitly. ``SIDE_BOTH`` marks a
+    device of a paired entry that is neither a side nor the pair itself.
     """
     selected = dr.async_get(hass).async_get(device_id)
     # HA's validation helper accepts full devices only. Validate a native
@@ -305,7 +306,7 @@ def _resolve_sided_target(
             if domain == DOMAIN
         }
         if inferred_side is None and not identifiers.intersection(parent_identifiers):
-            raise invalid("side_unavailable")
+            inferred_side = SIDE_BOTH
     return coordinator, inferred_side
 
 
@@ -313,6 +314,8 @@ def _resolve_sided_targets(
     hass: HomeAssistant,
     device_ids: list[str],
     explicit_side: str | None,
+    *,
+    problems: list[BaseException] | None = None,
 ) -> tuple[list[tuple[BedTarget, str]], list[str]]:
     """Group sided-service targets by coordinator, merging inferred sides.
 
@@ -320,22 +323,40 @@ def _resolve_sided_targets(
     collapses to a single ``both`` fan-out - preserving the both-failure
     contract - instead of two separate side commands. Each coordinator
     appears once in first-seen order. Returns (targets, missing_device_ids).
+
+    With ``problems`` (STOP), nothing raises: a device that cannot be resolved
+    is recorded there and skipped, and a side that cannot be honoured is
+    recorded and widened to the whole bed, so every reachable bed still stops.
     """
     ordered: list[int] = []
     by_key: dict[int, tuple[BedTarget, set[str | None]]] = {}
     missing: list[str] = []
     for device_id in device_ids:
-        resolved = _resolve_sided_target(hass, device_id)
+        try:
+            resolved = _resolve_sided_target(hass, device_id)
+        except Exception as err:
+            if problems is None:
+                raise
+            problems.append(err)
+            continue
         if resolved is None:
+            if problems is not None:
+                problems.append(invalid("devices_not_found", device_ids=device_id))
             missing.append(device_id)
             continue
         coordinator, inferred_side = resolved
-        if (
-            inferred_side is not None
-            and explicit_side is not None
-            and explicit_side != inferred_side
-        ):
-            raise invalid("side_selection_conflict", inferred_side=inferred_side, side=explicit_side)
+        problem: ServiceValidationError | None = None
+        if inferred_side == SIDE_BOTH:
+            problem = invalid("side_unavailable")
+        elif inferred_side is not None and explicit_side not in (None, inferred_side):
+            problem = invalid(
+                "side_selection_conflict", inferred_side=inferred_side, side=explicit_side
+            )
+        if problem is not None:
+            if problems is None:
+                raise problem
+            problems.append(problem)
+            inferred_side = SIDE_BOTH
         key = id(coordinator)
         if key not in by_key:
             by_key[key] = (coordinator, set())
@@ -345,7 +366,10 @@ def _resolve_sided_targets(
     targets: list[tuple[BedTarget, str]] = []
     for key in ordered:
         coordinator, sides = by_key[key]
-        if explicit_side is not None:
+        if SIDE_BOTH in sides:
+            # Only a STOP whose side could not be honoured gets here.
+            side = SIDE_BOTH
+        elif explicit_side is not None:
             side = explicit_side
         elif sides == {SIDE_LEFT}:
             side = SIDE_LEFT
@@ -912,30 +936,30 @@ async def handle_stop_all(call: ServiceCall) -> None:
 
     _LOGGER.info("Service stop_all called (side=%s)", explicit_side)
 
-    targets, missing_device_ids = _resolve_sided_targets(hass, device_ids, explicit_side)
+    # STOP is a safety action: attempt every bed that resolves before surfacing
+    # an error, so one bad target never leaves another bed still moving.
+    problems: list[BaseException] = []
+    targets, _missing = _resolve_sided_targets(hass, device_ids, explicit_side, problems=problems)
 
     async def _stop_one(coordinator: BedTarget, side: str) -> None:
-        # Validate that side applies (rejects left/right on a single bed).
-        _command_targets(coordinator, side)
+        try:
+            _command_targets(coordinator, side)
+        except ServiceValidationError as err:
+            # A side this bed does not have stops the whole bed.
+            problems.append(err)
+            side = SIDE_BOTH
         if isinstance(coordinator, PairedBedCoordinator):
             await coordinator.async_stop_command(side=side)
         else:
             await coordinator.async_stop_command()
 
-    # STOP is a safety action: attempt every target before surfacing an
-    # error, so one bed's failure never leaves another still moving.
     results = await asyncio.gather(
         *(_stop_one(coordinator, side) for coordinator, side in targets),
         return_exceptions=True,
     )
-    stop_errors = [r for r in results if isinstance(r, BaseException)]
-
-    if missing_device_ids:
-        raise invalid("devices_not_found", device_ids=", ".join(missing_device_ids))
-
-    if stop_errors:
-        # Every target was attempted; surface the first failure.
-        raise stop_errors[0]
+    problems.extend(r for r in results if isinstance(r, BaseException))
+    if problems:
+        raise problems[0]
 
 
 async def _set_position_plan(
@@ -3182,7 +3206,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_goto_preset,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_PRESET): vol.All(_whole_number, vol.Range(min=1)),
                 vol.Optional(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
@@ -3195,7 +3219,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_save_preset,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_PRESET): vol.All(_whole_number, vol.Range(min=1)),
                 **SIDE_FIELD,
             }
@@ -3207,7 +3231,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_stop_all,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 **SIDE_FIELD,
             }
         ),
@@ -3218,7 +3242,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_set_position,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_MOTOR): vol.In(POSITION_MOTOR_OPTIONS),
                 # No max cap here - per-motor validation handles bed-specific limits
                 vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0)),
@@ -3232,7 +3256,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_set_positions,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_POSITIONS): vol.All(
                     [
                         {
@@ -3254,7 +3278,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_timed_move,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_MOTOR): vol.In(TIMED_MOVE_MOTOR_OPTIONS),
                 vol.Required(ATTR_DIRECTION): vol.In(["up", "down"]),
                 vol.Required(ATTR_DURATION_MS): vol.All(

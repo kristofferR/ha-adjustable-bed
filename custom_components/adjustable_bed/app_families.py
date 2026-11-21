@@ -1513,7 +1513,7 @@ def _remacro_placeholders(visit: Visit) -> dict[str, str]:
     key, default = ("unknown", "Not reported yet") if model_id is None else ("unlisted", "Unknown model")
     try:
         words = async_get_cached_translations(visit.hass, visit.hass.config.language, "selector", DOMAIN)
-    except Exception:  # noqa: BLE001 - a missing translation must not block the question
+    except Exception:
         words = {}
     return {"model": words.get(f"component.{DOMAIN}.selector.remacro_model.options.{key}", default)}
 

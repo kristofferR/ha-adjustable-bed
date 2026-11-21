@@ -22,7 +22,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from bleak.exc import BleakError
 
-from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -374,55 +373,6 @@ class ReverieController(BedController, ReverieComfortActions):
         for b in command_bytes:
             checksum ^= b
         return bytes([0x55] + command_bytes + [checksum])
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        _LOGGER.debug(
-            "Writing command to Reverie bed (%s): %s (repeat: %d, delay: %dms, response=True)",
-            REVERIE_CHAR_UUID,
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        self._record_command_trace(
-            REVERIE_CHAR_UUID,
-            command,
-            response=True,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-        )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                note_frame_skipped()
-                return
-
-            try:
-                async with self._ble_lock:
-                    if effective_cancel is not None and effective_cancel.is_set():
-                        note_frame_skipped()
-                        return
-                    await self.client.write_gatt_char(REVERIE_CHAR_UUID, command, response=True)
-                    note_frame_written(effective_cancel)
-            except BleakError:
-                _LOGGER.exception("Failed to write command")
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None

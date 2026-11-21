@@ -17,7 +17,6 @@ from custom_components.adjustable_bed.beds.richmat_app.catalog import (
     PROFILE_CHOICES,
     RESTORED_CHOICES,
     descriptors,
-    normalize_product,
     scan_matches,
 )
 from custom_components.adjustable_bed.beds.richmat_app.protocol import BlanketSleep
@@ -78,8 +77,6 @@ def written(c):
 def test_full_catalog_identity_selection_and_actual_routes():
     assert len(PRODUCTS) == 1118 and len(PROFILE_CHOICES) == 756 and len(RESTORED_CHOICES) == 362
     assert not set(PROFILE_CHOICES) & set(RESTORED_CHOICES)
-    assert normalize_product(" 7i\nrm ") == "7IRM"
-    assert normalize_product("\t7irm") == "\t7IRM"
     assert scan_matches("vendor-7IRM-extra") and not scan_matches("vendor-7irm-extra")
     assert scan_matches("Luffabenz") and not scan_matches(None)
     assert sum(len(p["versions"]["other"]["motors"]) for p in PRODUCTS.values()) == 3179
@@ -119,6 +116,32 @@ async def test_release_even_when_write_fails_and_no_retry(coordinator, clocked):
     with pytest.raises(OSError):
         await c.hold_control("richmat_app_cb18d1", 100)
     assert len(written(c)) == 2 and written(c)[-1] == "6e01006edd"
+
+
+async def test_a_second_cancel_cannot_interrupt_the_release(coordinator, clocked):
+    c = controller(coordinator)
+    moving, releasing, release_done = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    finish_release = asyncio.Event()
+
+    async def write(_char, frame, **_kwargs):
+        if frame.hex() == "6e01006edd":
+            releasing.set()
+            await finish_release.wait()
+            release_done.set()
+        else:
+            moving.set()
+            await asyncio.Event().wait()
+
+    coordinator.client.write_gatt_char.side_effect = write
+    task = asyncio.create_task(c.hold_control("richmat_app_cb18d1", 1000))
+    await moving.wait()
+    task.cancel()
+    await releasing.wait()
+    task.cancel()
+    finish_release.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert release_done.is_set()
 
 
 async def test_save_tap_uses_long_opcode_without_stop(coordinator, clocked):

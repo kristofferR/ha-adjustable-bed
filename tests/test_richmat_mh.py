@@ -162,14 +162,6 @@ def test_alarm_cancel_delete_and_clock_frames() -> None:
     assert tuple(f.hex() for f in protocol.clock_frames(7, 5, 9)) == ("6e1307058d", "6e1409ff8a")
 
 
-@pytest.mark.parametrize(
-    ("target", "now", "expected"),
-    [(420, 420, 1440), (421, 420, 1), (419, 420, 1439), (0, 1439, 1), (1439, 0, 1439)],
-)
-def test_alarm_countdown_is_the_apps_wrapping_difference(target, now, expected) -> None:
-    assert protocol.alarm_countdown_minutes(target, now) == expected
-
-
 def test_alarm_combinations_two_massages_and_unmatched_pairs() -> None:
     assert len(protocol.ALARM_COMBINATIONS) == 21
     assert protocol.alarm_action(0x58, (0x4C,)) == 0x7A

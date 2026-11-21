@@ -141,7 +141,7 @@ authoritative capability records. Malformed replies remain strict failures.
   as complete discovery and cannot retire known entities or be persisted as a
   capability snapshot.
 - This absence fallback preserves the behavior used by field-reported receivers;
-  it does not change the accepted app behavior when valid replies arrive.
+  it does not change the app's behavior when valid replies arrive.
 - Star2 does not use this P1 handshake.
 
 #### Capability records
@@ -227,7 +227,7 @@ the Standard or Star2 implementation when the variant is left on Auto. Features
 are still limited by the device capabilities and the support table above, and
 every OEM combination is not necessarily hardware-tested.
 
-The accepted 1.03.02 artifact defines no separate protocol profile selected by
+App version 1.03.02 has no separate protocol profile selected by
 OEM branding, CID, PID, hardware, firmware, locale or device name. Standard P1
 remains the existing OCTO bed type; Star2 remains separate.
 
@@ -574,8 +574,8 @@ integration whose controls do nothing.
 The official app hides *every* control while locked (motors, light and presets
 alike), so the app itself does not distinguish between them. Users have reported
 the under-bed light still responding while the motors do not, which is how this
-usually presents in the field, but that asymmetry is a field observation and is
-not established by the app.
+usually presents in the field, but that asymmetry is a field observation, not
+something the app shows.
 
 The integration raises a repair notification when capability discovery reports
 `CAP_BLE_PIN` locked while no PIN is configured. Enter the PIN in the
@@ -626,9 +626,9 @@ no PIN set (`CAP_BLE_PIN` `value[0]` becomes 0), so it is no longer locked.
 | `CTL_RCV2` (Receiver II) | `RC2` | Button on the controller **10x in quick succession** | Light flashes 1x |
 | `CTL_BMB` (BrickMini Basic) | `BMB` | Button on the controller **10x in quick succession** | Light flashes 1x |
 | `CTL_BRICK2` (Brick 2) | `OCTOBrick2` | Button **1x briefly, then 1x long (approx. 10 s)** | Beeps 3x briefly |
-| `9021` | not established | Button **1x briefly, then 1x long (approx. 10 s)** | Light flashes 1x |
-| `1001` | not established | Button **1x briefly, then 1x long (approx. 10 s)** | Beeps 3x briefly |
-| `CTL_LIFT_MICRO` | not established | Reset from the **remote**, not the controller (below) | See below |
+| `9021` | unknown | Button **1x briefly, then 1x long (approx. 10 s)** | Light flashes 1x |
+| `1001` | unknown | Button **1x briefly, then 1x long (approx. 10 s)** | Beeps 3x briefly |
+| `CTL_LIFT_MICRO` | unknown | Reset from the **remote**, not the controller (below) | See below |
 
 The BLE-name column is a best-effort match against the official name prefixes;
 only the first three are confident. If your receiver is not one of those, pick
@@ -761,7 +761,7 @@ ordering tests, but still needs validation on real dual OCTO hardware.
 
 The APK proves the app uses one active GATT target, but it cannot prove whether
 bed firmware permits two simultaneous central connections or whether two
-Bluetooth proxies behave differently from one. It also does not establish a
+Bluetooth proxies behave differently from one. It also does not show a
 shared connection limit across two independent receivers. Single-proxy and
 dual-proxy operation remain hardware-validation items.
 

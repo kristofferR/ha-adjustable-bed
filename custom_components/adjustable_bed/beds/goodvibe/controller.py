@@ -34,6 +34,7 @@ from ...profiles.richmat_catalog import Catalog
 from ...state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..catalog_buttons import (
     EXTRA_KEY,
     Kind,
@@ -1403,7 +1404,7 @@ class GoodVibeController(BedController):
             release_required = (attempted or bed is not None and not cancel.is_set()) and gesture == "sustainPress"
             if release_required or attempted and gesture == "shortPress" and bed is None:
                 if bed is None:
-                    await self._send(_stop(side, link), cleanup=True, link=link)
+                    await settled(self._send(_stop(side, link), cleanup=True, link=link))
                 else:
                     release = asyncio.create_task(self._send(_stop(side, link), cleanup=True, link=link))
                     cancelled = False

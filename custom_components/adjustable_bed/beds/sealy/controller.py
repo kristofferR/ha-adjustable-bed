@@ -420,7 +420,12 @@ class SealyController(Okin7ByteController):
                 on_write()
 
     async def _release(
-        self, link: _Link, context: CommandContext | None = None, *, own: bool = False
+        self,
+        link: _Link,
+        context: CommandContext | None = None,
+        *,
+        own: bool = False,
+        key: str = "stop",
     ) -> None:
         async def send() -> None:
             failure: Exception | None = None
@@ -428,7 +433,7 @@ class SealyController(Okin7ByteController):
                 if index:
                     await asyncio.sleep(app.REFRESH_MS / 1000)
                 try:
-                    await self._frame(link, app.FRAMES["stop"], asyncio.Event(), own=own)
+                    await self._frame(link, app.FRAMES[key], asyncio.Event(), own=own)
                 except Exception as err:
                     failure = failure or err
             if failure is not None:
@@ -646,6 +651,7 @@ class SealyController(Okin7ByteController):
 
     async def stop_all(self) -> None:
         link, context = self._live(), current_command_context()
+        released = False
         if self._cleanup is not None and context is not None:
             owner_link, owner = self._cleanup
             if (
@@ -654,12 +660,17 @@ class SealyController(Okin7ByteController):
                 and any(owner is old for old in context.preempted_contexts)
                 and owner.cleanup_stop_sent
             ):
-                self._cleanup = None
                 owner.cleanup_stop_sent = False
-                return
+                released = True
         self._cleanup = None
         with command_frames_counted():
-            await self._release(link, own=True)
+            try:
+                if not released:
+                    await self._release(link, own=True)
+            finally:
+                # The app ends a one-touch ("… once") movement with its own
+                # one-touch STOP, never the ordinary one, so Stop sends both.
+                await self._release(link, own=True, key="voice_stop")
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         link = self._live()

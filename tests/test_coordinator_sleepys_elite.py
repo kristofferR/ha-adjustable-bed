@@ -963,8 +963,13 @@ async def test_stale_both_hold_preflight_preserves_new_left_hold(
     right._offline_controller = None
 
     def resolve_targets(
-        _hass: HomeAssistant, _device_ids: list[str], explicit_side: str | None = None
+        _hass: HomeAssistant,
+        _device_ids: list[str],
+        explicit_side: str | None = None,
+        *,
+        problems: list[BaseException] | None = None,
     ) -> tuple[list[tuple[PairedBedCoordinator, str]], list[str]]:
+        # The pair resolves, so a STOP has no problem to record.
         return [(pair, explicit_side or SIDE_BOTH)], []
 
     old_both_hold: asyncio.Task[object] | None = None

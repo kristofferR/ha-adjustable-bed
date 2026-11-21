@@ -255,7 +255,7 @@ Part feedback uses the accepted byte mapping and clamps values to 0–100%:
 
 The internal progress-target helper encodes Part selectors 0–4 and a target
 byte. Stopped feedback advances an already populated internal queue; movement,
-STOP and session teardown clear or invalidate it. The accepted app has no UI
+STOP and session teardown clear or invalidate it. The app has no UI
 enqueue/set-position entry point, so this helper is retained as internal
 protocol behavior and is not presented as a Home Assistant control.
 

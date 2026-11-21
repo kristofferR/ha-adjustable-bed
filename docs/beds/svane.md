@@ -196,8 +196,8 @@ The builder is not clamped to 100.
 
 ### Dormant commands
 
-The old dormant `3fff`, `3f40`, `3f80` and `3f81` writes are not reachable
-controls in this profile. Earlier versions of this guide described them as read
+The old dormant `3fff`, `3f40`, `3f80` and `3f81` writes are not controls in
+this profile. Earlier versions of this guide described them as read
 position, save position, recall position and flatten.
 
 ## Command Timing
@@ -264,7 +264,7 @@ position, save position, recall position and flatten.
 ## Memory and presets
 
 - The **Svane position** action keeps the `preset_zero_g` button ID that existing
-  entries use. The artifact does not prove a Flat, Zero-G or Anti-Snore meaning.
+  entries use. Whether it means Flat, Zero-G or Anti-Snore is not known.
 - Preset, lamp and memory actions do not append movement STOP.
 - The two source-labelled positions are **Read** and **TV** (public numbered
   memory slots 1 and 2).
@@ -300,13 +300,13 @@ position, save position, recall position and flatten.
   slots pass validation.
 - Normal recall still appends no STOP. P2's explicit global STOP can interrupt
   recall independently of held-motion tracking.
-- P1's opaque absolute-position recall has no proven STOP on its position
+- P1's opaque absolute-position recall has no known STOP on its position
   characteristic and supplies no direction to select a directional release. Host
   STOP cancels a pending feet write during the one-second gap, but does not claim
   to halt a head recall already delivered. The integration does not guess a
   direction or write a fabricated STOP to the position characteristic.
 - Idle notification teardown does not append a global STOP; started held-motion
-  roles still receive their proven cleanup.
+  roles still receive their normal cleanup.
 
 ## Lamp
 
@@ -319,7 +319,7 @@ position, save position, recall position and flatten.
   same-target/profile reloads, while cold restart or profile reset loses it.
   Subsequent optimistic values are assumed; there is no native physical
   lamp-state feedback.
-- Lamp intensity is a persisted local preference, exposed through the established
+- Lamp intensity is a persisted local preference, exposed through the existing
   0-100 light level slider so existing entries keep their entity. Setting 0 turns
   the lamp off; other values snap to the app's 5-100 steps of five and command the
   lamp on.
@@ -331,7 +331,7 @@ position, save position, recall position and flatten.
 
 ### Held adjustment
 
-- The frozen app's held adjustment begins after more than 200 ms while local
+- The app's held adjustment begins after more than 200 ms while local
   intent is on. It unconditionally reverses step at current intensity >=100 or
   <=6 before adding five: 90→95→100→95, and 10→5→10.
 - The held HA control accepts the same 5–100, step-five range as the intensity

@@ -712,7 +712,7 @@ release.
 
 #### Evidence
 
-The Richmat remotes send only their frozen frames. The GGRM catalog actions are
+The GGRM catalog actions are
 from the Revive Control, Blvd Home and HARMONY GGRM tables ( with the `main_6e` release and
 its 120 ms delay); the other frames are the pre-v5 controller's.
 
@@ -856,13 +856,13 @@ See [the action reference](../SERVICES.md#bedtech-app).
 #### Evidence
 
 Based on `com.bedtech`
-7.1.3 (14): nine model routes and 148 frozen literal vectors. The Richmat codec
-reproduces every literal byte for byte, including bank 1. All 585 app
+7.1.3 (14): nine model routes and 148 test vectors. The Richmat codec
+reproduces every frame byte for byte, including bank 1. All 585 app
 model/action/side routes are retained as focused test vectors. Hardware remains
 unverified for the explicit profiles, including cessation of movement after
 refresh ends, bank mapping, memory saves and the timer 20 button.
 
-The earlier BedTech 7.1.3 Hermes checks (2026-07-10, issue #410) established
+The earlier BedTech 7.1.3 Hermes checks (2026-07-10, issue #410) showed
 write-with-response; the contrary light/Lounge experiment in issue #243 did
 not describe the official app's write mode. The legacy field-report behavior
 remains available independently of the explicit app profiles.
@@ -902,7 +902,7 @@ interval are in [Fixed-table routes](#fixed-table-routes).
 
 #### Evidence
 
-L&P MlRM sends only its frozen frames, the pre-v5 controller's.
+L&P MlRM sends the pre-v5 controller's frames.
 
 ### RMControl
 
@@ -1008,7 +1008,7 @@ Sensors and binary sensors are added when their corresponding state is first
 reported, rather than creating permanently unknown entities for every catalog.
 Diagnostics retain the selected product, transport, capability replies, decoded
 state, supported alarm action names and all received alarm records. Reported
-numeric values without proven units are deliberately unitless. A numbered motor
+numeric values without known units are deliberately unitless. A numbered motor
 is not silently relabeled as a particular physical axis.
 
 ##### Lighting
@@ -1070,7 +1070,7 @@ current Home Assistant time to the alarm subsystem.
   operation.
 - The separate synchronization protocol encodes timezone offsets in whole hours,
   truncated toward zero. Half-hour and quarter-hour offsets cannot be represented
-  fully; this is a source-proven limitation, not an automatic adjustment by HA.
+  fully; this is a limit of the app, not an automatic adjustment by HA.
 - New alarm creation resolves the current selected product's effective command,
   including its override. It does not reproduce the app's separate restoration
   path that can discard an override.
@@ -1095,7 +1095,7 @@ anti-snore preset position.
 
 - The service also accepts the paired-bed `side` field.
 - The time mode deliberately does not claim seconds or minutes where the
-  artifact does not establish that unit.
+  app does not give that unit.
 - Configuring count/time is not equivalent to enabling the feature.
 
 This service requires the app's BLE sleep-monitoring metadata, a received sleep
@@ -1391,12 +1391,12 @@ See [Actions](../SERVICES.md).
 
 #### Evidence
 
-The Richmat MH apps send only frames frozen from their apps. Owners can help confirm model selection by
+Owners can help confirm model selection by
 name, KEEP/STOP behavior, alarm countdown semantics, LED timeout units and the
 waist mattress controls.
 
 `tools/generate_richmat_mh_catalog.py` builds `beds/richmat_mh/catalog.py` from the
-machine-local frozen reports (hash-pinned). It reads them from `--phase4-dir`,
+maintainer's local app reports (hash-pinned). It reads them from `--phase4-dir`,
 `$ADJUSTABLE_BED_PHASE4_DIR`, `disassembly/output/phase4-early` in the checkout,
 or the main checkout of a linked worktree; `--check` verifies the committed file
 and reports missing inputs instead of failing with a traceback.
@@ -1465,7 +1465,7 @@ Bluetooth names do not identify the layout.
 - HA's indexed name hints match those prefixes. Service/manual detection still accepts the keywords anywhere in a name.
 - Names with an earlier prefix and no eligible advertised service use manual device selection. HA rejects leading-wildcard manifest matchers.
 - E0FF uses name hints or manual selection because non-bed devices share it; all six listed transports work after explicit selection.
-- HA provides discovery and an explicit device/product picker. Names are scan hints, not capability evidence.
+- HA provides discovery and an explicit device/product picker. Names are scan hints, not a sign of capabilities.
 - Phone text/QR input searches the current 19 remote codes; persisted display keys use exact case-sensitive first-match selection.
 - HA stores an explicit profile per physical device, so ambiguous remote codes cannot change its layout.
 - The two later FlexxLink objects are shadowed by the first RFRN display-key match and are not independent selectable profiles. `None` is unused as a control profile.
@@ -1685,8 +1685,8 @@ parser rejection information. Bed
 observations include motor travel/angles/height, version/control modes, massage,
 white/RGB lighting, music, snore/off-bed/name/locks, coaxing, aroma, heating, fan,
 blanket and detection data. These passive readings do not enable an outbound
-command. Raw values are retained where physical units or motor mappings are not
-proven. Position seeking is not inferred from those observations.
+command. Raw values are kept where physical units or motor mappings are not
+known. Position seeking is not inferred from those observations.
 
 The six service/write pairs are in `beds/hjbed/controller.py:GATT`. The first
 eligible write and first notify characteristic are retained in returned order;
@@ -1779,8 +1779,7 @@ selected product's alarm list.
 
 #### Evidence
 
-HJBed sends only frames frozen from its app. Physical
-effects, ATT behavior and firmware acceptance still need testing by owners.
+Based on HJBed 2.1.2 (21200). Physical effects, ATT behavior and firmware acceptance still need testing by owners.
 
 ### Eshine
 
@@ -1827,7 +1826,7 @@ resource. Flat, Zero-G and Anti-Snore recall are each sent once.
 **Save Zero Gravity** and **Save Anti-Snore** are separate buttons for named
 presets, not numbered memory slots. The phone app's three-second gesture chooses
 save, but the bed does not receive a three-second stream: each save button
-sends its save code once. Strength and mode labels do not establish physical
+sends its save code once. Strength and mode labels do not tell the physical
 cycle levels, persistence or discrete on/off values.
 
 The generic `hold_control` action accepts `head_up`, `head_down`, `feet_up`,
@@ -1895,9 +1894,9 @@ lock, music, mode and component checks.
   new writable capability.
 - No parsed reply enables new commands: the app's E6000 layout is fixed and its
   own UI has no subscribers for these parsed states.
-- Motor reports keep the artifact's numeric motor/type, status, angle, height
+- Motor reports keep the app's numeric motor/type, status, angle, height
   and monitor-height fields. Their mapping to physical head, feet, lumbar and
-  pillow axes is unproven, so they never populate position feedback or sliders.
+  pillow axes is unknown, so they never populate position feedback or sliders.
 - Alarm reports contain six ordered opaque integers. Sleep advertisement names
   stay byte lists.
 - Received side modes never enable single-address pairing or send a side
@@ -1921,8 +1920,7 @@ lock, music, mode and component checks.
 
 #### Evidence
 
-Eshine sends only frames frozen from its app, framed and
-bare. Desk data, firmware maintenance and OTA, empty pruned blanket and
+Based on Eshine 1.0.1 (10100), framed and bare. Desk data, firmware maintenance and OTA, empty pruned blanket and
 diagnostic models, unused enums and unrelated phone infrastructure are excluded;
 no bed Wi-Fi, provisioning, cloud or account path was found. Firmware
 acceptance, physical axis semantics, massage and light cycles and STOP behavior
@@ -1975,7 +1973,7 @@ package-local catalog. A compiled layout is not hardware confirmation.
   the detected Richmat route. A shared service UUID does not identify the app,
   its axes or a physical side.
 - One-address Left/Right pairing is unavailable: the app's mode labels do not
-  establish physical side roles.
+  tell which physical side is which.
 
 The first present fixed service wins, in the order W1, W2, N1, W4 (see
 [Transports](#transports)). N1 sends the decoded resource bytes unchanged (RAW);
@@ -2288,8 +2286,7 @@ motor-mapping configuration stay outside the supported surface. See
 
 #### Evidence
 
-The classic apps send only frames frozen from their five apps. Hardware
-behavior is unverified.
+Based on the five classic apps. Not yet tested on hardware.
 
 ### Good Vibe Sleep
 
@@ -2329,8 +2326,8 @@ Single-address pairs expose only the selected product's admitted sides. A
 combined command uses native side 2 when the product offers it; products
 offering only sides 0 and 1 receive left then right commands on the same BLE link.
 
-The source app has no app-owned PIN, challenge, encryption or bond request. This
-does not establish that firmware never requires OS bonding. Home Assistant
+The app has no PIN, challenge, encryption or bond request. This does not mean
+the firmware never requires OS bonding. Home Assistant
 retains its normal adapter, proxy and setup infrastructure.
 
 ##### Normal-product GATT
@@ -2370,7 +2367,7 @@ without assigning a physical motor to a name alone.
 | Command | Bytes | Description |
 |---------|-------|-------------|
 | Generic short action | `6e 01 S C sum8` or `C` | `C` is the exact selected descriptor's short/legacy-short operand |
-| Generic long action | `6e 01 S L sum8` or `L` | `L` is the exact descriptor's reachable long operand |
+| Generic long action | `6e 01 S L sum8` or `L` | `L` is the exact descriptor's long operand |
 | Release / STOP | `6e 01 S 6e sum8` or `6e` | Sent by gestures that define release; no inferred firmware guarantee |
 
 The five-model memory predicate applies only to E3RM, GXRM, JDRM, JFRM and JGRM,
@@ -2400,8 +2397,8 @@ frame on each side, or the single code on the legacy service:
 <!-- /generated -->
 
 The Y6RM sustained controls refresh like any sustained press; a released control
-sends STOP through the same common builder. These labels do not establish
-physical axes for an untested bed.
+sends STOP through the same common builder. These labels do not tell the
+physical axes of an untested bed.
 
 ##### Lights
 
@@ -2478,7 +2475,7 @@ See [Catalog app timing](#catalog-app-timing).
   Incomplete normal data expires (see [Catalog app timing](#catalog-app-timing)).
   Malformed bounds and zero-length records are rejected without fabricating state.
 - Sleep ordinary assembly uses byte 12 and strips one 14-byte header. Type 1
-  routes by the retained request; type 2 uses the artifact's ordered
+  routes by the retained request; type 2 uses the app's ordered
   text-contains routing. Incoming bytewise text is separate from outbound UTF-8.
 - Report continuation preserves the type-specific whole-chunk versus
   per-chunk-header rule, then bounded GZip decoding and typed day/month schemas.
@@ -2583,8 +2580,7 @@ monitoring to protect the shared response selector.
 
 #### Evidence
 
-Good Vibe Sleep sends only frames frozen from its app's vectors
-(`tests/fixtures/goodvibe`). Hardware, ATT delivery, firmware acceptance and
+Based on Good Vibe Sleep 2.0.1 (20103) (vectors in `tests/fixtures/goodvibe`). Hardware, ATT delivery, firmware acceptance and
 physiological interpretation still need testing by owners.
 
 ### L&P legacy app
@@ -2596,7 +2592,7 @@ physiological interpretation still need testing by owners.
 The `leggett_lp_legacy` bed type follows the legacy app's 122 remote layouts,
 each selected by the four-character code used in that app's manual or QR setup
 (for example `A2RM`, `B1RM`, `ZR00`); the full list is `LP_LEGACY_PROFILE_CODES`
-in `beds/leggett/lp_legacy_profiles.py`. I0RM has no proven bed commands in this app and
+in `beds/leggett/lp_legacy_profiles.py`. I0RM has no bed commands in this app and
 therefore exposes no remote action buttons. It does not change existing Richmat
 or L&P QRRM configurations.
 
@@ -2651,7 +2647,7 @@ builds the packet for the entry's mode.
 | **Legacy** | The first character of the token as one byte, as Nordic framing sends a bare code |
 | **Framed** | `6E 01 hi lo sum8`: the token's four hex digits as two bytes, the codec's command with `hi` in the side byte |
 
-- Only controls with a proven encoding for the selected mode are exposed.
+- Only controls with a known encoding for the selected mode are exposed.
   Single-character tokens have no framed encoding.
 - The two modes can send different bytes for the same token, as 6BRM's `40024`
   below shows.
@@ -2687,20 +2683,20 @@ state decides how the integration sends them:
 
 See [Catalog app timing](#catalog-app-timing).
 
-- Held controls repeat at the app's proven cadence. The configured motor pulse
+- Held controls repeat at the app's cadence. The configured motor pulse
   count determines how long a button invocation holds the control. The wait
   between writes accounts for time spent awaiting the Bluetooth write.
 - The integration preserves each control's own release behavior and sends its
   release even when a running action is cancelled.
 - One-shot controls do not inherit a movement repeat loop.
 - The Stop button cancels the active action and performs its release cleanup.
-  It cannot stop movement started outside this integration: the artifact
+  It cannot stop movement started outside this integration: the app
   defines no separate global emergency-stop command.
 
 #### Notifications
 
 The optional app-response diagnostic reports only the three exact patterns the
-app recognizes. Their physical meaning is not established. They are not motor
+app recognizes. Their physical meaning is not known. They are not motor
 positions, battery readings, a capability query or proof that an alarm is set.
 
 <!-- generated:lp-legacy-notifications -->
@@ -2878,7 +2874,7 @@ byte. Operation `01` writes and `00` queries; replies use `02` and `03`.
 
 #### Evidence
 
-Both apps send only frames frozen from their apps
+Based on Casper Base 1.0.8 and Hush Base 1.0.5
 (`tests/casper_base_vectors.py`, `tests/hush_vectors.py`);
 `tests/test_casper_base_vectors.py` and `tests/test_hush_vectors.py` rebuild
 each one through this codec. Physical motor effects, firmware compatibility,
@@ -2980,7 +2976,7 @@ Only stored products use these further actions:
 
 #### Evidence
 
-Casper Base sends only the frames frozen from its app: its builder vectors
+Based on Casper Base 1.0.8: its builder vectors
 (`tests/fixtures/casper_base/builders.json`) and command bytes
 (`tests/fixtures/casper_base/command_bytes.json`).
 
@@ -3111,7 +3107,7 @@ Hush adds to the family's parser:
 
 #### Evidence
 
-Hush Base sends only the frames frozen from its app, whose
+Based on Hush Base 1.0.5, whose
 products, shared builders and auxiliary shards are listed in
 `tests/hush_vectors.py`.
 
@@ -3757,7 +3753,7 @@ A hidden or disabled descriptor is retained as data and creates no button.
 Phone-light, Clock and Voice callbacks are local navigation; use the alarm action
 for scheduling. The MLILY menu expands to its four directional controls and reset.
 A normal None, title or logo descriptor can send zero and is not assumed to be a
-hardware no-op. Labels identify the app's controls without assigning unproven
+hardware no-op. Labels identify the app's controls without guessing
 physical axes to motor numbers.
 
 BRRM, APRM, YFRM and YGRM start in release mode. BRRM, YFRM and YGRM replace
@@ -5008,7 +5004,7 @@ requested. Native session identity prevents cross-device report and command race
 
 Based on MLILY Control 5.0.2. Literal vectors are in
 `tests/fixtures/mlily/`; all normal bed frames use the Richmat codec and sleep
-JSON uses the shared sleep-envelope codec. Static evidence does not establish
+JSON uses the shared sleep-envelope codec. Not yet tested on hardware:
 physical effects, over-air delivery, alarm accuracy or persistence.
 
 
@@ -6503,7 +6499,7 @@ second command; cancellation prevents a stale delayed write.
 Blanket general temperature limits differ from its sleep-stage limits. Mite
 removal changes local warm temperatures through the general clamp and sends
 only the mite command. Sleep settings send before a changed main-mode frame.
-The main delay retains the artifact's raw multiply-by-sixty formula even though
+The main delay keeps the app's raw multiply-by-sixty formula even though
 its Android label says hours. Groove timers convert UI seconds to rounded
 minutes before encoding; received timers retain the separate base-sixty decode
 and subscriber multiplication. These values are not calibrated hardware units.
@@ -6557,7 +6553,7 @@ no action accepts arbitrary packet bytes.
 - Separate sleep entry: time/part/realtime queries, polling,
   sensitivity query, automatic anti-snore query/setting, report session, init and
   local cancellation. `sleep_snore` uses value 0 for query and 1 for setting.
-  There is no valid sensitivity setter in this artifact.
+  There is no valid sensitivity setter in this app.
 - Clock: the bed and the separate sleep entry set their clock with
   [Set bed clock](../SERVICES.md#sync_clock); the sleep entry also sets it on
   every connection.
@@ -6707,7 +6703,7 @@ local clock. Alarm actions are `anti_snore`,
 `zero_gravity`, `tv`, `memory_1` and `memory_2`. Weekdays are Monday=0 through
 Sunday=6; an empty list means once, and `enabled` occupies the low repeat bit.
 New alarms use the first unused observed id from 1 through 7; this app allocation
-range does not establish controller capacity. An explicit `alarm_id` avoids
+range does not show the controller's capacity. An explicit `alarm_id` avoids
 relying on an incomplete notification list. Light timeout accepts whole minutes
 from 0 through 15, supplied as seconds, with zero selecting the always-on sentinel.
 Color is two frames in one characteristic write. All requested targets and
@@ -6741,7 +6737,7 @@ Write-without-response is used only when that selected writable TX also advertis
 The embedded manuals cover headboard installation, power storage, electric bed
 controls and Hi-Lo Tilt. They ground labels, not inferred product-to-hardware
 aliases, BLE pairing, side commands or packet values. The unused Factory Reset
-title is not an action. Flat is the reachable MotorReset control.
+title is not an action. Flat is the app's MotorReset control.
 
 #### Controls
 
@@ -6875,7 +6871,7 @@ movement cleanup, drops cancelled work and applies a strict elapsed hold ceiling
 It sends the actual STOP after a submitted held refresh, with cancellation unable
 to suppress cleanup. A release before the first refresh sends nothing. Tap,
 preset, save, light and massage actions send once without an extra STOP. These HA
-ownership and cancellation guards do not establish a firmware watchdog.
+ownership and cancellation guards are not a firmware watchdog.
 
 #### Notifications
 
@@ -6902,8 +6898,8 @@ publish into a replacement physical session.
 `delete`; [`sync_clock`](../SERVICES.md#sync_clock) sets the clock. Alarm access requires the current connection's clock ACK.
 FARM/JLRM supply the four preset choices. `set` creates or replaces an explicit
 ID. `new` also requires an explicit ID from the app's range 1 through 7,
-without claiming firmware capacity. A nonempty cache cannot establish which
-slots are free: no list terminator or empty-list proof is known. Partial replies
+without claiming firmware capacity. A nonempty cache cannot show which slots
+are free: the bed sends no list terminator or empty-list marker. Partial replies
 and silence never authorize automatic allocation.
 
 Weekday bits run Monday through Sunday from bit 7 to bit 1; bit 0 enables the
@@ -6919,7 +6915,7 @@ closed link. On the execution connection HA validates the owner/product and
 inputs again, waits for the current clock ACK, and queries fresh target fields
 for toggles. Changed toggle fields abort instead of reusing the previous tuple.
 All topologies query a fresh requested-ID tuple before a toggle. Those reply
-waits have a five-second HA bound; they do not establish list completeness.
+waits have a five-second HA bound; they do not confirm the list is complete.
 An explicit list reads for five seconds from actual query submission, with slow
 writes consuming that window. Its optional response contains copied alarm tuples
 per physical address/side and `complete: false`, including for zero observations.
@@ -7797,7 +7793,7 @@ containing both color frames.
 #### Notifications
 
 The session parser accepts checksum-framed replies and discards callbacks
-from previous connections. Alarm acknowledgements do not establish a stored
+from previous connections. Alarm acknowledgements do not confirm a stored
 schedule. Light and aroma settings need live capability replies. Table
 height and range values stay in diagnostics; they are not bed motor angles.
 
@@ -9166,13 +9162,11 @@ subframes in one write. No raw-command or separate-sensor service is exposed.
 
 #### Evidence
 
-Row A09's accepted whole-artifact reconciliation binds every selector to its
-current getters, installed copied configuration, screen route and session state.
-The 48,642 ordinary frozen literals are carried by `tests/fixtures/galaxy` and
-encoded by `codec/richmat.py`; focused tests also cover normal advanced builders,
-parsers, countdown commits and reconciled runtime transitions. This is static
-app evidence, not a claim of hardware validation. Real owners can
-validate firmware, physical sides and release behavior with timestamped captures.
+The 48,642 ordinary frames are in `tests/fixtures/galaxy` and encoded by
+`codec/richmat.py`; focused tests also cover advanced builders, parsers,
+countdown commits and runtime transitions. Not yet tested on hardware; owners
+can help confirm firmware, physical sides and release behavior with timestamped
+captures.
 
 Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
@@ -9184,7 +9178,7 @@ Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
 Select the app first, then its exact four-character layout. Luuna Rise has its
 own 604-layout catalog and Power Cool its own 586-layout catalog. An app name,
-shared Bluetooth service or matching opcode does not establish a product match.
+shared Bluetooth service or matching opcode does not mean a product match.
 Luuna's H-series layouts include HKRM with its own Left/Right selector. AHRM's
 one-shot action differs between apps; Luuna also has an H9RM reset-labelled
 action that is absent in Power Cool. That label does not prove a factory reset.
@@ -9239,9 +9233,9 @@ are limited to BRRM/YFRM/YGRM. GVRM's uninitialized old-long field emits no foot
 command. U3RM's selected tag changes its additional actuator bytes.
 
 The table preserves exact layout eligibility. Hidden controls remain hidden
-unless a proven overlay reveals them. Resource names are app labels, not proof
-of motor anatomy. Short music actions are unavailable while independently
-proven long lock-labelled gestures remain available.
+unless an app overlay reveals them. Resource names are app labels, not a map of
+the motors. Short music actions are unavailable while the long lock-labelled
+gestures remain available.
 
 <!-- generated:richmat-rise-commands -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -9745,6 +9739,34 @@ proven long lock-labelled gestures remain available.
  </details>
 <!-- /generated -->
 
+#### Alarm actions
+
+Set the alarm with [`set_alarm`](../SERVICES.md#set_alarm). A layout accepts
+only the controls the app can wake you with; about 140 of each app's 600
+layouts have any. TV, Lounge, Zero Gravity, Anti-snore and Flat sleep are the
+`wake_action` values `tv`, `lounge`, `zero_g`, `anti_snore` and `flat_sleep`,
+M1 to M3 are `memory_1` to `memory_3`, and the two wake modes are `wake_mode_1`
+and `wake_mode_2`. Massage 1 and massage 2 intensity up are the `head` and
+`feet` massage zones, and both together (or the massage-on control) `both`. Add
+`massage: true` with a `massage_zone` to a position, or use `wake_action: none`
+with `massage: true` for massage alone. On UFRM, for example, `wake_action:
+zero_g` with `massage: true` and `massage_zone: head` wakes you with Zero
+Gravity and massage 1.
+
+These are the most common sets:
+
+| Layouts | Alarm actions |
+|---|---|
+| UFRM, XJRM, XKRM, XZRM, Z5RM | TV, Lounge, Zero Gravity, M1, M2, massage 1 intensity up, massage 2 intensity up |
+| O7RM, V4RM, XYRM, Z4RM, ZFRM | TV, Anti-snore, Zero Gravity, M1, M2, massage 1 intensity up, massage 2 intensity up |
+| AFRM, AGRM, AMRM, ANRM, XFRM | Zero Gravity, Anti-snore, TV, massage 1 intensity up, massage 2 intensity up |
+| A9RM, DARM, WURM, Z6RM | TV, Anti-snore, Zero Gravity, massage 1 intensity up, M1, massage 2 intensity up, M2 |
+| FHRM, G9RM, HLRM and HRRM (Luuna Rise only) | TV, Lounge, Anti-snore, Zero Gravity, M1 |
+| XGRM, Y1RM, Y7RM, YQRM | Zero Gravity, Anti-snore, M1 |
+
+For another layout, download the bed's diagnostics: `alarm_actions` lists the
+layout's alarm controls.
+
 #### Position Feedback / Notifications
 
 The source recognizer's checksum, prefix order and partial/coalesced-message
@@ -9802,8 +9824,7 @@ service wins even if its characteristics are incomplete. An explicit advanced
 option enables the source's third-service property fallback. HA resolves both
 characteristics from the current session and rejects an incomplete route.
 Android leaves write type unchanged; HA uses the selected characteristic's
-advertised write properties. No authentication or position-feedback contract
-is established.
+advertised write properties. There is no authentication or position feedback.
 
 #### Controls
 
@@ -9823,7 +9844,7 @@ The separate generic BED requests correspond to the app's recognized-command
 callbacks. They remain usable through `richmat_resource_bed`, independently of XML buttons and alarm choices. A
 `memory_three` request does not certify a third physical slot. Use the normal
 Stop action for movement release. `voice_stop_request` sends the app's separate
-request and then the protocol release; its label is not emergency STOP evidence.
+request and then the protocol release; it is not an emergency stop.
 Speech recognition and microphone machinery are not part of the integration.
 
 <!-- generated:richmat-resource-apps -->
@@ -10153,7 +10174,7 @@ rules.
 
 Alarm metadata, the received capability flag and direct alarm navigation are
 separate gates. LED support requires an actual current-session reply; saved
-menus and default RGB values do not establish device feedback. RGB is one
+menus and default RGB values are not device feedback. RGB is one
 concatenated write. The phone wheel drops updates while its sender is busy;
 HA serializes explicit action requests. Timeout retains the source's byte-pair
 folding rather than silently substituting a conventional 16-bit value.
@@ -10189,8 +10210,8 @@ standard `hold_control` action; held buttons publish current card metadata.
 
 All four apps share the binding
 domain, both movement formats and direct settings builders. The Richmat codec
-reproduces their frozen literal vectors; the controllers use each member's
-explicit product scope and preserve its source-qualified limits. Hardware
+reproduces their test vectors; the controllers use each member's product scope
+and keep its limits. Hardware
 motion, physical axes, memory effects and optional features remain unverified.
 
 ### Lady Americana
@@ -10397,7 +10418,7 @@ once, and leaving the field out keeps an edited alarm's days. The four modes are
 explicit `alarm_id` from 1 through 7 when creating a recurring alarm. The list
 has no completion marker, so Home Assistant does not infer a free slot from
 missing or delayed replies. The app's exhausted allocator serializes FF; that
-evidence is retained in codec tests, but Home Assistant requires an explicit
+case is kept in codec tests, but Home Assistant requires an explicit
 slot instead.
 
 A one-shot alarm uses the selected local time and a minute countdown; a positive
@@ -10464,7 +10485,7 @@ the sibling's detailed offsets and controls are not borrowed.
 Ordinary KEEP uses the selected widget's interval. Fixed-layout remotes use
 150 ms refresh; their long-save gesture waits three one-second ticks and sends
 a checksummed save, followed by the 150 ms release sequence. The generic
-LONG-worker's malformed checksum-zero example is evidence of a distinct path,
+LONG-worker's malformed checksum-zero example belongs to a distinct path,
 not a reason to corrupt all saves or assume firmware tolerance.
 HA does not expose that raw threshold path, which no current Nisco widget is
 shown to use. Ordinary programming and the separately attached, checksummed
@@ -10525,7 +10546,7 @@ Based on Nisco 1.1.1 (3).
 
 Choose **MLILY Supreme app (Richmat)** explicitly. This is a separate profile
 from MLILY Control and other same-brand integrations. The name rule and GATT
-priority match Nisco's established common domains. Unlike Nisco, the six short
+priority match Nisco's common domains. Unlike Nisco, the six short
 manual surface identifiers are selectable. Choose the explicit normal-mattress
 variant only for that app-selected extra; a powered initialization must still
 arrive. Waist powered initialization accepts its own area. Configure and paired
@@ -10548,7 +10569,7 @@ setting domains. Pad selectors do not create another BLE recipient.
 #### Timing
 
 The shared query schedule and ordinary/fixed-remote caller timings apply only
-where established. Two-phase alarms use 300 ms. Mattress initialization
+where the app uses them. Two-phase alarms use 300 ms. Mattress initialization
 consumers run 300 ms after their accepted frames. Mattress commands are one-shot;
 mode zero and leg/pillow zero are explicit stop values.
 
@@ -10564,7 +10585,7 @@ stop resets progress and retains rows. Other valid INIT frames keep their generi
 fallback. The source length/checksum gate covers the whole accumulated buffer.
 
 Normal/waist cache keys, alarm tails and the source's fixed-end-index resync
-quirk remain distinct from Nisco's bounded evidence. Coalesced waist lengths are
+quirk remain distinct from Nisco's. Coalesced waist lengths are
 14, 18 and 19 bytes. The separate sleep receiver's live consumer requires a
 saved physical receiver; `Std` defaults to 1. HA rejects signed-length overflow
 headers and bounds malformed buffering rather than claiming Android recovered
@@ -11588,12 +11609,12 @@ adapter/proxy discovery, connection acceptance and handoff.
 
 | Feature | Availability |
 |---|---|
-| Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and foot up, Upper Section Up, ...), without inferring physical motor count. |
-| Presets and memory | Exact named actions in the selected profile, including separate Save buttons where programming is proven. No universal slot count or numeric memory namespace. |
+| Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and foot up, Upper Section Up, ...), without guessing the physical motor count. |
+| Presets and memory | Exact named actions in the selected profile, including separate Save buttons where the app can save. No universal slot count or numeric memory namespace. |
 | Massage and bed light | Profile-specific request buttons; local icon/flag changes do not confirm remote state. Where a remote has more than one fixed massage timer key (10MIN, 20MIN, 30MIN), they are the **Massage: Timer** select, with durations only; **Timer / Off** stays a button. |
 | Factory Reset | Only where listed; requires confirmation in the native card, as do Save buttons. |
 | Position and device state feedback | None. |
-| Renewable holds | Proven motion controls only. Countdown, massage, programming and local selectors remain finite. |
+| Renewable holds | Motion controls only. Countdown, massage, programming and local selectors remain finite. |
 
 The command tables below describe raw single-character ASCII String bytes over
 Nordic UART. There is no packet envelope, terminator, checksum, sequence, side
@@ -13509,7 +13530,7 @@ Cleanup uses the captured physical connection and a fresh cancellation event.
 Already-submitted GATT work and the complete release batch drain independently
 of cancellation; unconditional cleanup is attempted even if a short-recall
 write fails. A stale callback cannot write to a replacement bed. These rules
-do not establish a mechanical stop guarantee.
+do not guarantee a mechanical stop.
 
 #### Notifications
 
@@ -13547,7 +13568,7 @@ Based on SleepEvolution 3.5.5 (13) and W.Silver Products 3.3.7 (9).
 Choose **BedSmart / X-Series app** in the Richmat app question, then choose the
 four-character layout matching the app. **Reconfigure** changes the app or
 layout later. Each physical bed in a combined pair keeps its own choices.
-Name matches offer the app as a choice; they do not establish a physical model.
+Name matches offer the app as a choice; they do not identify a physical model.
 The manual aliases B6RU and ZR90 work without being automatic scan prefixes.
 ZRS0, ZRS1, ZRS2 and ZRS3 are menus: choose the matching destination layout
 during setup. If a layout correction cannot use a saved selection, that
@@ -14472,8 +14493,8 @@ separate from physical bed sides. Set them and the declared motor group with
 Choose **Separate sleep and intervention receiver** for the auxiliary
 receiver. It exposes local single/double user mode and left/right intervention
 switches, with its own BLE session and clock. It has no motor controls or
-physiological report entities. Its intervention settings do not establish a
-mechanical bed movement effect. Normal mattress controls require the explicit
+physiological report entities. Its intervention settings are not known to move
+the bed. Normal mattress controls require the explicit
 normal-mattress option and powered initialization; waist controls require the
 receiver's waist initialization.
 
@@ -15358,7 +15379,7 @@ anti-snore and zero gravity. AFEG350 also has coaxing sleep mode.
 
 Each preset's alternate byte is offered through a **Save** button. Named preset
 saves ask for confirmation; numbered-memory saves use the card's **Set** mode.
-The alternate bytes are proven; save/program intent is inferred from the app's
+The alternate bytes come from the app; save/program intent follows the app's
 three-second preset gesture. Their physical effects have not been verified.
 No numeric massage range, decrement or light on/off state is inferred from a
 cycle/toggle command. Timer state is unknown until a successful timer write.
@@ -15422,7 +15443,7 @@ cycle/toggle command. Timer state is unknown until a successful timer write.
 
 Movement starts on the first 100 ms tick. Releasing before it sends neither
 movement nor STOP. A held operation refreshes until its deadline or cancellation,
-then sends the proven global STOP on its captured connection with a fresh
+then sends the app's global STOP on its captured connection with a fresh
 cancellation event. Expired queued ticks are discarded at dispatch; the small HA
 scheduling allowance at an exact end tick is listed above. Preset recalls and
 alternate saves send once. Save buttons replace the app's three-second gesture
@@ -15489,7 +15510,7 @@ Direction buttons support `hold_control`. Flat, presets, saves and massage keep
 their own gestures. Confirmed saves never have a renewable hold. Fixed massage
 timers use the shared duration select; intensity steps do not imply absolute
 levels. L2RM has no combined Down control: the app's generated counterpart has
-no established physical meaning. RGB conversion is corroborated. The physical
+no known physical meaning. RGB conversion matches the app. The physical
 vibration effect and measured position mappings remain unverified.
 
 <!-- generated:dreamsense -->
@@ -15654,7 +15675,7 @@ validation. Pending bytes expire after 500 ms and are cleared. Alarm list/push
 records and standard/split replies update connection-scoped state. Retired-session
 notifications cannot change the current state.
 
-Unconsumed library angle/status events establish no calibrated motor feedback.
+The library's angle and status events are not used as motor positions.
 No position slider or guessed range is exposed. Disconnect clears observed alarm
 records and commanded settings. Stored capability knowledge may retain entity
 visibility, but never admits writes on a new connection.
@@ -15678,9 +15699,8 @@ phone controls, network and device administration are outside the integration.
 
 #### Evidence
 
-Based on Dream Sense Bed 1.0.4 (`com.richmat.dreamsense`), the complete frozen
-Google Play Norway delivery of November 18, 2026. This is not a live or worldwide
-latest-version claim. No hardware verification is claimed.
+Based on Dream Sense Bed 1.0.4 (`com.richmat.dreamsense`), as delivered by
+Google Play on November 18, 2026. Not yet tested on hardware.
 
 ## Notes
 

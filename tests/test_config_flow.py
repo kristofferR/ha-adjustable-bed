@@ -2229,7 +2229,7 @@ class TestBluetoothDiscoveryFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
-        enable_custom_integrations,  # noqa: ARG002
+        enable_custom_integrations,
     ):
         """The confirm step exposes a pre-filled 'report misidentified device' link."""
         result = await hass.config_entries.flow.async_init(
@@ -2249,7 +2249,7 @@ class TestBluetoothDiscoveryFlow:
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
         caplog: pytest.LogCaptureFixture,
-        enable_custom_integrations,  # noqa: ARG002
+        enable_custom_integrations,
     ):
         """Discovery confirmation should still load if discovery-log storage fails."""
         mock_log = MagicMock()

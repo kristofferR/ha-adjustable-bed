@@ -904,7 +904,7 @@ class SleepNumberController(BedController, SleepNumberActions):
             and self._system_config.get(f"{side or self._side}_{actuator}_actuator", "yes") == "yes"
         )
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Convert direct-position values to Sleep Number's 0-100 native range."""
         return max(_SLEEP_NUMBER_MIN_POSITION, min(_SLEEP_NUMBER_MAX_POSITION, round(angle)))
 
@@ -1054,7 +1054,7 @@ class SleepNumberController(BedController, SleepNumberActions):
         except BleakError:
             _LOGGER.debug("Failed to stop Sleep Number notifications", exc_info=True)
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read actuator positions, preserving explicit logical-side ownership."""
         await self._read_positions_for_side(self._side)
 

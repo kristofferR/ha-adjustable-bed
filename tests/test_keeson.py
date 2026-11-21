@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.keeson.controller import (
@@ -36,6 +37,7 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
@@ -540,13 +542,12 @@ class TestKeesonPresets:
         mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test program memory logs warning."""
+        """A bed that cannot save memory refuses to."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
-
-        assert "Programming memory 1 is not supported" in caplog.text
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.program_memory(1)
 
 
 class TestKeesonLights:
@@ -2078,7 +2079,7 @@ class TestKsbtMemoryPresets:
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
-    async def test_ksbt_preset_memory_invalid_slot_warns(
+    async def test_ksbt_preset_memory_invalid_slot_is_refused(
         self,
         hass: HomeAssistant,
         mock_keeson_config_entry,
@@ -2086,16 +2087,16 @@ class TestKsbtMemoryPresets:
         mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test out-of-range KSBT memory slot warns and sends nothing."""
+        """An out-of-range KSBT memory slot is refused and sends nothing."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
         controller = KeesonController(coordinator, variant="ksbt")
         coordinator._controller = controller
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        await controller.preset_memory(4)
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await controller.preset_memory(4)
 
-        assert "Memory 4 not supported" in caplog.text
         mock_bleak_client.write_gatt_char.assert_not_called()
 
 

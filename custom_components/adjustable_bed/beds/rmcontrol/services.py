@@ -13,13 +13,13 @@ from homeassistant.helpers import config_validation as cv
 from ...const import DOMAIN
 from ...errors import invalid
 from ...import_executor import async_import_modules
-from ...services import SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
 if TYPE_CHECKING:
     from .controller import RmcontrolController
 
 _ANTI_SNORE_FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(("switch", "configure", "query")),
     vol.Optional("enabled"): cv.boolean,
     vol.Optional("mode"): vol.In(("count", "time")),

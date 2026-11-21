@@ -171,9 +171,15 @@ class ResourceBedController(RichmatClassicController):
         self._record_command_trace(
             session.write.uuid, packet, response=session.response, characteristic=session.write
         )
-        task = asyncio.create_task(
-            session.client.write_gatt_char(session.write, packet, response=session.response)
-        )
+
+        async def write() -> None:
+            async with self._ble_lock:
+                await session.client.write_gatt_char(
+                    session.write, packet, response=session.response
+                )
+            note_frame_written(cancel)
+
+        task = asyncio.create_task(write())
         cancelled = False
         while not task.done():
             try:
@@ -181,7 +187,6 @@ class ResourceBedController(RichmatClassicController):
             except asyncio.CancelledError:
                 cancelled = True
         task.result()
-        note_frame_written(cancel)
         if cancelled:
             raise asyncio.CancelledError
 

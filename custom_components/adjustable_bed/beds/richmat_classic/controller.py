@@ -389,7 +389,8 @@ class RichmatClassicController(BedController):
             raise ConnectionError("No current app BLE session")
         # Calls are admitted under the coordinator command lock. Never retry an
         # actuator write or carry cached Android objects across connections.
-        await session.client.write_gatt_char(session.write, packet, response=session.response)
+        async with self._ble_lock:
+            await session.client.write_gatt_char(session.write, packet, response=session.response)
         note_frame_written(cancel)
 
     async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = TICK_MS, cancel_event: asyncio.Event | None = None) -> None:

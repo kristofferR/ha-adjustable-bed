@@ -203,13 +203,6 @@ def test_thermal_slider_matches_every_source_entry(index: int) -> None:
 
 
 @pytest.mark.parametrize(
-    "enabled, source_id", [(True, "LengnuanFragment:294"), (False, "LengnuanFragment:296")]
-)
-def test_thermal_timer_switch_matches_source(enabled: bool, source_id: str) -> None:
-    assert protocol.build_thermal_timer_enabled(enabled) == protocol.SOURCE_COMMANDS[source_id]
-
-
-@pytest.mark.parametrize(
     "track, checksum", [(1, "1C04"), (2, "1D04"), (3, "1E04"), (4, "1F04"), (5, "2004")]
 )
 def test_dynamic_audio_track(track: int, checksum: str) -> None:

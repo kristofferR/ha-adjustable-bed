@@ -14,6 +14,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.keeson.controller import (
@@ -38,6 +39,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.error_helpers import raises_key
 
 KSBT01C = "KSBT01C000015046"
 KSBT03C = "KSBT03C000015046"
@@ -366,7 +368,8 @@ async def test_auto_keeps_legacy_routing_for_embedded_identities(coordinator, na
 
 
 async def test_unknown_memory_slot_sends_nothing(coordinator, mock_bleak_client: MagicMock):
-    await _lite(coordinator, KSBT01C).preset_memory(4)
+    with raises_key("feature_not_supported", ServiceValidationError):
+        await _lite(coordinator, KSBT01C).preset_memory(4)
     mock_bleak_client.write_gatt_char.assert_not_awaited()
 
 
