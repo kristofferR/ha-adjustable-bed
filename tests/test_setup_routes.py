@@ -257,7 +257,7 @@ async def test_aliases_show_friendly_labels_and_keep_their_saved_id(hass, alias,
     selector = _bed_type_selector(alias, show_saved_id=True)
     # An alias inside a family's journey names that family too.
     family = " · Okin" if alias == const.BED_TYPE_OKIMAT else ""
-    shown = f"{bed_type_label(alias)}{family} (saved as {alias})"
+    shown = f"{bed_type_label(alias)}{family}"
     assert shown in {option["label"] for option in selector.config["options"]}
     # The shown label maps back to the saved ID, never to the route it runs.
     assert selector(shown) == alias

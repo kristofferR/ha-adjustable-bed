@@ -1348,3 +1348,20 @@ async def test_discovered_bed_starts_with_its_advertised_model(hass):
     result = await flow.async_step_profile_questions({})
     await finish_new_bed(flow, result)
     assert flow._finish_with_verify.await_args.args[0][CONF_PRODUCT_TYPE] == "134"
+
+
+def test_identical_models_show_once_and_a_saved_twin_stays():
+    """Entries that differ only in their key show once; other shared names keep theirs."""
+    from custom_components.adjustable_bed.const import CONF_PRODUCT_TYPE
+    from custom_components.adjustable_bed.setup_questions import (
+        _cheerssleep_errors,
+        _cheerssleep_models,
+    )
+
+    models = _cheerssleep_models({})
+    assert models["14"] == "BS200C/BS200P" and "16" not in models
+    # A shared name on another command format stays a choice of its own.
+    assert {"45", "134"} <= set(models)
+    saved = {CONF_PRODUCT_TYPE: "16"}
+    assert _cheerssleep_models(saved)["16"] == "BS200C/BS200P"
+    assert _cheerssleep_errors(saved) == {}

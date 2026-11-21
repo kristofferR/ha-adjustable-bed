@@ -449,7 +449,7 @@ async def test_public_service_has_only_bed_operations_and_checks_app_before_exec
     services.async_register_goodvibe_services(hass)
     obj = controller(coordinator, "D1RM")
 
-    async def execute(_targets, _cls, _description, call, *, validate, admissions):
+    async def execute(_targets, _cls, call, *, validate, admissions):
         assert admissions == []
         validate(obj)
         await call(obj)

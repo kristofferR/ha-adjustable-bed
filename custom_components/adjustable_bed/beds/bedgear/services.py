@@ -132,7 +132,6 @@ async def _handle(call: ServiceCall, app: str) -> None:
     await _preflight_and_execute(
         targets,
         BedgearController,
-        "L2 Motion" if app == "l2motion" else "Bedgear",
         execute,
         validate=snapshot,
         cancel_running=not color,

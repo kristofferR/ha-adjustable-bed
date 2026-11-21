@@ -71,7 +71,6 @@ async def handle_action(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         AgingPlaceController,
-        "Dawn House actions",
         run,
         resource=resource,
         cancel_running=resource is None,
@@ -98,7 +97,6 @@ async def handle_setting(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         AgingPlaceController,
-        "Dawn House settings",
         run,
         admit=True,
         admissions=admissions,

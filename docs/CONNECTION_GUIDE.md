@@ -178,7 +178,7 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
      controller name. The app then asks its own questions; see
      [Initial Setup](CONFIGURATION.md#initial-setup)
    - **Name**: Friendly name for your bed
-   - **Number of motors** and **Has massage feature**: Shown when the app does not set them
+   - **Number of motors** and **Massage controls**: Shown when the app does not set them
    - **Bluetooth connection**: How long Home Assistant keeps the link after a command; usually leave the default
    - **Advanced: bed model or remote** (only for bed types with several): Usually leave on **Automatic (recommended)**
    - **Movement**: **Movement per tap**; usually leave the default
@@ -199,9 +199,10 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
    **Check again**. The ordinary capability check also allows finishing setup
    without a successful probe.
 
-   **Standard Octo is different:** its PIN check must report **accepted** or
-   **not required** before the entry is saved. A required, rejected, or
-   inconclusive PIN check offers a retry. This check does not move the bed.
+   **Standard Octo is different:** a PIN the bed says is required or rejected
+   must be entered or corrected before the entry is saved. An inconclusive
+   check offers **Check again** or **Finish setup anyway**. This check does not
+   move the bed.
    Star2 keeps its separate setup behavior. See [Octo setup](beds/octo.md#pin-verification-during-setup).
 
 For a split bed with independent controllers, add and verify each side first,
@@ -239,7 +240,7 @@ If your bed isn't auto-discovered:
 
 **Using the Integration (Recommended):**
 1. Go to **Settings > Devices & services > Add Integration > Adjustable Bed**
-2. Choose **Pick any Bluetooth device** (or **Browse unsupported BLE devices** for inspection only)
+2. Choose **Pick any Bluetooth device** (or **Browse unsupported Bluetooth devices** for inspection only)
 3. The integration displays all discovered Bluetooth devices with their MAC addresses
 4. Find your bed in the list (look for names like "Desk XXXXX", "HHC...", your bed brand, etc.)
 
@@ -251,7 +252,7 @@ If your bed isn't auto-discovered:
 
 If your bed doesn't appear in Home Assistant at all (not visible to any adapter or proxy), use [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) on your phone to verify the device exists and check its range. If nRF Connect sees it but Home Assistant doesn't, the bed may be out of range of your HA Bluetooth adapter - consider adding an ESPHome proxy closer to the bed.
 
-**Tip:** If your bed type isn't recognized, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. See [Getting Help](GETTING_HELP.md) for details.
+**Tip:** If your bed type isn't recognized, use **Browse unsupported Bluetooth devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. See [Getting Help](GETTING_HELP.md) for details.
 
 ---
 

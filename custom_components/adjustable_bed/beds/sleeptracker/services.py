@@ -76,7 +76,6 @@ async def handle_sleeptracker(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         SleeptrackerController,
-        "Sleeptracker processor controls",
         lambda controller: controller.async_execute_sleeptracker_request(request),
         validate=lambda controller: controller.validate_sleeptracker_request(request),
         cancel_running=True,

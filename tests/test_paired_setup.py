@@ -54,6 +54,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_DEVICE_NAME,
     CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -195,6 +196,13 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
     )
     entry.add_to_hass(hass)
     return entry
+
+
+def _record_bond(hass: HomeAssistant, entry: MockConfigEntry) -> None:
+    """Record a bond on one side, so the entry offers to remove it."""
+    data = {**entry.data, CONF_PAIR_CHILDREN: [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]}
+    data[CONF_PAIR_CHILDREN][0][CONF_BLE_BOND_ESTABLISHED] = True
+    hass.config_entries.async_update_entry(entry, data=data)
 
 
 class TestPairedSetup:
@@ -404,7 +412,8 @@ class TestPairedSetup:
         # The options flow always opens on a menu, so a bed that cannot pair its
         # sides is proven by the absence of the entry, not by skipping the menu.
         assert result["type"] == FlowResultType.MENU
-        expected = {"settings", "remove_bond"}
+        # A Kaidi bed never pairs, so it has no bond to remove.
+        expected = {"settings"}
         if offers_pairing:
             expected.add("pair_sides")
         assert set(result["menu_options"]) == expected
@@ -440,7 +449,7 @@ class TestPairedSetup:
 
         result = await hass.config_entries.options.async_init(entry.entry_id)
         assert result["type"] == FlowResultType.MENU
-        assert set(result["menu_options"]) == {"settings", "pair_sides", "remove_bond"}
+        assert set(result["menu_options"]) == {"settings", "pair_sides"}
         result = await hass.config_entries.options.async_configure(
             result["flow_id"], {"next_step_id": "pair_sides"}
         )
@@ -581,7 +590,6 @@ class TestPairedSetup:
             "left_settings",
             "right_settings",
             "unpair",
-            "remove_bond",
         }
 
         result = await hass.config_entries.options.async_configure(
@@ -611,6 +619,7 @@ class TestPairedSetup:
     ) -> None:
         """A combined parent never guesses which child address the action means."""
         entry = _paired_entry(hass)
+        _record_bond(hass, entry)
 
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
@@ -650,6 +659,7 @@ class TestPairedSetup:
             version=4,
         )
         entry.add_to_hass(hass)
+        _record_bond(hass, entry)
 
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
@@ -677,6 +687,7 @@ class TestPairedSetup:
             version=4,
         )
         entry.add_to_hass(hass)
+        _record_bond(hass, entry)
 
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
@@ -707,6 +718,7 @@ class TestPairedSetup:
             version=4,
         )
         entry.add_to_hass(hass)
+        _record_bond(hass, entry)
 
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
@@ -738,6 +750,7 @@ class TestPairedSetup:
             version=4,
         )
         entry.add_to_hass(hass)
+        _record_bond(hass, entry)
         original_remove_bond = AdjustableBedOptionsFlow.async_step_remove_bond
         selected: list[str | None] = []
 

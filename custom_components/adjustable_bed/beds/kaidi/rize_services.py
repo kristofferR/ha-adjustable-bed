@@ -34,16 +34,14 @@ async def handle_rize_program_preset(call: ServiceCall) -> None:
     ):
         raise invalid("one_bed_only")
     preset, confirm = call.data["preset"], call.data["confirm"]
-    label = "Rize default preset programming"
     preflighted = await _preflight_capability(
-        targets, RizeController, label,
-        validate=lambda c: c.validate_program_preset(preset, confirm),
+        targets, RizeController, validate=lambda c: c.validate_program_preset(preset, confirm),
     )
     try:
         for coordinator, side in targets:
             await _execute_sided(
                 coordinator, side,
-                _family_command(RizeController, label, lambda c: c.program_preset(preset, confirm)),
+                _family_command(RizeController, lambda c: c.program_preset(preset, confirm)),
                 resource="configuration",
             )
     except BaseException:

@@ -102,6 +102,7 @@ the migration changed, under `profile_migration`.
 | **Bed type** and **Protocol variant** in Configure | **Reconfigure**, for every bed. The protocol variant is now called **Bed model or remote** |
 | **Has massage feature**, maximum angles and a motor count with one choice, shown for beds that ignore them | Hidden |
 | A bed added through **Pick any Bluetooth device** saved the scanner that found it as its adapter | Saves **Automatic**, like a discovered bed |
+| **App artwork theme** (Limoss Remote) | Removed. It changed no control. A saved theme is kept and still shows in diagnostics |
 | A combined bed's saved pair connection mode (`pair_connection_mode`) | Removed. A combined bed with two Bluetooth addresses starts with both links and switches between the two beds one at a time only when the adapter cannot hold both |
 
 Three layouts with no massage showed massage buttons in 4.x when Massage was
@@ -316,6 +317,12 @@ removed below, with what to use instead; it is checked again at every start
 and goes away once none does. Templates are not checked. The
 [Actions and Automations](SERVICES.md) guide describes every current action.
 
+Entities removed or folded into another one are handled the same way: once
+the bed has connected and they are gone, a repair lists the automations and
+scripts that still use one, and goes away at the first start where none does.
+[Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) says what
+replaced each. Dashboards are not checked.
+
 | 4.x action | Use now |
 |------------|---------|
 | `bf_cherish_set_alarm` | `set_alarm` |
@@ -393,6 +400,8 @@ Other action changes:
   defaults), and the sleep report's `part` and `report_type` take `left` or
   `right` and `day` or `month` instead of 1 and 2.
 - `goodvibe` no longer offers `operation: sync`; use `sync_clock`.
+- `goto_preset` and `save_preset` refuse a memory number that is not a whole
+  number, such as `1.5`; 4.x quietly used memory 1.
 - `furnimove_action` no longer takes `consumer`.
 - `sleep_number_command` no longer offers `reboot_system`,
   `starts_actuator_homing`, `set_system_time`, the cooling and core-temperature
@@ -657,7 +666,7 @@ runs the bed. Rows that left the top-level list keep their bed type and ID.
 | Remacro | Slumberland, The Brick or Jerome's, using the model the bed advertises |
 | Reverie | The Nightstand app or the Protocol 110 or 108 receiver, then the model. Pairlink keeps its own row |
 | Richmat | RMControl, the Richmat MH apps, the classic apps, SleepFunction, SVEN & SON and Richmat remotes. Each app is also its own searchable row |
-| Sleep Number | Fuzion (Climate 360, FlexFit) or BAM/MCR (i8, 360 FlexFit 2). A Fuzion bed then asks its side |
+| Sleep Number | Fuzion (Climate 360, FlexFit) or an older base (i8, 360 FlexFit 2). A Fuzion bed then asks its side |
 | Sleepy's Elite | The MFRM Sleepy's Elite app, or the BOX15, BOX24 or BOX25 receiver |
 | Solace | HomeKobo, Sealy MotionFlex or Sweet Night; Woosa Sleep; Motion Bed; or BedSense |
 | StarCode | AdjustableM5X4, AdjustableM5X5 or Adjustable Comfort M1X12 |

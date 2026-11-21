@@ -8,12 +8,12 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.beds.malouf.app import require_app_transport
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
     _bed_type_selector,
+    _family_rows,
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
@@ -65,7 +65,9 @@ def test_one_row_names_both_apps_and_both_receivers():
     # The receiver routes are answers of the question, not rows of their own.
     assert not set(RECEIVERS) & set(rows)
     # The brand path opens the same question instead of a try-this-first list.
-    assert ACTUATOR_GROUPS["malouf"] == ((const.BED_TYPE_MALOUF_APP, None),)
+    brands = dict(_family_rows())
+    assert const.BED_TYPE_MALOUF_APP in brands
+    assert not set(RECEIVERS) & set(brands)
 
 
 @pytest.mark.parametrize("receiver", RECEIVERS)

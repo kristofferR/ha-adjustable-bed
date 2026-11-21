@@ -34,7 +34,7 @@ def setup_flow(hass, bed_type: str, services: list[str] | None) -> AdjustableBed
 def test_one_row_names_both_transports_and_their_models():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     label = rows[const.BED_TYPE_SLEEP_NUMBER]
-    for name in ("SleepIQ", "Fuzion", "Climate 360", "BAM/MCR", "i8", "360 FlexFit 2"):
+    for name in ("SleepIQ", "Fuzion", "Climate 360", "older", "i8", "360 FlexFit 2"):
         assert name in label
     assert const.BED_TYPE_SLEEP_NUMBER_MCR not in rows
     # A detected BAM/MCR bed shows the family row; saved labels name their transport.
@@ -42,7 +42,7 @@ def test_one_row_names_both_transports_and_their_models():
         const.BED_TYPE_SLEEP_NUMBER_MCR
     )
     assert shown == label
-    assert "BAM/MCR" in bed_type_label(const.BED_TYPE_SLEEP_NUMBER_MCR)
+    assert "older base" in bed_type_label(const.BED_TYPE_SLEEP_NUMBER_MCR)
     assert "Fuzion" in bed_type_label(const.BED_TYPE_SLEEP_NUMBER)
 
 

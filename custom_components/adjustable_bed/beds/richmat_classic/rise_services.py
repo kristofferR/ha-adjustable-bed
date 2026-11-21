@@ -112,7 +112,7 @@ async def handle_richmat_rise(call: ServiceCall) -> None:
                 raise invalid("action_stopped")
 
     await _execute_preflighted(
-        targets, [], _family_command(RichmatClassicController, "Luuna Rise / Power Cool bed settings", lambda controller: controller.async_execute_richmat_rise_request(request)),
+        targets, [], _family_command(RichmatClassicController, lambda controller: controller.async_execute_richmat_rise_request(request)),
         cancel_running=movement, resource=resource, admissions=admissions,
     )
 
