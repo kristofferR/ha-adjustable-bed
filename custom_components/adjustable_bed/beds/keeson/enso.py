@@ -5,18 +5,17 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, cast
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ...card import CARD_LIGHT_STATE, CARD_MASSAGE, CARD_MASSAGE_TIMER
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER
 from ...command_scheduler import CommandContext, current_command_context, note_frame_skipped
 from ...const import CONF_PRODUCT_TYPE
-from ...controller_state import StateKey
 from ...errors import failed, invalid
 from ...profiles import enso as app
-from ...state_keys import MASSAGE_TIMER_MINUTES
+from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON
 from ..base import BedController
 from ..builder import BuildContext
 from ..cancellation import cancellable, settled
@@ -24,7 +23,6 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     massage_timer_sensor_spec,
@@ -33,9 +31,6 @@ from .controller import KeesonController
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
-
-LIGHT: Final = StateKey[bool | None]("enso_light")
-
 
 @dataclass(frozen=True, slots=True)
 class _Link:
@@ -190,18 +185,9 @@ class EnsoController(KeesonController):
         )
 
     @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return (
-            ControllerStateBinarySensorSpec(
-                "enso_light",
-                "enso_light",
-                LIGHT,
-                "mdi:lightbulb",
-                card=CARD_LIGHT_STATE,
-                entity_registry_enabled_default=True,
-                entity_category=None,
-            ),
-        )
+    def supports_light_state_feedback(self) -> bool:
+        """Every status notification reports the light."""
+        return self.supports_light_toggle_control
 
     def _live(self, link: _Link | None = None) -> _Link:
         selected = self._link
@@ -435,7 +421,7 @@ class EnsoController(KeesonController):
             self.forward_raw_notification(sender.uuid, bytes(data))
             status = app.parse_status(bytes(data))
             if status is not None:
-                self.forward_controller_state_updates(LIGHT(status.light))
+                self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(status.light))
                 if status.timer_minutes is not None:
                     self.forward_controller_state_updates(
                         MASSAGE_TIMER_MINUTES(status.timer_minutes)
@@ -454,7 +440,7 @@ class EnsoController(KeesonController):
     async def stop_notify(self) -> None:
         link, self._subscribed = self._subscribed, None
         self._subscription_token = None
-        self.forward_controller_state_updates(LIGHT(None), MASSAGE_TIMER_MINUTES(None))
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None), MASSAGE_TIMER_MINUTES(None))
         if link is not None and link.client.is_connected:
             await link.client.stop_notify(link.notify)
 
@@ -462,7 +448,7 @@ class EnsoController(KeesonController):
         self._link = self._subscribed = None
         self._subscription_token = None
         self._cleanup = None
-        self.forward_controller_state_updates(LIGHT(None), MASSAGE_TIMER_MINUTES(None))
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None), MASSAGE_TIMER_MINUTES(None))
 
 
 async def build_controller(ctx: BuildContext) -> BedController:

@@ -10,6 +10,7 @@ from time import monotonic
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -575,6 +576,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 "on",
                 "mdi:lock",
                 local_set_fn=lambda on: self.select_child("on" if on else "off"),
+                entity_category=EntityCategory.CONFIG,
             ),
             ControllerSwitchSpec(
                 "smart_sleep_privacy",
@@ -585,6 +587,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 keys.PRIVACY,
                 "on",
                 "mdi:shield-lock-outline",
+                entity_category=EntityCategory.CONFIG,
             ),
             ControllerSwitchSpec(
                 "smart_sleep_massage",
@@ -1047,8 +1050,9 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 str(key),
                 str(key),
                 key,
-                "mdi:information-outline",
+                "mdi:alarm" if alarm else "mdi:information-outline",
                 entity_registry_enabled_default=enabled,
+                entity_category=None if alarm else EntityCategory.DIAGNOSTIC,
             )
             for key, enabled in (
                 (keys.MODEL, False),
@@ -1058,6 +1062,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 *(((keys.BRIGHTNESS, True),) if self.profile.key == "p2" else ()),
                 *(((keys.AI_STATUS, False), (keys.AI_SCORE, False)) if self.model == 8 else ()),
             )
+            for alarm in (str(key).startswith("smart_sleep_alarm"),)
         )
 
     @property
@@ -1067,8 +1072,9 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 str(key),
                 str(key),
                 key,
-                "mdi:information-outline",
+                "mdi:alarm" if key is keys.ALARM_ON else "mdi:information-outline",
                 entity_registry_enabled_default=True,
+                entity_category=None if key is keys.ALARM_ON else EntityCategory.DIAGNOSTIC,
             )
             for key in (
                 keys.ALARM_ON,

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
@@ -865,12 +866,13 @@ class AdjustaMattressController(
                 NS + key,
                 NS + key,
                 _field_key(key),
-                "mdi:information-outline",
+                "mdi:vibrate" if key in _MASSAGE_FIELDS else "mdi:information-outline",
                 # Readbacks of the step buttons, which take no direct value. The
                 # timer is the bed's step (P3 and P4 round 600 units up to one);
                 # its duration is unproven, so it has no unit.
-                entity_registry_enabled_default=False,
+                entity_registry_enabled_default=key in _MASSAGE_FIELDS,
                 card=CARD_MASSAGE if key in _MASSAGE_FIELDS else CARD_UTILITY,
+                entity_category=None if key in _MASSAGE_FIELDS else EntityCategory.DIAGNOSTIC,
             )
             for key in self._sensor_fields
             if key not in _SETTING_FIELDS

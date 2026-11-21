@@ -194,8 +194,8 @@ Detection uses the unique Sleep Number service UUID for each protocol family:
 - `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` (Fuzion)
 - `ffffd1fd-388d-938b-344a-939d1f6efee0` (MCR)
 
-The bed-type list has one **Sleep Number: SleepIQ app, Fuzion (Climate 360,
-FlexFit) and older (i8, 360 FlexFit 2) bases** row. When Home Assistant has
+The bed-type list has one **SleepIQ app, Fuzion (Climate 360, FlexFit) and older
+(i8, 360 FlexFit 2) bases · Sleep Number** row. When Home Assistant has
 seen the advertisement, setup confirms the transport from its service without
 asking; otherwise it asks which base the bed is, and a detected transport stays
 one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks no
@@ -429,8 +429,9 @@ reports; the additional diagnostic and configuration actions need hardware testi
 
 #### Setup
 
-Choose **Sleep Number**, then the route advertised by the bed. The app remains
-findable as **SleepIQ** in setup and Reconfigure. Service UUIDs determine the
+Choose **SleepIQ app, Fuzion (Climate 360, FlexFit) and older (i8, 360 FlexFit
+2) bases · Sleep Number**, then the route advertised by the bed: **Fuzion base:
+Climate 360, FlexFit or FlexFit Smart** or **Older base: i8 or 360 FlexFit 2**. Service UUIDs determine the
 route; Bluetooth names and product names do not enable optional hardware.
 Fuzion requires readable Auth and TransferInfo, readable/notifiable/writable
 BulkTransfer and public command characteristics. BulkTransfer is validated but

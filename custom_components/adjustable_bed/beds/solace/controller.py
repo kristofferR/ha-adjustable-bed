@@ -164,7 +164,6 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
                 translation_key="solace_alarm_enabled",
                 state_key=ALARM_ENABLED,
                 icon="mdi:alarm",
-                entity_registry_enabled_default=True,
                 attribute_keys=(
                     ALARM_TIME,
                     ALARM_WEEKDAYS,
@@ -173,6 +172,8 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
                     ALARM_SOUND,
                     AUDIO_AVAILABLE,
                 ),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

@@ -163,6 +163,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     with (
         patch(diagnostic_module + "select_adapter", new=AsyncMock(return_value=AdapterSelectionResult(device, source, -50, True, [source]))),
         patch(diagnostic_module + "establish_connection", new=AsyncMock()) as diagnostic_connect,
+        patch(diagnostic_module + "asyncio.sleep"),
     ):
         with pytest.raises(ConnectionError):
             await BLEDiagnosticRunner(hass, address)._connect()

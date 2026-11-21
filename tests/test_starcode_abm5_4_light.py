@@ -79,10 +79,12 @@ async def test_actual_HA_light_catalog_does_not_claim_impossible_fresh_feedback(
         assert isinstance(controller, StarcodeAbm5_4Controller)
         registry = er.async_get(hass)
         rows = er.async_entries_for_config_entry(registry, entry.entry_id)
+        # Without feedback, the app's on and off buttons make an assumed on/off light.
+        native_power = not feedback and command in ("BOX3633", "BOX25", "BOX25_STAR")
         assumed = [row for row in rows if row.unique_id.endswith("_under_bed_lights_assumed")]
         lights = [row for row in rows if row.domain == "light" and row not in assumed]
-        assert len(lights) == int(feedback)
-        assert len(assumed) == int(not feedback)
+        assert len(lights) == int(feedback or native_power)
+        assert len(assumed) == int(not feedback and not native_power)
         for row in assumed:
             assert row.disabled_by is er.RegistryEntryDisabler.INTEGRATION
             assert hass.states.get(row.entity_id) is None
@@ -122,37 +124,30 @@ async def test_actual_HA_light_catalog_does_not_claim_impossible_fresh_feedback(
             )
             assert hass.states.get(light.entity_id).state == state_before
         else:
-            toggle = next(
+            toggles = [
                 row
                 for row in rows
                 if row.domain == "button" and row.translation_key == "toggle_light"
-            )
-            controller._last_light_time_ms = None
-            await hass.services.async_call(
-                "button", "press", {"entity_id": toggle.entity_id}, blocking=True
-            )
-            assert controller.client.write_gatt_char.await_args.args[1] == native_frame(
-                command, "underbedLighting"
-            )
-            power = {
-                row.translation_key: row
-                for row in rows
-                if row.domain == "button"
-                and row.translation_key in ("starcode_abm5_4_light_on", "starcode_abm5_4_light_off")
-            }
-            assert len(power) == (2 if command in ("BOX3633", "BOX25", "BOX25_STAR") else 0)
-            for key, builder in [
-                ("starcode_abm5_4_light_on", "turnonUnderbedLighting"),
-                ("starcode_abm5_4_light_off", "turnoffUnderbedLighting"),
-            ]:
-                if key in power:
-                    controller._last_light_time_ms = None
-                    await hass.services.async_call(
-                        "button", "press", {"entity_id": power[key].entity_id}, blocking=True
-                    )
-                    assert controller.client.write_gatt_char.await_args.args[1] == native_frame(
-                        command, builder
-                    )
+            ]
+            assert len(toggles) == int(not native_power)
+            if native_power:
+                presses = [
+                    ("light", service, lights[0].entity_id, builder)
+                    for service, builder in [
+                        ("turn_on", "turnonUnderbedLighting"),
+                        ("turn_off", "turnoffUnderbedLighting"),
+                    ]
+                ]
+            else:
+                presses = [("button", "press", toggles[0].entity_id, "underbedLighting")]
+            for domain, service, entity_id, builder in presses:
+                controller._last_light_time_ms = None
+                await hass.services.async_call(
+                    domain, service, {"entity_id": entity_id}, blocking=True
+                )
+                assert controller.client.write_gatt_char.await_args.args[1] == native_frame(
+                    command, builder
+                )
             assert not controller._ui_state_observed
             assert not any(
                 row.translation_key == "starcode_abm5_4_light_on" and row.domain == "sensor"
@@ -338,7 +333,7 @@ async def test_actual_HA_positive_C_feedback_boundary_reloads_exact_child_catalo
         await hass.async_block_till_done()
 
 
-async def test_actual_HA_reconnect_classification_adds_power_buttons_without_positive_C_change(
+async def test_actual_HA_reconnect_classification_adds_the_on_off_light_without_positive_C_change(
     hass, enable_custom_integrations
 ):
     entry = MockConfigEntry(
@@ -431,30 +426,22 @@ async def test_actual_HA_reconnect_classification_adds_power_buttons_without_pos
             current = {
                 (row.domain, row.unique_id): (row.entity_id, row.device_id) for row in current_rows
             }
+            # The on/off light replaces the toggle button and the estimated light.
+            replaced = {
+                ("button", "AA:BB:CC:DD:EE:FF_toggle_light"),
+                ("light", "AA:BB:CC:DD:EE:FF_under_bed_lights_assumed"),
+            }
             changed_identity = {
                 key: (value, current.get(key))
                 for key, value in original.items()
                 if current.get(key) != value
             }
-            assert not changed_identity
-            assert (
-                sum(
-                    row.domain == "button"
-                    and row.translation_key
-                    in ("starcode_abm5_4_light_on", "starcode_abm5_4_light_off")
-                    for row in current_rows
-                )
-                == 2
-            )
-            assumed = [
-                row for row in current_rows if row.unique_id.endswith("_under_bed_lights_assumed")
-            ]
-            assert len(assumed) == 1
-            assert assumed[0].disabled_by is er.RegistryEntryDisabler.INTEGRATION
-            assert hass.states.get(assumed[0].entity_id) is None
-            assert not any(
-                row.domain in ("light", "switch") and row not in assumed for row in current_rows
-            )
+            assert changed_identity.keys() == replaced
+            assert not any(key in current for key in replaced)
+            [light] = [row for row in current_rows if row.domain == "light"]
+            assert light.unique_id == "AA:BB:CC:DD:EE:FF_under_bed_lights"
+            assert light.disabled_by is None
+            assert not any(row.domain == "switch" for row in current_rows)
             assert entry.data[const.CONF_STARCODE_UI_SELECTOR] == "BOX1220"
             assert entry.data[const.CONF_STARCODE_TRANSPORT_SELECTOR] == "BOX25"
         assert await hass.config_entries.async_unload(entry.entry_id)

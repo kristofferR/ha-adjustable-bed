@@ -21,7 +21,6 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ...card import CARD_LIGHTING
 from ...codec import keeson as codec
 from ...const import (
     BED_MOTOR_PULSE_DEFAULTS,
@@ -72,13 +71,12 @@ from ...profiles.keeson import (
 from ...profiles.keeson import (
     is_ksbt03c_name as is_ksbt03c_name,
 )
-from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
+from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, massage_intensity
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     POSITION_UNIT_PERCENT,
     ControllerButtonSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
@@ -100,7 +98,6 @@ _PRESET_NAMES: Final[dict[profiles.Preset, str]] = {
 }
 
 _ADJUSTABLE_LITE_STATUS_MIN_LENGTH = 13
-STATE_ADJUSTABLE_LITE_LIGHT: Final = StateKey[bool | None]("adjustable_lite_light")
 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER: Final = StateKey[int | None]("adjustable_lite_massage_timer")
 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW: Final = StateKey[int | None](
     "adjustable_lite_massage_timer_raw"
@@ -126,7 +123,7 @@ def parse_adjustable_lite_status(data: bytes, *, massage_timer: bool) -> list[St
     """
     if len(data) < _ADJUSTABLE_LITE_STATUS_MIN_LENGTH:
         return None
-    state = [STATE_ADJUSTABLE_LITE_LIGHT(data[12] == 1)]
+    state = [UNDER_BED_LIGHTS_ON(data[12] == 1)]
     if massage_timer:
         raw = (data[3] << 8) | data[4]
         state += [
@@ -284,6 +281,11 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
     @property
     def supports_light_toggle_control(self) -> bool:
         return self.profile.lights is not None
+
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        """Adjustable Lite's status poll reports the bulb."""
+        return self.profile.status_poll_ms is not None and self.profile.lights is not None
 
     @property
     def has_tilt_support(self) -> bool:
@@ -580,28 +582,10 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         """Forget reported status when the BLE session ends."""
         if self.profile.status_poll_ms:
             self.forward_controller_state_updates(
-                STATE_ADJUSTABLE_LITE_LIGHT(None),
+                UNDER_BED_LIGHTS_ON(None),
                 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER(None),
                 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW(None),
             )
-
-    @property
-    def controller_state_binary_sensor_specs(
-        self,
-    ) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        """The app's bulb icon, driven by notification byte 12."""
-        if not self.profile.status_poll_ms:
-            return ()
-        return (
-            ControllerStateBinarySensorSpec(
-                key="adjustable_lite_light",
-                translation_key="adjustable_lite_light",
-                state_key=STATE_ADJUSTABLE_LITE_LIGHT,
-                icon="mdi:lightbulb",
-                entity_registry_enabled_default=True,
-                card=CARD_LIGHTING,
-            ),
-        )
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -1025,6 +1009,8 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         self._require_lights()
         if self.profile.lights == "discrete":
             await self._write_light(True)
+        elif self.supports_light_state_feedback:
+            await super().lights_on()
         else:
             await self.lights_toggle()
 
@@ -1032,6 +1018,8 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         self._require_lights()
         if self.profile.lights == "discrete":
             await self._write_light(False)
+        elif self.supports_light_state_feedback:
+            await super().lights_off()
         else:
             await self.lights_toggle()
 

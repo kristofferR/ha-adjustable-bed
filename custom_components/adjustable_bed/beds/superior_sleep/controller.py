@@ -288,6 +288,8 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 s.ALARM_HOUR,
                 "mdi:alarm",
                 attribute_keys=(s.ALARM_MINUTE, s.ALARM_MASK, s.ALARM_SELECTOR, s.ALARM_DAYS),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
             ControllerStateSensorSpec(
                 "superior_sleep_timer_seconds",
@@ -296,6 +298,8 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 "mdi:timer-outline",
                 native_unit_of_measurement="s",
                 device_class=SensorDeviceClass.DURATION,
+                # The minutes reading shows the timer; this is its finer copy.
+                entity_category=None,
             ),
         )
 
@@ -307,6 +311,8 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 "superior_sleep_alarm_enabled",
                 s.ALARM_ENABLED,
                 "mdi:alarm",
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

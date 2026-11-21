@@ -48,19 +48,22 @@
 
 1. Select the exact app name in setup. Shared Bluetooth services and four-character
    names cannot identify which app layout a bed uses.
-2. Choose **Model from the Bluetooth name** or an explicit model. Automatic model
+2. Choose **Automatic (recommended)**, which reads the model from the Bluetooth
+   name, or an explicit model. Automatic model
    selection reads the first four characters of the raw Bluetooth name, ignoring
    case. `QRRM` and `Cool Touch` names require a model choice. RUF always selects
    its fixed BQRM remote.
-3. Only choose **with normal mattress** if your W.Silver, AMERICANSTAR or TX bed
+3. Only choose a model ending in "with normal mattress" if your W.Silver, AMERICANSTAR or TX bed
    actually provides that function. The normal app constructors do not enable it.
    The apps can consume a saved Boolean enabling this page, but the origin and
    prevalence of old saved records are unknown. HA's explicit choice represents
    that capability choice; it does not read an app's saved history.
    A new, valid, powered normal initialization is also required. VER1/VER2 pages
    do not enable normal-mattress controls.
-4. For the separate sleep device, add **W.Silver / AMERICANSTAR / Bailey / TX sleep
-   receiver**, choose its app, and select that receiver's address. Its GATT roles
+4. For the separate sleep device, add the row for its app: **W.Silver Products
+   separate sleep receiver**, **AMERICANSTAR separate sleep receiver**, **Bailey's
+   Bed Control separate sleep receiver** or **TX separate sleep receiver**, and
+   select that receiver's address. Its GATT roles
    differ from the bed remote. Device attributes must arrive before settings can
    be changed. A source-single receiver in single mode cannot switch user mode.
 

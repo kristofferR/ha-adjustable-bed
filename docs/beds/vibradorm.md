@@ -89,8 +89,8 @@ controls.
 
 Detection suggests the generic `vibradorm` bed type (see
 [Generic controller](#generic-controller)). The app profiles are explicit
-choices: the bed-type picker has one **Vibradorm: VMAT, Caresse Diamant,
-Werkmeister, V-MAT Basic** entry. Choose the app you use on your phone, then its
+choices: the bed-type picker has one **VMAT, Caresse Diamant,
+Werkmeister, V-MAT Basic · Vibradorm** entry. Choose the app you use on your phone, then its
 remote or product, or **Legacy setup** for the generic controller. Each profile
 keeps its own command table and timing; none reuses a sibling's.
 
@@ -264,8 +264,8 @@ Detection:
 These are generic discovery hints, not proof of an app, remote layout or every
 optional feature.
 
-Choose **Legacy setup** inside the **Vibradorm: VMAT, Caresse Diamant,
-Werkmeister, V-MAT Basic** entry for this controller, which then asks the motor
+Choose **Legacy setup** inside the **VMAT, Caresse Diamant,
+Werkmeister, V-MAT Basic · Vibradorm** entry for this controller, which then asks the motor
 count, whether massage motors are fitted and whether to read positions before
 pairing. Existing entries keep their saved controller until you explicitly
 reconfigure them. See the [guided setup and migration](#guided-setup-and-migration).
@@ -520,7 +520,7 @@ CBI response (`1551`) roles of the [transport table](#transports).
 
 ##### Home Assistant setup
 
-Select **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+Select **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm** in the
 bed-type picker, then choose Caresse Diamant or Werkmeister. Existing generic
 entries keep their legacy setup until explicitly reconfigured. Bluetooth identifiers do not select an app
 or remote layout. Werkmeister offers its two remote
@@ -991,7 +991,7 @@ move through CBI. Detection: none; the profile is an explicit choice.
 
 ##### VMAT remote selection
 
-- Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+- Choose **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm** in the
   bed-type picker, then **VMAT** and the same zero-based remote ordinal used by
   the app.
 - **Legacy setup** inside the family chooser retains the older generic
@@ -1122,7 +1122,7 @@ After native pairing, setup closes with `01 A7`.
 
 ##### Home Assistant setup
 
-Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+Choose **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm** in the
 bed-type picker, then **VMAT** and the same remote ordinal as the app. Its fourteen
 shipped selections derive the logical axes, memory, sync, floor, mood and
 massage controls. Independent feature overrides
@@ -1292,7 +1292,7 @@ The bed type is `vmatbasic` with profile `basic`, `cbi` or `xtbox` (see the
 
 #### Setup
 
-- Select **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic**, then
+- Select **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm**, then
   **V-MAT Basic** and the product explicitly: V-MAT-BASIC-RF,
   V-MAT-BASIC-RF-CBI, or V-MAT-BASIC-RF-CBI with XT-Box. Detection: none.
 - Existing entries keep their controllers until a
@@ -1348,7 +1348,7 @@ bonding, a PIN, authentication exchange or authenticated-GATT proof.
 
 ##### Home Assistant setup
 
-Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic**, then
+Choose **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm**, then
 **V-MAT Basic** and the exact Basic, CBI or CBI with XT-Box product. Bluetooth
 identifiers and diagnostic model strings do not choose this profile. CBI exposes
 saved floor level 0–255 and timer 0–1439 minutes; XT exposes level 1–6 and timer

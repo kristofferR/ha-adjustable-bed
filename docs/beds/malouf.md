@@ -55,7 +55,8 @@ The apps know 16 models; see [Models](#models).
 
 ## Choosing a profile
 
-Choose **Malouf / Lucid** in the bed-type list (a detected receiver is shown
+Choose **Malouf Base and Lucid Base apps, Malouf and Lucid remotes · Malouf /
+Lucid** in the bed-type list (a detected receiver is shown
 there too), then answer which app or receiver controls the bed: the Malouf Base
 app, the Lucid Base app, the receiver on the Nordic UART service
 ([NEW_OKIN](#new_okin)) or the receiver on the FFE5 service

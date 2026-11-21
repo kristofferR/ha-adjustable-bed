@@ -396,3 +396,38 @@ async def test_retained_e3rm_entity_follows_mem_and_replacement_controller(
             assert_card_route(True)
             radio.client.write_gatt_char.reset_mock()
     await platform.async_reset()
+
+
+@pytest.mark.parametrize(
+    "fields,choices",
+    [
+        ({"wake_action": "zero_g"}, ("zero_g",)),
+        ({"wake_action": "tv", "massage": True, "massage_zone": "head"}, ("tv", "head")),
+        ({"wake_action": "none", "massage": True}, ("all",)),
+    ],
+)
+async def test_alarm_through_the_shared_action_matches_the_app(
+    hass, instant, monkeypatch, fields, choices
+):
+    from homeassistant.util import dt as dt_util
+
+    from tests.alarm_helpers import call_set_alarm
+
+    now = dt_util.now().replace(hour=6, minute=0, second=0, microsecond=0)
+    monkeypatch.setattr(dt_util, "now", lambda: now)
+    ctrl, coord = controller("luunarise2", "P4RM", "RAW")
+    ctrl._receive.menu.add("alarm")
+    keys = {code: key for key, code in ctrl._alarm_actions().items()}
+    names = {"zero_g": 0x45, "tv": 0x58, "head": 0x4C, "all": 0x5D}
+    app = rise.Request(
+        "alarm", actions=tuple(keys[names[c]] for c in choices), when=now.replace(minute=30).time()
+    )
+    await ctrl.async_execute_richmat_rise_request(app)
+    expected = packets(coord)
+    assert len(expected) == 2
+    coord.client.write_gatt_char.reset_mock()
+    await call_set_alarm(hass, ctrl, {"enabled": True, "time": "06:30:00", **fields})
+    assert packets(coord) == expected
+    coord.client.write_gatt_char.reset_mock()
+    await call_set_alarm(hass, ctrl, {"enabled": False})
+    assert packets(coord) == [p.hex() for p in alarm(0, 0)]

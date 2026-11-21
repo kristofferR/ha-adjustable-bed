@@ -1,4 +1,4 @@
-"""Registered peer and selected-axis regressions from the PR720 review."""
+"""Registered peer and selected-axis feedback on Reverie Pairlink and Nightstand."""
 
 import asyncio
 from unittest.mock import AsyncMock

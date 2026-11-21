@@ -228,6 +228,7 @@ LATE_CLOCK_SYNC = frozenset(
         "GmmotorController",
         "GoodVibeController",
         "HJBedController",
+        "LuunaController",
         "MajesticHomeController",
         "MlilyRemoteController",
         "MotionBedController",
@@ -1149,6 +1150,7 @@ class Coordinator:
         self.name = "Contract Test Bed"
         self.ble_device_name = "Contract Test Bed"
         self.observed_ble_device_name = None
+        self.ble_model = None
         self.motor_count = 2
         self.has_massage = True
         self.disable_angle_sensing = True

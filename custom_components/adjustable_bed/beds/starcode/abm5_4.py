@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Final
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...card import (
     CARD_LIGHT_LEVEL,
@@ -29,7 +30,7 @@ from ...const import (
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
 )
-from ...controller_state import AnyStateKey, StateKey
+from ...controller_state import AnyStateKey, StateKey, StateUpdate
 from ...profiles.okin_nframe import (
     STARCODE_ABM5_4_FLAT_HOLD_MS,
     STARCODE_ABM5_4_PROFILES,
@@ -326,6 +327,15 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         return self.ui_selector in ("BOX25", "BOX25_STAR") and self._transport.subscribe
 
     @property
+    def supports_discrete_light_control(self) -> bool:
+        """The app's dedicated on and off buttons, where it shows them."""
+        return self._native_light_power_buttons
+
+    @property
+    def light_state_is_assumed(self) -> bool:
+        return self._native_light_power_buttons
+
+    @property
     def supports_massage(self) -> bool:
         return True
 
@@ -421,8 +431,6 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             "save_zero_g",
             "reset",
         )
-        if self._native_light_power_buttons:
-            actions += ("light_on", "light_off")
         saves = {
             "save_tv": "Save TV position",
             "save_lounge": "Save lounge position",
@@ -434,12 +442,10 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 saves.get(action, action.replace("_", " ").title()),
                 _button(action),
                 translation_key="starcode_abm5_4_" + action,
-                cancel_movement=action not in ("light_plus", "light_minus", "light_on", "light_off"),
-                scheduler_resource="lighting"
-                if action in ("light_plus", "light_minus", "light_on", "light_off")
-                else None,
+                cancel_movement=action not in ("light_plus", "light_minus"),
+                scheduler_resource="lighting" if action in ("light_plus", "light_minus") else None,
                 card=CARD_LIGHTING
-                if action in ("light_plus", "light_minus", "light_on", "light_off")
+                if action in ("light_plus", "light_minus")
                 else CARD_PRESET_SAVE
                 if action.startswith("save_")
                 else CARD_UTILITY,
@@ -478,14 +484,14 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         # Raw fields and selectors stay in diagnostics; the timer select and
         # number show the timer and light level where the bed accepts them.
         positive = self.command_selector in _POSITIVE_SELECTORS
-        keys: tuple[tuple[str, bool], ...] = (
-            ("manufacturer", False),
-            ("firmware", False),
-            ("wave", True),
-            ("head_intensity", True),
+        keys: tuple[tuple[str, str], ...] = (
+            ("manufacturer", "mdi:factory"),
+            ("firmware", "mdi:chip"),
+            ("wave", "mdi:waveform"),
+            ("head_intensity", "mdi:vibrate"),
         )
         if not positive:
-            keys += (("massage_timer", True), ("light_level", True))
+            keys += (("massage_timer", ""), ("light_level", "mdi:brightness-6"))
         return tuple(
             massage_timer_sensor_spec(
                 "starcode_abm5_4_massage_timer", "starcode_abm5_4_massage_timer", MASSAGE_TIMER
@@ -495,10 +501,13 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 "starcode_abm5_4_" + key,
                 "starcode_abm5_4_" + key,
                 _state_key(key),
-                "mdi:information-outline",
-                entity_registry_enabled_default=enabled,
+                icon,
+                # Firmware and manufacturer are diagnostics; the rest is bed state.
+                entity_registry_enabled_default=dashboard,
+                entity_category=None if dashboard else EntityCategory.DIAGNOSTIC,
             )
-            for key, enabled in keys
+            for key, icon in keys
+            for dashboard in (key not in ("manufacturer", "firmware"),)
         )
 
     @property
@@ -734,10 +743,6 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             await self.release_massage()
         elif action in ("union_up", "union_down"):
             await self.hold_control(action, self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
-        elif action == "light_on":
-            await self.lights_on()
-        elif action == "light_off":
-            await self.lights_off()
         elif action in ("light_plus", "light_minus"):
             await self._light_step(1 if action == "light_plus" else -1)
         elif action == "reset":
@@ -805,7 +810,8 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             return
         level = min(6, self._level + 1) if direction > 0 else self._level - 1
         if level <= 0:
-            await self._once("turnoffUnderbedLighting")
+            with self.sent_state(*self._assumed_light(False)):
+                await self._once("turnoffUnderbedLighting")
         else:
             if self.command_selector not in _POSITIVE_SELECTORS:
                 level = 2
@@ -815,13 +821,19 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         self._operation_generation += 1
         await self._send(build_frame(self.command_selector, "stop"), asyncio.Event())
 
+    def _assumed_light(self, on: bool) -> tuple[StateUpdate, ...]:
+        """What the assumed on/off light shows; a reporting bed shows only its reports."""
+        return (UNDER_BED_LIGHTS_ON(on),) if self._native_light_power_buttons else ()
+
     async def lights_on(self) -> None:
         if self._accept_light_action():
-            await self._once("turnonUnderbedLighting")
+            with self.sent_state(*self._assumed_light(True)):
+                await self._once("turnonUnderbedLighting")
 
     async def lights_off(self) -> None:
         if self._accept_light_action():
-            await self._once("turnoffUnderbedLighting")
+            with self.sent_state(*self._assumed_light(False)):
+                await self._once("turnoffUnderbedLighting")
 
     async def lights_toggle(self) -> None:
         if self._accept_light_action():

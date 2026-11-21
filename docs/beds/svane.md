@@ -120,7 +120,7 @@ write to the correct service to control the intended motor.
 - Bed-type detection uses the head service `0000abcb-0000-1000-8000-00805f9b34fb`
   or a name containing `Svane Bed` or `Jensen Bed` (case-insensitive), so renamed
   beds such as "Svane Bed 2" still detect.
-- Choose **Jensen / Svane** in the bed-type list and answer the
+- Choose **Jensen Adjustable Sleep app (JMC400 and LinOn beds) and Svane Remote app · Jensen / Svane** in the bed-type list and answer the
   [app and bed question](jensen.md#home-assistant-setup). For a scanned name
   containing case-sensitive `JMC`, the question suggests the JMC400 profile,
   following the app's own name rule, in Bluetooth and manual setup alike.

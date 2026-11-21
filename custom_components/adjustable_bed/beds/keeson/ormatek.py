@@ -565,6 +565,7 @@ class OrmatekController(KeesonController):
                 attribute_keys=(ALARM,),
                 card=CARD_UTILITY,
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

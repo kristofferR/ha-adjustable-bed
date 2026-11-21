@@ -74,7 +74,7 @@ so the name does not tell which app's controls your bed needs.
 
 ### Home Assistant setup
 
-QMS and similar names are shared by several apps, so choosing the **Solace** row,
+QMS and similar names are shared by several apps, so choosing the **HomeKobo, Sealy MotionFlex and Sweet Night apps · Solace** row,
 or a bed detected as Solace, asks which app you use:
 
 | Answer | Route |
@@ -89,7 +89,7 @@ The **Woosa Sleep app** row in the bed-type list answers the question itself and
 shows the same note. For an existing bed, open the entry's three-dot menu and
 **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
-**Keep** leaves the entry as it is. A Solace entry from before v5 on the name
+**Keep the detected or saved controls** leaves the entry as it is. A Solace entry from before v5 on the name
 routes is asked once, through a repair, whether it uses Woosa Sleep. A Solace
 route change has nothing to check:
 the controller never refuses a link, and Configure never checked one either. A
@@ -663,8 +663,9 @@ properties.
 
 #### Setup
 
-Detection: none. Select **BedSense app (com.fenmenbielei.bedsense)** in manual
-setup, then choose a layout or **BedSense layout from the Bluetooth name**. Auto
+Detection: none. Select **BedSense app** (`com.fenmenbielei.bedsense`) in manual
+setup, then choose a layout or **Automatic (recommended)**, which takes it from
+the Bluetooth name. Auto
 uses the original, case-sensitive name; a custom HA display name does not
 select the layout. The first matching rule wins:
 
@@ -689,7 +690,7 @@ select the layout. The first matching rule wins:
 
 ##### Home Assistant setup
 
-Select **BedSense app (com.fenmenbielei.bedsense)** and a layout, or select its
+Select **BedSense app** and a layout, or **Automatic (recommended)** for its
 case-sensitive Bluetooth-name layout rule. Layout owns the motion controls;
 generic motor count, massage and angle-sensing choices are hidden. The original
 Bluetooth name and layout belong to each side of a two-address pair. There is no
@@ -1098,7 +1099,7 @@ supported.
 Two motors and massage are fixed, and **Read bed position** is off. When you
 combine two beds, each side keeps its own name.
 
-Choose **Solace → Sophie app** explicitly. Shared names and FFE1 do not identify
+Choose **Sophie app · Solace** explicitly. Shared names and FFE1 do not identify
 this app. Keep the actual Bluetooth name in setup: it selects the saved-query
 route, alarm modes and alarm-massage gate independently. Name punctuation is
 normalized as the app does before these feature checks.

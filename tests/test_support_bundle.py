@@ -1009,6 +1009,8 @@ class TestBleDiagnosticsRunner:
                 "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
                 return_value=1,
             ),
+            # Skip the one-second wait between reconnect attempts.
+            patch("custom_components.adjustable_bed.ble_diagnostics.asyncio.sleep"),
         ):
             report = await BLEDiagnosticRunner(
                 hass,

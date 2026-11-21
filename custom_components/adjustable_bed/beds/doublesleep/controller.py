@@ -1209,9 +1209,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 "on",
                 "mdi:lock",
                 local_set_fn=local,
-                # Settings, not dashboard controls: there to enable.
+                # A setting, shown with the bed's other settings.
                 entity_category=EntityCategory.CONFIG,
-                entity_registry_enabled_default=False,
+                entity_registry_enabled_default=True,
             ),
             ControllerSwitchSpec(
                 "doublesleep_privacy",
@@ -1222,7 +1222,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 "on",
                 "mdi:shield-lock-outline",
                 entity_category=EntityCategory.CONFIG,
-                entity_registry_enabled_default=False,
+                entity_registry_enabled_default=True,
             ),
         )
 
@@ -1302,8 +1302,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     _field_key("alarm_enabled"),
                     "mdi:alarm",
                     attribute_keys=(_field_key("alarm"),),
-                    entity_registry_enabled_default=False,
+                    entity_registry_enabled_default=True,
                     card=CARD_UTILITY,
+                    entity_category=None,
                 ),
                 ControllerStateSensorSpec(
                     "doublesleep_light",
@@ -1323,8 +1324,8 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             if self.protocol == "p2"
             else ("massage",)
         ):
-            # The switch shows "running"; the rest mirror the step buttons
-            # (the bed takes no direct level), so they start hidden.
+            # The switch shows "running"; the levels and timer step the bed
+            # reports are massage state (the bed takes no direct level).
             for key in ("mode", "strength", "head", "foot", "time", "source"):
                 if domain == "massage" and key == "source":
                     continue
@@ -1335,8 +1336,11 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                         name,
                         _field_key(f"{domain}_{key}"),
                         "mdi:vibrate",
-                        entity_registry_enabled_default=False,
+                        entity_registry_enabled_default=key not in ("mode", "source"),
                         card=CARD_MASSAGE,
+                        entity_category=None
+                        if key not in ("mode", "source")
+                        else EntityCategory.DIAGNOSTIC,
                     )
                 )
         return tuple(specs)

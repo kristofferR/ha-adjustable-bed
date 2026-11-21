@@ -128,7 +128,7 @@ Beds are detected by the advertised service `6e403587-b5a3-f393-e0a9-e50e24dcca9
 
 ### Home Assistant setup
 
-The bed-type list has one **Remacro: Slumberland, The Brick and Jerome's apps**
+The bed-type list has one **Slumberland, The Brick and Jerome's apps · Remacro**
 row, and a discovered Remacro bed opens the same question. Setup shows the
 model the bed advertises and asks which app you use, offering only the apps
 that list that model:
@@ -137,7 +137,7 @@ that list that model:
 |---|---|
 | Slumberland app | `auto` |
 | The Brick app | `the_brick` |
-| Jerome's app (company IDs 45 to 53 only) | `jeromes` |
+| Jerome's app | `jeromes` (company IDs 45 to 53 only) |
 
 When no model has been seen yet, or no app lists it, every app is offered and
 the bed starts on the [fallback controls](#unrecognized-models-fallback). The

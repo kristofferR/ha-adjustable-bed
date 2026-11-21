@@ -29,8 +29,6 @@ from tests.test_starcode_abm5_4 import make_controller
 LIGHT_FRAMES = {
     "light_plus": "04e000040000",
     "light_minus": "04e000020000",
-    "light_on": "04e001010000",
-    "light_off": "04e001000000",
 }
 
 
@@ -73,8 +71,7 @@ async def test_public_light_button_queues_after_native_movement_release(
     hass: HomeAssistant, side: str, movement: str, action: str
 ) -> None:
     await async_register_services(hass)
-    transport = "BOX3633" if action in ("light_on", "light_off") else "BOX1220"
-    first, first_controller = physical_target(hass, "AA:BB:CC:DD:EE:01", transport)
+    first, first_controller = physical_target(hass, "AA:BB:CC:DD:EE:01")
     children = {"left": first}
     controllers = {"left": first_controller}
     if side == "standalone":
@@ -83,7 +80,7 @@ async def test_public_light_button_queues_after_native_movement_release(
         service_side = const.SIDE_BOTH
         button_side = "left"
     else:
-        second, second_controller = physical_target(hass, "AA:BB:CC:DD:EE:02", transport)
+        second, second_controller = physical_target(hass, "AA:BB:CC:DD:EE:02")
         children["right"], controllers["right"] = second, second_controller
         entry = MockConfigEntry(
             domain=const.DOMAIN,

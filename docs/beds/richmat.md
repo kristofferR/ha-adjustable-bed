@@ -139,26 +139,28 @@ own: choose the app's row in the bed-type list, then its product.
 
 ### Home Assistant setup
 
-The bed-type list has one **Richmat** row naming RMControl, the five MH apps, the
-five classic apps, MLILY Control, SleepFunction, SVEN & SON and the Richmat remotes. Searching
-for any of those names finds it. A detected Richmat bed opens the same question.
+The bed-type list has one **RMControl, SleepFunction and SVEN & SON apps, and
+Richmat remotes · Richmat** row, and each other Richmat app has a row of its own,
+such as **Revive Control app · Richmat**. A detected Richmat bed opens the same
+question.
 Setup then asks which app you use; the bed's name and services never decide it.
 
 1. **RMControl app:** choose the exact product code RMControl shows, then the
    side the app commands (see [RMControl](#rmcontrol)).
-2. **Revive Control, Best Mattress, Blvd Home, HARMONY or Idealbed app:** choose
-   the model, or keep Auto to read it from the Bluetooth name (see
+2. **Revive Control app**, **Best Mattress app**, **Blvd Home app**, **HARMONY
+   app** or **Idealbed app**: choose the model, or keep **Automatic
+   (recommended)** to read it from the Bluetooth name (see
    [Richmat MH apps](#richmat-mh-apps)).
-3. **Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior app:**
-   choose the app's four-character layout (see
+3. **Avocado Eco Base app**, **CoasterSleep app**, **Forty Winks app**,
+   **Milemont app** or **Superior app**: choose the app's four-character layout (see
    [Classic Richmat apps](#classic-richmat-apps)).
 4. **SleepFunction or SVEN & SON app, or a Richmat remote:** choose the remote
    code. A code the Bluetooth name carries is preselected (see
    [Richmat remotes](#richmat-remotes)).
 
 RMControl and the remote controls also offer the packet dialect under
-**Advanced**. An app picked from the **Richmat app profiles** brand list skips
-the question. Existing entries keep their bed type, settings and entity IDs.
+**Advanced**. An app picked by its own row in the bed-type list skips the
+question. Existing entries keep their bed type, settings and entity IDs.
 **Reconfigure** changes the same answers and lists each app by its own name, so an
 existing entry can switch to an MH or classic app there. In **Configure**, a remote
 entry opts in to RMControl by choosing a product, and an RMControl entry returns to the remote
@@ -569,7 +571,7 @@ that field retain Richmat behavior, including the confirmed Casper RGB-light mod
 
 QRRM is a generic controller name, not a single physical remote layout. For the
 L&P surface reported in issue #504, with Flat, Zero G, Custom 1, and Custom 2,
-choose **L&P QRRM** under the integration options. It remains an explicit profile
+choose **L&P QRRM (Head, Feet, Flat, Zero G, Custom 1/2)** under the integration options. It remains an explicit profile
 because the BLE name and GATT layout do not distinguish it from other QRRM
 surfaces.
 The current L&P and Richmat apps make the same explicit product-profile choice;
@@ -578,8 +580,8 @@ issue #504, Flat is confirmed. The other command frames are checked against the 
 across the apps but have not yet been validated on that physical bed.
 
 The QRRM receiver in issue #695 (Sven & Son, `WLT825X_H35_S`) is paired with an
-HJH89 remote whose label prints, and QR-encodes, `GGRM`. Choose **GGRM / HJH89**
-for that handset: head, feet, pillow (head tilt) and lumbar motors, Flat, Zero G,
+HJH89 remote whose label prints, and QR-encodes, `GGRM`. Choose **GGRM / HJH89 (Head, Feet, Pillow, Lumbar, M1, ZG, Anti-snore, Lights,
+Massage)** for that handset: head, feet, pillow (head tilt) and lumbar motors, Flat, Zero G,
 Anti-snore, one memory, massage and a white light toggle. The Revive Control,
 Blvd Home and HARMONY catalogs define the same GGRM controls and release with
 `0x6E`, so this profile does not use the `0x5E` compatibility stop, which those
@@ -1813,7 +1815,7 @@ named preset saves, massage and a light toggle.
 
 #### Setup
 
-- Detection: none. Choose **Eshine app (E6000)** manually. Shared Bluetooth
+- Detection: none. Choose **eShine app (E6000)** manually. Shared Bluetooth
   names and services do not identify this app, and existing Richmat entries keep
   their own behavior.
 - The profile owns the generic motor count, massage, angle and protocol fields,
@@ -2641,8 +2643,8 @@ or L&P QRRM configurations.
 
 #### Setup
 
-- Detection: none. Choose the **L&P Adjustable Base (legacy app)** row, or
-  answer **L&P Adjustable Base legacy app (2.2.1)** in the
+- Detection: none. Choose the **L&P Adjustable Base app (older version)** row (version 2.2.1),
+  or answer **L&P Adjustable Base app (older version)** in the
   [L&P question](leggett-platt.md#home-assistant-setup), then select the exact
   remote code and packet mode. An existing legacy entry reaches the other L&P
   routes through the same question in **Reconfigure**; **Configure** still
@@ -2934,7 +2936,7 @@ Behaves as the [Casper and Hush family](#casper-and-hush-family), except as belo
 
 #### Setup
 
-- The `casper_base` bed type. Choose **Casper Base app (select product)**, then
+- The `casper_base` bed type. Choose **Casper Base app**, then
   **PRO** or **MAX**, the app's own products. Its protocol variant is the product.
 - The 37 other choices, labelled **stored profile**, are products the app's
   stored-product decoder accepts. You pick one in setup; setup never picks it for you.
@@ -3033,7 +3035,7 @@ Behaves as the [Casper and Hush family](#casper-and-hush-family), except as belo
 
 #### Setup
 
-- The `hush_base` bed type. Choose **Hush Base app (select product)**, then the
+- The `hush_base` bed type. Choose **Hush Base app**, then the
   exact model; the app's own twelve products, catalog indices 46 to 57, come
   first. Its protocol variant is the product.
 - The other catalog indices are products a phone restored under the shared
@@ -3299,7 +3301,7 @@ Based on Lunio Smart+ 1.0.4 (`com.richmat.luniosmart`).
 
 #### Setup
 
-Choose **SonicSleep / 소닉슬립 app**. There are no further questions: the
+Choose **SonicSleep / 소닉슬립 app · Richmat**. There are no further questions: the
 product is fixed with two motors, and **Read bed position** is off. On a bed
 with two receivers, each side keeps its own settings.
 
@@ -3580,11 +3582,12 @@ alarm/press records are rejected instead of indexing beyond their payload.
 
 #### Services
 
-`adjustable_bed.luuna` offers `alarm`, `alarm_cancel`, `light_rgb`, `light_seconds`,
-`light_warm`, `light_cold`, `light_off`, `sleep_name` and `time_sync`. Generic
-memory and movement actions use the same profile and command serialization.
+`adjustable_bed.luuna` offers `light_rgb`, `light_seconds`, `light_warm`,
+`light_cold`, `light_off` and `sleep_name`. `set_alarm` sets and cancels the
+alarm and `sync_clock` sets the clock (`time_sync`). Generic memory and movement
+actions use the same profile and command serialization.
 
-Alarms use one selected preset from that product's alarm list and a local hour
+Alarms use one wake action from that product's alarm list and a local hour
 and minute. The countdown ignores seconds; the current minute wraps to tomorrow.
 Both save and cancel write the low frame first, then the high/action frame.
 There is no weekday or repeating schedule on this live alarm path.
@@ -3609,7 +3612,7 @@ MTU remain for owners to validate.
 
 #### Setup
 
-1. Choose **MLILY Remote app**.
+1. Choose **MLILY Remote app · Richmat**.
 2. Choose the product (MS200, MS300, MS600, PowerCool or MS300-SH) and whether
    the bed is a single bed or a double bed with separate sides.
 
@@ -3617,7 +3620,7 @@ The product sets the motors and massage; PowerCool shows fan and cooling
 controls. **Read bed position** is off. On a bed with two receivers, each side
 keeps its own product and layout.
 
-Choose **Richmat → MLILY Remote**, then the exact product: MS200, MS300,
+Choose **MLILY Remote app · Richmat**, then the exact product: MS200, MS300,
 MS600, PowerCool or MS300-SH. This is independent of MLILY Control. Choose the
 app's single or double bed layout. The catalog codes are product identifiers,
 not Bluetooth-name mappings. Discovery recognizes the case-sensitive substrings
@@ -3773,7 +3776,7 @@ Based on MLILY Remote 1.0.1 (10103).
 
 #### Setup
 
-Choose **MLILY Control**, then the exact product or its explicit remote-choice
+Choose **MLILY Control app · Richmat**, then the exact product or its explicit remote-choice
 route. Search by the product code shown in the app. The name helper suggests
 an admitted product from the Bluetooth name, but shared services cannot identify
 the app. A remote-choice route records both the chooser and its selected remote.
@@ -3785,7 +3788,8 @@ bare byte only for selected-detail commands. Explicit RGB, timer, clock, repeat
 alarm, name and synchronization helpers retain their framed packets on Nordic.
 There is no app-owned encryption or PIN handshake in these routes.
 
-Independent **RM- (MM)** and **HJ- (SXB)** sleep devices need separate entries.
+Independent sleep devices need separate entries: **MLILY Control app · Richmat**,
+then **RM- sleep sensor (MM)** or **HJ- sleep sensor (SXB)**.
 Their advertised name selects the route, independently of the bed product.
 
 #### Controls
@@ -5058,7 +5062,7 @@ physical effects, over-air delivery, alarm accuracy or persistence.
 
 #### Setup
 
-1. Choose **Richmat app**, then search for the product code the app shows.
+1. Choose **Richmat app · Richmat**, then search for the product code the app shows.
    Codes marked "restored product" are ones the app only reaches from a saved
    setup; choose one only when it is your bed's code.
 2. If your bed has a separate sleep sensor, add it as its own device with
@@ -5067,7 +5071,7 @@ physical effects, over-air delivery, alarm accuracy or persistence.
 The product sets the motors, massage and timing. On a bed with two receivers,
 add each one and combine them; each side keeps its own product.
 
-Choose **Richmat 4.2.0 app** and the exact product code. The searchable product
+Choose **Richmat app · Richmat** (version 4.2.0) and the exact product code. The searchable product
 question lists the app's manual products first and labels the additional restored
 products explicitly. QR text is a product code, not a Bluetooth address. Product
 identity, protocol version and selected physical side remain independent.
@@ -5076,8 +5080,8 @@ select an app or product. Home Assistant connects through its normal adapter or
 Bluetooth proxy selection. No PIN or bonding handshake is defined by this app.
 
 The bed's sleep-name reply appears in the status sensor's `events.sleep_device`.
-Add that physical device separately as **Richmat 4.2.0 sleep device**, choosing its
-RM-/MM or HJ-/public session. The restored demo options retain the old library's
+Add that physical device separately as **Richmat app sleep sensor**, choosing its
+session, **RM- sleep device (MM)** or **HJ- sleep device (public)**. The restored demo options retain the old library's
 service selection. Each entry owns its own link, sequence and cancellation; a
 sleep-device reply never changes the main bed's product. Use the exact advertised
 name to identify it. This replaces the Android global scanner and singleton
@@ -6763,7 +6767,7 @@ Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
 
 #### Setup
 
-Choose **Majestic Home**, then the exact FARM, JLRM, JGRN or JHRN identifier
+Choose **Majestic Home app · Richmat**, then the exact FARM, JLRM, JGRN or JHRN identifier
 shown in the app. Change it later in Reconfigure. Each physical side of a
 two-address pair keeps its own choice; separate a combined bed before changing
 either side's product. Imports and restored entries use the same
@@ -9256,8 +9260,12 @@ Layout-bound movement, combined movement, recall/save, massage, USB, fan, lock
 and light-labelled controls retain the selected app's gesture and visibility
 gates. Lock and vibration targets remain unknown. No motor position, battery,
 model identity or general command acknowledgment is reported by these apps.
-Settings provide alarm countdowns and combinations, RGB, lamp timers and the
-D1RM/D9RM/Y6RM timer utilities. A lamp capability reply reveals a timer number
+Settings provide RGB, lamp timers and the D1RM/D9RM/Y6RM timer utilities.
+`set_alarm` sets the alarm countdown: one of the layout's positions as
+`wake_action` (the wake modes are `wake_mode_1` and `wake_mode_2`, flat sleep
+`flat_sleep`), optional `massage` with a zone, or `none` with `massage` for
+massage alone. A position and massage pair the app has no alarm code for is
+refused. A lamp capability reply reveals a timer number
 entity without a reload. Its value is a local requested setting, not readback.
 
 #### Detection / Setup
@@ -9804,28 +9812,31 @@ gestures remain available.
 
 #### Alarm actions
 
-The `actions` field of [`richmat_rise`](../SERVICES.md#richmat_rise) takes
-names of the form `node_<number>`, where the number is the control's place in
-your layout. A layout accepts only the controls the app can wake you with: TV,
-Lounge, Zero Gravity, Anti-snore, Flat sleep, M1 to M3, massage 1 and 2
-intensity up, and the 10-minute massage timer. About 140 of each app's 600
-layouts have any. Choose one bed action, one or both massage actions, or both
-kinds; two massage actions select all massage. On UFRM, for example,
-`actions: [node_3, node_14]` wakes you with Zero Gravity and massage 1.
+Set the alarm with [`set_alarm`](../SERVICES.md#set_alarm). A layout accepts
+only the controls the app can wake you with; about 140 of each app's 600
+layouts have any. TV, Lounge, Zero Gravity, Anti-snore and Flat sleep are the
+`wake_action` values `tv`, `lounge`, `zero_g`, `anti_snore` and `flat_sleep`,
+M1 to M3 are `memory_1` to `memory_3`, and the two wake modes are `wake_mode_1`
+and `wake_mode_2`. Massage 1 and massage 2 intensity up are the `head` and
+`feet` massage zones, and both together (or the massage-on control) `both`. Add
+`massage: true` with a `massage_zone` to a position, or use `wake_action: none`
+with `massage: true` for massage alone. On UFRM, for example, `wake_action:
+zero_g` with `massage: true` and `massage_zone: head` wakes you with Zero
+Gravity and massage 1.
 
-The numbers differ between layouts. These are the most common sets:
+These are the most common sets:
 
 | Layouts | Alarm actions |
 |---|---|
-| UFRM, XJRM, XKRM, XZRM, Z5RM | `node_1` TV, `node_2` Lounge, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
-| O7RM, V4RM, XYRM, Z4RM, ZFRM | `node_1` TV, `node_2` Anti-snore, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
-| AFRM, AGRM, AMRM, ANRM, XFRM | `node_1` Zero Gravity, `node_3` Anti-snore, `node_4` TV, `node_12` massage 1 intensity up, `node_14` massage 2 intensity up |
-| A9RM, DARM, WURM, Z6RM | `node_8` TV, `node_9` Anti-snore, `node_10` Zero Gravity, `node_11` massage 1 intensity up, `node_12` M1, `node_13` massage 2 intensity up, `node_15` M2 |
-| FHRM, G9RM, HLRM and HRRM (Luuna Rise only) | `node_1` TV, `node_3` Lounge, `node_4` Anti-snore, `node_6` Zero Gravity, `node_11` M1 |
-| XGRM, Y1RM, Y7RM, YQRM | `node_1` Zero Gravity, `node_2` Anti-snore, `node_3` M1 |
+| UFRM, XJRM, XKRM, XZRM, Z5RM | TV, Lounge, Zero Gravity, M1, M2, massage 1 intensity up, massage 2 intensity up |
+| O7RM, V4RM, XYRM, Z4RM, ZFRM | TV, Anti-snore, Zero Gravity, M1, M2, massage 1 intensity up, massage 2 intensity up |
+| AFRM, AGRM, AMRM, ANRM, XFRM | Zero Gravity, Anti-snore, TV, massage 1 intensity up, massage 2 intensity up |
+| A9RM, DARM, WURM, Z6RM | TV, Anti-snore, Zero Gravity, massage 1 intensity up, M1, massage 2 intensity up, M2 |
+| FHRM, G9RM, HLRM and HRRM (Luuna Rise only) | TV, Lounge, Anti-snore, Zero Gravity, M1 |
+| XGRM, Y1RM, Y7RM, YQRM | Zero Gravity, Anti-snore, M1 |
 
-For another layout, download the bed's diagnostics: `controls` lists each
-control's number and name, and `alarm_actions` lists the names an alarm accepts.
+For another layout, download the bed's diagnostics: `alarm_actions` lists the
+layout's alarm controls.
 
 #### Position Feedback / Notifications
 
@@ -9873,8 +9884,9 @@ Based on Luuna Rise 1.0.13 (`com.richmat.luunarise2`) and Power Cool Sleep Syste
 
 #### Setup
 
-Choose **Richmat**, then the exact app and its four-character layout. All four
-app names are searchable in setup and Reconfigure. A shared Bluetooth name or
+Choose the app's own row, **Lady Americana app · Richmat**, **ACAA app ·
+Richmat**, **STA Homecare app · Richmat** or **Zero Gravity app · Richmat**,
+then its four-character layout. All four are listed in setup and Reconfigure. A shared Bluetooth name or
 service suggests the family, and does not choose an app or physical layout.
 Each receiver in a two-address pair keeps its own app, layout and saved choices.
 There is no single-address Left/Right selector for these apps.
@@ -10251,14 +10263,16 @@ or alarm-time feedback.
 
 #### Services
 
-`adjustable_bed.richmat_resource_bed` exposes `query`, `alarm`, `cancel_alarm`,
-`rgb`, `lamp_timeout`, `massage_timer` and `bed_command`. The status entity lists
-available alarm action names in layout order. Choose one bed preset and optional
-massage actions. The action validates every target before execution, and STOP
-fences later writes on every target even while another target is awaiting BLE.
+`adjustable_bed.richmat_resource_bed` exposes `query`, `rgb`, `lamp_timeout`,
+`massage_timer` and `bed_command`. The action validates every target before
+execution, and STOP fences later writes on every target even while another
+target is awaiting BLE.
 
-An alarm time selects its next local occurrence, with unset/equal time meaning
-the next day. Only the layout-owned combinations are accepted. Light timeout
+`set_alarm` sets and cancels the alarm: one of the layout's positions as
+`wake_action`, optional `massage` with a zone (`both`, `head` or `feet`), or
+`none` with `massage` for massage alone. The status entity lists the layout's
+alarm actions. An alarm time selects its next local occurrence, with an equal
+time meaning the next day. Only the layout-owned combinations are accepted. Light timeout
 requests are 0–300 seconds, with zero labelled keep on. The D1RM massage slider
 uses its actual 0–5 callback mapping. Requested values are labelled as requests,
 not device readback. Other layout actions use their named buttons and the
@@ -10363,7 +10377,7 @@ Based on Zero Gravity 1.0.3 (4).
 
 #### Setup
 
-1. Choose **Okimiki app**.
+1. Choose **Okimiki app · Richmat**.
 2. Choose the product code the app shows: HCRN, IPRM, IQRM or KWRN. The bed's
    name does not tell them apart.
 
@@ -10371,7 +10385,7 @@ The product decides the memory, preset and alarm controls. The light and alarm
 controls appear once the bed has connected and reported them. Configure keeps
 the product; on a bed with two receivers each side keeps its own.
 
-Choose **Okimiki app**, then the exact product code shown in the app. Configure,
+Choose **Okimiki app · Richmat**, then the exact product code shown in the app. Configure,
 import and restored entries retain that product independently for each bed.
 Shared Bluetooth names/services do not select a product. Case-sensitive scan
 keywords match anywhere in the name; manual setup also accepts these candidates.
@@ -10501,7 +10515,7 @@ Based on Okimiki 1.0.1 (`com.richmat.okimiki`).
 
 #### Setup
 
-Choose **Nisco app (Richmat)** explicitly. Auto uses the first four Bluetooth
+Choose **Nisco app · Richmat** explicitly. Auto uses the first four Bluetooth
 name characters, lowercased, as the surface identifier. A saved explicit model
 wins over the name. QRRM asks for a real model. The six short identifiers
 3i/4i/4it/5i/6i/7i are dormant in this app and are not offered. Shared UUIDs and
@@ -10602,7 +10616,7 @@ Based on Nisco 1.1.1 (3).
 
 #### Setup
 
-Choose **MLILY Supreme app (Richmat)** explicitly. This is a separate profile
+Choose **MLILY Supreme app · Richmat** explicitly. This is a separate profile
 from MLILY Control and other same-brand integrations. The name rule and GATT
 priority match Nisco's common domains. Unlike Nisco, the six short
 manual surface identifiers are selectable. Choose the explicit normal-mattress
@@ -11641,7 +11655,8 @@ and STOP response are not yet verified on hardware.
 
 #### Setup
 
-1. Choose **SleepEvolution app** or **W.Silver Products 3.x app** under Richmat.
+1. Choose **SleepEvolution app · Richmat** or **W.Silver Products app (older
+   version) · Richmat** (W.Silver Products 3.x).
    The newer W.Silver Products app is a separate choice.
 2. Choose the start of the bed's Bluetooth name (**Bed model or remote**). It is
    case-sensitive. A6, U3, U5 and X1 are offered only for SleepEvolution.
@@ -11650,8 +11665,8 @@ and STOP response are not yet verified on hardware.
 each one and combine them; each keeps its own app and name. Left and Right
 controls on one receiver are not supported. **Read bed position** is off.
 
-Search **SleepEvolution** or **W.Silver Products 3.x** under **Richmat** in setup
-or **Reconfigure**, then select the exact case-sensitive two-character name
+Search for **SleepEvolution app · Richmat** or **W.Silver Products app (older
+version) · Richmat** in setup or **Reconfigure**, then select the exact case-sensitive two-character name
 prefix. A matching name can suggest a prefix only after app selection. Shared
 prefixes and Nordic UART services cannot choose between the apps. The newer
 W.Silver MH app remains a separate choice. `Ml`, `Mr` and `Ms` are case
@@ -14536,7 +14551,7 @@ parser and event timing. Hardware is not yet tested.
 
 #### Setup
 
-Choose **Bed Tech app (older app)**, then your model. This is separate from the modern
+Choose **Bed Tech app (older app) · Richmat**, then your model. This is separate from the modern
 **BedTech app (newer app)** and its legacy controls. Automatic uses the first four Bluetooth
 name characters. **Cool Touch** and **QRRM** ask for a model. Short model names
 such as **5I** require an explicit selection. BT3000 and BT3000FH select the same
@@ -15415,7 +15430,7 @@ Physical behavior and firmware compatibility need real-user testing.
 
 #### Setup
 
-Choose **Super Colchones app (AFEG302, AFEG350)** and the product printed on your
+Choose **Super Colchones app (AFEG302, AFEG350) · Richmat** and the product printed on your
 bed: **AFEG302** or **AFEG350**. Discovery matches the case-sensitive substring
 `QRRM`. The `NLRN` and `NMRN` product metadata do not select a product from the
 Bluetooth name. The product is always an explicit setup choice.

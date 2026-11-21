@@ -171,10 +171,10 @@ notifications and report no positions.
 
 #### Setup
 
-Choose **MotoMotion app (exact Bluetooth name)** in the bed-type list; searching for MotoMotion finds it. The next question asks the exact Bluetooth local name, filled in from the advertisement when there is one. Configure asks the same name and checks it the same way. The Home Assistant display name never selects a panel. Discovery offers a candidate without overriding another app's confident match. Shared service UUIDs alone do not select this app.
+Choose **MotoMotion app** in the bed-type list; searching for MotoMotion finds it. The next question asks the exact Bluetooth local name, filled in from the advertisement when there is one. Configure asks the same name and checks it the same way. The Home Assistant display name never selects a panel. Discovery offers a candidate without overriding another app's confident match. Shared service UUIDs alone do not select this app.
 
 - `BT201` selects binary music first. Otherwise zero-based name index 9 selects `1`, `2`, `3`, `5`, `6`, `7`, `8`, `9`, `A`, `D`, `E`, `G`, `H`, or `J`. `MM` at indices 9 and 10 selects ASCII music. Other selectors use the One panel.
-- Home Assistant's automatic name index requires three literal leading characters, so its name-only hints are `SOFA*`, `BT201*` and `MOTO*`. Names with another prefix can still reach discovery through advertised service hints, or through **Show all BLE devices** and manual setup. The app's case-sensitive substring rules and exact Bluetooth name remain the profile inputs; a shared service does not select the MotoMotion app automatically.
+- Home Assistant's automatic name index requires three literal leading characters, so its name-only hints are `SOFA*`, `BT201*` and `MOTO*`. Names with another prefix can still reach discovery through advertised service hints, or through **Pick any Bluetooth device** and manual setup. The app's case-sensitive substring rules and exact Bluetooth name remain the profile inputs; a shared service does not select the MotoMotion app automatically.
 
 Name lengths and zero-based indices follow the app’s UTF-16 code units. A supplementary Unicode character occupies two units in both profile selection and receive routing.
 
@@ -752,11 +752,16 @@ an acknowledgement for a particular command. Other known response lengths are
 | --- | --- |
 | `rgb` | `rgb: [red, green, blue]` (0–255), `brightness` (0–1). Brightness scales the channels before 0–120 conversion. Red below 10, green/blue below 30 become zero. Sends red, green, then blue with the source queries and delays. |
 | `light_timer` | `minutes: 0..1439`. Zero disables shutdown; 10 is the app's on-switch value. This is minutes, not brightness. |
-| `alarm` | `time: HH:MM`, `strength: 0..2` (off, 1, 2). Omit time or strength only to reuse an actually received value; received time digit widths are preserved. No weekday or repeat parameter. |
 | `sync_mode` | `wired: false` selects wireless, true wired. Requires `confirm: true`. This is bed synchronization, not Bluetooth pairing or network membership. |
 | `toggle_sync` | Requires a received available bind state. The current active/inactive state selects the source command. |
 | `save_memory` | `slot: 1..2`, subject to layout. Optional `recall_on_release: true` sends recall after save, matching the source's up-before-rebuild branch. |
 | `save_snore` | Panel E only, sends save without a release recall. Use the separate held anti-snore preset to recall. |
+
+Set the alarm with `set_alarm`: `time`, `enabled` and optional
+`massage_intensity` 1 or 2 (the alarm strength); disabling sends strength 0
+with the time the bed reported, when it has reported one.
+The alarm gate is name character 11 `E`. There is no weekday or repeat
+parameter.
 
 Memory saves default to save only. Panel E snore save has no release-send branch.
 HA does not reproduce a race against a Flutter widget rebuild. Synchronization does not select another Bluetooth
@@ -779,11 +784,11 @@ qualify those behaviors with timestamps, GATT details and physical observations.
 
 #### Setup
 
-Choose **L2 Motion** for beds controlled by Leon's L2Motion app. Setup and
+Choose **L2 Motion app** for beds controlled by Leon's L2Motion app. Setup and
 Reconfigure ask for the bed's exact Bluetooth name, which decides the controls;
 there are no motor or massage questions. A combined bed keeps each side's name.
 
-Choose **L2 Motion** and enter the original Bluetooth name exactly, including case.
+Choose **L2 Motion app** and enter the original Bluetooth name exactly, including case.
 Names contain `HHC` and have exactly fourteen UTF-16 units. Display renames do not
 change the layout. Matching names are app candidates; choose the app actually used
 with the bed. Each physical side keeps its own name when combining two entries.
@@ -932,7 +937,7 @@ movement feedback. There is no command acknowledgement correlation.
 #### Services
 
 Use `set_alarm` with time, `enabled` and optional `massage_intensity` 1 or 2.
-Disabling maps to strength 0. The alarm gate is name character 11 `E`; weekdays,
+Disabling maps to strength 0, with the time the bed reported when it has one. The alarm gate is name character 11 `E`; weekdays,
 extra slots, wake actions, dates and timezone settings are unsupported.
 
 `l2motion` sets RGB color/brightness or synchronization mode. Changing wired or

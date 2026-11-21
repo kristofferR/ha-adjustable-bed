@@ -609,26 +609,21 @@ class SleepysBox25Controller(BedController):
         Star* devices use StarCode framing (5A 01 03 10 30 KK A5), including
         Memory 1/2. The terminator's framing must match its preset key's framing.
         """
-        try:
+        # A failed commit fails the preset, since the bed never moved; a failure
+        # of the arm frames before it stays the error the user sees.
+        # Fresh cancel event so a pending Stop All can't suppress the commit
+        # packet — without it the preset never executes.
+        async with self.releasing(
+            lambda: self.write_command(
+                Box25Commands.STAR_PRESET_TERMINATOR, cancel_event=asyncio.Event()
+            )
+        ):
             await self.write_command(
                 preset_cmd,
                 repeat_count=_PRESET_REPEAT_COUNT,
                 repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
             )
             await asyncio.sleep(_PRESET_COMMIT_DELAY)
-        finally:
-            try:
-                # Fresh cancel event so a pending Stop All can't suppress the
-                # commit packet — without it the preset never executes.
-                await self.write_command(
-                    Box25Commands.STAR_PRESET_TERMINATOR,
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError, ConnectionError:
-                _LOGGER.debug(
-                    "Failed to send committing terminator after preset",
-                    exc_info=True,
-                )
 
     async def preset_flat(self) -> None:
         await self._send_preset(Box25Commands.STAR_PRESET_FLAT)

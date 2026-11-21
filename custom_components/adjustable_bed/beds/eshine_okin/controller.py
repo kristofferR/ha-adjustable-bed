@@ -256,8 +256,9 @@ class EshineOkinController(BedController):
                 _group_key(group),
                 "mdi:alarm" if group == "alarm" else "mdi:vibrate",
                 attribute_keys=(_group_data_key(group),),
-                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE if group == "massage" else CARD_UTILITY,
+                entity_registry_enabled_default=True,
+                entity_category=None,
             )
             for group in (("massage", "alarm") if self.supports_massage else ("alarm",))
         )

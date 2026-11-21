@@ -239,6 +239,7 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
                     patch(config_module + "async_predict_path", return_value=PathPrediction(path, (path,))),
                     patch(diagnostic_module + "select_adapter", new=AsyncMock(return_value=adapter)),
                     patch(diagnostic_module + "establish_connection", new=AsyncMock()) as diagnostic_connect,
+                    patch(diagnostic_module + "asyncio.sleep"),
                 ):
                     async def config_worker():
                         return await flow._async_pair_and_classify(address, "pair", device)

@@ -140,9 +140,10 @@ is 0 none, 1 light, 2 massage, 3 both.
 
 ### Home Assistant setup
 
-The bed-type list has one **Limoss / Stawett: Limoss Remote and FSM Relax apps,
-Stawett and older Limoss controls** row, and the **Limoss / Stawett** brand
-opens the same question. The receiver's name and service are shared, so setup
+The bed-type list has one **Limoss Remote and FSM Relax apps, Stawett and older
+Limoss controls · Limoss / Stawett** row, and the brand list's **Limoss /
+Stawett: Limoss Remote and FSM Relax apps, Stawett and older Limoss controls**
+row opens the same question. The receiver's name and service are shared, so setup
 asks which app you use:
 
 | Answer | Route |
@@ -155,7 +156,7 @@ Each route keeps its own controls, feedback and memory format; none is
 translated into another. For an existing bed, open the entry's three-dot menu
 and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
-**Keep** leaves the entry as it is. A change to Limoss Remote first checks for
+**Keep the detected or saved controls** leaves the entry as it is. A change to Limoss Remote first checks for
 the app's FFE0 service and its notifying FFE1 characteristic. Leaving Limoss
 Remote with its light or massage enabled sends the app's OFF commands before
 saving, as Configure does; if they fail or are cancelled, the saved setup stays.
@@ -372,7 +373,8 @@ route sends the pre-v5 controller's frames.
 
 #### Setup
 
-- Detection: none. Answer **Limoss Remote app** in the
+- Detection: none. Answer **Limoss Remote app: bed or chair layouts and eight
+  local memories** in the
   [Limoss question](#home-assistant-setup), then choose bed or chair and its
   local lamp and massage controls.
 - The source selects the first exact FFE0 service, then its first exact FFE1
@@ -437,7 +439,7 @@ route sends the pre-v5 controller's frames.
 
 ##### Home Assistant setup
 
-Answer **Limoss Remote app** in the [Limoss question](#home-assistant-setup). Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile.
+Answer **Limoss Remote app: bed or chair layouts and eight local memories** in the [Limoss question](#home-assistant-setup). Choose bed/chair, local lamp and massage controls, four reversal flags and an optional app artwork preference. Live replies select the rendered key layout and memory capacity. These settings belong to each physical receiver, including paired children. Disabling a selected feature sends its ten OFF frames before saving; enabling only changes the local layout. Generic pulse, angle and motor-count settings are hidden for this profile.
 
 #### Controls
 
@@ -607,7 +609,7 @@ Based on Limoss Remote 7.1.8 (44); its key tables match the app's.
 
 #### Setup
 
-- Detection: none on its own. Answer **FSM Relax app** in the
+- Detection: none on its own. Answer **FSM Relax app: bed or chair profile with app-labelled controls** in the
   [Limoss question](#home-assistant-setup). The exact case-sensitive lowercase `limoss` name adds FSM Relax as an
   ambiguous candidate to the Limoss detection, so the choice stays explicit; the
   focused chooser also applies when that candidate advertises FFE0.
@@ -640,7 +642,9 @@ controls immediately; optional version queries cannot revoke them on timeout.
 
 ##### Home Assistant setup
 
-Choose the **Limoss / Stawett** row and answer **FSM Relax app** in the
+Choose the **Limoss Remote and FSM Relax apps, Stawett and older Limoss controls
+· Limoss / Stawett** row and answer **FSM Relax app: bed or chair profile with
+app-labelled controls** in the
 [Limoss question](#home-assistant-setup); FSM Relax is not a row of its own.
 Then choose the chair/bed layout, optional light/massage controls and four
 reversal flags on its own step. These settings are local app

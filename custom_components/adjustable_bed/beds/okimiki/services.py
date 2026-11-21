@@ -29,6 +29,7 @@ from ...services import (
     _family_command,
     _preflight_capability,
     _release_preflighted,
+    local_datetime,
 )
 from . import protocol as p
 
@@ -208,7 +209,7 @@ FIELDS: dict[vol.Marker, object] = {
     vol.Required("operation"): vol.In(tuple(op for op in OPERATIONS if op != "sync")),
     vol.Optional("control"): vol.In(CONTROLS),
     vol.Optional("duration_ms", default=1000): vol.All(cv.positive_int, vol.Range(max=60000)),
-    vol.Optional("datetime"): cv.datetime,
+    vol.Optional("datetime"): local_datetime,
     vol.Optional("alarm_id"): vol.All(cv.positive_int, vol.Range(min=1, max=7)),
     vol.Optional("mode"): vol.In(MODES),
     vol.Optional("weekdays"): vol.All(cv.ensure_list, [vol.In(WEEKDAYS)]),

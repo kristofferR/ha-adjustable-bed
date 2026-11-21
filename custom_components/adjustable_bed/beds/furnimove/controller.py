@@ -14,12 +14,12 @@ import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Final
 
-from ...card import CARD_HIDDEN, CARD_LIGHTING
+from ...card import CARD_HIDDEN
 from ...codec import keeson as codec
 from ...const import CONF_FURNIMOVE_REMOTE
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
-from ...state_keys import massage_intensity
+from ...state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
 from ..base import BedController, require_controller
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -298,6 +298,8 @@ class FurniMoveController(BedController):
     def _publish(self, key: str, value: object) -> None:
         self._state[key] = value
         self.forward_controller_state_update(_state_key(key), value)
+        if key == "furnimove_ubl":
+            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(bool(value)))
         if key in _MASSAGE_SESSION_FIELDS:
             self.forward_controller_state_updates(*self._massage_levels())
 
@@ -314,6 +316,8 @@ class FurniMoveController(BedController):
         )
 
     def _clear_session(self) -> None:
+        # The light switches from this link's own report, never a retained one.
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
         self._write_characteristic = self._feedback_characteristic = None
         self._rf_name = self._gap_name = None
         self._info.clear()
@@ -494,6 +498,9 @@ class FurniMoveController(BedController):
             if value is not None and (
                 value != self._state[state_key]
                 or type(self._coordinator.controller_state.get(_state_key(state_key))) is not bool
+                # Every light report is the truth, also over a value just sent.
+                or key == "ubl"
+                and self._coordinator.controller_state.get(UNDER_BED_LIGHTS_ON) is not value
             ):
                 self._publish(state_key, value)
 
@@ -502,14 +509,13 @@ class FurniMoveController(BedController):
         return tuple(
             ControllerStateBinarySensorSpec(
                 key,
-                "under_bed_light_state" if key == "furnimove_ubl" else key,
+                key,
                 _state_key(key),
                 icon,
                 entity_registry_enabled_default=enabled,
-                card=CARD_LIGHTING if key == "furnimove_ubl" else CARD_HIDDEN,
+                card=CARD_HIDDEN,
             )
             for key, icon, enabled in (
-                ("furnimove_ubl", "mdi:led-strip-variant", True),
                 ("furnimove_sync", "mdi:sync", False),
                 ("furnimove_child_lock", "mdi:lock", True),
                 ("furnimove_massage_running", "mdi:vibrate", True),
@@ -917,16 +923,13 @@ class FurniMoveController(BedController):
     def supports_light_toggle_control(self) -> bool:
         return self.supports_lights
 
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        return self.supports_lights
+
     async def lights_toggle(self) -> None:
         await self._hold([self._require("UBL")])
 
-    async def lights_on(self) -> None:
-        if not self._state["furnimove_ubl"]:
-            await self.lights_toggle()
-
-    async def lights_off(self) -> None:
-        if self._state["furnimove_ubl"]:
-            await self.lights_toggle()
 
     @property
     def supports_massage(self) -> bool:

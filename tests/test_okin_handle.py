@@ -77,18 +77,6 @@ def mock_okin_handle_config_entry(
 class TestOkinHandleController:
     """Test Okin handle controller."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports the stable Okin write characteristic."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == OKIMAT_WRITE_CHAR_UUID
-
     async def test_write_command(
         self,
         hass: HomeAssistant,

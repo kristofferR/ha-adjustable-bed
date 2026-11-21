@@ -69,7 +69,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`jiecang_wake`](#jiecang_wake) | Jiecang: start wake routine | Move to a preset and start the selected wake massage levels immediately. |
 | [`comfy_control`](#comfy_control) | KomfyD and ComfyDS: settings | Moves the bed or runs its timer and lock buttons. |
 | [`lp2`](#lp2) | L&P Adjustable Base: settings | Sets the lighting, aromatherapy and fans of an L&P Adjustable Base, or runs one of its remote controls. Use Set alarm for wake-up alarms. |
-| [`richmat_resource_bed`](#richmat_resource_bed) | Lady Americana and partner beds: settings | Sets the alarm, light and massage timer of a Lady Americana or partner bed, or presses a bed button. Read the current settings before changing the light. |
+| [`richmat_resource_bed`](#richmat_resource_bed) | Lady Americana and partner beds: settings | Sets the light and massage timer of a Lady Americana or partner bed, or presses a bed button. Set its alarm with Set alarm. Read the current settings before changing the light. |
 | [`leggett_sleep_timer`](#leggett_sleep_timer) | Leggett & Platt: sleep timer | Start a delayed preset or cancel the stored sleep timer. |
 | [`limoss_remote_calibrate`](#limoss_remote_calibrate) | Limoss Remote: calibrate | Runs the remote's calibration after you confirm, then releases the motors. |
 | [`limoss_remote_features`](#limoss_remote_features) | Limoss Remote: configure controls | Chooses whether the lamp and massage controls are shown. Turning a control off first turns that feature off on the bed. |
@@ -77,11 +77,11 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`linak_move_simultaneously`](#linak_move_simultaneously) | Linak: move two motors together | Moves two motors together for a set time on a Linak Bed Control or Jensen JMC400, then stops them. |
 | [`linx_snore_intervention`](#linx_snore_intervention) | Linx: snore intervention | Run the bed's anti-snore movement once, then ask the bed for its status. It does not listen for snoring. |
 | [`logicdata_hold_preset`](#logicdata_hold_preset) | LOGICDATA: hold preset | Holds a flat, preset or memory button for a set time, then releases it. |
-| [`luuna`](#luuna) | Luuna: settings | Sets the light, the one-time alarm and the clock of a Luuna bed, or reads the name of its sleep sensor. Only the options your bed reports can run. |
-| [`richmat_rise`](#richmat_rise) | Luuna Rise and Power Cool: settings | Sets the alarm, light and massage timer of a Luuna Rise or Power Cool bed. Alarm and light settings need the bed to report them first. |
+| [`luuna`](#luuna) | Luuna: settings | Sets the light of a Luuna bed, or reads the name of its sleep sensor. Set its alarm with Set alarm and its clock with Set bed clock. Only the options your bed reports can run. |
+| [`richmat_rise`](#richmat_rise) | Luuna Rise and Power Cool: settings | Sets the light and massage timer of a Luuna Rise or Power Cool bed. Set its alarm with Set alarm. Light settings need the bed to report them first. |
 | [`mline_command`](#mline_command) | M Line: settings | Sets sleep privacy or anti-snore, reads the current settings or alarm, or downloads sleep history. |
 | [`mlily`](#mlily) | MLILY: settings | Sets the alarm, light, massage and anti-snore options of an MLILY bed, or reads and sets its separate sleep sensor. |
-| [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, as listed in the bed's diagnostics. Saving, clearing, resetting and changing modules need confirmation. |
+| [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the common names; the bed's diagnostics list every name it accepts. Saving, clearing, resetting and changing modules need confirmation. |
 | [`motion_bed_air_setting`](#motion_bed_air_setting) | Motion Bed: air settings | Reads or saves the air strength and optional timer of one air mode. |
 | [`motion_bed_audio`](#motion_bed_audio) | Motion Bed: audio | Select a track, preview a track, or set volume on a target that reports audio support. |
 | [`motion_bed_calibration`](#motion_bed_calibration) | Motion Bed: calibrate sleep sensing | Save the app’s flat and side calibration readings. Confirm before changing calibration. |
@@ -126,7 +126,6 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`starcode_move_lifts`](#starcode_move_lifts) | StarCode: move lifts | Moves the lifts set up on one main bed. Flat lowers the main bed first and the lifts a moment later; Stop stops them all. |
 | [`svane_release_axis`](#svane_release_axis) | Svane: release motor | Stop one motor while the other keeps moving. |
 | [`symphony_anti_snore`](#symphony_anti_snore) | Symphony: anti-snore | Turns anti-snore on or off for the head or the elevation, or runs a demonstration. Some beds take strengths 1, 3 and 6; others take 1, 2 and 3. |
-| [`symphony_preset`](#symphony_preset) | Symphony: preset | Moves to a preset, or saves the current position to it on beds that can save presets. |
 | [`symphony_set_light`](#symphony_set_light) | Symphony: set light | Sets the light color and brightness together. ES700 and SS800 only. |
 
 # General actions
@@ -402,7 +401,7 @@ other beds. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep, Galaxy,
 MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, GM
 Control products with an alarm, OKIN SleepEase, HJBed, Richmat app beds and
 their separate sleep sensor, Bed Tech (including its separate intervention
-receiver) and Dream Sense Bed set their clock here too. On a Motion Bed it sets
+receiver), Dream Sense Bed and Luuna + set their clock here too. On a Motion Bed it sets
 the clock of the motor or heating module; on a hub, select the module first.
 HJBed's own `hjbed` action also keeps its Set bed clock operation, which does
 the same. A bed whose two sides share one receiver has its clock set once.
@@ -442,6 +441,7 @@ data:
 | Bed | Wake actions | Other options |
 |-----|--------------|---------------|
 | Bed Tech | From the selected model's alarm choices | Countdown or three-slot alarms on supported models. Calendar models use a uniquely reported `slot`, with `weekdays` or once. `mattress_side` selects the separate vibrating mattress alarm, with intensity 1–3 |
+| Bedgear | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
 | BF and Cherish | `none`, `memory_1`, `memory_2` | Once only |
 | BedSmart / X-Series | From the selected layout's alarm page; left out, the layout's first wake action is used. `none` only with `massage: true` and a supported zone | The layout's `massage` zones and combinations. Once, at the next occurrence: leave out `weekdays` and `slot` |
 | BetterLiving2 | `massage`, `memory_1`, `memory_2` | `weekdays` or once, at the next occurrence |
@@ -456,11 +456,14 @@ data:
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
 | Jerome's power base | The selected layout's wake positions; `none` only with `massage: true` and a supported zone | `massage` with the layout's zones. `memory_1` to `memory_3` need `confirm_custom_position: true`. Once, as a countdown to the time. Standalone beds and the physical sides of a two-address pair only, not a one-address combined bed |
+| Lady Americana and partner beds | From the selected layout's alarm controls; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence |
 | L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
 | Logicdata app | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2` | `weekdays`, head and foot massage levels 0–3 |
+| Luuna + | The product's alarm positions: `tv`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`; required to turn the alarm on | Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
+| Luuna Rise and Power Cool | From the selected layout's alarm controls; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
 | M Line | `zero_g`, `flat`, `memory_1`, `memory_2`, `massage`, `anti_snore` | `weekdays` |
 | Malouf / Lucid app | `zero_g`, `lounge`, `tv`, `anti_snore`, memories | `weekdays` |
 | Motion Bed | `none` (rings only), `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` (the alarm tone by default; music 1 by default where the bed has audio) |
@@ -483,7 +486,7 @@ data:
 | Ultramatic (ORE) | `none`, `massage`, `memory_1`, `memory_2` on the older bed route; `tv`, `massage`, `zero_g` on the newer | `weekdays` or once. Turning it on needs a `wake_action`; connect once first so the route is known |
 | Ultramatic Smart Bed | `massage`, `zero_g`, `memory_1` (required to turn on) | `weekdays` or once. Left, Right and Both set the A, B and AB alarms; a standalone bed uses its configured side. Turning off without a time keeps the reported alarm's other fields; refresh the alarm first |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |
-| Bedgear, Casper Base, classic Richmat apps, Galaxy Bed Control, GM Control, Good Vibe Sleep, HJBed, Hush Base, Lady Americana and partner beds, Luuna, Luuna Rise and Power Cool, Majestic Home, MLILY, MLILY Remote, OKIN SleepEase, Okimiki, Power Bob Base, Richmat app (`richmat_app` bed type), Snore Monitor, SonicSleep | Use the bed's own action | See [Bedgear](#bedgear), [Casper Base](#casper_base), [classic Richmat apps](#richmat_classic), [Galaxy](#galaxy), [GM Control](#gmmotor), [Good Vibe Sleep](#good-vibe-sleep), [HJBed](#hjbed), [Hush Base](#hush_base), [Lady Americana and partner beds](#richmat_resource_bed), [Luuna](#luuna), [Luuna Rise and Power Cool](#richmat_rise), [Majestic Home](#majestichome), [MLILY](#mlily), [MLILY Remote](#mlily-remote), [OKIN SleepEase](#doublesleep_configure), [Okimiki](#okimiki), [Power Bob Base](#bobpowerbase), [Richmat app](#richmat_app), [`onlysnore_set_alarm`](#onlysnore_set_alarm) and [SonicSleep](#sonicsleep) |
+| Casper Base, classic Richmat apps, Galaxy Bed Control, GM Control, Good Vibe Sleep, HJBed, Hush Base, Majestic Home, MLILY, MLILY Remote, OKIN SleepEase, Okimiki, Power Bob Base, Richmat app (`richmat_app` bed type), Snore Monitor, SonicSleep | Use the bed's own action | See [Casper Base](#casper_base), [classic Richmat apps](#richmat_classic), [Galaxy](#galaxy), [GM Control](#gmmotor), [Good Vibe Sleep](#good-vibe-sleep), [HJBed](#hjbed), [Hush Base](#hush_base), [Majestic Home](#majestichome), [MLILY](#mlily), [MLILY Remote](#mlily-remote), [OKIN SleepEase](#doublesleep_configure), [Okimiki](#okimiki), [Power Bob Base](#bobpowerbase), [Richmat app](#richmat_app), [`onlysnore_set_alarm`](#onlysnore_set_alarm) and [SonicSleep](#sonicsleep) |
 
 ### Estimated positions
 
@@ -631,12 +634,10 @@ button. Not yet confirmed on real beds.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Control | Choose the supported setting or save action. One of `rgb` (Light color), `light_timer`, `alarm` (Set alarm), `sync_mode`, `toggle_sync` (Turn sync on or off), `save_snore` (Save anti-snore position) or `save_memory`. |
+| `operation` | Control | Choose the supported setting or save action. One of `rgb` (Light color), `light_timer`, `sync_mode`, `toggle_sync` (Turn sync on or off), `save_snore` (Save anti-snore position) or `save_memory`. |
 | `rgb` | Light color | For Light color: red, green and blue, each 0 to 255. |
 | `brightness` | Brightness | For Light color: scales the color, from 0 to 1. Default 1. |
 | `minutes` | Light shutdown timer | For Light timer: turns the light off after this many minutes, from 0 (never) to 1439. |
-| `time` | Alarm time | For Set alarm: the time as HH:MM. Leave unset to keep the time the bed reported. |
-| `strength` | Alarm strength | For Set alarm: 0 turns the alarm off, 1 or 2 sets its strength. Leave unset to keep the strength the bed reported. |
 | `wired` | Wired synchronization | For Sync mode: on if the two bases are connected with a cable, off for wireless. |
 | `confirm` | Confirm synchronization change | Required to change the sync mode. |
 | `slot` | Memory slot | For Save memory: memory slot 1 or 2. |
@@ -645,9 +646,10 @@ button. Not yet confirmed on real beds.
 ### Bedgear settings
 
 
-Use `adjustable_bed.bedgear` for the light color, the light timer, the alarm
-time and strength, the sync between two bases, and saving memories and the
-anti-snore position. See the [Bedgear guide](beds/motomotion.md#bedgear).
+Use `adjustable_bed.bedgear` for the light color, the light timer, the sync
+between two bases, and saving memories and the anti-snore position. Set the
+alarm with [`set_alarm`](#set_alarm), its strength as `massage_intensity`. See
+the [Bedgear guide](beds/motomotion.md#bedgear).
 Motor covers and the card use the generic held and timed movement actions.
 
 ## BetterLiving2
@@ -1000,7 +1002,7 @@ buttons for everyday controls and `hold_control` for held buttons. See the
 | Field | Name | Meaning |
 |-------|------|---------|
 | `operation` | Operation | What to set or read. A product with repeating alarms has no one-time alarm, and the other way round. One of `single` (One-time alarm), `cancel_single` (Cancel one-time alarm), `repeat` (Repeating alarm), `delete` (Delete alarm), `query` (Read current settings), `toggle` (Turn alarm on or off), `sync` (Set bed clock), `light_timeout` (Light timer), `light_color` or `mode`. |
-| `action` | Alarm action | For a one-time or repeating alarm: what the alarm does, one of your product's alarm actions listed in the bed's diagnostics. |
+| `action` | Alarm action | For a one-time or repeating alarm: what the alarm does, an alarm action such as zero_gravity from your product's list in the Richmat guide. |
 | `time` | Time | For a one-time or repeating alarm: when it goes off, in whole minutes. |
 | `alarm_id` | Alarm number | Alarm number, 1 to 7. Delete and Turn on or off need a number the bed has reported. For a repeating alarm, leave it unset only to reuse a number deleted during this Bluetooth connection. |
 | `weekdays` | Weekdays (empty means once) | For a repeating alarm: the days it repeats. Leave empty for once. Any of `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday` or `sunday`. |
@@ -1149,7 +1151,7 @@ buttons work as in the app. See the [KomfyD and ComfyDS guide](beds/kaidi.md#kom
 | `intensity` | Intensity (%) | For Set fan: 0 to 100 percent in steps of 20. |
 | `duration` | Fan duration | For Set fan: duration choice 0 to 6, required for either fan. Only the head fan uses it. |
 | `confirm` | Confirm programming or saving | Required for a control's long press or save. |
-| `control` | Control | For Run control: the control's node number in your bed's remote layout, as listed in the bed's diagnostics. |
+| `control` | Control | For Run control: the control's number in your bed's remote layout, from the layout's list in the Richmat guide. A number that cannot send the chosen press on your bed is refused. |
 | `mode` | Control mode | For Run control: the layout's control mode, 0 to 2, one your layout offers. Default 0. |
 | `long` | Long press | For Run control: send the control's long press. Needs Confirm. |
 | `held` | Continuous movement | For Run control: hold the control for the movement duration. Controls that repeat on their own, such as motor movement, run for the duration without it. |
@@ -1164,13 +1166,11 @@ each layout accepts, including the
 ## Lady Americana and partner beds
 
 <a id="richmat_resource_bed"></a>
-**`richmat_resource_bed`**: Sets the alarm, light and massage timer of a Lady Americana or partner bed, or presses a bed button. Read the current settings before changing the light.
+**`richmat_resource_bed`**: Sets the light and massage timer of a Lady Americana or partner bed, or presses a bed button. Set its alarm with Set alarm. Read the current settings before changing the light.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation | What to set, read or press. One of `query` (Read current settings), `alarm` (One-time alarm), `cancel_alarm`, `rgb` (Light color), `lamp_timeout` (Lamp timer), `massage_timer` or `bed_command` (Bed button). |
-| `actions` | Alarm actions | For One-time alarm: one position and optional massage, from zero_gravity, anti_snore, memory_one, memory_two, tv, lounge, massage_all, massage_head and massage_foot, as your layout offers them. The bed's status sensor lists them. |
-| `time` | Alarm time | For One-time alarm: the time it goes off, at its next occurrence, in whole minutes. Leave unset for 24 hours from now. |
+| `operation` | Operation | What to set, read or press. One of `query` (Read current settings), `rgb` (Light color), `lamp_timeout` (Lamp timer), `massage_timer` or `bed_command` (Bed button). |
 | `rgb_color` | Light color | For Light color: the color. |
 | `seconds` | Light timeout | For Lamp timer: seconds, 0 to 300. 0 keeps the light on. |
 | `progress` | Massage timer choice | For Massage timer: slider position, 0 to 5. Only models with the massage timer slider accept it. |
@@ -1185,23 +1185,24 @@ each layout accepts, including the
 | Operation | Fields | Notes |
 |-----------|--------|-------|
 | `query` | none | Reads the layout's alarms and whether the bed has a light |
-| `alarm` | `actions`, optional `time` | One position and optional massage, from the alarm actions in the bed's status sensor |
-| `cancel_alarm` | none | Cancels the alarm on each selected bed |
 | `rgb` | `rgb_color` | Needs the bed to report its light first |
 | `lamp_timeout` | `seconds` (0 to 300) | Needs the bed to report its light first; 0 keeps the light on |
 | `massage_timer` | `progress` (0 to 5) | Only models with the massage timer slider |
 | `bed_command` | `command`, optional `duration_ms` (1 to 60000) | Presses the app's bed buttons, whatever the remote layout |
 
-For example, after choosing a layout with zero-gravity and head/foot massage
-alarm choices:
+Set the alarm with [`set_alarm`](#set_alarm): one position and optional
+massage, as your layout offers them. For example, zero gravity with head and
+foot massage:
 
 ```yaml
-action: adjustable_bed.richmat_resource_bed
+action: adjustable_bed.set_alarm
 data:
   device_id: YOUR_BED_DEVICE_ID
-  operation: alarm
+  enabled: true
   time: "07:00:00"
-  actions: [zero_gravity, massage_head, massage_foot]
+  wake_action: zero_g
+  massage: true
+  massage_zone: both
 ```
 
 `bed_command` offers head and foot up and down, TV, lounge, zero gravity,
@@ -1320,39 +1321,33 @@ The bed is asked for its status once, on the same connection. See the
 ## Luuna
 
 <a id="luuna"></a>
-**`luuna`**: Sets the light, the one-time alarm and the clock of a Luuna bed, or reads the name of its sleep sensor. Only the options your bed reports can run.
+**`luuna`**: Sets the light of a Luuna bed, or reads the name of its sleep sensor. Set its alarm with Set alarm and its clock with Set bed clock. Only the options your bed reports can run.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation | What to set or read. One of `alarm` (One-time alarm), `alarm_cancel` (Cancel alarm), `light_rgb` (Light color), `light_seconds` (Light timer), `light_off`, `light_warm` (Warm light), `light_cold` (Cool light), `sleep_name` (Sleeper name) or `time_sync` (Set bed clock). |
+| `operation` | Operation | What to set or read. One of `light_rgb` (Light color), `light_seconds` (Light timer), `light_off`, `light_warm` (Warm light), `light_cold` (Cool light) or `sleep_name` (Sleeper name). |
 | `value` | Value | Light timer in seconds (0, 300, 600 or 900; 0 keeps the light on), or brightness of Warm light and Cool light in percent (0 to 100). |
 | `rgb_color` | Light color | Color for Light color. |
-| `hour` | Alarm hour | Hour the alarm goes off, 0 to 23. |
-| `minute` | Alarm minute | Minute the alarm goes off, 0 to 59. |
-| `mode` | Alarm preset | Position the bed moves to when the alarm goes off. Only your product's alarm positions are accepted. One of `tv`, `zero_g` (Zero gravity), `anti_snore` (Anti-snore), `memory_1` or `memory_2`. |
 
 ### Luuna +
 
 
 `adjustable_bed.luuna` works with the Rise, Rise Pro and Rise Pro Light. See
-the [Luuna + guide](beds/richmat.md#luuna-) for what each has. Set a one-time
-alarm with `hour`, `minute` and `mode` (`anti_snore`, `zero_g`, `tv`, `memory_1`
-or `memory_2`, as the product offers), or cancel it. The light takes a color
-(`light_rgb` with `rgb_color`), warm or cool light with a brightness of 0 to 100
-percent in `value`, a timer of 0, 300, 600 or 900 seconds (0 keeps it on), or
-off. `sleep_name` reads the name of the Rise or Rise Pro Light sleep sensor, and
-`time_sync` sets the clock. Not yet confirmed on a real bed.
+the [Luuna + guide](beds/richmat.md#luuna-) for what each has. The light takes
+a color (`light_rgb` with `rgb_color`), warm or cool light with a brightness of
+0 to 100 percent in `value`, a timer of 0, 300, 600 or 900 seconds (0 keeps it
+on), or off. `sleep_name` reads the name of the Rise or Rise Pro Light sleep
+sensor. Set the one-time alarm with [`set_alarm`](#set_alarm) and the clock
+with [`sync_clock`](#sync_clock). Not yet confirmed on a real bed.
 
 ## Luuna Rise and Power Cool
 
 <a id="richmat_rise"></a>
-**`richmat_rise`**: Sets the alarm, light and massage timer of a Luuna Rise or Power Cool bed. Alarm and light settings need the bed to report them first.
+**`richmat_rise`**: Sets the light and massage timer of a Luuna Rise or Power Cool bed. Set its alarm with Set alarm. Light settings need the bed to report them first.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation | What to set or read. One of `query` (Read current settings), `alarm` (One-time alarm), `cancel_alarm`, `rgb` (Light color), `lamp_timer`, `massage_timer`, `massage_popup` (Massage menu). |
-| `actions` | Alarm actions | For One-time alarm: alarm actions listed in the bed's diagnostics, such as node_1. The first bed action and the massage choices decide what the alarm does. |
-| `time` | Alarm time | For One-time alarm: the time it goes off, at its next occurrence, in whole minutes. Leave unset for 24 hours from now. |
+| `operation` | Operation | What to set or read. One of `query` (Read current settings), `rgb` (Light color), `lamp_timer`, `massage_timer` or `massage_popup` (Massage menu). |
 | `rgb_color` | Light color | For Light color: the color. |
 | `seconds` | Lamp timer | For Lamp timer: seconds, 0 to 300. |
 | `timer_save` | Save the lamp timer | For Lamp timer: save the timer as the app's Save button does, instead of as releasing its slider does. |
@@ -1363,14 +1358,12 @@ off. `sleep_name` reads the name of the Rise or Rise Pro Light sleep sensor, and
 
 
 `adjustable_bed.richmat_rise` uses the app and layout chosen in setup. Use
-`query` to read the alarm and lamp settings, `alarm` and `cancel_alarm` for the
-one-time alarm, `rgb` for the light color, and `lamp_timer` with `seconds` (0 to
-300) and optional `timer_save`. `actions` lists alarm actions such as `node_1`;
-the guide's [Alarm actions](beds/richmat.md#alarm-actions) explains the names,
-and only your layout's choices are accepted. `time` is
-the next time of day it occurs; leave it out for 24 hours from now. A position
-and massage combination the layout does not have is refused before anything is
-sent. The bed does not report the alarm back.
+`query` to read the alarm and lamp settings, `rgb` for the light color, and
+`lamp_timer` with `seconds` (0 to 300) and optional `timer_save`. Set the
+one-time alarm with [`set_alarm`](#set_alarm): one of the layout's positions,
+optional `massage` with a zone, or `none` with `massage` for massage alone. A
+position and massage combination the layout does not have is refused before
+anything is sent. The bed does not report the alarm back.
 
 `massage_timer` takes `progress` 0 to 5 on models with the massage timer slider.
 `massage_popup` takes `popup` (`15`, `30`, `45` or `toggle`) on models with the
@@ -1514,12 +1507,12 @@ anti-snore movement runs on the left.
 ## Motion Bed
 
 <a id="motion_bed_action"></a>
-**`motion_bed_action`**: Run a control by its name, as listed in the bed's diagnostics. Saving, clearing, resetting and changing modules need confirmation.
+**`motion_bed_action`**: Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the common names; the bed's diagnostics list every name it accepts. Saving, clearing, resetting and changing modules need confirmation.
 
 | Field | Name | Meaning |
 |-------|------|---------|
 | `confirmed` | Confirm stored change | Required for saving, clearing, resetting and changing modules. |
-| `action` | Action | Name of the control to run, as listed in the bed's diagnostics. |
+| `action` | Action | Name of the control to run. The Motion Bed guide lists the common names; the bed's diagnostics list every name it accepts. |
 | `branch` | Preset step | For a preset you can program: recall it, save the current position to it, or clear it. Default recall. One of `app`, `save` or `clear`. |
 | `duration` | Duration | How long a movement control runs, 0.01 to 10 seconds. Default 1. |
 
@@ -1899,7 +1892,7 @@ part of the integration.
 | Field | Name | Meaning |
 |-------|------|---------|
 | `operation` | Operation | What to set or read. One of `query` (Read current settings), `alarm` (One-time alarm), `cancel_alarm`, `rgb` (Light color), `lamp_slider` (Lamp brightness), `lamp_save` (Save lamp setting), `aroma`, `massage_timer`, `massage_popup` (Massage menu), `desk_target` (Desk target height), `desk_unit` (Desk height unit), `desk_recall` or `desk_reset`. |
-| `action` | Alarm action | For One-time alarm: what the alarm does, one of the alarm actions listed in the bed's diagnostics, such as node_1. |
+| `action` | Alarm action | For One-time alarm: what the alarm does, a name such as node_1. The Richmat guide lists the names for the common layouts; for other layouts, the bed's diagnostics do. |
 | `time` | Alarm time | For One-time alarm: the time it goes off, at its next occurrence, in whole minutes. |
 | `minutes` | Lamp minutes | For Lamp brightness and Save lamp setting: minutes, 0 to 15. |
 | `rgb_color` | Light color | For Light color: the color. |
@@ -2335,14 +2328,6 @@ describes the bed's other buttons and entities.
 | `axis` | Moves | Which part of the bed anti-snore moves: the head or the elevation. Default head. One of `head` or `elevation`. |
 | `strength` | Strength | Strength level. Some beds take 1, 3 and 6 (low, medium, high); others take 1, 2 and 3. A level your bed does not take is refused. Default 1. One of `1` (Low), `2` (Level 2), `3` (Level 3: medium or high, depending on the bed) or `6` (High). |
 | `demo` | Run demonstration | Run the anti-snore movement once to show it. Default off. |
-
-<a id="symphony_preset"></a>
-**`symphony_preset`**: Moves to a preset, or saves the current position to it on beds that can save presets.
-
-| Field | Name | Meaning |
-|-------|------|---------|
-| `preset` | Preset | The preset to move to or save. Only your bed's presets work. One of `zero_g` (Zero gravity), `flat`, `memory_1`, `memory_2`, `reading`, `tv` or `anti_snore` (Anti-snore). |
-| `save` | Save current position | Save where the bed is now to the preset instead of moving to it. Default off. |
 
 <a id="symphony_set_light"></a>
 **`symphony_set_light`**: Sets the light color and brightness together. ES700 and SS800 only.

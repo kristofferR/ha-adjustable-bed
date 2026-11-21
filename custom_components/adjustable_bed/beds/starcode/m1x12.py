@@ -15,6 +15,7 @@ from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...card import (
@@ -192,9 +193,27 @@ def _action(name: str) -> Callable[[BedController], Coroutine[object, object, No
     return run
 
 
-# Reported values a typical user wants on a dashboard.
-# Massage and sonic levels and modes only mirror the step buttons (the bed
-# takes no direct level), so those readbacks start hidden.
+# Massage levels and alarms are bed state for the dashboard.
+_DASHBOARD: Final = frozenset(
+    {
+        "massage_head_level",
+        "massage_foot_level",
+        "sonic_head_level",
+        "sonic_foot_level",
+        "alarm_0",
+        "alarm_1",
+    }
+)
+
+
+def _reading_icon(key: str) -> str:
+    if key.startswith("alarm_"):
+        return "mdi:alarm"
+    return "mdi:vibrate" if key.endswith("_level") else "mdi:information-outline"
+
+
+# Reported values a typical user wants on a dashboard. Massage and sonic modes
+# only mirror the step buttons, so those readbacks start hidden.
 _ENABLED_STATE: Final = frozenset(
     {
         "massage_active",
@@ -528,14 +547,15 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 key=f"starcode_m1x12_{key}",
                 translation_key=f"starcode_m1x12_{key}",
                 state_key=spec_key(key),
-                icon="mdi:information-outline",
+                icon=_reading_icon(key),
                 native_unit_of_measurement=POSITION_UNIT_PERCENT
                 if key.endswith("_position")
                 else None,
                 attribute_keys=(field_key("light_rgb"), field_key("light_rgb_mode"))
                 if key == "light_color_index"
                 else ((field_key(key + "_details"),) if key.startswith("alarm_") else ()),
-                entity_registry_enabled_default=key in _ENABLED_STATE,
+                entity_registry_enabled_default=key in _ENABLED_STATE or key in _DASHBOARD,
+                entity_category=None if key in _DASHBOARD else EntityCategory.DIAGNOSTIC,
                 card=_state_card(key),
             )
             for key in keys

@@ -57,18 +57,6 @@ def mock_ergomotion_config_entry(
 class TestErgomotionController:
     """Test Keeson controller with ergomotion variant."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == ERGOMOTION_WRITE_CHAR_UUID
-
     async def test_build_command(
         self,
         hass: HomeAssistant,

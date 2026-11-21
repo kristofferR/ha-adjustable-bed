@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 
 from bleak import BleakClient
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...command_scheduler import note_frame_skipped, note_frame_written
@@ -342,6 +343,8 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                 "mdi:vibrate",
                 entity_registry_enabled_default=True,
                 card=CARD_MASSAGE,
+                # The mode is the reply's raw mode byte.
+                entity_category=EntityCategory.DIAGNOSTIC if key == "mode" else None,
             )
             for key, state in values
         )
