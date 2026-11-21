@@ -28,7 +28,6 @@ async def handle_speech(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         SuperiorSleepController,
-        "Superior Sleep",
         lambda controller: controller.action(action, speech=True, duration_ms=duration),
         validate=lambda controller: controller.validate_action(action, True),
         resource="*",

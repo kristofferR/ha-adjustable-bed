@@ -160,7 +160,7 @@ from the profile data.
 ### Home Assistant setup
 
 Choosing **Keeson**, **Ergomotion**, **Serta Motion Perfect**, **Okin FFE** or
-**Cool Base**, or a bed detected as one of them, asks which app or remote you
+**Cool Base app**, or a bed detected as one of them, asks which app or remote you
 use. Shared names and Bluetooth services never decide it.
 
 | Answer | Then | Route |
@@ -173,7 +173,7 @@ use. Shared names and Bluetooth services never decide it.
 | Purple Smart Base, Member's Mark or Linx / Juna Sleep | Which of them | [Purple](#purple-variant), [Base](#base-basei4i5), [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health) |
 | Cool Base app (with fan) | | [Cool Base](#cool-base) |
 | No app: another Keeson remote route | The route and motor count; the Ergomotion route also asks whether to read positions | Any [Keeson route](#profile-summary), such as KSBT or KSBT03CR |
-| I don't know: keep the detected controls | | The detected or chosen route |
+| Keep the detected or saved controls | | The detected or chosen route |
 
 An app row in the bed-type list answers the question itself; the one
 **Restonic BT app** row still asks the remote style. A Keeson brand list entry

@@ -30,7 +30,6 @@ async def _hold_vmatbasic_floor(
     await _preflight_and_execute(
         targets,
         VMatBasicController,
-        "V-MAT Basic floor refresh",
         lambda controller: controller.hold_control(control, duration_ms),
         supported=lambda controller: controller.supports_held_control,
         validate=validate,
@@ -64,7 +63,6 @@ async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> 
     await _preflight_and_execute(
         targets,
         VMatBasicController,
-        "V-MAT Basic rename",
         rename_and_remember,
         supported=lambda controller: controller.supports_device_rename,
         cancel_running=True,

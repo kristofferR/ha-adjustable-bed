@@ -242,7 +242,7 @@ BEDTECH_APP_PROFILES: Final = {
     for model, codes in BEDTECH_APP_CODES.items()
 }
 BEDTECH_VARIANTS: Final = {
-    "auto": "Legacy BedTech controls (existing hardware reports)",
+    "auto": "Older BedTech controls, without a model",
     **{model: f"BedTech app: {model.upper()}" for model in BEDTECH_APP_PROFILES},
 }
 

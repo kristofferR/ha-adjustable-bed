@@ -297,7 +297,7 @@ async def test_capability_and_protocol_are_required(
     setattr(controller, capability, True)
     coordinator.bed_type = BED_TYPE_LINAK
     coordinator.capability_controller = MagicMock(spec=BedController)
-    with pytest.raises(ServiceValidationError, match="does not support Leggett"):
+    with pytest.raises(ServiceValidationError, match="does not support this action"):
         await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
@@ -357,7 +357,7 @@ async def test_other_legacy_variants_reject_before_dispatch(
     coordinator.entry.data = {CONF_PROTOCOL_VARIANT: variant}
     # Other routes build other controllers, which lack the Okin timers.
     coordinator.capability_controller = MagicMock(spec=BedController)
-    with pytest.raises(ServiceValidationError, match="does not support Leggett"):
+    with pytest.raises(ServiceValidationError, match="does not support this action"):
         await hass.services.async_call(
             DOMAIN,
             SERVICE_LEGGETT_SLEEP_TIMER,

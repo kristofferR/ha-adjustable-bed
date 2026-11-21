@@ -53,7 +53,6 @@ async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         LogicdataAppController,
-        "Logicdata held preset recall",
         lambda controller: controller.hold_preset(preset, duration_ms),
         supported=lambda controller: controller.supports_preset_hold,
         validate=validate,

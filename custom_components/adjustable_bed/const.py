@@ -1793,11 +1793,11 @@ SIMMONS_VARIANT_INCLINED_SMARTBED: Final = "simmons_inclined_smartbed"
 SIMMONS_NAME_RULE_VARIANTS: Final = frozenset({VARIANT_AUTO, SIMMONS_VARIANT_INCLINED})
 SIMMONS_VARIANTS: Final = {
     VARIANT_AUTO: "Regular bed (recommended)",
-    SIMMONS_VARIANT_OKIN: "Regular bed, OKIN-name protocol",
-    SIMMONS_VARIANT_SMARTBED: "Regular bed, SmartBed-name protocol",
-    SIMMONS_VARIANT_INCLINED: "Inclined bed, protocol from the Bluetooth name",
-    SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, OKIN-name protocol",
-    SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, SmartBed-name protocol",
+    SIMMONS_VARIANT_OKIN: "Regular bed, as for an OKIN Bluetooth name",
+    SIMMONS_VARIANT_SMARTBED: "Regular bed, as for a SmartBed Bluetooth name",
+    SIMMONS_VARIANT_INCLINED: "Inclined bed, chosen by its Bluetooth name",
+    SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, as for an OKIN Bluetooth name",
+    SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, as for a SmartBed Bluetooth name",
 }
 # AdjustaMattress 1.6.0: model and manual layout are independent choices.
 ADJUSTAMATTRESS_LAYOUTS: Final = (
@@ -1806,8 +1806,8 @@ ADJUSTAMATTRESS_LAYOUTS: Final = (
 )
 ADJUSTAMATTRESS_VARIANTS: Final = {
     VARIANT_AUTO: "AdjustaBed (recommended)",
-    **{f"P{model}_L{layout}": f"{name} (P{model}: {transport})"
-       for model, transport in enumerate(("CB", "JLDP", "CB24", "SleepSnore"), 1)
+    **{f"P{model}_L{layout}": f"{name} (receiver P{model})"
+       for model in range(1, 5)
        for layout, name in enumerate(ADJUSTAMATTRESS_LAYOUTS)},
 }
 # Adjustable bed (Lumbar) app: "auto" applies the app's Bluetooth-name rule.
@@ -2789,7 +2789,7 @@ OKIN_64BIT_VARIANT_CUSTOM: Final = "custom"
 OKIN_64BIT_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     OKIN_64BIT_VARIANT_NORDIC: "Standard receiver",
-    OKIN_64BIT_VARIANT_CUSTOM: "Custom OKIN receiver",
+    OKIN_64BIT_VARIANT_CUSTOM: "Receiver that needs Bluetooth pairing",
 }
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does

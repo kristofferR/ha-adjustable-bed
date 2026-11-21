@@ -83,7 +83,7 @@ or a bed detected as Solace, asks which app you use:
 | Woosa Sleep app | [Woosa Sleep](#woosa-sleep), after a note on its own Favourite, massage, light and alarm controls |
 | Motion Bed app | [Motion Bed](#motion-bed), a separate bed type |
 | BedSense app | [BedSense](#bedsense), a separate bed type, then its layout |
-| I don't know: keep the detected controls | The detected or chosen route |
+| Keep the detected or saved controls | The detected or chosen route |
 
 The **Woosa Sleep app** row in the bed-type list answers the question itself and
 shows the same note. For an existing bed, open the entry's three-dot menu and

@@ -134,7 +134,6 @@ async def handle_doublesleep(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         DoubleSleepController,
-        "OKIN SleepEase controls",
         lambda controller: controller.request(request),
         validate=lambda controller: controller.validate_request(request),
         cancel_running=True,

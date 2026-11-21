@@ -35,12 +35,13 @@ The first screen lists the discovered beds, each named with its family, then:
   Casper Base and Comfort Enhancements have one row each, which then asks the
   exact product or layout. Its last answer,
   **My app isn't listed, or I don't know**, asks which brand is on the bed:
-  each family, named with its apps, then opens its own question, and **Not
-  sure** runs diagnostics.
+  every row of the bed-type list named brand first, where a family's row
+  opens its own question. **Not sure, or not listed** offers the detected
+  controls when you picked the device first, and otherwise runs diagnostics.
   You then pick the Bluetooth device, or type its address.
 - **Pick any Bluetooth device** lets you choose any device first, then asks the
   same app question. A confidently detected bed suggests its own row.
-- **Scan again for beds** and **Browse unsupported BLE devices**, and
+- **Scan again for beds** and **Browse unsupported Bluetooth devices**, and
   **Combine two beds into one (Dual Bed)** when two beds are set up.
 
 A discovered bed asks first which app or remote controls it, from its detected
@@ -70,7 +71,8 @@ you chose:
 Some apps need a choice no advertisement can make, such as the model in the
 Glideaway Motion app. Each bed guide's setup section says what to pick.
 
-**Okin ORE (older remotes)** keeps older ORE setups working. Beds you control
+**Older ORE remote**, under **Okin (other receivers)** in the brand list, keeps
+older ORE setups working. Beds you control
 with the Dynasty Bases, MaxCoil Una, Bedsense Bases, Avanti Bases,
 AMERICANSTAR or INNOVA app use [that app's row](beds/keeson.md#ore-comfort-bed-profiles)
 instead. Home Assistant does not discover ORE beds automatically, because their
@@ -122,12 +124,9 @@ legacy app entry or a Richmat entry on the L&P QRRM remote, so they can move
 to that family's other routes.
 
 1. Choose the app you use, then the layout or remote the app shows. The
-   question's keep answer leaves the entry exactly as it is. Its label depends
-   on the family: **I don't know: keep the current controls** (Jiecang, Leggett
-   & Platt), **I don't know: keep the detected controls** (Okin, Keeson, Solace,
-   Sleepy's Elite, Malouf / Lucid, LOGICDATA), **Keep the current app**
-   (Customatic, Jordan's), **Keep the current controls** (Jensen / Svane,
-   Limoss) or **Keep the current setup** (Vibradorm).
+   question's keep answer, **Keep the detected or saved controls**, leaves the
+   entry exactly as it is; when you add a bed it keeps the route detection
+   chose.
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
    Home Assistant releases its connection and checks the chosen setup. The
    check screen lists its steps. Nothing is saved yet.
@@ -185,7 +184,7 @@ side changes automatically. See the
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
 | **Number of motors** | Profile-dependent | 2 | Number of controllable motor sections when the profile uses a generic count |
-| **Has massage feature** | On/Off | Off | Enable massage controls if your bed supports it |
+| **Massage controls** | On/Off | Off | Enable massage controls if your bed supports it |
 | **Bluetooth adapter** | Automatic / a specific adapter or proxy | Automatic | Which Bluetooth adapter or proxy to use |
 
 Some app profiles add settings that several apps share. Each has one name and
@@ -194,8 +193,8 @@ label wherever it appears:
 | Setting | Offered by | Description |
 |---------|------------|-------------|
 | **Enable light controls** (`has_light`) | Logicdata and Jiecang bed apps (default on), FSM Relax and Limoss Remote (default off) | Expose the app's light controls |
-| **Bed or chair** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
-| **Reverse motor channel 1–4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
+| **App product, model or layout** (`product_type`) | FSM Relax, Limoss Remote | The product chosen in the app |
+| **Reverse motor 1** to **Reverse motor 4** (`reverse_motor_1` to `reverse_motor_4`) | FSM Relax, Limoss Remote | The app's per-channel direction flags, sent with every movement |
 | **Exact Bluetooth name** (`ble_device_name`) | Motion Bed, MotoMotion, AdjustableM5X5, Adjustable Comfort M1X12 | The unchanged advertised name that identifies the app profile |
 
 Entries that stored `logicdata_app_has_light` or `jiecang_app_has_light` are
@@ -226,7 +225,7 @@ settings because BLE command framing does not reveal the physical remote layout:
 
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
-| **Malouf/Lucid actuator layout** | Back + legs; add head tilt; add lumbar; four motor; Hi-Lo | Automatic | Controls which motor entities are exposed |
+| **Malouf/Lucid motor layout** | Back + legs; add head tilt; add lumbar; four motor; Hi-Lo | Automatic | Controls which motor entities are exposed |
 | **Malouf/Lucid memory positions** | Automatic, 1, 2 | Automatic | Must match the memory buttons on the physical remote |
 
 Automatic uses back + legs for a two-motor entry, head tilt for a three-motor entry,
@@ -279,7 +278,7 @@ feedback or change which commands a bed supports.
 | **Maximum back angle (degrees)** | Greater than 0, up to 180° | 68° | Back/head range for controllers reporting angles |
 | **Maximum legs angle (degrees)** | Greater than 0, up to 180° | 45° | Legs/feet range for controllers reporting angles |
 
-A form shows only the settings the bed uses. **Has massage feature** is left
+A form shows only the settings the bed uses. **Massage controls** is left
 out for beds with no massage commands or that turn massage on themselves; the
 maximum angles are left out where the frame's travel is fixed (for example
 Paramount, Serta MP Remote, SBI and BedJet); a motor count with only one
@@ -589,8 +588,8 @@ Existing entries keep their selection until you change it. Beds added before
 app they use; see [the upgrade prompt](TROUBLESHOOTING.md#new-app-profiles-are-available-repair).
 For a combined bed with two addresses, settings belong to each physical bed.
 Each receiver's own app settings, such as its motor count, massage or light
-settings, are under **Configure > Change left receiver settings** or **Change
-right receiver settings**. To change a receiver's bed type or app, separate the
+settings, are under **Configure > Change left side settings** or **Change
+right side settings**. To change a receiver's bed type or app, separate the
 beds, Reconfigure that bed, then combine them again.
 
 | Bed or brand | Model and remote settings |
@@ -598,7 +597,7 @@ beds, Reconfigure that bed, then combine them again.
 | Adjustable bed (Lumbar) | [Automatic, or the layout your bed uses](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | AdjustaMattress | [Choose the app, BLE model and product layout](beds/keeson.md#adjustamattress). Four models and seven layouts; the layout sets the controls. Each bed of a combined pair keeps its own. |
 | BedSense | [Layout, or the Bluetooth-name layout rule](beds/ff_frame.md#bedsense). |
-| BedTech | [The exact model, or **Legacy BedTech controls**](beds/richmat.md#bedtech). Existing entries keep the legacy controls until you choose a model. |
+| BedTech | [The exact model, or **Older BedTech controls, without a model**](beds/richmat.md#bedtech). Existing entries keep the legacy controls until you choose a model. |
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it sets the layout. |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | CheersSleep | See the [setup steps](beds/cheerssleep.md#cheerssleep-profile). |
@@ -689,10 +688,10 @@ Standard OCTO PIN exchange.
 - Use the PIN set in the OCTO Smart Control app; it is not the OS Bluetooth pairing code.
 - If your bed works without a PIN, leave this field empty
 
-Standard OCTO setup verifies PIN acceptance without moving the bed. Setup finishes
-only when the PIN is accepted or the controller confirms no PIN is required.
-An inconclusive check leaves the entry unsaved and can be retried; it does not
-mean the PIN is wrong. After a PIN lock challenge, the integration retries the
+Standard OCTO setup verifies PIN acceptance without moving the bed. A PIN the
+bed requires or rejects must be entered or corrected first. An inconclusive
+check can be retried, or setup can finish without it; it does not mean the PIN
+is wrong. After a PIN lock challenge, the integration retries the
 configured PIN once after one second. It does not use a periodic PIN timer. See
 [OCTO Smart Control](beds/octo.md#pin-control).
 
@@ -776,7 +775,7 @@ Increase **Movement per tap**. Start with +10 and test.
 
 - **Richmat beds:** Select your remote code in **Configure**
 - **Other beds:** Verify motor count matches your bed's actual motors
-- **Massage not showing:** Turn on **Has massage feature** in **Configure**, where it is offered
+- **Massage not showing:** Turn on **Massage controls** in **Configure**, where it is offered
 
 ---
 
@@ -848,8 +847,8 @@ a successful connection first to discover their capabilities. One-motor OCTO
 TV/bed lifts remain standalone. Combined controls use capabilities shared by both
 sides; side-specific controls retain each side's own features.
 
-For two receivers, open **Configure > Change left receiver settings** or
-**Change right receiver settings** to adjust its adapter, Bluetooth connection, Movement per tap and its own app's
+For two receivers, open **Configure > Change left side settings** or
+**Change right side settings** to adjust its adapter, Bluetooth connection, Movement per tap and its own app's
 settings.
 These changes apply only to the selected receiver, without separating the bed. **Change settings**
 retains the shared form; changed values there apply to both receivers.
