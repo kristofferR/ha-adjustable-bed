@@ -718,17 +718,18 @@ async def async_unload_position_estimates(hass: HomeAssistant, entry_id: str) ->
 
 async def async_one_side_positions(
     hass: HomeAssistant, entry_id: str, beds: Iterable[tuple[str, str | None]]
-) -> dict[str, str]:
-    """Saved positions of one bed or side, by id, with its address.
+) -> dict[str, tuple[str, str]]:
+    """Saved positions of one bed or side: their address and the id that bed stores.
 
-    Reads the beds' stores as a load would, so it needs no loaded entry; the
-    entry must be unloaded, which saves its positions under these ids.
+    Keyed by the id a load of these beds gives the position. Reads the beds'
+    stores as a load would, so it needs no loaded entry; the entry must be
+    unloaded, which saves its positions.
     """
     manager = PositionEstimates(hass, entry_id, beds)
     for bed in manager.beds.values():
         manager._load_positions(bed, await manager._stores[bed.address].async_load() or {})
     return {
-        position.id: bed.address
+        position.id: manager.renamed_ids.get(position.id, (bed.address, position.id))
         for position in manager.positions
         if len(position.targets) == 1
         and (bed := manager.bed_for_key(next(iter(position.targets)))) is not None

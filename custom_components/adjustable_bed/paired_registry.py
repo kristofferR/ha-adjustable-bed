@@ -603,9 +603,10 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
     try:
         for row in list(er.async_entries_for_config_entry(ent_reg, entry.entry_id)):
             position_id = row.unique_id.removeprefix(saved_position_prefix)
-            side_address = one_side_positions.get(position_id)
-            if row.domain != "button" or position_id == row.unique_id or side_address is None:
+            side = one_side_positions.get(position_id)
+            if row.domain != "button" or position_id == row.unique_id or side is None:
                 continue
+            side_address, stored_id = side
             device = next(
                 (
                     child_devices[single.entry_id]
@@ -614,7 +615,7 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
                 ),
                 None,
             )
-            unique_id = f"{side_address}_saved_position_{position_id}"
+            unique_id = f"{side_address}_saved_position_{stored_id}"
             if device is None or ent_reg.async_get_entity_id("button", DOMAIN, unique_id):
                 continue
             renamed_buttons.append(row)

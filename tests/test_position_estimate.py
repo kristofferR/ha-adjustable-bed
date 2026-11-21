@@ -435,6 +435,30 @@ async def test_each_bed_button_follows_its_own_part(
     assert right_row is not None and right_row.unique_id == f"pair_saved_position_{read.id}"
 
 
+async def test_one_side_positions_name_the_id_each_bed_stores(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """A separating pair finds each one-side position's bed and stored id, also a renamed one."""
+    for address, name in ((LEFT, "Reading"), (RIGHT, "Read")):
+        hass_storage[pe.storage_key(address)] = {
+            "version": pe.STORAGE_VERSION,
+            "key": pe.storage_key(address),
+            "data": {
+                "motors": {},
+                "positions": [{"id": "x", "name": name, "button": True, "targets": {"back": 1.0}}],
+            },
+        }
+    beds = ((LEFT, "left"), (RIGHT, "right"))
+    renamed = next(
+        iter((await pe.async_setup_position_estimates(hass, "entry", beds)).renamed_ids)
+    )
+
+    assert await pe.async_one_side_positions(hass, "entry", beds) == {
+        "x": (LEFT, "x"),
+        renamed: (RIGHT, "x"),
+    }
+
+
 async def test_saved_positions_lifecycle(hass: HomeAssistant, clock: Clock) -> None:
     manager = await calibrated(hass)
     bed = manager.beds[LEFT]
