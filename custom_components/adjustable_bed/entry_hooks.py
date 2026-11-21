@@ -22,7 +22,7 @@ from .beds.octo.runtime import async_refresh_octo_pin_issue
 from .beds.remacro.discovery import async_prepare_remacro_entry
 from .beds.reverie.pairlink_local_setup import async_setup_pairlink_local_entry
 from .beds.richmat.qrrm_reclassification import async_reclassify_bedtech_qrrm_entry
-from .beds.richmat_classic.layout_repair import async_load_removed_layout_entry
+from .beds.richmat_classic.removed_layouts import async_load_removed_layout_entry
 from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_FURNIMOVE,

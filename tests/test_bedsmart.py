@@ -10,13 +10,13 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.richmat_classic import bedsmart, lp2
-from custom_components.adjustable_bed.beds.richmat_classic.layout_repair import REMOVED_LAYOUTS
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
     load_catalog,
     resolve_layout,
 )
 from custom_components.adjustable_bed.beds.richmat_classic.protocol import Worker
 from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
+from custom_components.adjustable_bed.beds.richmat_classic.removed_layouts import REMOVED_LAYOUTS
 from custom_components.adjustable_bed.profiles.bedsmart import (
     EXCLUDED_LAYOUTS,
     MODE_LABELS,

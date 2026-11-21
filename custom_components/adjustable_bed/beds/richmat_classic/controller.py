@@ -41,7 +41,6 @@ from ..entity_specs import (
 from ..richmat.labels import resource_label
 from . import rise
 from .caller import RETAIN, Selection, effective_status, transition
-from .layout_repair import REMOVED_LAYOUTS
 from .profiles import RISE_APPS, Control, controls, load_catalog
 from .protocol import (
     ALARM_QUERY,
@@ -75,6 +74,7 @@ from .protocol import (
     worker_interval,
 )
 from .receive import MalformedFrame, ReceiveState
+from .removed_layouts import REMOVED_LAYOUTS
 from .requests import Request
 from .transport import Transport, select
 

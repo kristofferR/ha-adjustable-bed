@@ -441,8 +441,7 @@ The factory motor tests and motor programming are gone: `richmat_rise`
 `lp2` `operation: motor_program` and `movement_test` with its `schedule` field,
 `bedsmart` `operation: movement_test` with its `confirm` field, and the BedSmart
 **Movement test** button. Nothing replaces them. A bed set up with the TEST or
-RMCS layout loads without controls, and a repair asks you to choose its layout
-in Configure.
+RMCS layout loads without controls until you choose its layout in Configure.
 
 Galaxy and MLILY (`operation: sync`), SonicSleep (`operation: sync_clock`) and
 the Richmat app beds (`richmat_app` `operation: sync` and `sleep_sync`) set

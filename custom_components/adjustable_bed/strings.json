@@ -10688,10 +10688,6 @@
       "title": "Update automations for {bed}",
       "description": "Some of {bed}'s controls changed type or options in this version. These automations and scripts still use them the old way:\n\n{entities}\n\nEdit each one to use the new entity or its new options. An under-bed light is now a light, so use the light actions instead of the switch actions. Then ignore this message."
     },
-    "richmat_classic_layout": {
-      "title": "Choose the layout for {name}",
-      "description": "{name} was set up with the {layout} layout, a factory screen for testing or programming the motors. Adjustable Bed no longer offers it, so {name} has no controls and does not connect. Open Configure for this bed and choose the layout your bed uses. This notice goes away once you save it."
-    },
     "removed_actions": {
       "title": "Update automations that use removed bed actions",
       "description": "These automations and scripts call Adjustable Bed actions, fields or options that this version no longer has, so those steps fail when they run:\n\n{calls}\n\nAfter an arrow is what to use instead. For a line without one, select **Learn more** to see what replaces it. Edit each automation and script; this message goes away when Home Assistant next starts without finding one."

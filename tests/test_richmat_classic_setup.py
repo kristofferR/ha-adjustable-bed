@@ -298,18 +298,14 @@ BETA_ENTRY = {
     ("app", "layout"),
     [("powercool", "TEST"), ("powercool", "RMCS"), ("lp2", "TEST"), ("lp2", "RMCS"), ("bedsmart", "TEST")],
 )
-async def test_a_beta_bed_on_a_factory_test_layout_loads_and_asks_for_its_layout(
+async def test_a_beta_bed_on_a_factory_test_layout_loads_without_connecting(
     hass, mock_bluetooth_api, enable_custom_integrations, app, layout
 ):
     from unittest.mock import AsyncMock, patch
 
     from homeassistant.config_entries import ConfigEntryState
-    from homeassistant.helpers import issue_registry as ir
     from pytest_homeassistant.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.beds.richmat_classic.layout_repair import (
-        async_refresh_removed_layout_issues,
-    )
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -329,13 +325,6 @@ async def test_a_beta_bed_on_a_factory_test_layout_loads_and_asks_for_its_layout
 
     assert entry.state is ConfigEntryState.LOADED
     connect.assert_not_awaited()
-    issue_id = f"richmat_classic_layout_{entry.entry_id}_standalone"
-    issue = ir.async_get(hass).async_get_issue(DOMAIN, issue_id)
-    assert issue is not None
-    assert issue.translation_placeholders == {"name": "Classic bed", "layout": layout}
-
-    # Choosing the bed's layout in Configure retires the repair.
-    assert await hass.config_entries.async_unload(entry.entry_id)
-    hass.config_entries.async_update_entry(entry, data={**entry.data, "product_type": "6BRM"})
-    async_refresh_removed_layout_issues(hass, entry)
-    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+    # Configure refuses the saved layout until the bed's own is chosen.
+    with pytest.raises(ValueError):
+        _setup({**entry.data})
