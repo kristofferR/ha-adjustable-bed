@@ -724,7 +724,7 @@ its 120 ms delay); the other frames are the pre-v5 controller's.
 
 #### Setup
 
-Choose **BedTech app**, then the exact model. Detection cannot select a model.
+Choose **BedTech app (newer app)**, then the exact model. Detection cannot select a model.
 Existing entries keep **Legacy BedTech controls**, including their field-reported
 `^` release and old pillow mapping. Select an explicit model to use the app's
 controls and release behavior. No automatic migration changes a working bed.
@@ -14479,8 +14479,8 @@ parser and event timing. Hardware is not yet tested.
 
 #### Setup
 
-Choose **Bed Tech app**, then your model. This is separate from the modern
-**BedTech app** and its legacy controls. Automatic uses the first four Bluetooth
+Choose **Bed Tech app (older app)**, then your model. This is separate from the modern
+**BedTech app (newer app)** and its legacy controls. Automatic uses the first four Bluetooth
 name characters. **Cool Touch** and **QRRM** ask for a model. Short model names
 such as **5I** require an explicit selection. BT3000 and BT3000FH select the same
 controls. Combine two Bluetooth devices to control separate physical sides.

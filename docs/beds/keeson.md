@@ -160,7 +160,7 @@ from the profile data.
 ### Home Assistant setup
 
 Choosing **Keeson**, **Ergomotion**, **Serta Motion Perfect**, **Okin FFE** or
-**Cool Base**, or a bed detected as one of them, asks which app or remote you
+**Cool Base app**, or a bed detected as one of them, asks which app or remote you
 use. Shared names and Bluetooth services never decide it.
 
 | Answer | Then | Route |
