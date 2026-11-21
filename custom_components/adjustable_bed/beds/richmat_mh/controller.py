@@ -26,6 +26,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import (
+    CARD_CLIMATE,
     CARD_MASSAGE,
     CardPlacement,
     CardRole,
@@ -43,7 +44,7 @@ from ...const import (
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
 from ...profiles.richmat import RICHMAT_MH, RichmatProfile
-from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
+from ...state_keys import HEAT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..catalog_buttons import Kind, catalog_button, own_label, unique_buttons
@@ -345,6 +346,8 @@ _PRESETS: Final[dict[int, tuple[str, frozenset[str]]]] = {
     0xF0: ("yoga", frozenset({"yoga", "yoga mode"})),
 }
 FLAT_CODE: Final = 0x31
+# The heat levels a layout's heat page sets.
+_HEAT_LEVELS: Final = {"off": 0x9C, "low": 0x9D, "medium": 0x9E, "high": 0x9F}
 # Massage intensity levels 1, 2 and 3, as every catalog names them.
 _INTENSITY_LEVELS: Final = {1: 0x67, 2: 0xAF, 3: 0x68}
 FACTORY_RESET_CODE: Final = 0x62
@@ -747,6 +750,27 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         return dict(_INTENSITY_LEVELS) if set(_INTENSITY_LEVELS.values()) <= codes else {}
 
     @property
+    def _heat_level_codes(self) -> dict[str, int]:
+        """The layout's heat off, low, medium and high controls, when it has all four.
+
+        They are one heat level select; a layout missing a level keeps its buttons.
+        """
+        heat = {
+            c.code
+            for c in self._controls()
+            if c.area == "massage" and richmat_mh_name(c.code, c.label, massage_page=True)[1]
+        }
+        return dict(_HEAT_LEVELS) if set(_HEAT_LEVELS.values()) <= heat else {}
+
+    async def set_heat_level(self, level: str) -> None:
+        code = self._heat_level_codes.get(level)
+        if code is None:
+            raise ValueError("Choose a heat level this layout offers")
+        # The bed reports no heat level.
+        with self.sent_state(HEAT_LEVEL(level)):
+            await self.tap(code)
+
+    @property
     def supports_massage_intensity_control(self) -> bool:
         return bool(self._intensity_level_codes)
 
@@ -790,7 +814,11 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
     def _taps(self) -> tuple[Tap, ...]:
         """Every remaining app control, one button per opcode."""
         # The massage timer select and intensity number send these controls.
-        used: set[int] = {*self._massage_timer_codes.values(), *self._intensity_level_codes.values()}
+        used: set[int] = {
+            *self._massage_timer_codes.values(),
+            *self._intensity_level_codes.values(),
+            *self._heat_level_codes.values(),
+        }
         for recall, save in self._memory_slots().values():
             used.add(recall.code)
             if save is not None:
@@ -1005,6 +1033,17 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         specs: list[ControllerSelectSpec] = []
+        if heat := self._heat_level_codes:
+            specs.append(
+                ControllerSelectSpec(
+                    key=HEAT_LEVEL,
+                    translation_key=HEAT_LEVEL,
+                    state_key=HEAT_LEVEL,
+                    options=tuple(heat),
+                    select_fn=lambda ctrl, option: _invoke(ctrl, "set_heat_level", option),
+                    card=CARD_CLIMATE,
+                )
+            )
         if options := self.motor_mode_options:
             specs.append(
                 ControllerSelectSpec(

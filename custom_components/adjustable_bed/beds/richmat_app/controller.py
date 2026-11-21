@@ -13,12 +13,12 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_CONTROLLED_SIDE, CARD_HIDDEN
+from ...card import CARD_CLIMATE, CARD_CONTROLLED_SIDE, CARD_HIDDEN
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
-from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
+from ...state_keys import HEAT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..catalog_buttons import (
@@ -109,6 +109,12 @@ _LEVELS: Final = {
     "deviceFunctionItemMassageInstensityFirstGear": ("all", 1),
     "deviceFunctionItemMassageInstensitySecondGear": ("all", 2),
     "deviceFunctionItemMassageInstensityThirdGear": ("all", 3),
+}
+_HEAT: Final = {
+    "deviceFunctionItemHeatingOff": "off",
+    "deviceFunctionItemHeatingLowGear": "low",
+    "deviceFunctionItemHeatingMiddleGear": "medium",
+    "deviceFunctionItemHeatingHighGear": "high",
 }
 _RESETS: Final = frozenset(
     {"deviceFunctionItemRelieveZeroGravitySetting", "deviceFunctionItemRelieveSnoreSetting"}
@@ -760,6 +766,27 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         return {zone: levels for zone, levels in zones.items() if {1, 2, 3} <= set(levels)}
 
     @property
+    def _heat_levels(self) -> dict[str, str]:
+        """The product's heat off, low, medium and high actions, when it has all four.
+
+        They are one heat level select; a product missing a level keeps its buttons.
+        """
+        found = {
+            level: detail
+            for detail in sorted(self._allowed())
+            if (level := _HEAT.get(ACTIONS[detail]["enum"])) is not None
+        }
+        return {level: found[level] for level in _HEAT.values()} if len(found) == len(_HEAT) else {}
+
+    async def set_heat_level(self, level: str) -> None:
+        detail = self._heat_levels.get(level)
+        if detail is None:
+            raise ValueError("Choose a heat level this product offers")
+        # The bed reports no heat level.
+        with self.sent_state(HEAT_LEVEL(level)):
+            await self.press(detail)
+
+    @property
     def supports_massage_intensity_control(self) -> bool:
         return bool(self._level_actions)
 
@@ -817,6 +844,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         motors = {str(d) for m in self.route["motors"] for d in m[1:3]}
         # The massage timer select and intensity numbers send these actions.
         numbers = {d for levels in self._level_actions.values() for d in levels.values()}
+        numbers |= set(self._heat_levels.values())
         for detail in sorted(self._allowed() - motors - set(self._massage_timers.values()) - numbers):
             label = self._shown_label(detail)
             enum = ACTIONS[detail]["enum"]
@@ -932,8 +960,8 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             require_controller(controller, RichmatAppController)._select_side(option)
 
         self._select_side = apply
-        return (
-            (
+        specs = (
+            [
                 ControllerSelectSpec(
                     "richmat_app_side",
                     "richmat_app_side",
@@ -942,11 +970,22 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                     select,
                     local_select_fn=apply,
                     card=CARD_CONTROLLED_SIDE,
-                ),
-            )
+                )
+            ]
             if len(options) > 1
-            else ()
+            else []
         )
+        if heat := self._heat_levels:
+
+            async def heat_level(controller: BedController, option: str) -> None:
+                await require_controller(controller, RichmatAppController).set_heat_level(option)
+
+            specs.append(
+                ControllerSelectSpec(
+                    HEAT_LEVEL, HEAT_LEVEL, HEAT_LEVEL, tuple(heat), heat_level, card=CARD_CLIMATE
+                )
+            )
+        return tuple(specs)
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:

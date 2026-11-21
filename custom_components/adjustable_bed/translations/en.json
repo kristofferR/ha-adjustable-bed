@@ -6113,6 +6113,15 @@
           "mode3": "Mode 3"
         }
       },
+      "heat_level": {
+        "name": "Heat level",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
       "richmat_mh_snore": {
         "name": "Snore intervention",
         "state": {

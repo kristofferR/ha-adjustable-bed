@@ -805,3 +805,24 @@ async def test_every_massage_level_sends_what_its_button_sent(coordinator, clock
                     assert written(c) == button and button
                 zones += 1
     assert zones >= 6
+
+
+async def test_heat_levels_are_one_select_that_sends_what_the_buttons_sent(coordinator, clocked):
+    products = 0
+    for product in PRODUCTS:
+        c = controller(coordinator, product)
+        if not c._heat_levels:
+            continue
+        (spec,) = [s for s in c.controller_select_specs if s.key == "heat_level"]
+        assert spec.options == ("off", "low", "medium", "high")
+        keys = {s.key for s in c.controller_button_specs}
+        for level, detail in c._heat_levels.items():
+            assert "richmat_app_" + detail not in keys
+            coordinator.client.write_gatt_char.reset_mock()
+            await c.press(detail)
+            button = written(c)
+            coordinator.client.write_gatt_char.reset_mock()
+            await spec.select_fn(c, level)
+            assert written(c) == button and button
+        products += 1
+    assert products

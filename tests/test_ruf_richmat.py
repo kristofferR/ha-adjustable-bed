@@ -776,3 +776,21 @@ async def test_massage_intensity_levels_are_one_number(delays, kind, app, model,
         delays.clear()
         await fresh.set_massage_intensity("all", level)
         assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
+
+
+# The 7 RUF layout pages with heat off, low, medium and high form 2 groups by
+# what they send; each level of the select sends what its button sent.
+@pytest.mark.parametrize(("app", "stop_after"), [("wsilver2", 0.12), ("bailey2", 0.1)])
+async def test_heat_levels_are_one_select(delays, app, stop_after):
+    c = make(app, "hsrm")
+    (spec,) = [s for s in c.controller_select_specs if s.key == "heat_level"]
+    assert spec.options == ("off", "low", "medium", "high")
+    assert not {"richmat_mh_9c", "richmat_mh_9f"} & {s.key for s in c.controller_button_specs}
+    for level, code in zip(spec.options, ("9c0b", "9d0c", "9e0d", "9f0e"), strict=True):
+        fresh = make(app, "hsrm")
+        delays.clear()
+        await spec.select_fn(fresh, level)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (
+            [f"6e0100{code}", "6e01006edd"],
+            [stop_after],
+        )
