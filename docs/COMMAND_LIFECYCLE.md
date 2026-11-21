@@ -49,8 +49,9 @@ ahead of it, and what happens when the bed cannot be reached.
   that is. The write in flight and that command's own cleanup finish first:
   the controller sends its protocol STOP or release with a fresh cancel event.
   Then the STOP's own frames go out, ahead of anything queued. A bed-wide
-  STOP covers every resource; a motor or side STOP spares running work whose
-  declared resources do not overlap it. A command declared for the whole bed
+  STOP covers every resource. Besides that motion, a motor or side STOP
+  spares running work whose declared resources do not overlap it, such as a
+  light command declared for the light; a command declared for the whole bed
   overlaps every STOP.
 - When the command holding the writer is still connecting, the STOP waits for
   that connect. Nothing moves meanwhile, and the STOP then uses the new link.

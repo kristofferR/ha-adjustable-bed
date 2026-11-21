@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.button import (
     _button_entities_for,
 )
 from custom_components.adjustable_bed.codec import limoss as codec
+from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.paired_coordinator import (
@@ -447,6 +448,8 @@ async def test_a_capability_reload_fences_the_pair_until_it_finishes(hass):
             await asyncio.sleep(0)
         assert right._capability_reload_blocks_connection()
         await right.async_execute_controller_command(command, cancel_running=False)
+        # It ends as the unload would have ended it, not as completed.
+        assert right.command_scheduler.recent_records[-1].outcome is CommandOutcome.SHUTDOWN
 
         finish.set()
         await hass.async_block_till_done()

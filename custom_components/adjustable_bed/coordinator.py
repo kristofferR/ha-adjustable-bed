@@ -840,6 +840,20 @@ class AdjustableBedCoordinator(
                 if isinstance(controller, StarcodeAbm5_4Controller):
                     controller.restore_retained_app_state(retained)
 
+    def _fenced_by_capability_reload(self, context: CommandContext | None) -> bool:
+        """Return whether a capability reload replacing this runtime holds back an operation.
+
+        Only STOP passes, as when the reload held the command lock until the
+        unload had finished. A held-back command ends as that unload ended it.
+        """
+        if not self._capability_reload_running or (
+            context is not None and context.kind is CommandKind.STOP
+        ):
+            return False
+        if context is not None and context.scheduler_token is self._command_scheduler.token:
+            context.request_cancel(CommandOutcome.SHUTDOWN)
+        return True
+
     @contextlib.asynccontextmanager
     async def async_defer_capability_reload(self) -> AsyncIterator[None]:
         """Keep a multi-phase service's coordinators alive while releasing BLE links."""
@@ -2274,11 +2288,7 @@ class AdjustableBedCoordinator(
                 if scheduler_managed
                 else self._cancel_counter > entry_cancel_count
             )
-            # A capability reload replacing this runtime lets only STOP through,
-            # as when it held this lock until the unload had finished.
-            reloading = self._capability_reload_running and not (
-                command_context is not None and command_context.kind is CommandKind.STOP
-            )
+            reloading = self._fenced_by_capability_reload(command_context)
             if (preemptible and cancelled_while_waiting) or reloading:
                 _LOGGER.debug("Controller %s cancelled while waiting for lock", operation_name)
                 if (
