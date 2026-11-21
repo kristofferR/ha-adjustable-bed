@@ -3580,11 +3580,12 @@ alarm/press records are rejected instead of indexing beyond their payload.
 
 #### Services
 
-`adjustable_bed.luuna` offers `alarm`, `alarm_cancel`, `light_rgb`, `light_seconds`,
-`light_warm`, `light_cold`, `light_off`, `sleep_name` and `time_sync`. Generic
-memory and movement actions use the same profile and command serialization.
+`adjustable_bed.luuna` offers `light_rgb`, `light_seconds`, `light_warm`,
+`light_cold`, `light_off` and `sleep_name`. `set_alarm` sets and cancels the
+alarm and `sync_clock` sets the clock (`time_sync`). Generic memory and movement
+actions use the same profile and command serialization.
 
-Alarms use one selected preset from that product's alarm list and a local hour
+Alarms use one wake action from that product's alarm list and a local hour
 and minute. The countdown ignores seconds; the current minute wraps to tomorrow.
 Both save and cancel write the low frame first, then the high/action frame.
 There is no weekday or repeating schedule on this live alarm path.
@@ -9256,8 +9257,12 @@ Layout-bound movement, combined movement, recall/save, massage, USB, fan, lock
 and light-labelled controls retain the selected app's gesture and visibility
 gates. Lock and vibration targets remain unknown. No motor position, battery,
 model identity or general command acknowledgment is reported by these apps.
-Settings provide alarm countdowns and combinations, RGB, lamp timers and the
-D1RM/D9RM/Y6RM timer utilities. A lamp capability reply reveals a timer number
+Settings provide RGB, lamp timers and the D1RM/D9RM/Y6RM timer utilities.
+`set_alarm` sets the alarm countdown: one of the layout's positions as
+`wake_action` (the wake modes are `wake_mode_1` and `wake_mode_2`, flat sleep
+`flat_sleep`), optional `massage` with a zone, or `none` with `massage` for
+massage alone. A position and massage pair the app has no alarm code for is
+refused. A lamp capability reply reveals a timer number
 entity without a reload. Its value is a local requested setting, not readback.
 
 #### Detection / Setup
@@ -9804,28 +9809,31 @@ gestures remain available.
 
 #### Alarm actions
 
-The `actions` field of [`richmat_rise`](../SERVICES.md#richmat_rise) takes
-names of the form `node_<number>`, where the number is the control's place in
-your layout. A layout accepts only the controls the app can wake you with: TV,
-Lounge, Zero Gravity, Anti-snore, Flat sleep, M1 to M3, massage 1 and 2
-intensity up, and the 10-minute massage timer. About 140 of each app's 600
-layouts have any. Choose one bed action, one or both massage actions, or both
-kinds; two massage actions select all massage. On UFRM, for example,
-`actions: [node_3, node_14]` wakes you with Zero Gravity and massage 1.
+Set the alarm with [`set_alarm`](../SERVICES.md#set_alarm). A layout accepts
+only the controls the app can wake you with; about 140 of each app's 600
+layouts have any. TV, Lounge, Zero Gravity, Anti-snore and Flat sleep are the
+`wake_action` values `tv`, `lounge`, `zero_g`, `anti_snore` and `flat_sleep`,
+M1 to M3 are `memory_1` to `memory_3`, and the two wake modes are `wake_mode_1`
+and `wake_mode_2`. Massage 1 and massage 2 intensity up are the `head` and
+`feet` massage zones, and both together (or the massage-on control) `both`. Add
+`massage: true` with a `massage_zone` to a position, or use `wake_action: none`
+with `massage: true` for massage alone. On UFRM, for example, `wake_action:
+zero_g` with `massage: true` and `massage_zone: head` wakes you with Zero
+Gravity and massage 1.
 
-The numbers differ between layouts. These are the most common sets:
+These are the most common sets:
 
 | Layouts | Alarm actions |
 |---|---|
-| UFRM, XJRM, XKRM, XZRM, Z5RM | `node_1` TV, `node_2` Lounge, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
-| O7RM, V4RM, XYRM, Z4RM, ZFRM | `node_1` TV, `node_2` Anti-snore, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
-| AFRM, AGRM, AMRM, ANRM, XFRM | `node_1` Zero Gravity, `node_3` Anti-snore, `node_4` TV, `node_12` massage 1 intensity up, `node_14` massage 2 intensity up |
-| A9RM, DARM, WURM, Z6RM | `node_8` TV, `node_9` Anti-snore, `node_10` Zero Gravity, `node_11` massage 1 intensity up, `node_12` M1, `node_13` massage 2 intensity up, `node_15` M2 |
-| FHRM, G9RM, HLRM and HRRM (Luuna Rise only) | `node_1` TV, `node_3` Lounge, `node_4` Anti-snore, `node_6` Zero Gravity, `node_11` M1 |
-| XGRM, Y1RM, Y7RM, YQRM | `node_1` Zero Gravity, `node_2` Anti-snore, `node_3` M1 |
+| UFRM, XJRM, XKRM, XZRM, Z5RM | TV, Lounge, Zero Gravity, M1, M2, massage 1 intensity up, massage 2 intensity up |
+| O7RM, V4RM, XYRM, Z4RM, ZFRM | TV, Anti-snore, Zero Gravity, M1, M2, massage 1 intensity up, massage 2 intensity up |
+| AFRM, AGRM, AMRM, ANRM, XFRM | Zero Gravity, Anti-snore, TV, massage 1 intensity up, massage 2 intensity up |
+| A9RM, DARM, WURM, Z6RM | TV, Anti-snore, Zero Gravity, massage 1 intensity up, M1, massage 2 intensity up, M2 |
+| FHRM, G9RM, HLRM and HRRM (Luuna Rise only) | TV, Lounge, Anti-snore, Zero Gravity, M1 |
+| XGRM, Y1RM, Y7RM, YQRM | Zero Gravity, Anti-snore, M1 |
 
-For another layout, download the bed's diagnostics: `controls` lists each
-control's number and name, and `alarm_actions` lists the names an alarm accepts.
+For another layout, download the bed's diagnostics: `alarm_actions` lists the
+layout's alarm controls.
 
 #### Position Feedback / Notifications
 
@@ -10251,14 +10259,16 @@ or alarm-time feedback.
 
 #### Services
 
-`adjustable_bed.richmat_resource_bed` exposes `query`, `alarm`, `cancel_alarm`,
-`rgb`, `lamp_timeout`, `massage_timer` and `bed_command`. The status entity lists
-available alarm action names in layout order. Choose one bed preset and optional
-massage actions. The action validates every target before execution, and STOP
-fences later writes on every target even while another target is awaiting BLE.
+`adjustable_bed.richmat_resource_bed` exposes `query`, `rgb`, `lamp_timeout`,
+`massage_timer` and `bed_command`. The action validates every target before
+execution, and STOP fences later writes on every target even while another
+target is awaiting BLE.
 
-An alarm time selects its next local occurrence, with unset/equal time meaning
-the next day. Only the layout-owned combinations are accepted. Light timeout
+`set_alarm` sets and cancels the alarm: one of the layout's positions as
+`wake_action`, optional `massage` with a zone (`both`, `head` or `feet`), or
+`none` with `massage` for massage alone. The status entity lists the layout's
+alarm actions. An alarm time selects its next local occurrence, with an equal
+time meaning the next day. Only the layout-owned combinations are accepted. Light timeout
 requests are 0–300 seconds, with zero labelled keep on. The D1RM massage slider
 uses its actual 0–5 callback mapping. Requested values are labelled as requests,
 not device readback. Other layout actions use their named buttons and the

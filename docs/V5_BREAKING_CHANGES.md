@@ -475,7 +475,12 @@ RMCS layout loads without controls until you choose its layout in Configure.
 
 Galaxy and MLILY (`operation: sync`), SonicSleep (`operation: sync_clock`) and
 the Richmat app beds (`richmat_app` `operation: sync` and `sleep_sync`) set
-their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
+their clock with `sync_clock` now, like Good Vibe Sleep. Bedgear (`bedgear`
+`operation: alarm`), Luuna + (`luuna` `operation: alarm` and `alarm_cancel`),
+and the Lady Americana and partner beds and Luuna Rise and Power Cool
+(`richmat_resource_bed` and `richmat_rise` `operation: alarm` and
+`cancel_alarm`) set their alarm with `set_alarm` now, and Luuna + sets its
+clock with `sync_clock` (`operation: time_sync`). Beds added during
 the betas changed their entities too (clock buttons, timer selects, switches
 and sleep readings, as described under [Entities](#entities)); each beta's
 release notes list them.

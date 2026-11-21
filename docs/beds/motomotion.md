@@ -752,11 +752,16 @@ an acknowledgement for a particular command. Other known response lengths are
 | --- | --- |
 | `rgb` | `rgb: [red, green, blue]` (0–255), `brightness` (0–1). Brightness scales the channels before 0–120 conversion. Red below 10, green/blue below 30 become zero. Sends red, green, then blue with the source queries and delays. |
 | `light_timer` | `minutes: 0..1439`. Zero disables shutdown; 10 is the app's on-switch value. This is minutes, not brightness. |
-| `alarm` | `time: HH:MM`, `strength: 0..2` (off, 1, 2). Omit time or strength only to reuse an actually received value; received time digit widths are preserved. No weekday or repeat parameter. |
 | `sync_mode` | `wired: false` selects wireless, true wired. Requires `confirm: true`. This is bed synchronization, not Bluetooth pairing or network membership. |
 | `toggle_sync` | Requires a received available bind state. The current active/inactive state selects the source command. |
 | `save_memory` | `slot: 1..2`, subject to layout. Optional `recall_on_release: true` sends recall after save, matching the source's up-before-rebuild branch. |
 | `save_snore` | Panel E only, sends save without a release recall. Use the separate held anti-snore preset to recall. |
+
+Set the alarm with `set_alarm`: `time`, `enabled` and optional
+`massage_intensity` 1 or 2 (the alarm strength); disabling sends strength 0
+with the time the bed reported, when it has reported one.
+The alarm gate is name character 11 `E`. There is no weekday or repeat
+parameter.
 
 Memory saves default to save only. Panel E snore save has no release-send branch.
 HA does not reproduce a race against a Flutter widget rebuild. Synchronization does not select another Bluetooth
@@ -932,7 +937,7 @@ movement feedback. There is no command acknowledgement correlation.
 #### Services
 
 Use `set_alarm` with time, `enabled` and optional `massage_intensity` 1 or 2.
-Disabling maps to strength 0. The alarm gate is name character 11 `E`; weekdays,
+Disabling maps to strength 0, with the time the bed reported when it has one. The alarm gate is name character 11 `E`; weekdays,
 extra slots, wake actions, dates and timezone settings are unsupported.
 
 `l2motion` sets RGB color/brightness or synchronization mode. Changing wired or

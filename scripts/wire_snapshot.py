@@ -228,6 +228,7 @@ LATE_CLOCK_SYNC = frozenset(
         "GmmotorController",
         "GoodVibeController",
         "HJBedController",
+        "LuunaController",
         "MajesticHomeController",
         "MlilyRemoteController",
         "MotionBedController",

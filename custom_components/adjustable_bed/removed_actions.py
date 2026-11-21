@@ -123,6 +123,19 @@ REMOVALS: Final[tuple[Removal, ...]] = (
             ("richmat_app", "sleep_sync"),
         )
     ),
+    Removal("luuna", "operation", "time_sync", f"{DOMAIN}.sync_clock"),
+    *(
+        Removal(action, "operation", operation, f"{DOMAIN}.set_alarm{use}")
+        for action, operation, use in (
+            ("bedgear", "alarm", ""),
+            ("luuna", "alarm", ""),
+            ("luuna", "alarm_cancel", " enabled: false"),
+            ("richmat_resource_bed", "alarm", ""),
+            ("richmat_resource_bed", "cancel_alarm", " enabled: false"),
+            ("richmat_rise", "alarm", ""),
+            ("richmat_rise", "cancel_alarm", " enabled: false"),
+        )
+    ),
     Removal("gmmotor", "operation", "clock_sync", f"{DOMAIN}.sync_clock"),
     Removal("gmmotor", "repeat"),
     Removal("gmmotor", "status"),

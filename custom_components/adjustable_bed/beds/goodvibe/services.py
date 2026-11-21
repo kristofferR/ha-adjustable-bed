@@ -27,6 +27,7 @@ from ...services import (
     _execute_preflighted,
     _family_command,
     _preflight_and_execute,
+    local_datetime,
 )
 from ..base import BedController
 from . import protocol as p
@@ -357,7 +358,7 @@ FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): _actions(OPERATIONS),
     vol.Optional("action"): cv.string,
-    vol.Optional("datetime"): cv.datetime,
+    vol.Optional("datetime"): local_datetime,
     vol.Optional("alarm_id"): vol.All(vol.Coerce(int), vol.Range(min=1, max=7)),
     vol.Optional("weekdays"): vol.All(
         cv.ensure_list, [vol.All(vol.Coerce(int), vol.Range(min=0, max=6))]
