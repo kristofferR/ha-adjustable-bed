@@ -244,7 +244,7 @@ command: run_diagnostics
 parameters:
   diagnostics:
     group: Base
-    tests: [actuator-test]
+    tests: [power-health-test]
 ```
 
 Only the app's local hardware test IDs are accepted. Network tests, uploads,
