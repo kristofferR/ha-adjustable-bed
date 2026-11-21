@@ -1057,7 +1057,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 str(key),
                 str(key).removesuffix("_left").removesuffix("_right"),
                 key,
-                "mdi:information-outline",
+                "mdi:vibrate",
                 # Massage levels are dashboard state.
                 entity_registry_enabled_default=level,
                 entity_category=None if level else EntityCategory.DIAGNOSTIC,

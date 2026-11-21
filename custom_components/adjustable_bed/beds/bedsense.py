@@ -280,7 +280,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
                 f"bedsense_{key}",
                 f"bedsense_{key}",
                 _state_key(f"bedsense_{key}"),
-                "mdi:information-outline",
+                "mdi:vibrate" if key in _SENSOR_CARDS else "mdi:information-outline",
                 attribute_keys=(_state_key("bedsense_state_source"),),
                 # Step counts only mirror the up/down buttons; the bed takes no level.
                 entity_registry_enabled_default=key == "circulation",

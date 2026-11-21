@@ -866,7 +866,7 @@ class AdjustaMattressController(
                 NS + key,
                 NS + key,
                 _field_key(key),
-                "mdi:information-outline",
+                "mdi:vibrate" if key in _MASSAGE_FIELDS else "mdi:information-outline",
                 # Readbacks of the step buttons, which take no direct value. The
                 # timer is the bed's step (P3 and P4 round 600 units up to one);
                 # its duration is unproven, so it has no unit. The intensity

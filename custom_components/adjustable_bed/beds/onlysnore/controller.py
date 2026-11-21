@@ -563,6 +563,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 setting("privacy"),
                 keys.PRIVACY,
                 "on",
+                "mdi:shield-lock-outline",
                 entity_category=EntityCategory.CONFIG,
             ),
             ControllerSwitchSpec(

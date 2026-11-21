@@ -387,6 +387,12 @@ _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
 _MASSAGE_LEVELS: Final = frozenset(
     {"upper_massage", "lower_massage", "massage_wave", "air_upper_gear", "air_lower_gear"}
 )
+_BINARY_ICONS: Final = {
+    "sync_enabled": "mdi:link-variant",
+    "thermal_low_water": None,
+    "thermal_timer_enabled": "mdi:timer-outline",
+    "alarm_enabled": "mdi:alarm",
+}
 # The switches show the night light, smart sleep, module light and massage and
 # adaptive air settings; the climate timer keeps its schedule as attributes.
 _BINARY_SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
@@ -811,7 +817,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             if name == "air_timer"
             else ControllerStateSensorSpec(
                 key="motion_bed_" + name, translation_key="motion_bed_" + name,
-                state_key=_field_key(name), icon="mdi:bed-outline",
+                state_key=_field_key(name),
+                icon="mdi:vibrate" if name in _MASSAGE_LEVELS else "mdi:bed-outline",
                 attribute_keys=tuple(_field_key(item) for item in attributes),
                 entity_registry_enabled_default=enabled,
                 entity_category=None if name in _MASSAGE_LEVELS else EntityCategory.DIAGNOSTIC,
@@ -825,7 +832,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             ControllerStateBinarySensorSpec(
                 key="motion_bed_" + name, translation_key="motion_bed_" + name,
                 state_key=_field_key(name),
-                icon=None if name == "thermal_low_water" else "mdi:bed-outline",
+                icon=_BINARY_ICONS.get(name, "mdi:bed-outline"),
                 attribute_keys=tuple(_field_key(item) for item in attributes),
                 entity_registry_enabled_default=enabled,
                 entity_category=None if name == "alarm_enabled" else EntityCategory.DIAGNOSTIC,
