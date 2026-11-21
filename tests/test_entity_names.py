@@ -147,48 +147,20 @@ def test_display_label_drops_artifact_notes_and_shouting(label: str, shown: str)
     assert display_label(label) == shown
 
 
-def test_richmat_mh_catalog_labels_use_the_shared_wording() -> None:
-    """Every MH model's app labels, not only the factory default's."""
-    from custom_components.adjustable_bed.beds.richmat_mh.catalog import CONTROLS
-    from custom_components.adjustable_bed.beds.richmat_mh.controller import (
-        _display_label as mh_label,
-    )
+@pytest.mark.parametrize(
+    ("code", "label", "name", "clear"),
+    [
+        # A label that says part of what its code does takes the code's name; a
+        # timer keeps its own duration; one naming another feature is not established.
+        (0x4C, "Head+", "Head massage intensity up", True),
+        (0x5F, "Hour2", "Massage timer 2 hours", True),
+        (0x4C, "Back Fan", "Back fan", False),
+    ],
+)
+def test_richmat_mh_controls_are_named_by_their_code(code: int, label: str, name: str, clear: bool) -> None:
+    from custom_components.adjustable_bed.beds.richmat.labels import richmat_mh_name
 
-    names = {
-        display_label(mh_label(label, group if area == "massage" else None))
-        for _route, _kind, area, group, label, _code, _keep in CONTROLS
-        if area != "motor"
-    }
-    assert {name: problems(name) for name in names if problems(name)} == {}
-    assert mh_label("Head Intensity+", "HEAD_INTENSITY_INC3") == "Massage: Head Up"
-    assert mh_label("10Min", "MIN") == "Massage: Timer 10 Minutes"
-    assert mh_label("FLAT2") == "Flat 2"
-    # A terse app preset label stays: the owner knows it from the app or remote.
-    assert mh_label("V15") == "V15"
-
-
-def test_richmat_mh_app_command_labels_use_the_mh_wording() -> None:
-    """Nisco and MLILY Supreme name controls by command; they read like the MH buttons."""
-    from custom_components.adjustable_bed.beds.richmat.labels import command_label
-    from custom_components.adjustable_bed.beds.richmat_mh.app_catalog import catalog
-    from custom_components.adjustable_bed.beds.richmat_mh.controller import (
-        _display_label as mh_label,
-    )
-
-    names = {
-        display_label(command_label(control.label, save=control.kind == "save"))
-        for app in ("nisco", "mlily_supreme")
-        for model in catalog(app).values()
-        for control in model.controls
-        if control.area != "motor"
-    }
-    assert {name: problems(name) for name in names if problems(name)} == {}
-    assert command_label("Massage Head Intensity Inc") == mh_label("Head Intensity+", "HEAD_INTENSITY_INC3")
-    assert command_label("Massage 10Min") == mh_label("10Min", "MIN")
-    assert command_label("Flat2") == mh_label("FLAT2")
-    # The second head step never shares a model with the first, so it has no number.
-    assert command_label("Massage Head Intensity Inc2") == "Massage: Head Up"
-    assert command_label("Zg2 Set") == "Save Zero Gravity 2"
+    assert richmat_mh_name(code, label) == (name, clear)
 
 
 # Every entity of every offline controller variant, built once for the checks below.
