@@ -336,9 +336,42 @@ def async_setup_estimate_buttons(
         if additions:
             async_add_entities(additions)
 
+    _async_adopt_position_buttons(hass, entry, coordinator, manager)
     _async_remove_orphan_position_buttons(hass, entry, coordinator, manager)
     sync_position_buttons()
     entry.async_on_unload(manager.async_add_listener(sync_position_buttons))
+
+
+def _async_adopt_position_buttons(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+    manager: PositionEstimates,
+) -> None:
+    """Keep a saved position's button when its bed is combined into a pair.
+
+    Combining moves the bed's rows to the pair, still named after the bed. The
+    pair takes such a row over, so its entity ID and automations stay.
+    """
+    _device_info, prefix = _bed_identity(coordinator)
+    registry = er.async_get(hass)
+    rows = er.async_entries_for_config_entry(registry, entry.entry_id)
+    for position in manager.positions:
+        unique_id = f"{prefix}saved_position_{position.id}"
+        if not position.button or registry.async_get_entity_id("button", DOMAIN, unique_id):
+            continue
+        row = next(
+            (
+                row
+                for row in rows
+                if row.domain == "button"
+                and row.platform == DOMAIN
+                and row.unique_id.endswith(f"_saved_position_{position.id}")
+            ),
+            None,
+        )
+        if row is not None:
+            registry.async_update_entity(row.entity_id, new_unique_id=unique_id)
 
 
 def _async_remove_orphan_position_buttons(

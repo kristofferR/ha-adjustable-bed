@@ -2267,6 +2267,86 @@ class TestPairBedsConversion:
         assert final_device.name_by_user == "Left headboard"
         assert final_device.via_device_id is None
 
+    async def test_combine_and_separate_keep_estimates_and_saved_positions(
+        self,
+        hass: HomeAssistant,
+        hass_storage: dict[str, Any],
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Calibration, estimates and saved positions follow each bed (PLAT-1)."""
+        from custom_components.adjustable_bed import position_estimate as pe
+
+        ent_reg = er.async_get(hass)
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+        for entry, address, names in (
+            (left, LEFT_ADDR, ("Reading",)),
+            (right, RIGHT_ADDR, ("Reading", "Sleep")),
+        ):
+            manager = pe.position_estimates(hass, entry.entry_id)
+            assert manager is not None
+            bed = manager.beds[address]
+            bed.configure({"back": (20.0, 10.0)})
+            bed.set_reference()
+            for name in names:
+                manager.save_position(name, [bed], button=True)
+        await hass.async_block_till_done()
+        left_reading = pe.position_estimates(hass, left.entry_id).position("Reading")
+        reading_button = ent_reg.async_get_entity_id(
+            "button", DOMAIN, f"{LEFT_ADDR}_saved_position_{left_reading.id}"
+        )
+        assert reading_button is not None
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id),
+                CONF_NAME: "Master Bed",
+            },
+        )
+        await hass.async_block_till_done()
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        pair = next(e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data))
+
+        manager = pe.position_estimates(hass, pair.entry_id)
+        assert manager is not None
+        for address in (LEFT_ADDR, RIGHT_ADDR):
+            # Combining within one run keeps the estimate trusted.
+            assert manager.beds[address].tracking(["back"])
+            assert ent_reg.async_get_entity_id(
+                "number", DOMAIN, f"{address}_back_position_estimated"
+            )
+        # Both beds' "Reading" is one position that moves both sides.
+        reading = manager.position("Reading")
+        assert reading.targets == {SIDE_LEFT: {"back": 0.0}, SIDE_RIGHT: {"back": 0.0}}
+        assert manager.position("Sleep").targets == {SIDE_RIGHT: {"back": 0.0}}
+        assert len(manager.positions) == 2
+        # The left bed's button now recalls the pair's position, under its entity ID.
+        row = ent_reg.async_get(reading_button)
+        assert row is not None
+        assert row.unique_id == f"{pair.data[CONF_PAIR_ID]}_saved_position_{reading.id}"
+        assert row.config_entry_id == pair.entry_id
+
+        await async_unpair_entry(hass, pair)
+        await hass.async_block_till_done()
+        for entry, address, names in (
+            (left, LEFT_ADDR, ["Reading"]),
+            (right, RIGHT_ADDR, ["Reading", "Sleep"]),
+        ):
+            manager = pe.position_estimates(hass, entry.entry_id)
+            assert manager is not None
+            assert manager.beds[address].tracking(["back"])
+            assert [position.name for position in manager.positions] == names
+            assert all(position.targets == {"bed": {"back": 0.0}} for position in manager.positions)
+
+        # Removing a bed forgets its store; the other bed keeps its own.
+        await hass.config_entries.async_remove(left.entry_id)
+        await hass.async_block_till_done()
+        assert pe.storage_key(LEFT_ADDR) not in hass_storage
+        assert pe.storage_key(RIGHT_ADDR) in hass_storage
+
     async def test_split_keeps_current_connection_preferences(
         self,
         hass: HomeAssistant,

@@ -275,7 +275,7 @@ async def test_restart_restores_an_unconfirmed_estimate(
 ) -> None:
     manager = await calibrated(hass)
     await pe.track_motor_command(hass, "back", "up", moving(clock, 8.4))(controller(hass, LEFT))
-    await manager._store.async_save(manager._data_to_save())
+    await manager._stores[LEFT].async_save(manager._stored(manager.beds[LEFT]))
     pe._registry(hass).clear()
 
     restored = await pe.async_setup_position_estimates(hass, "entry", ((LEFT, None),))
@@ -302,6 +302,50 @@ async def test_entry_reload_keeps_confirmation(hass: HomeAssistant) -> None:
     hass.data[DOMAIN].pop(pe._SESSION_KEY)
     restarted = await pe.async_setup_position_estimates(hass, "entry", ((LEFT, None),))
     assert restarted.beds[LEFT].state("back") is EstimateState.UNCONFIRMED
+
+
+async def test_first_beta_store_moves_to_each_bed(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """A per-entry store from the first v5 betas is split per bed without loss."""
+    legacy = pe.entry_storage_key("entry")
+    hass_storage[legacy] = {
+        "version": 1,
+        "key": legacy,
+        "data": {
+            "beds": {
+                LEFT: {"back": {"up_s": 20.0, "down_s": 10.0, "percent": 30.0}},
+                RIGHT: {"legs": {"up_s": 10.0, "down_s": 8.0, "percent": 50.0}},
+            },
+            "positions": [
+                {
+                    "id": "reading",
+                    "name": "Reading",
+                    "button": True,
+                    "targets": {"left": {"back": 30.0}, "right": {"legs": 50.0}},
+                },
+                {"id": "tv", "name": "TV", "button": False, "targets": {"right": {"legs": 10.0}}},
+            ],
+        },
+    }
+
+    manager = await pe.async_setup_position_estimates(
+        hass, "entry", ((LEFT, "left"), (RIGHT, "right"))
+    )
+
+    assert legacy not in hass_storage
+    assert manager.beds[LEFT].motors["back"].percent == 30.0
+    assert manager.beds[RIGHT].motors["legs"].up_s == 10.0
+    assert [(p.id, p.name, p.button, p.targets) for p in manager.positions] == [
+        ("reading", "Reading", True, {"left": {"back": 30.0}, "right": {"legs": 50.0}}),
+        ("tv", "TV", False, {"right": {"legs": 10.0}}),
+    ]
+    assert hass_storage[pe.storage_key(RIGHT)]["data"]["positions"][1] == {
+        "id": "tv",
+        "name": "TV",
+        "button": False,
+        "targets": {"legs": 10.0},
+    }
 
 
 async def test_saved_positions_lifecycle(hass: HomeAssistant, clock: Clock) -> None:
