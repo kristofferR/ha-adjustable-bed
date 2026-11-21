@@ -78,8 +78,6 @@ from custom_components.adjustable_bed.profile_id import (
 )
 from custom_components.adjustable_bed.profile_review import v5_profile_review_mark
 from custom_components.adjustable_bed.validators import VARIANTS_BY_BED_TYPE
-from tests.codec_families import families
-from tests.codec_families._standalone import STANDALONE
 
 ADDRESS = "AA:BB:CC:DD:EE:01"
 # What 4.4.2's setup saved on every bed. Schema 5.6 turns it into the connection
@@ -145,11 +143,8 @@ def test_every_former_route_resolves_to_its_own_round_tripping_id() -> None:
         # Distinct routes never share an id: no alias is merged yet.
         assert seen.setdefault(profile_id, route) == route, profile_id
     assert len(seen) > 1000
-    # The id space covers every codec family bed type and every standalone controller.
-    registered = {*STANDALONE}
-    for family in families().values():
-        registered |= family.bed_types
-    assert registered <= {route.bed_type for route in seen.values()}
+    # The id space covers every supported bed type.
+    assert set(SUPPORTED_BED_TYPES) <= {route.bed_type for route in seen.values()}
 
 
 @pytest.mark.parametrize(

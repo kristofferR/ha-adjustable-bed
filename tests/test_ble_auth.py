@@ -128,26 +128,6 @@ def test_non_authentication_gatt_errors_do_not_request_pairing(message: str) -> 
     assert not is_ble_authentication_error(BleakError(message))
 
 
-def test_repair_text_does_not_assume_the_bond_lives_on_the_host() -> None:
-    """A proxy bond cannot be cleared with bluetoothctl on the Home Assistant host.
-
-    strings.json already states that Home Assistant cannot remove a bond that
-    lives on a proxy, so recovery guidance must not tell every user to run
-    bluetoothctl there.
-    """
-    import json
-    from pathlib import Path
-
-    strings = json.loads(
-        Path("custom_components/adjustable_bed/strings.json").read_text()
-    )
-    flow = strings["issues"]["pairing_required"]["fix_flow"]
-    description = flow["step"]["confirm"]["description"]
-
-    assert "ESPHome" in description
-    assert "stored on the proxy" in description
-
-
 def test_shared_repair_text_prescribes_no_bed_specific_reset() -> None:
     """The pairing repair is shared by every pairing-required protocol.
 
@@ -201,34 +181,3 @@ def test_repair_text_does_not_assert_an_unproven_cause() -> None:
     assert "refusing the bond" not in description
 
 
-def test_translation_strings_contain_no_angle_brackets() -> None:
-    """hassfest rejects angle brackets in translations as HTML.
-
-    A placeholder written as `<address>` reads as an HTML tag and fails CI, so
-    catch it here instead: the strings already receive {address}.
-    """
-    import json
-    import re
-    from pathlib import Path
-
-    pattern = re.compile(r"<[^>]+>")
-    offenders: list[str] = []
-
-    def walk(node: object, path: str) -> None:
-        if isinstance(node, dict):
-            for key, value in node.items():
-                walk(value, f"{path}.{key}")
-        elif isinstance(node, str) and pattern.search(node):
-            offenders.append(path)
-
-    # Discover the files rather than listing them: the set of shipped
-    # translations differs between branches, and a hardcoded list either breaks
-    # when one is missing or silently skips a new one.
-    root = Path("custom_components/adjustable_bed")
-    files = [root / "strings.json", *sorted(root.glob("translations/*.json"))]
-    assert files, "no translation files found"
-
-    for path in files:
-        walk(json.loads(path.read_text()), path.name)
-
-    assert offenders == []

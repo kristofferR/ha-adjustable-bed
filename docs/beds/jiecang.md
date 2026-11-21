@@ -507,8 +507,6 @@ has no report) the frames the pre-v5 controller sent.
 the LOGICDATA profiles, from the accepted MOTIONrelax phone 1.0.6, tablet 1.0.4
 and Sleep Smart 1.0.0 reports. The phone report states its massage-level rows as
 a template, which the vector file expands.
-`tests/test_codec_docs.py` checks that every frame spelled in this guide is one
-of those vectors and that the generated tables are current.
 Profile behavior is covered by `tests/test_jiecang.py`,
 `tests/test_jiecang_app_controller.py`, `tests/test_jiecang_app_entities.py`,
 `tests/test_jiecang_app_config.py` and `tests/test_dreamhd.py`; LOGICDATA behavior

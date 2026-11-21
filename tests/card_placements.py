@@ -118,12 +118,21 @@ from custom_components.adjustable_bed.switch import (
 )
 from tests.entity_translation_reachability import (
     INTEGRATION,
-    SPEC_PLATFORMS,
     _motion_bed_controllers,
     factory_controllers,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures/card_placements.json"
+# Each spec class's platform and the position of its translation_key field.
+SPEC_PLATFORMS = {
+    "MotorControlSpec": ("cover", 1),
+    "ControllerButtonSpec": ("button", 4),
+    "ControllerSelectSpec": ("select", 1),
+    "ControllerNumberSpec": ("number", 1),
+    "ControllerSwitchSpec": ("switch", 1),
+    "ControllerStateSensorSpec": ("sensor", 1),
+    "ControllerStateBinarySensorSpec": ("binary_sensor", 1),
+}
 
 
 def _runtime() -> MagicMock:

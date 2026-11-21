@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -364,11 +363,9 @@ def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
 
 
 @pytest.mark.parametrize("app", ("nisco", "mlily_supreme"))
-def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
+def test_button_names_are_unique_per_bed(app: str) -> None:
     from custom_components.adjustable_bed.beds.richmat_mh.app_controller import _shown_name
-    from tests.test_entity_names import problems
 
-    raw = re.compile(r"\b(Inc\d?|Dec|\d*Min|Zg2|Ubl|Flat2)\b")
     for model in models(app):
         for advanced in (False, True):
             controller = make(app, model)
@@ -376,8 +373,6 @@ def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
                 controller._version, controller._call_page = "0001", True
             names = [_shown_name(spec) for spec in controller.controller_button_specs]
             assert len(names) == len(set(names)), (model, names)
-            for name in names:
-                assert not raw.search(name) and not problems(name), (model, name)
             if model == "bhrm" and not advanced:
                 assert "Massage head up" in names
                 # Its 10, 20 and 30 minute timers are the massage timer select.

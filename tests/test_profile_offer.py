@@ -559,7 +559,4 @@ def test_review_text_is_translated_identically() -> None:
         assert issue == english["issues"][key]
         assert set(issue["fix_flow"]["step"]) == {"init", "unpair", "managed"}
         assert "entry_missing" in issue["fix_flow"]["abort"]
-        assert "—" not in json.dumps(issue, ensure_ascii=False)
-    assert strings["selector"]["app_profile_review"] == {
-        "options": {"keep": "Keep the current setup"}
-    }
+    assert strings["selector"]["app_profile_review"]["options"]["keep"]

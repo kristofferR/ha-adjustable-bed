@@ -588,8 +588,7 @@ could send.
 `tests/test_keeson_vectors.py` checks that every literal round-trips through the
 codec byte for byte, that each app profile sends only its frozen frames, that each
 other route sends exactly its frozen frames, and that every protocol variant is a
-profile. `tests/test_codec_docs.py` checks that every frame spelled in this guide
-is one of those vectors and that the generated tables are current.
+profile.
 
 ## Profiles
 
