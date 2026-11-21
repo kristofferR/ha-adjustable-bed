@@ -593,7 +593,6 @@ async def test_a_reloaded_bed_starts_with_no_presses_from_the_old_one(
     new = AdjustableBedCoordinator(hass, old.entry)
     new._client = old._client
     controller = bed(new, new_execution)
-    hass.data[DOMAIN][old.entry.entry_id] = new
     real_id = id
     with ExitStack() as stack:
         stack.enter_context(patch.object(new, "async_ensure_connected", AsyncMock(return_value=True)))
