@@ -301,7 +301,7 @@ async def _build_bluetooth_section(
 
     try:
         info["nearby_devices"] = _build_nearby_device_inventory(hass, address)
-    except Exception as err:  # noqa: BLE001 - diagnostics must degrade gracefully
+    except Exception as err:
         info["nearby_devices_error"] = str(err)
 
     try:
@@ -310,7 +310,7 @@ async def _build_bluetooth_section(
             diagnostics_report.get("advertisements_by_source", []),
             address=address,
         )
-    except Exception as err:  # noqa: BLE001 - diagnostics must degrade gracefully
+    except Exception as err:
         info["scanners_error"] = str(err)
 
     return info
@@ -403,7 +403,7 @@ def _nearby_device_snapshot(
             "ambiguous_types": list(detection.ambiguous_types or []),
             "supported_match": bed_type in SUPPORTED_BED_TYPES if bed_type else False,
         }
-    except Exception as err:  # noqa: BLE001 - one malformed advertisement must not abort a bundle
+    except Exception as err:
         detection_info = {
             "bed_type": None,
             "confidence": 0.0,
@@ -537,7 +537,7 @@ async def _build_scanner_status(
                     row["diagnostics"] = _compact_scanner_diagnostics(
                         scanner_diagnostics
                     )
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 row["diagnostics_error"] = str(err)
 
         if registration is not None:
@@ -624,7 +624,7 @@ def _build_esphome_proxy_status(
                 feature_flags = feature_flags_compat(
                     getattr(runtime, "api_version", None)
                 )
-            except Exception:  # noqa: BLE001 - raw flags still provide useful evidence
+            except Exception:
                 pass
         status["device"] = {
             "name": getattr(device_info, "name", None),

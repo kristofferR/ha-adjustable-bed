@@ -203,11 +203,6 @@ def selector_from_scan(name: str, manufacturer: Mapping[int, bytes], cached: int
     return result
 
 
-def logical_name(manufacturer: Mapping[int, bytes]) -> str | None:
-    data = manufacturer.get(89, b"")
-    return data[1:7].hex() if len(data) >= 7 else None
-
-
 @dataclass(frozen=True, slots=True)
 class SymphonyProfile:
     product: Product

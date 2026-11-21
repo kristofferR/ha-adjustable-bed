@@ -674,7 +674,7 @@ class PairedBedCoordinator:
         for callback_fn in list(self._connection_state_callbacks):
             try:
                 callback_fn(aggregate)
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 _LOGGER.warning("Paired connection state callback error: %s", err)
 
     def register_connection_state_callback(

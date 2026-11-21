@@ -776,7 +776,7 @@ class SleepStarController(BedController):
             POSITIONS({key: int(value) for key, value in values.items()}),
         )
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Request the current multi-part motor position report."""
         await self.write_command(SleepStarCommands.QUERY_MOTORS)
 
@@ -799,7 +799,7 @@ class SleepStarController(BedController):
             wrap_control_box(star.position_target(zone, max(0, min(100, int(position)))))
         )
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Clamp an integration percentage to the native 0-100 range."""
         return int(max(0, min(100, angle)))
 

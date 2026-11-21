@@ -899,7 +899,7 @@ def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
         has_massage=False,
     )
     try:
-        controller._select_transport(client)  # noqa: SLF001 - the controller's own selection
+        controller._select_transport(client)
     except ValueError as err:
         raise ConnectionError(str(err)) from err
 

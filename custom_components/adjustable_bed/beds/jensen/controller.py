@@ -575,7 +575,7 @@ class JensenController(BedController):
             _LOGGER.warning("Failed to send READ_POSITION command: %s", err)
             return False
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current positions via the asynchronous report that answers a query."""
         del motor_count  # Jensen always reports both motors
         async with self._position_query_lock:

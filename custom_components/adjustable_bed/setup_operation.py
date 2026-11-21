@@ -385,7 +385,7 @@ class BluetoothOperationMixin:
                 # The user closed the dialog while we were mid-phase. Nothing to
                 # update, and nothing worth logging.
                 return
-            except Exception:  # noqa: BLE001 - a redraw must never break the flow
+            except Exception:
                 _LOGGER.debug("Could not refresh the setup progress view", exc_info=True)
                 return
             if not self._refresh_pending:
@@ -444,7 +444,7 @@ class BluetoothOperationMixin:
                 state.result = task.result()
             except asyncio.CancelledError:
                 state.result = OperationResult(outcome=OperationOutcome.CANCELLED)
-            except Exception as err:  # noqa: BLE001 - a bug must not wedge the flow
+            except Exception as err:
                 _LOGGER.exception("Bluetooth setup operation failed unexpectedly")
                 state.result = OperationResult(
                     outcome=OperationOutcome.CONNECTION_FAILED,

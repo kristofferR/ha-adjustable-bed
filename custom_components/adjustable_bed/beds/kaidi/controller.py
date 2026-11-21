@@ -855,7 +855,7 @@ class KaidiController(BedController):
     # Direct position control
     # ------------------------------------------------------------------
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Kaidi uses percentage-style progress writes for direct position targeting."""
         return max(0, min(100, int(round(angle))))
 

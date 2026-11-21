@@ -506,4 +506,4 @@ def require_command_endpoint(client: object, profile: str) -> None:
     The controller's own check, so a guided change requires what the runtime does.
     """
     link = cast("AdjustableBedCoordinator", SimpleNamespace(client=client))
-    CustomaticController(link, profile=profile)._write_response()  # noqa: SLF001
+    CustomaticController(link, profile=profile)._write_response()

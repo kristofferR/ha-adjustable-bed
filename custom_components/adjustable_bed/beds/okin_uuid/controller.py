@@ -433,7 +433,7 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         except BleakError:
             pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data.
 
         OKIN beds typically use notifications rather than reads for position

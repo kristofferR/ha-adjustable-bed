@@ -379,7 +379,7 @@ def capture_clock(monkeypatch: pytest.MonkeyPatch) -> None:
 
     class _CaptureTime(datetime):
         @classmethod
-        def now(cls, tz=None):  # noqa: ARG003
+        def now(cls, tz=None):
             return CAPTURE_TIME
 
     monkeypatch.setattr(okin_64bit_module, "datetime", _CaptureTime)

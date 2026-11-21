@@ -74,31 +74,3 @@ def resolve_protocol(
         if len(data) == 5 and data[-1] == 5:
             result = "smartsainuo"
     return "okin" if "OKIN" in upper else result
-
-
-def admitted_name(name: str) -> bool:
-    return bool(name) and any(word in name.upper() for word in ("SLEEP", "SMARTBED", "OKIN"))
-
-
-def scan_first(
-    batch: tuple[tuple[str, str], ...], seen: set[str], requested_name: str | None = None
-) -> tuple[str, str] | None:
-    """Source FIRST-batch rule and ID dedup, independent of protocol selection."""
-    if not batch:
-        return None
-    device_id, name = batch[0]
-    if not admitted_name(name) or device_id in seen:
-        return None
-    seen.add(device_id)
-    return (device_id, name) if requested_name is None or name == requested_name else None
-
-
-def imported_layout(type_tag: int) -> str:
-    return {2: "two", 3: "triple", 4: "four"}.get(type_tag % 10, "four")
-
-
-def persisted_type(protocol: Protocol, layout: str) -> int:
-    return {"sleep": 2, "smart": 3, "smartsainuo": 5, "okin": 4}.get(protocol, 2) * 10 + {
-        "two": 2,
-        "triple": 3,
-    }.get(layout, 4)
