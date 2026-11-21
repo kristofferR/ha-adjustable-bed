@@ -3209,31 +3209,6 @@ symphony_anti_snore:
       selector:
         boolean:
 
-symphony_preset:
-  fields:
-    device_id:
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    side:
-      default: both
-      selector:
-        select:
-          options: [both, left, right]
-          translation_key: side
-    preset:
-      required: true
-      selector:
-        select:
-          options: [zero_g, flat, memory_1, memory_2, reading, tv, anti_snore]
-          translation_key: symphony_preset_preset
-    save:
-      default: false
-      selector:
-        boolean:
-
 symphony_set_light:
   fields:
     device_id:

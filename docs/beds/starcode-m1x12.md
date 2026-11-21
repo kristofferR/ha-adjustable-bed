@@ -12,8 +12,8 @@ ELEVATE entries keep their current behavior until you reconfigure them.
 
 - StarCode `STAR25*` beds operated with Adjustable Comfort M1X12, in three
   layouts: CB25, F23 and kneading (see [Configuration and groups](#configuration-and-groups))
-- Up to two [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts per main, configured as
-  the **Adjustable Comfort M1X12 ELEVATE** variant
+- Up to two [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts per main, set up as
+  **Adjustable Comfort M1X12 app, Elevate lift**
 
 ## Apps
 
