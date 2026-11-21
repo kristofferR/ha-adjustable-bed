@@ -70,8 +70,7 @@ class OkinCB35Controller(Okin7ByteController):
         self, command: bytes, repeat_count: int = 100, repeat_delay_ms: int = 300
     ) -> None:
         """Tap the preset key, then release it with STOP x3 to commit the move."""
-        command_failed = False
-        try:
+        async with self.releasing(self._send_stop):
             if self._coordinator.cancel_command.is_set():
                 return
             await self.write_command(
@@ -80,20 +79,10 @@ class OkinCB35Controller(Okin7ByteController):
                 repeat_delay_ms=repeat_delay_ms,
                 on_write=self._record_preset_write,
             )
-        except BaseException:
-            command_failed = True
-            raise
-        finally:
-            try:
-                await self._send_stop()
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send preset release", exc_info=True)
-                if not command_failed:
-                    raise
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Run a motor command and clear any preset it successfully interrupts."""
-        async with self.releasing(lambda: self._send_stop()):
+        async with self.releasing(self._send_stop):
             pulse_count, pulse_delay = self.motor_pulse_settings()
             await self.write_command(
                 command,

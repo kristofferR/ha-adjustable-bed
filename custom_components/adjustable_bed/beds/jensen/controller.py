@@ -36,6 +36,7 @@ from ...state_keys import (
 )
 from ..base import BedController
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..entity_specs import POSITION_UNIT_PERCENT, PositionNumberSpec, build_position_number_spec
 from ..lifecycle import CapabilitySnapshotPolicy
 
@@ -638,7 +639,7 @@ class JensenController(BedController):
                 self._coordinator.address,
                 _MOVEMENT_FEEDBACK_TIMEOUT_SECONDS,
             )
-            await asyncio.shield(self._send_stop())
+            await settled(self._send_stop())
 
     async def _read_settled_positions(self, cancel_event: asyncio.Event) -> None:
         """Query positions until two consecutive replies agree.
@@ -678,7 +679,7 @@ class JensenController(BedController):
             await self._monitor_movement()
         except BaseException:
             try:
-                await asyncio.shield(self._send_stop())
+                await settled(self._send_stop())
             except (BleakError, ConnectionError):
                 _LOGGER.debug("Failed to send Jensen STOP after an interrupted move")
             raise

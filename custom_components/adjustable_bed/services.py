@@ -927,6 +927,9 @@ async def handle_stop_all(call: ServiceCall) -> None:
     # STOP is a safety action: attempt every bed that resolves before surfacing
     # an error, so one bad target never leaves another bed still moving.
     problems: list[BaseException] = []
+    if explicit_side not in (None, SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH):
+        problems.append(invalid("side_unavailable"))
+        explicit_side = SIDE_BOTH
     targets, _missing = _resolve_sided_targets(hass, device_ids, explicit_side, problems=problems)
 
     async def _stop_one(coordinator: BedTarget, side: str) -> None:
@@ -3078,10 +3081,11 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_STOP_ALL,
         handle_stop_all,
+        # Any side string: the handler stops the whole bed for one it cannot honour.
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                **SIDE_FIELD,
+                vol.Optional(ATTR_SIDE): cv.string,
             }
         ),
     )
@@ -3209,7 +3213,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_generate_support_bundle,
         schema=vol.Schema(
             {
-                vol.Exclusive(CONF_DEVICE_ID, "target"): cv.ensure_list,
+                vol.Exclusive(CONF_DEVICE_ID, "target"): DEVICE_IDS,
                 vol.Exclusive(ATTR_TARGET_ADDRESS, "target"): cv.string,
                 vol.Optional(ATTR_CAPTURE_DURATION, default=DEFAULT_CAPTURE_DURATION): vol.All(
                     vol.Coerce(int),

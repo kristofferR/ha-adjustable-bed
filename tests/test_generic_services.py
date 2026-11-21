@@ -123,14 +123,14 @@ async def test_no_action_accepts_an_empty_device_list(hass: HomeAssistant) -> No
     await async_register_services(hass)
     accepting = []
     for name, service in hass.services.async_services()[DOMAIN].items():
+        assert service.schema is not None
         try:
             service.schema({"device_id": []})
         except vol.MultipleInvalid as err:
             if any(error.path[:1] == ["device_id"] for error in err.errors):
                 continue
         accepting.append(name)
-    # The support bundle takes a device or an address and reports a missing one.
-    assert accepting == ["generate_support_bundle"]
+    assert accepting == []
 
 
 async def test_hold_control_runs_a_declared_control(hass: HomeAssistant, resolve) -> None:

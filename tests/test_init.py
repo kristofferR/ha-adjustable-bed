@@ -1533,14 +1533,19 @@ class TestServices:
 
         stop.assert_awaited_once_with()
 
+    @pytest.mark.parametrize(
+        ("side", "error"), [("left", "side_not_supported"), ("middle", "side_unavailable")]
+    )
     async def test_stop_all_with_a_side_stops_a_single_bed_whole(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
         enable_custom_integrations,
+        side: str,
+        error: str,
     ):
-        """A side a single bed lacks stops the whole bed, then reports the side."""
+        """A side the bed cannot honour stops the whole bed, then reports the side."""
         from homeassistant.exceptions import ServiceValidationError
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -1552,12 +1557,12 @@ class TestServices:
 
         with (
             patch.object(coordinator, "async_stop_command", new=AsyncMock()) as stop,
-            raises_key("side_not_supported", ServiceValidationError),
+            raises_key(error, ServiceValidationError),
         ):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_STOP_ALL,
-                {"device_id": [device_id], "side": "left"},
+                {"device_id": [device_id], "side": side},
                 blocking=True,
             )
 
