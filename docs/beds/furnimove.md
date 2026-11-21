@@ -167,7 +167,7 @@ FurniMove connections and setup verification wait for live GATT service
 discovery before starting subscriptions. A cached BlueZ service collection can
 otherwise arrive before its characteristic objects exist, producing
 `org.freedesktop.DBus.Error.UnknownObject` on reads and notifications. This fixes
-the race observed in #633, but does not establish the cause of a link that
+the race observed in #633, but does not explain a link that
 disconnects before service discovery completes.
 
 ### Home Assistant setup
@@ -191,7 +191,7 @@ FurniMove handset. For a bed using another app, choose that app through
 After upgrading, every legacy **RF ECO BT single actuator** entry without an
 explicit staircase confirmation receives a fixable warning under **Settings →
 System → Repairs**, even if connection fails. A saved count of one motor does
-not establish the product. The repair offers these choices:
+not identify the product. The repair offers these choices:
 
 - **FurniMove adjustable bed:** choose the exact handset layout, restoring the
   selected axes. Every captured FurniMove handset is listed.

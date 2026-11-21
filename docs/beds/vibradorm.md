@@ -1276,7 +1276,7 @@ profile shipped in
 | Automatic generic layout from control-version metadata | Not supported: the metadata does not identify the app's remote. All fourteen VMAT remotes are selectable. |
 
 The requested MC4-MD08 retest remains deferred physical validation for its
-owner after release. The accepted app implementation does not prove that
+owner after release. Following the app does not by itself mean that
 [issue #162](https://github.com/kristofferR/ha-adjustable-bed/issues/162) is fixed
 or that a particular controller reports positions. 
 

@@ -253,7 +253,7 @@ STOP arrives, up to 30 s, then sends the same STOP. The Keeson-framed
 ### Vectors
 
 `tests/malouf_vectors.py` freezes each profile's single frames: the app profiles
-take every reachable literal of their apps, and `malouf_new_okin`
+take every frame their apps send, and `malouf_new_okin`
 every frame its pre-v5 controller sent. `tests/test_malouf_vectors.py` proves
 each literal round-trips through the codec and that each profile sends exactly
 its frozen frames.

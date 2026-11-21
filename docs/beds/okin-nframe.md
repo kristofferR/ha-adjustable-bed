@@ -3639,7 +3639,7 @@ repair with a guided **Fix** button. ESPHome Bluetooth proxies can pair only on
 ESPHome ≥ 2024.3.0; a local adapter near the bed is the most reliable for the
 first bond.
 
-Nectar Move's accepted app has no app-issued bond request or authentication
+Nectar Move's app has no app-issued bond request or authentication
 gate, so its profile skips proactive pairing. Home Assistant still routes an
 actual GATT authentication failure through the existing bond-recovery repair.
 That repair, with its **Pair Now** action, stays until a later connection
@@ -5044,8 +5044,8 @@ consumers. Raw replies still appear in support bundles.
 - [Issue #670](https://github.com/kristofferR/ha-adjustable-bed/issues/670)
   reports working numbered memory controls before 4.1.0, so their loss is a
   compatibility regression requiring the previous working bed type/variant,
-  exact recall/save buttons and current diagnostics. The accepted app report
-  alone supplies no numbered-memory save sequence; named preset saves above
+  exact recall/save buttons and current diagnostics. The app has no
+  numbered-memory save sequence; named preset saves above
   must not be presented as equivalent replacements or guessed numbered-slot
   mappings.
 - Not exposed: the app's speech-recognition commands (the same frames are
