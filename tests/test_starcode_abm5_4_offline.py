@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4
 from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import SELECTORS
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.errors import BedNotConnectedError
 from tests.test_starcode_abm5_4 import make_controller
 
 POSITIVE = frozenset(("BOX1220", "BOX3633", "BOX25", "BOX25_STAR"))
@@ -225,6 +226,6 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
             for key, entity_id in first.items()
             if key.endswith("_starcode_abm5_4_save_tv")
         )
-        with pytest.raises(ConnectionError, match="Not connected"):
+        with pytest.raises(BedNotConnectedError):
             await hass.services.async_call("button", "press", {"entity_id": save_id}, blocking=True)
         assert await hass.config_entries.async_unload(entry.entry_id)

@@ -491,12 +491,6 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
                 direction,
             )
-        except Exception:
-            _LOGGER.exception(
-                "Failed to move cover %s",
-                self.entity_description.key,
-            )
-            raise
         finally:
             # Only clear state if no newer movement has started
             if self._movement_generation == current_generation:
@@ -528,9 +522,6 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self._motor_resource if motor_scoped else "motor:*",
                 stream_member=motor_scoped,
             )
-        except Exception:
-            _LOGGER.exception("Failed to stop cover %s", self.entity_description.key)
-            raise
         finally:
             # Only clear state if no newer movement has started since stop was called
             if self._movement_generation == stop_generation:
