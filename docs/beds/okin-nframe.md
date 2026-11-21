@@ -4734,7 +4734,7 @@ Detection: none. Choose **Adjustable bed app** explicitly for this app, rather t
 
 `auto` lowercases the raw Bluetooth name: `okin` selects `36_33_04a`; `star` starts at `25_42_02` and switches to `35_22_01` only for exactly the four bytes `STAR` read from Device Information manufacturer 180A/2A29. Advertisement manufacturer data is not that read. Other names need an explicit variant. Each paired receiver owns its variant; no packet selects a split side. A fixed STAR-table variant is available for a known table.
 
-P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with response, as in the Lumbar transport table. An absent Device Information service aborts setup for either name. P3 also aborts on an absent manufacturer characteristic; P1 allows that missing characteristic and retains P1. This read is a selector, not bonding, authentication, or a proven firmware requirement. Home Assistant awaits it and fixes selection per connection, avoiding the app's asynchronous global asset/read race. A failed read retains the name-selected table as a deliberate integration fallback, not a claim about the app's error handling.
+P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with response, as in the Lumbar transport table. An absent Device Information service aborts setup for either name. P3 also aborts on an absent manufacturer characteristic; P1 allows that missing characteristic and retains P1. This read is a selector, not bonding, authentication, or a known firmware requirement. Home Assistant awaits it and fixes selection per connection, avoiding the app's asynchronous global asset/read race. A failed read retains the name-selected table as a deliberate integration fallback, not a claim about the app's error handling.
 
 #### Controls
 
@@ -4747,7 +4747,7 @@ P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with res
 | Light | Toggle |
 | Positions / numbered memory / side packets | None in this app |
 
-Covers and the preset, save, wave, intensity and light buttons use the touch route. The **Voice: …** buttons (diagnostic, disabled by default) send the commands the app's voice control sends, without speech recognition. On P2, the lumbar cover uses that dispatcher too: ordinary lumbar declarations are unreachable. No explicit light-on/off, brightness, color, numbered memory or alarm controls are inferred from unused declarations.
+Covers and the preset, save, wave, intensity and light buttons use the touch route. The **Voice: …** buttons (diagnostic, disabled by default) send the commands the app's voice control sends, without speech recognition. On P2, the lumbar cover uses that dispatcher too: the ordinary lumbar declarations are unused. No explicit light-on/off, brightness, color, numbered memory or alarm controls are inferred from unused declarations.
 
 Long tables use the N-frame encoder. The STAR-manufacturer table uses the [Okin 5A encoder](okin-5a.md), with no checksum despite the asset flag. The generated table contains the app's ordinary and speech packets and raw query:
 
