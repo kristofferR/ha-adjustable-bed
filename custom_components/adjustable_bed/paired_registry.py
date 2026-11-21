@@ -27,7 +27,6 @@ from .const import (
 )
 from .errors import failed
 from .paired_devices import async_restore_full_device
-from .position_estimate import async_migrate_entry_store, estimate_bed_keys
 from .pairing import (
     KEY_ABSORBED_ENTRY_ID,
     KEY_ORIGIN_SOURCE,
@@ -38,6 +37,7 @@ from .pairing import (
     iter_children,
     standalone_config_after_split,
 )
+from .position_estimate import async_migrate_entry_store, estimate_bed_keys
 from .profile_review import carry_profile_review
 
 _LOGGER = logging.getLogger(__name__)
