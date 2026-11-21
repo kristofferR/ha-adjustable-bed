@@ -186,29 +186,16 @@ class VibradormController(BedController):
     @property
     def _uses_app_strict_command_path(self) -> bool:
         """Return True for variants where the OEM app only drives movement via 0x1526."""
-        model = getattr(self._coordinator, "_ble_model", None)
+        model = self._coordinator.ble_model
         if not model:
             return False
-        return str(model).strip().lower() == _VMAT_BASIC_RF_CBI_MODEL
+        return model.strip().lower() == _VMAT_BASIC_RF_CBI_MODEL
 
     def _command_uuid_candidates(self) -> tuple[str, ...]:
         """Return command UUIDs to probe for the connected VMAT variant."""
         if self._uses_app_strict_command_path:
             return (VIBRADORM_COMMAND_CHAR_UUID,)
         return VIBRADORM_COMMAND_UUID_CANDIDATES
-
-    @property
-    def _detected_model(self) -> str | None:
-        """Return the discovered BLE model when available."""
-        model = getattr(self._coordinator, "_ble_model", None)
-        if model:
-            return str(model)
-        get_model = getattr(self._coordinator, "_get_model", None)
-        if callable(get_model):
-            resolved_model = get_model()
-            if resolved_model:
-                return str(resolved_model)
-        return None
 
     def _refresh_characteristics(self, *, force: bool = False) -> None:
         """Resolve runtime UUIDs for VMAT variants from discovered services."""
@@ -270,7 +257,7 @@ class VibradormController(BedController):
                 "uses 0x1526 only",
                 VIBRADORM_COMMAND_CHAR_UUID,
                 self._coordinator.address,
-                self._detected_model,
+                self._coordinator.ble_model,
             )
         elif selected_command_char is None:
             excluded_uuids = self._uuid_alias_set(
@@ -617,7 +604,7 @@ class VibradormController(BedController):
                 "Skipping VMAT CmdGetStatusMotMon for %s (model %s does not use app-backed "
                 "position feedback)",
                 self._coordinator.address,
-                self._detected_model,
+                self._coordinator.ble_model,
             )
             return
 

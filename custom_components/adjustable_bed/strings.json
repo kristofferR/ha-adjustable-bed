@@ -10174,6 +10174,9 @@
     "pairlink_not_ready": {
       "message": "{device_name} is not ready over Pairlink yet. Wait a moment, then try again."
     },
+    "bed_combining": {
+      "message": "This bed is being combined with another bed. Wait until that finishes, then try again."
+    },
     "bed_unavailable": {
       "message": "Could not connect to {device_name}. Check that it is powered and in range, then try again."
     },

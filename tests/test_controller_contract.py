@@ -145,6 +145,7 @@ class _FactoryCoordinator(SimpleNamespace):
             address="AA:BB:CC:DD:EE:FF",
             name="Contract Test Bed",
             ble_device_name="Contract Test Bed",
+            ble_model=None,
             motor_count=2,
             has_massage=False,
             disable_angle_sensing=True,
