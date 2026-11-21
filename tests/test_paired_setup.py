@@ -2437,7 +2437,8 @@ class TestPairBedsConversion:
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """A split that rolls back leaves the moved button row as it was (PLAT-1)."""
+        """A split that rolls back leaves the moved button row as it was, and a
+        split of a pair that is not loaded still moves it (PLAT-1)."""
         from custom_components.adjustable_bed import position_estimate as pe
 
         ent_reg = er.async_get(hass)
@@ -2492,6 +2493,19 @@ class TestPairBedsConversion:
         assert after.device_id == before.device_id
         restored_pair = hass.config_entries.async_get_entry(pair.entry_id)
         assert restored_pair is not None and restored_pair.state == ConfigEntryState.LOADED
+
+        # As after a failed reload: no estimates are loaded for the pair.
+        await hass.config_entries.async_unload(pair.entry_id)
+        await async_unpair_entry(hass, pair)
+        await hass.async_block_till_done()
+        moved = ent_reg.async_get("button.my_reading")
+        assert moved is not None
+        assert (moved.id, moved.unique_id, moved.config_entry_id, moved.disabled_by) == (
+            before.id,
+            f"{LEFT_ADDR}_saved_position_{position_id}",
+            left.entry_id,
+            er.RegistryEntryDisabler.USER,
+        )
 
     async def test_split_keeps_current_connection_preferences(
         self,

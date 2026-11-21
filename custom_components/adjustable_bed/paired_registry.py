@@ -37,7 +37,11 @@ from .pairing import (
     iter_children,
     standalone_config_after_split,
 )
-from .position_estimate import async_migrate_entry_store, estimate_bed_keys, position_estimates
+from .position_estimate import (
+    async_migrate_entry_store,
+    async_one_side_positions,
+    estimate_bed_keys,
+)
 from .profile_review import carry_profile_review
 
 _LOGGER = logging.getLogger(__name__)
@@ -535,19 +539,6 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
         occupied_entry_ids.add(single.entry_id)
         occupied_unique_ids.add(unique_id)
 
-    # Saved positions of one side, by id, with that side's address; unloading
-    # stores them under these ids.
-    estimates = position_estimates(hass, entry.entry_id)
-    one_side_positions = (
-        {
-            position.id: bed.address
-            for position in estimates.positions
-            if len(position.targets) == 1
-            and (bed := estimates.bed_for_key(next(iter(position.targets)))) is not None
-        }
-        if estimates is not None
-        else {}
-    )
     unloaded = await hass.config_entries.async_unload(entry.entry_id)
     if not unloaded:
         raise failed("pair_change_failed", reason="Could not unload the paired bed before unpairing")
@@ -560,6 +551,13 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             hass, entry.entry_id, estimate_bed_keys(entry.data)
         ):
             raise failed("pair_change_failed", reason="Could not move the estimated positions")
+        # Saved positions of one side keep their buttons below. Read from the
+        # stores, so this also holds for a pair that is not loaded.
+        one_side_positions = await async_one_side_positions(
+            hass,
+            entry.entry_id,
+            [(str(child.get(CONF_ADDRESS)), child.get(CONF_SIDE)) for child in children],
+        )
         for child in children:
             device = dr.async_get(hass).async_get_child_device_by_identifier(
                 (DOMAIN, child.get(CONF_ADDRESS, "")), entry.entry_id,

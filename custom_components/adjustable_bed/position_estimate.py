@@ -449,17 +449,20 @@ class PositionEstimates:
                             estimate.confirmed = True
                             estimate.reason = None
                         bed.motors[motor] = estimate
-            stored_positions = stored.get("positions")
-            if isinstance(stored_positions, list):
-                for item in stored_positions:
-                    # Each address stores its own motors' targets of a position.
-                    part = (
-                        SavedPosition.restored({**item, "targets": {bed.key: item.get("targets")}})
-                        if isinstance(item, dict)
-                        else None
-                    )
-                    if part is not None and part.targets:
-                        self._add_position_part(part, bed.address)
+            self._load_positions(bed, stored)
+
+    def _load_positions(self, bed: BedEstimate, stored: Mapping[str, Any]) -> None:
+        stored_positions = stored.get("positions")
+        if isinstance(stored_positions, list):
+            for item in stored_positions:
+                # Each address stores its own motors' targets of a position.
+                part = (
+                    SavedPosition.restored({**item, "targets": {bed.key: item.get("targets")}})
+                    if isinstance(item, dict)
+                    else None
+                )
+                if part is not None and part.targets:
+                    self._add_position_part(part, bed.address)
 
     def _add_position_part(self, part: SavedPosition, address: str) -> None:
         """Add one bed's part of a saved position.
@@ -711,6 +714,25 @@ async def async_unload_position_estimates(hass: HomeAssistant, entry_id: str) ->
     manager = _registry(hass).pop(entry_id, None)
     if manager is not None:
         await manager.async_unload()
+
+
+async def async_one_side_positions(
+    hass: HomeAssistant, entry_id: str, beds: Iterable[tuple[str, str | None]]
+) -> dict[str, str]:
+    """Saved positions of one bed or side, by id, with its address.
+
+    Reads the beds' stores as a load would, so it needs no loaded entry; the
+    entry must be unloaded, which saves its positions under these ids.
+    """
+    manager = PositionEstimates(hass, entry_id, beds)
+    for bed in manager.beds.values():
+        manager._load_positions(bed, await manager._stores[bed.address].async_load() or {})
+    return {
+        position.id: bed.address
+        for position in manager.positions
+        if len(position.targets) == 1
+        and (bed := manager.bed_for_key(next(iter(position.targets)))) is not None
+    }
 
 
 async def async_remove_position_estimates(
