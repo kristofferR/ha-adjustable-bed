@@ -860,14 +860,15 @@
       "symphony_profile": "Choose the Symphony Sleep Sense product the app shows.",
       "symphony_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides.",
       "bedgear_profile": "Enter the bed's Bluetooth name exactly as the Bedgear app shows it. It contains HHC.",
-      "invalid_movement_per_tap": "Enter a number from 1 to 100.",
+      "invalid_movement_per_tap": "Enter a whole number of 1 or more.",
       "cheerssleep_model_required": "Choose the bed model the CheersSleep app shows.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
       "l2motion_profile": "Enter the bed's Bluetooth name exactly as L2 Motion shows it.",
       "pair_bed_missing": "One of the chosen beds is no longer set up. Choose two beds from the list.",
       "octo_tv_lift_pairing_unsupported": "A one-motor Octo TV or bed lift cannot have Left and Right controls. Keep it as a single bed.",
       "invalid_angle": "Enter an angle greater than 0 and up to 180 degrees.",
-      "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row."
+      "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
+      "invalid_idle_seconds": "Enter a number of seconds from 1 to 300."
     }
   },
   "options": {
@@ -1633,13 +1634,14 @@
       "apex_remote_code": "This remote code is not supported. Check the capital letters and spaces against the label.",
       "symphony_profile": "Choose the Symphony Sleep Sense product the app shows.",
       "symphony_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides.",
-      "invalid_movement_per_tap": "Enter a number from 1 to 100.",
+      "invalid_movement_per_tap": "Enter a whole number of 1 or more.",
       "rmcontrol_needs_reconfigure": "This product needs another bed model or remote. Change that in Reconfigure first, then choose the product here.",
       "rmcontrol_needs_reconfigure_paired": "This product needs another bed model or remote. Separate the combined bed, change the affected bed in Reconfigure, then combine them again.",
       "cheerssleep_model_required": "Choose the bed model the CheersSleep app shows.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
       "invalid_variant_for_bed_type": "This bed model or remote does not fit the chosen app. Choose another one, or Automatic.",
-      "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row."
+      "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
+      "invalid_idle_seconds": "Enter a number of seconds from 1 to 300."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
