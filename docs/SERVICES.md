@@ -81,7 +81,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_rise`](#richmat_rise) | Luuna Rise and Power Cool: settings | Sets the light and massage timer of a Luuna Rise or Power Cool bed. Set its alarm with Set alarm. Light settings need the bed to report them first. |
 | [`mline_command`](#mline_command) | M Line: settings | Sets sleep privacy or anti-snore, reads the current settings or alarm, or downloads sleep history. |
 | [`mlily`](#mlily) | MLILY: settings | Sets the alarm, light, massage and anti-snore options of an MLILY bed, or reads and sets its separate sleep sensor. |
-| [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, as listed in the bed's diagnostics. Saving, clearing, resetting and changing modules need confirmation. |
+| [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the names; for the modular TL products, the bed's diagnostics do. Saving, clearing, resetting and changing modules need confirmation. |
 | [`motion_bed_air_setting`](#motion_bed_air_setting) | Motion Bed: air settings | Reads or saves the air strength and optional timer of one air mode. |
 | [`motion_bed_audio`](#motion_bed_audio) | Motion Bed: audio | Select a track, preview a track, or set volume on a target that reports audio support. |
 | [`motion_bed_calibration`](#motion_bed_calibration) | Motion Bed: calibrate sleep sensing | Save the app’s flat and side calibration readings. Confirm before changing calibration. |
@@ -1003,7 +1003,7 @@ buttons for everyday controls and `hold_control` for held buttons. See the
 | Field | Name | Meaning |
 |-------|------|---------|
 | `operation` | Operation | What to set or read. A product with repeating alarms has no one-time alarm, and the other way round. One of `single` (One-time alarm), `cancel_single` (Cancel one-time alarm), `repeat` (Repeating alarm), `delete` (Delete alarm), `query` (Read current settings), `toggle` (Turn alarm on or off), `sync` (Set bed clock), `light_timeout` (Light timer), `light_color` or `mode`. |
-| `action` | Alarm action | For a one-time or repeating alarm: what the alarm does, one of your product's alarm actions listed in the bed's diagnostics. |
+| `action` | Alarm action | For a one-time or repeating alarm: what the alarm does, an alarm action such as zero_gravity from your product's list in the Richmat guide. |
 | `time` | Time | For a one-time or repeating alarm: when it goes off, in whole minutes. |
 | `alarm_id` | Alarm number | Alarm number, 1 to 7. Delete and Turn on or off need a number the bed has reported. For a repeating alarm, leave it unset only to reuse a number deleted during this Bluetooth connection. |
 | `weekdays` | Weekdays (empty means once) | For a repeating alarm: the days it repeats. Leave empty for once. Any of `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday` or `sunday`. |
@@ -1152,7 +1152,7 @@ buttons work as in the app. See the [KomfyD and ComfyDS guide](beds/kaidi.md#kom
 | `intensity` | Intensity (%) | For Set fan: 0 to 100 percent in steps of 20. |
 | `duration` | Fan duration | For Set fan: duration choice 0 to 6, required for either fan. Only the head fan uses it. |
 | `confirm` | Confirm programming or saving | Required for a control's long press or save. |
-| `control` | Control | For Run control: the control's node number in your bed's remote layout, as listed in the bed's diagnostics. |
+| `control` | Control | For Run control: the control's number in your bed's remote layout, from the layout's list in the Richmat guide. |
 | `mode` | Control mode | For Run control: the layout's control mode, 0 to 2, one your layout offers. Default 0. |
 | `long` | Long press | For Run control: send the control's long press. Needs Confirm. |
 | `held` | Continuous movement | For Run control: hold the control for the movement duration. Controls that repeat on their own, such as motor movement, run for the duration without it. |
@@ -1508,12 +1508,12 @@ anti-snore movement runs on the left.
 ## Motion Bed
 
 <a id="motion_bed_action"></a>
-**`motion_bed_action`**: Run a control by its name, as listed in the bed's diagnostics. Saving, clearing, resetting and changing modules need confirmation.
+**`motion_bed_action`**: Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the names; for the modular TL products, the bed's diagnostics do. Saving, clearing, resetting and changing modules need confirmation.
 
 | Field | Name | Meaning |
 |-------|------|---------|
 | `confirmed` | Confirm stored change | Required for saving, clearing, resetting and changing modules. |
-| `action` | Action | Name of the control to run, as listed in the bed's diagnostics. |
+| `action` | Action | Name of the control to run, from the Motion Bed guide. For the modular TL products, the bed's diagnostics list the names. |
 | `branch` | Preset step | For a preset you can program: recall it, save the current position to it, or clear it. Default recall. One of `app`, `save` or `clear`. |
 | `duration` | Duration | How long a movement control runs, 0.01 to 10 seconds. Default 1. |
 
@@ -1893,7 +1893,7 @@ part of the integration.
 | Field | Name | Meaning |
 |-------|------|---------|
 | `operation` | Operation | What to set or read. One of `query` (Read current settings), `alarm` (One-time alarm), `cancel_alarm`, `rgb` (Light color), `lamp_slider` (Lamp brightness), `lamp_save` (Save lamp setting), `aroma`, `massage_timer`, `massage_popup` (Massage menu), `desk_target` (Desk target height), `desk_unit` (Desk height unit), `desk_recall` or `desk_reset`. |
-| `action` | Alarm action | For One-time alarm: what the alarm does, one of the alarm actions listed in the bed's diagnostics, such as node_1. |
+| `action` | Alarm action | For One-time alarm: what the alarm does, a name such as node_1. The Richmat guide lists the names for the common layouts; for other layouts, the bed's diagnostics do. |
 | `time` | Alarm time | For One-time alarm: the time it goes off, at its next occurrence, in whole minutes. |
 | `minutes` | Lamp minutes | For Lamp brightness and Save lamp setting: minutes, 0 to 15. |
 | `rgb_color` | Light color | For Light color: the color. |

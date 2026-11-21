@@ -7784,7 +7784,7 @@
         },
         "action": {
           "name": "Alarm action",
-          "description": "For a one-time or repeating alarm: what the alarm does, one of your product's alarm actions listed in the bed's diagnostics."
+          "description": "For a one-time or repeating alarm: what the alarm does, an alarm action such as zero_gravity from your product's list in the Richmat guide."
         },
         "time": {
           "name": "Time",
@@ -8222,7 +8222,7 @@
     },
     "motion_bed_action": {
       "name": "Motion Bed: run control",
-      "description": "Run a control by its name, as listed in the bed's diagnostics. Saving, clearing, resetting and changing modules need confirmation.",
+      "description": "Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the names; for the modular TL products, the bed's diagnostics do. Saving, clearing, resetting and changing modules need confirmation.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -8238,7 +8238,7 @@
         },
         "action": {
           "name": "Action",
-          "description": "Name of the control to run, as listed in the bed's diagnostics."
+          "description": "Name of the control to run, from the Motion Bed guide. For the modular TL products, the bed's diagnostics list the names."
         },
         "branch": {
           "name": "Preset step",
@@ -8752,7 +8752,7 @@
         },
         "action": {
           "name": "Alarm action",
-          "description": "For One-time alarm: what the alarm does, one of the alarm actions listed in the bed's diagnostics, such as node_1."
+          "description": "For One-time alarm: what the alarm does, a name such as node_1. The Richmat guide lists the names for the common layouts; for other layouts, the bed's diagnostics do."
         },
         "time": {
           "name": "Alarm time",
@@ -9864,7 +9864,7 @@
         },
         "control": {
           "name": "Control",
-          "description": "For Run control: the control's node number in your bed's remote layout, as listed in the bed's diagnostics."
+          "description": "For Run control: the control's number in your bed's remote layout, from the layout's list in the Richmat guide."
         },
         "mode": {
           "name": "Control mode",
