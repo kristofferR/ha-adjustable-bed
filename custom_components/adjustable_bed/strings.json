@@ -1464,7 +1464,7 @@
       },
       "estimated_positions": {
         "title": "Estimated positions",
-        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate.{not_offered}\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
         "data": {
           "back": "Back",
           "legs": "Legs",
@@ -1476,12 +1476,13 @@
         },
         "data_description": {
           "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
-          "acknowledge": "Required to turn estimated positions on."
+          "acknowledge": "Required to turn estimated positions on.",
+          "not_offered": "These motors cannot be estimated on this bed: {motors}."
         }
       },
       "left_estimated_positions": {
         "title": "Estimated positions, left side",
-        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate.{not_offered}\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
         "data": {
           "back": "Back",
           "legs": "Legs",
@@ -1498,7 +1499,7 @@
       },
       "right_estimated_positions": {
         "title": "Estimated positions, right side",
-        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate. Not offered: {not_offered} (no proven stop for these motors).\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
+        "description": "Estimate motor positions from calibrated movement time. This bed cannot report its position, so the values are estimates, not measurements.\n\nChoose the motors to estimate.{not_offered}\n\nEstimates drift with load and after many short moves. Moves made with the remote or the bed's app are not seen. After a restart you confirm the position before saved positions work. Clear every motor to turn estimated positions off.",
         "data": {
           "back": "Back",
           "legs": "Legs",
