@@ -72,9 +72,10 @@ Changing what is discovered needs evidence and its own change.
 ## A new bed
 
 Discovery and the device list use `detect_new_bed()`. When nothing but shared
-services (and standard Bluetooth services) led to a bed type, with no matched
-name or manufacturer record, a device without a name is not offered, and one
-with a name is offered as uncertain: the flow then says it may not be a bed.
+services (and standard Bluetooth services) led to a bed type, with no declared
+name or manufacturer hint matched and no `name:` signal from a detection name
+rule, a device without a name is not offered, and one with a name is offered
+as uncertain: the flow then says it may not be a bed.
 Reviews of a configured bed's route use `detect_bed_type_detailed()`, without
 that rule. A new bed is saved under the current route, never a compatibility
 ID such as `dewertokin`; entries that already have one keep it.
