@@ -1495,6 +1495,74 @@ class TestServices:
         # Verify command was sent
         mock_bleak_client.write_gatt_char.assert_called()
 
+    async def test_stop_all_stops_a_loaded_bed_when_another_is_not_loaded(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A bed in setup retry is reported only after every other bed got its STOP."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_registry = dr.async_get(hass)
+        loaded_id = dr.async_entries_for_config_entry(
+            device_registry, mock_config_entry.entry_id
+        )[0].id
+        retrying = MockConfigEntry(
+            domain=DOMAIN, data=dict(mock_config_entry.data), unique_id="AA:BB:CC:DD:EE:01"
+        )
+        retrying.add_to_hass(hass)
+        retrying_id = device_registry.async_get_or_create(
+            config_entry_id=retrying.entry_id, identifiers={(DOMAIN, "AA:BB:CC:DD:EE:01")}
+        ).id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+
+        with (
+            patch.object(coordinator, "async_stop_command", new=AsyncMock()) as stop,
+            pytest.raises(ServiceValidationError),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_STOP_ALL,
+                {"device_id": [retrying_id, loaded_id]},
+                blocking=True,
+            )
+
+        stop.assert_awaited_once_with()
+
+    async def test_stop_all_with_a_side_stops_a_single_bed_whole(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A side a single bed lacks stops the whole bed, then reports the side."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_id = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )[0].id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+
+        with (
+            patch.object(coordinator, "async_stop_command", new=AsyncMock()) as stop,
+            raises_key("side_not_supported", ServiceValidationError),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_STOP_ALL,
+                {"device_id": [device_id], "side": "left"},
+                blocking=True,
+            )
+
+        stop.assert_awaited_once_with()
+
     async def test_linak_simultaneous_move_service_uses_combined_opcode_and_release(
         self,
         hass: HomeAssistant,
