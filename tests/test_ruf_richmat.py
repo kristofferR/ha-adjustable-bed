@@ -671,3 +671,68 @@ async def test_set_alarm_calendar_needs_an_explicit_wake_action(hass):
     with pytest.raises(ServiceValidationError, match="Choose a wake action"):
         await call_set_alarm(hass, c, {"enabled": True, "time": "07:00:00", "slot": 1})
     c.ruf_richmat_alarm.assert_not_awaited()
+
+
+def _timer_layout(kind: str, app: str, model: str):
+    """A Richmat MH-family controller of one controller kind on a model's first page."""
+    if kind == "bedtech":
+        from tests.test_bedtech_classic import make as make_bedtech
+
+        return make_bedtech(model)
+    if kind == "app":
+        from tests.test_richmat_nisco_supreme import make as make_app
+
+        return make_app(app, model)
+    if kind == "ruf":
+        return make(app, model)
+    from tests.test_richmat_mh import W1
+    from tests.test_richmat_mh import make as make_mh
+
+    c = make_mh(app, None, variant=f"model_{model}")
+    c._write_char = SimpleNamespace(uuid=W1[1], properties=["write"], handle=1)
+    return c
+
+
+TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"], ["6e010061d0", "6e01006edd"]
+
+
+# Running every timer button and the select on all 4,104 Richmat MH-family
+# layout pages gives 8 groups by the frames and delays they send; one layout of
+# each group is pinned here. The frames are what the buttons sent.
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "sent", "stop_after"),
+    [
+        ("mh", "revive", "farm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "wsilver2", "6hrm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "bailey2", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.1),
+        ("app", "nisco", "6hrm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("app", "nisco", "aerm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.15),
+        ("app", "nisco", "mlrm", {10: TEN, 30: THIRTY}, 0.12),
+        ("app", "nisco", "ygrm", {10: TEN, 20: TWENTY}, 0.12),
+        ("bedtech", "bedtech_classic", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+    ],
+)
+async def test_massage_timer_select_sends_what_its_buttons_sent(delays, kind, app, model, sent, stop_after):
+    c = _timer_layout(kind, app, model)
+    assert c.massage_timer_options == sorted(sent) and not c.massage_timer_can_turn_off
+    keys = {spec.key for spec in c.controller_button_specs}
+    assert not {f"richmat_mh_{code:02x}" for code in c._massage_timer_codes.values()} & keys
+    for minutes, expected in sent.items():
+        fresh = _timer_layout(kind, app, model)
+        delays.clear()
+        await fresh.set_massage_timer(minutes)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
+
+
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "button"),
+    [
+        ("app", "nisco", "a9rm", "richmat_mh_5f"),  # 10 minutes only
+        ("app", "nisco", "ilrm", "richmat_mh_61"),  # 30 minutes only
+        ("ruf", "americanstar", "j2rm", "richmat_mh_63"),  # hour timers
+    ],
+)
+def test_a_layout_without_a_minute_timer_choice_keeps_its_buttons(kind, app, model, button):
+    c = _timer_layout(kind, app, model)
+    assert not c.supports_massage_timer
+    assert button in {spec.key for spec in c.controller_button_specs}

@@ -25,7 +25,7 @@ from ..base import BedController
 from ..builder import BuildContext
 from ..entity_specs import ControllerStateSensorSpec
 from .receive import Value
-from .requests import Request
+from .requests import CLOCK_SYNC, SLEEP_CLOCK_SYNC, Request
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -455,7 +455,7 @@ class SleepController(BedController):
                 self._rx, partial(self._notification, client, session=self._session)
             )
             await asyncio.sleep(0.00015)
-            await self.execute_request(Request("sync"))
+            await self.execute_request(Request(CLOCK_SYNC))
             if self.variant == "hj":
                 await self.send("s_part", 12)
         except BaseException:
@@ -495,10 +495,21 @@ class SleepController(BedController):
                 note_frame_written(self._coordinator.cancel_command)
             self._last_write = asyncio.get_running_loop().time()
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    def validate_clock_sync(self) -> None:
+        self.validate_request(Request(SLEEP_CLOCK_SYNC))
+
+    async def sync_clock(self) -> None:
+        # The frames of the action's former sleep_sync operation.
+        await self.execute_request(Request(SLEEP_CLOCK_SYNC))
+
     def validate_request(self, r: Request) -> None:
         if r.operation not in (
-            "sync",
-            "sleep_sync",
+            CLOCK_SYNC,
+            SLEEP_CLOCK_SYNC,
             "sleep_time",
             "sleep_part",
             "sleep_realtime",
@@ -530,7 +541,7 @@ class SleepController(BedController):
         self.validate_request(r)
         op = r.operation
         self._finish_report(self._report_context)
-        if op not in ("sync", "sleep_sync", "sleep_realtime", "sleep_poll"):
+        if op not in (CLOCK_SYNC, SLEEP_CLOCK_SYNC, "sleep_realtime", "sleep_poll"):
             self._cancel_work()
             self.receiver.clear()
         if op == "sleep_cancel":
@@ -551,7 +562,7 @@ class SleepController(BedController):
                 self._coordinator.hass, poll(), name="richmat_app_sleep_poll"
             )
             return
-        if op in ("sync", "sleep_sync"):
+        if op in (CLOCK_SYNC, SLEEP_CLOCK_SYNC):
             now = dt_util.now()
             offset = now.utcoffset()
             value = (

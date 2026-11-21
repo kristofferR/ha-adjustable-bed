@@ -202,8 +202,6 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
         specs: list[ControllerButtonSpec] = []
         for action in (
             *self.profile.adjustments,
-            "massage_on",
-            "massage_off",
             "speech_stop",
             "query_massage",
             "query_alarm",
@@ -245,6 +243,16 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 assumed_state=True,
                 icon="mdi:motion-sensor",
             ),
+            # The app's Massage on and Massage off keys.
+            ControllerSwitchSpec(
+                "superior_sleep_massage",
+                "superior_sleep_massage",
+                lambda c, on: _bed(c).action("massage_on" if on else "massage_off"),
+                state_key=s.MASSAGE,
+                assumed_state=True,
+                icon="mdi:vibrate",
+                card=CARD_MASSAGE,
+            ),
         )
 
     @property
@@ -256,6 +264,7 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 key,
                 "mdi:vibrate",
                 entity_registry_enabled_default=True,
+                entity_category=None,
                 card=CARD_MASSAGE,
             )
             for name, key in (
@@ -405,6 +414,7 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 s.HEAD(None),
                 s.FOOT(None),
                 s.MOTION(None),
+                s.MASSAGE(None),
                 s.ALARM_HOUR(None),
                 s.ALARM_MINUTE(None),
                 s.ALARM_MASK(None),
@@ -618,8 +628,17 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
             )
             return
         sensor = action in ("motion_on", "motion_off")
+        updates = (
+            (s.MOTION(action == "motion_on"),)
+            if sensor
+            else (s.MASSAGE(action == "massage_on"),)
+            if action in ("massage_on", "massage_off")
+            else ()
+        )
         if speech and action not in p.MOTORS and not sensor:
-            await self._burst(link, p.FRAMES[action], cancel)
+            # A spoken massage on or off is what the Massage switch shows.
+            with self.sent_state(*updates, is_current=lambda: self._current(link)):
+                await self._burst(link, p.FRAMES[action], cancel)
             return
         duration = (
             p.MOTION_MS
@@ -632,7 +651,6 @@ class SuperiorSleepController(ProfileExecution[p.SuperiorSleepProfile], OkinNFra
                 else self.leased_hold_ms(self._coordinator.motor_pulse_count * p.REFRESH_MS)
             )
         )
-        updates = (s.MOTION(action == "motion_on"),) if sensor else ()
         loop = asyncio.get_running_loop()
         start = loop.time()
         end_at, next_tick = start + duration / 1000, start
