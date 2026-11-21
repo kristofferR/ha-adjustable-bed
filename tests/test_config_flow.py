@@ -1764,11 +1764,6 @@ class TestBluetoothDiscoveryFlow:
             data=mock_bluetooth_service_info_octo_star2,
         )
 
-        # Any module can advertise the short UUID, so the user confirms Octo first.
-        assert result["step_id"] == "bluetooth_disambiguate"
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"bed_type_choice": BED_TYPE_OCTO}
-        )
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
         result = await _past_app_question(hass, result)

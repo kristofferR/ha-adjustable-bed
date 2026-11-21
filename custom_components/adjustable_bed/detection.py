@@ -567,12 +567,22 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
     )
 
 
-def _rests_on_shared_service(service_uuids: list[str], first: FirstPass) -> bool:
-    """Return whether only shared services, no declared name or maker hint, matched."""
+def _rests_on_shared_service(
+    service_uuids: list[str], first: FirstPass, result: DetectionResult
+) -> bool:
+    """Return whether only shared services led to a bed type.
+
+    A declared name or maker hint confirms the match, as does a name a
+    detection rule recorded (``name:...``, other than an app candidate's).
+    """
     return (
         any(not _is_standard_service(uuid) for uuid in service_uuids)
         and _has_only_generic_uuids(service_uuids)
         and not any(isinstance(hint, NameHint | ManufacturerHint) for hint in first.hints)
+        and not any(
+            signal.startswith("name:") and not signal.endswith("candidate")
+            for signal in result.signals
+        )
     )
 
 
@@ -1417,7 +1427,7 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     first = first_pass(service_info)
     result = _detect_with_first_pass(service_info, first)
     service_uuids = [str(uuid).lower() for uuid in service_info.service_uuids or ()]
-    if result.bed_type is not None and _rests_on_shared_service(service_uuids, first):
+    if result.bed_type is not None and _rests_on_shared_service(service_uuids, first, result):
         if is_mac_like_name(service_info.name):
             return DetectionResult(None, 0.0, ["shared_service:no_name"])
         result.confidence = min(result.confidence, 0.5)
