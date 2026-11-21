@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from custom_components.adjustable_bed import button, switch
 from custom_components.adjustable_bed.beds.sealy.controller import SealyController
 from custom_components.adjustable_bed.codec import okin_5a as codec
 from custom_components.adjustable_bed.controller_state import ControllerState
@@ -17,6 +18,7 @@ from custom_components.adjustable_bed.state_keys import (
     UNDER_BED_LIGHTS_ON,
     massage_intensity,
 )
+from tests.entity_surface import _Runtime
 from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.sealy_vectors import COMMANDS
@@ -144,6 +146,17 @@ async def test_layout_and_startup(layout):
     assert {s.key for s in c.motor_control_specs} == {"head", "feet", "both"}
     assert c.supports_massage and c.supports_lights
     assert all(s.hold is None for s in c.controller_button_specs if s.requires_confirmation)
+
+
+async def test_massage_is_one_switch_without_a_toggle_button():
+    """The Massage switch sends the app's on and off; no toggle button can unsettle it."""
+    c, _, _, _ = await bed()
+    runtime = _Runtime(c)
+    with patch("homeassistant.helpers.entity_registry.async_get", return_value=MagicMock()):
+        buttons = {e.translation_key for e in button._button_entities_for(MagicMock(), runtime)}
+        switches = {e.translation_key for e in switch._switch_entities_for(MagicMock(), runtime)}
+    assert "massage_all_toggle" not in buttons
+    assert "sealy_massage" in switches
 
 
 async def test_finite_public_commands_and_programming():

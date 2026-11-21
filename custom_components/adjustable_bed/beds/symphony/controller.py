@@ -40,6 +40,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..keeson.controller import KeesonController, _wait_unless_cancelled
 from ..lifecycle import ControllerSession
@@ -963,11 +964,10 @@ class SymphonyController(KeesonController):
         ]
         if self.supports_massage:
             specs.append(
-                ControllerStateSensorSpec(
+                massage_timer_sensor_spec(
                     "symphony_massage",
                     "symphony_massage",
                     self._key(k.TIMER),
-                    "mdi:vibrate",
                     attribute_keys=(
                         self._key(k.MASSAGE),
                         self._key(k.WAVE),
@@ -977,7 +977,6 @@ class SymphonyController(KeesonController):
                         self._key(k.PREMIER),
                     ),
                     card=CARD_MASSAGE_TIMER,
-                    entity_registry_enabled_default=True,
                 )
             )
         return tuple(specs)
@@ -1077,7 +1076,7 @@ class SymphonyController(KeesonController):
                     self._massage_received.set()
                 self._old_massage[side] = packet
                 self._publish(k.MASSAGE, massage.running, side)
-                self._publish(k.TIMER, massage.timer_index, side)
+                self._publish(k.TIMER, massage.timer_index * 10, side)
                 self._publish(k.WAVE, massage.wave, side)
                 self._publish(k.HEAD, massage.head, side)
                 self._publish(k.FOOT, massage.foot, side)

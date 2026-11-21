@@ -27,6 +27,7 @@ from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from .controller import KeesonController
 
@@ -180,15 +181,11 @@ class EnsoController(KeesonController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
                 "enso_massage_timer",
                 "enso_massage_timer",
                 MASSAGE_TIMER_MINUTES,
-                "mdi:timer",
-                native_unit_of_measurement="min",
                 card=CARD_MASSAGE_TIMER,
-                entity_registry_enabled_default=True,
-                entity_category=None,
             ),
         )
 

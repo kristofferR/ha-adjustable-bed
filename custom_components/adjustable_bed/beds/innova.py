@@ -40,6 +40,7 @@ from .entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from .keeson.controller import KeesonCommands, KeesonController
 
@@ -559,14 +560,11 @@ class InnovaController(KeesonController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
-                key="innova_massage_timer",
-                translation_key="innova_massage_timer",
-                state_key=STATE_MASSAGE_TIMER,
-                icon="mdi:timer-outline",
-                native_unit_of_measurement="min",
+            massage_timer_sensor_spec(
+                "innova_massage_timer",
+                "innova_massage_timer",
+                STATE_MASSAGE_TIMER,
                 card=CARD_MASSAGE_TIMER,
-                entity_registry_enabled_default=True,
             ),
         )
 

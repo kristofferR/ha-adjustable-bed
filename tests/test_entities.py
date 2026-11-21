@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
@@ -11,6 +12,8 @@ from bleak.exc import BleakError
 from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
@@ -1884,13 +1887,71 @@ class TestButtonEntities:
         coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
         coordinator.async_ensure_connected = AsyncMock(return_value=False)
 
-        with pytest.raises(RuntimeError, match="Failed to connect"):
+        with pytest.raises(HomeAssistantError) as raised:
             await hass.services.async_call(
                 "button",
                 "press",
                 {"entity_id": entity_id},
                 blocking=True,
             )
+        assert raised.value.translation_key == "bed_not_connected"
+
+    @pytest.mark.parametrize(
+        ("domain", "service", "suffix"),
+        [
+            ("button", "press", "_flat"),
+            ("button", "press", "_stop_all"),
+            ("cover", "open_cover", "_head"),
+            ("cover", "stop_cover", "_head"),
+            (DOMAIN, "stop_all", None),
+        ],
+    )
+    async def test_unreachable_bed_raises_translated_error_without_traceback(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+        caplog: pytest.LogCaptureFixture,
+        domain: str,
+        service: str,
+        suffix: str | None,
+    ):
+        """A control or action on a bed that is off or out of range says so plainly.
+
+        The error is Home Assistant's own, translated, and nothing logs a traceback.
+        """
+        del mock_coordinator_connected, enable_custom_integrations
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={**mock_config_entry.data, CONF_BED_TYPE: BED_TYPE_OKIN_CST},
+        )
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        await coordinator.async_disconnect()
+        coordinator.async_ensure_connected = AsyncMock(return_value=False)
+        if suffix is None:
+            [device] = dr.async_entries_for_config_entry(
+                dr.async_get(hass), mock_config_entry.entry_id
+            )
+            data = {"device_id": [device.id]}
+        else:
+            [entity_id] = [
+                state.entity_id
+                for state in hass.states.async_all(domain)
+                if state.entity_id.endswith(suffix)
+            ]
+            data = {"entity_id": entity_id}
+        caplog.clear()
+
+        with pytest.raises(HomeAssistantError) as raised:
+            await hass.services.async_call(domain, service, data, blocking=True)
+
+        assert raised.value.translation_key == "bed_not_connected"
+        assert isinstance(raised.value, ConnectionError)
+        assert not [record for record in caplog.records if record.exc_info]
+        assert not [record for record in caplog.records if record.levelno >= logging.ERROR]
 
 
 class TestSwitchEntities:

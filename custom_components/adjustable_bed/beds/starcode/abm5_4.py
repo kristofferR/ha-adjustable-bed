@@ -48,6 +48,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
+    massage_timer_sensor_spec,
 )
 from .abm5_4_profiles import (
     FIRMWARE_UUID,
@@ -121,7 +122,7 @@ async def _brightness(controller: BedController, value: float) -> None:
 
 
 type _Value = str | int | bool | None
-MASSAGE_TIMER: Final = StateKey[str | None]("starcode_abm5_4_massage_timer")
+MASSAGE_TIMER: Final = StateKey[int | None]("starcode_abm5_4_massage_timer")
 LIGHT_LEVEL: Final = StateKey[int | None]("starcode_abm5_4_light_level")
 
 
@@ -486,7 +487,11 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         if not positive:
             keys += (("massage_timer", True), ("light_level", True))
         return tuple(
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
+                "starcode_abm5_4_massage_timer", "starcode_abm5_4_massage_timer", MASSAGE_TIMER
+            )
+            if key == "massage_timer"
+            else ControllerStateSensorSpec(
                 "starcode_abm5_4_" + key,
                 "starcode_abm5_4_" + key,
                 _state_key(key),
@@ -962,7 +967,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         )
         self.forward_controller_state_updates(
             *(_field_key(k)(v) for k, v in values.items()),
-            MASSAGE_TIMER(str(self._timer_index * 10) if self._timer_index else None),
+            MASSAGE_TIMER(self._timer_index * 10 if self._ui_state_observed else None),
             MASSAGE_TIMER_MINUTES(self._timer_index * 10 if self._timer_index else None),
             LIGHT_LEVEL(self._level),
             *(

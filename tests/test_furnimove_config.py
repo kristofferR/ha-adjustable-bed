@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    LEGACY_BED_TYPE_MAPPING,
     requires_pairing,
 )
 from custom_components.adjustable_bed.detection import (
@@ -245,4 +246,6 @@ def test_gateway_service_never_outranks_another_match(
     result = detect_bed_type_detailed(info)
     assert result.bed_type == expected
     assert BED_TYPE_FURNIMOVE in result.ambiguous_types
-    assert (_confident_auto_detect(result) == expected) is confident
+    # A new bed gets the current route of a compatibility ID.
+    route = LEGACY_BED_TYPE_MAPPING.get(expected, expected)
+    assert (_confident_auto_detect(result) == route) is confident

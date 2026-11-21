@@ -375,7 +375,7 @@ def test_exact_parser_lengths_and_gates(app, length, flag_offset, status_offset,
     data = bytearray(length)
     data[status_offset] = 3
     ctrl._parse_notification(data)
-    assert coord.controller_state.get("app_timer_status") == (3 if accept else None)
+    assert coord.controller_state.get("app_timer_status") == (30 if accept else None)
     if flag_offset is not None:
         coord.controller_state.clear()
         data[flag_offset] = 32
@@ -403,17 +403,17 @@ def test_qplus_prefix_precedence_and_all_current_side_selector_fates():
         coord = coordinator()
         ctrl = AppController(coord, app_profile("qplus_app"), side=side)
         data = bytearray(16)
-        data[:5] = bytes.fromhex("a50b0d0259")  # 601 seconds -> state 2
+        data[:5] = bytes.fromhex("a50b0d0259")  # 601 seconds -> the 20 minute timer
         data[13] = 32
         ctrl._parse_notification(data)
-        assert coord.controller_state["app_timer_status"] == 2
+        assert coord.controller_state["app_timer_status"] == 20
         data = bytearray(19)
         data[15], data[16] = 3, 2
         ctrl._parse_notification(data)
-        assert coord.controller_state["app_timer_status"] == 2
+        assert coord.controller_state["app_timer_status"] == 20
         data[16] = 1
         ctrl._parse_notification(data)
-        assert coord.controller_state["app_timer_status"] == 3
+        assert coord.controller_state["app_timer_status"] == 30
 
 
 SERTA_PULSES = [
@@ -600,17 +600,17 @@ def test_parser_branch_vector_cases(app, prefix, status_offset, flag_offset):
     data = bytearray(19)
     data[0], data[status_offset] = prefix, 255
     ctrl._parse_notification(data)
-    assert coord.controller_state["app_timer_status"] == -1
+    assert coord.controller_state["app_timer_status"] == 0
     data[status_offset] = 2
     ctrl._parse_notification(data)
-    assert coord.controller_state["app_timer_status"] == 2
+    assert coord.controller_state["app_timer_status"] == 20
     if flag_offset is not None:
         data[flag_offset] = 32
         data[status_offset] = 3
         ctrl._parse_notification(data)
-        assert coord.controller_state["app_timer_status"] == 2
+        assert coord.controller_state["app_timer_status"] == 20
     ctrl._parse_notification(None)
-    assert coord.controller_state["app_timer_status"] == 2
+    assert coord.controller_state["app_timer_status"] == 20
 
 
 def test_absolute_java_date_milliseconds_are_chosen_before_delta_division():
@@ -661,7 +661,7 @@ def test_qplus_19byte_flags_have_no_invented_both_side_override(flags, accepted)
     data = bytearray(19)
     data[15], data[16] = 3, flags
     ctrl._parse_notification(data)
-    assert coord.controller_state == ({"app_timer_status": 3} if accepted else {})
+    assert coord.controller_state == ({"app_timer_status": 30} if accepted else {})
 
 
 @pytest.mark.parametrize(

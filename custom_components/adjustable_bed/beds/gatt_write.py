@@ -18,6 +18,7 @@ from ..command_scheduler import (
     note_write_not_counted,
 )
 from ..diagnostic_payloads import format_payload
+from ..errors import BedNotConnectedError
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -147,13 +148,13 @@ class GattWriter(ABC):
                      frame. Set False for writes that only prepare the link.
 
         Raises:
-            ConnectionError: If not connected to the bed
+            BedNotConnectedError: If not connected to the bed
             BleakError: If the GATT write fails
         """
         client = self.client
         if client is None or not client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
+            _LOGGER.debug("Cannot write command: BLE client not connected")
+            raise BedNotConnectedError
 
         effective_cancel = cancel_event or self._coordinator.cancel_command
         logged_command = self.loggable_hex(command)
@@ -202,11 +203,11 @@ class GattWriter(ABC):
                         note_frame_skipped()
                         return
                     client = self.client
+                    if client is None or not client.is_connected:
+                        _LOGGER.debug("Cannot write command: BLE client disconnected during write")
+                        raise BedNotConnectedError
                     if expected_client is not None and client is not expected_client:
                         raise ConnectionError("Command belongs to a previous BLE connection")
-                    if client is None or not client.is_connected:
-                        _LOGGER.error("Cannot write command: BLE client disconnected during write")
-                        raise ConnectionError("Not connected to bed")
                     if wall_clock_pacing:
                         write_started = asyncio.get_running_loop().time()
                     if before_write is not None:
@@ -239,13 +240,16 @@ class GattWriter(ABC):
                         note_write_not_counted()
                     if on_write is not None:
                         on_write()
-            except BleakError:
+            except BleakError as err:
                 if log_errors:
-                    _LOGGER.exception(
-                        "Failed to write command %s to %s",
+                    # The error reaches the caller; its traceback is only for debugging.
+                    _LOGGER.warning(
+                        "Failed to write command %s to %s: %s",
                         logged_command,
                         char_uuid,
+                        err,
                     )
+                    _LOGGER.debug("Write failure details", exc_info=True)
                 else:
                     _LOGGER.debug(
                         "Suppressed write failure for %s to %s",

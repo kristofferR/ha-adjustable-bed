@@ -169,7 +169,9 @@ Every other saved setting, bed type and ID loads unchanged.
   Bluetooth name is spelled the way beds of its app advertise it. A bed that
   advertises an unusual spelling of an app-only name, for example lowercase
   `a0rm1234`, may no longer be offered; add it manually or pick the app in
-  Reconfigure.
+  Reconfigure. A device that advertises only a shared Bluetooth service and no
+  name, or only a name starting with `TEST`, is no longer offered either; add
+  it from the integration by its app.
 
 ## Entities
 
@@ -269,6 +271,17 @@ The same control now looks the same on every bed:
   integration had created disabled is enabled once; one you disabled stays
   disabled. The DoubleSleep breathing rate's unit changes from brpm to
   breaths/min, and Home Assistant offers to update its statistics.
+- **Massage timer readings are durations.** They show minutes (or seconds),
+  are no longer under Diagnostic and are enabled on new installs; entities you
+  already have keep their enabled state. Readings that showed the app's timer
+  code instead ("-1", "1" to "3" on the Keeson app layouts and Ergomotion 4)
+  show 0 to 30 minutes, and the StarCode ABM5-4 and Keeson **Massage: Timer
+  Mode** readings show a number of minutes instead of text. The AdjustaMattress
+  massage timer reading loses its minutes unit: the bed reports a step, not
+  minutes.
+- **Readings carry their device class.** Temperature, signal strength, height
+  and countdown readings, low battery and low water use Home Assistant's device
+  classes, so a temperature follows your unit system (°F where you use it).
 - **Sleep Number bed presence** is enabled by default and named **In bed**,
   **Left in bed** and **Right in bed**. It updates only while the bed is
   connected (see [Connection](#connection)).

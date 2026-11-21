@@ -427,7 +427,7 @@ async def test_changed_U_callback_consumes_exact_fields_and_suppresses_duplicate
     assert len(pending) == 1
     values = published(*c._coordinator.handle_controller_state_updates.call_args.args)
     assert values[UNDER_BED_LIGHTS_ON] is True
-    assert values["starcode_abm5_4_massage_timer"] == "10"
+    assert values["starcode_abm5_4_massage_timer"] == 10
     assert values["starcode_abm5_4_head_intensity"] == 0
     c._notification(c.client, 0, role, frame)
     assert len(pending) == 1 and c._coordinator.handle_controller_state_updates.call_count == 1

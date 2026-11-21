@@ -11,6 +11,8 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING
 
+from homeassistant.components.sensor import SensorDeviceClass
+
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import (
     CARD_HIDDEN,
@@ -411,6 +413,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
                     "mdi:timer",
                     "min",
                     entity_registry_enabled_default=True,
+                    device_class=SensorDeviceClass.DURATION,
                 )
             )
         if self.profile.alarm:
