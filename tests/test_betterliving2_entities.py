@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.components.light import ColorMode
-from homeassistant.const import EntityCategory
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
@@ -158,14 +157,11 @@ async def test_native_names_types_exposure_and_retained_ids(hass, protocol, layo
         for spec in controller.controller_state_sensor_specs:
             entity = AdjustableBedControllerStateSensor(view, spec)
             assert entity.unique_id == view.entity_unique_id(spec.key)
+            # Every massage reading is dashboard state; only head and foot sit on the card.
+            assert entity.entity_category is None
+            assert entity.entity_registry_enabled_default
             if spec.key.endswith(("_wave", "_timer")):
-                assert entity.entity_category is EntityCategory.DIAGNOSTIC
-                assert not entity.entity_registry_enabled_default
                 assert entity._card.attributes["card_section"] == "hidden"
-            else:
-                # The head and foot levels are dashboard massage state.
-                assert entity.entity_category is None
-                assert entity.entity_registry_enabled_default
             entities.append(("sensor", entity))
         names = [
             STRINGS[domain][entity.translation_key]["name"].format_map(
