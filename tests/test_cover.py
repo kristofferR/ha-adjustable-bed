@@ -263,6 +263,8 @@ async def test_cover_without_hold_publishes_a_side_wide_stop() -> None:
         ("tilt", "keeson_head", "mdi:head"),
         # Two motors at once get the generic icon, not half of the pair.
         ("both", "back_legs", "mdi:bed-outline"),
+        # "Foot" is the feet motor.
+        ("legs", "smart_sleep_foot", "mdi:foot-print"),
         # A name with no known motor falls back to the internal key.
         ("head", "smart_sleep_headrest", "mdi:head"),
     ],

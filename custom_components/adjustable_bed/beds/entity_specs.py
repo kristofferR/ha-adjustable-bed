@@ -373,21 +373,20 @@ def massage_timer_sensor_spec(
     translation_key: str,
     state_key: AnyStateKey,
     *,
-    unit: Literal["min", "s"] = "min",
     card: CardPlacement = CARD_HIDDEN,
     attribute_keys: tuple[AnyStateKey, ...] = (),
 ) -> ControllerStateSensorSpec:
-    """A massage timer as a duration on the dashboard.
+    """A massage timer as a duration in minutes on the dashboard.
 
-    Publish minutes or seconds, never an index: a bed whose index has no proven
-    duration keeps its own spec, named as a step.
+    Publish minutes, never an index: a bed whose index has no proven duration
+    keeps its own spec, named as a step.
     """
     return ControllerStateSensorSpec(
         key,
         translation_key,
         state_key,
         "mdi:timer-outline",
-        native_unit_of_measurement=unit,
+        native_unit_of_measurement="min",
         attribute_keys=attribute_keys,
         entity_registry_enabled_default=True,
         card=card,

@@ -4613,7 +4613,7 @@
         "name": "Foot massage"
       },
       "doublesleep_massage_time": {
-        "name": "Massage timer"
+        "name": "Massage timer step"
       },
       "doublesleep_sonic_mode": {
         "name": "Sonic massage mode"
@@ -4628,13 +4628,13 @@
         "name": "Sonic foot massage"
       },
       "doublesleep_sonic_time": {
-        "name": "Sonic massage timer"
+        "name": "Sonic massage timer step"
       },
       "doublesleep_sonic_source": {
         "name": "Sonic massage source"
       },
       "adjustamattress_massage_time": {
-        "name": "Massage timer"
+        "name": "Massage timer step"
       },
       "adjustamattress_head_intensity": {
         "name": "Head massage intensity"

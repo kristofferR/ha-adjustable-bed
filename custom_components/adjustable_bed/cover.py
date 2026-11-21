@@ -252,6 +252,8 @@ def _cover_entities_for(
 _COVER_TEMPLATES: dict[str, AdjustableBedCoverEntityDescription] = {
     description.key: description for description in COVER_DESCRIPTIONS
 }
+# Beds name the feet motor "Foot" as often as "Feet".
+_COVER_TEMPLATES["foot"] = _COVER_TEMPLATES["feet"]
 
 
 def _cover_template(spec: MotorControlSpec) -> AdjustableBedCoverEntityDescription | None:
