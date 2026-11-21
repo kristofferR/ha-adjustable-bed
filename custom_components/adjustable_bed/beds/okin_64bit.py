@@ -330,14 +330,11 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
         if (word := commands.get(memory_num)) is not None:
             await self._press(word)
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
         """Program current position to memory (not supported - use set commands)."""
-        _LOGGER.warning(
-            "OKIN 64-bit beds don't support programming memory presets directly. "
-            "Memory positions are programmed by sending set commands at the desired position."
-        )
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
         await self._press(self.profile.keys["zero_g"])

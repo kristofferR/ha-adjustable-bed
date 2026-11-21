@@ -309,17 +309,11 @@ class OkinOreController(BedController):
         elif memory_num == 2:
             await self._preset_with_stop(codec.frame(OkinOreCommands.CMD_MEMORY_2))
         else:
-            _LOGGER.warning(
-                "OKIN ORE beds only support Memory 1 and Memory 2 (requested: %d)",
-                memory_num,
-            )
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory position (not supported)."""
-        _LOGGER.warning(
-            "OKIN ORE beds don't support programming memory positions (requested: %d)",
-            memory_num,
-        )
+        raise self.not_supported("saving memory presets")
 
     # Light controls
     async def lights_on(self) -> None:

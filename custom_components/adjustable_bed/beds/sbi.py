@@ -478,11 +478,11 @@ class SBIController(ProfileExecution[keeson_profiles.KeesonProfile], BedControll
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
         else:
-            _LOGGER.warning("SBI supports Memory 1-2, requested: %d", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported)."""
-        _LOGGER.warning("SBI doesn't support programming memory presets")
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -490,7 +490,7 @@ class SBIController(ProfileExecution[keeson_profiles.KeesonProfile], BedControll
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (not available)."""
-        _LOGGER.warning("Lounge preset is not available on SBI beds")
+        raise self.not_supported("the Lounge preset")
 
     async def preset_tv(self) -> None:
         """Go to TV position."""
@@ -498,7 +498,7 @@ class SBIController(ProfileExecution[keeson_profiles.KeesonProfile], BedControll
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (not available)."""
-        _LOGGER.warning("Anti-snore preset is not available on SBI beds")
+        raise self.not_supported("the Anti-snore preset")
 
     # Light methods
     async def lights_on(self) -> None:

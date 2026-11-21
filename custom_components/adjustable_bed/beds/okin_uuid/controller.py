@@ -573,8 +573,7 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
     async def _press(self, keycode: int | None, tap: Tap | None, name: str) -> None:
         """Send a remote key as a fixed burst and its STOP, if the remote has it."""
         if keycode is None or tap is None:
-            _LOGGER.debug("%s not available on remote %s", name, self._variant)
-            return
+            raise self.not_supported(name)
         await self._tap_then_stop(keycode, tap)
 
     @property
@@ -583,17 +582,16 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         return self._remote.flat is not None
 
     async def preset_flat(self) -> None:
-        await self._press(self._remote.flat, self._route_profile.recall, "Flat preset")
+        await self._press(self._remote.flat, self._route_profile.recall, "the Flat preset")
 
     async def preset_memory(self, memory_num: int) -> None:
         remote = self._remote
         command = {1: remote.memory_1, 2: remote.memory_2, 3: remote.memory_3, 4: remote.memory_4}
         keycode = command.get(memory_num)
         if keycode is None:
-            _LOGGER.warning("Memory %d not available on remote %s", memory_num, self._variant)
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         profile = self._route_profile
-        await self._press(keycode, profile.memory_recall or profile.recall, f"Memory {memory_num}")
+        await self._press(keycode, profile.memory_recall or profile.recall, f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program the current position.
@@ -604,8 +602,7 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         cmd = self._remote.memory_save
         save = self._route_profile.memory_save
         if cmd is None or save is None:
-            _LOGGER.warning("Memory save not available on remote %s", self._variant)
-            return
+            raise self.not_supported("saving memory presets")
         _LOGGER.debug(
             "Saving to memory slot %d on remote %s (remote determines actual slot)",
             memory_num,
@@ -738,7 +735,7 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         The handset streams this key for ~6 s and releases with STOP, like
         every other held key.
         """
-        await self._press(self._remote.sync, self._route_profile.long_press, "Sync")
+        await self._press(self._remote.sync, self._route_profile.long_press, "syncing both sides")
 
     @property
     def supports_child_lock(self) -> bool:
@@ -747,7 +744,7 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
 
     async def child_lock_toggle(self) -> None:
         """Toggle the handset child lock (held command)."""
-        await self._press(self._remote.child_lock, self._route_profile.long_press, "Child lock")
+        await self._press(self._remote.child_lock, self._route_profile.long_press, "the child lock")
 
     @property
     def supports_preset_zero_g(self) -> bool:
@@ -755,7 +752,7 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         return self._remote.zero_gravity is not None
 
     async def preset_zero_g(self) -> None:
-        await self._press(self._remote.zero_gravity, self._route_profile.recall, "Zero-gravity")
+        await self._press(self._remote.zero_gravity, self._route_profile.recall, "the Zero G preset")
 
     @property
     def _anti_snore_keycode(self) -> int | None:
@@ -775,7 +772,7 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         return self._anti_snore_keycode is not None
 
     async def preset_anti_snore(self) -> None:
-        await self._press(self._anti_snore_keycode, self._route_profile.recall, "Anti-snore")
+        await self._press(self._anti_snore_keycode, self._route_profile.recall, "the Anti-snore preset")
 
 
 async def build_controller(ctx: BuildContext) -> BedController:

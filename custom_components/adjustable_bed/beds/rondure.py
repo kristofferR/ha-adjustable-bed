@@ -319,17 +319,11 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset (not supported on Rondure beds)."""
-        _LOGGER.warning(
-            "Memory presets are not supported on Rondure beds (requested: M%d)",
-            memory_num,
-        )
+        raise self.not_supported("memory presets")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Rondure beds)."""
-        _LOGGER.warning(
-            "Memory programming is not supported on Rondure beds (requested: M%d)",
-            memory_num,
-        )
+        raise self.not_supported("saving memory presets")
 
     # Massage methods
     async def massage_head_toggle(self) -> None:

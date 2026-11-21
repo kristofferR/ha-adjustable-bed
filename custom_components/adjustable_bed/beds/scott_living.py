@@ -321,11 +321,11 @@ class ScottLivingController(ProfileExecution[keeson_profiles.KeesonProfile], Bed
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
         else:
-            _LOGGER.warning("Scott Living supports Memory 1-4, requested: %d", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported)."""
-        _LOGGER.warning("Scott Living doesn't support programming memory presets")
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -333,7 +333,7 @@ class ScottLivingController(ProfileExecution[keeson_profiles.KeesonProfile], Bed
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (not available)."""
-        _LOGGER.warning("Lounge preset is not available on Scott Living beds")
+        raise self.not_supported("the Lounge preset")
 
     async def preset_tv(self) -> None:
         """Go to TV position (same as Memory 3)."""

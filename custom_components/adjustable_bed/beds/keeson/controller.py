@@ -90,6 +90,14 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+_PRESET_NAMES: Final[dict[profiles.Preset, str]] = {
+    "flat": "Flat",
+    "zero_g": "Zero G",
+    "lounge": "Lounge",
+    "tv": "TV",
+    "anti_snore": "Anti-snore",
+}
+
 _ADJUSTABLE_LITE_STATUS_MIN_LENGTH = 13
 STATE_ADJUSTABLE_LITE_LIGHT: Final = StateKey[bool | None]("adjustable_lite_light")
 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER: Final = StateKey[int | None]("adjustable_lite_massage_timer")
@@ -956,8 +964,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
     async def _preset(self, preset: profiles.Preset) -> None:
         word = self.profile.presets.get(preset)
         if word is None:
-            _LOGGER.warning("%s preset is not available on %s beds", preset, self._variant)
-            return
+            raise self.not_supported(f"the {_PRESET_NAMES[preset]} preset")
         await self._write_single_shot(self._build_command(word))
 
     async def preset_flat(self) -> None:
@@ -982,14 +989,9 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
 
     async def preset_memory(self, memory_num: int) -> None:
         """Recall a memory slot; words differ per profile (see ``profiles/keeson.py``)."""
-        if not self.profile.memory:
-            raise NotImplementedError("This Keeson app has no memory presets")
         word = self.profile.memory.get(memory_num)
         if word is None:
-            _LOGGER.warning(
-                "Memory %d not supported (valid: %s)", memory_num, sorted(self.profile.memory)
-            )
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         await self._write_single_shot(self._build_command(word))
 
     async def program_memory(self, memory_num: int) -> None:
@@ -997,8 +999,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         save = self.profile.memory_save
         word = save.words.get(memory_num) if save is not None else None
         if save is None or word is None:
-            _LOGGER.warning("Programming memory %d is not supported on this bed", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         command = self._build_command(word)
         if not save.wait_first:
             await self.write_command(

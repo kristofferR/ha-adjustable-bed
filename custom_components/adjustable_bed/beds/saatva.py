@@ -143,14 +143,13 @@ class SaatvaController(RichmatProfileController):
             raise invalid("left_side_only")
         with self.side_scope(SIDE_LEFT):
             deadline = asyncio.timeout(TEST_SECONDS)
-            try:
-                async with deadline:
-                    await self.write_command(codec.command(0x24), repeat_count=21)
-            except TimeoutError:
-                if not deadline.expired():
-                    raise
-            finally:
-                await self._release()
+            async with self.releasing(self._send_stop):
+                try:
+                    async with deadline:
+                        await self.write_command(codec.command(0x24), repeat_count=21)
+                except TimeoutError:
+                    if not deadline.expired():
+                        raise
 
     @property
     def supports_massage(self) -> bool:

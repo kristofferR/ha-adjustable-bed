@@ -554,15 +554,11 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
         if command := commands.get(memory_num):
             await self.write_command(self._build_command_from_value(command))
         else:
-            _LOGGER.warning(
-                "Cool Base memory slot %d not supported (valid: %s)",
-                memory_num,
-                sorted(commands),
-            )
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported)."""
-        _LOGGER.warning("Cool Base doesn't support programming memory presets")
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""

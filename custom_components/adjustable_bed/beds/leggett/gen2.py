@@ -487,11 +487,12 @@ class LeggettGen2Controller(BedController):
             3: LeggettGen2Commands.PRESET_WAKE_UP,
             4: LeggettGen2Commands.PRESET_RELAX,
         }
-        if command := commands.get(memory_num):
-            async with self.releasing(
-                lambda: self.write_command(LeggettGen2Commands.STOP, cancel_event=asyncio.Event())
-            ):
-                await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
+        if not (command := commands.get(memory_num)):
+            raise self.not_supported(f"memory preset {memory_num}")
+        async with self.releasing(
+            lambda: self.write_command(LeggettGen2Commands.STOP, cancel_event=asyncio.Event())
+        ):
+            await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
@@ -501,12 +502,13 @@ class LeggettGen2Controller(BedController):
             3: LeggettGen2Commands.PROGRAM_WAKE_UP,
             4: LeggettGen2Commands.PROGRAM_RELAX,
         }
-        if command := commands.get(memory_num):
-            await self.write_command(command)
+        if not (command := commands.get(memory_num)):
+            raise self.not_supported(f"saving memory preset {memory_num}")
+        await self.write_command(command)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position (not supported on Gen2)."""
-        _LOGGER.warning("Zero-G preset not available on Gen2 beds")
+        raise self.not_supported("the Zero G preset")
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""

@@ -404,21 +404,17 @@ class MaloufNewOkinController(ProfileExecution[MaloufRouteProfile], BedControlle
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
-            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         if (action := f"memory_{memory_num}") not in self.profile.words:
-            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         await self._send_preset(action)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory with the official app's hold-to-save stream."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
-            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         if memory_num not in self.profile.save_words.slots:
-            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         word = self.profile.save_words.word(memory_num, self._coordinator.ble_device_name)
         save = self.profile.save
         # The APK schedules the first write after one interval. Its final
@@ -714,8 +710,7 @@ class MaloufLegacyOkinController(ProfileExecution[keeson_profiles.KeesonProfile]
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
-            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         commands = {
             1: MaloufCommands.MEMORY_1,
             2: MaloufCommands.MEMORY_2,
@@ -723,17 +718,15 @@ class MaloufLegacyOkinController(ProfileExecution[keeson_profiles.KeesonProfile]
         if command := commands.get(memory_num):
             await self._send_preset(command)
         else:
-            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory using the official app's 85 x 150 ms hold sequence."""
         if memory_num < 1 or memory_num > self.memory_slot_count:
-            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         command_value = _save_memory_command(memory_num, self._coordinator.ble_device_name)
         if command_value is None:
-            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         # Match the APK's delayed first write and exact repeat count. The APK's
         # trailing "stopCommand" is a dead string, not a STOP transmission.
         await asyncio.sleep(0.15)

@@ -25,6 +25,8 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak import BleakClient
 
 if TYPE_CHECKING:
+    from homeassistant.exceptions import ServiceValidationError
+
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
 
@@ -41,6 +43,7 @@ from ..controller_state import (
     StateKey,
     StateUpdate,
 )
+from ..errors import invalid
 from ..execution import (
     HOLD_CEILING_MS,
     NO_EXECUTION_CAPABILITIES,
@@ -564,6 +567,10 @@ class BedController(GattWriter):
     def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
         """Plan repeats including the immediate first write."""
         return max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)
+
+    def not_supported(self, feature: str) -> ServiceValidationError:
+        """The error for a request this bed cannot carry out, such as "memory preset 3"."""
+        return invalid("feature_not_supported", device_name=self._coordinator.name, feature=feature)
 
     @asynccontextmanager
     async def releasing(
