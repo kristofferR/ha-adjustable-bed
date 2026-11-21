@@ -575,7 +575,7 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         if keycode is None or tap is None:
             _LOGGER.debug("%s not available on remote %s", name, self._variant)
             return
-        await self._tap_then_stop(keycode, tap, name)
+        await self._tap_then_stop(keycode, tap)
 
     @property
     def supports_preset_flat(self) -> bool:

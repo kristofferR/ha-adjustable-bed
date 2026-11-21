@@ -257,13 +257,8 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and send STOP at the end."""
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             await self._send_command(command)
-        finally:
-            try:
-                await self._send_stop()
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     async def _send_stop(self) -> None:
         """Release the active key; app subclasses may own a release schedule."""

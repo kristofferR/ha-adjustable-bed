@@ -638,11 +638,7 @@ class JensenController(BedController):
                 self._coordinator.address,
                 _MOVEMENT_FEEDBACK_TIMEOUT_SECONDS,
             )
-            try:
-                await asyncio.shield(self._send_stop())
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send Jensen STOP after the movement timeout")
-            return
+            await asyncio.shield(self._send_stop())
 
     async def _read_settled_positions(self, cancel_event: asyncio.Event) -> None:
         """Query positions until two consecutive replies agree.
@@ -701,17 +697,12 @@ class JensenController(BedController):
         pulse_count, pulse_delay = self.motor_pulse_settings()
         if duration_ms is not None:
             pulse_count = self.timed_move_repeat_count(duration_ms, pulse_delay)
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             await self.write_command(
                 command,
                 repeat_count=pulse_count,
                 repeat_delay_ms=pulse_delay,
             )
-        finally:
-            try:
-                await self._send_stop()
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

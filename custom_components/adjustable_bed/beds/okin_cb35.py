@@ -93,7 +93,7 @@ class OkinCB35Controller(Okin7ByteController):
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Run a motor command and clear any preset it successfully interrupts."""
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             pulse_count, pulse_delay = self.motor_pulse_settings()
             await self.write_command(
                 command,
@@ -101,11 +101,6 @@ class OkinCB35Controller(Okin7ByteController):
                 repeat_delay_ms=pulse_delay,
                 on_write=self._record_motor_write,
             )
-        finally:
-            try:
-                await self._send_stop()
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send STOP during cleanup", exc_info=True)
 
     async def stop_all(self) -> None:
         """Stop all movement.

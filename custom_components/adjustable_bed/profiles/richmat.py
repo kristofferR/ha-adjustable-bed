@@ -89,8 +89,6 @@ class RichmatProfile:
     motor_repeat_ms: int | None = None
     """Fixed app refresh cadence; None keeps the entry settings."""
     recall: Recall = Recall()
-    quiet_release: bool = True
-    """Movement cleanup logs a failed STOP instead of raising it."""
     epoch_first_hex: bool = False
     """Keep the app's first-eight-hex-digit epoch serialization."""
 
@@ -182,7 +180,6 @@ BEDTECH: Final = RichmatProfile(
     memory=((0x2E, 0x2B), (0x2F, 0x2C)),
     # Field reports: BT6500 variants stop only on ``^``.
     stop=COMPAT_STOP,
-    quiet_release=False,
 )
 # BedTech 7.1.3 (14): only ordinary UI actions that pass their model guards.
 # E_UI/E_CATALOG in BedTech 7.1.3; literals in bedtech_vectors.json.

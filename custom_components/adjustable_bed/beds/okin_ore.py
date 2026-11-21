@@ -17,8 +17,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
 from ..codec import okin_ore as codec
 from ..const import OKIN_ORE_WRITE_CHAR_UUID
 from .base import BedController
@@ -180,7 +178,11 @@ class OkinOreController(BedController):
 
     async def _move_with_stop(self, cmd_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                codec.frame(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
+            )
+        ):
             pulse_count = self._coordinator.motor_pulse_count
             pulse_delay = self._coordinator.motor_pulse_delay_ms
             await self.write_command(
@@ -188,18 +190,14 @@ class OkinOreController(BedController):
                 repeat_count=pulse_count,
                 repeat_delay_ms=pulse_delay,
             )
-        finally:
-            try:
-                await self.write_command(
-                    codec.frame(OkinOreCommands.CMD_STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError:
-                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     async def _preset_with_stop(self, command: bytes) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a preset command and always send STOP at the end."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                codec.frame(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
+            )
+        ):
             pulse_count = self._coordinator.motor_pulse_count
             pulse_delay = self._coordinator.motor_pulse_delay_ms
             await self.write_command(
@@ -207,14 +205,6 @@ class OkinOreController(BedController):
                 repeat_count=pulse_count,
                 repeat_delay_ms=pulse_delay,
             )
-        finally:
-            try:
-                await self.write_command(
-                    codec.frame(OkinOreCommands.CMD_STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError:
-                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:

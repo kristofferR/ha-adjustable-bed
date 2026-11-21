@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from custom_components.adjustable_bed import position_estimate as pe
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.entity_specs import ControllerMotorHoldSpec
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.position_estimate import (
@@ -123,27 +124,38 @@ async def test_tracked_moves_follow_direction_and_combined_motors(
     assert bed.tracking(["back", "legs"])
 
 
-async def test_swallowed_release_failure_is_not_travel(hass: HomeAssistant, clock: Clock) -> None:
-    """A Richmat quiet release logs a failed STOP; the estimate must not trust it."""
-    from unittest.mock import MagicMock
-
-    from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
-
+async def test_a_failed_release_after_a_cancelled_move_is_not_travel(
+    hass: HomeAssistant, clock: Clock
+) -> None:
+    """STOP cancelled the move but the release failed: the stop time measures nothing."""
     manager = await calibrated(hass)
     ctrl = controller(hass, LEFT)
-    richmat = MagicMock(spec=RichmatController)
-    richmat._coordinator = ctrl._coordinator
-    richmat.profile = SimpleNamespace(quiet_release=True)
-    richmat._send_stop = AsyncMock(side_effect=BleakError("stop lost"))
 
-    async def pulse_then_release(_controller: object) -> None:
-        clock.now += 2.0
-        await RichmatController._release(richmat)
+    async def cancelled_move(_controller: object) -> None:
+        async with BedController.releasing(ctrl, AsyncMock(side_effect=BleakError("lost"))):
+            clock.now += 2.0
+            raise asyncio.CancelledError
 
-    await pe.track_motor_command(hass, "back", "up", pulse_then_release)(ctrl)
+    with pytest.raises(asyncio.CancelledError):
+        await pe.track_motor_command(hass, "back", "up", cancelled_move)(ctrl)
     back = manager.beds[LEFT].motors["back"]
     assert back.state is EstimateState.UNKNOWN
     assert back.reason is EstimateReason.FAILED_MOVE
+
+
+async def test_a_failed_release_after_a_finished_move_fails_the_move(
+    hass: HomeAssistant, clock: Clock
+) -> None:
+    manager = await calibrated(hass)
+    ctrl = controller(hass, LEFT)
+
+    async def move(_controller: object) -> None:
+        async with BedController.releasing(ctrl, AsyncMock(side_effect=BleakError("lost"))):
+            clock.now += 2.0
+
+    with pytest.raises(BleakError):
+        await pe.track_motor_command(hass, "back", "up", move)(ctrl)
+    assert manager.beds[LEFT].motors["back"].state is EstimateState.UNKNOWN
 
 
 async def test_stop_mid_move_keeps_tracking_at_the_stop_time(

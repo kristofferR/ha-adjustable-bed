@@ -213,18 +213,13 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
 
     async def _move_with_stop(self, command: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_packet(RondureCommands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             packet = self._build_packet(command)
             await self.write_command(packet, repeat_count=25, repeat_delay_ms=50)
-        finally:
-            try:
-                stop_packet = self._build_packet(RondureCommands.STOP)
-                await self.write_command(
-                    stop_packet,
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

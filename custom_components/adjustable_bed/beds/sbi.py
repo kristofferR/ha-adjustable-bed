@@ -362,7 +362,14 @@ class SBIController(ProfileExecution[keeson_profiles.KeesonProfile], BedControll
         elif state.get("lumbar") is False:
             key |= SBICommands.MOTOR_LUMBAR_DOWN
 
-        try:
+        async def release() -> None:
+            self._motor_state = {}
+            await self.write_command(
+                self._build_command(SBICommands.STOP),
+                cancel_event=asyncio.Event(),
+            )
+
+        async with self.releasing(release):
             if key:
                 await self.write_command(
                     self._build_command(key),
@@ -373,16 +380,6 @@ class SBIController(ProfileExecution[keeson_profiles.KeesonProfile], BedControll
                     or self._coordinator.motor_pulse_count,
                     repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
                 )
-        finally:
-            # Always send stop
-            self._motor_state = {}
-            try:
-                await self.write_command(
-                    self._build_command(SBICommands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

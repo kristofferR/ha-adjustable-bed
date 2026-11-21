@@ -18,8 +18,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
 from ...codec import malouf as malouf_codec
 from ...const import (
     CONF_MALOUF_LAYOUT,
@@ -303,16 +301,11 @@ class MaloufNewOkinController(ProfileExecution[MaloufRouteProfile], BedControlle
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Repeat a movement frame at the pulse settings, then always send STOP."""
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             pulse_count, pulse_delay = self.motor_pulse_settings()
             # A leased hold (#483) refreshes until its lease ends.
             pulse_count = self.leased_hold_refreshes(pulse_delay) or pulse_count
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
-        finally:
-            try:
-                await self._send_stop()
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     async def _move(self, action: str) -> None:
         await self._move_with_stop(self._frame(action))
@@ -390,11 +383,8 @@ class MaloufNewOkinController(ProfileExecution[MaloufRouteProfile], BedControlle
     async def _send_preset(self, action: str) -> None:
         """Send a preset frame as the profile's recall, then STOP."""
         recall = self.profile.recall
-        await self.write_command(self._frame(action), repeat_count=recall.repeats)
-        try:
-            await self._send_stop()
-        except BleakError, ConnectionError:
-            _LOGGER.debug("Failed to send STOP after preset", exc_info=True)
+        async with self.releasing(self._send_stop):
+            await self.write_command(self._frame(action), repeat_count=recall.repeats)
 
     async def preset_flat(self) -> None:
         await self._send_preset("flat")
@@ -574,21 +564,17 @@ class MaloufLegacyOkinController(ProfileExecution[keeson_profiles.KeesonProfile]
     async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         command = self._build_command(command_value)
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             pulse_delay = self._coordinator.motor_pulse_delay_ms
             # A leased hold (#483) refreshes until its lease ends.
             pulse_count = (
                 self.leased_hold_refreshes(pulse_delay) or self._coordinator.motor_pulse_count
             )
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(MaloufCommands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:

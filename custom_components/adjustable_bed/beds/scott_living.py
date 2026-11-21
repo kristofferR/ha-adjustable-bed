@@ -207,23 +207,20 @@ class ScottLivingController(ProfileExecution[keeson_profiles.KeesonProfile], Bed
         elif state.get("lumbar") is False:
             key += ScottLivingCommands.MOTOR_LUMBAR_DOWN
 
-        try:
+        async def release() -> None:
+            self._motor_state = {}
+            await self.write_command(
+                self._build_command(0),  # Zero = stop
+                cancel_event=asyncio.Event(),
+            )
+
+        async with self.releasing(release):
             if key:
                 await self.write_command(
                     self._build_command(key),
                     repeat_count=self._coordinator.motor_pulse_count,
                     repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
                 )
-        finally:
-            # Always send stop
-            self._motor_state = {}
-            try:
-                await self.write_command(
-                    self._build_command(0),  # Zero = stop
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

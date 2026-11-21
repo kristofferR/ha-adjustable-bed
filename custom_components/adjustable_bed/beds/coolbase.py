@@ -464,7 +464,14 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
         elif state.get("feet") is False:
             cmd0 += CoolBaseCommands.MOTOR_FEET_DOWN
 
-        try:
+        async def release() -> None:
+            self._motor_state = {}
+            await self.write_command(
+                self._build_command(),  # All zeros = stop
+                cancel_event=asyncio.Event(),
+            )
+
+        async with self.releasing(release):
             if cmd0:
                 await self.write_command(
                     self._build_command(cmd0=cmd0),
@@ -475,15 +482,6 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
                     or self._coordinator.motor_pulse_count,
                     repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
                 )
-        finally:
-            self._motor_state = {}
-            try:
-                await self.write_command(
-                    self._build_command(),  # All zeros = stop
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
