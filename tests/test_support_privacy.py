@@ -63,13 +63,9 @@ TARGET = "AA:BB:CC:DD:EE:FF"
 
 @pytest.mark.parametrize("redact", (redact_data, redact_bundle))
 def test_both_files_follow_one_address_policy(redact) -> None:
-    """Every address keeps only its prefix, in every form it appears (PRIV-8)."""
+    """Every address keeps only its prefix (PRIV-8)."""
     data = {
         "address": TARGET,
-        "advertised": "QRRM-DDEEFF",
-        "manufacturer_data": "0102ffeedd03",
-        "ascii": b"DDEEFF".hex(),
-        "ascii_variants": b'"MAC":"aa:bb:cc:dD:eE:Ff" FFEEDD'.hex(),
         "log": "seen aa_bb_cc_dd_ee_ff next to 11-22-33-44-55-66",
         TARGET: "keyed by address",
         "title": "Kris",
@@ -78,14 +74,9 @@ def test_both_files_follow_one_address_policy(redact) -> None:
         "fsm_relax_memory_names": {"1": "Reading"},
     }
 
-    redacted = redact(data, addresses=[TARGET])
+    redacted = redact(data)
 
     assert redacted["address"] == "AA:BB:CC:**:**:**"
-    assert redacted["advertised"] == "QRRM-******"
-    assert redacted["manufacturer_data"] == "0102******03"
-    assert redacted["ascii"] == "*" * 12
-    assert b"dD:eE:Ff".hex() not in redacted["ascii_variants"]
-    assert b"FFEEDD".hex() not in redacted["ascii_variants"]
     assert redacted["log"] == "seen AA_BB_CC_**_**_** next to 11-22-33-**-**-**"
     assert "AA:BB:CC:**:**:**" in redacted
     dumped = json.dumps(redacted)
@@ -108,7 +99,7 @@ def test_health_readings_keep_only_their_type() -> None:
         "motion_bed_variant": "hub",
     }
 
-    assert redact_bundle({"protocol_state": state}, addresses=[])["protocol_state"] == {
+    assert redact_bundle({"protocol_state": state})["protocol_state"] == {
         "left_heart_rate": "<int>",
         "breathingRate": "<float>",
         "bed_presence": "<bool>",

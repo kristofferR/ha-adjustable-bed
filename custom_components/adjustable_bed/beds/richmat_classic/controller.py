@@ -74,6 +74,7 @@ from .protocol import (
     worker_interval,
 )
 from .receive import MalformedFrame, ReceiveState
+from .removed_layouts import REMOVED_LAYOUTS
 from .requests import Request
 from .transport import Transport, select
 
@@ -124,8 +125,8 @@ class RichmatClassicController(BedController):
         self.app = app or str(coordinator.entry.data[CONF_PROTOCOL_VARIANT])
         self.profile = RICHMAT_CLASSIC[self.app]
         self.layout = str(coordinator.entry.data[CONF_PRODUCT_TYPE]).strip().upper()
-        if self.layout in ("TEST", "RMCS") and self.app not in ("powercool", "lp2", "bedsmart"):
-            raise ValueError("Diagnostic endurance and motor-mapping layouts are excluded")
+        if self.layout in REMOVED_LAYOUTS:
+            raise ValueError("This layout ran a factory test; choose the bed's layout in Configure")
         if self.app in RISE_APPS and self.layout in ("WFRM", "FWRM"):
             raise ValueError("Standalone desk layouts are outside the bed integration")
         self._controls = controls(self.app, self.layout)
@@ -384,7 +385,8 @@ class RichmatClassicController(BedController):
             raise ConnectionError("No current app BLE session")
         # Calls are admitted under the coordinator command lock. Never retry an
         # actuator write or carry cached Android objects across connections.
-        await session.client.write_gatt_char(session.write, packet, response=session.response)
+        async with self._ble_lock:
+            await session.client.write_gatt_char(session.write, packet, response=session.response)
         note_frame_written(cancel)
 
     async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = TICK_MS, cancel_event: asyncio.Event | None = None) -> None:
@@ -843,14 +845,6 @@ class RichmatClassicController(BedController):
         elif op == "massage_popup":
             if request.popup not in ("15", "30", "45", "toggle") or not any(c.tag == "65" for c in self._controls):
                 raise ValueError("This layout does not offer the selected timer popup")
-        elif op in ("program_schedule", "diagnostic_cycle"):
-            required = "RMCS" if op == "program_schedule" else "TEST"
-            if self.app != "powercool" or self.layout != required:
-                raise ValueError(f"This operation requires Power Cool's explicit {required} layout")
-            if op == "program_schedule":
-                if request.schedule is None:
-                    raise ValueError("Provide all schedule parameters")
-                request.schedule.encode()
         elif op not in ("query", "cancel_alarm"):
             raise ValueError("Unknown bed utility")
 
@@ -858,35 +852,6 @@ class RichmatClassicController(BedController):
         self.validate_richmat_rise_request(request)
         op = request.operation
         cancel = self._coordinator.cancel_command
-        if op == "diagnostic_cycle":
-            session = self._session
-            if session is None:
-                raise ConnectionError("No current bed session")
-            mode = self._mode
-            for code, seconds in rise.DIAGNOSTIC_CYCLE:
-                try:
-                    elapsed = 0
-                    while elapsed < seconds * 1000 and not cancel.is_set():
-                        await self.write_command(control(bytes((code,)), session.wire, mode))
-                        if not await self._wait(self._worker.tick_ms, cancel):
-                            break
-                        elapsed += self._worker.tick_ms
-                finally:
-                    await self._release(HELD_RELEASE_MS, mode=mode)
-                if not await self._wait(5000, cancel):
-                    break
-            return
-        if op == "program_schedule":
-            assert request.schedule is not None
-            data = request.schedule.encode()
-            for offset in range(0, len(data), 20):
-                if cancel.is_set():
-                    return
-                await self.write_command(data[offset:offset + 20])
-                if offset + 20 < len(data) and not await self._wait(10, cancel):
-                    return
-            # Programming has no source-defined STOP/commit/ACK.
-            return
         delay = 0
         if op == "query":
             frames = ([ALARM_QUERY] if any(c.alarm_clock is not None for c in self._controls) else []) + [LAMP_QUERY]

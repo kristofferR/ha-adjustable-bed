@@ -15,9 +15,9 @@
 - Svane
 - Many OEM adjustable beds with Linak motors
 
-The analyzed apps contain no product-name or remote-code catalog. The integration
-therefore selects behavior from the live GATT services and actuator mask, not from
-a retail brand or guessed model name.
+The apps have no list of products or remotes. The integration learns which
+motors and features your bed has when it connects, not from the brand or model
+name.
 
 ## Apps
 
@@ -31,19 +31,19 @@ a retail brand or guessed model name.
 
 | Feature | Bed Control | Performance Series |
 |---------|-------------|--------------------|
-| Motor control and explicit release | ✅ (mask-selected Back, Legs, Head, Feet, Base) | ✅ |
-| Native two-section movement opcodes | ✅, all 40 combinations | ❌ |
+| Motor control | ✅ (Back, Legs, Head, Feet, Base, as the bed reports them) | ✅ |
+| Moving two sections together | ✅ (any two sections your bed has) | ❌ |
 | Flat | ✅ | ✅ |
 | All up | ✅ | ❌ |
 | Four memory recalls and stores | TD3/Advanced only | ✅ |
 | Position, reported speed and four status flags | Advanced only | ❌ |
-| All 104 protocol error codes | ✅ | ❌, notification payload is opaque |
+| Error messages | ✅ (all 104 error codes) | ❌ |
 | Massage | Off, modes, zones and intensity | Toggle, wave/frequency, intensity and impulse |
 | AUX/under-bed light | On/off light entity | Toggle button |
 | Automatic drive configuration | ✅ | ❌ |
 | BLE device rename | ✅ | ❌ |
-| Alarm event, recurrence and commit | Alarm model only | ❌ |
-| Reset defaults (`4E 00`) | ✅ | ✅ |
+| Alarms (time and repeat) | Alarm model only | ❌ |
+| Reset defaults (`4E 00`) | ✅, disabled by default | ✅ |
 | Configuration factory reset (`7F 3E 80`) | ✅, disabled by default | ❌ |
 | Wake command | ✅ | ❌ |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 100 ms refresh, then the release) | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, then the release) |
@@ -238,7 +238,7 @@ Reference notifications are exactly four little-endian bytes:
 - Extension is converted to the configured angle range for the position entities;
   the read-only angle sensors are omitted because they would duplicate those same
   values.
-- The artifact does not prove a physical unit for extension or speed.
+- The app does not give a physical unit for extension or speed.
 
 ### Position seeking
 
@@ -266,11 +266,11 @@ Reference notifications are exactly four little-endian bytes:
   leg position during startup, while the other side returned `FE FF 00 00`. The
   earlier -2 cutoff discarded the right leg sample and left its number and cover
   entities `unknown`. This hardware observation extends the existing near-zero
-  handling by one count. It supplements the frozen Bed Control 6.0.9
-  reference-parser evidence; it does not change the packet parser, status flags,
+  handling by one count. It adds to the Bed Control 6.0.9 reference parser; it
+  does not change the packet parser, status flags,
   command timing or connection policy.
 - Upper endpoints retain the normal tolerance. No upper-endpoint exception is
-  enabled without supporting evidence.
+  enabled without a hardware report.
 
 ## Command Timing
 
@@ -354,17 +354,17 @@ characteristic; no movement or configuration commands were sent:
   characteristics were sampled before and after writes.
 - No usable light-state feedback was observed: the error read stayed empty,
   configuration stayed `FE`, and subsequent readable values were identical across
-  ON/OFF. Initial reference notifications were position values, not evidence of
-  light state.
+  ON/OFF. Initial reference notifications were position values, not the light
+  state.
 - This does not prove that every firmware lacks another feedback mechanism. The
   issue reporter's TD5 (Standard profile) has not been physically tested in this
   session.
-- This hardware evidence supplements the unchanged frozen app reports: absence of
-  an app caller did not establish that the peripheral rejects those constants. It
+- This hardware report adds to what the app shows: the app not using those
+  constants did not mean the bed rejects them. It
   does not enable other dead library commands (such as memories 5/6).
 - The modern-profile ON/OFF commands also restore the pre-v4 integration behavior
   reported working in #615. They are not gated on the position-feedback service
-  that distinguishes Standard from Advanced; the frozen modern AUX command enum
+  that distinguishes Standard from Advanced; the app's modern AUX command enum
   does not define a separate packet format for those models.
 
 ### Bed Connect exclusion
@@ -378,7 +378,7 @@ provisioning, cloud control or module firmware updates.
 
 ### App features
 
-Every reachable app feature, grouped by builder, lifecycle and control; the
+Every app feature, grouped by builder, lifecycle and control; the
 byte-level command tables above remain exhaustive.
 
 | Feature | Home Assistant |
@@ -390,7 +390,7 @@ byte-level command tables above remain exhaustive.
 | Four favorite recalls and stores with model gating | Buttons and generic preset services |
 | Massage zones, modes and all intensity actions | Capability-gated buttons |
 | AUX/light toggle | Native controller action; legacy toggle button, modern on/off entity |
-| Defaults reset and configuration factory reset | Separate buttons; factory reset disabled by default |
+| Defaults reset and configuration factory reset | Separate buttons, both disabled by default |
 | Automatic drive configuration | Assumed-state switch, disabled by default |
 | Device rename | `rename` action plus advertising refresh disconnect |
 | Alarm event, commit and notification states | `set_alarm` action and diagnostic sensor |

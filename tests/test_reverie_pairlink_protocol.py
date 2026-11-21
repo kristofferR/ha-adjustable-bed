@@ -7,7 +7,6 @@ from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_WRITE_UUID,
     PairlinkSignGate,
     a7_payload,
-    build_default_event_key,
     build_user_frame,
     comfort_payloads,
     dashboard_payload,
@@ -20,11 +19,8 @@ from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     status_sync_payloads,
 )
 
-_SYNTHETIC_PASSWORD_BYTES = b"1122"
 
-
-def test_accepted_synthetic_frame_and_event_key_vector() -> None:
-    key = build_default_event_key(5566, _SYNTHETIC_PASSWORD_BYTES)
+def test_accepted_synthetic_frame_vector() -> None:
     frame = build_user_frame(
         bytes.fromhex("0101FF00"),
         destination=PAIRLINK_BROADCAST_ADDRESS,
@@ -32,13 +28,12 @@ def test_accepted_synthetic_frame_and_event_key_vector() -> None:
         own_virtual_address=bytes.fromhex("11223344"),
     )
 
-    assert key.hex() == "be311531003200324556454e544b4559"
     assert frame.hex() == "03ffffffff20112233440101ff00"
 
 
 def test_accepted_synthetic_encryption_vector() -> None:
     pytest.importorskip("cryptography")
-    event_key = build_default_event_key(5566, _SYNTHETIC_PASSWORD_BYTES)
+    event_key = bytes.fromhex("be311531003200324556454e544b4559")
     frame = build_user_frame(
         bytes.fromhex("0101FF00"),
         destination=bytes.fromhex("FFFFFFFF"),

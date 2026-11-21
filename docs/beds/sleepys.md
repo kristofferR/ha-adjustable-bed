@@ -57,10 +57,10 @@ Other Sleepy's profiles keep their existing generic `2A29`/`2A24` behavior.
 
 | Selector | Write characteristic | Notification characteristic | App-only additions |
 |----------|----------------------|-----------------------------|--------------------|
-| `none`, `BOX24`, `BOX1221`, `BOX2422`, `BOX2442` | Nordic UART `6E400002` | Nordic UART `6E400003` | Position target sliders and raw app state where the app caller is proven |
-| `BOX15` | `FFE9` in `FFE5` | `FFE4` in `FFE0` | Position target sliders and raw app state where the app caller is proven |
-| `BOX1220` | `1001` in `1000` | `1002` in `1000` | Position target sliders and raw app state where the app caller is proven |
-| `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the proven safe common app surface; the conditional navigation-race position slider is excluded |
+| `none`, `BOX24`, `BOX1221`, `BOX2422`, `BOX2442` | Nordic UART `6E400002` | Nordic UART `6E400003` | Position target sliders and raw app state where the app uses them |
+| `BOX15` | `FFE9` in `FFE5` | `FFE4` in `FFE0` | Position target sliders and raw app state where the app uses them |
+| `BOX1220` | `1001` in `1000` | `1002` in `1000` | Position target sliders and raw app state where the app uses them |
+| `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the common app controls; the position slider the app shows only after a screen race is left out |
 | `BOX25`, `BOX25_STAR` | Nordic UART `6E400002` | Nordic UART `6E400003` | App light, massage, timer-code, and voice actions |
 
 Each selector's frames come from the [Okin N-frame](okin-nframe.md#wire-codec),
@@ -71,11 +71,11 @@ Held movement and held app actions accept a
 [renewable hold](../SERVICES.md#renewable-holds): the app's 100 ms refresh
 continues until the lease runs out, then the selector STOP follows.
 
-The profile exposes proven head, feet, lumbar, and selector-supported neck
+The profile exposes head, feet, lumbar, and selector-supported neck
 movement, the app's preset and memory actions, position refresh, and eligible
 light/massage actions. The app's position axes `0`, `1` and `2` belong to its
 head, foot and lumbar controllers, so they appear as head, foot and lumbar
-target numbers over the logical `0..100` range on nine proven UI selectors.
+target numbers over the logical `0..100` range on nine of the app's selectors.
 Unlabelled app state fields stay in diagnostics. The app's voice shortcuts
 (STOP, one-step brightness and position targets `0` and `100`) repeat existing
 controls and are not separate entities. Stable BOX3633
@@ -126,7 +126,7 @@ cover actions use a bounded 300 ms adapter window with the same refresh and
 release behavior. Voice position calls are one-shot.
 Motion-sensor refresh ends after five seconds by cancelling its repeat; this
 path sends no fabricated STOP frame. The app's
-`setAlarm` and `queryAlarm` routes are unreachable from the app UI and are not
+`setAlarm` and `queryAlarm` routes have no control in the app UI and are not
 exposed. The two empty BOX15 writer calls are retained as exact empty-value
 attempts in the internal route table; no payload bytes or platform acceptance
 are inferred for them, and they do not create public massage controls.
@@ -135,9 +135,8 @@ are inferred for them, and they do not create public massage controls.
 Raw RX state is parsed atomically: malformed or bounds-faulting packets, and
 callbacks without a current BLE notification session, leave the prior state
 unchanged. Unknown fields are surfaced with neutral raw
-field names instead of inferred physical labels. The protocol is reconstructed
-from accepted canonical v2 app evidence; physical behavior has not been
-verified on a bed.
+field names instead of guessed physical labels. The protocol follows the app;
+physical behavior has not been verified on a bed.
 
 ## Home Assistant setup
 
@@ -308,7 +307,7 @@ massage action:
 ```
 
 Normal commands are written to Nordic UART without response. The integration
-sends the proven `5A 0B 00 A5` wake frame once **with response**, before enabling
+sends the app's `5A 0B 00 A5` wake frame once **with response**, before enabling
 RX notifications, exactly matching the Sleepy's app session. There is no
 application-level delay after wake. The legacy
 `00 D0` / `00 B0` subsystem initializers and `05 02`, `08 02`, and `04 E0`
@@ -392,7 +391,7 @@ offers preset colors:
   at level 6) lack a frame header and offsets, so the integration does not parse
   them. Light state stays assumed.
 
-The legacy CB25 dialect has no proven color frame. Its extended frame carries
+The legacy CB25 dialect has no color frame. Its extended frame carries
 only two values, so legacy beds keep the on/off light. With the auto variant, a
 later connection that resolves the other dialect reloads the entities once the
 link is released.
@@ -424,7 +423,7 @@ The 10/20/30 minute timer maps to values 1/2/3:
 #### Legacy CB25 Runtime Dialect
 
 When `2A29` is missing, unreadable, empty, or does not contain `star`, Auto mode
-uses the legacy packet builders recovered from the same reachable BOX25 class.
+uses the legacy packet builders from the same BOX25 class in the app.
 They are Okin N-frames; the generated key table is in the
 [Sleepy's legacy CB25 profile](okin-nframe.md#sleepys-legacy-cb25):
 
@@ -443,7 +442,7 @@ Movement keys are `1/2` head, `4/8` foot, `10/20` lumbar, `40/80` neck,
 and zero for STOP. Preset keys are `08000000` flat, `00004000` TV,
 `00001000` zero-G, `00008000` anti-snore, `00002000` lounge,
 `00010000` memory 1, and `00040000` memory 2. The integration preserves the
-same three-repeat plus STOP recall sequence and the proven long-press memory
+same three-repeat plus STOP recall sequence and the app's long-press memory
 programming behavior.
 
 Legacy light on/off uses `04 E0 01 01/00 00 00`; toggle and wave modes use the

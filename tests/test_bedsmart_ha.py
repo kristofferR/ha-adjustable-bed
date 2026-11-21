@@ -158,7 +158,10 @@ async def test_bedsmart_cannot_reach_lp2_admin_service(hass, runtime):
     _, client = runtime
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
-            const.DOMAIN, "lp2", {"device_id": "bed", "operation": "motor_program"}, blocking=True
+            const.DOMAIN,
+            "lp2",
+            {"device_id": "bed", "operation": "fan", "fan": "head", "intensity": 20, "duration": 1},
+            blocking=True,
         )
     client.write_gatt_char.assert_not_awaited()
 
@@ -167,7 +170,7 @@ async def test_unknown_and_excluded_actions_fail_before_any_write(hass, runtime)
     import voluptuous as vol
 
     _, client = runtime
-    for op in ("fan", "motor_program", "wifi", "control"):
+    for op in ("fan", "motor_program", "movement_test", "wifi", "control"):
         with pytest.raises(vol.Invalid):
             await hass.services.async_call(
                 const.DOMAIN, "bedsmart", {"device_id": "bed", "operation": op}, blocking=True
@@ -365,33 +368,6 @@ async def test_stop_on_other_target_during_bedsmart_readiness_prevents_first_wri
     assert first.ensure_feature.await_count == 2
     first.settings.assert_not_awaited()
     second.settings.assert_not_awaited()
-
-
-async def test_movement_test_cancelled_during_release_marks_remaining_stages(runtime, monkeypatch):
-    import asyncio
-    import contextlib
-
-    from custom_components.adjustable_bed.command_scheduler import Delivery, delivered
-
-    coordinator, _ = runtime
-    await coordinator.async_execute_controller_command(lambda c: c.read_positions())
-    c = coordinator.controller
-    real_release = c._release
-
-    async def release_then_cancel(*args, **kwargs):
-        await real_release(*args, **kwargs)
-        raise asyncio.CancelledError
-
-    monkeypatch.setattr(c, "_release", release_then_cancel)
-    seen = []
-
-    async def operation(controller):
-        with delivered(seen.append):
-            await controller.diagnostic_cycle()
-
-    with contextlib.suppress(asyncio.CancelledError):
-        await coordinator.async_execute_controller_command(operation)
-    assert seen == [Delivery.PARTIAL]
 
 
 async def test_native_stop_after_idle_setting_change_keeps_physical_session(runtime, hass):

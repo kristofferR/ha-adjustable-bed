@@ -15,11 +15,11 @@ architecture.
 
 > [!NOTE]
 > Two newer apps that share these names use a different wire format. The
-> Nectar Motion app is the explicit **Nectar Move** profile of
+> Nectar Motion app is the **Nectar Move** profile of
 > [Okin CST](okin-nframe.md#okin-cst), and beds using the official MFirm 900-O app
 > (`com.okin.bedding.rizemf900`) and advertising as `OKIN-XXXXXX` are
-> [Okin CST](okin-nframe.md#okin-cst) too. Neither is selected by an `OKIN-*` name, a
-> shared OKIN UUID or a Device Information value.
+> [Okin CST](okin-nframe.md#okin-cst) too. Setup does not pick either from the
+> Bluetooth name or services; choose it yourself.
 >
 > The Nectar Premier / Resident Adjustable Base uses neither: choose the
 > [Resident Adjustable Base](okin-nframe.md#resident-adjustable-base) app profile,
@@ -58,7 +58,7 @@ of this one (see [Nectar](#nectar)).
 | Feature | Nectar | Mattress Firm 900 / iFlex | Sealy Posturematic (CB35) | DewertOkin ELEVATE |
 |---------|--------|---------------------------|---------------------------|--------------------|
 | Motor Control | ✅ Head, Feet, Lumbar | ✅ Head, Foot, Lumbar | ✅ Head, Foot, Lumbar, Neck, Hips (Hips is the Head End Tilt cover) | ✅ Actuator 1, actuator 2 and both together |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ (no semantic notification parser in the apps) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Anti-Snore, Lounge; TV sends the Lounge key | ✅ Flat, Zero-G, Anti-Snore, Lounge, Incline; TV sends the Lounge key | ✅ Flat, Zero G, Anti-Snore, Lounge, Incline, TV | ✅ Flat (one-shot) |
 | Memory Presets | ⚠️ Recall of slots 1-2 only, no programming | ❌ (built-in presets instead) | ⚠️ Recall of Memory 1 and 2; no programming over BLE | ❌ |
 | Massage | ✅ Global on, wave and off; no intensity commands | ✅ On, toggle, wave, off, intensity up/down | ✅ Toggle, head/foot strength, mode step, stop | ❌ |
@@ -66,7 +66,7 @@ of this one (see [Nectar](#nectar)).
 | Group control with M5X5 / M1X12 mains | ❌ | ❌ | ❌ | ✅ (see [AdjustableM5X5 lifts](#adjustablem5x5-lifts)) |
 | Hold until release | ❌ (finite pulses) | ❌ (finite pulses) | ❌ (finite pulses) | ✅ (renewable `timed_move`, both routes) |
 | BLE Pairing / Authentication | ❌ Not required | ❌ Not required | ❌ Not required | ❌ Not required |
-| Hardware-confirmed | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
+| Tested on hardware | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
 
 ## Choosing a profile
 
@@ -311,10 +311,10 @@ raw-parts clock formula, parser and captured-session execution.
 profile's frames against its vectors. `tests/test_codec_docs.py` checks every
 frame spelled in this guide against the vectors and each bed type against the
 factory. Each profile's vectors are
-the frames its pre-v5 controller sent. No app evidence covers the Nectar,
+the frames its pre-v5 controller sent. No app was analyzed for the Nectar,
 Mattress Firm and CB35 key frames; ELEVATE's frames match its apps (see
-its [Evidence](#dewertokin-elevate)). The same file freezes every StarCode frame
-in the standalone StarCode controllers' artifact vectors, by encoder, and the
+its [Evidence](#dewertokin-elevate)). The same file holds every StarCode frame
+in the standalone StarCode controllers' vectors, by encoder, and the
 same test rebuilds each one from its fields.
 
 ## Profiles
@@ -368,8 +368,8 @@ See the [timing table](#choosing-a-profile).
 
 #### Evidence
 
-No app evidence covers this profile. Nectar sends
-only its frozen frames, the ones the pre-v5 controller sent, from MaximumWorf's
+No app was analyzed for this profile. Nectar sends the frames the pre-v5
+controller sent, from MaximumWorf's
 [homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar).
 
 ### Mattress Firm 900 / iFlex
@@ -412,8 +412,8 @@ The MFirm 900 1.1.2 app
 (`com.okin.bedding.rizemf900`) reaches only the Okin CST frame. That app uses a
 14-byte CST format (`[0x0C, 0x02, motor_bytes(4), control_bytes(4), reserved(4)]`)
 and detects devices by the name prefix `okin` (case-insensitive); see
-[Okin CST](okin-nframe.md#okin-cst). This profile sends only its frozen frames, the ones the
-pre-v5 controller sent. The protocol was manually reverse-engineered by David
+[Okin CST](okin-nframe.md#okin-cst). This profile sends the frames the pre-v5
+controller sent. The protocol was manually reverse-engineered by David
 Delahoz in 2020 from the M900 app, with discovery from Zrau5454 in
 [#50](https://github.com/kristofferR/ha-adjustable-bed/issues/50).
 
@@ -527,8 +527,7 @@ See [Responses](#responses).
 
 #### Evidence
 
-The profile sends only its frozen frames, the ones the pre-v5
-controller sent, from the `com.okin.sealy` v1.1.1 analysis in
+The profile sends the frames the pre-v5 controller sent, from the `com.okin.sealy` v1.1.1 analysis in
 [#310](https://github.com/kristofferR/ha-adjustable-bed/issues/310). Complete
 protocol definition at
 `disassembly/output/com.okin.sealy/extracted/assets/flutter_assets/assets/protocol/35_22_01.json`.
@@ -636,7 +635,7 @@ commanded state is assumed, starts unknown and clears on disconnection.
 
 A finite movement or held preset always drains its two ordinary STOP cleanup
 writes to its captured session with a fresh cancellation event. Replaced
-clients never receive the old release. No source-proven automatic STOP exists
+clients never receive the old release. The app sends no automatic STOP
 for app backgrounding, link loss, one-shot movement, or an anti-pinch status.
 BLE write completion is transport delivery, not a hardware acknowledgement.
 An explicit Stop in a sequential pair reconnects the selected physical beds
@@ -672,7 +671,7 @@ Use the shared actions in [Actions and Automations](../SERVICES.md).
 Command literals and public execution are checked in `tests/test_sealy.py` and
 `tests/sealy_vectors.py`. The raw Dart-parts clock encoder retains the exact
 source formula. Automatic clock synchronization is unavailable until the
-meaning of parts index 6 is established; no Python weekday conversion is
+meaning of parts index 6 is known; no Python weekday conversion is
 assumed. Physical behavior remains unverified.
 
 ### DewertOkin ELEVATE
@@ -735,7 +734,7 @@ the AdjustableM5X5 app. That app's ELEVATE class sends exactly the frames above
 (its P3 vectors are tested against this controller), so it is not a separate
 profile.
 
-Its app-proven group behavior is carried over:
+Its group behavior follows the app:
 
 - Select an ELEVATE entry as a lift on an [AdjustableM5X5](starcode-m5x5.md)
   main. An ELEVATE can also be the main and select up to three lifts in its own
@@ -748,7 +747,7 @@ Its app-proven group behavior is carried over:
 #### Evidence
 
 Based on `com.starcode.adjustablem1x12` 1.1.3 and
-`com.starcode.abm5_5` 1.2.3. ELEVATE sends only its frozen frames. Command
+`com.starcode.abm5_5` 1.2.3. Command
 direction and multi-device fan-out await real-hardware checks.
 
 ## Notes

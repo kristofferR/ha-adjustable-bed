@@ -155,7 +155,7 @@ type RoutineSteps = list[tuple[ReverieComfortRequest | None, int | None]]
 
 
 class ReverieComfortActions(ABC):
-    """Comfort, routine and diagnostic actions shared by the Reverie protocols."""
+    """Comfort and routine actions shared by the Reverie protocols."""
 
     @abstractmethod
     def validate_comfort_request(self, request: ReverieComfortRequest) -> None:
@@ -172,14 +172,6 @@ class ReverieComfortActions(ABC):
     @abstractmethod
     async def async_start_routine(self, steps: RoutineSteps) -> None:
         """Replace the routine queue and run its first step."""
-
-    @abstractmethod
-    def validate_diagnostic(self) -> None:
-        """Reject a diagnostic test this model cannot run."""
-
-    @abstractmethod
-    async def async_start_diagnostic(self) -> None:
-        """Start the model's timed diagnostic test."""
 
 
 class PairlinkComfortActions(ReverieComfortActions):

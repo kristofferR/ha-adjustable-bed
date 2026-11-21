@@ -12,7 +12,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.beds.casper_base.protocol import Request
-from custom_components.adjustable_bed.beds.casper_sleep.protocol import MAX_REPORT_BYTES, Receive
 from custom_components.adjustable_bed.beds.hush_sleep.controller import HushSleepController
 from custom_components.adjustable_bed.beds.hush_sleep.protocol import (
     HushReceive,
@@ -189,16 +188,3 @@ async def test_delayed_handshake_uses_actual_admitted_controller():
     ctrl._send.assert_not_awaited()
     await captured[0](ctrl)
     ctrl._send.assert_awaited_once()
-
-
-@pytest.mark.parametrize("receiver", (Receive, HushReceive))
-def test_report_larger_than_any_real_report_is_refused(receiver) -> None:
-    """A device-sent report size cannot make HA buffer without limit (PRIV-11)."""
-    rx = receiver("mm")
-    rx.reset("q_report_allow")
-    rx.report_size = 2**40
-    chunk = bytes(64 * 1024)
-    with pytest.raises(ValueError, match="Oversized"):
-        for _ in range(MAX_REPORT_BYTES // len(chunk) + 1):
-            rx.feed(chunk)
-    assert not rx.pending

@@ -22,7 +22,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from bleak.exc import BleakError
 
-from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -156,8 +155,6 @@ class ReverieController(BedController, ReverieComfortActions):
         self._comfort_delay_seconds = 0.0
         self._comfort_ready_generation = 0
         self._comfort_connection_release: Callable[[], None] | None = None
-        self._diagnostic_timer: asyncio.TimerHandle | None = None
-        self._diagnostic_connection_release: Callable[[], None] | None = None
         self._routine_timer: asyncio.TimerHandle | None = None
         self._routine_steps: list[tuple[ReverieComfortRequest, int]] = []
         self._routine_generation = 0
@@ -376,55 +373,6 @@ class ReverieController(BedController, ReverieComfortActions):
         for b in command_bytes:
             checksum ^= b
         return bytes([0x55] + command_bytes + [checksum])
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        _LOGGER.debug(
-            "Writing command to Reverie bed (%s): %s (repeat: %d, delay: %dms, response=True)",
-            REVERIE_CHAR_UUID,
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        self._record_command_trace(
-            REVERIE_CHAR_UUID,
-            command,
-            response=True,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-        )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                note_frame_skipped()
-                return
-
-            try:
-                async with self._ble_lock:
-                    if effective_cancel is not None and effective_cancel.is_set():
-                        note_frame_skipped()
-                        return
-                    await self.client.write_gatt_char(REVERIE_CHAR_UUID, command, response=True)
-                    note_frame_written(effective_cancel)
-            except BleakError:
-                _LOGGER.exception("Failed to write command")
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
@@ -710,85 +658,8 @@ class ReverieController(BedController, ReverieComfortActions):
                 break
             self._validate_composer_values(request)
 
-    async def async_start_diagnostic(self) -> None:
-        """Start the ten-second Protocol 108 direct BLE test route."""
-        self.validate_diagnostic()
-        self._cancel_diagnostic()
-        context = self._coordinator.hold_command_connection()
-        context.__enter__()
-
-        def release() -> None:
-            context.__exit__(None, None, None)
-
-        self._diagnostic_connection_release = release
-        self._diagnostic_timer = self._coordinator.hass.loop.call_later(
-            10, self._enqueue_diagnostic_stop, release
-        )
-        failures: list[Exception] = []
-        for command in ([0x5B, 0x00], [0x41]):
-            try:
-                await self.write_command(self._build_command(command))
-            except Exception as err:
-                failures.append(err)
-                _LOGGER.exception("Reverie Protocol 108 diagnostic start write failed")
-        if failures:
-            raise ExceptionGroup("Reverie diagnostic start writes failed", failures)
-
-    def validate_diagnostic(self) -> None:
-        if not self.model.nightlight or not self.model.massage:
-            raise ValueError("Protocol 108 diagnostic test requires lights and massage")
-
-    def _cancel_diagnostic(self) -> None:
-        if self._diagnostic_timer is not None:
-            self._diagnostic_timer.cancel()
-            self._diagnostic_timer = None
-        release = self._diagnostic_connection_release
-        self._diagnostic_connection_release = None
-        if release is not None:
-            release()
-
-    def _enqueue_diagnostic_stop(self, release: Callable[[], None]) -> None:
-        if release is not self._diagnostic_connection_release:
-            return
-        self._diagnostic_timer = None
-        self._coordinator.hass.async_create_task(
-            self._stop_diagnostic(release), "adjustable_bed.reverie_diagnostic_stop"
-        )
-
-    async def _stop_diagnostic(self, release: Callable[[], None] | None = None) -> None:
-        if release is None:
-            release = self._diagnostic_connection_release
-        failures: list[Exception] = []
-        async def write_stops(controller: BedController) -> None:
-            if controller is not self or release is not self._diagnostic_connection_release:
-                return
-            for command in ([0x35], [0x5B, 0x00]):
-                try:
-                    await self.write_command(
-                        self._build_command(command), cancel_event=asyncio.Event()
-                    )
-                except Exception as err:
-                    failures.append(err)
-                    _LOGGER.exception(
-                        "Reverie Protocol 108 diagnostic stop write failed"
-                    )
-
-        try:
-            await self._coordinator.async_execute_controller_command(
-                write_stops,
-                cancel_running=False,
-                resource="reverie:diagnostic",
-                read_positions_after_operation=False,
-            )
-        finally:
-            if release is self._diagnostic_connection_release:
-                self._cancel_diagnostic()
-        if failures:
-            raise ExceptionGroup("Reverie diagnostic stop writes failed", failures)
-
     def on_disconnect(self) -> None:
         self._cancel_comfort_progression()
-        self._cancel_diagnostic()
         self._cancel_routine()
         super().on_disconnect()
 

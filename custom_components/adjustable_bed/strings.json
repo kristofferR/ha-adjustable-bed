@@ -8924,7 +8924,7 @@
         },
         "operation": {
           "name": "Operation",
-          "description": "What to set or read. Test cycle and Program schedule run only on Power Cool beds set up with the matching remote layout."
+          "description": "What to set or read."
         },
         "actions": {
           "name": "Alarm actions",
@@ -8953,10 +8953,6 @@
         "popup": {
           "name": "Timer popup choice",
           "description": "For Massage menu: a 15, 30 or 45 minute timer, or turn massage on or off."
-        },
-        "schedule": {
-          "name": "Motor schedule",
-          "description": "For Program schedule: records (twelve rows of order 1 to 12, run seconds and rest seconds, one per motor and direction), rest, count, radio (rf or ble), code (new or old), identifier (1 to 9) and motors (1, 2, 3 and 4 in any order). A running schedule cannot be stopped or read back."
         },
         "side": {
           "name": "Side",
@@ -9864,7 +9860,7 @@
     },
     "lp2": {
       "name": "L&P Adjustable Base: settings",
-      "description": "Sets the lighting, aromatherapy and fans of an L&P Adjustable Base, runs one of its remote controls, or runs a movement program or test. Use Set alarm for wake-up alarms.",
+      "description": "Sets the lighting, aromatherapy and fans of an L&P Adjustable Base, or runs one of its remote controls. Use Set alarm for wake-up alarms.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -9898,13 +9894,9 @@
           "name": "Fan duration",
           "description": "For Set fan: duration choice 0 to 6, required for either fan. Only the head fan uses it."
         },
-        "schedule": {
-          "name": "Movement program",
-          "description": "For Program movement sequence: records (twelve rows of order 1 to 12, run time and pause), rest, count, radio (rf or ble), code (new or old), identifier (1 to 9) and motors (1, 2, 3 and 4 in any order). Only beds set up with the matching remote layout accept it."
-        },
         "confirm": {
           "name": "Confirm programming or saving",
-          "description": "Required for Program movement sequence, Run movement test, and a control's long press or save."
+          "description": "Required for a control's long press or save."
         },
         "control": {
           "name": "Control",
@@ -9963,10 +9955,6 @@
         "aroma_times": {
           "name": "Aromatherapy times",
           "description": "For Aroma times: three numbers, 1 to 60 minutes, 1 to 60 minutes and 1 to 12 hours."
-        },
-        "confirm": {
-          "name": "Confirm programming or saving",
-          "description": "Required for Movement test, which runs only on beds set up with the test layout."
         },
         "duration_ms": {
           "name": "Movement duration (milliseconds)",
@@ -10276,9 +10264,6 @@
     "bed_changed": {
       "message": "The bed changed while the action was being checked. Try again."
     },
-    "bed_reconnected": {
-      "message": "{device_name} reconnected while the action was being checked. Try again."
-    },
     "feature_not_supported": {
       "message": "{device_name} does not support {feature}."
     },
@@ -10587,9 +10572,6 @@
     },
     "jerome_aroma": {
       "message": "Choose aroma intervals and durations from 1 to 60 minutes, and a pause from 1 to 12 hours."
-    },
-    "jerome_intensity": {
-      "message": "Choose massage intensity 1, 2 or 3."
     },
     "jerome_feature_scope": {
       "message": "This setting applies to a whole physical bed. It cannot target one half of a one-address combined bed. Keep this bed standalone to use its whole-bed settings."
@@ -11540,7 +11522,6 @@
         "outlet": "Outlet",
         "outlet_status": "Outlet status",
         "position": "Position",
-        "preset_reset": "Preset reset",
         "preset_save": "Preset save",
         "preset_timer": "Preset timer",
         "responsive_air": "Responsive air",
@@ -11565,7 +11546,6 @@
         "underbed_auto_status": "Underbed auto status",
         "get_sleep_number_controls": "Read Sleep Number settings",
         "bind_foundation": "Pair base",
-        "reset_articulation_presets": "Reset saved positions",
         "run_diagnostics": "Run bed diagnostics",
         "cancel_current_diagnostic_run": "Cancel bed diagnostics",
         "get_simple_diagnostic_run_results": "Read bed diagnostic results",
@@ -11945,9 +11925,7 @@
         "rgb": "Light color",
         "lamp_timer": "Lamp timer",
         "massage_timer": "Massage timer",
-        "massage_popup": "Massage menu",
-        "diagnostic_cycle": "Test cycle",
-        "program_schedule": "Program schedule"
+        "massage_popup": "Massage menu"
       }
     },
     "richmat_rise_popup": {
@@ -12739,9 +12717,7 @@
         "light_duration": "Set light duration",
         "aromatherapy": "Set aromatherapy times",
         "fan": "Set fan",
-        "motor_program": "Program movement sequence",
-        "control": "Run control",
-        "movement_test": "Run movement test"
+        "control": "Run control"
       }
     },
     "lp2_fan": {
@@ -12755,7 +12731,6 @@
         "color": "Light color",
         "light_duration": "Light timeout",
         "aromatherapy": "Aroma times",
-        "movement_test": "Movement test",
         "bed_command": "Bed command"
       }
     },

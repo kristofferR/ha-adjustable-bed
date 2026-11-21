@@ -392,17 +392,18 @@ async def test_controls_absent_from_the_selected_remote_send_nothing(
     coordinator, mock_bleak_client: MagicMock
 ):
     remote_a = _restonic(coordinator, KEESON_VARIANT_RESTONIC_A)
-    for action in (
-        remote_a.lights_toggle,
-        remote_a.restonic_zzz,
-        remote_a.move_back_legs_up,
-        lambda: remote_a.preset_memory(1),
-        lambda: _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).preset_memory(1),
-    ):
+    for action in (remote_a.lights_toggle, remote_a.restonic_zzz, remote_a.move_back_legs_up):
         with pytest.raises(NotImplementedError):
             await action()
-    for preset in (remote_a.preset_tv, remote_a.preset_anti_snore, remote_a.preset_lounge):
-        await preset()
+    for action in (
+        lambda: remote_a.preset_memory(1),
+        lambda: _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).preset_memory(1),
+        remote_a.preset_tv,
+        remote_a.preset_anti_snore,
+        remote_a.preset_lounge,
+    ):
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await action()
     mock_bleak_client.write_gatt_char.assert_not_awaited()
 
 

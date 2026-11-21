@@ -95,7 +95,6 @@ CALLBACK_FUNCTION_LOCK: Final = "84"  # CmdKey.LOCK, the smart set lock
 CALLBACK_FUNCTION_SNORE: Final = "21"  # EPack.SNORE function
 DATA_TABLE_LEN: Final = 32
 BUFFER_RESET_LEN: Final = 100
-MAX_BUFFER_LEN: Final = 256
 
 # Fixed opcodes the app writes outside the per-model catalog.
 BTN_LED_OFF_CODE: Final = 0x75  # Button-light page OFF (k_ubl_off, press_once)
@@ -299,12 +298,6 @@ def parse_waist_piece(frame: str) -> dict[str, Any]:
     return {}
 
 
-def alarm_countdown_minutes(target_minute_of_day: int, now_minute_of_day: int) -> int:
-    """``(target - now) mod 1440``; zero (and the -1 case) become 1440."""
-    minutes = (target_minute_of_day - now_minute_of_day) % 1440
-    return 1440 if minutes in (0, -1) else minutes
-
-
 def alarm_action(memory: int | None, massage: tuple[int, ...]) -> int | None:
     """``setAlarmData``/``combineCmd``: the opcode for one memory and 0-2 massages.
 
@@ -364,11 +357,6 @@ class Classifier:
         hex_text = data.hex()
         if hex_text.startswith(("6e", "5e")) and len(self.buffer) > BUFFER_RESET_LEN:
             self.buffer = ""
-        if len(self.buffer) + len(hex_text) > MAX_BUFFER_LEN:
-            # Bounds memory only: the longest frame is far shorter.
-            self.buffer = ""
-            if len(hex_text) > MAX_BUFFER_LEN:
-                return self.events
         self.buffer += hex_text
         buf = self.buffer
         if buf == RX_VERSION1:

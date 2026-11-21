@@ -13,16 +13,16 @@ architecture.
 
 ## Known Models
 
-BetterLiving2's two- and three-motor screen choices are explicit app profiles.
-Its shared Bluetooth names do not establish a particular actuator model.
+BetterLiving2 has two- and three-motor layouts; pick yours in setup. The
+Bluetooth name does not tell which one you have.
 
-Symphony Sleep Sense's selector 4 and fixed split P1 helpers use this codec.
-Its independent product/selector choices, lifecycle, alarm modes and supported
-controls are documented in the [Symphony profile](okin-soundwave.md#symphony-sleep-sense).
-The app is an explicit choice; a shared name or UUID does not identify it.
+Symphony Sleep Sense beds with control box selector 4, and its split P1 beds,
+also use this format; their controls are in the
+[Symphony profile](okin-soundwave.md#symphony-sleep-sense). Choose that app in
+setup; the Bluetooth name does not identify it.
 
-OrmatekTechnoSmart has explicit Techno Smart New and Techno Smart Lite app layouts.
-Its shared carriers identify the wire format; hardware compatibility remains unverified.
+OrmatekTechnoSmart has Techno Smart New and Techno Smart Lite layouts; pick yours
+in setup. They are not yet tested on hardware.
 
 Brands using Keeson/Ergomotion actuators:
 
@@ -48,13 +48,12 @@ Brands using Keeson/Ergomotion actuators:
 - Bases controlled by MaxCoil Una, Dynasty Bases, Bedsense Bases, Avanti Bases
   and AMERICANSTAR (app screens 2M, 3M and 4M, chosen by hand in the app)
 
-**Beautyrest BLACK app boundary:** The Android app
-`com.keeson.beautyrestblack` 1.2.1 (18) uses TCP and network services, with no
-reachable Bluetooth bed-control transport in that exact artifact. BLE hardware
-using independently identified Keeson protocols remains supported.
+**Beautyrest BLACK app:** the Android app `com.keeson.beautyrestblack` 1.2.1
+(18) controls the bed over the network, not Bluetooth, so it is not supported.
+Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 
 **DewertOkin/ORE brands** also using FFE5 protocol (31 apps):
-- Simon Li, Cherish Smart, Minghua, Heal Every Night (Simon Li, Heal Every Night and OKIN-Seating have [explicit profiles](#simon-li-heal-every-night-and-okin-seating-profiles))
+- Simon Li, Cherish Smart, Minghua, Heal Every Night (Simon Li, Heal Every Night and OKIN-Seating have [their own profiles](#simon-li-heal-every-night-and-okin-seating-profiles))
 - ORE: Dynasty, LevaSleep, American Star, Avanti, Comfort Furniture, Hestia Motion, Maxcoil, Power's Bedding, SFM, Ultramatic, Better Living, Koizumi
 - See [DewertOkin](okin-nframe.md#dewertokin) for full list
 
@@ -66,8 +65,8 @@ using independently identified Keeson protocols remains supported.
 | ✅ | [OrmatekTechnoSmart](https://play.google.com/store/apps/details?id=com.okin.ormatek) | `com.okin.ormatek` | [Techno Smart New / Lite](#ormatek-technosmart) |
 | ✅ | [Aging in Place / Dawn House](https://play.google.com/store/apps/details?id=com.keeson.agingplace) 1.1.0 (87) | `com.keeson.agingplace` | [Dawn House JSON](#aging-in-place--dawn-house) |
 | ✅ | [Enso Remote](https://play.google.com/store/apps/details?id=com.ore.sfm2) 2.3 | `com.ore.sfm2` | [Enso Remote](#enso-remote) |
-| ✅ (verified scope) | [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada) 1.0.1 (6) | `com.okin.yamada` | [Explicit P1/P2](#アシステック--yamada) |
-| ✅ | Somos / SomosBeds 1.0.0 (code 1) | `cn.com.somos` | [Five explicit products](#somos--somosbeds) |
+| ✅ | [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada) 1.0.1 (6) | `com.okin.yamada` | [P1/P2](#アシステック--yamada) |
+| ✅ | Somos / SomosBeds 1.0.0 (code 1) | `cn.com.somos` | [Five products](#somos--somosbeds) |
 | ✅ | [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6) | `com.ore.yorkfeng.comfortbaseble2` | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
 | ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [Ergomotion 4.0](#ergomotion-40); also [KSBT](#ksbt-family) |
 | ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` | [KSBT](#ksbt-family) |
@@ -90,38 +89,33 @@ using independently identified Keeson protocols remains supported.
 | ✅ | [Dynasty Bases](https://play.google.com/store/apps/details?id=com.ore.Dynasty) 1.0.2 (3) | `com.ore.Dynasty` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [Bedsense Bases](https://play.google.com/store/apps/details?id=com.ore.sfmc2bedsence) 1.1 (3) | `com.ore.sfmc2bedsence` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [Avanti Bases](https://play.google.com/store/apps/details?id=com.ore.AvantiBases) 1.0.5 (7) | `com.ore.AvantiBases` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
-| ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1), hardware unverified | `com.ore.americanstar` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
+| ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1), not yet tested on hardware | `com.ore.americanstar` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | ComfortFurniture 2.3 (10) | `com.ore.comfortfurniture` | [ComfortFurniture](#comfortfurniture) |
-| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [OKIN Comfort Bed](#okin-comfort-bed) |
-| ✅ | [ORE Ultramatic](https://play.google.com/store/apps/details?id=com.ore.ultramatic) 1.0.5 (9), hardware unverified | `com.ore.ultramatic` | [ORE Ultramatic](#ore-ultramatic) |
+| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), not yet tested on hardware | `com.ore.okincomfortbed` | [OKIN Comfort Bed](#okin-comfort-bed) |
+| ✅ | [ORE Ultramatic](https://play.google.com/store/apps/details?id=com.ore.ultramatic) 1.0.5 (9), not yet tested on hardware | `com.ore.ultramatic` | [ORE Ultramatic](#ore-ultramatic) |
 | ✅ | [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (11) | `com.ore.bedding.glideawaymontion` | [Glideaway Motion](#glideaway-motion) |
 | ✅ | [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (10) | `com.okin.adjustamattress` | [AdjustaMattress](#adjustamattress) |
 | ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
 | ✅ | [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4) | `com.ore.jalon.neworebeding_android` | [Jalon](#okincomfortbed-ⅱ-jalon) |
-| Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
+| Own guide | Tempur Sleeptracker-AI ([guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
 
-**iDealBed 6i app boundary:** iDealBed 6i Adjustable, acquired as iDealBed 6i
-Remote, `com.keeson.idealbed6iremote` 1.2.0 (11), controls beds over LAN UDP
-or cloud TCP. No direct BLE or Bluetooth Classic bed-control path was found
-in that exact Android app. Its network controls,
-Wi-Fi setup and cloud/account services are outside this Bluetooth-only
-integration. This finding does not apply to all iDealBed devices or to the
-separately supported [Idealbed BLE app](richmat.md#richmat-mh-apps)
-(`com.richmat.idealbed`). Choose a BLE profile only from independently identified
-hardware or app evidence, never from the iDealBed brand or this package name.
+**iDealBed 6i:** iDealBed 6i Adjustable (installed as iDealBed 6i Remote,
+`com.keeson.idealbed6iremote` 1.2.0 (11)) controls beds over the local network
+or the cloud, not Bluetooth, so it is not supported. This does not apply to every
+iDealBed bed or to the [Idealbed Bluetooth app](richmat.md#richmat-mh-apps)
+(`com.richmat.idealbed`). Choose a profile from your bed's app or controller, not
+from the iDealBed brand.
 
-**ComfortBaseForWifi is network-only:** ComfortBaseForWifi 3.7 (10)
-(`com.ore.jalon.comfortwifiandroid`) controls beds over TCP/HTTP and has no
-direct BLE path. Its Wi-Fi setup and cloud/account features are outside this
-Bluetooth-only integration. It is a different app from ComfortBase II (BLE).
-Do not choose a Keeson profile based on the ComfortBaseForWifi app name or its
-product list. For a bed independently identified as using BLE, follow its
-documented route, such as [BaseI4/I5](#base-basei4i5) for the confirmed GlideAway
-ComfortBase Odessa hardware.
+**ComfortBaseForWifi:** ComfortBaseForWifi 3.7 (10)
+(`com.ore.jalon.comfortwifiandroid`) controls beds over the network, not
+Bluetooth, so it is not supported. It is a different app from ComfortBase II
+(Bluetooth). Do not pick a Keeson profile from its name or product list. A bed
+that uses Bluetooth follows its own route, such as [BaseI4/I5](#base-basei4i5)
+for the GlideAway ComfortBase Odessa, which owners have confirmed.
 
 The eight apps of the [Keeson layout app family](#keeson-layout-app-family) (Tempur
 Curve, Q-Plus, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo
-Slim and TEMPUR AU) are also their own bed types with their app's exact keys and
+Slim and TEMPUR AU) are also their own bed types with their app's own keys and
 layouts; the "also" routes are the generic Keeson variants that drive the same beds.
 
 
@@ -132,22 +126,22 @@ layouts; the "also" routes are the generic Keeson variants that drive the same b
 | Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Hold Until Release | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Memory Presets | ⚠️ 4 exposed (slot 3 app-confirmed) | ✅ (remote-dependent 0x2000/0x4000/0x8000/0x10000) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 exposed (verification needed) | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
-| TV Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Anti-Snore Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Lounge Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Memory Presets | ⚠️ 4 shown; the app uses slot 3 | ✅ (depends on the remote) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 shown; not yet tested on hardware | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
+| TV Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Anti-Snore Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Lounge Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-The Sino column's anti-snore is the BetterLiving table. The app profiles list
+The Sino column's anti-snore comes from the BetterLiving app. The app profiles list
 their controls in their sections.
 
 Hold until release ([renewable holds](../SERVICES.md#renewable-holds)) is on
 every profile whose app streams a held key until release; the
 tables below mark each one. The Base, OKIN, Sino, JSON, KSBT CR, KSBT04C, Sleep
-Harmony, Purple, OKIN FFE, Rondure, Scott Living and Sleepy's BOX15 routes have no
-app evidence for it and keep finite pulses.
+Harmony, Purple, OKIN FFE, Rondure, Scott Living and Sleepy's BOX15 routes move
+in steps instead.
 
 ## Choosing a profile
 
@@ -454,8 +448,8 @@ profiles address one half with Left `02` or Right `01`, the selectors of the
 Ergomotion 4.0 3.7 app builder; Both keeps the eight-byte `E5` frame. Every
 command, release and STOP included, keeps the selected side.
 
-The older A/B aliases in this guide (`01` side A, `02` side B) do not establish
-physical A/B orientation. Android 3.7's A/B settings strings actually produce
+The older A/B aliases in this guide (`01` side A, `02` side B) do not tell
+which physical side is A or B. Android 3.7's A/B settings strings actually produce
 selector `00` because its builder expects Left/Right. HA uses the Left/Right branches. Which half is which still needs testing by
 owners.
 
@@ -630,7 +624,7 @@ Right child devices and retains the parent's Both controls, sending the
 resolve to P2 or JSON at connection time, and the detected BetterLiving
 and CB1322 tables have no side frame.
 
-The side frame is proven by Ergomotion 4.0 3.7; its use on Member's Mark
+The side frame comes from Ergomotion 4.0 3.7; its use on Member's Mark
 hardware remains unverified. Choose it only for a receiver with compatible P1
 side addressing. It does not change existing standalone frames, pulse timings,
 profiles or entity identities. Two separately advertising receivers use the
@@ -826,7 +820,7 @@ The KSBT03C command values and 3-motor layout are APK-derived (Ergomotion Sync
 confirms the lumbar motor responds to `0x40`/`0x80` and that no tilt motor
 exists. The cadence, unacknowledged write mode and timer-cessation release are
 checked against the app from Ergomotion Sync 1.0.5 but remain hardware-unverified. A
-replacement STOP frame must not be guessed without new protocol evidence or a
+replacement STOP frame must not be guessed without new protocol details or a
 hardware capture.
 
 ### Sleep Harmony Variant
@@ -1314,7 +1308,7 @@ stops motion and presets.
 - MaxCoil Una and Dynasty Bases ship the same `com.ore.okincomfortbed` code base.
 - Bedsense Bases is a separate package, but its app has the same
   frames, screens, timing, release, massage, light and reply handling.
-- The separate Avanti artifact proves every command, layout, timing and reply
+- The separate Avanti app confirms every command, layout, timing and reply
   behavior below as well, and so does AMERICANSTAR 1.0 (1).
 - INNOVA (`com.ore.sfm`), Bedsense's sibling app, uses different frames and
   has its own [INNOVA profile](#innova-profile).
@@ -1448,8 +1442,8 @@ and subscribes with its Bluetooth stack. The app leaves ATT mode at the Android
 runtime default and enables notifications only locally, without writing a CCCD.
 Actual properties, numeric ATT mode and peripheral subscription needs remain
 unverified. There is no setup write, authentication or capability handshake.
-Two separate receivers can use HA's paired infrastructure; no single-address
-side selector is established.
+Two separate receivers can use HA's paired infrastructure; there is no
+single-address side selector.
 
 #### Controls
 
@@ -1550,7 +1544,7 @@ FFE4 messages are accepted only at exactly nine bytes, with no added header,
 checksum, footer or fragment rules. Accessory lamp and F0 audio/fridge branches
 take priority and are ignored safely rather than reproducing the app's invalid
 BED-fragment casts. Remaining byte 7 values 07, 06 and 0A end held refresh.
-The app sends no STOP on this incoming path; HA still performs the proven
+The app sends no STOP on this incoming path; HA still performs the app's
 movement release as command cleanup. No BED position, light or massage state
 is decoded, and no query packet is added.
 
@@ -1615,11 +1609,10 @@ massage levels and timer indicators describe local commands only.
 
 #### Evidence
 
-The app's 104 literal command/variant vectors and 39 Java builder probes are
-frozen. The shared Keeson
-codec reproduces every reachable frame. Physical axes, release behavior, memory,
-massage/light effects and actual GATT properties remain unverified until real
-users supply feedback from owners. No app feature is left pending.
+The app's 104 command/variant vectors and 39 builder probes are in the tests, and
+the shared Keeson codec reproduces every frame the app sends. Physical axes,
+release behavior, memory, massage/light effects and actual GATT properties still
+need testing by owners.
 
 ### Keeson layout app family
 
@@ -1666,7 +1659,7 @@ Shared Bluetooth names, UUIDs and manufacturer data do not identify these apps.
 Select the bed address manually when automatic discovery cannot disambiguate it.
 
 **App controls** asks for the layout shown by the app. Q-Plus defaults to M2;
-Ergomotion and TEMPUR AU default to B2; Omazz uses its reachable RemoteB layout.
+Ergomotion and TEMPUR AU default to B2; Omazz uses its RemoteB layout.
 The layout fixes the available actions and source timing. It does not prove
 physical motor count. The pulse count bounds a normal held-action button press;
 it does not change the source 100 ms refresh interval. Serta's local angle-edit
@@ -1684,11 +1677,11 @@ each declared app layout, Q-Plus A/B/Both wire selector and Serta local targets
 through reload; unrelated settings from a previous protocol are removed.
 Shared options do not overwrite side-owned settings. Native child-device
 targeting and side conflicts follow the existing
-paired rules. No unproven single-address physical side mapping is added.
+paired rules. No guessed single-address physical side mapping is added.
 
 All eight profiles require both current-session write and notification roles.
 The seven profiles without position feedback keep angle sensing disabled and
-still subscribe for their proven timer state. Serta MP exposes calibrated angle
+still subscribe for the app's timer state. Serta MP exposes calibrated angle
 feedback and direct pulse targets. Hardware behavior remains unverified.
 
 #### Controls
@@ -1931,7 +1924,7 @@ MX keys the sparse builder accepts (any other key is sent as zero): `0x1`, `0x2`
 - MX then polls `00 B0` five seconds after connect and every 30 seconds, through
   the diagnostic poll hook, with command priority and without renewing the idle
   timeout.
-- The app has no clock writer and no reachable angle-target writer.
+- The app has no clock writer and no angle-target writer.
 
 #### Services
 
@@ -2066,7 +2059,7 @@ physical meaning is assumed for it.
 
 **Status:** Not yet tested
 
-Bed type `omazz_adjusto_iii`, one layout. The app has no reachable name writer,
+Bed type `omazz_adjusto_iii`, one layout. The app has no name writer,
 so rename is unavailable.
 
 #### Controls
@@ -2316,7 +2309,7 @@ existing entry controls. Hardware is unverified.
   sensing and refresh settings are hidden. The motor pulse count still sets a
   cover movement's duration.
 - Two physical addresses may use native paired-bed routing; there is no
-  app-proven single-address side protocol.
+  single-address side protocol in the app.
 - It writes to FFE9 in FFE5 and subscribes to FFE4 in FFE0, with response only
   when the characteristic offers `write` alone (the app leaves Android's write
   type unchanged).
@@ -2447,7 +2440,7 @@ with the same zero frame.
 
 Bed type `scott_living`, selected manually: it shares the FFE5 service with
 other Keeson beds and has no distinct name. It writes FFE9 and subscribes to
-FFE4. The side byte is always `01`. There is no app evidence; the frames are
+FFE4. The side byte is always `01`. No app was analyzed; the frames are
 the pre-v5 controller's.
 
 #### Controls
@@ -2854,7 +2847,7 @@ The Cool Base profile follows this app. Hardware behavior is unverified.
 |---------|-----------|
 | Motor Control | ✅ (2 motors: head, foot) |
 | Position Feedback | ❌ |
-| Memory Presets | Cool Base: ❌ (the app's star button has no proven memory meaning; exposed as **Star**). DewertOKIN OKIN-BLE: 2 slots |
+| Memory Presets | Cool Base: ❌ (the app's star button is not known to be a memory; exposed as **Star**). DewertOKIN OKIN-BLE: 2 slots |
 | Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore; Lounge only on DewertOKIN OKIN-BLE) |
 | Massage | ✅ (Head massage, Foot massage, Massage mode buttons; mode sensor) |
 | Light Control | ✅ (on/off from reported state; toggle) |
@@ -3192,7 +3185,7 @@ Example frames from `alarm_frame()` with an HA clock of Tuesday 07:15:30:
 - Cherish intent persists across HA restarts; expiry clears its local enabled
   indication. It does not restore phone alarms or infer receiver state.
 - BF's **Refresh alarm** button sends the live E2 clock query.
-- Cherish has no reachable query or alarm notification consumer, so neither is
+- Cherish has no query or alarm notification handler in the app, so neither is
   synthesized for it.
 
 ##### Deliberate App Differences
@@ -3243,7 +3236,7 @@ BF alarm report on FFE4:
   numeric errors or reflection-based cache refresh.
 - The apps themselves can reject an incoming STOP at queue capacity; that
   defect is not copied into HA.
-- No failure, disconnect or timeout alone establishes physical stopping.
+- No failure, disconnect or timeout alone means the bed stopped.
 
 ##### Scope
 
@@ -3254,10 +3247,8 @@ services and unrelated phone infrastructure are outside this BLE integration.
 
 **Hardware status:** needs testing.
 
-- Real-user captures are deferred external validation, not
-  a prerequisite for implementing the proven app behavior.
 - Physical posture, stopping distance, alarm recurrence and successful on-air
-  delivery have not been established.
+  delivery are not yet confirmed; captures from owners help.
 
 ##### BF and Cherish analysis provenance
 
@@ -3449,12 +3440,12 @@ alarm. It accepts the usual `device_id` and optional paired `side`, plus:
   positioning, which can send stale or FF time bytes. HA never reproduces those
   races, the misleading initial enabled flag, phone ringtone playback or Android
   scheduling.
-- Successful writes establish no device acknowledgement of the alarm setting.
+- A successful write is not an acknowledgement of the alarm setting from the bed.
 
 #### Notifications / State
 
 - The app's live notify callback compares lowercase hex against uppercase
-  `E2FE16`, rejecting all inputs. Its unreachable parser lacks a proven reply
+  `E2FE16`, rejecting all inputs. Its unused parser lacks a known reply
   length/checksum and always marks massage enabled.
 - HA retains raw notifications for diagnostics and does not invent working
   feedback from that dead parser. No notification-derived alarm, motor, sensor
@@ -3501,7 +3492,7 @@ The `ergomotion_4` bed type is an app profile over this codec, like the
 [Keeson layout apps](#keeson-layout-app-family). This codec builds every frame it
 sends: the K1 and side frames for P1 products, the `04 02` frames and status
 query for P2 products, and its custom massage and RGB frames. Its product
-catalog, not the profile, picks the keys each product sends. Its frozen vectors
+catalog, not the profile, picks the keys each product sends. Its test vectors
 are the `ergomotion_4` entry of `tests/keeson_vectors.py`.
 
 #### Setup
@@ -3510,7 +3501,7 @@ are the `ergomotion_4` entry of `tests/keeson_vectors.py`.
 
 The app's built-in products H, M1–M22 and M30/EZI MAID, plus the 21 products
 in the offline catalog acquired on 2026-11-03. The product table below gives
-the exact choices. App labels do not establish physical motor counts.
+the exact choices. App labels do not tell how many motors the bed has.
 
 This is the **Ergomotion 4.0** app (`com.sfd.hump`), distinct from the older
 [Ergomotion app](#ergomotion-app) B1/B2/C1/D1 profiles. Existing
@@ -3598,7 +3589,7 @@ available. Restoring standalone controls restores the saved feedback setting.
 
 The Android 3.7 settings radio stores A/B, but its P1 builder only recognizes
 Left/Right. Those A/B values incorrectly produce side byte `00`. HA deliberately
-uses the proven Left=`02` and Right=`01` builder branches, never that app defect.
+uses the app's Left=`02` and Right=`01` builder branches, never that app defect.
 Confirm which physical half corresponds to Left/Right; the
 reporter has not provided a support bundle or a confirmed receiver profile.
 For two independently advertising receivers, use the existing two-address
@@ -3617,7 +3608,7 @@ product's keys, without combining products.
 
 The built-in **M22** choice represents a persisted-only legacy layout; it is not
 in the app's current popup. EZI MAID is an alias of M30. A trailing space in
-`ErgoBalance100 ` is significant in the frozen catalog.
+`ErgoBalance100 ` is significant in the catalog.
 
 ###### Ergomotion 4.0 products
 
@@ -3675,7 +3666,7 @@ in the app's current popup. EZI MAID is an alias of M30. A trailing space in
 Choose **Ergomotion 4.0 app (explicit product)** and the exact product shown in
 the app. This is separate from the older Ergomotion app's B1/B2/C1/D1 layouts.
 The [product guide](#ergomotion-40-products) lists all built-in choices and
-the 21 frozen catalog products. Other catalog product accepts that product's
+the 21 catalog products. Other catalog product accepts that product's
 exact name and ordered feature keys, without connecting to a vendor account.
 Motor pulse count bounds each held action at the app's fixed 100 ms cadence.
 
@@ -3693,7 +3684,7 @@ movement controls remain available. Restoring standalone controls restores the
 stored position-feedback preference.
 
 HA uses the app builder's Left=`02` and Right=`01` branches. The Android app's
-A/B radio labels do not establish physical orientation and contain a selector
+A/B radio labels do not tell which physical side is which and contain a selector
 mismatch. Confirm the halves with the real bed. For two
 separately advertising receivers, use the ordinary two-address combined bed.
 
@@ -4249,8 +4240,7 @@ models P3 and P4 send [Okin N-frames](okin-nframe.md#framing-and-checksum), desc
 |----------|-----|------------|
 | ✅ | [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (version code 10) | `com.okin.adjustamattress` |
 
-- The bed type implements this artifact. Its artifact behavior is verified;
-  physical hardware remains **unverified**.
+- The bed type follows this app. It is **not yet tested** on hardware.
 
 ##### AdjustaMattress setup and layout
 
@@ -4259,7 +4249,7 @@ explicit choices (`P1_L0` to `P4_L6`) combine two independent dimensions.
 
 ###### AdjustaMattress models
 
-| Model | Artifact enum | GATT roles |
+| Model | App enum | GATT roles |
 | --- | --- | --- |
 | P1 | CB | Service FFE5 / write FFE9, service FFE0 / notify FFE4 |
 | P2 | JLDP | Same roles; FFF0 is a model marker, never the writer |
@@ -4278,7 +4268,7 @@ explicit choices (`P1_L0` to `P4_L6`) combine two independent dimensions.
 | L5 HilowBed | Neck tilt, TV, lounge, anti-snore, lighting |
 | L6 Lolobed | Lift head, lift foot, lift up/down, lighting |
 
-- Lift labels follow the app. They do not establish a measured height or a new
+- Lift labels follow the app. They do not give a measured height or a new
   motor position scale.
 - L5 has no lift command merely because of its name.
 - M1 exists only on L0; no memory programming or additional memory slots exist.
@@ -4288,13 +4278,13 @@ explicit choices (`P1_L0` to `P4_L6`) combine two independent dimensions.
 
 - Position covers, standard preset buttons, app-labelled M1/lift/light buttons,
   and the generic `adjustable_bed.hold_control` action use the selected layout.
-- Held identifiers preserve the artifact's method names, such as `headUp`,
+- Held identifiers keep the app's method names, such as `headUp`,
   `footDown`, `unionUp`, `neckTiltUp`, `lumbarDown`, `liftHead`, `flatPosition`,
   `zeroGravity`, `tv`, `lounge`, `anti` and `m1`. Only exposed controls are
   accepted.
 - The native card groups massage, lighting, presets and utility settings.
 
-| HA control | Artifact actions |
+| HA control | App actions |
 | --- | --- |
 | Back cover | `headUp` / `headDown` |
 | Legs cover | `footUp` / `footDown` |
@@ -4384,7 +4374,7 @@ the raw Bluetooth name and GATT:
 | Presets | ✅ (flat and zero gravity; TV, lounge and anti-snore on L0 to L5) |
 | Memory Presets | ⚠️ (M1 recall on L0 only; no memory programming or additional slots) |
 | Massage | ✅ (P2 L0/L1/L2/L3/L5: dedicated selectors and timers; others: four held steps) |
-| Massage power/off, absolute intensity | ❌ (not in this artifact, not synthesized) |
+| Massage power/off, absolute intensity | ❌ (not in the app) |
 | Lights | ✅ (underbed lighting on L0/L1/L3/L5/L6; ❌ on P2) |
 | Alarm | ✅ (hour, minute and action settings, applied by the Alarm switch) |
 | Clock sync | ✅ (P1/P3/P4) |
@@ -4398,8 +4388,8 @@ Frames are `frame()` output from
 [`adjustamattress_protocol.py`](../../custom_components/adjustable_bed/beds/adjustamattress/protocol.py),
 which builds the P1 and P2 frames through this codec and the lift, P3 and P4
 frames through the [Okin N-frame codec](okin-nframe.md#framing-and-checksum).
-Concrete tests cover all 180 accepted command/vector rows, including dormant
-branches retained only as evidence.
+Tests cover all 180 command/vector rows, including app branches no control
+uses.
 
 ###### AdjustaMattress motor control
 
@@ -4438,7 +4428,7 @@ The lift helpers send the same `05` frames on every model.
 | `lounge` | `E6 FE 16 00 20 00 00 00 E5` | `E5 FE 16 01 00 00 09 FC` | `05 02 00 00 20 00 00` | `06 02 00 00 20 00 00 00` |
 | `anti` | `E6 FE 16 00 80 00 00 00 85` | `E5 FE 16 01 00 00 09 FC` | `05 02 00 00 80 00 00` | `06 02 00 00 80 00 00 00` |
 
-- On P2, `lounge` and `anti` send the same code (`09`), as in the artifact vectors.
+- On P2, `lounge` and `anti` send the same code (`09`), as in the app's vectors.
 
 ###### AdjustaMattress memory
 
@@ -4484,7 +4474,7 @@ The lift helpers send the same `05` frames on every model.
 | `timer30` | `E5 FE 16 01 00 00 43 C2` |
 
 - There is no generic massage power/off command or universal absolute intensity
-  setter in this artifact, so those controls are not synthesized.
+  setter in this app, so those controls are not offered.
 - Dormant timer branches on other models are not promoted.
 
 ###### AdjustaMattress lights
@@ -4652,7 +4642,7 @@ HA deliberately does not reproduce these app defects:
   substitution and orphaned refresh after disconnect are excluded.
 - Phone UI tab/render timers, including the HomeBloc's movement-time
   shared-buffer polling, do not run in HA. Their underlying alarm, massage and
-  status queries are explicit native refresh actions, with the evidenced query
+  status queries are explicit native refresh actions, with the app's query
   timing. They cannot overwrite an active held motor frame or its STOP.
 - Invalid-length crashes, unknown-fragment resets to zero, and missed on-only
   callbacks are phone parser defects. HA guards complete indexed fields, retains
@@ -4765,17 +4755,19 @@ An F4 FE 16 prefix of 7 to 20 bytes begins a fragmented reply. Home Assistant bo
 
 #### Evidence
 
-The profile covers all ten product choices, 31 reachable actions, 43 literal builders and 20 notification scenarios. The static save gesture repeats recall bytes; firmware storage and persistence need validation by owners.
+Based on AdjustaMattress 1.6.0 (10): all ten product choices, 31 actions, 43
+builders and 20 notification cases. The save gesture repeats the recall bytes;
+whether the bed stores the position still needs testing by owners.
 
 
 ## Notes
 
-### Timing evidence
+### Timing sources
 
 Cadence belongs to the app or protocol family, not to the shared 32-bit command
 values. The values are in [Hold and release timing](#hold-and-release-timing).
 
-| Profile | OEM app evidence |
+| Profile | Timing source in the app |
 |---------|------------------|
 | Base | Member's Mark fixed-delay scheduler; Base-family zero frame on release |
 | JSON/A00A | Juna / Linx request scheduler, gated by one outstanding acknowledged write |
@@ -4952,7 +4944,7 @@ integer division on P3, including their zero-value distinctions.
 Alarm dispatch accepts the app's hardcoded `A5 0C`, `A5 0D`, or `ED 80 03` headers
 and interprets fields with the selected profile. Its sensor exposes enabled state,
 weekday mask, raw wake type, hour, minute and first/second indicator. P1 can parse
-alarm replies but has no reachable setter or query. P3's declared two-byte minute
+alarm replies but has no setter or query. P3's declared two-byte minute
 field still reads only the first byte, as the app does. HA rejects incomplete
 records rather than converting missing fields to invented zero state, and clears
 all reported state when the session ends.
@@ -4969,7 +4961,7 @@ configured. Use the generic `sync_clock` action to repeat calibration explicitly
 #### Evidence
 
 Based on `com.ore.jalon.neworebeding` 2.0.2 (9).
-The three profiles reproduce every frozen ordinary, raw, clock and alarm vector;
+The three profiles reproduce every ordinary, raw, clock and alarm vector;
 notification vectors are synthetic inputs rather than captured hardware traffic.
 Tests: `tests/test_jalon.py`, `tests/fixtures/jalon/vectors.json`.
 Real-user testing by owners remains needed for STOP, programming, write mode,
@@ -5152,7 +5144,7 @@ and notification roles must be usable; subscription failure aborts setup.
 
 Presets are Flat, Zero G, Anti-snore and two named memories. Recall and save
 use the same packet: **Save preset** holds A or B for the app's local success
-interval. That interval is not a device acknowledgement or proven hardware
+interval. That interval is not a device acknowledgement or a known hardware
 completion threshold. All four models above 400E have a toggle light and
 relative total-body massage wave, intensity, timer-cycle and off controls.
 They provide no absolute intensity, wave or light state.
@@ -5257,7 +5249,7 @@ without inventing incoming checksum or ACK validation. Old callbacks and
 fragments cannot publish after reconnect. Fallback ignores notifications.
 Only massage minutes and bed alarm time, wake and enabled state are telemetry.
 There is no motor-position, light, wave or intensity feedback. One observed
-alarm does not establish the bed's complete alarm capacity.
+alarm does not show the bed's complete alarm capacity.
 
 #### Services
 
@@ -5274,7 +5266,7 @@ outside this integration.
 #### Evidence
 
 Based on `com.ore.bedding.symphony` 1.1.0 (14).
-All five models and fifteen dispatch outcomes are implemented; physical checks still need testing by owners. Frozen literals and crafted parser cases live in
+All five models and fifteen dispatch outcomes are implemented; physical checks still need testing by owners. Its frames and crafted parser cases live in
 `tests/fixtures/symphony_sleep/vectors.json`.
 
 
@@ -5293,7 +5285,7 @@ sections**, the app's two- or three-motor screen. Reconfigure asks the same
 questions. These are independent choices, kept per side when combining two
 physical beds.
 An unknown route or layout has no offline controls. The names `okin*` and
-`smartbed*` are shared scan hints, not evidence that a device uses this app.
+`smartbed*` are shared scan hints, not a sign that a device uses this app.
 
 The manufacturer read in the Android app can change its wire selector after
 GATT binding. HA keeps the explicit route and its endpoint pair coherent.
@@ -5301,10 +5293,10 @@ P1/P2 use separate write and notification services; P3 uses Nordic UART. HA
 validates their live properties and prefers write-with-response when supported.
 No explicit Android write mode is known.
 
-Only back and feet are separately proven axes. The two-motor HF controls and
-three-motor ALL controls use distinct words; the latter does not establish a
+Only back and feet are known separate axes. The two-motor HF controls and
+three-motor ALL controls use distinct words; the latter does not mean a
 separately controllable third axis. Two-address native pairing is supported.
-There is no proven one-address side selector, concurrent motor mask or speed
+There is no one-address side selector, concurrent motor mask or speed
 setting.
 
 <!-- generated:keeson-betterliving2 -->
@@ -5395,7 +5387,7 @@ are retained, with length guards. A recognizable alarm response goes to the
 alarm consumer, preventing it from being interpreted as massage. Other
 headerless massage responses are consumed only in the massage-query context.
 No position feedback, incoming checksum, command ACK or fragment accumulator is
-proven.
+known.
 
 The alarm sensor represents the app's selection, not physical confirmation.
 P1's zero or FF week is stateful: a selected switch keeps its prior state;
@@ -5427,8 +5419,8 @@ before the first change.
 `betterliving2_diagnostic_action` replaces the ordinary status-refresh buttons.
 Its fixed `action` choices are `refresh_alarm` and `refresh_massage` (P2/P3 only).
 These call the existing query methods with the same owner, STOP and session checks.
-The four raw P1 timer inputs remain codec evidence; their physical duration
-mapping is unproven, so they have no Home Assistant action. There is no
+The four raw P1 timer inputs are in the codec; their physical duration is
+unknown, so they have no Home Assistant action. There is no
 arbitrary packet action. The **Set bed clock** action
 ([`sync_clock`](../SERVICES.md#sync_clock)) sets the clock, as the connection
 startup does.
@@ -5443,7 +5435,7 @@ controls retain their existing entity identities.
 The shared preset and memory actions expose Flat, Zero Gravity and two memories;
 Zero Gravity and the memories can be programmed. Finite elapsed deadlines, captured
 session writes and drained cleanup replace the Android app's shared untagged
-timer and unowned delayed recall STOP. Ending refresh alone is not a proven
+timer and unowned delayed recall STOP. Ending refresh alone is not known to be a
 physical STOP. Renewable holds are restricted to the six named movement
 controls; they do not assert renewable generic timed movement.
 
@@ -5470,7 +5462,7 @@ two receivers, choose the version for each side.
 
 Choose **アシステック / ASSISTEC / Yamada** and explicitly select **P1** or
 **P2**. Setup, Configure and restored entries retain this choice independently
-for each side of a two-address pair. No single-address side selector is proven.
+for each side of a two-address pair. There is no single-address side selector.
 
 The app scans names starting with `okin-ble` or `smartbed`, ignoring case.
 These shared names suggest the app without identifying it. `ASSISTEC` is a display
@@ -5551,8 +5543,8 @@ weekday, position, hour, minute, zero, enabled and zero. P2 clock fields are raw
 year minus 1900, zero-based month and Sunday-zero weekday, never BCD.
 
 The refresh button performs the page-entry burst. P1 sends three requests;
-P2 sends C0 at 0/300/600 ms and D0 at 300/600/900 ms. Equal deadlines have no
-source-proven ordering. A save schedules only one delayed round. HA keeps all
+P2 sends C0 at 0/300/600 ms and D0 at 300/600/900 ms. The app gives equal
+deadlines no order. A save schedules only one delayed round. HA keeps all
 queries and release frames inside the captured session and command lane.
 
 #### Notifications
@@ -5596,10 +5588,9 @@ are per session and cleared on reconnect; no old observation authorizes a write.
 
 #### Evidence
 
-Based on `com.okin.yamada` 1.0.1 (6): the direct BLE scope reproduces all
-35 frozen packet literals through the existing Keeson and Okin N-frame codecs,
-plus all four valid parser fixtures. App behavior is supported from the app;
-hardware testing remains testing by owners.
+Based on `com.okin.yamada` 1.0.1 (6): the existing Keeson and Okin N-frame
+codecs reproduce all 35 of its packets and all four valid parser fixtures. Not
+yet tested on hardware.
 
 ### Ormatek TechnoSmart
 
@@ -5680,7 +5671,7 @@ controls cycle, with no absolute intensity setter.
 Alarm replies start `ED 80` or `A5 0C` / `A5 0D`. Enabled is true only for the
 app's parsed value 1. A disabled reply preserves the last known time. The app
 ignores the reply's slot, week and wake type. Home Assistant retains the decoded
-slot and publishes only slot one's alarm state. A reply does not establish the
+slot and publishes only slot one's alarm state. A reply does not confirm the
 selected wake action. No notification is a command acknowledgement.
 
 Twenty-byte chunks are retained for the next eligible chunk; short chunks do
@@ -5754,7 +5745,7 @@ button 2, while B's bed light is `v_snore`. The **Head massage**, **Foot massage
 **Cycle massage timer** and **Light** buttons are opaque app actions, with no
 guessed levels, timer values, cycle order or light state. The **Massage timer**
 sensor reports the app's 10/20/30-minute indicator and a remaining seconds
-attribute. No position or light-state feedback is established.
+attribute. The bed reports no position or light state.
 
 ### Commands and timing
 
@@ -5886,7 +5877,7 @@ this app accepts any nonempty device name and supplies no safe advertisement fil
 The live GATT table selects P1 if any FFF0 service exists, otherwise P2. FF20
 is not a selection requirement. Both FFE9 and FFE4 must exist; the last instance
 of each across all services wins. No PIN, authentication, capability query,
-firmware read or motor-position query is established. Route capabilities are
+firmware read or motor-position query is used. Route capabilities are
 captured after connection, including for offline paired-side entities.
 
 #### Controls
@@ -6029,7 +6020,7 @@ sentinel for the prior true repeat; P1 repeat 80 decodes to-128. Received-128
 and positive UI 128 remain distinct when sent back. No checksum or strict
 header validation is added to massage decoding. HA ignores truncated alarm
 fields safely instead of reproducing out-of-bounds exceptions. Notifications
-establish no positions or light state. Bleak manages the actual notification
+carry no positions or light state. Bleak manages the actual notification
 subscription; the Android app only enables it locally and writes no CCCD.
 
 #### Services

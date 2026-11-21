@@ -245,7 +245,7 @@ def _open_regular_file(log_path: str) -> int:
     # stat, not lstat: a symlink pointing at a real log file is a legitimate
     # setup and must be followed, while a symlink to a FIFO resolves to the FIFO
     # and is refused on its own merits.
-    if not stat.S_ISREG(os.stat(log_path).st_mode):  # noqa: PTH116 - HA config path
+    if not stat.S_ISREG(os.stat(log_path).st_mode):
         raise _NotARegularFile(f"{log_path} is not a regular file")
 
     fd = os.open(log_path, os.O_RDONLY | os.O_NONBLOCK)

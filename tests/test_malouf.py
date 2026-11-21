@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.malouf.controller import (
@@ -29,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     MALOUF_LAYOUT_HILO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.error_helpers import raises_key
 
 
 def _new_okin_frame(word: int) -> bytes:
@@ -344,7 +346,10 @@ class TestMaloufMemoryProgramming:
         await coordinator.async_connect()
         controller = coordinator.controller
 
-        with patch.object(controller, "write_command", new=AsyncMock()) as mock_write:
+        with (
+            patch.object(controller, "write_command", new=AsyncMock()) as mock_write,
+            raises_key("feature_not_supported", ServiceValidationError),
+        ):
             await controller.program_memory(3)
 
         mock_write.assert_not_called()

@@ -18,15 +18,12 @@ from collections.abc import Callable
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Final
 
-from bleak.exc import BleakError
 from homeassistant.const import EntityCategory
 
 from ...card import CARD_CONTROLLED_SIDE, CARD_MASSAGE, motor_card
 from ...command_scheduler import (
     Delivery,
     delivered,
-    note_frame_skipped,
-    note_frame_written,
 )
 from ...const import (
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
@@ -173,8 +170,6 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         self._stk_head_positions: dict[str, int] = {}
         # Release retains its target even when the initial GATT write fails.
         self._active_stk_motion_side: int | None = None
-        self._diagnostic_timer: asyncio.TimerHandle | None = None
-        self._diagnostic_connection_release: Callable[[], None] | None = None
         self._routine_timer: asyncio.TimerHandle | None = None
         self._routine_steps: list[tuple[ReverieComfortRequest, int]] = []
         self._routine_generation = 0
@@ -502,47 +497,13 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a single byte value to a specific characteristic."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-        command = bytes([value])
-
-        _LOGGER.debug(
-            "Writing 0x%02X to %s (repeat: %d, delay: %dms, response=True)",
-            value,
+        await self._write_gatt_with_retry(
             char_uuid,
-            repeat_count,
-            repeat_delay_ms,
-        )
-        self._record_command_trace(
-            char_uuid,
-            command,
-            response=True,
+            bytes([value]),
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
         )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                note_frame_skipped()
-                return
-
-            async with self._ble_lock:
-                try:
-                    if effective_cancel is not None and effective_cancel.is_set():
-                        note_frame_skipped()
-                        return
-                    await self.client.write_gatt_char(char_uuid, command, response=True)
-                    note_frame_written(effective_cancel)
-                except BleakError:
-                    _LOGGER.exception("Failed to write to %s", char_uuid)
-                    raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
 
     async def _write_bytes_to_char(
         self,
@@ -552,23 +513,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write one exact app payload to a specific characteristic."""
-        if self.client is None or not self.client.is_connected:
-            raise ConnectionError("Not connected to bed")
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-        if effective_cancel is not None and effective_cancel.is_set():
-            note_frame_skipped()
-            return
-        self._record_command_trace(char_uuid, value, response=True)
-        async with self._ble_lock:
-            if effective_cancel is not None and effective_cancel.is_set():
-                note_frame_skipped()
-                return
-            try:
-                await self.client.write_gatt_char(char_uuid, value, response=True)
-                note_frame_written(effective_cancel)
-            except BleakError:
-                _LOGGER.exception("Failed to write to %s", char_uuid)
-                raise
+        await self._write_gatt_with_retry(char_uuid, value, cancel_event=cancel_event)
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
@@ -714,7 +659,6 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
     def _cancel_protocol_timers(self) -> None:
         self._cancel_routine()
-        self._cancel_diagnostic()
 
     def on_disconnect(self) -> None:
         self._cancel_protocol_timers()
@@ -878,88 +822,6 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             ),
             "adjustable_bed.reverie_routine_step",
         )
-
-    async def async_start_diagnostic(self) -> None:
-        """Run the P1 scan-screen LED and massage test for ten seconds."""
-        self.validate_diagnostic()
-        self._cancel_diagnostic()
-        context = self._coordinator.hold_command_connection()
-        context.__enter__()
-
-        def release() -> None:
-            context.__exit__(None, None, None)
-
-        self._diagnostic_connection_release = release
-        self._diagnostic_timer = self._coordinator.hass.loop.call_later(
-            10, self._enqueue_diagnostic_stop, release
-        )
-        failures: list[Exception] = []
-        for char_uuid, value in (
-            (REVERIE_NIGHTSTAND_LED_UUID, 0x64),
-            (REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, 0x01),
-        ):
-            try:
-                await self._write_to_char(char_uuid, value)
-            except Exception as err:
-                failures.append(err)
-                _LOGGER.exception("Reverie Protocol 110 diagnostic start write failed")
-        if failures:
-            raise ExceptionGroup("Reverie diagnostic start writes failed", failures)
-
-    def validate_diagnostic(self) -> None:
-        if not self.model.nightlight or not self.model.massage:
-            raise ValueError("Protocol 110 diagnostic test requires lights and massage")
-
-    def _cancel_diagnostic(self) -> None:
-        if self._diagnostic_timer is not None:
-            self._diagnostic_timer.cancel()
-            self._diagnostic_timer = None
-        release = self._diagnostic_connection_release
-        self._diagnostic_connection_release = None
-        if release is not None:
-            release()
-
-    def _enqueue_diagnostic_stop(self, release: Callable[[], None]) -> None:
-        if release is not self._diagnostic_connection_release:
-            return
-        self._diagnostic_timer = None
-        self._coordinator.hass.async_create_task(
-            self._stop_diagnostic(release), "adjustable_bed.reverie_diagnostic_stop"
-        )
-
-    async def _stop_diagnostic(self, release: Callable[[], None] | None = None) -> None:
-        if release is None:
-            release = self._diagnostic_connection_release
-        failures: list[Exception] = []
-        async def write_stops(controller: BedController) -> None:
-            if controller is not self or release is not self._diagnostic_connection_release:
-                return
-            for char_uuid, value in (
-                (REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, 0x00),
-                (REVERIE_NIGHTSTAND_LED_UUID, 0x00),
-            ):
-                try:
-                    await self._write_to_char(
-                        char_uuid, value, cancel_event=asyncio.Event()
-                    )
-                except Exception as err:
-                    failures.append(err)
-                    _LOGGER.exception(
-                        "Reverie Protocol 110 diagnostic stop write failed"
-                    )
-
-        try:
-            await self._coordinator.async_execute_controller_command(
-                write_stops,
-                cancel_running=False,
-                resource="reverie:diagnostic",
-                read_positions_after_operation=False,
-            )
-        finally:
-            if release is self._diagnostic_connection_release:
-                self._cancel_diagnostic()
-        if failures:
-            raise ExceptionGroup("Reverie diagnostic stop writes failed", failures)
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""

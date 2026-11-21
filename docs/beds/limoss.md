@@ -17,14 +17,13 @@ for the architecture.
   with 2, 4, 6, 8, 10 or 12 keys, chair layouts with 2, 4, 6 or 8 keys
 - Chairs and beds operated by the FSM Relax app on Limoss-style FFE0 receivers
 
-A shared FFE0 service or device name cannot identify either app's layout, so both
-app profiles are explicit choices.
+Setup cannot tell which app's layout a bed uses, so pick the app you use.
 
 ## Apps
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
-| ✅ | [Limoss Remote](https://play.google.com/store/apps/details?id=com.limoss.limossremote) 7.1.8 (44) | `com.limoss.limossremote` | [Limoss Remote](#limoss-remote); the [legacy route](#legacy-route) predates its audit |
+| ✅ | [Limoss Remote](https://play.google.com/store/apps/details?id=com.limoss.limossremote) 7.1.8 (44) | `com.limoss.limossremote` | [Limoss Remote](#limoss-remote); the [legacy route](#legacy-route) is the older route |
 | ✅ | Stawett | `com.stawett` | [Legacy route](#legacy-route) |
 | ✅ | [FSM Relax](https://play.google.com/store/apps/details?id=com.limoss.fsmrelax) 1.9 (20) | `com.limoss.fsmrelax` | [FSM Relax](#fsm-relax) |
 
@@ -32,15 +31,15 @@ app profiles are explicit choices.
 
 | Feature | Legacy route | Limoss Remote | FSM Relax |
 |---------|--------------|---------------|-----------|
-| Motor Control | ✅ (head/back and legs; 3/4 motors from the capability reply) | ✅ (literal motor channels 1–4, combined, lift and shift, per rendered layout) | ✅ (held app actions from the exact source tables) |
-| Position Feedback | ✅ (estimated angles from raw positions) | ⚠️ (raw signed values only; no unit, angle or slider) | ⚠️ (raw signed motor values only; no unit, angle, percentage or slider) |
-| Presets | ✅ Flat (both down, held) | ❌ (no named flat, zero-gravity or TV preset) | ❌ (no firmware Flat preset is inferred) |
-| Memory Presets | ✅ (software: saves raw positions, recalls by set-position) | ✅ (up to 8 app-local raw-position slots, device-reported capacity) | ✅ (up to 8 device-local slots, raw targets stored in HA) |
-| Massage | ✅ (vibration zones 1–6 toggles) | ✅ (held plus/minus controls when selected; no intensity feedback) | ⚠️ (held plus/minus actions in the bed layout; no six-zone toggle or measured state) |
-| Lights | ✅ (toggle) | ✅ (held under-bed light control when selected; no ON/OFF feedback) | ⚠️ (held control in the bed layout; no on/off state, RGB, brightness or timer) |
-| Calibration | ❌ | ✅ (confirmed, memory-capable receivers only) | ✅ (`fsm_relax_calibrate`, confirmation required) |
+| Motor Control | ✅ (head/back and legs; 3/4 motors from the capability reply) | ✅ (motors 1–4, combined, lift and shift, as your layout has them) | ✅ (the app's hold-to-move buttons) |
+| Position Feedback | ✅ (estimated angles from raw positions) | ⚠️ (raw values only; no angles or sliders) | ⚠️ (raw values only; no angles or sliders) |
+| Presets | ✅ Flat (both down, held) | ❌ | ❌ |
+| Memory Presets | ✅ (software: saves raw positions, recalls by set-position) | ✅ (up to 8 slots, as many as the receiver reports; positions kept in Home Assistant) | ✅ (up to 8 slots; positions kept in Home Assistant) |
+| Massage | ✅ (vibration zones 1–6 toggles) | ✅ (hold-to-adjust plus/minus when chosen in setup; intensity not shown) | ⚠️ (hold-to-adjust plus/minus in the bed layout; no zone toggles; state not shown) |
+| Lights | ✅ (toggle) | ✅ (hold-to-use under-bed light when chosen in setup; on/off state not shown) | ⚠️ (hold-to-use control in the bed layout; no on/off state, color, brightness or timer) |
+| Calibration | ❌ | ✅ (asks for confirmation; receivers with memory only) | ✅ (`fsm_relax_calibrate`, confirmation required) |
 | Hold until release | ❌ (finite pulses at the entry's pulse settings) | ✅ (renewable `hold_control`) | ✅ (renewable `hold_control`) |
-| Sync, PIN or bond | ❌ | ❌ | ❌ (no OS bond or pairing step) |
+| Pairing or PIN | Not needed | Not needed | Not needed |
 
 ## Choosing a profile
 
@@ -362,9 +361,8 @@ Recall writes each stored motor once, at the recall interval, with no release.
 
 #### Evidence
 
-Reverse engineered from `com.limoss.limossremote` and `com.stawett` before their
-audits. The legacy route sends only its frozen bodies, which equal the pre-v5
-controller's.
+Reverse engineered from `com.limoss.limossremote` and `com.stawett`. The legacy
+route sends the pre-v5 controller's frames.
 
 ### Limoss Remote
 
@@ -381,9 +379,9 @@ controller's.
   characteristic, which must support notification and a write property. Each
   write binds that selected object, including after reconnect; unsubscribe uses
   the same object and owning client.
-- The app inherits Android's write mode without a proven override. HA writes with
+- The app uses Android's default write mode. HA writes with
   response when `write` is available, else without. This is a host transport
-  policy, not a claim about the artifact's inherited mode.
+  policy, not a claim about the app's mode.
 - The sequence is the app's global counter: it advances when a command is
   built, including packets whose later write fails, so every repeat and release
   has a fresh value. Logical batches are built together to preserve cross-receiver
@@ -400,7 +398,7 @@ controller's.
 - Configuration 1 selects the eight-key chair's custom Alpha ordering.
 - Every rendered lamp/massage combination is retained, including blank cells and
   omitted combined/shift directions. The key tables are generated above.
-- Controls use motor channels (Motor 1-4) rather than unproven physical axes or
+- Controls use motor channels (Motor 1-4) rather than guessed physical axes or
   angle units. Capability counts, calibration replies and raw positions stay in
   diagnostics; the versions and serial are disabled diagnostic sensors.
 
@@ -419,7 +417,7 @@ controller's.
   selections are saved. A failure or cancellation retains the previous local
   selections even if some hardware writes succeeded.
 - Replacing a queued or active OFF transaction also keeps its previous selection;
-  a normal scheduler return alone does not establish burst completion.
+  a normal scheduler return alone does not mean the burst completed.
 - Fresh capability updates defer entity reloads through every selected service
   phase, including preflight and terminal persistence. BLE links still release
   between sequential sides. Reloads resume only after the transaction and any
@@ -483,7 +481,7 @@ Answer **Limoss Remote app** in the [Limoss question](#home-assistant-setup). Ch
 
 **Chair artwork interpretation**
 
-The frozen resource images show the following pictured changes. These are source
+The app's images show the following pictured changes. These are source
 artwork descriptions, not verified actuator assignments. Channel labels remain
 literal across themes, and custom Alpha changes the rendered order of `12/13` and
 `42/43`.
@@ -511,7 +509,7 @@ generated timing table.
 
 - The tick is also the minimum spacing between write starts: HA serializes ATT
   calls and waits for each to complete. Each ATT call has a two-second host
-  deadline; this is not an artifact timing claim.
+  deadline; it is not the app's timing.
 - Ordinary controls ending before the first tick send no command and no release.
 - A memory recall resends its batch of set-position frames at the recall interval
   for the whole hold, then releases. Its frames share the same write lane.
@@ -526,7 +524,7 @@ generated timing table.
   then the hardware and software queries in reply order. The host bounds this to
   ten seconds, including lane, pacing and write waits.
 - A fresh capability reply is required even when capabilities are cached.
-  Restored values populate offline diagnostic sensors but do not establish a live
+  Restored values populate offline diagnostic sensors but do not start a live
   session.
 - The app opens controls on that reply, so missing version replies may use up the
   remaining budget without blocking startup. A write failure or timeout,
@@ -558,7 +556,7 @@ generated timing table.
   issue queries.
 - There is no native request ID: a delayed same-opcode reply arriving after a
   query is indistinguishable from its reply.
-- Replies never establish authentication, measured lamp or massage state, or
+- Replies never prove authentication, measured lamp or massage state, or
   physical motion completion.
 - Diagnostics expose raw capability fields, chosen product, exact layout, visible
   opcodes, reversal flags, theme preference, local memories and the app sequence.
@@ -599,8 +597,7 @@ generated timing table.
 
 #### Evidence
 
-Limoss Remote sends only its frozen
-bodies, and its key tables match the report's rendered tables.
+Based on Limoss Remote 7.1.8 (44); its key tables match the app's.
 
 ### FSM Relax
 
@@ -674,7 +671,7 @@ This profile section covers exact controls, quarantine and calibration.
 - Memory buttons and `goto_preset` send each stored target once, in motor order.
   Motor zero must exist; absent later rows are skipped. The default button hold
   is the motor pulse count times the tick; this is a local HA gesture policy, not
-  an app-proven preset duration or arrival deadline. Give `goto_preset` a
+  the app's preset duration or an arrival deadline. Give `goto_preset` a
   `duration` to choose another hold.
 - A normal release follows any remaining queued targets. Cancellation skips unsent
   targets and still attempts the whole recall release.
@@ -721,7 +718,7 @@ the STOP burst.
 - The optional hardware and software queries start 120 ms after the preceding
   reply, taking the command lock only for each write.
 - Each position-save query gets one attempt and a one-second HA wait. That timeout
-  is a safety bound, not an artifact deadline.
+  is a safety bound, not the app's deadline.
 - Writes are serialized; late writes are still attempted, so nominal offsets are
   not a promise of physical timing.
 
@@ -752,8 +749,11 @@ the STOP burst.
 
 #### Services
 
-- Use `adjustable_bed.hold_control` to choose a hold duration. Available
-  `command_XX` names appear in protocol diagnostics as `held_controls`.
+- Use `adjustable_bed.hold_control` to choose a hold duration. A control's name
+  is `command_` followed by its opcode from [Held controls](#held-controls),
+  for example `command_12` for Back up or `command_70` for the light.
+  [FSM Relax key tables](#fsm-relax-key-tables) lists the opcodes your layout
+  has. A name your bed does not have is refused with the list of names it has.
 
   ```yaml
   action: adjustable_bed.hold_control
@@ -776,8 +776,7 @@ the STOP burst.
 
 #### Evidence
 
-FSM Relax sends only its frozen
-bodies.
+Based on FSM Relax 1.9 (20).
 
 ## Notes
 

@@ -32,8 +32,6 @@ import logging
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
 from ..codec import okin_nframe as codec
 from ..const import (
     CB24_BED_SELECTION_A,
@@ -299,7 +297,11 @@ class OkinCB24Controller(ProfileExecution[OkinNFrameProfile], BedController):
             self._motor_state[motor] = direction
         command = self._get_move_command()
 
-        try:
+        async def release() -> None:
+            self._motor_state = {}
+            await self.write_command(self._build_stop_command(), cancel_event=asyncio.Event())
+
+        async with self.releasing(release):
             if command:
                 pulse_count = self._coordinator.motor_pulse_count
                 pulse_delay = self._coordinator.motor_pulse_delay_ms
@@ -308,20 +310,6 @@ class OkinCB24Controller(ProfileExecution[OkinNFrameProfile], BedController):
                     repeat_count=pulse_count,
                     repeat_delay_ms=pulse_delay,
                 )
-        finally:
-            self._motor_state = {}
-            # Shield the STOP command to ensure it runs even if cancelled
-            try:
-                await asyncio.shield(
-                    self.write_command(
-                        self._build_stop_command(),
-                        cancel_event=asyncio.Event(),
-                    )
-                )
-            except asyncio.CancelledError:
-                raise
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send stop command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -385,14 +373,11 @@ class OkinCB24Controller(ProfileExecution[OkinNFrameProfile], BedController):
         if command := commands.get(memory_num):
             await self._send_preset(command)
         else:
-            _LOGGER.warning("Memory slot %d not supported (valid: 1-3)", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on CB24)."""
-        _LOGGER.warning(
-            "CB24 beds don't support programming memory presets (requested slot: %d)",
-            memory_num,
-        )
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
         await self._send_preset(_KEYS["zero_g"])

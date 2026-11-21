@@ -7,8 +7,8 @@
 ## Known Models
 
 Personal Comfort air units ANM V3, ANM V5 and RA, with a separately configured
-Malouf, Reverie or Reverie V2 base. The base model is an explicit setup choice.
-An air unit is not a second base in a combined pair.
+Malouf, Reverie or Reverie V2 base. Pick the base model in setup. The air unit
+and the base are separate entries; do not combine them as a pair.
 
 ## Apps
 
@@ -20,12 +20,12 @@ An air unit is not a second base in a combined pair.
 
 | Feature | Supported |
 |---------|-----------|
-| Firmness | Native left/right values and immediate targets, 5–50 |
+| Firmness | Left and right, 5–50 |
 | Motor Control | Base head/feet; pillow on selected models and routes |
-| Position Feedback | No base positions or angle seeking |
+| Position Feedback | ❌ |
 | Memory Presets | Two on Malouf and V2; none on Reverie V1 or air units |
-| Massage | Model-specific head/foot, pattern and stop operations |
-| Lights | Toggle on Malouf/V1; on/off with initial read on V2 |
+| Massage | Head/foot, pattern and stop, by model |
+| Lights | Toggle on Malouf/V1; on/off with its current state on V2 |
 | Alarm | No |
 
 ## Choosing a profile

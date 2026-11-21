@@ -113,7 +113,7 @@ async def capture_proxy_logs(
                 await client.connect(on_stop=on_stop, login=True, log_errors=False)
             row["status"] = "empty"
             client.subscribe_logs(on_log, LogLevel.LOG_LEVEL_DEBUG, dump_config=False)
-        except Exception as err:  # noqa: BLE001 - proxy logging must not prevent BLE diagnostics
+        except Exception as err:
             row["status"] = "unavailable"
             # Do not serialize exceptions that might contain API credentials.
             row["reason"] = type(err).__name__
@@ -136,7 +136,7 @@ async def capture_proxy_logs(
                 and entry.data.get(CONF_SOURCE_CONFIG_ENTRY_ID)
             }
             await asyncio.gather(*(start(source, entry_id) for source, entry_id in registrations.items()))
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             reports.append({"status": "unavailable", "reason": type(err).__name__, "entries": []})
         with async_setup_support_logs(hass).capture_pairing(address) if retain else nullcontext():
             yield reports

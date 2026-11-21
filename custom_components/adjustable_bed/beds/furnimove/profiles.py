@@ -1,18 +1,13 @@
 """Pinned FurniMove production handset profiles, captured on 2026-09-30.
 
-Generated outside this repository from FurniMove 2.2.0 (com.okin.okinsmartcomfort);
-no generator is checked in, so edits are by hand.
+Data extracted from the FurniMove 2.2.0 app (com.okin.okinsmartcomfort) outside this
+repository; not edited by hand.
 Remote IDs choose app control layouts; GATT characteristics choose transport.
 No network access or shipped application credential is needed at runtime.
 """
 
 from __future__ import annotations
 
-import hashlib
-import json
-import math
-import re
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Final
@@ -63,104 +58,6 @@ class FurniMoveProfile:
     def massage_max_intensity(self) -> int:
         row = self.first("MassagerHeadPlus")
         return row.intensity if row is not None and row.intensity is not None else 4
-
-
-def _json_string(value: object) -> str:
-    if isinstance(value, str):
-        return value
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-
-
-def _json_int(value: object) -> int:
-    """Android JSONObject.getInt numeric coercion, with Boolean rejected."""
-    if isinstance(value, bool) or value is None:
-        raise ValueError("Expected a JSON integer")
-    if isinstance(value, int):
-        if not -(2**63) <= value < 2**63:
-            return 2**31 - 1 if value > 0 else -(2**31)
-        return (value + 2**31) % 2**32 - 2**31
-    if isinstance(value, (float, str)):
-        try:
-            number = float(value)
-        except ValueError as err:
-            raise ValueError("Expected a JSON integer") from err
-        if math.isnan(number):
-            return 0
-        return (
-            min(2**31 - 1, max(-(2**31), int(number)))
-            if math.isfinite(number)
-            else (2**31 - 1 if number > 0 else -(2**31))
-        )
-    raise ValueError("Expected a JSON integer")
-
-
-def parse_furnimove_profile(
-    handset_id: str,
-    objects: Sequence[Mapping[str, object]],
-    buttons: Sequence[Mapping[str, object]],
-) -> FurniMoveProfile:
-    """Parse supplied tables without network access, preserving app row order.
-
-    Android accepts unsafe malformed keycode strings. This input boundary rejects
-    them before BLE use; the controller's literal encoder retains audit vectors.
-    PK follows Integer.parseInt, rather than JSONObject's permissive getInt.
-    Unknown categories remain in their original form for name lookup, while type
-    consumers only select the exact recognized strings, as in the app converter.
-    """
-    if not isinstance(handset_id, str) or not handset_id or not objects:
-        raise ValueError("A nonempty handset ID and object table are required")
-    obj = objects[0]
-    last_modified = _json_string(obj["last_modified"]) if "last_modified" in obj else None
-    # SimpleDateFormat is lenient and accepts trailing text after the seconds.
-    # Locale/timezone display conversion has no BLE consumer; retain wire text.
-    if (
-        last_modified is not None
-        and re.match(r"\s*[+-]?\d+-[+-]?\d+-[+-]?\d+T[+-]?\d+:[+-]?\d+:[+-]?\d+", last_modified)
-        is None
-    ):
-        raise ValueError("Invalid last_modified date")
-    try:
-        pk = _json_string(obj["PK"])
-        if re.fullmatch(r"[+-]?\d+", pk) is None:
-            raise ValueError("Invalid object PK")
-        brand_id = int(pk)
-        if not -(2**31) <= brand_id < 2**31:
-            raise ValueError("Object PK exceeds a signed 32-bit integer")
-        actions: list[FurniMoveAction] = []
-        intensity: int | None = None
-        for button in buttons:
-            action = _json_string(button["action"])
-            category = _json_string(button["type"])
-            keycode = _json_string(button["keycode"])
-            if re.fullmatch(r"0[xX](?:[0-9a-fA-F]{2}){0,4}", keycode) is None:
-                raise ValueError("Unsafe malformed FurniMove keycode")
-            if category == "massage-function":
-                intensity = _json_int(button["intensity"])
-            duration = _json_int(button["duration"]) if "duration" in button else 0
-            frequency = _json_int(button["frequency"]) if "duration" in button else 0
-            actions.append(
-                FurniMoveAction(action, category, keycode, duration, frequency, intensity)
-            )
-    except (KeyError, TypeError, OverflowError) as err:
-        raise ValueError("Malformed FurniMove table") from err
-    product_type = _json_string(obj["type"]) if "type" in obj else "bed"
-    if product_type not in ("bed", "chair"):
-        product_type = "undefined"
-
-    def encode(value: object) -> bytes:
-        return json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode()
-
-    return FurniMoveProfile(
-        handset_id,
-        _json_string(obj["description"]) if "description" in obj else None,
-        brand_id,
-        product_type,
-        tuple(actions),
-        hashlib.sha256(encode(objects)).hexdigest(),
-        hashlib.sha256(encode(buttons)).hexdigest(),
-        source="supplied_table",
-        last_modified=last_modified,
-    )
 
 
 _PRODUCTION_TABLES: Final = (

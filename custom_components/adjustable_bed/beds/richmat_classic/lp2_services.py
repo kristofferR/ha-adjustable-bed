@@ -27,8 +27,6 @@ from ...services import (
 )
 from ..base import BedController
 from .resource_protocol import BED_COMMANDS
-from .rise import Schedule
-from .rise_services import SCHEDULE
 
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
@@ -38,8 +36,6 @@ FIELDS: dict[vol.Marker, object] = {
             "light_duration",
             "aromatherapy",
             "fan",
-            "motor_program",
-            "movement_test",
             "control",
         )
     ),
@@ -53,7 +49,6 @@ FIELDS: dict[vol.Marker, object] = {
     vol.Optional("fan"): vol.In(("head", "foot")),
     vol.Optional("intensity"): vol.All(cv.positive_int, vol.In((0, 20, 40, 60, 80, 100))),
     vol.Optional("duration"): vol.All(cv.positive_int, vol.Range(max=6)),
-    vol.Optional("schedule"): SCHEDULE,
     vol.Optional("confirm", default=False): cv.boolean,
     vol.Optional("control"): cv.positive_int,
     vol.Optional("mode", default=0): vol.All(cv.positive_int, vol.In((0, 1, 2))),
@@ -71,7 +66,7 @@ FIELDS.update(SIDE_FIELD.items())
 async def handle_settings(call: ServiceCall) -> None:
     data = call.data
     op = data["operation"]
-    movement = op in ("control", "motor_program", "movement_test", "bed_command")
+    movement = op in ("control", "bed_command")
     resource = "movement" if movement else "configuration"
     targets = _call_targets(call)
     selection = _Selection.capture(targets)
@@ -87,8 +82,6 @@ async def handle_settings(call: ServiceCall) -> None:
         "light_duration": ("seconds",),
         "aromatherapy": ("aroma_times",),
         "fan": ("fan", "intensity", "duration"),
-        "motor_program": ("schedule",),
-        "movement_test": (),
         "control": ("control",),
         "bed_command": ("command",),
     }[op]
@@ -101,13 +94,6 @@ async def handle_settings(call: ServiceCall) -> None:
         if op == "bed_command":
             if not isinstance(controller, BedSmartController) or data["command"] not in BED_COMMANDS:
                 raise invalid("bedsmart_control")
-        elif op == "motor_program":
-            if not data["confirm"] or controller.layout != "RMCS":
-                raise ValueError("Choose the motor program layout and confirm programming")
-            controller.schedule_frame(Schedule(**data["schedule"]))
-        elif op == "movement_test":
-            if not data["confirm"] or controller.layout != "TEST":
-                raise ValueError("Choose the movement-test layout and confirm the test")
         elif op == "control":
             if data["mode"] not in controller._model.modes:
                 raise ValueError("Choose a mode offered by the selected layout")
@@ -159,10 +145,6 @@ async def handle_settings(call: ServiceCall) -> None:
         if op == "bed_command":
             assert isinstance(controller, BedSmartController)
             await controller.bed_command(data["command"], data["duration_ms"])
-        elif op == "motor_program":
-            await controller.program_schedule(Schedule(**data["schedule"]))
-        elif op == "movement_test":
-            await controller.diagnostic_cycle()
         elif op == "control":
             await controller.execute_action(
                 data["control"],
@@ -250,8 +232,8 @@ def async_register_lp2_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, "lp2", handle_settings, schema=vol.Schema(FIELDS))
     bedsmart = {
         key: value for key, value in FIELDS.items()
-        if key.schema in (CONF_DEVICE_ID, "operation", "rgb_color", "seconds", "aroma_times", "confirm", "side", "duration_ms")
+        if key.schema in (CONF_DEVICE_ID, "operation", "rgb_color", "seconds", "aroma_times", "side", "duration_ms")
     }
-    bedsmart[vol.Required("operation")] = vol.In(("color", "light_duration", "aromatherapy", "movement_test", "bed_command"))
+    bedsmart[vol.Required("operation")] = vol.In(("color", "light_duration", "aromatherapy", "bed_command"))
     bedsmart[vol.Optional("command")] = vol.In(BED_COMMANDS)
     hass.services.async_register(DOMAIN, "bedsmart", handle_settings, schema=vol.Schema(bedsmart))

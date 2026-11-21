@@ -27,9 +27,9 @@ Both apps also drive LinonPI beds, with frames of their own: the
 |---------|-------------------------|--------------|
 | Motor control | ✅ head and foot, together in one frame | ✅ head and feet, together in one frame |
 | Hold until release | ✅ renewable, then STOP once | ✅ renewable, then STOP |
-| Position feedback | ✅ percentages from measured anchors | ❌ opaque bytes as diagnostics |
+| Position feedback | ✅ percentages | ❌ (raw values in diagnostics only) |
 | Go to position | ✅ | ✅ memory recall only |
-| Flat | ✅ | ✅ as the unnamed Svane position |
+| Flat | ✅ | ❌ (the **Svane Position** button may move to Flat; not yet known) |
 | Memory | ✅ 1 device slot on box type 4, otherwise 4 stored by Home Assistant | ✅ 2 stored by Home Assistant (Read, TV) |
 | Massage | ✅ head, foot and wave, levels 0-10 | ❌ |
 | Light | ✅ levels 0-10 | ✅ 5-100 in steps of five |
@@ -257,7 +257,7 @@ rejection is logged as a warning.
 
 #### Evidence
 
-- Adjustable Sleep 2.0.29 (98) and 2.0.37 (106): the profile sends only its frozen frames.
+- Based on Adjustable Sleep 2.0.29 (98) and 2.0.37 (106).
 - The JMC400 support bundle and capture in
   [#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631): the
   position byte order, the anchors, and the go-to and massage frames.
@@ -308,8 +308,7 @@ are kept as the opaque position a memory save stores; byte 1 is ignored.
 
 #### Evidence
 
-- Svane Remote 1.8 (8): the JMC400 route
-  sends only its frozen frames.
+- The JMC400 route is based on Svane Remote 1.8 (8).
 
 ## Notes
 

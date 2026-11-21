@@ -203,6 +203,8 @@ Every other saved setting, bed type and ID loads unchanged.
 - **Refresh and query buttons are diagnostic** and disabled by default where
   the bed reports the value itself. So is the generic **Wake controller**
   button.
+- **Linak's Reset defaults button is disabled by default** on new installs,
+  because one press resets the bed. A button you already have stays as it is.
 - **No device shows one name twice**, and a paired bed's Left, Right and Both
   entities are named from their devices, as Home Assistant 2026.11 does, so
   the card no longer shows doubled names such as "Bed Left Back".
@@ -408,7 +410,9 @@ Other action changes:
   `starts_actuator_homing`, `set_system_time`, the cooling and core-temperature
   module commands (`get_frosty_mode`, `set_frosty_mode`, `get_frosty_presence`,
   `get_heidi_mode`, `set_heidi_mode`, `get_heidi_presence`) or
-  `get_system_status` (network and update status). Restarting and homing are
+  `get_system_status` (network and update status), and MCR beds no longer
+  offer `preset_reset`, which reset a saved position without asking first.
+  Restarting and homing are
   buttons now (see **New controls** under [Entities](#entities)); **Restart
   bed** always restarts both components, so one component can no longer be
   restarted alone. Set the clock with `sync_clock`, which writes Home
@@ -416,8 +420,7 @@ Other action changes:
   are the **Climate** entities and their duration the **Climate Timer**
   selects; module presence is detected automatically. `kid_outlet` and
   `kid_outlet_status` accept only `device: 0`. New
-  commands: `reset_articulation_presets`, `run_diagnostics`, `bind_foundation`
-  and `underbed_intensity`. See the
+  commands: `run_diagnostics`, `bind_foundation` and `underbed_intensity`. See the
   [Sleep Number command guide](beds/sleep-number-services.md).
 - `timed_move` and `hold_control` gain optional `hold_owner` and
   `hold_generation` fields for renewable holds. Calls without them work as
@@ -459,12 +462,23 @@ sensors with the same object ID where it is free, and its
 intervention selects are the **Left snore intervention** and **Right snore
 intervention** switches.
 
+The factory motor tests and motor programming are gone: `richmat_rise`
+`operation: diagnostic_cycle` and `program_schedule` with its `schedule` field,
+`lp2` `operation: motor_program` and `movement_test` with its `schedule` field,
+`bedsmart` `operation: movement_test` with its `confirm` field, and the BedSmart
+**Movement test** button. Nothing replaces them. A bed set up with the TEST or
+RMCS layout loads without controls until you choose its layout in Configure.
+
 Galaxy and MLILY (`operation: sync`), SonicSleep (`operation: sync_clock`) and
 the Richmat app beds (`richmat_app` `operation: sync` and `sleep_sync`) set
 their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
 the betas changed their entities too (clock buttons, timer selects, switches
 and sleep readings, as described under [Entities](#entities)); each beta's
 release notes list them.
+
+`sleep_number_command` no longer offers `reset_articulation_presets`; reset
+saved positions with the **Reset saved positions** button, which the card asks
+about before it runs.
 
 ## Dashboard card
 

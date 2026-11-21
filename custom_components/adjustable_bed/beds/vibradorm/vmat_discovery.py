@@ -49,56 +49,6 @@ def parse_vmat_manufacturer(payload: bytes | None) -> VmatManufacturer:
     )
 
 
-def extract_vmat_raw_ad(raw: bytes) -> tuple[bytes | None, int | None]:
-    """Concatenate FF records in source order; reject malformed AD safely."""
-    offset = 0
-    records: list[bytes] = []
-    # A complete raw record with no Flags field has the shipped SDK's -1
-    # default. None is reserved for host data that does not expose raw flags.
-    advertising_flags = -1
-    while offset < len(raw):
-        length = raw[offset]
-        if length == 0:
-            break
-        # The shipped signed-length parser hangs or throws on these inputs.
-        if length >= 128 or offset + length >= len(raw):
-            raise ValueError("Malformed VMAT advertising data")
-        kind = raw[offset + 1]
-        value = raw[offset + 2:offset + length + 1]
-        if kind == 0xFF:
-            records.append(value)
-        elif kind == 1:
-            if not value:
-                raise ValueError("Malformed VMAT advertising flags")
-            advertising_flags = value[0]
-        offset += length + 1
-    return (b"".join(records) if records else None), advertising_flags
-
-
-def vmat_onboarding_eligible(fields: VmatManufacturer, advertising_flags: int | None) -> bool | None:
-    if not fields.is_vib_device:
-        return False
-    if fields.teach_mode:
-        return True
-    if advertising_flags is None:
-        return None
-    return bool(advertising_flags & 1)
-
-
-@dataclass(slots=True)
-class VmatOnboardingReports:
-    """Select the current third eligible report, without an RSSI replacement."""
-
-    eligible_count: int = 0
-
-    def observe(self, raw: bytes) -> bool:
-        payload, flags = extract_vmat_raw_ad(raw)
-        if vmat_onboarding_eligible(parse_vmat_manufacturer(payload), flags) is not True:
-            return False
-        self.eligible_count += 1
-        return self.eligible_count == 3
-
-
 def vmat_manufacturer_diagnostics(manufacturer_data: Mapping[int, bytes]) -> dict[str, object]:
     return {
         "observation_kind": "ha_manufacturer_data_mapping",

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
@@ -20,6 +21,7 @@ from custom_components.adjustable_bed.const import (
     ERGOMOTION_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
@@ -120,13 +122,12 @@ class TestErgomotionPresets:
         mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test program memory logs warning."""
+        """A bed that cannot save memory refuses to."""
         coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
-
-        assert "Programming memory 1 is not supported" in caplog.text
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.program_memory(1)
 
 
 class TestErgomotionPositionNotifications:

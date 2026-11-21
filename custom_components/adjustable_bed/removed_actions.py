@@ -67,6 +67,7 @@ def _actions(actions: str, use: str | None) -> tuple[Removal, ...]:
 
 
 # What 4.4.2 or a v5 beta offered and v5 no longer accepts, from the upgrade guide.
+# A later removal may add a row so callers get a repair; it is not required.
 REMOVALS: Final[tuple[Removal, ...]] = (
     *_actions(
         "bf_cherish_set_alarm comfort_enhancements_set_alarm configure_alarm_schedule "
@@ -150,8 +151,25 @@ REMOVALS: Final[tuple[Removal, ...]] = (
             "set_heidi_mode",
             "get_heidi_presence",
             "get_system_status",
+            # Resetting saved positions needs the button's confirmation.
+            "preset_reset",
+            "reset_articulation_presets",
         )
     ),
+    # Factory motor tests and motor programming, only in v5 betas.
+    *(
+        Removal(action, "operation", operation)
+        for action, operation in (
+            ("richmat_rise", "diagnostic_cycle"),
+            ("richmat_rise", "program_schedule"),
+            ("lp2", "motor_program"),
+            ("lp2", "movement_test"),
+            ("bedsmart", "movement_test"),
+        )
+    ),
+    Removal("richmat_rise", "schedule"),
+    Removal("lp2", "schedule"),
+    Removal("bedsmart", "confirm"),
 )
 
 ISSUE_ID: Final = "removed_actions"

@@ -817,6 +817,16 @@ class TestLeggettGen2Capabilities:
         coordinator = AdjustableBedCoordinator(hass, entry)
         return LeggettGen2Controller(coordinator, manufacturer_data={0x092D: payload})
 
+    async def test_a_failed_stop_after_a_move_is_reported(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        """The bed may still be moving, so the move must not report success."""
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 5)
+        c.write_command = AsyncMock(side_effect=[None, BleakError("stop lost")])
+
+        with pytest.raises(BleakError, match="stop lost"):
+            await c.move_head_up()
+
     async def test_rgb_bed_with_pillow_lumbar(
         self, hass: HomeAssistant, mock_leggett_gen2_config_entry
     ):

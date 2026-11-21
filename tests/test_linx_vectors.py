@@ -42,7 +42,7 @@ def test_existing_json_codec_does_not_reproduce_linx_literal():
     )
 
 
-def test_static_alarm_serialization_is_separate_from_unavailable_catalog_semantics():
+def test_static_alarm_slot_serialization():
     assert (
         codec.alarm_slot("BED", 6)
         == b'{"dvid":"BED","code":15,"cmd":{"nm":6,"blmd":0,"blpt":0,"blat":0,"blsw":0}}'
@@ -55,15 +55,6 @@ def test_static_alarm_serialization_is_separate_from_unavailable_catalog_semanti
             )
         )["cmd"]
         assert fields == {"nm": 1, "blmd": mode, "blpt": 65, "blat": 3661, "blsw": 1}
-    for key, value in codec.ALARM_KEY_CONVERSION.items():
-        assert codec.alarm_recall("BED", str(key), uart=True) == codec.instruction(value)
-    assert json.loads(codec.alarm_recall("BED", "1000", uart=False))["cmd"] == {
-        "ctrm": 1,
-        "key": "00001000",
-        "keykt": 0,
-        "km": 1,
-    }
-    assert codec.alarm_recall("BED", "5", uart=True) == codec.instruction(0)
     for slot in (0, 7, True):
         with pytest.raises(ValueError):
             codec.alarm_slot("BED", slot)

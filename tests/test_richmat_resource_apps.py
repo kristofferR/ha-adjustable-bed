@@ -259,3 +259,14 @@ def test_alarm_ownership_order_combinations_and_unreachable_helpers():
         0x83,
     }
     assert not {0x30, 0x80, 0x7A, 0x7D} & all_outputs
+
+
+async def test_write_waits_for_another_gatt_operation_to_finish():
+    ctrl, coordinator = controller()
+    async with ctrl.ble_lock:
+        send = asyncio.create_task(ctrl._send(b"\x01"))
+        for _ in range(3):
+            await asyncio.sleep(0)
+        assert not coordinator.client.write_gatt_char.await_count
+    await send
+    assert packets(coordinator) == ["01"]

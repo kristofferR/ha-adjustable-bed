@@ -638,20 +638,14 @@ class KaidiController(BedController):
         if delay > 0:
             # A renewable hold (#483) repeats until its lease ends, within its ceiling.
             count = self.leased_hold_ms(count * delay) // delay
-        try:
+        async with self.releasing(
+            lambda: self._write_control_command(stop_command, cancel_event=asyncio.Event())
+        ):
             await self._write_control_command(
                 move_command,
                 repeat_count=count,
                 repeat_delay_ms=delay,
             )
-        finally:
-            try:
-                await self._write_control_command(
-                    stop_command,
-                    cancel_event=asyncio.Event(),
-                )
-            except ConnectionError:
-                _LOGGER.debug("Kaidi cleanup stop skipped because device disconnected")
 
     def _require_memory_command(self, command_map: Mapping[int, int], memory_num: int) -> int:
         """Resolve a Kaidi memory command or raise a helpful error."""
@@ -855,7 +849,7 @@ class KaidiController(BedController):
     # Direct position control
     # ------------------------------------------------------------------
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Kaidi uses percentage-style progress writes for direct position targeting."""
         return max(0, min(100, int(round(angle))))
 

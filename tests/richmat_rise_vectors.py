@@ -25,7 +25,7 @@ def _frames(app: str) -> frozenset[str]:
     for row in records(app, "vectors"):
         value = row["expected_bytes"].lower().replace(" ", "")
         if len(value) > 2 and not value.startswith("6e"):
-            continue  # RMCS is tested by its separate unchecksummed builder.
+            continue  # RMCS motor programs, which are not offered.
         if len(value) > 10 and len(value) % 10 == 0:
             frames.update(value[i:i + 10] for i in range(0, len(value), 10))
         else:
