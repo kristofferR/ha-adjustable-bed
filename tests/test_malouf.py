@@ -133,10 +133,6 @@ class TestMaloufNewOkinController:
         assert coordinator.ble_device_name == "Test Bed"
 
 
-class TestMaloufLegacyOkinController:
-    """Test Malouf LEGACY_OKIN controller."""
-
-
 class TestMaloufNewOkinPresets:
     """Test Malouf NEW_OKIN preset commands."""
 

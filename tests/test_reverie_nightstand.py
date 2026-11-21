@@ -123,6 +123,23 @@ class TestReverieNightstandCommands:
 class TestReverieNightstandController:
     """Test ReverieNightstandController."""
 
+    async def test_control_characteristic_uuid(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Control characteristic should be linear head UUID."""
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+
+        assert (
+            coordinator.controller.control_characteristic_uuid
+            == REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID
+        )
+
     async def test_supports_preset_zero_g(
         self,
         hass: HomeAssistant,
