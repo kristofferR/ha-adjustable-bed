@@ -15,7 +15,6 @@ import contextlib
 import dataclasses
 import logging
 import math
-from collections import OrderedDict
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -58,10 +57,10 @@ from .beds.base import BedController, controller_as
 from .beds.entity_specs import POSITION_UNIT_DEGREES, POSITION_UNIT_PERCENT
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
-    CommandContext,
     CommandOutcome,
     HoldClaim,
     HoldLease,
+    HoldWindow,
     StaleHoldLease,
     command_resources,
     current_command_context,
@@ -2140,39 +2139,6 @@ def _declares_hold(targets: list[tuple[BedTarget, str]], control: str) -> bool:
     )
 
 
-@dataclass(slots=True)
-class _HoldWindow:
-    """One press's hold of a control, and the route its renewals follow."""
-
-    control: str
-    generation: int
-    deadline: float
-    windowed: bool = True
-    ended: bool = False
-    expired: bool = False
-    # The commands this press started, one per physical side.
-    commands: list[CommandContext] = field(default_factory=list)
-
-    @property
-    def lapsed(self) -> bool:
-        """Whether renewals stopped, even before the deadline keeper notices."""
-        return self.expired or asyncio.get_running_loop().time() >= self.deadline
-
-
-# Presses by (target, side, owner). Ended ones are remembered, bounded, so a
-# late renewal of an ended press never starts motion again.
-_HOLD_WINDOWS: OrderedDict[tuple[int, str, str], _HoldWindow] = OrderedDict()
-_ENDED_HOLD_WINDOWS_KEPT = 64
-
-
-def _remember_press(key: tuple[int, str, str], press: _HoldWindow) -> None:
-    _HOLD_WINDOWS[key] = press
-    _HOLD_WINDOWS.move_to_end(key)
-    ended = [k for k, w in _HOLD_WINDOWS.items() if w.ended]
-    for stale in ended[: max(0, len(ended) - _ENDED_HOLD_WINDOWS_KEPT)]:
-        del _HOLD_WINDOWS[stale]
-
-
 def _windowed_press(
     targets: list[tuple[BedTarget, str]], lease: HoldLease, control: str
 ) -> bool:
@@ -2185,12 +2151,15 @@ def _windowed_press(
     if len(targets) != 1:
         return not _declares_hold(targets, control)
     coordinator, side = targets[0]
-    key = (id(coordinator), side, lease.owner)
-    press = _HOLD_WINDOWS.get(key)
+    press = coordinator.hold_windows.get(side, lease.owner)
     if press is not None and press.generation >= lease.generation:
         return press.windowed
     if _declares_hold(targets, control):
-        _remember_press(key, _HoldWindow(control, lease.generation, math.inf, windowed=False, ended=True))
+        coordinator.hold_windows.remember(
+            side,
+            lease.owner,
+            HoldWindow(control, lease.generation, math.inf, windowed=False, ended=True),
+        )
         return False
     return True
 
@@ -2199,7 +2168,7 @@ async def _async_hold_window(
     hass: HomeAssistant,
     targets: list[tuple[BedTarget, str]],
     lease: HoldLease,
-    run: Callable[[_HoldWindow], Awaitable[None]],
+    run: Callable[[HoldWindow], Awaitable[None]],
 ) -> None:
     """Hold a control that declares no renewable hold until its renewals stop.
 
@@ -2212,9 +2181,8 @@ async def _async_hold_window(
     if len(targets) != 1:
         raise invalid("hold_one_bed")
     coordinator, side = targets[0]
-    key = (id(coordinator), side, lease.owner)
     now = asyncio.get_running_loop().time()
-    window = _HOLD_WINDOWS.get(key)
+    window = coordinator.hold_windows.get(side, lease.owner)
     if window is not None and window.generation >= lease.generation:
         if window.generation > lease.generation or window.control != lease.action:
             raise invalid("hold_ended")
@@ -2222,8 +2190,8 @@ async def _async_hold_window(
         if not window.ended:
             window.deadline = now + lease.duration_s
         return
-    window = _HoldWindow(lease.action, lease.generation, now + lease.duration_s)
-    _remember_press(key, window)
+    window = HoldWindow(lease.action, lease.generation, now + lease.duration_s)
+    coordinator.hold_windows.remember(side, lease.owner, window)
     # A dropped caller (a closed dashboard) must not take the deadline with it.
     task = hass.async_create_background_task(
         _run_hold_window(window, run), "adjustable_bed hold window"
@@ -2232,7 +2200,7 @@ async def _async_hold_window(
 
 
 async def _run_hold_window(
-    window: _HoldWindow, run: Callable[[_HoldWindow], Awaitable[None]]
+    window: HoldWindow, run: Callable[[HoldWindow], Awaitable[None]]
 ) -> None:
     loop = asyncio.get_running_loop()
     hold = asyncio.ensure_future(run(window))
@@ -2291,7 +2259,7 @@ async def _hold_targets(
     *,
     lease: HoldLease | None = None,
     admissions: Sequence[_CommandAdmission] | None = None,
-    window: _HoldWindow | None = None,
+    window: HoldWindow | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     bounded_catalog = lease is None and all(
