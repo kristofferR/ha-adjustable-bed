@@ -63,7 +63,6 @@ async def handle_hjbed(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         HJBedController,
-        "HJBed configuration",
         lambda controller: controller.async_execute_hjbed_request(request),
         validate=lambda controller: controller.validate_hjbed_request(request),
     )

@@ -259,7 +259,7 @@ async def _run_alarm(
         # Capability validation is offline-safe; link-bound plans must use the live
         # physical controller, never the client-free capability instance.
         preflighted = await _preflight_capability(
-            targets, UltramaticController, "Ultramatic alarms"
+            targets, UltramaticController
         )
         try:
             check_initial()
@@ -337,7 +337,7 @@ async def _run_alarm(
             await _execute_preflighted(
                 [target],
                 preflighted,
-                _family_command(UltramaticController, "Ultramatic alarms", apply),
+                _family_command(UltramaticController, apply),
                 cancel_running=True,
                 resource="*",
                 admissions=[admission],

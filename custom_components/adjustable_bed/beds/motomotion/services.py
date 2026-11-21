@@ -71,7 +71,6 @@ async def handle(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         MotoMotionController,
-        "MotoMotion users",
         lambda controller: controller.async_execute_motomotion_request(request),
         supported=lambda controller: controller.supports_motomotion_users,
         validate=lambda controller: controller.validate_motomotion_request(request),

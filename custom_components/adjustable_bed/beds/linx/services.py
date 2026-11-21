@@ -38,7 +38,6 @@ def register_services(hass: HomeAssistant) -> None:
         await _preflight_and_execute(
             targets,
             LinxController,
-            "Linx snore intervention",
             execute,
             validate=lambda controller: controller.validate_snore_intervention(),
             resource=None,

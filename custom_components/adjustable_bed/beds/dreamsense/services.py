@@ -35,7 +35,7 @@ async def handle_light(call: ServiceCall) -> None:
         controller.validate_light(rgb, seconds)
 
     preflighted = await _preflight_capability(
-        targets, DreamSenseController, "Dream Sense Bed", None, validate
+        targets, DreamSenseController, None, validate
     )
 
     async def execute(controller: DreamSenseController) -> None:
@@ -44,7 +44,7 @@ async def handle_light(call: ServiceCall) -> None:
     await _execute_preflighted(
         targets,
         preflighted,
-        _family_command(DreamSenseController, "Dream Sense lighting", execute),
+        _family_command(DreamSenseController, execute),
         cancel_running=False,
         resource="configuration",
         admissions=admissions,
@@ -94,7 +94,7 @@ async def handle_delete_alarm(call: ServiceCall) -> None:
         stamps[controller] = controller.validate_record(number)
 
     preflighted = await _preflight_capability(
-        targets, DreamSenseController, "Dream Sense alarm", None, validate
+        targets, DreamSenseController, None, validate
     )
 
     async def execute(controller: DreamSenseController) -> None:
@@ -108,7 +108,7 @@ async def handle_delete_alarm(call: ServiceCall) -> None:
     await _execute_preflighted(
         targets,
         preflighted,
-        _family_command(DreamSenseController, "Dream Sense alarm", execute),
+        _family_command(DreamSenseController, execute),
         cancel_running=False,
         resource="configuration",
         admissions=admissions,
