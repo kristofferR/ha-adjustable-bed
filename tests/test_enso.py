@@ -183,21 +183,21 @@ async def test_notification_suppression_retention_and_session_fence():
     data = bytearray(16)
     data[13:15] = bytes((0x40, 2))
     receive(sender, data)
-    assert state.get("enso_light") is True
+    assert state.get("under_bed_lights_on") is True
     assert state.get("massage_timer") == 20
     data[14] = 7
     receive(sender, data)
     assert state.get("massage_timer") == 20
     data[13] = 0x20
     receive(sender, data)
-    assert state.get("enso_light") is True
+    assert state.get("under_bed_lights_on") is True
     c.on_disconnect()
     receive(sender, bytearray(16))
-    assert state.get("enso_light") is None
+    assert state.get("under_bed_lights_on") is None
     assert state.get("massage_timer") is None
     co.client = MagicMock()
     receive(sender, data)
-    assert state.get("enso_light") is None
+    assert state.get("under_bed_lights_on") is None
 
 
 async def test_rename_and_errors():

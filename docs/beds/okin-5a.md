@@ -334,14 +334,14 @@ framing and actions. Do not interchange the command sets.
   the Nectar Move app profile.
 - Some Nectar bases advertise only as `OKIN-XXXXXX`. Those names are ambiguous
   with classic Okimat, seven-byte Nectar and newer CST controllers, so setup
-  prompts for the Okin-family protocol. Choose `Nectar` only for the seven-byte
-  protocol.
-- Select **Nectar Move** explicitly when setting up that app profile; shared
+  prompts for the Okin-family protocol. Choose **Nectar bed** under **Okin (other
+  receivers)** only for the seven-byte protocol.
+- Select **Nectar Move · Okin** explicitly when setting up that app profile; shared
   advertisements and Device Information are not sufficient to choose it.
 - The `62741523-...` OKIN service, `90311623-...` CSS service, and Nordic DFU
   service `00001530-...` are not sufficient by themselves to identify CST
   because RF ECO BT stair actuators share that GATT inventory. Choose the
-  **Okin CST** row, which names its apps, only when the known base or app
+  **Rize and Jordan's apps (and other Okin apps) · Okin** row only when the known base or app
   identity also corroborates CST. Device Information model `MEGAMAT MBZ`
   identifies RF ECO BT instead.
 - Or configure bed type `nectar` manually (a legacy alias of the `okin_7byte`
@@ -664,7 +664,7 @@ Use the shared actions in [Actions and Automations](../SERVICES.md).
 | `hold_control` | `device_id`, `control`, `duration` (seconds), optional `side` | Hold a head, foot, combined or preset control; ordinary STOP release |
 | `goto_preset` | `device_id`, `preset`, optional `duration` (seconds) and `side` | Recall memory 1 or 2, with ordinary STOP release |
 | `save_preset` | `device_id`, `preset`, optional `side` | Save slot 1 or 2 with finite programming and release |
-| `stop_all` | `device_id`, optional `side` | Ordinary STOP twice; does not promise interruption of every firmware preset |
+| `stop_all` | `device_id`, optional `side` | Ordinary STOP twice, then the app's one-touch STOP twice; does not promise interruption of every firmware preset |
 
 #### Evidence
 

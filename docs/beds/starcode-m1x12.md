@@ -4,8 +4,8 @@
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-Choose **Adjustable Comfort M1X12 app** in setup for the CB25, F23 and kneading
-layouts; setup never picks it on its own. Existing AdjustableM5X5 and DewertOkin
+Choose **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed** in the StarCode
+question for the CB25, F23 and kneading layouts; setup never picks it on its own. Existing AdjustableM5X5 and DewertOkin
 ELEVATE entries keep their current behavior until you reconfigure them.
 
 ## Known Models
@@ -80,7 +80,8 @@ The main profile also requires Device Information Service
 
 ## Configuration and groups
 
-Choose **Adjustable Comfort M1X12 app** from the bed list, enter the original
+Choose **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed** in the StarCode
+question, enter the original
 Bluetooth name and select CB25, F23 or kneading.
 
 | Name prefix, checked first to last | Layout |
@@ -98,8 +99,8 @@ Bluetooth name and select CB25, F23 or kneading.
 
 An M1X12 main entry can link up to two independent ELEVATE entries.
 
-- Each lift must be explicitly reconfigured to the **Adjustable Comfort M1X12
-  ELEVATE** variant first. The group form rejects a generic ELEVATE entry with a
+- Each lift must be explicitly reconfigured to **Adjustable Comfort M1X12 app,
+  Elevate lift** first. The group form rejects a generic ELEVATE entry with a
   request to reconfigure it.
 - Linking leaves the other entry's configuration, controller, device ID and
   associations untouched.
@@ -109,7 +110,7 @@ An M1X12 main entry can link up to two independent ELEVATE entries.
 
 ### Home Assistant setup
 
-Choose the **StarCode apps** row, then **Adjustable Comfort M1X12 app**, then enter the exact Bluetooth name and choose CB25, F23 or kneading. Specific F23 and kneading prefixes take precedence over generic `STAR25`; the app identity is not inferred from Nordic UART, manufacturer, firmware or the name alone. Existing AdjustableM5X5 entries retain their current controller and configuration.
+Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps · StarCode** row, then **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed**, then enter the exact Bluetooth name and choose CB25, F23 or kneading. Specific F23 and kneading prefixes take precedence over generic `STAR25`; the app identity is not inferred from Nordic UART, manufacturer, firmware or the name alone. Existing AdjustableM5X5 entries retain their current controller and configuration.
 
 An M1X12 main can include up to **two separately configured ELEVATE accessories**. Each ELEVATE entry must be explicitly reconfigured to **Adjustable Comfort M1X12 app, Elevate lift** before it can be linked. Linking never changes that entry. Existing ELEVATE defaults and AdjustableM5X5 groups keep their current behavior. These entries remain independent devices and do not become Left/Right paired beds. The M1X12 profile and accessory list belong to one physical side and cannot be changed from a shared two-address pair form.
 

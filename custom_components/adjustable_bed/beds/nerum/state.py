@@ -10,7 +10,6 @@ HEAD: Final = StateKey[int]("nerum_head_massage")
 FOOT: Final = StateKey[int]("nerum_foot_massage")
 MINUTES: Final = StateKey[int]("nerum_minutes")
 WAVE: Final = StateKey[int]("nerum_wave")
-LIGHT: Final = StateKey[bool]("nerum_light")
 MASSAGE: Final = StateKey[bool]("nerum_massage")
 # Each alarm sensor shows its HH:MM time; the rest of the record is attributes.
 ALARM_KEYS: Final = tuple(StateKey[str](f"nerum_alarm_{slot}") for slot in (1, 2, 3))

@@ -84,7 +84,7 @@ the app's TV and Anti-Snore presets, ActiveBreeze climate and premium massage
 controls. Adjustable Lite was a compatibility selection for the reported bed;
 its Tempur-specific massage and preset workarounds are removed.
 
-- Select the **Sleeptracker processor's actual Bluetooth endpoint**. The app
+- Select the Sleeptracker processor's own Bluetooth address. The app
   uses framed JSON there, while the reported KSSF05C / MC232SC entries expose
   UART. Add the verified processor as a separate entry. Do not change those
   UART addresses to this profile solely because they belong to the same bed.

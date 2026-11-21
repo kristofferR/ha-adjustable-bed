@@ -42,7 +42,7 @@ app's controls, entities and limitations.
 ## Choosing a profile
 
 A JMC400 box looks the same to both apps: the name `JMC400` and service
-`1234` never decide which app a bed uses. Choose **Jensen / Svane** in the
+`1234` never decide which app a bed uses. Choose **Jensen Adjustable Sleep app (JMC400 and LinOn beds) and Svane Remote app · Jensen / Svane** in the
 bed-type list and answer the [app and bed question](jensen.md#home-assistant-setup).
 
 <!-- generated:jmc-profiles -->

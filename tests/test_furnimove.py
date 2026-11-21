@@ -142,7 +142,9 @@ async def test_light_exposure_is_toggle_and_unpublished_initial_boolean() -> Non
     controller = await fast_controller()
     assert controller.supports_lights and controller.supports_light_toggle_control
     assert not controller.supports_discrete_light_control
-    assert not controller.supports_light_state_feedback
+    # The light shows the reported UBL state; the initial False is not a report.
+    assert controller.supports_light_state_feedback
+    assert controller._coordinator.controller_state.get("under_bed_lights_on") is None
     assert not any(
         entry.args[0] == "furnimove_ubl"
         for entry in controller._coordinator.handle_controller_state_update.call_args_list
@@ -358,6 +360,7 @@ def test_initial_off_feedback_publishes_once_and_invalid_packets_remain_unknown(
     controller._parse_feedback(feedback)
     assert controller._coordinator.controller_state == {
         "furnimove_ubl": False,
+        "under_bed_lights_on": False,
         "furnimove_sync": False,
         "furnimove_child_lock": False,
     }
@@ -692,3 +695,25 @@ async def test_dot_write_notification_property_does_not_subscribe(monkeypatch) -
         feedback,
     ]
     assert controller.client.write_gatt_char.call_args.args == (dot_write, b"\x00\xb0")
+
+
+def test_a_new_link_shows_the_light_only_from_its_own_report() -> None:
+    controller = make_controller()
+    state = controller._coordinator.controller_state
+    controller._parse_feedback(generic(0x00020000))
+    assert state["under_bed_lights_on"] is True
+    controller._clear_session()
+    assert state["under_bed_lights_on"] is None
+    # The same reading as the last link still counts as this link's report.
+    controller._parse_feedback(generic(0x00020000))
+    assert state["under_bed_lights_on"] is True
+
+
+def test_a_report_corrects_the_light_state_a_command_showed() -> None:
+    controller = make_controller()
+    state = controller._coordinator.controller_state
+    controller._parse_feedback(generic(0))
+    # A toggle showed On; the remote switched the lamp back before the next report.
+    state["under_bed_lights_on"] = True
+    controller._parse_feedback(generic(0))
+    assert state["under_bed_lights_on"] is False

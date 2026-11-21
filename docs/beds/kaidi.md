@@ -21,7 +21,7 @@
 - Common Bluetooth name: `Mouselet`
 - Floyd Home beds advertising Kaidi product 139 (`TRANQUILITY_II`)
 - ISleep bases advertising one of eight products: 129, 130, 131, 132, 133, 134,
-  142 and 143. Choose **ISleep app (Kaidi, com.kaidi_test4)** in setup; setup
+  142 and 143. Choose **ISleep app** (`com.kaidi_test4`) in setup; setup
   does not pick it from the name.
 
 ## Apps
@@ -83,8 +83,8 @@
 
 Detection suggests the `kaidi` bed type for a Kaidi advertisement (see
 [Seat setup](#seat-profiles)); its `auto` variant picks the profile from the
-advertised product ID. ISleep is never detected: choose **ISleep app (Kaidi,
-com.kaidi_test4)** explicitly. Each profile keeps its own command table and
+advertised product ID. ISleep is never detected: choose **ISleep app**
+(`com.kaidi_test4`) explicitly. Each profile keeps its own command table and
 timing; none reuses a sibling's.
 
 <!-- generated:kaidi-profiles -->
@@ -431,8 +431,8 @@ hardware.
 
 #### Setup
 
-- Select **Floyd Home app (Kaidi product 139)** under the Kaidi transport, or
-  leave Kaidi on Auto when the bed advertises product 139. It owns its two-axis
+- Select **Floyd Home app** (Kaidi product 139), or leave the **Rize app (older
+  version)** row on **Automatic (recommended)** when the bed advertises product 139. It owns its two-axis
   layout and disables unsupported massage/position controls.
 - Existing Kaidi discovery rules continue to apply to the Seat profiles.
 - Each physical address keeps its own BLE room and node metadata; do not copy
@@ -604,7 +604,7 @@ this app; only the transport is shared with the Seat profiles.
 
 #### Setup
 
-Choose **ISleep app (Kaidi, com.kaidi_test4)** and confirm its product ID,
+Choose **ISleep app** (`com.kaidi_test4`) and confirm its product ID,
 signed 32-bit room ID and advertised actuator descriptor. The profile form uses
 those fields as defaults when HA has a matching advertisement. The profile owns
 layout, massage, feedback and movement timing. Detection: none.

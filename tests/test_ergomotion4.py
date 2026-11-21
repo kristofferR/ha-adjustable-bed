@@ -673,11 +673,9 @@ async def test_rgb_entity_tracks_reported_power_and_disconnect():
     for enabled in (True, False, True):
         _reported_light(ctrl, enabled)
         assert entity.is_on is enabled
-        assert coord.controller_state["ergomotion4_light"] is enabled
         assert coord.controller_state["under_bed_lights_on"] is enabled
     ctrl.on_disconnect()
     assert coord.controller_state["under_bed_lights_on"] is None
-    assert coord.controller_state["ergomotion4_light"] is None
     assert entity.is_on is False
 
 
@@ -767,3 +765,16 @@ def test_custom_preset_ancestor_gates_keep_o5_slot_consumption(keys, expected):
     # exist. dealTagAction consumes a slot even when the tag is inert o5.
     product = custom_product("Other", keys, (), False, False)
     assert set(product.commands) & {"C043", "C044", "C045", "C046"} == expected
+
+
+async def test_a_reported_light_is_one_light_and_an_unreported_one_keeps_its_button():
+    # A custom product's status frames carry the light; the H style's do not.
+    ctrl, _ = await ready("custom", ergomotion4_model_keys=["k1"], has_light=True)
+    assert ctrl.supports_light_state_feedback and ctrl.supports_light_toggle_control
+    light = ctrl._light_action()
+    assert light is not None
+    assert light.key not in {s.key for s in ctrl.controller_button_specs if s is not None}
+    assert ctrl.controller_state_binary_sensor_specs == ()
+    plain, _ = await ready("H")
+    assert not plain.supports_light_state_feedback
+    assert "c056" in {s.key for s in plain.controller_button_specs if s is not None}

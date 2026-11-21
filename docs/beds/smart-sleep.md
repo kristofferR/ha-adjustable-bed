@@ -320,7 +320,8 @@ the integration does not send.
 
 1. Choose **OKIN Smart Sleep app**. Discovery suggests it only for beds named
    SLEEP or Sleep that advertise OKIN data.
-2. Choose the format, P1 or P2, and the model number. P2 always uses model 80.
+2. Choose the format, **Older bed controls** (P1) or **Newer bed controls** (P2),
+   and the model number. P2 always uses model 80.
 
 The **Child mode** switch blocks movement and presets from Home Assistant; it
 does not lock the bed. On a bed with two receivers, each side keeps its own format

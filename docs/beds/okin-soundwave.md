@@ -55,7 +55,7 @@ have. The table lists the controls the app offers for each product.
 
 ## Choosing a profile
 
-Choose **Symphony Sleep Sense**, then the product and BLE selector shown by the
+Choose **Symphony Sleep Sense app**, then the product and BLE selector shown by the
 app. Shared names and services do not identify this app or its product. Unknown
 product and unknown selector retain the app's explicitly labelled fallbacks.
 
