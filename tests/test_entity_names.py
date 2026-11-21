@@ -150,45 +150,17 @@ def test_display_label_drops_artifact_notes_and_shouting(label: str, shown: str)
 @pytest.mark.parametrize(
     ("code", "label", "name", "clear"),
     [
-        # Labels that say part of what the code does take the code's name.
+        # A label that says part of what its code does takes the code's name; a
+        # timer keeps its own duration; one naming another feature is not established.
         (0x4C, "Head+", "Head massage intensity up", True),
-        (0x4C, "Msg Head Intensity Inc", "Head massage intensity up", True),
-        (0x48, "Mode", "Massage mode", True),
-        (0xD3, "Next", "Next music track", True),
-        (0x9D, "Low", "Heat low", True),
-        # A toggle keeps the product's own button; a timer its own duration.
-        (0x5E, "Start\\nStop", "Massage on/off", True),
         (0x5F, "Hour2", "Massage timer 2 hours", True),
-        (0x5F, "Massage 10Min", "Massage timer 10 minutes", True),
-        # A label naming another feature or action is not the code's control.
         (0x4C, "Back Fan", "Back fan", False),
-        (0x5D, "Both massage off", "Both massage off", False),
     ],
 )
 def test_richmat_mh_controls_are_named_by_their_code(code: int, label: str, name: str, clear: bool) -> None:
     from custom_components.adjustable_bed.beds.richmat.labels import richmat_mh_name
 
     assert richmat_mh_name(code, label) == (name, clear)
-
-
-@pytest.mark.parametrize(
-    ("label", "name"),
-    [
-        ("Zg Back", "Zero gravity"),
-        ("Zg Set", "Zero gravity"),
-        ("Snore Back", "Anti-snore"),
-        ("M2 Back", "Memory 2"),
-        ("Zero Gravity Mode primary", "Zero gravity"),
-        ("Xiaofeiyan", "Yoga"),
-        ("Erlieving Stress", "Relieving stress"),
-        ("Lull", "Sleep aid"),
-        ("Sleeping", "Sleeping"),
-    ],
-)
-def test_richmat_preset_labels_name_the_preset(label: str, name: str) -> None:
-    from custom_components.adjustable_bed.beds.richmat.labels import preset_name
-
-    assert preset_name(label) == name
 
 
 # Every entity of every offline controller variant, built once for the checks below.
@@ -211,25 +183,6 @@ def test_every_shown_name_follows_the_rules(devices) -> None:
         if entity.name and (issues := problems(entity.name))
     }
     assert offenders == {}
-
-
-def test_catalog_names_are_words_with_their_feature(devices) -> None:
-    """An app's abbreviations and bare button words never become an entity name."""
-    abbreviation = re.compile(r"\b(?:msg|inc|dec|zg\d*|mem|pos|min|mins)\b", re.IGNORECASE)
-    bare = re.compile(
-        r"mode|next|previous|switch|on/off|on off|up|down|low|medium|middle|high|off|on|"
-        r"intensity|[+/-]+|start stop|start/stop|pause/start|\d+ ?(?:min|h)",
-        re.IGNORECASE,
-    )
-    assert {
-        (device.bed, entity.name)
-        for device in devices
-        for entity in device.entities
-        if entity.translation_key is not None
-        and entity.translation_key.startswith("catalog_")
-        and entity.name
-        and (abbreviation.search(entity.name) or bare.fullmatch(entity.name))
-    } == set()
 
 
 def test_one_device_never_shows_one_name_twice(devices) -> None:

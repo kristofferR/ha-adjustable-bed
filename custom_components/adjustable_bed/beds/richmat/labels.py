@@ -286,8 +286,6 @@ MH_CODES: Final[dict[int, tuple[str, str]]] = {
     # The motor page's lock key: the smart set lock (its dedicated switch sends it too).
     0x84: (OTHER, "Smart set lock on/off"),
 }
-# Codes whose catalogs name them without saying what they do.
-_MH_UNCLEAR: Final = frozenset({0xB8})
 # Words a label may add to its code's name without saying anything else: the
 # Nisco catalog's "Massage Head Foot Intensity Inc" is the code every other app
 # calls "Intensity+".
@@ -385,8 +383,6 @@ def richmat_mh_name(code: int, label: str, *, massage_page: bool = False) -> tup
         number, unit = duration[1] or duration[4], duration[2] or duration[3]
         return _with_feature(_MH_TIMERS[code], ["timer", number, unit]), True
     shown = _words(label, fillers=True)
-    if code in _MH_UNCLEAR:
-        return MH_CODES[code][1], False
     if code not in MH_CODES:
         # A massage page's plain on/off or off button says what it does even where
         # other layouts give its code another use (VERM's 61 "Start Stop", "All Off").
@@ -539,8 +535,6 @@ _APP_NAMES: Final[dict[str, str]] = {
     "SwingOnAndOff": "Swing on/off",
     "AntiPinchSensitivityModeChange": "Anti-pinch sensitivity",
 }
-# Enums the catalog names without saying what they do.
-_APP_UNCLEAR: Final = frozenset({"MusicCut", "RelieveSnoreSetting"})
 
 
 def richmat_app_name(enum: str, label: str) -> tuple[str, bool]:
@@ -566,4 +560,4 @@ def richmat_app_name(enum: str, label: str) -> tuple[str, bool]:
     toggle = [w for w in words if w not in _FEATURE_WORDS.get(own or "", ())] == ["on/off"]
     if toggle and re.search(r"(?<!/)\b(?:on|off)$", name):
         return re.sub(r"(?<!/)\b(?:on|off)$", "on/off", name), True
-    return name, short not in _APP_UNCLEAR
+    return name, True
