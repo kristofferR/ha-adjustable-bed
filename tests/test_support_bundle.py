@@ -1442,7 +1442,7 @@ class TestSupportBundle:
         hass: HomeAssistant,
         enable_custom_integrations,
     ):
-        """Nearby inventory should favor likely beds, then strong advertisements."""
+        """Only the target and likely beds are listed; other devices are only counted."""
         del enable_custom_integrations
         nearby = [
             _build_nearby_service_info(
@@ -1483,10 +1483,13 @@ class TestSupportBundle:
 
         assert inventory["limit"] == 30
         assert inventory["total_visible"] == 36
-        assert inventory["included"] == 30
-        assert inventory["truncated"] is True
-        assert len(inventory["devices"]) == 30
-        assert [device["rank"] for device in inventory["devices"]] == list(range(1, 31))
+        assert inventory["included"] == 2
+        assert inventory["truncated"] is False
+        assert inventory["other_devices"] == 34
+        assert [device["rank"] for device in inventory["devices"]] == [1, 2]
+        # Other people's phones and watches never appear by name or address.
+        assert "Nearby 05" not in json.dumps(inventory)
+        assert "02:00:00:00:00:05" not in json.dumps(inventory)
 
         likely_bed = inventory["devices"][0]
         assert likely_bed["address"] == "AA:BB:CC:DD:EE:FF"
@@ -1500,7 +1503,6 @@ class TestSupportBundle:
         assert strongest_unknown["address"] == "02:00:00:00:00:00"
         assert strongest_unknown["is_target"] is True
         assert strongest_unknown["rssi"] == -20
-        assert all(device["address"] != "02:00:00:00:00:22" for device in inventory["devices"])
 
     async def test_generate_support_bundle_raw_address_has_standard_sections(
         self,
@@ -1625,12 +1627,12 @@ class TestSupportBundle:
             )
 
         assert report["target"]["mode"] == "configured_device"
-        assert report["target"]["address"] == mock_config_entry.data["address"]
+        assert report["target"]["address"] == "AA:BB:CC:**:**:**"
         assert report["target"]["device_id"] == "retry-device-id"
         assert report["target"]["entry_id"] == mock_config_entry.entry_id
-        assert report["target"]["title"] == mock_config_entry.title
+        assert report["target"]["title"] == "**REDACTED**"
         assert report["integration"]["entry_id"] == mock_config_entry.entry_id
-        assert report["integration"]["address"] == mock_config_entry.data["address"]
+        assert report["integration"]["address"] == "AA:BB:CC:**:**:**"
         assert report["controller"]["initialized"] is False
         assert report["command_trace"] == []
 

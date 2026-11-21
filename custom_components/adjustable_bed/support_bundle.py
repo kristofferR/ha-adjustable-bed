@@ -46,8 +46,13 @@ from .diagnostic_payloads import format_mapping_payloads
 from .download import is_bundle_filename
 from .pairing import iter_children
 from .profile_decisions import async_profile_decision_history
-from .redaction import redact_pins_only, redact_sleep_number_sessions, redact_sleeptracker_sessions
-from .support_logs import async_setup_support_logs
+from .redaction import (
+    mentions_only,
+    redact_bundle,
+    redact_sleep_number_sessions,
+    redact_sleeptracker_sessions,
+)
+from .support_logs import async_setup_support_logs, known_bluetooth_addresses
 from .support_proxy_logs import DATA_PAIRING_PROXY_LOGS, capture_proxy_logs
 from .support_report import (
     _get_bluetooth_info,
@@ -66,6 +71,12 @@ _LOGGER = logging.getLogger(__name__)
 _REPORT_VERSION = "2.6"
 _MAX_NEARBY_BLUETOOTH_DEVICES = 30
 MAX_SAVED_BUNDLES = 5
+_PRIVACY_NOTE = (
+    "Bluetooth addresses keep only their manufacturer prefix. Credentials, typed names,"
+    " health and presence readings, other nearby devices and log lines about them are"
+    " left out. Captured notifications are raw bytes from the bed and can include"
+    " sensor readings."
+)
 _BLUETOOTH_DOMAIN = "bluetooth"
 _ESPHOME_DOMAIN = "esphome"
 _ESPHOME_PAIRING_FEATURE_FLAG = 1 << 3
@@ -153,6 +164,11 @@ async def generate_support_bundle(
         (log.get("timestamp"), log.get("name"), log.get("message")): log
         for log in [*pairing_logs, *pre_capture_logs, *recent_logs]
     }.values())
+    # Lines about other people's devices stay out of a file posted publicly.
+    known = known_bluetooth_addresses(hass, address)
+    logged = len(recent_logs)
+    recent_logs = [log for log in recent_logs if mentions_only(log.get("message", ""), known)]
+    pairing_logs = [log for log in pairing_logs if mentions_only(log.get("message", ""), known)]
     diagnostic_dict = diagnostics_report.to_dict()
     pairing = _build_pairing_assessment(
         diagnostic_dict,
@@ -180,6 +196,8 @@ async def generate_support_bundle(
             "capture_duration_seconds": capture_duration,
             "integration_domain": DOMAIN,
             "log_source": "memory" if include_logs else "not_requested",
+            "withheld_log_entries": logged - len(recent_logs),
+            "privacy": _PRIVACY_NOTE,
         },
         "target": {
             "mode": "configured_device" if entry is not None else "target_address",
@@ -218,7 +236,11 @@ async def generate_support_bundle(
 
     redact_sleep_number_sessions(report)
     redact_sleeptracker_sessions(report)
-    return redact_pins_only(report)  # type: ignore[no-any-return]
+    candidates = {
+        str(device["address"])
+        for device in bluetooth_info.get("nearby_devices", {}).get("devices", [])
+    }
+    return redact_bundle(report, addresses=known | candidates)  # type: ignore[no-any-return]
 
 
 async def _build_bluetooth_section(
@@ -308,7 +330,14 @@ def _build_nearby_device_inventory(
         devices.append(best)
 
     devices.sort(key=_nearby_device_sort_key)
-    included = devices[: max(0, limit)]
+    # Only the target and other possible beds are listed; the rest are people's
+    # phones, watches and neighbours' devices, so they are only counted.
+    beds: list[dict[str, Any]] = []
+    others: list[dict[str, Any]] = []
+    for device in devices:
+        is_bed = device["is_target"] or device["detection"]["supported_match"]
+        (beds if is_bed else others).append(device)
+    included = beds[: max(0, limit)]
     for rank, device in enumerate(included, start=1):
         device["rank"] = rank
 
@@ -316,17 +345,15 @@ def _build_nearby_device_inventory(
         "limit": limit,
         "total_visible": len(devices),
         "included": len(included),
-        "truncated": len(devices) > len(included),
+        "truncated": len(beds) > len(included),
+        "other_devices": len(others),
+        "other_connectable_devices": sum(device["connectable"] for device in others),
         "ranking": [
             "supported_bed_match",
             "detection_confidence",
             "connectable",
             "rssi",
         ],
-        "privacy_note": (
-            "Contains Bluetooth names and addresses visible to Home Assistant "
-            "when the bundle was generated."
-        ),
         "devices": included,
     }
 
@@ -987,7 +1014,8 @@ def _empty_integration_info(address: str) -> dict[str, Any]:
 def save_support_bundle(hass: HomeAssistant, report: dict[str, Any], address: str) -> Path:
     """Save the support bundle to a JSON file in the config directory."""
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    address_safe = address.replace(":", "").lower()
+    # The file name is published with the file: only the manufacturer prefix.
+    address_safe = address.replace(":", "").lower()[:6]
     filename = f"adjustable_bed_support_bundle_{address_safe}_{timestamp}.json"
 
     config_dir = Path(hass.config.config_dir)

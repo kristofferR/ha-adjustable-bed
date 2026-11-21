@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from typing import Any
 
-from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.const import CONF_NAME
 
 from .const import (
     BED_TYPE_SLEEP_NUMBER,
+    CONF_BLE_DEVICE_NAME,
+    CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_JENSEN_PIN,
     CONF_OCTO_PIN,
     CONF_PAIRLINK_PASSWORD_HEX,
@@ -16,7 +19,9 @@ from .const import (
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 
-# Credentials are secret even in support bundles that retain device identities.
+REDACTED = "**REDACTED**"
+
+# Credentials are secret in every file.
 _CREDENTIAL_KEYS = {
     CONF_JENSEN_PIN,
     CONF_OCTO_PIN,
@@ -28,115 +33,156 @@ _CREDENTIAL_KEYS = {
     "token",
     "password",
 }
+# Text the user typed or renamed: often a person's name, never needed to debug.
+_USER_TEXT_KEYS = {"title", CONF_BLE_DEVICE_NAME, CONF_FSM_RELAX_MEMORY_NAMES}
 KEYS_TO_REDACT = {
     CONF_NAME,
-    "title",
     "serial",
     "serial_number",
     "configuration_url",
-} | _CREDENTIAL_KEYS
+} | _USER_TEXT_KEYS | _CREDENTIAL_KEYS
+# The support bundle keeps device names: they are what bed detection matches.
+_BUNDLE_KEYS_TO_REDACT = _USER_TEXT_KEYS | _CREDENTIAL_KEYS
 
-# Keys containing MAC addresses (partial redaction - keep OUI)
-MAC_ADDRESS_KEYS = {CONF_ADDRESS, "address"}
+# A Bluetooth address with one consistent separator.
+_HEX = "[0-9A-Fa-f]"
+MAC_ADDRESS_PATTERN = re.compile(
+    rf"(?<!{_HEX})({_HEX}{{2}})([:\-_])({_HEX}{{2}})\2({_HEX}{{2}})"
+    rf"\2{_HEX}{{2}}\2{_HEX}{{2}}\2{_HEX}{{2}}(?!{_HEX})"
+)
 
-# Regex pattern for MAC addresses (colon or hyphen separated)
-MAC_ADDRESS_PATTERN = re.compile(r"([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}")
+# Health and presence readings: the key stays, the value becomes its type.
+# Matched on whole words of the key, so "motion_bed" or "anti_snore" never match.
+_HEALTH_KEY = re.compile(
+    r"_(?:heart|heartbeat|breath|breathing|respiration|respiratory|apnea|hrv|occupancy"
+    r"|occupied|presence|inbed|onbed|outbed|awake|awakening|snoring|in_bed|on_bed|out_bed"
+    r"|bed_exit|leave_bed|body_move|body_movement|body_revolve|snore_duration"
+    r"|sleep_(?:report|data|stage|score|history|status|quality)|report_cache)_"
+)
+
+
+def _is_health_key(key: str) -> bool:
+    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", key).lower()
+    return _HEALTH_KEY.search(f"_{re.sub('[^a-z0-9]+', '_', words)}_") is not None
 
 
 def _redact_mac_address(mac: str | None | Any) -> str | Any:
-    """Redact the last 3 bytes of a MAC address, keeping the OUI (manufacturer ID).
+    """Keep the manufacturer prefix (first three bytes) of a MAC address.
 
     Example: AA:BB:CC:DD:EE:FF -> AA:BB:CC:**:**:**
 
-    This function is designed to handle any input type defensively. Non-string
-    inputs (including None, integers, etc.) are returned unchanged.
-
-    Args:
-        mac: The MAC address to redact. Accepts str, None, or any other type.
-
-    Returns:
-        The partially redacted MAC address, or "**REDACTED**" for invalid formats,
-        or the original value if not a string or empty.
+    Non-string or empty inputs are returned unchanged; a string that is not a
+    six-byte address becomes "**REDACTED**".
     """
     if not mac or not isinstance(mac, str):
         return mac
-
-    # Handle both : and - separators
-    sep = ":" if ":" in mac else "-"
-    parts = mac.upper().replace("-", ":").split(":")
-
-    if len(parts) != 6:
-        return "**REDACTED**"
-
-    # Keep first 3 bytes (OUI), redact last 3
-    return f"{parts[0]}{sep}{parts[1]}{sep}{parts[2]}{sep}**{sep}**{sep}**"
+    match = MAC_ADDRESS_PATTERN.fullmatch(mac.strip())
+    if match is None:
+        return REDACTED
+    return _mask_match(match)
 
 
-def redact_string(text: str) -> str:
-    """Redact MAC addresses found within a string."""
-
-    def replace_mac(match: re.Match[str]) -> str:
-        return _redact_mac_address(match.group(0))
-
-    return MAC_ADDRESS_PATTERN.sub(replace_mac, text)
+def _mask_match(match: re.Match[str]) -> str:
+    sep = match.group(2)
+    prefix = sep.join(match.group(index).upper() for index in (1, 3, 4))
+    return f"{prefix}{sep}**{sep}**{sep}**"
 
 
-def redact_data(data: Any, depth: int = 0) -> Any:
-    """Recursively redact sensitive data from a dictionary.
+def _device_half_pattern(addresses: Iterable[str]) -> re.Pattern[str] | None:
+    """Match the device-specific half of known addresses in any other form.
 
-    - Fully redacts name, title, PIN and serial fields
-    - Partially redacts MAC addresses (keeps OUI for debugging)
-
-    Args:
-        data: The data structure to redact.
-        depth: Current recursion depth (for infinite loop prevention).
-
-    Returns:
-        A copy of the data with sensitive values redacted.
+    Names, advertisement data and frames can carry it without separators, in
+    reverse byte order or as ASCII text.
     """
+    forms: set[str] = set()
+    for address in addresses:
+        match = MAC_ADDRESS_PATTERN.fullmatch(address.strip()) if isinstance(address, str) else None
+        if match is None:
+            continue
+        tail = match.group(0)[9:].replace(match.group(2), "").lower()
+        octets = [tail[index : index + 2] for index in (0, 2, 4)]
+        forms.add("[:\\-_]?".join(octets))
+        forms.add("[:\\-_]?".join(reversed(octets)))
+        forms.add(tail.encode().hex())
+        forms.add(tail.upper().encode().hex())
+    if not forms:
+        return None
+    return re.compile(f"(?i){'|'.join(sorted(forms))}")
+
+
+def _redact_text(text: str, device_half: re.Pattern[str] | None) -> str:
+    text = MAC_ADDRESS_PATTERN.sub(_mask_match, text)
+    if device_half is not None:
+        text = device_half.sub(lambda match: "*" * len(match.group(0)), text)
+    return text
+
+
+def redact_text(text: str, addresses: Iterable[str]) -> str:
+    """Apply the address policy of ``redact_bundle`` to one string."""
+    return _redact_text(text, _device_half_pattern(addresses))
+
+
+def _redact(data: Any, keys: set[str], device_half: re.Pattern[str] | None, depth: int) -> Any:
     if depth > 20:  # Prevent infinite recursion
         return data
-
     if isinstance(data, dict):
-        result = {}
+        result: dict[Any, Any] = {}
         for key, value in data.items():
             key_lower = key.lower() if isinstance(key, str) else key
-            if key in KEYS_TO_REDACT or key_lower in KEYS_TO_REDACT:
-                result[key] = "**REDACTED**"
-            elif key in MAC_ADDRESS_KEYS or key_lower in MAC_ADDRESS_KEYS:
-                result[key] = _redact_mac_address(value) if isinstance(value, str) else value
+            out_key = _redact_text(key, device_half) if isinstance(key, str) else key
+            if key in keys or key_lower in keys:
+                result[out_key] = REDACTED
+            elif isinstance(key, str) and _is_health_key(key):
+                result[out_key] = f"<{type(value).__name__}>"
             else:
-                result[key] = redact_data(value, depth + 1)
+                result[out_key] = _redact(value, keys, device_half, depth + 1)
         return result
-    elif isinstance(data, list):
-        return [redact_data(item, depth + 1) for item in data]
-    elif isinstance(data, str):
-        return redact_string(data)
-    else:
-        return data
-
-
-def redact_pins_only(data: Any, depth: int = 0) -> Any:
-    """Redact credentials, leaving names/addresses/MACs intact.
-
-    Used for support bundles where BLE device names and MAC addresses are
-    essential debugging information and should not be stripped.
-    """
-    if depth > 20:
-        return data
-
-    if isinstance(data, dict):
-        result = {}
-        for key, value in data.items():
-            key_lower = key.lower() if isinstance(key, str) else key
-            if key in _CREDENTIAL_KEYS or key_lower in _CREDENTIAL_KEYS:
-                result[key] = "**REDACTED**"
-            else:
-                result[key] = redact_pins_only(value, depth + 1)
-        return result
-    if isinstance(data, list):
-        return [redact_pins_only(item, depth + 1) for item in data]
+    if isinstance(data, list | tuple):
+        return [_redact(item, keys, device_half, depth + 1) for item in data]
+    if isinstance(data, str):
+        return _redact_text(data, device_half)
     return data
+
+
+def redact_data(data: Any, *, addresses: Iterable[str] = ()) -> Any:
+    """Redact the diagnostics download.
+
+    Removes names, typed text, serials and credentials, keeps only the
+    manufacturer prefix of every Bluetooth address and hides health readings.
+    ``addresses`` are scrubbed in every other form too (see ``redact_bundle``).
+    """
+    return _redact(data, KEYS_TO_REDACT, _device_half_pattern(addresses), 0)
+
+
+def redact_bundle(data: Any, *, addresses: Iterable[str]) -> Any:
+    """Redact a support bundle: the diagnostics policy, but device names stay.
+
+    Every Bluetooth address keeps only its manufacturer prefix. The device half
+    of each address in ``addresses`` is also starred wherever it appears without
+    separators, in reverse byte order or as ASCII (names, advertisement data,
+    frames, logs). Health and presence readings keep their key only.
+    """
+    return _redact(data, _BUNDLE_KEYS_TO_REDACT, _device_half_pattern(addresses), 0)
+
+
+def _addresses_in(text: str) -> set[str]:
+    return {
+        match.group(0).upper().replace(match.group(2), ":")
+        for match in MAC_ADDRESS_PATTERN.finditer(text)
+    }
+
+
+def mentions_only(text: str, addresses: set[str]) -> bool:
+    """Whether every Bluetooth address in ``text`` is one of ``addresses``.
+
+    ``addresses`` are upper case with colons.
+    """
+    return _addresses_in(text) <= addresses
+
+
+def mentions_any(text: str, addresses: set[str]) -> bool:
+    """Whether ``text`` names one of ``addresses`` (upper case with colons)."""
+    return not _addresses_in(text).isdisjoint(addresses)
 
 
 def redact_sleep_number_sessions(report: dict[str, Any]) -> None:

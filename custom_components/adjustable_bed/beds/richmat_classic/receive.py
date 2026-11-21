@@ -16,6 +16,8 @@ PREFIXES = (
     "6e090100", "6e0e0001", "6e0e0003", "6e1a0001", "6e1a0002", "6e1a0003",
 )
 
+MAX_BUFFER_HEX = 256
+
 
 class MalformedFrame(ValueError):
     """An app substring/getPack boundary that cannot produce a callback."""
@@ -96,6 +98,10 @@ class ReceiveState:
         text = data.hex()
         if text.startswith("6e") and len(self.buffer) > 100:
             self.buffer = ""
+        # HA retention budget; the app's longest parsed record is 16 bytes.
+        if len(self.buffer) + len(text) > MAX_BUFFER_HEX:
+            self.buffer = ""
+            return
         self.buffer += text
         if len(self.buffer) < 10:
             return

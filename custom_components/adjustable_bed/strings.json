@@ -56,6 +56,7 @@
           "transport_all_busy": "No free Bluetooth connections",
           "transport_actual": "Connected over",
           "transport_actual_differs": "Path differed from the prediction",
+          "report_misidentified": "Report a misidentified device",
           "read_positions": "Read bed position",
           "connection_mode": "Bluetooth connection",
           "idle_disconnect_seconds": "Seconds to stay connected"
@@ -79,6 +80,7 @@
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted}).",
+          "report_misidentified": "Wrong device, or not a bed? [Report a misidentified device]({url}). The report opens as a public GitHub issue, so check what it shares before you submit it.",
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
