@@ -209,8 +209,9 @@ when you combine two beds into a pair or separate a pair. Combining makes each
 bed's saved positions positions of its side, with the same IDs, and their
 buttons keep their entity IDs. If both beds have a position with the same name,
 choose the side or use the position's ID. Separating gives each bed back its
-own part of every position, with a button on each bed. Removing a bed deletes
-its calibration and saved positions.
+own part of every position. A position of one side keeps its button, with its
+entity ID and settings; a position of both sides gets a new button on each bed.
+Removing a bed deletes its calibration and saved positions.
 
 ## Actions
 

@@ -2344,6 +2344,23 @@ class TestPairBedsConversion:
             if button
         }
         assert all(buttons.values())
+        # A renamed entity ID and a disabled button are registry settings to keep.
+        left_reading, right_reading = (
+            next(pid for pid, (name, _b) in saved[address].items() if name == "Reading")
+            for address in (LEFT_ADDR, RIGHT_ADDR)
+        )
+        ent_reg.async_update_entity(
+            buttons[left_reading], new_entity_id="button.my_reading", name="My reading"
+        )
+        buttons[left_reading] = "button.my_reading"
+        ent_reg.async_update_entity(
+            buttons[right_reading], disabled_by=er.RegistryEntryDisabler.USER
+        )
+        registry_settings = {
+            entity_id: (row.name, row.disabled_by, row.hidden_by)
+            for entity_id in buttons.values()
+            if (row := ent_reg.async_get(entity_id)) is not None
+        }
 
         result = await self._reach_pair_step(hass)
         result = await hass.config_entries.flow.async_configure(
@@ -2385,6 +2402,7 @@ class TestPairBedsConversion:
             assert row is not None
             assert row.unique_id == f"{pair.data[CONF_PAIR_ID]}_saved_position_{position_id}"
             assert row.config_entry_id == pair.entry_id
+            assert (row.name, row.disabled_by, row.hidden_by) == registry_settings[entity_id]
 
         await async_unpair_entry(hass, pair)
         await hass.async_block_till_done()
@@ -2396,19 +2414,84 @@ class TestPairBedsConversion:
                 position.id: (position.name, position.button) for position in manager.positions
             } == saved[address]
             assert all(position.targets == {"bed": {"back": 0.0}} for position in manager.positions)
-        # Each bed's buttons are its own again, under the same entity IDs.
-        for address, positions in saved.items():
-            for position_id in positions:
-                if position_id in buttons:
-                    assert ent_reg.async_get_entity_id(
-                        "button", DOMAIN, f"{address}_saved_position_{position_id}"
-                    ) == buttons[position_id]
+        # Each bed's buttons are its own again: the same rows, settings kept.
+        for entry, address in ((left, LEFT_ADDR), (right, RIGHT_ADDR)):
+            for position_id in saved[address]:
+                if position_id not in buttons:
+                    continue
+                row = ent_reg.async_get(buttons[position_id])
+                assert row is not None
+                assert row.unique_id == f"{address}_saved_position_{position_id}"
+                assert row.config_entry_id == entry.entry_id
+                assert (row.name, row.disabled_by, row.hidden_by) == registry_settings[row.entity_id]
 
         # Removing a bed forgets its store; the other bed keeps its own.
         await hass.config_entries.async_remove(left.entry_id)
         await hass.async_block_till_done()
         assert pe.storage_key(LEFT_ADDR) not in hass_storage
         assert pe.storage_key(RIGHT_ADDR) in hass_storage
+
+    async def test_failed_separate_returns_a_side_button_to_the_pair(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A split that rolls back leaves the moved button row as it was (PLAT-1)."""
+        from custom_components.adjustable_bed import position_estimate as pe
+
+        ent_reg = er.async_get(hass)
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+        manager = pe.position_estimates(hass, left.entry_id)
+        assert manager is not None
+        bed = manager.beds[LEFT_ADDR]
+        bed.configure({"back": (20.0, 10.0)})
+        bed.set_reference()
+        position_id = manager.save_position("Reading", [bed], button=True).id
+        await hass.async_block_till_done()
+        button = ent_reg.async_get_entity_id(
+            "button", DOMAIN, f"{LEFT_ADDR}_saved_position_{position_id}"
+        )
+        assert button is not None
+        ent_reg.async_update_entity(
+            button, new_entity_id="button.my_reading", disabled_by=er.RegistryEntryDisabler.USER
+        )
+        result = await self._reach_pair_step(hass)
+        await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id),
+                CONF_NAME: "Master Bed",
+            },
+        )
+        await hass.async_block_till_done()
+        pair = next(e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data))
+        before = ent_reg.async_get("button.my_reading")
+        assert before is not None and before.config_entry_id == pair.entry_id
+
+        with (
+            patch.object(
+                hass.config_entries,
+                "async_set_disabled_by",
+                side_effect=RuntimeError("injected load failure"),
+            ),
+            pytest.raises(RuntimeError, match="injected load failure"),
+        ):
+            await async_unpair_entry(hass, pair)
+        await hass.async_block_till_done()
+
+        after = ent_reg.async_get("button.my_reading")
+        assert after is not None
+        assert (after.id, after.unique_id, after.config_entry_id, after.disabled_by) == (
+            before.id,
+            before.unique_id,
+            pair.entry_id,
+            er.RegistryEntryDisabler.USER,
+        )
+        assert after.device_id == before.device_id
+        restored_pair = hass.config_entries.async_get_entry(pair.entry_id)
+        assert restored_pair is not None and restored_pair.state == ConfigEntryState.LOADED
 
     async def test_split_keeps_current_connection_preferences(
         self,
