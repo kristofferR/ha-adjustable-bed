@@ -156,6 +156,15 @@ finite pulses. The device scheduler owns the lease:
   every 250 ms with a 750 ms lease. Release, unmount and a hidden page stop the
   renewals and send the usual STOP. Entities advertise the hold with
   `hold_lease_mode`; motors without it keep finite pulses.
+- A `hold_control` lease on a control without a declared hold is no scheduler
+  lease. The action runs the control's ordinary bounded hold (at most 30
+  seconds), so the bed gets the frames it always got; a renewal only moves the
+  action's own deadline. When the deadline passes with the hold still running,
+  the action cancels that command as a STOP does, so the controller runs its
+  release, and no other command is touched. A press keeps the route it started
+  with, so its renewals never become a scheduler lease when the controller's
+  capabilities change mid-press. A renewal of an ended press moves nothing, and
+  an older generation is refused.
 
 ## Merged stream for concurrent motors
 

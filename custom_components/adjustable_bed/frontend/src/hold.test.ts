@@ -84,7 +84,7 @@ function recorder(opts: { reject?: boolean; missingEntity?: boolean } = {}): Rec
           resolvePending = resolve;
         });
       },
-      holdControl: () => undefined,
+      lease: () => undefined,
       stopCover: (cover, stopEntityId) => {
         stoppedCovers.push(cover);
         rec.stoppedCoverTargets.push(stopEntityId);
@@ -159,7 +159,7 @@ class FakeLifecycleTarget implements HoldLifecycleTarget {
 function heldActions(events: string[]): HoldActions {
   return {
     pulse: () => undefined,
-    holdControl: (motor, direction) => {
+    lease: (motor, direction) => {
       events.push(`start:${motor.key}:${direction}`);
       return new Promise<void>(() => {});
     },
@@ -176,9 +176,11 @@ for (const releaseAt of [50, 99, 150, 250]) {
       held_control: "motomotion_home", hold_start_delay_ms: 0,
       hold_release_delay_ms: 0, hold_release_button_key: "motomotion_release",
     }, releaseAt);
+    // The press starts the hold and renews it every 250 ms until release.
+    const renewals = [0, 250].filter((at) => at <= releaseAt);
     expect(trace).toEqual([
-      { at: 0, domain: "adjustable_bed", service: "hold_control",
-        data: { device_id: ["chair"], control: "motomotion_home", duration: 60 } },
+      ...renewals.map((at) => ({ at, domain: "adjustable_bed", service: "hold_control",
+        data: { device_id: ["chair"], control: "motomotion_home", duration: 0.75, hold_owner: expect.any(String), hold_generation: 1 } })),
       { at: releaseAt, domain: "button", service: "press", data: { entity_id: "button.release" } },
     ]);
   });
@@ -208,12 +210,12 @@ test("button hold metadata uses the bounded side-scoped service", async () => {
     startDelayMs: 100,
     releaseDelayMs: 100,
   });
-  await movementHold(hass, motor!, "up");
+  await movementHold(hass, motor!, "up", { owner: "card", generation: 1 });
 
   expect(calls).toEqual([[
     "adjustable_bed",
     "hold_control",
-    { device_id: ["left-device"], control: "headUp", duration: 60, side: "left" },
+    { device_id: ["left-device"], control: "headUp", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "left" },
   ]]);
 });
 
@@ -904,10 +906,10 @@ test("opaque MX action uses one bounded service and retains the native child STO
   const motor = heldButtonMotor(hass, "button.mx_memory1")!;
   expect(motor.heldControl).toEqual({ control: "mx_memory1", startDelayMs: 0, releaseDelayMs: 0 });
   const rec = recorder();
-  const hold = new MotorHold({ ...rec.actions, holdControl: (m, dir) => movementHold(hass, m, dir) });
+  const hold = new MotorHold({ ...rec.actions, lease: (m, dir, lease) => movementHold(hass, m, dir, lease) });
   hold.start(motor, "up", null, "button.right_stop");
   expect(calls).toEqual([{ domain: "adjustable_bed", service: "hold_control", data: {
-    device_id: ["right-child"], control: "mx_memory1", duration: 60, side: "right",
+    device_id: ["right-child"], control: "mx_memory1", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "right",
   } }]);
   expect(rec.pulses).toEqual([]);
   // Keyboard release uses the exact retained STOP owner, including after discovery rebuild.
@@ -926,7 +928,7 @@ test("page abandonment cancels the owning cover hold and never repeats finite pu
     up: { control: "head_up", startDelayMs: 0, releaseDelayMs: 0 },
   } };
   let finish: (() => void) | undefined;
-  const hold = new MotorHold({ ...rec.actions, holdControl: (m) => {
+  const hold = new MotorHold({ ...rec.actions, lease: (m) => {
     holds.push(m.key);
     return new Promise<void>((resolve) => { finish = resolve; });
   } });
@@ -1542,11 +1544,11 @@ test("held cover metadata uses the bounded service with the cover's side", async
     holdEntityId: "cover.left_back",
     heldControls: { up: { control: "back_up", startDelayMs: 100, releaseDelayMs: 100 } },
   };
-  await movementHold(hass, motor, "up");
+  await movementHold(hass, motor, "up", { owner: "card", generation: 1 });
   expect(calls).toEqual([[
     "adjustable_bed",
     "hold_control",
-    { device_id: ["left-device"], control: "back_up", duration: 60, side: "left" },
+    { device_id: ["left-device"], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "left" },
   ]]);
 });
 
@@ -1608,11 +1610,11 @@ test("M1X12 cover hold starts one bounded shared service window", async () => {
     },
   };
 
-  await movementHold(hass, motor, "down");
+  await movementHold(hass, motor, "down", { owner: "card", generation: 1 });
 
   expect(calls).toEqual([[
     "adjustable_bed", "hold_control", {
-      device_id: ["m1x12"], control: "part_1_down", duration: 60, side: "left",
+      device_id: ["m1x12"], control: "part_1_down", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "left",
     },
   ]]);
 });
@@ -1629,7 +1631,7 @@ test("M1X12 hold release cancels the one service window and sends cover STOP", a
   };
   const hold = new MotorHold({
     pulse: () => undefined,
-    holdControl: () => new Promise<void>((resolve) => { resolveService = resolve; }),
+    lease: () => new Promise<void>((resolve) => { resolveService = resolve; }),
     stopCover: (cover) => stopped.push(cover),
     stopBed: () => undefined,
   });
@@ -1678,7 +1680,7 @@ test("held M1X12 massage button uses one bounded service and its paired-side STO
   const stops: Array<string | undefined> = [];
   const hold = new MotorHold({
     pulse: () => undefined,
-    holdControl: (entity, direction) => movementHold(hass, entity, direction),
+    lease: (entity, direction, lease) => movementHold(hass, entity, direction, lease),
     stopCover: () => undefined,
     stopBed: (stopEntityId) => stops.push(stopEntityId),
   });
@@ -1686,7 +1688,7 @@ test("held M1X12 massage button uses one bounded service and its paired-side STO
   hold.start(motor, "up", 5, "button.left_stop");
   expect(calls).toEqual([[
     "adjustable_bed", "hold_control", {
-      device_id: ["left-device"], control: "massage_wave_up", duration: 60, side: "left",
+      device_id: ["left-device"], control: "massage_wave_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "left",
     },
   ]]);
   hold.end({ ...motor });
@@ -1739,7 +1741,7 @@ test("paired M1X12 and ELEVATE motor holds use the shared service and parent STO
     const stopped: Array<string | undefined> = [];
     const hold = new MotorHold({
       pulse: () => undefined,
-      holdControl: (entity, direction) => movementHold(hass, entity, direction),
+      lease: (entity, direction, lease) => movementHold(hass, entity, direction, lease),
       stopCover: () => undefined,
       stopBed: (stopEntityId) => stopped.push(stopEntityId),
     });
@@ -1752,7 +1754,7 @@ test("paired M1X12 and ELEVATE motor holds use the shared service and parent STO
     hold.start(motor, "up", 7, "button.pair_stop");
     expect(calls).toEqual([[
       "adjustable_bed", "hold_control", {
-        device_id: ["pair"], control: item.control, duration: 60,
+        device_id: ["pair"], control: item.control, duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number),
       },
     ]]);
     hold.end({ ...motor });
@@ -1799,13 +1801,13 @@ test("AdjustaMattress backend owns start and release delays for card holds", () 
   const stops: string[] = [];
   const hold = new MotorHold({
     pulse: () => undefined,
-    holdControl: (entity, direction) => movementHold(hass, entity, direction),
+    lease: (entity, direction, lease) => movementHold(hass, entity, direction, lease),
     stopCover: () => undefined,
     stopBed: (id) => { if (id) stops.push(id); },
   }, timers);
   hold.start(motor, "up", 1, "button.stop");
   expect(calls).toEqual([["adjustable_bed", "hold_control", {
-    device_id: ["bed"], control: "headStrengthAdd", duration: 60,
+    device_id: ["bed"], control: "headStrengthAdd", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number),
   }]]);
   hold.end(motor);
   expect(stops).toEqual(["button.stop"]);

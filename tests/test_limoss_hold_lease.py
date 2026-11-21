@@ -268,18 +268,26 @@ async def test_stop_preempts_renewal(bed: Bed, clock: Any) -> None:
 
 
 
-async def test_an_undeclared_profile_refuses_a_lease_before_writing(bed: Bed) -> None:
-    with (
-        patch.object(
-            type(bed.controller),
-            "execution",
-            new_callable=PropertyMock,
-            return_value=NO_EXECUTION_CAPABILITIES,
-        ),
-        raises_key("hold_renewal_not_supported", ServiceValidationError),
+async def test_an_undeclared_profile_never_takes_a_lease(bed: Bed, clock: Any) -> None:
+    with patch.object(
+        type(bed.controller),
+        "execution",
+        new_callable=PropertyMock,
+        return_value=NO_EXECUTION_CAPABILITIES,
     ):
+        if isinstance(bed.controller, LimossRemoteController):
+            # The Limoss Remote route renders its own literal actions.
+            with raises_key("hold_renewal_not_supported", ServiceValidationError):
+                await _hold(bed, 9)
+            assert bed.writes == []
+            return
         await _hold(bed, 9)
-    assert bed.writes == []
+    # FSM Relax holds it as a finger does; once renewals stop, its own
+    # five-frame release burst ends it.
+    bodies = bed.bodies()
+    assert bodies[0] == HELD and set(bodies) == {HELD, STOP}
+    assert bodies[bodies.index(STOP):] == [STOP] * 5
+    assert bed.coordinator._command_scheduler.recent_records[-1].kind is CommandKind.COMMAND
 
 
 async def test_a_renewed_hold_is_one_tracked_movement(bed: Bed, clock: Any) -> None:

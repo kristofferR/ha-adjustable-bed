@@ -30,7 +30,10 @@ Hold an Up/Down control to move; release it to send STOP. On beds whose app is
 proven to stream a held key until release, the card holds the motor in one
 continuous [renewable hold](SERVICES.md#renewable-holds), and the
 integration stops it when its short lease runs out if the browser goes away.
-Other beds repeat finite movements, so a hold can have short pauses between them.
+A control the bed holds as its remote does is renewed the same way: if the
+browser, phone or network goes away mid-hold, the integration ends the hold
+within about a second, with the release the bed's remote sends. Other beds repeat finite movements, so a hold can
+have short pauses between them.
 Position sliders appear only when the selected controller exposes them.
 
 ### Tap to move
@@ -42,17 +45,18 @@ arrow or Stop stops it, and never starts another motor. Movement also stops:
 
 - after at most 30 seconds, or 10 seconds on beds that keep moving after one
   start command (`latched` holds);
-- when you press a preset, memory or other button on the card, which takes over
-  from the movement;
+- when you press a preset, memory or other action button on the card, which
+  takes over from the movement. Light, switch and setting controls leave it
+  running;
 - when you hide the page, switch apps, navigate away, remove the card or switch
   the side tab of a paired bed;
 - when the browser, phone or network disappears. A bed with a renewable hold
   stops within one 750 ms lease; any other bed stops after its current finite
   movement.
 
-A control whose only hold is a fixed 60-second window that the card cannot
-renew stays press-and-hold, because it would keep moving if the page
-disappeared. Presets and memory are unchanged.
+A control the bed holds as its remote does, without a proven continuous hold,
+stays press-and-hold: it can run a gesture, such as a long press, that a tap
+would change. Presets and memory are unchanged.
 
 For a combined bed, the card shows tabs: **Both** first, then one per side.
 A side tab uses the side's own name, without the bed name it repeats, so
@@ -123,7 +127,9 @@ preset when no memory recall exists). On a paired bed, an action picked on one s
 uses the matching action on the other sides, and actions the selected side lacks are
 left out; entity names and icons are preserved. Cards saved by older versions list
 the integration's internal keys instead of entity IDs; these keep working, and the
-editor saves entity IDs the next time you change the quick actions. Compact controls are off by default
+editor saves entity IDs the next time you change the quick actions. The exception
+is an app preset on a Richmat bed saved by a 4.x card: its key named all of the
+bed's app presets at once, so pick that quick action again. Compact controls are off by default
 except for these quick actions. The other `show_*` sections and `section_order`
 apply to the full layout. Memory saving and position synchronization stay there.
 
@@ -207,9 +213,9 @@ dialog_config:
 
 Everything is configurable from the card's **visual editor** (no YAML needed):
 
-- **Show or hide sections:** toggle Position, Firmness, Presets, Memory, Lighting,
-  Massage, Utility, Climate, Connection, and the bed-angle graphic on or off. Only the
-  sections your bed has are listed.
+- **Show or hide sections:** toggle Bed angle graphic, Position controls,
+  Firmness, Presets, Saved positions, Memory, Lighting, Massage, Utility, Climate
+  and Connection controls on or off. Only the sections your bed has are listed.
 - **Reorder sections:** use the up and down arrows next to each section to
   change the order they appear on the card.
 - **Choose which memory positions to show:** pick exactly the memory slots you
@@ -237,8 +243,9 @@ its entity's own name and icon, so to relabel something you just rename the
 entity (Settings → Devices & Services → your bed → the entity → ⚙). For example,
 rename **Memory 1** to *"Flat"* and give it a bed icon, and the card's first
 memory tile becomes a bed icon labelled "Flat". This is purely cosmetic and
-local to you. The card finds entities by the integration's internal keys, so
-renaming or re-icon-ing never breaks it, and other users keep the tidy defaults
+local to you. The card finds entities by the place each one publishes in the
+card (its `card_section` and `card_role` attributes), so renaming or
+re-icon-ing never breaks it, and other users keep the tidy defaults
 (*Memory 1–6* with numbered icons).
 
 <details>

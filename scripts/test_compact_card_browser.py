@@ -638,6 +638,32 @@ async def main():
         await page.evaluate(
             "async () => {hass=nativeHass;card.hass=hass;await configure({show_motors:true})}"
         )
+        # A position row's name carries its value, and a held tile, like the
+        # motor arrows, keeps the page from scrolling under a drifting finger.
+        await page.evaluate("""async () => {
+          const id='button.left_massage_head_up',back='number.left_back_position';
+          hass={...hass,entities:{...hass.entities,[id]:{entity_id:id,device_id:'left',
+            platform:'adjustable_bed',translation_key:'massage_head_up',name:'Head massage up'},
+            [back]:{entity_id:back,device_id:'left',platform:'adjustable_bed',translation_key:'back_position'}},
+            states:{...hass.states,[id]:{entity_id:id,state:'unknown',last_changed:'',last_updated:'',
+              attributes:{bed_side:'left',held_control:'massage_head_up',hold_start_delay_ms:0,
+                hold_release_delay_ms:0}},
+              [back]:{entity_id:back,state:'38',last_changed:'',last_updated:'',
+                attributes:{bed_side:'left',unit_of_measurement:'°'}}}};
+          card.hass=hass;
+          await configure({device_id:'left',default_target:'left',layout:'full',show_motors:true,show_massage:true});
+        }""")
+        assert await card.locator(".position-label").first.evaluate(
+            "el=>el.hasAttribute('aria-label')"
+        ) is False
+        assert "38" in await card.locator(".position-label").first.inner_text()
+        held = card.get_by_role("button", name="Head massage up", exact=True)
+        assert await held.evaluate("el=>getComputedStyle(el).touchAction") == "none"
+        flat = card.get_by_role("button", name="Flat", exact=True)
+        assert await flat.evaluate("el=>getComputedStyle(el).touchAction") == "manipulation"
+        await page.evaluate(
+            "async () => {hass=nativeHass;card.hass=hass;await configure({show_motors:true})}"
+        )
 
         for width in [180, 240, 320, 440]:
             await page.locator("main").evaluate("(el,width)=>el.style.width=width+'px'", width)
