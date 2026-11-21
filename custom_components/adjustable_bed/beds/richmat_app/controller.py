@@ -161,6 +161,8 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             "light_seconds": 300,
         }
         self._side_selection = self.product["side"]
+        # The last massage timer sent to each physical side (0 left, 1 right).
+        self._timers: dict[int, int] = {}
         self._motor_values: list[int | None] = [None] * 4
         self._massage_values = [0, 0]
         self._pending_alarm: dict[str, object] | None = None
@@ -823,11 +825,20 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         detail = self._massage_timers.get(minutes)
         if detail is None:
             raise ValueError("Choose a massage timer this product offers")
-        # The bed reports no timer. A side of a single-address pair shows its own.
-        side = self.command_side
-        sides = ("left", "right") if side == "both" else (side,)
-        with self.sent_state(*(sided(MASSAGE_TIMER_MINUTES, s)(minutes) for s in sides)):
+        # The bed reports no timer: show what was sent to the side the command
+        # addresses, so the side selector and each side of a pair show their own.
+        addressed = self._side()
+        timers = self._timers | dict.fromkeys((0, 1) if addressed == 2 else (addressed,), minutes)
+        updates = [sided(MASSAGE_TIMER_MINUTES, ("left", "right")[s])(m) for s, m in timers.items()]
+        with self.sent_state(MASSAGE_TIMER_MINUTES(self._timer_shown(timers)), *updates):
             await self.press(detail)
+        self._timers = timers
+
+    def _timer_shown(self, timers: Mapping[int, int]) -> int | None:
+        """The timer of the selected side, or of both when they agree."""
+        side = self._side_selection
+        values = {timers.get(s) for s in ((0, 1) if side == 2 else (side,))}
+        return values.pop() if len(values) == 1 else None
 
     def _saves(self, detail: str) -> bool:
         """Whether a preset tile saves: the app flags it and the action has a long-press code."""
@@ -957,6 +968,11 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             self._side_selection = 1 - side if self.product["swap"] and side != 2 else side
             self.local["side"] = self._side_selection
             self._publish()
+            if self._timers:
+                # The timer select follows the selected side.
+                self.forward_controller_state_updates(
+                    MASSAGE_TIMER_MINUTES(self._timer_shown(self._timers))
+                )
 
         async def select(controller: BedController, option: str) -> None:
             require_controller(controller, RichmatAppController)._select_side(option)

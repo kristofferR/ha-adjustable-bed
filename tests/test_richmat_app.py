@@ -828,12 +828,25 @@ async def test_heat_levels_are_one_select_that_sends_what_the_buttons_sent(coord
     assert products
 
 
-async def test_a_side_of_a_one_address_pair_shows_its_own_massage_timer(coordinator, clocked):
-    c = controller(coordinator, "6HRM", single=True)
-    with c.side_scope("right"):
-        await c.set_massage_timer(20)
+async def test_the_massage_timer_shows_the_selected_sides_own_value(coordinator, clocked):
+    """6HRM addresses one side at a time; the timer shows what that side was sent."""
+    c = controller(coordinator, "6HRM")
+    (spec,) = [s for s in c.controller_select_specs if s.key == "richmat_app_side"]
+    select = spec.local_select_fn
+    assert select is not None
     state = coordinator.controller_state
-    assert state.get("massage_timer_right") == 20 and "massage_timer_left" not in state
+    select("left")
+    await c.set_massage_timer(20)
+    assert written(c)[0][4:6] == "00"  # the left side's frame
+    assert state["massage_timer"] == 20
+    select("right")
+    assert state["massage_timer"] is None
+    await c.set_massage_timer(30)
+    assert state["massage_timer"] == 30
+    select("left")
+    assert state["massage_timer"] == 20
+    # A side of a one-address pair shows its own.
+    assert (state["massage_timer_left"], state["massage_timer_right"]) == (20, 30)
     with c.side_scope("both"):
-        await c.set_massage_timer(30)
-    assert (state["massage_timer_left"], state["massage_timer_right"]) == (30, 30)
+        await c.set_massage_timer(10)
+    assert (state["massage_timer_left"], state["massage_timer_right"]) == (10, 10)
