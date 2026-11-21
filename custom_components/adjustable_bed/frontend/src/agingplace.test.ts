@@ -48,6 +48,6 @@ test("Dawn House head and aggregate height expose their source controls without 
   const height = bed.motors.find((motor) => motor.cover === "cover.bed_height");
   expect(height?.heldControls).toEqual({ up: { control: "bed_up", startDelayMs: 0, releaseDelayMs: 0 }, down: { control: "bed_down", startDelayMs: 0, releaseDelayMs: 0 } });
   expect(height?.coverStopScope).toBe("side");
-  await movementHold(hass, height!, "down");
-  expect(calls[0]).toEqual(["adjustable_bed", "hold_control", { device_id: ["dawn"], control: "bed_down", duration: 60, side: "left" }]);
+  await movementHold(hass, height!, "down", { owner: "card", generation: 1 });
+  expect(calls[0]).toEqual(["adjustable_bed", "hold_control", { device_id: ["dawn"], control: "bed_down", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "left" }]);
 });

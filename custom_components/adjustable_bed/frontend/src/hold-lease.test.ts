@@ -1,5 +1,5 @@
-// Renewable hold leases (#483): a declared controller gets one leased call
-// renewed every 250 ms; everything else keeps its finite pulses.
+// Renewable hold leases (#483): a declared controller or any held control gets
+// one leased call renewed every 250 ms; everything else keeps finite pulses.
 // Run with: bun test
 import { expect, test } from "bun:test";
 import { bedEntitiesForDevice } from "./discovery";
@@ -104,10 +104,6 @@ function rig(withLease = true): Rig {
   const actions: HoldActions = {
     pulse: (motor, dir) => {
       pulses.push(`${motor.key}:${dir}`);
-      return new Promise<void>(() => {});
-    },
-    holdControl: (motor, dir) => {
-      events.push(`window:${motor.key}:${dir}`);
       return new Promise<void>(() => {});
     },
     ...(withLease ? { lease: bed.lease } : {}),
@@ -452,7 +448,65 @@ test("a tap without a declared hold repeats finite pulses until one fails", asyn
   expect(hold.tapMoving).toBe(false);
 });
 
-test("a held control without a lease keeps press-and-hold", () => {
+test("a held control without a declared hold still stops when the card vanishes", () => {
+  const { hold, events, bed, timers } = rig();
+  const windowed: MotorEntity = {
+    key: "head",
+    holdEntityId: "button.head_up",
+    deviceId: "bed",
+    heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 0 },
+  };
+  bed.ignoreStop = true;
+  hold.start(windowed, "up", 1, "button.stop");
+  timers.advance(2000);
+  expect(bed.calls).toHaveLength(9);
+  expect(bed.moving).toBe(true);
+  // The phone drops: no release, no STOP, and no more renewals.
+  hold.abandon();
+  expect(events).toEqual(["stop:button.stop"]);
+  timers.advance(HOLD_LEASE_MS);
+  expect(bed.moving).toBe(false);
+  expect(bed.calls).toHaveLength(9);
+});
+
+test("a held control's finished hold leaves nothing for its release to stop", async () => {
+  const { hold, events, bed, timers } = rig();
+  const windowed: MotorEntity = {
+    key: "head",
+    holdEntityId: "button.head_up",
+    deviceId: "bed",
+    heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 0 },
+  };
+  hold.start(windowed, "up", 1, "button.stop");
+  timers.advance(500);
+  // The bed's own gesture finished while the finger is still down.
+  bed.end();
+  await tick();
+  const sent = bed.calls.length;
+  hold.endFromPointer(windowed, 1, true, "button.stop");
+  timers.advance(1000);
+  expect(events).toEqual([]);
+  expect(bed.calls).toHaveLength(sent);
+});
+
+test("a refused renewal keeps a held control's release armed", async () => {
+  const { hold, events, bed, timers } = rig();
+  const windowed: MotorEntity = {
+    key: "head",
+    holdEntityId: "button.head_up",
+    deviceId: "bed",
+    heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 0 },
+  };
+  bed.refuseRenewals = true;
+  hold.start(windowed, "up", 1, "button.stop");
+  timers.advance(HOLD_LEASE_RENEW_MS);
+  await tick();
+  // The starting call still runs, so letting go must still stop the bed.
+  hold.endFromPointer(windowed, 1, true, "button.stop");
+  expect(events).toEqual(["stop:button.stop"]);
+});
+
+test("a held control without a declared hold keeps press-and-hold", () => {
   const { hold, events, bed } = rig();
   const windowed: MotorEntity = {
     key: "head",
@@ -460,7 +514,7 @@ test("a held control without a lease keeps press-and-hold", () => {
     deviceId: "bed",
     heldControl: { control: "headUp", startDelayMs: 0, releaseDelayMs: 0 },
   };
-  // Its 60 s window ends only on release, so a vanished card would not stop it.
+  // A tap would change the control's own gesture.
   expect(canTapMove(windowed, "up")).toBe(false);
   expect(canTapMove({ ...windowed, holdLease: { deviceId: "bed" } }, "up")).toBe(true);
   expect(canTapMove({ key: "legs", cover: "cover.legs" }, "up")).toBe(true);
