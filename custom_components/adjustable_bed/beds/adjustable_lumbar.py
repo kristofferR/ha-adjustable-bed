@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import replace
 from typing import TYPE_CHECKING, Final, Literal
 
@@ -216,8 +216,7 @@ class AdjustableLumbarController(
         elif protocol_variant == ADJUSTABLE_LUMBAR_VARIANT_STAR:
             branch = "star"
         else:
-            data = getattr(getattr(coordinator, "entry", None), "data", None)
-            stored = data.get(CONF_BLE_DEVICE_NAME) if isinstance(data, Mapping) else None
+            stored = coordinator.entry.data.get(CONF_BLE_DEVICE_NAME)
             branch = resolve_branch(_protocol_name(device_name, stored))
         self._branch = branch
         # Star beds start on 25_42_02; the manufacturer read may upgrade them.
@@ -491,7 +490,7 @@ class AdjustableLumbarController(
             or not isinstance(duration_ms, int)
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Duration must be a positive integer, at most 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Stream a control every 100 ms for the hold, then release it."""

@@ -589,7 +589,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
 
     async def press(self, detail: str, *, save: bool = False, duration_ms: int = 1000) -> None:
         if detail not in self._allowed():
-            raise ValueError("This control is unavailable in the current product/protocol layout")
+            raise ValueError("This bed model does not offer that control")
         if save and not self._saves(detail):
             raise ValueError("This preset has no save control")
         if (
@@ -635,7 +635,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             or not 1 <= duration_ms <= 60000
         ):
             raise ValueError(
-                "Choose an available Richmat app movement and a duration from 1 to 60000 ms"
+                "Choose a movement this bed offers and a duration of up to 60 seconds"
             )
 
     async def hold_control(self, control: str, duration_ms: int) -> None:

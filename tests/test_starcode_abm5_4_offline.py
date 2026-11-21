@@ -78,7 +78,7 @@ async def test_actual_offline_factory_only_mints_invariant_selector_catalog(
     assert bool(controller.controller_number_specs) == (command in POSITIVE)
     assert not controller._massage_on and not controller._ui_state_observed
     if command in POSITIVE:
-        with pytest.raises(ValueError, match="observed"):
+        with pytest.raises(ValueError, match="Turn on the light or massage"):
             await controller.set_app_timer("20")
 
 

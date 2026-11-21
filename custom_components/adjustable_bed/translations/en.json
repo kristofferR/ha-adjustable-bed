@@ -10456,6 +10456,9 @@
     "bluetooth_command_failed": {
       "message": "Bluetooth could not send the command to the bed ({error}). Check that it is powered on and in range, then try again."
     },
+    "bed_command_timed_out": {
+      "message": "The bed did not finish the command in time. Check that it is powered on and in range, then try again."
+    },
     "bed_missing_service": {
       "message": "The bed does not offer the Bluetooth service this profile needs. Check the bed model in its settings."
     },

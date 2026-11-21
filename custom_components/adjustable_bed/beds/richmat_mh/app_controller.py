@@ -355,7 +355,7 @@ class RichmatMHAppController(RufRichmatController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 1 <= duration_ms <= HOLD_CEILING_MS:
-            raise ValueError("Choose a declared held control and a duration from 1 to 30000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -434,7 +434,7 @@ class RichmatMHAppController(RufRichmatController):
 
     def set_group_type(self, option: str) -> None:
         if option not in self._mode_groups:
-            raise ValueError("Choose an app group declared by this model")
+            raise ValueError("Choose a group this bed model offers")
         self._group_type = option
         self._persist_snapshot()
 
@@ -477,12 +477,12 @@ class RichmatMHAppController(RufRichmatController):
     def validate_control(self, code: int, *, remote_long: bool = False) -> Control:
         control = next((control for control in self._controls() if control.code == code), None)
         if control is None:
-            raise ValueError("Choose a control declared by the selected app/model page")
+            raise ValueError("Choose a control this bed model offers")
         if remote_long and (
             self.route != "L" or control.kind != "save" or not self.model
             or code not in self._remote_long_codes
         ):
-            raise ValueError("This model has no attached fixed-remote long-save caller")
+            raise ValueError("This bed model cannot save positions this way")
         return control
 
     def validate_voice(self, source: int) -> Control:
@@ -491,7 +491,7 @@ class RichmatMHAppController(RufRichmatController):
             return Control("L", "press", "motor_btn", "END", "Stop", codec.STOP, 0)
         control = next((item for item in self.model.controls if item.code == target), None) if self.model else None
         if control is None:
-            raise ValueError("Choose a BED output declared by this model's speech map")
+            raise ValueError("Choose a voice command this bed model offers")
         return control
 
     async def voice_queue(self, source: int) -> None:

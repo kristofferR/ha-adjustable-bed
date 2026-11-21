@@ -168,7 +168,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         self._variant = variant
         self.profile: KeesonProfile = profiles.resolve(
             variant,
-            device_name or getattr(coordinator, "name", None),
+            device_name or coordinator.name,
             ksbt_service=variant == KEESON_VARIANT_PURPLE and self._has_ksbt_service(),
             betterliving=betterliving_presets,
             cb1322=cb1322_presets,
@@ -503,9 +503,9 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
     def _json_device_identifier(self) -> str:
         """Return the device identifier used by the JSON/A00A protocol."""
         for candidate in (
-            getattr(self._coordinator, "name", None),
+            self._coordinator.name,
             getattr(self.client, "address", None),
-            getattr(self._coordinator, "address", None),
+            self._coordinator.address,
         ):
             if candidate:
                 return str(candidate)
@@ -1082,7 +1082,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         except KeyError as err:
             raise ValueError(f"Unsupported Restonic BT control: {control}") from err
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= 60000:
-            raise ValueError("Hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
         cancel_event = self._coordinator.cancel_command
         if cancel_event.is_set():
             return

@@ -354,7 +354,7 @@ entities, including the light colors, are separate.
 | [Superior sleep](beds/okin-nframe.md#superior-sleep-ss350--ss650) | The SS350/SS650 button controls that can be held | Saves, reset and the five-second motion activation are separate buttons |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss.md#limoss-remote) | The controls of the remote's layout | |
-| [FSM Relax](beds/limoss.md#fsm-relax) | `command_XX` values listed in the bed's diagnostics | The bed does not confirm that it moved |
+| [FSM Relax](beds/limoss.md#fsm-relax) | `command_` plus an opcode from your configuration's row in the [FSM Relax key tables](beds/limoss.md#fsm-relax-key-tables), such as `command_12` | The bed does not confirm that it moved |
 | [TiMOTION AHF](beds/timotion-ahf.md) | `control_1_up`/`control_1_down` through `control_5_up`/`control_5_down`, `night`, `light`, `chair` | |
 
 Customatic Clarity, Remedy and Jerome's C use
@@ -1014,8 +1014,9 @@ buttons for everyday controls and `hold_control` for held buttons. See the
 
 `adjustable_bed.hjbed` sets the one-time or repeating alarms your product has,
 reads, deletes and turns them on or off, and sets the light timer, the light
-color and, on some products, whether both heads move together. The alarm
-actions are listed in the bed's diagnostics. See the
+color and, on some products, whether both heads move together. Each product's
+alarm actions are listed under
+[HJBed alarm actions](beds/richmat.md#hjbed-alarm-actions). See the
 [HJBed guide](beds/richmat.md#hjbed) for each product's options.
 
 ## Hush Base
@@ -1157,7 +1158,8 @@ buttons work as in the app. See the [KomfyD and ComfyDS guide](beds/kaidi.md#kom
 | `duration_ms` | Movement duration (milliseconds) | For Run control: how long a held or repeating control runs, 1 to 60000 milliseconds. Default 1000. |
 
 The [L&P Adjustable Base guide](beds/richmat.md#lp-adjustable-base) lists what
-each layout accepts. Set wake-up alarms with [`set_alarm`](#set_alarm).
+each layout accepts, including the
+[control numbers](beds/richmat.md#lp-control-numbers) for Run control. Set wake-up alarms with [`set_alarm`](#set_alarm).
 
 ## Lady Americana and partner beds
 
@@ -1917,7 +1919,7 @@ Forty Winks, Milemont and Superior apps.
 
 | Operation | Fields | What it does |
 |---|---|---|
-| `alarm` | `action`, `time` | Sets one alarm action, listed in the bed's diagnostics, for a time in whole minutes |
+| `alarm` | `action`, `time` | Sets one [alarm action](beds/richmat.md#classic-alarm-actions), such as `node_1`, for a time in whole minutes |
 | `cancel_alarm` | None | Cancels the bed's alarm |
 | `lamp_slider` / `lamp_save` | `minutes`, 0 to 15 | Changes the lamp timer, as moving or saving the app's slider does |
 | `massage_popup` | `popup`: `15`, `30`, `45` or `toggle` | Picks a choice from the layout's massage timer menu |

@@ -426,12 +426,12 @@ async def test_timeout_cancel_quarantine_and_same_opcode_ambiguity():
     ):
         await ctrl.program_memory(1)
     assert ctrl.session.slots[1] == {0: 123}
-    with pytest.raises(RuntimeError, match="quarantined"):
+    with pytest.raises(RuntimeError, match="Reconnect the bed so it reports"):
         await ctrl.program_memory(1)
     await ctrl.stop_notify()
     await ctrl.start_notify()
     ctrl._live_capabilities = True
-    with pytest.raises(RuntimeError, match="quarantined"):
+    with pytest.raises(RuntimeError, match="Reconnect the bed so it reports"):
         await ctrl.program_memory(2)
     await ctrl.stop_notify()
     # A fresh client/subscription is required, merely resubscribing is insufficient.
@@ -506,7 +506,7 @@ async def test_memory_invalid_slots_and_missing_motor_zero(slot):
     with pytest.raises(ValueError):
         await ctrl.recall_memory(slot, hold_ms=120)
     ctrl.session.slots[1] = {1: 4}
-    with pytest.raises(ValueError, match="motor-zero"):
+    with pytest.raises(ValueError, match="Save this memory position"):
         await ctrl.recall_memory(1, hold_ms=120)
     ctrl.client.write_gatt_char.assert_not_called()
 

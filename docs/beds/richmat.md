@@ -1469,7 +1469,7 @@ Bluetooth names do not identify the layout.
 - Phone text/QR input searches the current 19 remote codes; persisted display keys use exact case-sensitive first-match selection.
 - HA stores an explicit profile per physical device, so ambiguous remote codes cannot change its layout.
 - The two later FlexxLink objects are shadowed by the first RFRN display-key match and are not independent selectable profiles. `None` is unused as a control profile.
-- No layout or feature is inferred from a generic Richmat remote table.
+- No layout or feature is taken from a generic Richmat remote table.
 
 Write selection requires `write`. A selected `write-without-response` property
 uses writes without response; otherwise writes use response. Selection retains
@@ -1774,8 +1774,28 @@ selected massage lists, and independently named music routes remain independent.
 The full per-product action and flag inventory is in the
 [HJBed catalog](../../custom_components/adjustable_bed/beds/hjbed/catalog.py).
 Alarm action keys are snake-case names such as `zero_gravity`, `anti_snoring`,
-`memory_position1`, `tv_position`, or `lounge_position`, and must belong to the
-selected product's alarm list.
+`memory_position1`, `t_v_position`, or `lounge_position`, and must belong to the
+selected product's alarm list; see [HJBed alarm actions](#hjbed-alarm-actions).
+
+##### HJBed alarm actions
+
+The `action` field of [`hjbed`](../SERVICES.md#hjbed) takes one of the selected
+product's alarm actions. Products not listed here have no alarm.
+
+| Product | Alarm actions |
+|---|---|
+| HC800 | `anti_snoring`, `zero_gravity`, `memory_position1` |
+| SN300 | `zero_gravity`, `anti_snoring`, `t_v_position`, `memory_position1` |
+| SN500 | `anti_snoring`, `zero_gravity` |
+| blue | `t_v_position`, `zero_gravity`, `lounge_position`, `anti_snoring`, `memory_position1`, `memory_position2` |
+| green, orange | `zero_gravity`, `t_v_position`, `memory_position1`, `anti_snoring` |
+| yellow | `zero_gravity`, `t_v_position`, `memory_position1`, `memory_position2`, `anti_snoring` |
+| AFEG300 | `lounge_position`, `zero_gravity`, `t_v_position`, `memory_position1` |
+| FlexxLink, Series 3 | `anti_snoring`, `zero_gravity`, `memory_position1` |
+| PB325 | `t_v_position`, `anti_snoring`, `zero_gravity`, `memory_position1` |
+| PB450 | `zero_gravity`, `anti_snoring`, `memory_position1` |
+| ABF03, ABF07 | `zero_gravity`, `anti_snoring`, `t_v_position`, `lounge_position`, `memory_position1` |
+| VIP 3.0, VIP 3.0-SH | `t_v_position`, `lounge_position`, `zero_gravity`, `memory_position1`, `memory_position2` |
 
 #### Evidence
 
@@ -1990,7 +2010,7 @@ write-without-response. That ATT choice is not a claim about the app's
 effective platform write type.
 
 `U3RM` remembers its third, fourth or fifth selector. The hardware meaning of a
-motor slot or Mode 1/2/3 is not inferred from a layout name.
+motor slot or Mode 1/2/3 is not guessed from a layout name.
 
 #### Controls
 
@@ -2278,11 +2298,34 @@ memory count or authentication API is inferred from dormant constants.
 `adjustable_bed.richmat_classic` sends the app's typed settings: `operation:
 query` requests the settings capabilities, then alarm and alarm cancel, RGB,
 lamp slider and Save timers, aroma, massage popup and slider, and the desk
-target, unit, recall buttons and reset. The layout's available alarm action IDs
-and the received state are in diagnostics. Wi-Fi, cloud and account,
+target, unit, recall buttons and reset. The alarm action names are under
+[Classic alarm actions](#classic-alarm-actions); the received state is in
+diagnostics. Wi-Fi, cloud and account,
 group and network administration, and the diagnostic endurance and
 motor-mapping configuration stay outside the supported surface. See
 [Actions](../SERVICES.md#classic-richmat-app-settings).
+
+##### Classic alarm actions
+
+The `action` field of [`richmat_classic`](../SERVICES.md#richmat_classic) takes
+one name of the form `node_<number>`, where the number is the control's place in
+your layout. A layout accepts only the controls the app can wake you with, such
+as TV, Lounge, Zero Gravity, Anti-snore, M1 and M2, and massage 1 and 2 intensity
+up. Which layouts have any differs slightly between the five apps. The numbers
+differ between layouts. These are the most common sets; the layouts listed have
+them in all five apps:
+
+| Layouts | Alarm actions |
+|---|---|
+| A0RN, UFRM, XJRM, XKRM, XZRM, Z5RM | `node_1` TV, `node_2` Lounge, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
+| O7RM, V4RM, XYRM, Z4RM, ZFRM | `node_1` TV, `node_2` Anti-snore, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
+| AFRM, AGRM, AMRM, ANRM, XFRM | `node_1` Zero Gravity, `node_3` Anti-snore, `node_4` TV, `node_12` massage 1 intensity up, `node_14` massage 2 intensity up |
+| A9RM, DARM, WURM, Z6RM | `node_8` TV, `node_9` Anti-snore, `node_10` Zero Gravity, `node_11` massage 1 intensity up, `node_12` M1, `node_13` massage 2 intensity up, `node_15` M2 |
+| XGRM, Y1RM, Y7RM, YQRM | `node_1` Zero Gravity, `node_2` Anti-snore, `node_3` M1 |
+| H8RM, HTRM, Z8RM | `node_1` TV, `node_2` Anti-snore, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_15` Lounge, `node_16` massage 2 intensity up |
+
+For another layout, download the bed's diagnostics: `controls` lists each
+control's number and name, and `alarm_actions` lists the names an alarm accepts.
 
 #### Evidence
 
@@ -2894,7 +2937,7 @@ Behaves as the [Casper and Hush family](#casper-and-hush-family), except as belo
 - The `casper_base` bed type. Choose **Casper Base app (select product)**, then
   **PRO** or **MAX**, the app's own products. Its protocol variant is the product.
 - The 37 other choices, labelled **stored profile**, are products the app's
-  stored-product decoder accepts. They are explicit choices, never inferred.
+  stored-product decoder accepts. You pick one in setup; setup never picks it for you.
 - One-address sides: the stored L400SH and L300SH layouts.
 
 #### Controls
@@ -2995,7 +3038,7 @@ Behaves as the [Casper and Hush family](#casper-and-hush-family), except as belo
   first. Its protocol variant is the product.
 - The other catalog indices are products a phone restored under the shared
   catalog, labelled **restored profile**. They keep the Hush app's own rows and
-  are explicit choices, never inferred.
+  are choices you make in setup; setup never picks one for you.
 - One-address sides: the products with the side flag. Nordic has no side byte,
   so one-address pairing is rejected there. Two-address pairs keep independent
   profile and connection ownership.
@@ -6734,7 +6777,7 @@ service selects raw versus framed commands even if earlier handles were retained
 Write-without-response is used only when that selected writable TX also advertises it.
 
 The embedded manuals cover headboard installation, power storage, electric bed
-controls and Hi-Lo Tilt. They ground labels, not inferred product-to-hardware
+controls and Hi-Lo Tilt. They inform labels only, not product-to-hardware
 aliases, BLE pairing, side commands or packet values. The unused Factory Reset
 title is not an action. Flat is the app's MotorReset control.
 
@@ -6958,6 +7001,31 @@ A bed takes either raw or framed commands, depending on its Bluetooth service.
 A control whose command differs between the two is listed only for the bed's own
 format, which is known from its first connection on and is remembered across
 restarts. Before that, only the controls both formats share are listed.
+
+##### L&P control numbers
+
+The `control` field of [`lp2`](../SERVICES.md#lp2) takes the control's number in
+your layout. These are the numbers for the layouts the app selects by product
+name (see the name table below):
+
+| Layout (product names) | Controls |
+|---|---|
+| A0RM (200U&I, 400I) | 1 Motor 1 up, 2 Motor 3 up, 3 Motor 2 up, 4 Motor 1 down, 5 Motor 3 down, 6 Motor 2 down, 7 Flat, 8 TV, 9 Anti-snore, 10 Zero Gravity, 11 Massage 1 intensity up, 12 M1, 13 Massage 2 intensity up, 14 Massage mode, 15 M2, 16 Massage off 3, 17 M3 |
+| A1RM (800I) | 1 Motor 1 up, 2 Motor 3 up, 3 Motor 2 up, 4 Motor 1 down, 5 Motor 3 down, 6 Motor 2 down, 7 Zero Gravity, 8 M1, 9 Motor 4 up, 10 M2, 11 Massage 1 intensity up, 12 Motor 4 down, 13 Massage 2 intensity up, 14 Massage mode, 15 Flat, 16 Massage off 3, 17 Underbed light on/off |
+| A8RM (200I, 200IV2, 208A14, FC200) | 1 Motor 1 up, 3 Motor 2 up, 4 Motor 1 down, 5 Underbed light on/off, 6 Motor 2 down, 7 Zero Gravity, 9 Flat |
+| B6RM (B6RU) | 1 Motor 1 up, 2 Motor 1 down, 3 Motor 2 up, 4 Motor 2 down, 5 Motor 1+2 up, 6 Motor 1+2 down |
+| BLRM (MPE_HJ008) | 1 TV, 2 Lounge, 3 Zero Gravity, 4 Motor 1 up, 5 Motor 3 up, 6 Motor 2 up, 7 Motor 1 down, 8 Motor 3 down, 9 Motor 2 down, 10 M1, 11 M2, 12 Flat, 14 Massage 1 intensity up, 15 Underbed light on/off, 16 Massage 2 intensity up, 17 and 20 Massage timer 10 minutes, 19 Massage mode, 21 Massage timer 20 minutes, 22 Massage timer 30 minutes |
+| BNRM (MPE_HJ006, MPE_HJ006-1) | 1 TV, 2 M3, 3 Zero Gravity, 4 Motor 1 up, 5 Motor 1+2 up, 6 Motor 2 up, 7 Motor 1 down, 8 Motor 1+2 down, 9 Motor 2 down, 10 M1, 11 M2, 12 Anti-snore, 14 Massage 1 intensity up, 15 Underbed light on/off, 16 Massage 2 intensity up, 17 Massage off 3, 19 Massage mode, 20 Massage timer 10 minutes, 21 Massage timer 20 minutes, 22 Massage timer 30 minutes |
+| S9RM (ZR90) | 1 Motor 1 up, 2 Motor 2 up, 3 Motor 1 down, 4 Motor 2 down, 5 Zero Gravity, 6 Anti-snore, 7 Reset, 8 Flat |
+| TWRM (MPE_HJ002) | 1 Motor 1 up, 2 Motor 1 down, 3 Motor 2 up, 4 Motor 2 down, 5 Motor 1+2 up, 6 Motor 1+2 down, 8 Flat (Lounge on beds that take raw commands) |
+| WPRM (MPE_HJ003, MPE_HJ005) | 1 Motor 1 up, 3 Motor 2 up, 4 Motor 1 down, 6 Motor 2 down, 7 M1, 8 M2, 9 TV |
+| ZRA2 (MPE_HJ001, MPE_HJ010, MPE_HJ011, MPE_HJ012) | 1 Motor 1 up, 2 Motor 1 down, 3 Motor 2 up, 4 Motor 2 down, 5 Motor 1+2 up, 6 Motor 1+2 down, 7 Flat, 8 M1, 9 Anti-snore, 10 M2, 11 Zero Gravity, 12 M3 |
+| ZRS3 (L&P ADJBED, L&P-ADJBED) | None: its two buttons only switch the app to the APRM or AQRM layout, and Run control refuses them. Use the numbers of the layout you chose |
+
+The layout table below lists every layout's control numbers from the app. Run
+control accepts only a number that sends a command for the chosen press and your
+bed's command format, and refuses the rest. The names of each number are in the
+bed's diagnostics download (`controls`).
 
 <!-- generated:lp2-controls -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->

@@ -381,11 +381,11 @@ class SleepNumberController(BedController, SleepNumberActions):
             and requested_side is not None
             and requested_side != self.command_side
         ):
-            raise ValueError("Command side does not match the selected physical bed side")
+            raise ValueError("The side in the command does not match the targeted side. Use the same side")
         spec = COMMANDS[command]
         if self._system_config:
             if requested_side is not None and requested_side not in self._feature_sides:
-                raise ValueError("This bed does not expose the requested chamber")
+                raise ValueError("This bed has no air chamber on that side")
             pressure_keys = {"SNCG", "SNFG", "SNFS", "PSNS", "PSNI", "LRAG", "LRAS", "LBPS"}
             articulation_keys = {
                 "ACTG",

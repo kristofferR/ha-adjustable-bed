@@ -48,7 +48,7 @@ def test_command_rows_are_byte_exact():
 
 @pytest.mark.parametrize("name", ["", "Bed 1", "Å", "a" * 21])
 def test_rename_rejects_names_outside_the_edit_field(name):
-    with pytest.raises(ValueError, match="1..20"):
+    with pytest.raises(ValueError, match="1 to 20"):
         pump.rename_frames(name)
 
 

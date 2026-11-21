@@ -126,6 +126,7 @@ class RecordingChild(SchedulerSurface):
 
     controller_side = None
     pairlink_peripheral = False
+    bed_type = "linak"
 
     def __init__(
         self,

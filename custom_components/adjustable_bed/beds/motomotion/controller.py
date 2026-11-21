@@ -610,7 +610,7 @@ class MotoMotionController(BedController):
             raise ValueError("MotoMotion commands require one side")
         if side == "right":
             if not self.profile.sides:
-                raise ValueError("This MotoMotion name has no side selector")
+                raise ValueError("This bed has no sides. Leave out the side")
             return 10000
         return 0
 
@@ -666,7 +666,7 @@ class MotoMotionController(BedController):
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Choose an available MotoMotion control and a 1..60000 ms hold")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
         self._parameter()
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
@@ -749,7 +749,7 @@ class MotoMotionController(BedController):
 
     async def preset_memory(self, memory_num: int) -> None:
         if not 1 <= memory_num <= self.memory_slot_count:
-            raise ValueError("Unavailable MotoMotion memory")
+            raise ValueError("This bed has no such memory position")
         await self.recall_memory(memory_num, hold_ms=1000)
 
     async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
@@ -758,7 +758,7 @@ class MotoMotionController(BedController):
             or type(hold_ms) is not int
             or not 1 <= hold_ms <= 60000
         ):
-            raise ValueError("Choose an available MotoMotion memory and a bounded hold")
+            raise ValueError("Choose a memory position this bed offers and a duration of up to 60 seconds")
         command = (256, 257, 32779, 32780)[slot - 1]
         if self.profile.panel == "D":
             command = 257
@@ -784,9 +784,9 @@ class MotoMotionController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         if not 1 <= memory_num <= self.memory_slot_count:
-            raise ValueError("Unavailable MotoMotion memory")
+            raise ValueError("This bed has no such memory position")
         if self.profile.panel == "Six" and self._local_cm is not None and self._local_cm.flag:
-            raise ValueError("MotoMotion blocks programming while its lift status is active")
+            raise ValueError("The bed cannot save a position while it is lifting. Wait until it stops, then try again")
         if self.profile.panel == "D":
             await self._ascii(264)
         elif self.profile.panel == "Six" and self.profile.binary:
@@ -1221,9 +1221,9 @@ class MotoMotionController(BedController):
 
     def validate_motomotion_request(self, request: Request) -> None:
         if not self.profile.users:
-            raise ValueError("This name has no MotoMotion users tab")
+            raise ValueError("This bed model has no user profiles")
         if request.posture not in ("upright", "recline", "tv", "lay"):
-            raise ValueError("Unknown MotoMotion posture")
+            raise ValueError("Choose a posture this bed offers")
         if request.operation == "save_user":
             if (
                 not request.user
@@ -1235,23 +1235,23 @@ class MotoMotionController(BedController):
                 )
         elif request.operation in ("select_user", "delete_user"):
             if request.user not in self._users:
-                raise ValueError("Select an existing MotoMotion user")
+                raise ValueError("Choose a user saved on the bed")
         elif request.operation == "fine_tune":
             if request.targets is None or any(
                 not 0 <= getattr(request.targets, key) <= maximum
                 for key, maximum in FINE_LIMITS.items()
             ):
-                raise ValueError("Fine tune targets must fit the app sliders")
+                raise ValueError("Choose fine-tune values within the allowed range")
         elif request.operation in ("recall", "reset_posture"):
             if request.user is not None and request.user not in self._users:
-                raise ValueError("Select an existing MotoMotion user")
+                raise ValueError("Choose a user saved on the bed")
             if not self._dimensions and request.user is None:
                 raise ValueError("Save and select measurements before recalling a posture")
         elif request.operation == "save_posture":
             if request.posture != self._posture or (
                 request.user is not None and request.user != self._user
             ):
-                raise ValueError("Working targets belong to a different user or posture")
+                raise ValueError("The current adjustment belongs to another user or posture. Recall the posture again first")
             if self._targets is None:
                 raise ValueError("Recall or fine tune a posture first")
         else:

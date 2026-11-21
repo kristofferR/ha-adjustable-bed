@@ -130,7 +130,7 @@ async def test_direct_settings_query_alarm_and_light_without_movement_wrapping(c
     assert packets(coordinator) == ["6e05a00013", "6e060545be"]
     assert ctrl._receive.alarm_enabled is None
     coordinator.client.write_gatt_char.reset_mock()
-    with pytest.raises(ValueError, match="LED"):
+    with pytest.raises(ValueError, match="reported a light"):
         await ctrl.execute_request(p.Request("lamp_timeout", seconds=300))
     ctrl._notification(ctrl._session, ctrl._session.notify, bytearray.fromhex("6E0E00037F"))
     await ctrl.execute_request(p.Request("lamp_timeout", seconds=300))

@@ -128,7 +128,7 @@ async def test_registered_running_rename_gatt_failure_does_not_persist(
 
 
 @pytest.mark.parametrize(
-    "name,reason", [("x" * 21, "ten UTF-16"), ("😀" * 6, "ten UTF-16"), ("十" * 8, "twenty-byte")]
+    "name,reason", [("x" * 21, "at most 10 characters"), ("😀" * 6, "at most 10 characters"), ("十" * 8, "too long")]
 )
 async def test_registered_overlong_rename_is_rejected_without_truncation(
     hass: HomeAssistant, name: str, reason: str

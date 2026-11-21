@@ -748,7 +748,7 @@ class Lp2Controller(RichmatClassicController):
 
     async def check_alarm(self, alarm: AlarmRequest) -> None:
         if self.alarm_capability is None:
-            raise ValueError("Choose a layout with alarm controls")
+            raise ValueError("This bed model has no alarm")
         self.validate_alarm(alarm)
         if self._session is None:
             raise ConnectionError("The bed is disconnected")

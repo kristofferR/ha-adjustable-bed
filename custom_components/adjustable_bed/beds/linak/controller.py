@@ -566,7 +566,7 @@ class LinakController(BedController):
 
     def validate_device_rename(self, name: str) -> None:
         if not name or len(name.encode()) > 17:
-            raise ValueError("Linak device names must contain 1 to 17 UTF-8 bytes")
+            raise ValueError("Use a name of 1 to 17 characters. Accented letters and symbols count as two or more")
 
     @property
     def supports_simultaneous_movement(self) -> bool:
@@ -2075,7 +2075,7 @@ class LinakController(BedController):
             raise NotImplementedError("Rename is not exposed by this Linak profile")
         encoded = name.encode()
         if not name or len(name) > 17 or len(encoded) > 17:
-            raise ValueError("Linak device names must contain 1 to 17 bytes")
+            raise ValueError("Use a name of 1 to 17 characters. Accented letters and symbols count as two or more")
         await self._write_protected_characteristic(LINAK_DEVICE_NAME_UUID, encoded)
 
     @property
