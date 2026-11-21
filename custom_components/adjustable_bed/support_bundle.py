@@ -241,10 +241,6 @@ async def generate_support_bundle(
     redact_sleep_number_sessions(report)
     redact_sleeptracker_sessions(report)
     redact_pairlink_frames(report)
-    candidates = {
-        str(device["address"])
-        for device in bluetooth_info.get("nearby_devices", {}).get("devices", [])
-    }
     # Log lines repeat the names users typed. A name a device advertises stays:
     # detection matches it, and the address policy already covers its suffix.
     typed = {other.title for other in hass.config_entries.async_entries(DOMAIN)}
@@ -257,7 +253,7 @@ async def generate_support_bundle(
                 {**log, "message": names.sub(lambda match: "*" * len(match.group(0)), log["message"])}
                 for log in report[section]
             ]
-    return redact_bundle(report, addresses=known | candidates)  # type: ignore[no-any-return]
+    return redact_bundle(report)  # type: ignore[no-any-return]
 
 
 def _advertised_names(data: Any) -> Iterator[str]:
@@ -301,7 +297,7 @@ async def _build_bluetooth_section(
 
     try:
         info["nearby_devices"] = _build_nearby_device_inventory(hass, address)
-    except Exception as err:  # noqa: BLE001 - diagnostics must degrade gracefully
+    except Exception as err:
         info["nearby_devices_error"] = str(err)
 
     try:
@@ -310,7 +306,7 @@ async def _build_bluetooth_section(
             diagnostics_report.get("advertisements_by_source", []),
             address=address,
         )
-    except Exception as err:  # noqa: BLE001 - diagnostics must degrade gracefully
+    except Exception as err:
         info["scanners_error"] = str(err)
 
     return info
@@ -403,7 +399,7 @@ def _nearby_device_snapshot(
             "ambiguous_types": list(detection.ambiguous_types or []),
             "supported_match": bed_type in SUPPORTED_BED_TYPES if bed_type else False,
         }
-    except Exception as err:  # noqa: BLE001 - one malformed advertisement must not abort a bundle
+    except Exception as err:
         detection_info = {
             "bed_type": None,
             "confidence": 0.0,
@@ -537,7 +533,7 @@ async def _build_scanner_status(
                     row["diagnostics"] = _compact_scanner_diagnostics(
                         scanner_diagnostics
                     )
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 row["diagnostics_error"] = str(err)
 
         if registration is not None:
@@ -624,7 +620,7 @@ def _build_esphome_proxy_status(
                 feature_flags = feature_flags_compat(
                     getattr(runtime, "api_version", None)
                 )
-            except Exception:  # noqa: BLE001 - raw flags still provide useful evidence
+            except Exception:
                 pass
         status["device"] = {
             "name": getattr(device_info, "name", None),

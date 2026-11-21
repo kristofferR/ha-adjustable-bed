@@ -62,7 +62,7 @@ def commands() -> str:
 def models() -> str:
     return _block(
         _table(
-            ("Numeric model", "App label", "Bed gate"),
+            ("Numeric model", "App label", "Controls"),
             (
                 (
                     str(model),

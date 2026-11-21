@@ -1810,7 +1810,7 @@ class CoordinatorConnectionMixin:
                 await self._async_cleanup_failed_connection()
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
-            except Exception as err:  # noqa: BLE001 - preserve retry diagnostics for unexpected connect failures
+            except Exception as err:
                 # Track connection error for diagnostics (issue #168)
                 self._connecting = False
                 self._last_connection_error = str(err)

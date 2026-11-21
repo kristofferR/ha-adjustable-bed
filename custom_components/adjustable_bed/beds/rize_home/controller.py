@@ -623,7 +623,7 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - propagated below
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():

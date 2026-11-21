@@ -7,11 +7,11 @@
 ## Known Models
 
 - Svane adjustable beds with the "Svane Bed" BLE name (LinonPI controller)
-- JMC400 beds (also in the Svane app), through the explicit P2 JMC400 profile
+- JMC400 beds (also in the Svane app), through the P2 JMC400 profile chosen in setup
 - Jensen LinOn beds ("Adjustable Bed"/"Jensen Bed") share these services but use
   the Jensen app's own frames: protocol variant `jensen_linon`, described in the
   [Jensen guide](jensen.md#linon). The separate [Jensen](jensen.md) and
-  [Jensen LinOn](jensen.md#linon) profiles retain their own behavior.
+  [Jensen LinOn](jensen.md#linon) profiles keep their own behavior.
 - Svane is a Norwegian bed manufacturer; its beds are primarily sold in
   Scandinavia. "LinON" appears to be Svane's internal name for its bed
   controller; it is not related to Linak despite the similar-sounding name.
@@ -22,8 +22,8 @@
 |----------|-----|------------|
 | ✅ | [Svane Remote](https://play.google.com/store/apps/details?id=com.svane.svaneremote) **Version 1.8 (8)** | `com.svane.svaneremote` |
 
-The app has two explicit BLE profiles. Earlier analysis of this protocol
-used the package `com.produktide.svane.svaneremote`.
+The app has two profiles, chosen in setup. An earlier Svane app used the package
+`com.produktide.svane.svaneremote`.
 
 ## Features
 
@@ -32,16 +32,16 @@ used the package `com.produktide.svane.svaneremote`.
 | Motor Control | ✅ (2 app axes: head/backrest and feet/seat+footrest) |
 | Combined movement | ✅ (four head/feet combinations; separate `timed_move` calls on head and feet run together) |
 | Hold until release | ✅ (renewable `timed_move`) |
-| Position Feedback | ❌ (opaque raw bytes as diagnostics only; no angles or sliders) |
-| Memory Presets | ✅ (2 host slots: Read and TV) |
-| Svane Position | ✅ (one-shot; Flat, Zero-G or Anti-Snore meaning unproven) |
-| Flat Preset | ❌ (dormant firmware command, not reachable) |
-| Under-bed Lights | ✅ (on/off, 5-100 intensity, held adjust; assumed state) |
+| Position Feedback | ❌ (the raw values appear in diagnostics only) |
+| Memory Presets | ✅ (2 slots: Read and TV) |
+| Svane Position | ✅ (one press; whether it moves to Flat, Zero-G or Anti-Snore is not yet known) |
+| Flat Preset | ❌ |
+| Under-bed Lights | ✅ (on/off, brightness 5-100, hold to adjust; shows the last command sent, not a reading) |
 | Massage | ❌ |
 | Device information | ✅ (firmware, hardware, manufacturer diagnostics) |
 
 - The two axes keep the integration's existing `back` and `legs` cover keys.
-- Physical actuator count and numeric position units are unknown.
+- How many motors the bed has and what its position values mean are not known.
 - There are no measured-angle sensors or position sliders.
 
 ## Protocol Details
@@ -196,8 +196,8 @@ The builder is not clamped to 100.
 
 ### Dormant commands
 
-The old dormant `3fff`, `3f40`, `3f80` and `3f81` writes are not reachable
-controls in this profile. Earlier versions of this guide described them as read
+The old dormant `3fff`, `3f40`, `3f80` and `3f81` writes are not controls in
+this profile. Earlier versions of this guide described them as read
 position, save position, recall position and flatten.
 
 ## Command Timing
@@ -264,7 +264,7 @@ position, save position, recall position and flatten.
 ## Memory and presets
 
 - The **Svane position** action keeps the `preset_zero_g` button ID that existing
-  entries use. The artifact does not prove a Flat, Zero-G or Anti-Snore meaning.
+  entries use. Whether it means Flat, Zero-G or Anti-Snore is not known.
 - Preset, lamp and memory actions do not append movement STOP.
 - The two source-labelled positions are **Read** and **TV** (public numbered
   memory slots 1 and 2).
@@ -300,13 +300,13 @@ position, save position, recall position and flatten.
   slots pass validation.
 - Normal recall still appends no STOP. P2's explicit global STOP can interrupt
   recall independently of held-motion tracking.
-- P1's opaque absolute-position recall has no proven STOP on its position
+- P1's opaque absolute-position recall has no known STOP on its position
   characteristic and supplies no direction to select a directional release. Host
   STOP cancels a pending feet write during the one-second gap, but does not claim
   to halt a head recall already delivered. The integration does not guess a
   direction or write a fabricated STOP to the position characteristic.
 - Idle notification teardown does not append a global STOP; started held-motion
-  roles still receive their proven cleanup.
+  roles still receive their normal cleanup.
 
 ## Lamp
 
@@ -319,7 +319,7 @@ position, save position, recall position and flatten.
   same-target/profile reloads, while cold restart or profile reset loses it.
   Subsequent optimistic values are assumed; there is no native physical
   lamp-state feedback.
-- Lamp intensity is a persisted local preference, exposed through the established
+- Lamp intensity is a persisted local preference, exposed through the existing
   0-100 light level slider so existing entries keep their entity. Setting 0 turns
   the lamp off; other values snap to the app's 5-100 steps of five and command the
   lamp on.
@@ -331,7 +331,7 @@ position, save position, recall position and flatten.
 
 ### Held adjustment
 
-- The frozen app's held adjustment begins after more than 200 ms while local
+- The app's held adjustment begins after more than 200 ms while local
   intent is on. It unconditionally reverses step at current intensity >=100 or
   <=6 before adding five: 90→95→100→95, and 10→5→10.
 - The held HA control accepts the same 5–100, step-five range as the intensity

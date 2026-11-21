@@ -125,7 +125,7 @@ def pairlink_host_adapter_inventory(
 
     try:
         scanners = bluetooth.async_current_scanners(hass)
-    except Exception:  # noqa: BLE001 - missing inventory fails closed at selection
+    except Exception:
         return ()
 
     inventory: list[PairlinkHostAdapterInventoryEntry] = []

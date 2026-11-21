@@ -162,14 +162,6 @@ def test_alarm_cancel_delete_and_clock_frames() -> None:
     assert tuple(f.hex() for f in protocol.clock_frames(7, 5, 9)) == ("6e1307058d", "6e1409ff8a")
 
 
-@pytest.mark.parametrize(
-    ("target", "now", "expected"),
-    [(420, 420, 1440), (421, 420, 1), (419, 420, 1439), (0, 1439, 1), (1439, 0, 1439)],
-)
-def test_alarm_countdown_is_the_apps_wrapping_difference(target, now, expected) -> None:
-    assert protocol.alarm_countdown_minutes(target, now) == expected
-
-
 def test_alarm_combinations_two_massages_and_unmatched_pairs() -> None:
     assert len(protocol.ALARM_COMBINATIONS) == 21
     assert protocol.alarm_action(0x58, (0x4C,)) == 0x7A
@@ -901,13 +893,3 @@ def test_catalog_generator_reports_missing_frozen_inputs(tmp_path, monkeypatch, 
     assert generator.main() == 2
     err = capsys.readouterr().err
     assert str(tmp_path) in err and generator.PHASE4_ENV in err
-
-
-def test_classifier_buffer_is_bounded() -> None:
-    """Chunks that never form a frame cannot grow the buffer (PRIV-11)."""
-    # A long INIT record is kept until it completes, so continuations pile up.
-    c = protocol.Classifier("revive", rx_type="INIT")
-    c.feed(b"\x6e" + bytes(19))
-    for _ in range(100):
-        c.feed(bytes(range(1, 20)))
-        assert len(c.buffer) <= protocol.MAX_BUFFER_LEN

@@ -485,7 +485,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+            except Exception:
                 break
         if cancelled:
             # The caller's cancellation wins; still retrieve a STOP failure.

@@ -1072,11 +1072,6 @@ async def _async_finish_entry_setup(
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
 
 
-def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
-    """Parent-level config inherited by every child (each descriptor overrides)."""
-    return inheritable_child_fields(parent_data)
-
-
 def _make_child_persist_cb(
     hass: HomeAssistant, entry: ConfigEntry, side: str
 ) -> Callable[[dict[str, Any]], None]:
@@ -1202,7 +1197,7 @@ async def _async_release_absorbed_singles(
                 raise not_ready("pair_side_busy", name=original.title) from err
             except ConfigEntryNotReady:
                 raise
-            except Exception as err:  # noqa: BLE001 - retain both working originals
+            except Exception as err:
                 raise not_ready("pair_side_busy", name=original.title) from err
     except (Exception, asyncio.CancelledError):
         for coordinator in transferring:
@@ -1375,7 +1370,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                             async with asyncio.timeout(SETUP_TIMEOUT):
                                 if await child.async_connect():
                                     child.cache_capability_controller()
-                        except Exception:  # noqa: BLE001 - validation below reports the retry
+                        except Exception:
                             _LOGGER.debug(
                                 "Pre-absorb capability reconnect of %s failed",
                                 child.address,
@@ -1446,7 +1441,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                     # forwarding indefinitely. A timeout just falls back to offline-prime.
                     async with asyncio.timeout(SETUP_TIMEOUT):
                         await child.async_connect()
-                except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
+                except Exception:
                     _LOGGER.debug("Post-absorb reconnect of %s side failed; priming offline", side)
         # Prime a client-free capability controller for any side that did NOT connect,
         # so its per-side entities are still created up-front (with byte-identical

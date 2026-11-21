@@ -22,8 +22,8 @@ drives three bed families:
 
 - **JMC400** beds use the `jensen` bed type (this page).
 - **LinOn** beds ("Adjustable Bed"/"Jensen Bed" names) use the Svane bed type's
-  Jensen LinOn profile; see [LinOn](#linon) below. 2.0.29 never wrote a LinOn
-  frame; 2.0.37 does.
+  Jensen LinOn profile; see [LinOn](#linon) below. Only 2.0.37 controls LinOn
+  beds.
 - **Linak**-based Jensen beds use the [Linak](linak.md) bed type.
 
 ## Home Assistant setup
@@ -33,9 +33,10 @@ there too), then answer which app and bed you use: the Jensen Adjustable Sleep
 app with a JMC400 bed (this page; it then asks the PIN, motor count, whether
 massage motors are fitted and whether to read positions) or with a
 [LinOn](#linon) bed, or the [Svane Remote](svane.md) app with a Svane Bed or a
-JMC400 bed. The JMC400 name and the LinonPI services occur with both apps, so
-they never decide the answer; the apps' own name rules suggest it the same way
-in Bluetooth and manual setup. A LinON Entry box is JMC400 hardware, not a
+JMC400 bed. Both apps offer a JMC400 choice, and LinOn and Svane beds share
+Bluetooth services while needing different commands, so the bed's name only
+suggests an answer, the same way in Bluetooth and manual setup. Pick the choice
+for your app and your bed. A LinON Entry box is JMC400 hardware, not a
 LinOn bed. **Reconfigure** changes an existing bed's app or bed; existing
 entries keep their route until then. Reconfigure lists the JMC400 route by its
 own name, for an entry of another bed type to switch to it.
@@ -158,4 +159,4 @@ no light level, memory or position feedback for LinOn beds.
 - The position anchors come from one JMC400.
 - JMC400 lights, fan and device memory have no hardware confirmation yet.
 - Massage wave only has an effect while head or foot massage runs.
-- LinOn control comes from app evidence only; no LinOn bed has been tested.
+- LinOn control follows the app; no LinOn bed has been tested.

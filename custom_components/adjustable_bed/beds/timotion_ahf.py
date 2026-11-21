@@ -48,25 +48,6 @@ LOCK_MASK: Final = StateKey[int | None]("timotion_ahf_lock_mask")
 LAMP_DISPLAY_CODE: Final = StateKey[int | None]("timotion_ahf_lamp_display_code")
 
 
-class TiMOTIONAhfCommands:
-    """AHF app-action bitmasks, grouped by packet byte."""
-
-    CONTROL_1_UP = 0x01
-    CONTROL_1_DOWN = 0x02
-    CONTROL_2_UP = 0x04
-    CONTROL_2_DOWN = 0x08
-    CONTROL_3_UP = 0x10
-    CONTROL_3_DOWN = 0x20
-
-    CONTROL_4_UP = 0x01
-    CONTROL_4_DOWN = 0x02
-    CONTROL_5_UP = 0x04
-    CONTROL_5_DOWN = 0x08
-    NIGHT = 0x10
-    LIGHT = 0x20
-    CHAIR = 0x40
-
-
 @dataclass(frozen=True, slots=True)
 class _ControlAction:
     """One action label and its app-observed packet bit."""
@@ -516,7 +497,7 @@ class TiMOTIONAhfController(BedController):
                 except TimeoutError:
                     self._notify_error = "Status notification subscription timed out"
                     raise
-                except Exception as err:  # noqa: BLE001 - read can still establish status
+                except Exception as err:
                     self._notify_error = f"Status notification subscription failed: {err}"
                     _LOGGER.warning("Failed to start TiMOTION AHF status notifications: %s", err)
 
@@ -534,7 +515,7 @@ class TiMOTIONAhfController(BedController):
             async def read_initial_status() -> None:
                 try:
                     initial_status = await client.read_gatt_char(TIMOTION_AHF_NOTIFY_CHAR_UUID)
-                except Exception as err:  # noqa: BLE001 - a later valid notification may succeed
+                except Exception as err:
                     self._read_error = f"Initial status read failed: {err}"
                     _LOGGER.debug("Failed to read initial TiMOTION AHF status: %s", err)
                 else:

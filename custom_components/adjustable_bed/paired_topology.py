@@ -276,7 +276,7 @@ async def safe_disconnect(
     try:
         disconnect_fn = disconnect or child.async_disconnect
         disconnected = await disconnect_fn("sequential_switch")
-    except Exception as err:  # noqa: BLE001 - CancelledError must propagate
+    except Exception as err:
         _LOGGER.warning("Disconnect failed on %s side (%s): %s", side, child.address, err)
         return False
     return disconnected is not False and not child.is_connected
@@ -887,7 +887,7 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                 for side, (child, handle) in prepared.items():
                     try:
                         await child.async_wait_prepared_command(handle)
-                    except Exception as err:  # noqa: BLE001 - collect both sides
+                    except Exception as err:
                         if is_expected_invalidation(side, err):
                             revalidation_invalidated = True
                         else:
@@ -1285,7 +1285,7 @@ class SequentialTwoLinkTopology(PairTopology):
 
             try:
                 connected = True if local_role else await child.async_connect()
-            except Exception as err:  # noqa: BLE001 - CancelledError must propagate
+            except Exception as err:
                 errors[side] = err
                 break
             if not connected:
@@ -1311,7 +1311,7 @@ class SequentialTwoLinkTopology(PairTopology):
                 if not local_role:
                     await safe_disconnect(side, child)
                 raise
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 op_error = err
 
             # Release the slot before opening the next side. A failed disconnect
@@ -1439,7 +1439,7 @@ class SequentialTwoLinkTopology(PairTopology):
                 break
             try:
                 connected = await child.async_connect()
-            except Exception as err:  # noqa: BLE001 - CancelledError must propagate
+            except Exception as err:
                 _LOGGER.warning("Connect failed on %s side: %s", side, err)
                 continue
             if connected:
@@ -1523,7 +1523,7 @@ class SingleLinkSideAwareTopology(_SideLaneTopology):
                     return
                 try:
                     await op(child)
-                except Exception as err:  # noqa: BLE001
+                except Exception as err:
                     errors[side] = err
                     break
             if errors:
@@ -1535,7 +1535,7 @@ class SingleLinkSideAwareTopology(_SideLaneTopology):
         except asyncio.CancelledError:
             await self._pair._stop_children(targets)
             raise
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             if self._is_native_group(targets):
                 stop_errors = await self._pair._stop_children([(SIDE_BOTH, targets[0][1])])
                 raise PairedSideError(

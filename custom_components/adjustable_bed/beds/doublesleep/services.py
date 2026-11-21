@@ -9,7 +9,6 @@ from typing import Literal
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...const import DOMAIN
@@ -142,7 +141,7 @@ async def handle_doublesleep(call: ServiceCall) -> None:
 
 
 def async_register_doublesleep_services(hass: HomeAssistant) -> None:
-    from ...services import CONF_DEVICE_ID, SIDE_FIELD
+    from ...services import CONF_DEVICE_ID, DEVICE_IDS, SIDE_FIELD
 
     fields = (
         "hour",
@@ -163,7 +162,7 @@ def async_register_doublesleep_services(hass: HomeAssistant) -> None:
         "capability_page",
     )
     schema = {
-        vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         **SIDE_FIELD,
         vol.Required("action"): vol.In(
             (

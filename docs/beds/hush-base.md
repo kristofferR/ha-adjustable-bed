@@ -7,7 +7,7 @@
 ## Known Models
 
 - L200, L300, L300SH, L400, L400SH, L500, S175, S175SH, S375, S375SH, S575 and S575SH.
-- Additional stored profiles are explicit restoration choices, not discoveries of Hush hardware.
+- More product profiles can be picked in setup to restore an earlier configuration; picking one does not mean such a Hush product exists.
 - Separate RM-/MM and HJ-/SXB sleep modules, plus the RCRM handset finder.
 
 ## Apps
@@ -20,16 +20,16 @@
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ Product-specific back, legs, pillow, lumbar, combined and third motor |
-| Position Feedback | Raw index/angle/height events only, no inferred physical axis |
-| Memory Presets | ✅ Product-specific recall and explicit save commands |
-| Massage | ✅ Exact product zones, modes and timers |
-| Lights | ✅ RGB strip for lighting-flag profiles; plain color/timer otherwise |
-| Alarms | ✅ Single; repeating only on restored profiles with that capability |
-| Fan and heating | ✅ Exact restored-profile memberships |
-| Music | ✅ Restored music profiles and reported music capability |
-| Sleep sensor | ✅ Independent BLE live data, parts, reports, information and SXB settings |
-| Split sides | ✅ Explicit side-capable profile and verified non-Nordic transport |
+| Motor Control | ✅ Back, legs, pillow, lumbar, both together and a third motor, as the product has them |
+| Position Feedback | ❌ The bed's position messages are not shown as bed positions |
+| Memory Presets | ✅ Recall and save, as the product has them |
+| Massage | ✅ The product's zones, modes and timers |
+| Lights | ✅ RGB strip on products with one; otherwise color and timer |
+| Alarms | ✅ One alarm; repeating alarms on products that have them |
+| Fan and heating | ✅ On products that have them |
+| Music | ✅ On products that have it, once the bed reports music support |
+| Sleep sensor | ✅ Live data, reports, device information and SXB settings from the separate sleep module |
+| Split sides | ✅ On products with two sides, except on Nordic UART receivers |
 
 ## Protocol Details
 
@@ -101,13 +101,13 @@ each operation sends; Hush sends a single alarm's low frame first (see the
 | `sensor_query_anti_snore` | SXB `q_antiSnore` null |
 | `sensor_anti_snore` | SXB `s_antiSnore` with both `L` and `R` `[enable,8,4]`; no angle semantics assigned |
 
-The live request survives link loss/controller replacement through HA's per-address app-state store. Explicit stop/disconnect clears it. Reports accept the proven gzip/zlib wrappers and single/multi algorithm schemas. Values are device data, without medical interpretation.
+The live request survives link loss/controller replacement through HA's per-address app-state store. Explicit stop/disconnect clears it. Reports accept the app's gzip/zlib wrappers and single/multi algorithm schemas. Values are device data, without medical interpretation.
 
 ## Position Feedback / Notifications
 
 The diagnostic state retains capability events, alarms, RGB, music, raw motor/desk, lock, heating, fan, blanket and atomization values. Sleep entries expose left/right live values, report data, device time, sensitivity and anti-snore settings.
 
-- No raw axis is assigned a physical motor or calibrated unit without evidence.
+- Raw axis values are not assigned to a physical motor or a unit.
 - The [Hush Base profile](richmat.md#hush-base) lists the bed notifications, their
   framing and checksums.
 

@@ -875,7 +875,7 @@ def require_app_transport(
         primary=data.get(CONF_MALOUF_APP_PRIMARY, True),
     )
     try:
-        return controller._resolve_transport()  # noqa: SLF001 - the controller's own selection
+        return controller._resolve_transport()
     except ValueError as err:
         raise ConnectionError(str(err)) from err
 

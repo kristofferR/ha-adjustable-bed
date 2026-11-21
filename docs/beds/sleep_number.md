@@ -24,23 +24,23 @@
 
 ## Features
 
-Features are enabled from the connected bed's system or foundation capability
-responses. A model name alone does not enable optional hardware.
+Controls appear according to what the connected bed reports it has; the model
+name alone adds none.
 
 | Feature | Fuzion | MCR |
 |---|---|---|
 | Head/foot movement and percentage targets | ✅ Yes (0-100%) | ✅ When foundation supports them |
-| Position feedback | ✅ Queried | ✅ Foundation response |
+| Position feedback | ✅ | ✅ |
 | Foundation presets | ✅ Supported presets (Flat, Zero-G, Anti-Snore, TV) | ✅ Supported presets per side |
 | Favorite memory | ✅ Slot 1: recall and save | ✅ `Favorite` foundation preset |
 | Firmness (Sleep Number setting) | ✅ Configured side | ✅ Left and right |
 | Favorite firmness and responsive air | ✅ Named service commands | ✅ Named service commands |
 | Under-bed lighting | ✅ Level and timer | ✅ Foundation lighting and options |
-| Core heating/cooling | ✅ Hardware dependent (unified entity; heating only on Heidi-equipped beds) | ❌ Not in this transport's exposed controls |
-| Footwarming | ✅ Hardware dependent | ✅ Supported foundation |
-| Temperature schedules | ✅ Named service commands | ❌ Not exposed by the app |
-| Massage and outlets | ❌ Not exposed by this transport | ✅ Supported foundation commands |
-| Presence polling | ✅ Left/right, disabled by default | ❌ Not exposed as occupancy sensors |
+| Core heating/cooling | ✅ On beds that have it (one climate entity; heating only on beds with Heidi) | ❌ |
+| Footwarming | ✅ On beds that have it | ✅ On bases that have it |
+| Temperature schedules | ✅ Named service commands | ❌ |
+| Massage and outlets | ❌ | ✅ On bases that have them |
+| Presence polling | ✅ Left/right, disabled by default | ❌ |
 
 Use the normal cover, position, firmness, preset, lighting and climate entities
 for everyday controls. Additional controls and structured queries are available
@@ -82,7 +82,7 @@ pair a connection whose bond is still usable.
 **Transport and bonding:**
 
 - Recovery tracks the adapter or Bluetooth proxy that actually carried the
-  connection. Pairing on the Home Assistant host does not establish a bond on a
+  connection. Pairing on the Home Assistant host does not create a bond on a
   separate ESPHome proxy. Use the integration's pairing repair for the active
   transport and close the phone app before connecting.
 - If the bed isn't discoverable, hold the side button until the indicator
@@ -109,7 +109,7 @@ pair a connection whose bond is still usable.
 - **#574:** the September 22 captures show that the ESPHome proxy completed
   pairing and retained a bond, while the subsequent Auth read returned zero
   bytes. Other GATT reads worked. That identifies the failed step but does not
-  establish why the bed returned an empty Auth value.
+  show why the bed returned an empty Auth value.
 - **#660:** support bundles from the same bed show four different handle layouts
   for the Fuzion service across ten days: same characteristics, different order.
   After a power outage, the ESPHome proxy kept serving the table it had cached
@@ -127,8 +127,8 @@ pair a connection whose bond is still usable.
   not require a separate diagnostic HA build or manual debug-log download. The
   standard ESPHome API cannot report stored bond keys or link-security details;
   those fields require proxy firmware support.
-- The runtime recovery correction does not establish successful Climate 360
-  hardware operation.
+- The runtime recovery correction is not yet confirmed to work on Climate 360
+  hardware.
 
 ### MCR
 

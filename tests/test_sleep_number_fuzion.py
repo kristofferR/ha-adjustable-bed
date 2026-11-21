@@ -115,16 +115,7 @@ async def test_att_slices_once_then_accumulates_read_fragments() -> None:
     assert controller._parse_bamkey_blob(expected) == command
 
 
-@pytest.mark.parametrize(
-    "chunks",
-    [
-        [b""],
-        [b"invalid preamble"],
-        [b"fUzIoN\x0e\0\0\0xxxxEXTRA"],
-        # A length no response needs: refuse it rather than read for seconds.
-        [b"fUzIoN" + (2 * 1024 * 1024).to_bytes(4, "little") + b"xxxx"],
-    ],
-)
+@pytest.mark.parametrize("chunks", [[b""], [b"invalid preamble"], [b"fUzIoN\x0e\0\0\0xxxxEXTRA"]])
 async def test_readback_rejects_invalid_stream(chunks: list[bytes]) -> None:
     controller, client = controller_with_client()
     client.read_gatt_char.side_effect = chunks

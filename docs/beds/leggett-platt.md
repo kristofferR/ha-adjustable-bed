@@ -55,8 +55,8 @@ from that app; the bed's name never decides it.
 | L&P Adjustable Base legacy app (2.2.1) | [L&P legacy app](richmat.md#lp-legacy-app), which keeps its own row and settings |
 | Keep the detected or saved controls | The detected or chosen route |
 
-LP Control lists its own Okin products, but none is proven to change the Leggett
-Okin layout, so LP Control on an LP BED receiver keeps the default one.
+LP Control lists its own Okin products, but choosing one does not change the
+controls: LP Control on an LP BED receiver uses the default layout.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));

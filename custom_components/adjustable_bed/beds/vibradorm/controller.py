@@ -815,17 +815,12 @@ class VibradormController(BedController):
 
     async def _motor_move_with_stop(self, command: int) -> None:
         """Execute a single-byte movement command and always send STOP at the end."""
-        try:
+        async with self.releasing(
+            lambda: self._write_motor_command(
+                codec.STOP, repeat_count=1, cancel_event=asyncio.Event()
+            )
+        ):
             await self._write_motor_command(command)
-        finally:
-            try:
-                await self._write_motor_command(
-                    codec.STOP,
-                    repeat_count=1,
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -959,21 +954,16 @@ class VibradormController(BedController):
         The profile repeats it 200 times at 100 ms (20 s), enough headroom for
         the slowest motors (~14s full travel). The cancel event allows early stop.
         """
-        try:
+        async with self.releasing(
+            lambda: self._write_motor_command(
+                codec.STOP, repeat_count=1, cancel_event=asyncio.Event()
+            )
+        ):
             await self._write_motor_command(
                 cmd,
                 repeat_count=self.profile.preset_repeats,
                 repeat_delay_ms=self.profile.preset_delay_ms,
             )
-        finally:
-            try:
-                await self._write_motor_command(
-                    codec.STOP,
-                    repeat_count=1,
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during preset cleanup")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory via CBI characteristic.

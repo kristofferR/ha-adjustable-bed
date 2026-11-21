@@ -287,7 +287,7 @@ class EstimatedPositionsFlowMixin:
         elapsed = None if running is None else running[1]
         try:
             await async_stop_bed(self.hass, manager, bed)
-        except Exception:  # noqa: BLE001 - the measurement fails, the flow reports it
+        except Exception:
             _LOGGER.warning("STOP after a calibration move failed", exc_info=True)
             elapsed = None
         try:
@@ -297,7 +297,7 @@ class EstimatedPositionsFlowMixin:
             current = asyncio.current_task()
             if current is not None and current.cancelling():
                 raise
-        except Exception:  # noqa: BLE001 - a failed move is not a measurement
+        except Exception:
             _LOGGER.debug("Calibration move ended with an error", exc_info=True)
             elapsed = None
         if running is not None and bed.move_failed(running[0]):

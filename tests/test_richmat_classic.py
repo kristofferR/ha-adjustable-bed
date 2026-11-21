@@ -563,3 +563,13 @@ async def test_native_release_entity_keeps_the_admitted_mode_through_cleanup(has
     assert not CONTROLLER_GESTURE_RELEASE.get()
     coord._client.is_connected = False
     await coord.async_shutdown()
+
+
+async def test_write_waits_for_another_gatt_operation_to_finish():
+    ctrl, coord = controller()
+    async with ctrl.ble_lock:
+        send = asyncio.create_task(ctrl._send(b"\x01"))
+        await asyncio.sleep(0)
+        assert not coord.client.write_gatt_char.await_count
+    await send
+    assert packets(coord) == ["01"]

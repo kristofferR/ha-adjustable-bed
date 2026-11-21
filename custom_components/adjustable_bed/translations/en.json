@@ -10264,9 +10264,6 @@
     "bed_changed": {
       "message": "The bed changed while the action was being checked. Try again."
     },
-    "bed_reconnected": {
-      "message": "{device_name} reconnected while the action was being checked. Try again."
-    },
     "feature_not_supported": {
       "message": "{device_name} does not support {feature}."
     },
@@ -10575,9 +10572,6 @@
     },
     "jerome_aroma": {
       "message": "Choose aroma intervals and durations from 1 to 60 minutes, and a pause from 1 to 12 hours."
-    },
-    "jerome_intensity": {
-      "message": "Choose massage intensity 1, 2 or 3."
     },
     "jerome_feature_scope": {
       "message": "This setting applies to a whole physical bed. It cannot target one half of a one-address combined bed. Keep this bed standalone to use its whole-bed settings."
@@ -11528,7 +11522,6 @@
         "outlet": "Outlet",
         "outlet_status": "Outlet status",
         "position": "Position",
-        "preset_reset": "Preset reset",
         "preset_save": "Preset save",
         "preset_timer": "Preset timer",
         "responsive_air": "Responsive air",
@@ -11553,7 +11546,6 @@
         "underbed_auto_status": "Underbed auto status",
         "get_sleep_number_controls": "Read Sleep Number settings",
         "bind_foundation": "Pair base",
-        "reset_articulation_presets": "Reset saved positions",
         "run_diagnostics": "Run bed diagnostics",
         "cancel_current_diagnostic_run": "Cancel bed diagnostics",
         "get_simple_diagnostic_run_results": "Read bed diagnostic results",

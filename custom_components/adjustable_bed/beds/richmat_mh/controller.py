@@ -1593,7 +1593,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     await self._send_clock()
         except asyncio.CancelledError:
             raise
-        except Exception:  # noqa: BLE001 - a failed query leaves the stored snapshot
+        except Exception:
             _LOGGER.debug("Richmat MH connection setup failed", exc_info=True)
             return
         finally:
@@ -1832,7 +1832,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 if delaying:
                     # Skip the remaining delay; never cancel the STOP write itself.
                     task.cancel()
-            except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():
