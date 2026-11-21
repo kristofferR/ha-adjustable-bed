@@ -13,15 +13,24 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_CONTROLLED_SIDE, CARD_HIDDEN
+from ...card import CARD_CLIMATE, CARD_CONTROLLED_SIDE, CARD_HIDDEN
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
+from ...state_keys import HEAT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..cancellation import settled
-from ..catalog_buttons import Kind, catalog_button, unique_buttons
+from ..catalog_buttons import (
+    Kind,
+    catalog_button,
+    classify,
+    massage_timer_minutes,
+    own_label,
+    save_name,
+    unique_buttons,
+)
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -30,7 +39,13 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..richmat.labels import function_label, screen_label
+from ..richmat.labels import (
+    SHARED_PRESETS,
+    function_label,
+    preset_name,
+    richmat_app_name,
+    screen_label,
+)
 from ..richmat.transport import select_app_link
 from . import protocol as p
 from .catalog import (
@@ -79,6 +94,32 @@ def select_link(client: BleakClient) -> Link:
     if selected.rx is None:
         raise ValueError("Richmat app requires its selected writable and notification characteristics")
     return Link(client, selected.tx, selected.rx, selected.query_single)
+
+
+# Actions that set one massage zone to a level, as the app names them.
+_LEVELS: Final = {
+    f"deviceFunctionItem{action}": target
+    for zone, prefix in (("head", "MassageHead"), ("foot", "MassageFoot"))
+    for action, target in (
+        (f"{prefix}Off", (zone, 0)),
+        (f"{prefix}InstensFirstMode", (zone, 1)),
+        (f"{prefix}InstensSecondMode", (zone, 2)),
+        (f"{prefix}InstensThirdMode", (zone, 3)),
+    )
+} | {
+    "deviceFunctionItemMassageInstensityFirstGear": ("all", 1),
+    "deviceFunctionItemMassageInstensitySecondGear": ("all", 2),
+    "deviceFunctionItemMassageInstensityThirdGear": ("all", 3),
+}
+_HEAT: Final = {
+    "deviceFunctionItemHeatingOff": "off",
+    "deviceFunctionItemHeatingLowGear": "low",
+    "deviceFunctionItemHeatingMiddleGear": "medium",
+    "deviceFunctionItemHeatingHighGear": "high",
+}
+_RESETS: Final = frozenset(
+    {"deviceFunctionItemRelieveZeroGravitySetting", "deviceFunctionItemRelieveSnoreSetting"}
+)
 
 
 def action_name(action: Action) -> str:
@@ -549,7 +590,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
     async def press(self, detail: str, *, save: bool = False, duration_ms: int = 1000) -> None:
         if detail not in self._allowed():
             raise ValueError("This control is unavailable in the current product/protocol layout")
-        if save and not any(row[0] == detail and row[1] for row in self.route["presets"]):
+        if save and not self._saves(detail):
             raise ValueError("This preset has no save control")
         if (
             not save
@@ -676,6 +717,123 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             raise ValueError("This product has no such memory slot")
         await self.press(detail, save=True)
 
+    def _shown_label(self, detail: str) -> str:
+        """The product's label for an action, from its preset tile or its massage page."""
+        tile = any(row[0] == detail for row in self.route["presets"])
+        selector = "0xdd2d" if self.version == 1 else "0x1230d"
+        return self._detail_label(
+            detail, selector if tile else ("0xf761" if self.version == 1 else "0xeea5")
+        )
+
+    @property
+    def _massage_timers(self) -> dict[int, str]:
+        """The product's fixed massage timer actions, by the minutes their labels show.
+
+        They are one timer select; a product with a single duration keeps its button.
+        """
+        timers: dict[int, str] = {}
+        for detail in sorted(self._allowed()):
+            enum = ACTIONS[detail]["enum"]
+            if massage_timer_minutes(enum) is None:
+                continue
+            name, _clear = richmat_app_name(enum, self._shown_label(detail))
+            amount, unit = name.removeprefix("Massage timer ").split()
+            timers.setdefault(int(amount) * (60 if unit == "hours" else 1), detail)
+        return timers if len(timers) > 1 else {}
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timers)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows the product's massage timers and levels.
+        return (
+            super().auto_enable_massage
+            or self.supports_massage_timer
+            or self.supports_massage_intensity_control
+        )
+
+    @property
+    def _level_actions(self) -> dict[str, dict[int, str]]:
+        """Each massage zone's level actions, for zones with levels 1, 2 and 3.
+
+        A zone's levels are one intensity number; a zone missing a level keeps its buttons.
+        """
+        zones: dict[str, dict[int, str]] = {}
+        for detail in sorted(self._allowed()):
+            if (target := _LEVELS.get(ACTIONS[detail]["enum"])) is not None:
+                zones.setdefault(target[0], {}).setdefault(target[1], detail)
+        return {zone: levels for zone, levels in zones.items() if {1, 2, 3} <= set(levels)}
+
+    @property
+    def _heat_levels(self) -> dict[str, str]:
+        """The product's heat off, low, medium and high actions, when it has all four.
+
+        They are one heat level select; a product missing a level keeps its buttons.
+        """
+        found = {
+            level: detail
+            for detail in sorted(self._allowed())
+            if (level := _HEAT.get(ACTIONS[detail]["enum"])) is not None
+        }
+        return {level: found[level] for level in _HEAT.values()} if len(found) == len(_HEAT) else {}
+
+    async def set_heat_level(self, level: str) -> None:
+        detail = self._heat_levels.get(level)
+        if detail is None:
+            raise ValueError("Choose a heat level this product offers")
+        # The bed reports no heat level.
+        with self.sent_state(HEAT_LEVEL(level)):
+            await self.press(detail)
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        return bool(self._level_actions)
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        return list(self._level_actions)
+
+    @property
+    def massage_intensity_max(self) -> int:
+        return 3
+
+    def massage_intensity_min(self, zone: str) -> int:
+        # Only a zone with its own off action offers 0.
+        return 0 if 0 in self._level_actions.get(zone, {}) else 1
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        detail = self._level_actions.get(zone, {}).get(level)
+        if detail is None:
+            raise ValueError("Choose a massage level this product offers")
+        # The bed reports no level.
+        with self.sent_state(massage_intensity(zone)(level)):
+            await self.press(detail)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self._massage_timers)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No timer action turns the timer off.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        detail = self._massage_timers.get(minutes)
+        if detail is None:
+            raise ValueError("Choose a massage timer this product offers")
+        # The bed reports no timer.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.press(detail)
+
+    def _saves(self, detail: str) -> bool:
+        """Whether a preset tile saves: the app flags it and the action has a long-press code."""
+        return bool(ACTIONS[detail]["long"]) and any(
+            row[0] == detail and row[1] for row in self.route["presets"]
+        )
+
     def controller_button_available(self, key: str) -> bool:
         return key == "richmat_app_release" or any(
             spec.key == key for spec in self.controller_button_specs
@@ -685,25 +843,41 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         rows: list[ControllerButtonSpec | None] = []
         motors = {str(d) for m in self.route["motors"] for d in m[1:3]}
-        selector = "0xdd2d" if self.version == 1 else "0x1230d"
-        for detail in sorted(self._allowed() - motors):
-            label = self._detail_label(
-                detail,
-                selector
-                if any(row[0] == detail for row in self.route["presets"])
-                else ("0xf761" if self.version == 1 else "0xeea5"),
-            )
+        # The massage timer select and intensity numbers send these actions.
+        numbers = {d for levels in self._level_actions.values() for d in levels.values()}
+        numbers |= set(self._heat_levels.values())
+        for detail in sorted(self._allowed() - motors - set(self._massage_timers.values()) - numbers):
+            label = self._shown_label(detail)
+            enum = ACTIONS[detail]["enum"]
             meaning = action_name(ACTIONS[detail])
-            rows.append(
-                catalog_button(
-                    "richmat_app_" + detail, label, partial(_press, detail=detail), meaning=meaning
-                )
+            clear = True
+            # A preset row can hold a timer or a massage control: the action says which.
+            if (shape := classify(meaning)) is not None and shape.kind in (Kind.PRESET, Kind.MEMORY):
+                name = preset_name(label)
+                if name in SHARED_PRESETS and name != preset_name(meaning):
+                    # The tile shows another preset's name: the action says which it is.
+                    name = preset_name(meaning)
+            else:
+                name, clear = richmat_app_name(enum, label)
+            # The app's "relieve setting" actions reset a stored position: they ask first.
+            reset = enum in _RESETS
+            spec = catalog_button(
+                "richmat_app_" + detail,
+                name,
+                partial(_press, detail=detail),
+                meaning=meaning,
+                requires_confirmation=reset,
+                enabled=clear and not reset,
             )
-            if any(row[0] == detail and row[1] for row in self.route["presets"]):
+            rows.append(spec if clear or spec is None else own_label(spec))
+            if spec is not None and self._saves(detail):
+                shared = spec.translation_key or ""
                 rows.append(
                     catalog_button(
                         "richmat_app_save_" + detail,
-                        "Save " + label,
+                        save_name(shared.removeprefix("preset_"))
+                        if shared.startswith("preset_") and not shared.startswith("preset_memory_")
+                        else "Save " + name,
                         partial(_press, detail=detail, save=True),
                         kind=Kind.SAVE,
                         meaning="Save " + meaning,
@@ -787,8 +961,8 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             require_controller(controller, RichmatAppController)._select_side(option)
 
         self._select_side = apply
-        return (
-            (
+        specs = (
+            [
                 ControllerSelectSpec(
                     "richmat_app_side",
                     "richmat_app_side",
@@ -797,11 +971,22 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                     select,
                     local_select_fn=apply,
                     card=CARD_CONTROLLED_SIDE,
-                ),
-            )
+                )
+            ]
             if len(options) > 1
-            else ()
+            else []
         )
+        if heat := self._heat_levels:
+
+            async def heat_level(controller: BedController, option: str) -> None:
+                await require_controller(controller, RichmatAppController).set_heat_level(option)
+
+            specs.append(
+                ControllerSelectSpec(
+                    HEAT_LEVEL, HEAT_LEVEL, HEAT_LEVEL, tuple(heat), heat_level, card=CARD_CLIMATE
+                )
+            )
+        return tuple(specs)
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:

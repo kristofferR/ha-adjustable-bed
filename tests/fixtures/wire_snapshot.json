@@ -1102,6 +1102,9 @@
 "cover:feet_open": {"as":"feet_up","ok":"ok","status":"same"},
 "cover:feet_close": {"as":"feet_down","ok":"ok","status":"same"},
 "cover:feet_stop": {"as":"feet_stop","ok":"ok","status":"same"},
+"massage_timer_120": {"status":"ok","writes":[[0,"6e400002",false,"6e01005fce",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
+"massage_timer_180": {"status":"ok","writes":[[0,"6e400002",false,"6e010063d2",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
+"massage_timer_300": {"status":"ok","writes":[[0,"6e400002",false,"6e010061d0",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",false,"6e01002493",4,80],[440,"6e400002",false,"6e01006edd",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",false,"6e01002594",4,80],[440,"6e400002",false,"6e01006edd",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",false,"6e01002695",4,80],[440,"6e400002",false,"6e01006edd",2,7]]},
@@ -1115,9 +1118,6 @@
 "button:richmat_mh_39": {"status":"ok","writes":[[0,"6e400002",false,"6e010039a8",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
 "button:richmat_mh_48": {"status":"ok","writes":[[0,"6e400002",false,"6e010048b7",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
 "button:richmat_mh_5e": {"status":"ok","writes":[[0,"6e400002",false,"6e01005ecd",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
-"button:richmat_mh_5f": {"status":"ok","writes":[[0,"6e400002",false,"6e01005fce",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
-"button:richmat_mh_63": {"status":"ok","writes":[[0,"6e400002",false,"6e010063d2",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
-"button:richmat_mh_61": {"status":"ok","writes":[[0,"6e400002",false,"6e010061d0",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
 "preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"6e010059c8",1,0],[107,"6e400002",false,"6e01006edd",1,0]]}
 }},
 "bedgear": {

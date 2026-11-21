@@ -3509,6 +3509,9 @@
  "select:goodvibe_side": {
   "card_section": "motors"
  },
+ "select:heat_level": {
+  "card_section": "climate"
+ },
  "select:hjbed_layout": {
   "card_section": "utility"
  },
