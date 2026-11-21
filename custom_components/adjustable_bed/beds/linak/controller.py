@@ -17,6 +17,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
+from ...bluetooth_transport import async_path_for_source, client_source, is_esphome_proxy_path
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -142,6 +143,9 @@ class _AxisKeys:
 # Live proxy connections can need more than six seconds before accepting writes.
 LINAK_CONTROL_READY_TIMEOUT_S = 15.0
 LINAK_CONTROL_READY_RETRY_DELAY_S = 0.75
+# A proxy that holds the bond encrypts in 0.2 to 0.3 seconds. A slower or failed
+# request falls back to the readiness retry.
+LINAK_LINK_ENCRYPTION_TIMEOUT_S = 5.0
 LINAK_PROTOCOL_READ_TIMEOUT_S = 0.75
 # Some controllers never answer the mask read over a proxy (issue #714). Without
 # a bound, the proxy's own 30 s read timeout stalls every connect.
@@ -381,6 +385,7 @@ class LinakController(BedController):
         self._resolved_two_motor_secondary_spec: LinakPositionSpec | None = None
         self._session_ready = False
         self._session_started_monotonic = monotonic()
+        self._link_encryption_requested = False
         self._protocol_notification_uuids: set[str] = set()
         self._deferred_protocol_notifications: set[str] = set()
         self._capability_discovery_deferred = False
@@ -737,8 +742,48 @@ class LinakController(BedController):
             ", ".join(self._capabilities.position_axes) or "none",
         )
 
+    async def _async_encrypt_proxy_link(self) -> None:
+        """Have an ESPHome proxy encrypt the link instead of waiting for the bed.
+
+        The controller refuses every read, write and subscription until the
+        link is encrypted. An ESP32 proxy holding the bond encrypts only when
+        the controller asks. Measured on two Advanced controllers, it asks about
+        two seconds after a connect, about ten seconds after a disconnect when
+        the reconnect is quick, and not at all while its under-bed light is on.
+        Asked directly, the proxy encrypts in 0.2 to 0.3 seconds in every case.
+        Other adapters keep the readiness retry.
+        """
+        client = self.client
+        if self._link_encryption_requested or client is None or not client.is_connected:
+            return
+        path = async_path_for_source(self._coordinator.hass, client_source(client))
+        if not is_esphome_proxy_path(path):
+            return
+        self._link_encryption_requested = True
+        started = monotonic()
+        try:
+            async with asyncio.timeout(LINAK_LINK_ENCRYPTION_TIMEOUT_S):
+                await client.pair()
+        except (BleakError, TimeoutError, NotImplementedError, TypeError) as err:
+            # The controller may still ask for encryption itself, which the
+            # readiness retry waits for.
+            _LOGGER.debug(
+                "Proxy did not encrypt the link to %s after %.2fs: %s",
+                self._coordinator.address,
+                monotonic() - started,
+                str(err) or type(err).__name__,
+            )
+            return
+        _LOGGER.debug(
+            "Proxy encrypted the link to %s in %.2fs",
+            self._coordinator.address,
+            monotonic() - started,
+        )
+
     async def async_discover_capabilities(self) -> None:
         """Resolve Standard, TD3, and Advanced from services and mask byte 0."""
+        # The controller refuses the mask read below on an unencrypted link.
+        await self._async_encrypt_proxy_link()
         if self._profile is LinakProfile.PERFORMANCE:
             self._capability_discovery_deferred = False
             self._publish_capability_state()

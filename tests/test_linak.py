@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.beds.linak.protocol import (
     LinakModelVariant,
     LinakProfile,
 )
+from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     CONF_PROTOCOL_VARIANT,
@@ -44,6 +45,12 @@ from custom_components.adjustable_bed.position_seek import (
     SeekSample,
 )
 from custom_components.adjustable_bed.services import _timed_move_plan
+
+ESPHOME_PROXY_PATH = ConnectionPath(
+    source="AA:BB:CC:DD:EE:01",
+    transport=TransportClass.PROXY,
+    source_domain="esphome",
+)
 
 
 def _written_commands(mock_bleak_client: MagicMock) -> list[bytes]:
@@ -965,6 +972,92 @@ class TestLinakCorpusProfiles:
         assert coordinator.controller.memory_slot_count == 0
         assert coordinator.controller.supports_position_feedback is False
         assert coordinator.controller.passive_position_reconciliation_interval is None
+
+    async def test_esphome_proxy_encrypts_the_link_before_the_first_read(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """A proxy waits for the bed to ask, and the bed never asks with its light on."""
+        order: list[str] = []
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+
+        async def read(uuid: str) -> bytes:
+            if str(uuid).lower() == LINAK_POSITION_MASK_UUID:
+                order.append("mask")
+            return await original_read(uuid)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        mock_bleak_client.pair = AsyncMock(side_effect=lambda: order.append("pair"))
+
+        with patch(
+            "custom_components.adjustable_bed.beds.linak.controller.async_path_for_source",
+            return_value=ESPHOME_PROXY_PATH,
+        ):
+            await AdjustableBedCoordinator(hass, mock_config_entry).async_connect()
+
+        assert order == ["pair", "mask"]
+
+    @pytest.mark.parametrize(
+        ("path", "pair_calls"),
+        [(ESPHOME_PROXY_PATH, 1), (None, 0)],
+        ids=["proxy_refuses", "other_adapter"],
+    )
+    async def test_link_without_proxy_encryption_keeps_the_readiness_retry(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        path: ConnectionPath | None,
+        pair_calls: int,
+    ) -> None:
+        """A refused request, or an adapter that is not a proxy, still waits for the bed."""
+        mock_bleak_client.pair = AsyncMock(
+            side_effect=BleakError("Pairing failed due to error: 82")
+        )
+        auth_error = BleakError(
+            "Bluetooth GATT Error address=CB:3D:68:A7:7B:D0 handle=14 "
+            "error=5 description=Insufficient authentication"
+        )
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+        mask_reads = 0
+
+        async def read(uuid: str) -> bytes:
+            nonlocal mask_reads
+            if str(uuid).lower() == LINAK_POSITION_MASK_UUID:
+                mask_reads += 1
+                if mask_reads == 1:
+                    raise auth_error
+            return await original_read(uuid)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        mock_bleak_client.write_gatt_char.side_effect = [auth_error, None, None]
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.async_path_for_source",
+                return_value=path,
+            ),
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            await coordinator.async_connect()
+            # The first command repeats the deferred mask read on the same link.
+            await coordinator.controller.write_command(LinakCommands.MOVE_HEAD_UP)
+
+        assert mask_reads == 2
+        assert mock_bleak_client.pair.await_count == pair_calls
+        assert _written_commands(mock_bleak_client) == [
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_HEAD_UP,
+        ]
 
     async def test_capability_mask_retries_after_cold_session_auth_window(
         self,
