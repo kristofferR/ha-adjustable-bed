@@ -46,7 +46,7 @@ The first screen lists the discovered beds, each named with its family, then:
 A discovered bed asks first which app or remote controls it, from its detected
 family: that family's own question, or the detected bed type's rows. **Another
 app or remote** opens the full app list for the same bed. The family question's
-**Keep** answer saves the detected route, after a screen that says its controls
+**Keep the current setup** answer saves the detected route, after a screen that says its controls
 are generic, whether it needs pairing, and that **Reconfigure** can choose the
 app later; its **Back** returns to the question. Detection never picks an app by
 itself, because a bed's name and Bluetooth services do not tell these apps
@@ -123,12 +123,8 @@ legacy app entry or a Richmat entry on the L&P QRRM remote, so they can move
 to that family's other routes.
 
 1. Choose the app you use, then the layout or remote the app shows. The
-   question's keep answer leaves the entry exactly as it is. Its label depends
-   on the family: **I don't know: keep the current controls** (Jiecang, Leggett
-   & Platt), **I don't know: keep the detected controls** (Okin, Keeson, Solace,
-   Sleepy's Elite, Malouf / Lucid, LOGICDATA), **Keep the current app**
-   (Customatic, Jordan's), **Keep the current controls** (Jensen / Svane,
-   Limoss) or **Keep the current setup** (Vibradorm).
+   question's keep answer, **Keep the current setup**, leaves the entry
+   exactly as it is.
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
    Home Assistant releases its connection and checks the chosen setup. The
    check screen lists its steps. Nothing is saved yet.
