@@ -56,7 +56,7 @@
    actually provides that function. The normal app constructors do not enable it.
    The apps can consume a saved Boolean enabling this page, but the origin and
    prevalence of old saved records are unknown. HA's explicit choice represents
-   that capability choice; it does not import or infer an app's saved history.
+   that capability choice; it does not read an app's saved history.
    A new, valid, powered normal initialization is also required. VER1/VER2 pages
    do not enable normal-mattress controls.
 4. For the separate sleep device, add **W.Silver / AMERICANSTAR / Bailey / TX sleep

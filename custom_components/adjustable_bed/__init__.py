@@ -1527,7 +1527,7 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
         raise not_ready("setup_connect_failed", name=entry.title, hint="")
 
     controller = inner.controller
-    if controller is not None and not getattr(controller, "supports_single_address_pairing", True):
+    if controller is not None and not controller.supports_single_address_pairing:
         await coordinator.async_shutdown()
         raise setup_stopped("single_address_pair_unsupported")
 

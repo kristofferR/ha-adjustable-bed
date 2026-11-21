@@ -259,7 +259,7 @@ async def test_bed_setting_builders_and_reported_capability_preflight(coordinato
     coordinator.client.is_connected = False
     request.plan(obj)  # A cold preflight checks product gates, then live dispatch checks the reply.
     coordinator.client.is_connected = True
-    with pytest.raises(ValueError, match="advertised"):
+    with pytest.raises(ValueError, match="has not reported that it offers this"):
         request.validate(obj)
     obj._event("deviceCharacteristicsSubscriptionClockEvent", None)
     request.validate(obj)
@@ -268,7 +268,7 @@ async def test_bed_setting_builders_and_reported_capability_preflight(coordinato
     Request("snore_count", value=3).validate(obj)
     assert Request("snore_count", value=3).frames(obj) == (bytes.fromhex("6e0a20060501010003a8"),)
     obj.on_disconnect()
-    with pytest.raises(ValueError, match="advertised"):
+    with pytest.raises(ValueError, match="has not reported that it offers this"):
         request.validate(obj)
     with pytest.raises(ValueError):
         Request("report").plan(controller(coordinator, "HNRN"))
@@ -331,7 +331,7 @@ async def test_startup_capability_timeout_still_rejects_unadvertised_setting(coo
     ):
         await obj.start_notify()
     startup_writes = writes(coordinator)
-    with pytest.raises(ValueError, match="advertised"):
+    with pytest.raises(ValueError, match="has not reported that it offers this"):
         await obj.async_execute_goodvibe_request(Request("light_off"))
     assert writes(coordinator) == startup_writes
     obj.on_disconnect()
@@ -481,7 +481,7 @@ async def test_public_service_has_only_bed_operations_and_checks_app_before_exec
 async def test_alarm_enable_preserves_observed_fields_and_freezes_the_plan(coordinator):
     obj = controller(coordinator, "HNRN")
     obj._menus.add("alarm")
-    with pytest.raises(ValueError, match="Query"):
+    with pytest.raises(ValueError, match="Read the alarm list first"):
         Request("enable_alarm", alarm_id=3, enabled=False).plan(obj)
     obj.choices.events["repeat_alarms"] = {"3": [3, 17, 7, 30, 2, 131]}
     request = Request("enable_alarm", alarm_id=3, enabled=False).plan(obj)
@@ -558,7 +558,7 @@ async def test_public_bulk_preflight_rejects_missing_live_capability_before_writ
                 "custom_components.adjustable_bed.services._resolve_sided_targets",
                 return_value=([(target, "both") for target in targets], []),
             ),
-            pytest.raises(ServiceValidationError, match="advertised"),
+            pytest.raises(ServiceValidationError, match="has not reported that it offers this"),
         ):
             await hass.services.async_call(
                 DOMAIN, "galaxy", {"device_id": ["a", "b"], "operation": "light_off"}, blocking=True

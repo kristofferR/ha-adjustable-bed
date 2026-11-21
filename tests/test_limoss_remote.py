@@ -651,7 +651,7 @@ async def test_changed_motor_layout_rejects_stale_memory_before_any_write():
 
     c = make_controller(system=0x12)
     c.memories.slots[8] = LimossRemoteMemory("Old four-motor layout", ((0, -1), (3, 1)))
-    with pytest.raises(ValueError, match="different reported motor layout"):
+    with pytest.raises(ValueError, match="different motor setup"):
         await c.hold_memory(8, 100)
     c.client.write_gatt_char.assert_not_called()
     assert c.sequence.value == 0

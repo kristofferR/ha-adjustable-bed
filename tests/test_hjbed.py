@@ -872,7 +872,7 @@ async def test_query_and_delete_retire_only_the_source_alarm_records(coordinator
     ]
     c._state.alarms = rows.copy()
     create = Request("repeat", action="zero_gravity", when=time(8))
-    with pytest.raises(ValueError, match="occupied"):
+    with pytest.raises(ValueError, match="in use"):
         c.validate_hjbed_request(create)
     await c.async_execute_hjbed_request(Request("delete", alarm_id=7))
     assert c._state.alarms == rows[:6]
@@ -924,13 +924,13 @@ async def test_repeat_allocation_requires_known_free_slot_and_reserves_attempt(
     c = controller(coordinator, "98ff11")
     c._state.features.add("alarm")
     auto = Request("repeat", action="zero_gravity", when=time(7))
-    with pytest.raises(ValueError, match="explicit alarm_id"):
+    with pytest.raises(ValueError, match="full alarm list"):
         await c.async_execute_hjbed_request(auto)
     assert written(coordinator) == []
     await c.async_execute_hjbed_request(
         Request("repeat", action="zero_gravity", when=time(7), alarm_id=1)
     )
-    with pytest.raises(ValueError, match="explicit alarm_id"):
+    with pytest.raises(ValueError, match="full alarm list"):
         await c.async_execute_hjbed_request(auto)
     await c.async_execute_hjbed_request(Request("delete", alarm_id=2))
     assert c._available_alarm_slots() == [2]
@@ -938,7 +938,7 @@ async def test_repeat_allocation_requires_known_free_slot_and_reserves_attempt(
     assert bytes.fromhex(written(coordinator)[-1])[6] == 2
     assert coordinator.controller_state["hjbed_available_alarm_slots"] == []
     count = len(written(coordinator))
-    with pytest.raises(ValueError, match="explicit alarm_id"):
+    with pytest.raises(ValueError, match="full alarm list"):
         await c.async_execute_hjbed_request(auto)
     assert len(written(coordinator)) == count  # No notification is needed to reserve it.
 
@@ -980,7 +980,7 @@ async def test_failed_alarm_write_does_not_reallocate_an_uncertain_slot(coordina
     auto = Request("repeat", action="zero_gravity", when=time(7))
     with pytest.raises(ConnectionError, match="uncertain"):
         await c.async_execute_hjbed_request(auto)
-    with pytest.raises(ValueError, match="explicit alarm_id"):
+    with pytest.raises(ValueError, match="full alarm list"):
         await c.async_execute_hjbed_request(auto)
 
 
@@ -1035,7 +1035,7 @@ async def test_local_layout_select_uses_replacement_controller(coordinator, inst
         await live.execute_action("974f61")
         assert written(coordinator) == ["6e010031a0", "6e01006edd"]
     else:
-        with pytest.raises(ValueError, match="Normal layout"):
+        with pytest.raises(ValueError, match="Normal model"):
             live.validate_hjbed_request(Request("mode", mode="standard"))
     coordinator.capability_controller = None
     with raises_key("option_unavailable", ServiceValidationError):

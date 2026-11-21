@@ -128,7 +128,7 @@ class RizeRemedyIIController(OkinBeddingAppController):
         if control not in self._app.actions:
             raise ValueError("Unknown Rize Remedy II control")
         if isinstance(duration_ms, bool) or not isinstance(duration_ms, int) or not 0 < duration_ms <= 60000:
-            raise ValueError("Duration must be a positive integer, at most 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     def _hold_ms(self, action: str) -> int:
         # 500 ms is the active voice one-shot deadline. Save chords have no

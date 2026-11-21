@@ -838,7 +838,7 @@ async def test_goto_preset_child_mode_fails_all_target_preflight(hass, monkeypat
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         lambda *_: ([(left, "both"), (right, "both")], []),
     )
-    with virtual_clock(), pytest.raises(ServiceValidationError, match="child mode"):
+    with virtual_clock(), pytest.raises(ServiceValidationError, match="Child lock"):
         await hass.services.async_call(
             DOMAIN, "goto_preset", {"device_id": ["left", "right"], "preset": 1}, blocking=True
         )

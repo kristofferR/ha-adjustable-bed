@@ -53,15 +53,15 @@ async def test_actual_callback_audio_feedback_controls_preview_volume_and_alarm_
     alarm = MotionBedWrite("alarm", (build_alarm(enabled=True,hour=6,minute=30,weekdays={},audio=expected),), "home", confirmed=True, persistent=True, alarm_audio=expected)
     rig.controller.validate_motion_bed_write(alarm)
     mismatch = replace(alarm, alarm_audio=not expected)
-    with pytest.raises(ValueError, match="audio"):
+    with pytest.raises(ValueError, match="alarm sound"):
         rig.controller.validate_motion_bed_write(mismatch)
     if expected:
         rig.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
         rig.controller.validate_motion_bed_write(volume)
     else:
-        with pytest.raises(ValueError, match="audio support"):
+        with pytest.raises(ValueError, match="reported a speaker"):
             rig.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
-        with pytest.raises(ValueError, match="audio support|unavailable"):
+        with pytest.raises(ValueError, match="reported a speaker|does not offer"):
             rig.controller.validate_motion_bed_write(volume)
     await rig.controller.stop_notify()
 

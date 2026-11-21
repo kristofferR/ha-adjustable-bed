@@ -403,9 +403,9 @@ class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile],
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 1 <= duration_ms <= 30000:
-            raise ValueError("Unknown Glideaway control or hold duration outside 1..30000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
         if control.startswith("memory_") and duration_ms >= 5000:
-            raise ValueError("Use save_preset for memory programming holds of 5 seconds or longer")
+            raise ValueError("To save a memory position, use the Save preset action instead of holding for 5 seconds or longer")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -458,7 +458,7 @@ class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile],
         foot_level: int = 0,
     ) -> None:
         if weekdays or head_level or foot_level:
-            raise ValueError("Glideaway alarms have no weekly or massage-level selectors")
+            raise ValueError("This bed's alarm has no weekdays or massage levels. Remove them and try again")
         now = dt_util.now()
         packet = alarm_frame(enabled, hour, minute, preset, now)
         await self.write_command(rtc_frame(now))

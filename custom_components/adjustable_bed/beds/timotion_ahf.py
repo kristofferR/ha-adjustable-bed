@@ -245,7 +245,7 @@ class TiMOTIONAhfController(BedController):
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         """Preflight AHF status and lock state before a bounded held action."""
         if duration_ms <= 0:
-            raise ValueError("TiMOTION AHF hold duration must be greater than zero")
+            raise ValueError("Choose a duration longer than zero")
         action = _CONTROL_ACTION_BY_KEY.get(control)
         if action is None:
             raise ValueError(f"Unsupported TiMOTION AHF held control: {control}")
@@ -400,8 +400,7 @@ class TiMOTIONAhfController(BedController):
         if action.lock_bit is not None and self._feature_mask is not None:
             if self._feature_mask & (1 << action.lock_bit):
                 raise ValueError(
-                    f"TiMOTION AHF {action.label} is disabled by status lock bit "
-                    f"{action.lock_bit} (mask 0x{self._feature_mask:02X})"
+                    f"{action.label} is locked on the bed. Unlock it, then try again"
                 )
 
     def _action_enabled(self, action: _ControlAction) -> bool:

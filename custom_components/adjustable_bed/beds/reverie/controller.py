@@ -793,7 +793,7 @@ class ReverieController(BedController, ReverieComfortActions):
         if isinstance(duration_ms, bool) or not isinstance(duration_ms, int):
             raise ValueError("Reverie hold duration must be an integer number of milliseconds")
         if not 100 <= duration_ms <= 60_000:
-            raise ValueError("Reverie hold duration must be between 100 and 60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Send one press frame, wait for the bounded hold, then send fresh STOP."""

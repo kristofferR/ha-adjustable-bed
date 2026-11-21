@@ -295,7 +295,7 @@ class SophieController(SolaceController):
     def validate_memory_recall(self, memory_num: int) -> None:
         super().validate_memory_recall(memory_num)
         if not self._preset_is_selected(f"memory_{memory_num}"):
-            raise ValueError("Sophie memory has not been reported saved")
+            raise ValueError("Save this memory position before recalling it")
 
     async def _send_preset(self, command: bytes) -> None:
         await self.write_command(command)
@@ -350,7 +350,7 @@ class SophieController(SolaceController):
         }
         if (mode := modes.get(alarm.wake_action)) is None:
             # The live Bluetooth name can name another model than preflight saw.
-            raise ValueError("This Sophie model does not offer the selected wake action")
+            raise ValueError("This bed model does not offer that wake action")
         # The app numbers Monday 1 through Sunday 7.
         await self.set_alarm(
             enabled=alarm.enabled,

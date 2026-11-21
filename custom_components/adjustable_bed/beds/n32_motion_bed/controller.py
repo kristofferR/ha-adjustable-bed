@@ -474,7 +474,7 @@ class N32MotionBedController(Okin64BitController):
         if control not in self.held_control_options:
             raise ValueError("Unknown N32 held control")
         if type(duration_ms) is not int or not 1 <= duration_ms <= 60000:
-            raise ValueError("Hold duration must be 1 through 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -531,7 +531,7 @@ class N32MotionBedController(Okin64BitController):
     @staticmethod
     def validate_alarm_slot(slot: int, operation: str, row: AlarmRow | None) -> None:
         if type(slot) is not int or slot not in SLOTS:
-            raise ValueError("N32 has app alarm slots 1, 2 and 3")
+            raise ValueError("Choose alarm 1, 2 or 3")
         if operation not in ("set", "disable", "delete", "query"):
             raise ValueError("Unknown N32 alarm operation")
         if operation == "set":
@@ -545,7 +545,7 @@ class N32MotionBedController(Okin64BitController):
                 or row.week != 0
                 and not 128 <= row.week <= 255
             ):
-                raise ValueError("Supply a complete N32 alarm time, UI weekdays and mode")
+                raise ValueError("Enter the alarm time, weekdays and wake action")
 
     async def _query_slot(self, slot: int) -> codec.AlarmReport:
         link = self._live()

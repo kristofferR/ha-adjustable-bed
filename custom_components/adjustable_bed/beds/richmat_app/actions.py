@@ -36,7 +36,7 @@ ALARM_OPERATIONS = {"single_alarm", "cancel_alarm", "repeat_alarm", "delete_alar
 def validate(c: RichmatAppController, r: Request) -> None:
     op = r.operation
     if op != CLOCK_SYNC and (op not in OPERATIONS or op.startswith("sleep_")):
-        raise ValueError("Choose a main-bed Richmat app operation")
+        raise ValueError("Choose an operation this bed offers")
     if op.startswith("blanket_"):
         if not c.product["selectors"]["0xea47"]:
             raise ValueError("This product has no blanket controls")
@@ -129,13 +129,13 @@ def validate(c: RichmatAppController, r: Request) -> None:
         ):
             raise ValueError("Invalid RGB channels or opacity")
         if op in ("therapy_light", "therapy_sound", "white_noise") and r.mode not in (0, 1, 2, 3):
-            raise ValueError("Choose an app therapy mode")
+            raise ValueError("Choose a therapy mode this bed offers")
     if (
         op in ("snore", "get_off_bed", "snore_intervention")
         and "snore" not in c.features
         and not (c.product_key in ("A5RN", "GARM", "AFRN") and descriptors(c.product, "0xe5e9"))
     ):
-        raise ValueError("This product has no admitted snore page")
+        raise ValueError("This bed model has no snore settings")
     if op == "toggle_alarm" and not any(row["7"] == r.alarm_id for row in c.alarms):
         raise ValueError("Refresh and choose an observed alarm")
     if op == "detection" and "detection" not in c.features:
@@ -146,7 +146,7 @@ def validate(c: RichmatAppController, r: Request) -> None:
         or op == "strip_color_mode"
         and r.mode not in (2, 3, 5)
     ):
-        raise ValueError("Choose an app groove/color mode")
+        raise ValueError("Choose a light effect this bed offers")
     if (
         op == "light_rgb"
         and "cold_warm" not in c.features
@@ -154,7 +154,7 @@ def validate(c: RichmatAppController, r: Request) -> None:
     ):
         raise ValueError("Choose one of this product palette colors")
     if op == "snore_intervention" and not 0 <= r.value <= 255:
-        raise ValueError("Intervention must fit its one-byte field")
+        raise ValueError("Choose an intervention value from 0 to 255")
     if op == "music_source" and (r.value, r.mode) != (3, 1):
         raise ValueError("The direct music source control selects local music (3,1)")
     if op == "query":
@@ -190,7 +190,7 @@ def validate(c: RichmatAppController, r: Request) -> None:
             for step in r.steps
         ):
             raise ValueError(
-                "Demo needs known app actions, 0–60 second holds and 0–600 second delays"
+                "Each demo step needs an action this bed offers, a hold of up to 60 seconds and a delay of up to 600 seconds"
             )
 
 
