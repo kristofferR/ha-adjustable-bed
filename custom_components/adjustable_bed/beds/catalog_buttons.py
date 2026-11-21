@@ -444,7 +444,14 @@ def _own_label(spec: ControllerButtonSpec) -> ControllerButtonSpec:
             card=CARD_PRESET_SAVE,
         )
     return replace(
-        spec, translation_key=key, translation_placeholders={"action": name}, card=_CARDS[key]
+        spec,
+        translation_key=key,
+        translation_placeholders={"action": name},
+        card=_CARDS[key],
+        # A control moved to the utility row (a second motor move under one
+        # name) starts disabled, as the other extras do.
+        entity_registry_enabled_default=spec.entity_registry_enabled_default
+        and key != EXTRA_KEY,
     )
 
 

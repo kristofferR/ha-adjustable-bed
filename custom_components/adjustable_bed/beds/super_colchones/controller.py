@@ -139,10 +139,6 @@ class SuperColchonesController(ProfileExecution[SuperColchonesProfile], BedContr
         return False
 
     @property
-    def replaced_standard_button_keys(self) -> frozenset[str]:
-        return frozenset(f"program_memory_{slot}" for slot in range(1, self.memory_slot_count + 1))
-
-    @property
     def supports_massage(self) -> bool:
         return True
 
@@ -199,9 +195,10 @@ class SuperColchonesController(ProfileExecution[SuperColchonesProfile], BedContr
                 spec = catalog_button("super_colchones_" + key, action.label, partial(_action, action=key), kind=kind)
                 if spec is not None:
                     specs.append(spec)
-            if action.alternate is not None:
+            # A memory's save is the standard Save to Memory button (program_memory).
+            if action.alternate is not None and not key.startswith("memory_"):
                 spec = catalog_button(
-                    "program_memory_" + key[-1] if key.startswith("memory_") else "super_colchones_save_" + key,
+                    "super_colchones_save_" + key,
                     "Save " + action.label, partial(_action, action=key, alternate=True), kind=Kind.SAVE,
                 )
                 if spec is not None:

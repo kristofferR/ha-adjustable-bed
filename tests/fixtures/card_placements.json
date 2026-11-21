@@ -4884,6 +4884,9 @@
  "switch:smart_sleep_privacy": {
   "card_section": "utility"
  },
+ "switch:superior_sleep_massage": {
+  "card_section": "massage"
+ },
  "switch:superior_sleep_motion": {
   "card_section": "utility"
  },
