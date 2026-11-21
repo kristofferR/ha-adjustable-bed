@@ -4825,7 +4825,7 @@ handoff, independently for each physical receiver. New setups keep the link
 between commands because massage controls depend on its notification state.
 
 The app normally connects to one receiver. It has no single-address side
-selector and does not move motors together. HA may combine two independently
+selector, and it never combines separate motor commands. HA may combine two independently
 configured addresses; each keeps its own layout, profile, parser and state.
 
 #### Controls
