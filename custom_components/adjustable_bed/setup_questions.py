@@ -1951,13 +1951,38 @@ def _app_layout_title(data: Mapping[str, Any]) -> str:
     return APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")
 
 
+# What each of the app's feature keys adds to an Other product, read from the
+# controls ``custom_product`` gives it. The fifth preset key adds no control.
+_ERGOMOTION4_FEATURES: Final = {
+    "k1": "Simple remote: head up and down",
+    "k2": "Simple remote: foot up and down",
+    "k3": "Simple remote: flat",
+    "o1": "Anti-snore preset",
+    "o2": "Memory preset",
+    "o3": "Relax preset",
+    "o4": "TV preset",
+    "o5": "Fifth preset (adds no control)",
+    "m1": "Massage timer",
+    "m2": "Massage stop, with the massage timer",
+    "m3": "Head massage levels, with foot massage levels",
+    "m4": "Foot massage levels, with head massage levels",
+    "m5": "Head massage",
+    "m6": "Foot massage",
+    "m7": "Head tilt, on a bed with a waist motor",
+    "m8": "Waist motor",
+    "m9": "Foot tilt, on a bed with a waist motor",
+    "m10": "Two head and two foot motors",
+}
+
+
 def _ergomotion4_keys(kind: Literal["model", "massage"]) -> Choices:
-    """The catalog's model or massage feature keys, for an Other product."""
+    """The catalog's model or massage feature keys, for an Other product, by what they add."""
 
     def choices(_data: Mapping[str, Any]) -> Mapping[Any, str]:
         from .beds.ergomotion4.controller import MASSAGE_KEYS, MODEL_KEYS
 
-        return {key: key for key in (MODEL_KEYS if kind == "model" else MASSAGE_KEYS)}
+        keys = MODEL_KEYS if kind == "model" else MASSAGE_KEYS
+        return {key: _ERGOMOTION4_FEATURES[key] for key in keys}
 
     return choices
 
