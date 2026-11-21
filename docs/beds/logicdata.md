@@ -42,7 +42,7 @@ protocol family from all other supported beds.
 **Manufacturer ID:** `0x0547` (1351)
 **Format:** 3-byte command payload, encrypted, CRC-checked and SLIP-framed
 
-### BLE Connection
+### BLE connection
 
 | Property | Value |
 |----------|-------|

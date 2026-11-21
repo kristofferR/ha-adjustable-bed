@@ -981,9 +981,9 @@ class TestSleepNumberEntities:
 
         registry = er.async_get(hass)
         expected = {
-            ("number", "sleep_number_setting"): "Sleep Number Setting",
-            ("select", "thermal_timer"): "Climate Timer",
-            ("select", "footwarming_timer"): "Footwarming Timer",
+            ("number", "sleep_number_setting"): "Sleep Number setting",
+            ("select", "thermal_timer"): "Climate timer",
+            ("select", "footwarming_timer"): "Footwarming timer",
             ("climate", "sleep_number_thermal_climate"): "Climate",
             ("climate", "footwarming_climate"): "Footwarming",
         }
@@ -1639,7 +1639,7 @@ class TestButtonEntities:
         assert timer_entity_id == str(established_timer.entity_id)
         timer_state = hass.states.get(timer_entity_id)
         assert timer_state is not None
-        assert timer_state.name.endswith("Massage: Timer")
+        assert timer_state.name.endswith("Massage timer")
 
         # 3.6 briefly shipped different unique IDs. Migrate them without
         # changing an existing entity ID, and prefer an established pre-3.6

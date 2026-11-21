@@ -196,7 +196,7 @@ def test_variant_fixes_protocol_and_layout_independently():
         and "inclined_left" in inclined.held_control_options
     )
     assert inclined.alarm_mode_options == ("custom_mode", "flat")
-    assert regular.memory_slot_count == 1 and regular.memory_slot_names == ("Custom Mode",)
+    assert regular.memory_slot_count == 1 and regular.memory_slot_names == ("Custom mode",)
     assert not regular.supports_massage and not regular.supports_position_feedback
 
 

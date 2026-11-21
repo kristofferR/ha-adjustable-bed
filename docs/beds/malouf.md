@@ -289,7 +289,7 @@ capacity is separate too: auto selects one slot for the two-motor layout and two
 otherwise; both can be overridden in integration options.
 
 Hi-Lo entries expose Back, Legs, Head End Tilt, Foot End Tilt and Bed Height.
-`Bed Height` raises or lowers the whole frame by moving both lift columns
+`Bed height` raises or lowers the whole frame by moving both lift columns
 together; the two tilt controls move one column each.
 
 #### Controls

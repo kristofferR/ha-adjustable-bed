@@ -4079,7 +4079,7 @@
         "name": "Manufacturer"
       },
       "okin_bedding_app_massage_timer_minutes": {
-        "name": "Massage timer"
+        "name": "Current massage timer"
       },
       "okin_bedding_app_alarm_type": {
         "name": "Alarm action"
@@ -4330,7 +4330,7 @@
         "name": "Massage timer"
       },
       "innova_massage_timer": {
-        "name": "Massage timer"
+        "name": "Current massage timer"
       },
       "fsm_relax_hardware_version": {
         "name": "Hardware version"
@@ -4506,7 +4506,7 @@
         "name": "Kneading mode"
       },
       "app_timer_status": {
-        "name": "Massage timer"
+        "name": "Current massage timer"
       },
       "sleepys_app_position_axis_0": {
         "name": "Head position"
@@ -4554,7 +4554,7 @@
         "name": "Alarm"
       },
       "glideaway_motion_massage_timer": {
-        "name": "Massage timer"
+        "name": "Current massage timer"
       },
       "bedsense_circulation": {
         "name": "Circulation mode"
@@ -4755,7 +4755,7 @@
         "name": "Model"
       },
       "massage_timer": {
-        "name": "Massage timer"
+        "name": "Current massage timer"
       },
       "galaxy_status": {
         "name": "Status"
@@ -4782,7 +4782,7 @@
         "name": "Foot massage intensity"
       },
       "rize_home_mode": {
-        "name": "Massage mode"
+        "name": "Current massage mode"
       },
       "comfy_lock_status": {
         "name": "Control lock owner",
@@ -4835,7 +4835,7 @@
         "name": "Alarm 3"
       },
       "symphony_massage_minutes": {
-        "name": "Massage timer"
+        "name": "Current massage timer"
       },
       "symphony_alarm_time": {
         "name": "Alarm time"
@@ -4850,7 +4850,7 @@
         "name": "Alarm"
       },
       "symphony_massage": {
-        "name": "Massage timer"
+        "name": "Current massage timer"
       },
       "yamada_alarm_1": {
         "name": "Alarm 1"
@@ -5113,13 +5113,13 @@
         }
       },
       "superior_sleep_timer_minutes": {
-        "name": "Massage timer"
+        "name": "Current massage timer"
       },
       "superior_sleep_timer_seconds": {
         "name": "Massage remaining time"
       },
       "superior_sleep_mode": {
-        "name": "Massage mode"
+        "name": "Current massage mode"
       },
       "superior_sleep_head_level": {
         "name": "Head massage level"
@@ -5983,7 +5983,7 @@
         }
       },
       "reverie_pairlink_massage_mode": {
-        "name": "Massage mode",
+        "name": "Massage mode setting",
         "state": {
           "0": "Off",
           "1": "Mode 1",

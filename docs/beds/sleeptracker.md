@@ -150,7 +150,7 @@ number. The token is omitted when there is none.
 |---------|-------------|-----------|-------------|
 | Move up / down | `motor-command` | `{"movement": {"position": {"side": <unit>, "location": "head"\|"foot"\|"lumbar"}, "action": "up"\|"down", "ticks": 4, "waitForResponse": false}}` | One increment per reply |
 | Axis stop | `motor-command` | `{"movement": {"position": {"side": <unit>, "location": <axis>}, "action": "stop"}}` | Release cleanup for that axis |
-| Stop All | `motor-command` | `{"stop": {"action": "all", "position": {"side": <unit>}}}` | All features; also stops the local motor/massage animation |
+| Stop all | `motor-command` | `{"stop": {"action": "all", "position": {"side": <unit>}}}` | All features; also stops the local motor/massage animation |
 | Read motor status | `motor-status` | none | Status refresh |
 
 ### Presets
@@ -259,7 +259,7 @@ written to the authentication characteristic. See
   unverified.
 - Wind-down uses modes 1 and 2; the app shows 16- and 10-minute countdowns,
   without sending those countdown lengths as parameters.
-- Use massage off to stop wave or wind-down, and Stop All to stop the local
+- Use massage off to stop wave or wind-down, and Stop all to stop the local
   motor/massage animation.
 - The local animation keeps the app's six motor/massage statements, order
   and individual delays, omitting six speaker statements. It makes no claim to

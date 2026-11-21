@@ -268,7 +268,7 @@ combined steps it offers are:
   (`RC3`, `BM3` and 4-motor bases) actually reach flat instead of leaving the
   extra actuators parked.
 - A motor count the app does not recognize renders no controls at all.
-- **Back + Legs:** on a two-motor receiver, M1+2 is exposed as a **Back + Legs**
+- **Back + legs:** on a two-motor receiver, M1+2 is exposed as a **Back + legs**
   motor control. Its Up and Down actions replace the former tap-only Back + Legs
   Up and Flat preset tiles, so the bundled card can repeat the command while the
   control is held. Three- and four-motor receivers retain separate preset
@@ -350,7 +350,7 @@ advertised record:
 
 - Star2 has no STOP frame: its motors stop when the held-command refresh ends.
 - The Star2 Both Up and Both Down frames are exposed as the Up and Down actions
-  of the **Back + Legs** motor control. In the bundled card this makes the
+  of the **Back + legs** motor control. In the bundled card this makes the
   combined movement hold-capable, like the individual Back and Legs controls.
 
 ## Motor layout and motion
@@ -399,7 +399,7 @@ those states from command timing.
   Lift** cover with Raise, Lower, and Stop controls. You can also select one
   motor manually for a Standard OCTO controller.
 - The lift is deliberately not presented as an adjustable bed. Bed-only controls
-  such as Flat, Back + Legs Up, memory positions, lights, and Controller Sync are
+  such as Flat, Back + legs up, memory positions, lights, and Controller sync are
   suppressed even if a malformed or unexpected capability response advertises
   them. Position feedback is not available.
 - The packet implementation is derived from the official OCTO app; physical RTV
@@ -720,10 +720,10 @@ If one configured Octo entry only moves one side of the bed:
 
 1. Add the other Octo BLE address as a second Adjustable Bed device.
 2. Rename the two entries during setup so they are clearly left/right.
-3. Use the **Controller Sync** switch if your hardware supports linked movement.
+3. Use the **Controller sync** switch if your hardware supports linked movement.
 
 The official Octo app handles this by storing separate left/right device
-addresses and switching between them. Also note that the `Back + Legs Up`
+addresses and switching between them. Also note that the `Back + legs up`
 preset only moves both motors on the currently connected controller; it does
 not mean both bed sides.
 
@@ -751,7 +751,7 @@ device.
   a one-motor RTV cannot be paired with a two-motor RC2.
 - This design matches three-device installations such as two `RC2` bed sides
   plus one `RTV` TV lift.
-- **Controller Sync**, when advertised by a receiver, remains a hardware capability
+- **Controller sync**, when advertised by a receiver, remains a hardware capability
   and is not software grouping across arbitrary entries.
 
 Unit tests cover left-then-right switching, abort-on-release-failure, PIN

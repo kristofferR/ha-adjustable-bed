@@ -46,7 +46,7 @@ screen, and therefore which codes, apply.
 | Memory Presets | ✅ (2 slots; 1 on the ASI models; per side on split beds) |
 | Factory Presets | ✅ (Flat on every screen; Anti-snore, TV, Zero-G on preset screens) |
 | Massage | ✅ (head and foot levels 1-3, wave 1/2, off) |
-| Lights | ✅ (on/off **Under Bed Lights** light; LED level and **Save light level** in Slumberland and The Brick) |
+| Lights | ✅ (on/off **Under-bed lights** light; LED level and **Save light level** in Slumberland and The Brick) |
 | Controlled side | ✅ (split models 51, 52) |
 | RGB color, heating, LED modes, tilt, memory 3/4 | ❌ |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
@@ -251,7 +251,7 @@ stopping it sets them off.
 | LED light setting | `0x0501` | White mask plus slider level |
 | Save light level | `0x050F` | White mask plus current level |
 
-- The bed never reports its light, so the **Under Bed Lights** light starts
+- The bed never reports its light, so the **Under-bed lights** light starts
   unknown and shows the commanded state as assumed.
 - The LED light setting sends `0x0501` with parameter `0xFFFFFF00 | level` 150 ms
   after a change, and **Save light level** sends `0x050F` with the current level

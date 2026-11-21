@@ -304,7 +304,7 @@ Configure the PIN in the integration's options.
 **Solutions:**
 1. **Improve signal:** Move Bluetooth adapter/proxy closer to the bed
 2. **Compare connected and cold commands:** A cold connection may need authentication and several proxy attempts. With **Bluetooth connection** set to "Release right after each command", commands within the one-second handoff window reuse the link.
-3. **Use Stop All when movement must end:** STOP invalidates queued movement and interrupts active movement and position reads. A replacement movement for the same motor supersedes the older request; independent motor commands are serialized.
+3. **Use Stop all when movement must end:** STOP invalidates queued movement and interrupts active movement and position reads. A replacement movement for the same motor supersedes the older request; independent motor commands are serialized.
 4. **Inspect connection diagnostics:** Repeated failures on the strongest proxy can delay access to a working alternative. Multiple paths receive a bounded extra retry budget; this cannot repair an unusable proxy or an unreachable bed.
 
 Timed Move uses the requested elapsed movement limit. Connection preparation and

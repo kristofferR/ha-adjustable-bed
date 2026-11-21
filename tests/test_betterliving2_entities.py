@@ -174,7 +174,7 @@ async def test_native_names_types_exposure_and_retained_ids(hass, protocol, layo
             for domain, entity in entities
         ]
         assert len(names) == len(set(names))
-        assert "All sections" in names and "Save Zero Gravity" in names
+        assert "All sections" in names and "Save zero gravity" in names
         assert not {(domain, entity.translation_key) for domain, entity in entities} & set(REMOVED)
         if protocol == "p1":
             assert "Cycle massage timer" not in names

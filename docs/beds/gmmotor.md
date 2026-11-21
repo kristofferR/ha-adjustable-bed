@@ -25,7 +25,7 @@
 | Motor Control | The app's controls for your product, with the app's names | Up, down, reset | None |
 | Position Feedback | ❌ Not shown as bed positions | Desk height, unit, limits and state | None |
 | Memory Presets | Your product's recall and save controls; where the app saves with a long press, you get a **Save …** button | Three memory recalls; no save | None |
-| Massage | Your product's controls; a countdown where the product has one; **Massage: Timer** select for products with several fixed timers | None | None |
+| Massage | Your product's controls; a countdown where the product has one; **Massage timer** select for products with several fixed timers | None | None |
 | Lights | Your product's controls; the RGB and timeout controls appear once the bed reports it has them | None | None |
 | Alarms | Countdown or repeating alarms, by product; appear once the bed answers a clock request | None | None |
 | Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | ❌ |

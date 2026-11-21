@@ -320,17 +320,17 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 
 | Entity | Transport | Notes |
 |--------|-----------|-------|
-| `Under Bed Lights` light | Fuzion, MCR | |
-| `Light Level` number | Fuzion | Values `0-3` |
-| `Light Timer` select | Fuzion | `Off`, `15 min`, `30 min`, `45 min`, `1 hr`, `2 hr`, and `3 hr` |
+| `Under-bed lights` light | Fuzion, MCR | |
+| `Light level` number | Fuzion | Values `0-3` |
+| `Light timer` select | Fuzion | `Off`, `15 min`, `30 min`, `45 min`, `1 hr`, `2 hr`, and `3 hr` |
 | `Left in bed` / `Right in bed` binary sensors | Fuzion | Enabled by default. They update only while the bed is connected and never keep it connected |
-| `Sleep Number Setting` number | Fuzion | Configured side |
-| `Sleep Number Setting Left` / `Sleep Number Setting Right` numbers | MCR | |
-| `Foundation Preset Left` / `Foundation Preset Right` selects | MCR | `Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`, as supported |
+| `Sleep Number setting` number | Fuzion | Configured side |
+| `Sleep Number setting left` / `Sleep Number setting right` numbers | MCR | |
+| `Foundation preset left` / `Foundation preset right` selects | MCR | `Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`, as supported |
 | `Climate` climate | Fuzion | Unified entity routed to whichever module the bed has. HVAC modes `off`, `cool`, and (Heidi only) `heat`; preset modes `low`, `medium`, `high`, and (Heidi only) `boost` |
 | `Footwarming` climate | Fuzion | `low`, `medium`, and `high` presets |
-| `Climate Timer` select | Fuzion | `30 min` through `10 hr` |
-| `Footwarming Timer` select | Fuzion | `30 min` through `6 hr` |
+| `Climate timer` select | Fuzion | `30 min` through `10 hr` |
+| `Footwarming timer` select | Fuzion | `30 min` through `6 hr` |
 
 - Occupancy polling sends a grouped `BAMG` request for both sides in one call,
   then publishes separate left/right binary sensors. The poll runs only over

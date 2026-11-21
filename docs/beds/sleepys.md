@@ -107,7 +107,7 @@ setter still supports the distinct source value-zero brightness frame. Slider an
 enabled state. HA commits require the active BLE controller session but do
 not reproduce the app's UI-only debounce or local preview. Combined massage
 intensity spans `0..7` and maps to builder
-value `0` or `2..8`. The **Massage: Timer** select offers 10, 20 and 30 minutes
+value `0` or `2..8`. The **Massage timer** select offers 10, 20 and 30 minutes
 (timer codes `1`, `2` and `3`) and no off. Intensity and timer commits require
 active massage; timer
 selection also skips the already-selected code. The source sends brightness

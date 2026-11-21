@@ -179,7 +179,9 @@ Every other saved setting, bed type and ID loads unchanged.
 
 - **Renamed entities keep their entity IDs, history and settings.** Only the
   shown name changes: brand and app names, notes such as "(app)" or "(raw)",
-  protocol words and ALL-CAPS labels are gone. A name you set yourself stays.
+  protocol words and ALL-CAPS labels are gone, and every name is in sentence
+  case ("Zero Gravity" is **Zero gravity**, "Massage: Mode" is **Massage
+  mode**). A name you set yourself stays.
 - **Removed entities disappear by themselves** once the bed has connected.
   Remove them from dashboards, automations and scripts. Their values stay in
   diagnostics and support bundles.
@@ -219,7 +221,7 @@ on and off button pair that became one switch, start as new entities:
 
 | Bed or app | 4.x type | v5 entity |
 |------------|----------|-----------|
-| Every bed with an on/off under-bed light, except Octo | `switch` | **Under Bed Lights** `light` |
+| Every bed with an on/off under-bed light, except Octo | `switch` | **Under-bed lights** `light` |
 | Casper, Hush, Good Vibe and Richmat sleep sensors | `sensor` | **Left in bed**, **Right in bed**, **Left body movement**, **Right body movement**, **Left snoring**, **Right snoring** `binary_sensor` |
 | StarCode AdjustableM5X4 | `sensor` | **Massage** `binary_sensor` |
 | Heal Every Night (OKIN apps) | `select` | **Reversed installation**, **Reverse actuator 1**, **Reverse actuator 2** `switch` |
@@ -227,7 +229,7 @@ on and off button pair that became one switch, start as new entities:
 | DoubleSleep (OKIN SleepEase) | `select` | **Child lock** `switch` |
 | AdjustaMattress | `select` | **Alarm**, **Intelligent anti-snore** `switch` |
 | AdjustaMattress | `button` | **Sleep mode** `switch` |
-| AdjustaMattress | `select` | **Massage: Head Intensity**, **Massage: Foot Intensity**, **Massage: Wave Intensity** `number` |
+| AdjustaMattress | `select` | **Massage head intensity**, **Massage foot intensity**, **Massage wave intensity** `number` |
 | Motion Bed app | `button` | **Night light**, **Smart sleep** `switch` |
 
 ### One shape per control
@@ -235,7 +237,7 @@ on and off button pair that became one switch, start as new entities:
 The same control now looks the same on every bed:
 
 - **Under-bed lights.** Every on/off under-bed light is a `light` entity
-  (**Under Bed Lights**), on every bed except Octo, whose light depends on its
+  (**Under-bed lights**), on every bed except Octo, whose light depends on its
   PIN session and its own light timer. A bed that cannot report the light's
   state shows it as assumed, as the switch did.
 - **On and off pairs are switches.** A pair of on and off buttons, or a
@@ -244,9 +246,9 @@ The same control now looks the same on every bed:
   controls.
 - **Timers are selects.** Where the bed can set a duration directly,
   fixed-time buttons ("Massage 20 minutes") and bed-specific timer selects
-  became the shared **Massage: Timer** and **Light Timer** selects. A bed
+  became the shared **Massage timer** and **Light timer** selects. A bed
   without an off command offers only its durations. A bed that can only step
-  through its timers keeps one cycle button. The **Massage: Timer** select
+  through its timers keeps one cycle button. The **Massage timer** select
   shows unknown until a timer is sent or reported.
 - **Massage levels are numbers.** Where the bed has an intensity number, the up
   and down step buttons for the same zone are gone; beds that can only step
@@ -255,8 +257,8 @@ The same control now looks the same on every bed:
 - **Buttons from an app or remote layout show what they are.** Motor up and
   down buttons sit in the card's motor rows, presets and memories in their
   tiles, and massage and light controls in their sections. A preset, memory or
-  massage step every bed has takes the shared name (**Zero Gravity**,
-  **Memory 1**, **Massage: Head Up**); other buttons keep the app's label
+  massage step every bed has takes the shared name (**Zero gravity**,
+  **Memory 1**, **Massage head up**); other buttons keep the app's label
   without internal identifiers ("MasFootAdd" is **Increase foot massage**,
   "Ubb" is **Under-bed light**). Where an app lists two controls under one
   label, the second is numbered (**Wave 2**). Empty app slots and buttons that
@@ -417,7 +419,7 @@ Other action changes:
   bed** always restarts both components, so one component can no longer be
   restarted alone. Set the clock with `sync_clock`, which writes Home
   Assistant's current time and takes no `date_time`. Cooling and heating modes
-  are the **Climate** entities and their duration the **Climate Timer**
+  are the **Climate** entities and their duration the **Climate timer**
   selects; module presence is detected automatically. `kid_outlet` and
   `kid_outlet_status` accept only `device: 0`. New
   commands: `run_diagnostics`, `bind_foundation` and `underbed_intensity`. See the
@@ -619,40 +621,40 @@ described under [One shape per control](#one-shape-per-control).
 
 | Bed or app | Removed | Replaced by |
 |------------|---------|-------------|
-| AdjustaMattress | Privacy-agreement select, reported alarm and strength sensors, sleeping, alarm, anti-snore and auxiliary status binary sensors, clock sync, alarm query and massage query buttons | Alarm commit and anti-snore selects and the sleep button: **Alarm**, **Intelligent anti-snore** and **Sleep mode** switches. Head, foot and wave selector selects: **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Wave Intensity** numbers (1-4). Timer 10, 20 and 30 buttons: **Massage: Timer** select |
-| BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons, massage timer and light duration sensors | Memory recall buttons of slots 3 to 5: **TV**, **Zero Gravity** and **Anti-Snore** (**Flat** on layouts 6 and 8), which recall those slots; their saves stay. Massage timer and cancel buttons, light 10 min, 8 h and 10 h buttons: **Massage: Timer** and **Light Timer** selects |
-| BedTech | | Massage 20 minutes button: **Massage: Timer** select |
-| Casper Base, Hush Base | | "Memory position 1-3", "Save Memory position 1-3" and "Motor reset": **Memory 1-3**, **Save to Memory 1-3** and **Flat**, which send the same commands. Massage 10, 20 and 30 minute buttons: **Massage: Timer** select (durations only) |
+| AdjustaMattress | Privacy-agreement select, reported alarm and strength sensors, sleeping, alarm, anti-snore and auxiliary status binary sensors, clock sync, alarm query and massage query buttons | Alarm commit and anti-snore selects and the sleep button: **Alarm**, **Intelligent anti-snore** and **Sleep mode** switches. Head, foot and wave selector selects: **Massage head intensity**, **Massage foot intensity** and **Massage wave intensity** numbers (1-4). Timer 10, 20 and 30 buttons: **Massage timer** select |
+| BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons, massage timer and light duration sensors | Memory recall buttons of slots 3 to 5: **TV**, **Zero gravity** and **Anti-snore** (**Flat** on layouts 6 and 8), which recall those slots; their saves stay. Massage timer and cancel buttons, light 10 min, 8 h and 10 h buttons: **Massage timer** and **Light timer** selects |
+| BedTech | | Massage 20 minutes button: **Massage timer** select |
+| Casper Base, Hush Base | | "Memory position 1-3", "Save Memory position 1-3" and "Motor reset": **Memory 1-3**, **Save to memory 1-3** and **Flat**, which send the same commands. Massage 10, 20 and 30 minute buttons: **Massage timer** select (durations only) |
 | Comfort Enhancements | Cycle massage timer button (the timer select already sets it) | |
-| Customatic Z-Series | | App "Toggle light": **Toggle Light** |
-| DoubleSleep (OKIN SleepEase) | Four flag binary sensors, parser-error, privacy, massage running and sonic running sensors, "Sync clock" and "Refresh clock" buttons | Child lock select and privacy buttons: **Child lock** and **Privacy** switches. Massage and sonic on/off buttons: **Massage** and **Sonic massage** switches. The app's "Stop all" is **Stop movement** (**Stop All** stops the bed). Clock: the **Set bed clock** action |
-| eShine (E6000) | | Massage 10, 20 and 30 minute buttons: **Massage: Timer** select, with Off |
+| Customatic Z-Series | | App "Toggle light": **Toggle light** |
+| DoubleSleep (OKIN SleepEase) | Four flag binary sensors, parser-error, privacy, massage running and sonic running sensors, "Sync clock" and "Refresh clock" buttons | Child lock select and privacy buttons: **Child lock** and **Privacy** switches. Massage and sonic on/off buttons: **Massage** and **Sonic massage** switches. The app's "Stop all" is **Stop movement** (**Stop all** stops the bed). Clock: the **Set bed clock** action |
+| eShine (E6000) | | Massage 10, 20 and 30 minute buttons: **Massage timer** select, with Off |
 | eShine OKIN | Alarm refresh and "Sync bed clock" buttons | Clock: the **Set bed clock** action |
 | FSM Relax | 11 count, acknowledgement, calibration, information and raw motor sensors | |
 | FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
-| GM Control | "None", "Logo" and "Title …" buttons from empty app slots and menu headings that send no command; "(long press)" buttons whose long press writes only what the short press writes; a control the app lists twice (the second Pillow up and Pillow down on DWRN) | A preset's or memory's long press that sends its save: the **Save …** button (same entity ID). Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only), on products with more than one duration |
+| GM Control | "None", "Logo" and "Title …" buttons from empty app slots and menu headings that send no command; "(long press)" buttons whose long press writes only what the short press writes; a control the app lists twice (the second Pillow up and Pillow down on DWRN) | A preset's or memory's long press that sends its save: the **Save …** button (same entity ID). Massage 10, 20 and 30 minute timer buttons: **Massage timer** select (durations only), on products with more than one duration |
 | GM Control sleep module | Time and Query part buttons (the clock is set on every connection; the `gmmotor` action still queries the part) | Start and stop live data buttons: **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
-| Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save: the **Save …** button. Massage 10, 20 and 30 minute buttons and the "Massage timer" select: **Massage: Timer** select (with Off where the app has a countdown off; the select keeps its entity ID). "Light duration (seconds)" select: **Light Timer** select (same entity ID). Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both |
+| Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save: the **Save …** button. Massage 10, 20 and 30 minute buttons and the "Massage timer" select: **Massage timer** select (with Off where the app has a countdown off; the select keeps its entity ID). "Light duration (seconds)" select: **Light timer** select (same entity ID). Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both |
 | Good Vibe, Casper and Hush sleep sensors | | In-bed, snoring and movement text sensors: **In bed**, **Snoring** and **Body movement** binary sensors, with the same object ID; heart and breathing rate sensors take the shared names and keep their IDs |
 | Heal Every Night (OKIN apps) | | Installation and actuator direction selects: **Reversed installation**, **Reverse actuator 1** and **Reverse actuator 2** switches |
-| HJBed | | Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both. Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only) |
+| HJBed | | Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both. Massage 10, 20 and 30 minute timer buttons: **Massage timer** select (durations only) |
 | Keeson app layouts (TEMPUR AU, Tempur Curve, Ergomotion, Q-Plus, Serta MP Remote, Omazz, ROW Control, Ergo Slim) | | The app's Flat button: **Flat** |
 | Limoss Remote | Repeated motor channel buttons, capability count, calibration reply and raw position sensors | Covers are named **Motor 1** to **Motor 4** |
-| Motion Bed app | 83 state sensors (preset-selected flags, raw positions, calibration samples, day and month report arrays, module and pressure readings), alarm-sound preview buttons, massage timer and brightness sensors, five mirror binary sensors | Alarm, climate timer, fault and sleep report details: attributes of their sensors. Massage timer, light timer and brightness 0-10 buttons: **Massage: Timer** and **Light Timer** selects and the **Light brightness** number. Night light, smart sleep, module light, module massage, climate timer and adaptive air toggles or on/off pairs: switches |
+| Motion Bed app | 83 state sensors (preset-selected flags, raw positions, calibration samples, day and month report arrays, module and pressure readings), alarm-sound preview buttons, massage timer and brightness sensors, five mirror binary sensors | Alarm, climate timer, fault and sleep report details: attributes of their sensors. Massage timer, light timer and brightness 0-10 buttons: **Massage timer** and **Light timer** selects and the **Light brightness** number. Night light, smart sleep, module light, module massage, climate timer and adaptive air toggles or on/off pairs: switches |
 | OKIN bedding apps (Jordan's Serenity and Tranquil, Customatic Z-Series) | Status, timer and save-event code sensors | |
-| OKIN CST | | Memory recall buttons for slots a named preset recalls: **Zero Gravity**, **Incline**, **Reading** or **Lounge**; the slot's save stays |
-| ORE comfort-bed apps (Avanti, Bedsense, Dynasty, MaxCoil Una), StarCode ABM5-4 | | Bed-specific massage timer select: **Massage: Timer** select (durations only; same entity ID) |
+| OKIN CST | | Memory recall buttons for slots a named preset recalls: **Zero gravity**, **Incline**, **Reading** or **Lounge**; the slot's save stays |
+| ORE comfort-bed apps (Avanti, Bedsense, Dynasty, MaxCoil Una), StarCode ABM5-4 | | Bed-specific massage timer select: **Massage timer** select (durations only; same entity ID) |
 | Reverie, Reverie Nightstand, Pairlink, Jiecang app | Wave sensor, Pairlink massage mode and timer sensors (the select and number show them), head and foot massage up and down buttons where an intensity number exists | Pairlink massage rhythm select: **Massage rhythm** switch |
-| Richmat MH apps (Revive, Best Mattress, Blvd Home, Harmony, Idealbed) | | Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only), on layouts with more than one of them. Massage intensity 1, 2 and 3 buttons: **Massage: Intensity** number (1 to 3), on layouts with all three. Buttons are named for what their command does, keeping their entity IDs ("Head Intensity+" is **Massage: Head Up**, "Start Stop" is **Massage: Toggle**, "Next" on the music page is **Next music track**); music controls that the app filed with massage ("Vibration Mode", "Previous", "Next") and the start and stop component check buttons start disabled. **Factory reset** always asks first |
-| RMControl | Protocol version, bed mode and last alarm record sensors. Disabled catalog buttons that send exactly what a standard entity sends (motor covers, presets, memory recall and save, light, sync and massage controls), and another app page's identical copy of a control | Massage timer buttons: **Massage: Timer** select (durations only), on products with more than one duration. The other catalog buttons keep their entity IDs, lose the app page and position from their names and, except music, fans, resets and similar extras, start enabled. A copy that sends something else stays disabled, named "… (short press)" (the motor list's single tap of a held move) or numbered. A preset's long press that sends its save: the **Save …** button |
+| Richmat MH apps (Revive, Best Mattress, Blvd Home, Harmony, Idealbed) | | Massage 10, 20 and 30 minute timer buttons: **Massage timer** select (durations only), on layouts with more than one of them. Massage intensity 1, 2 and 3 buttons: **Massage intensity** number (1 to 3), on layouts with all three. Buttons are named for what their command does, keeping their entity IDs ("Head Intensity+" is **Massage head up**, "Start Stop" is **Massage toggle**, "Next" on the music page is **Next music track**); music controls that the app filed with massage ("Vibration Mode", "Previous", "Next") and the start and stop component check buttons start disabled. **Factory reset** always asks first |
+| RMControl | Protocol version, bed mode and last alarm record sensors. Disabled catalog buttons that send exactly what a standard entity sends (motor covers, presets, memory recall and save, light, sync and massage controls), and another app page's identical copy of a control | Massage timer buttons: **Massage timer** select (durations only), on products with more than one duration. The other catalog buttons keep their entity IDs, lose the app page and position from their names and, except music, fans, resets and similar extras, start enabled. A copy that sends something else stays disabled, named "… (short press)" (the motor list's single tap of a held move) or numbered. A preset's long press that sends its save: the **Save …** button |
 | Serta MP Remote | Memory request sensor | |
 | SIMMONS | "Sync Clock" button | Clock: the **Set bed clock** action |
 | Sleeptracker | Massage pattern and strength sensors (the selects show them) | |
-| Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons (the light entity drives the light) | Motion sensor on/off buttons: **Motion sensor** switch. Massage timer code select and cycle massage timer button: **Massage: Timer** select (10, 20, 30 min; same entity ID). BOX25 Massage on and Massage off buttons: **Massage** switch. Axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
+| Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons (the light entity drives the light) | Motion sensor on/off buttons: **Motion sensor** switch. Massage timer code select and cycle massage timer button: **Massage timer** select (10, 20, 30 min; same entity ID). BOX25 Massage on and Massage off buttons: **Massage** switch. Axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
 | StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time, brightness and RGB-mode sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
 | StarCode AdjustableM5X4 | Raw app field, automatic-white and floor light sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor: **Massage** binary sensor |
 | StarCode AdjustableM5X5 | Raw time, brightness, RGB-mode and motor part 4-6 sensors, motor-stopped, light-on, firmware-read and kneading-demo binary sensors | |
-| SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor, the "Controller Sync" switch, the "Sync clock" button | Lock and unlock: a **Lock** switch with a new entity ID. Head and foot massage off, 1, 2 and 3 buttons and Massage level 0 to 3 buttons: **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Intensity** numbers (0-3). MOON left and right massage strength 1, 2 and 3 buttons: **Left massage intensity** and **Right massage intensity** numbers (1-3). MOON left and right massage timer 10, 20 and 30 minute buttons: **Left massage timer** and **Right massage timer** selects (durations only). Clock: the **Set bed clock** action |
+| SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor, the "Controller Sync" switch, the "Sync clock" button | Lock and unlock: a **Lock** switch with a new entity ID. Head and foot massage off, 1, 2 and 3 buttons and Massage level 0 to 3 buttons: **Massage head intensity**, **Massage foot intensity** and **Massage intensity** numbers (0-3). MOON left and right massage strength 1, 2 and 3 buttons: **Left massage intensity** and **Right massage intensity** numbers (1-3). MOON left and right massage timer 10, 20 and 30 minute buttons: **Left massage timer** and **Right massage timer** selects (durations only). Clock: the **Set bed clock** action |
 | Svane | Head, feet and position byte sensors | |
 | V-MAT Basic | ED motor status binary sensor | |
 

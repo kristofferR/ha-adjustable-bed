@@ -185,7 +185,7 @@ motors your bed has are accepted.
 On a split top, head actions follow the selected side; the foot motor and the
 memory slots are shared. Stop ends a held movement but not a preset that is
 already moving. Plus massage and light controls are buttons, with a 10/20 minute
-**Massage: Timer** select showing the last value sent.
+**Massage timer** select showing the last value sent.
 
 Positions are in degrees or percent, depending on the bed: check its position
 entity and its [guide](README.md#bed-guides). Moving to a position needs the
