@@ -209,9 +209,6 @@ class FurniMoveController(BedController):
         self._notifying: list[BleakGATTCharacteristic] = []
         self._dot = False
         self._massage_busy_until = 0.0
-        self._widget_pending = False
-        self._widget_last: bytes | None = None
-        self._widget_before_last: bytes | None = None
         self._widget_pending, self._widget_last, self._widget_before_last = (
             coordinator.furnimove_widget_state
         )
