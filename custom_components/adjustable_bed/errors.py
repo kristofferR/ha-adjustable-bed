@@ -52,10 +52,11 @@ class BedNotConnectedError(HomeAssistantError, ConnectionError):
     """The bed could not be reached, or its link was lost.
 
     Still a ``ConnectionError``, so code that handles a lost link keeps doing so.
+    Pass a translation key when the user needs a more specific reason.
     """
 
-    def __init__(self) -> None:
-        message, keywords = keyed("bed_not_connected")
+    def __init__(self, key: str = "bed_not_connected", **placeholders: object) -> None:
+        message, keywords = keyed(key, **placeholders)
         super().__init__(message, **keywords)
 
 

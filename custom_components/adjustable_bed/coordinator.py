@@ -1011,6 +1011,11 @@ class AdjustableBedCoordinator(
         return self._ble_device_name
 
     @property
+    def ble_model(self) -> str | None:
+        """Return the model string the bed reported over Bluetooth, if any."""
+        return self._ble_model
+
+    @property
     def observed_ble_device_name(self) -> str | None:
         """Return the most recently observed BLE advertising name, if any."""
         return self._observed_ble_device_name
@@ -1980,7 +1985,7 @@ class AdjustableBedCoordinator(
         async with self._command_demand_scope(), self._command_lock:
             self._hold_link_for_command()
             if self._pairing_transfer_active:
-                raise ConnectionError("Bed ownership is being transferred")
+                raise BedNotConnectedError("bed_combining")
             controller = self._controller
             disconnected_transport = controller is not None and (
                 controller.requires_disconnected_transport is True
@@ -1989,9 +1994,7 @@ class AdjustableBedCoordinator(
                 if disconnected_transport:
                     assert controller is not None
                     if controller.disconnected_transport_ready is not True:
-                        raise ConnectionError(
-                            "Selected disconnected transport is not ready for STOP"
-                        )
+                        raise BedNotConnectedError("pairlink_not_ready", device_name=self.name)
                 else:
                     if not await self.async_ensure_connected(reset_timer=False):
                         _LOGGER.debug("Cannot send stop: not connected to bed")
@@ -2002,9 +2005,7 @@ class AdjustableBedCoordinator(
                     # discovery-time controller captured before the connect.
                     controller = self._controller
                     if controller is None or controller.requires_disconnected_transport is True:
-                        raise ConnectionError(
-                            "Selected controller changed transport during STOP preparation"
-                        )
+                        raise BedNotConnectedError
 
                     try:
                         await self._async_refresh_controller_auth()
@@ -2046,7 +2047,7 @@ class AdjustableBedCoordinator(
     async def _async_prepare_controller_operation(self, operation_name: str) -> BedController:
         """Prepare the selected transport before any controller operation."""
         if self._pairing_transfer_active:
-            raise ConnectionError("Bed ownership is being transferred")
+            raise BedNotConnectedError("bed_combining")
         controller = self._controller
         if controller is not None and controller.requires_disconnected_transport is True:
             if controller.disconnected_transport_ready is not True:
@@ -2054,7 +2055,7 @@ class AdjustableBedCoordinator(
                     "Cannot execute %s: selected disconnected transport is not ready",
                     operation_name,
                 )
-                raise ConnectionError("Selected disconnected transport is not ready")
+                raise BedNotConnectedError("pairlink_not_ready", device_name=self.name)
             return controller
 
         if not await self.async_ensure_connected(reset_timer=False):
@@ -2070,9 +2071,7 @@ class AdjustableBedCoordinator(
                 "Cannot execute %s: current central controller is unavailable after connect",
                 operation_name,
             )
-            raise ConnectionError(
-                f"Selected controller changed transport during {operation_name} preparation"
-            )
+            raise BedNotConnectedError
         await self._async_refresh_controller_auth()
         if self._bed_type == BED_TYPE_OCTO:
             from .beds.octo.runtime import octo_controller
