@@ -51,7 +51,7 @@ differences and sensor accuracy are unconfirmed. If you own one, a
   each product is a profile in
   [`profiles/casper.py`](../../custom_components/adjustable_bed/profiles/casper.py)
   over the [Richmat codec](richmat.md#casper-base).
-- Fresh PRO/MAX do not gain music, sensor menus or repeating alarms from a reply.
+- PRO and MAX never show music, sensor menus or repeating alarms.
 
 ### Controls
 
@@ -110,7 +110,7 @@ Use `adjustable_bed.casper_base` with a `device_id` and `operation`.
 - The service validates every selected physical target before any command.
 - A feature must be present in the product and, where applicable, confirmed by
   the capability reply.
-- Fresh PRO/MAX do not gain music, sensor menus or repeating alarms from a reply.
+- PRO and MAX never show music, sensor menus or repeating alarms.
 - The [Richmat guide](richmat.md#casper-and-hush-family) lists the frame each
   operation sends.
 
