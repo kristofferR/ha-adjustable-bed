@@ -850,3 +850,35 @@ async def test_the_massage_timer_shows_the_selected_sides_own_value(coordinator,
     with c.side_scope("both"):
         await c.set_massage_timer(10)
     assert (state["massage_timer_left"], state["massage_timer_right"]) == (10, 10)
+
+
+async def test_the_massage_timer_follows_delivered_state_not_the_controller(coordinator, clocked):
+    """What each side shows is the published state of what reached it (sent_state),
+    read again when the write settles and when the side changes."""
+
+    def side_select(c):
+        (spec,) = [s for s in c.controller_select_specs if s.key == "richmat_app_side"]
+        assert spec.local_select_fn is not None
+        return spec.local_select_fn
+
+    c = controller(coordinator, "6HRM")
+    select = side_select(c)
+    state = coordinator.controller_state
+    select("left")
+    await c.set_massage_timer(20)
+    select("right")
+    assert state["massage_timer"] is None
+    # The side chosen while a write runs shows its own timer when the write settles.
+    press = c.press
+
+    async def switching(detail, **kwargs):
+        select("left")
+        await press(detail, **kwargs)
+
+    c.press = switching
+    await c.set_massage_timer(10)
+    assert (state["massage_timer"], state["massage_timer_right"]) == (20, 10)
+    # A replacement controller reads the sides from the published state.
+    fresh = controller(coordinator, "6HRM")
+    side_select(fresh)("right")
+    assert state["massage_timer"] == 10
