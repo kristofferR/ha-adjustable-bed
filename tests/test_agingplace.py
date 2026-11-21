@@ -1103,3 +1103,12 @@ async def test_diagnostic_indications_during_start_write_keep_maxima_and_status(
         if not task.done():
             task.cancel()
         await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_cut_off_indication_reaches_support_capture_without_its_bytes(hass, monkeypatch):
+    """An indication that fails to parse may hold part of a Wi-Fi password."""
+    _, controller, _, callbacks, _ = await target(hass, monkeypatch)
+    captured = []
+    controller.set_raw_notify_callback(lambda uuid, data: captured.append(bytes(data)))
+    callbacks[0](None, bytearray(b'{"ssid":"private-network","pswd":"private-pa'))
+    assert captured == [bytes(len(b'{"ssid":"private-network","pswd":"private-pa'))]

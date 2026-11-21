@@ -56,6 +56,7 @@
           "transport_all_busy": "No free Bluetooth connections",
           "transport_actual": "Connected over",
           "transport_actual_differs": "Path differed from the prediction",
+          "report_misidentified": "Report a misidentified device",
           "read_positions": "Read bed position",
           "connection_mode": "Bluetooth connection",
           "idle_disconnect_seconds": "Seconds to stay connected"
@@ -79,6 +80,7 @@
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted}).",
+          "report_misidentified": "Wrong device, or not a bed? [Report a misidentified device]({url}). The report opens as a public GitHub issue, so check what it shares before you submit it.",
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
@@ -7071,7 +7073,7 @@
     },
     "generate_support_bundle": {
       "name": "Create support bundle",
-      "description": "Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. The file lists up to 30 nearby Bluetooth devices with their names and addresses.",
+      "description": "Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. Bluetooth addresses keep only their manufacturer prefix, and PINs, typed names, health readings and other nearby devices are left out.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -9923,7 +9925,7 @@
       "message": "Adjustable bed: support bundle ready"
     },
     "support_bundle_ready_message": {
-      "message": "[**Download the support bundle**]({url})\n\nBluetooth messages captured: {count}, over {seconds} seconds.\n\nNext, attach the file to your bug report or bed support request. The download link works for one hour or until Home Assistant restarts; the file stays saved at `{path}`."
+      "message": "[**Download the support bundle**]({url})\n\nBluetooth messages captured: {count}, over {seconds} seconds.\n\nNext, open the file and remove anything you do not want to share, then attach it to your bug report or bed support request. GitHub issues are public. The download link works for one hour or until Home Assistant restarts; the file stays saved at `{path}` until five newer bundles replace it."
     },
     "support_bundle_warnings": {
       "message": "**While capturing:**"

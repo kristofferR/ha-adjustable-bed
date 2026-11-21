@@ -500,7 +500,8 @@ class AgingPlaceController(KeesonController):
         raw = bytes(data)
         payload = codec.parse_json_indication(raw)
         if payload is None:
-            self.forward_raw_notification(codec.TRANSPORTS["json"].notify_uuid, raw)
+            # A cut-off indication may be part of a Wi-Fi password: keep its size only.
+            self.forward_raw_notification(codec.TRANSPORTS["json"].notify_uuid, bytes(len(raw)))
             return
         if "ssid" in payload and "pswd" in payload:
             # Provisioning remains excluded. Its observed shared link invalidation

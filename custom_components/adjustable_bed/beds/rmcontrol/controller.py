@@ -62,6 +62,9 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+_SLEEP_STATE_KEYS: Final = frozenset(
+    f"rmcontrol_anti_snore_{name}" for name in ("in_bed_status", "sleep_status", "stop_music")
+)
 # Integration readiness budget, not an on-wire protocol interval.
 _CAPABILITY_TIMEOUT = 5.0
 # The app's serialized queue: writes, sustain repeats and release at least this far apart.
@@ -965,7 +968,13 @@ class RmcontrolController(RichmatController):
             "side": self._rmcontrol_side,
             "transport": "nordic" if self._nordic else "framed",
             "capabilities": sorted(self._reported_capabilities),
-            "state": dict(self._reported_state),
+            # In bed and asleep, and the flag derived from both, stay out of
+            # files users post publicly.
+            "state": {
+                key: value
+                for key, value in self._reported_state.items()
+                if key not in _SLEEP_STATE_KEYS
+            },
             "alarm_actions": alarm_actions,
             # A sequence of last-received observations, not an authoritative
             # current-device alarm list. The parser proves no end-of-list marker.
