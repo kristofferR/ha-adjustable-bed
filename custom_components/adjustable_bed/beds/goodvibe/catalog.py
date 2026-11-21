@@ -1,7 +1,7 @@
 """Good Vibe Sleep 2.0.1/code20103 current product getters and exact controls.
 
 Hardware unverified.
-Generated outside this repository from the app; no generator is checked in, so edits are by hand.
+Data extracted from the Good Vibe Sleep app outside this repository; not edited by hand.
 All 12 byte alternatives per action are checked against independent artifact vectors.
 """
 

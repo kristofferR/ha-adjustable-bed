@@ -1,7 +1,7 @@
 """Pinned FurniMove production handset profiles, captured on 2026-09-30.
 
-Generated outside this repository from FurniMove 2.2.0 (com.okin.okinsmartcomfort);
-no generator is checked in, so edits are by hand.
+Data extracted from the FurniMove 2.2.0 app (com.okin.okinsmartcomfort) outside this
+repository; not edited by hand.
 Remote IDs choose app control layouts; GATT characteristics choose transport.
 No network access or shipped application credential is needed at runtime.
 """
