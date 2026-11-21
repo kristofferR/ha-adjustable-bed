@@ -490,9 +490,11 @@ the bed's PIN.
 - **PIN not required:** finish setup after capability discovery confirms this.
 - **Required or rejected:** enter or correct the PIN and retry without losing
   the other settings.
-- **Could not verify:** the entry remains unsaved. Wake the bed, close other
-  connected apps, check the selected Bluetooth adapter or proxy, and retry.
-  A timeout or connection failure does not mean the PIN is wrong.
+- **Could not verify:** wake the bed, close other connected apps, check the
+  selected Bluetooth adapter or proxy, and choose **Check again**, or choose
+  **Finish setup anyway** to save the entry without a verdict. A timeout or
+  connection failure does not mean the PIN is wrong. A PIN the bed already
+  refused in the same setup is never saved this way.
 
 Further setup rules:
 

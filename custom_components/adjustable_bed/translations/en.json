@@ -10477,7 +10477,7 @@
           },
           "handset": {
             "title": "Select the FurniMove handset",
-            "description": "Choose the handset ID shown in the FurniMove app. Only captured handsets are listed. If yours is missing, go back and choose Okimat instead.",
+            "description": "Choose the handset ID shown in the FurniMove app. Only captured handsets are listed. If yours is missing, choose **Switch to Okimat** at the end of the list.",
             "data": {
               "furnimove_remote": "Handset layout"
             }
