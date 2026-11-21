@@ -380,6 +380,12 @@ async def test_combined_beds_keep_their_own_parts_and_ids(
     assert (reading.id, reading.targets) == ("x", {"left": {"back": 20.0}})
     assert (read.name, read.targets) == ("Read", {"right": {"back": 40.0}})
     assert read.id != "x" and manager.renamed_ids == {read.id: (RIGHT, "x")}
+    # Until a change saves it, a later load (a retried setup) derives the same id.
+    pe._registry(hass).clear()
+    again = await pe.async_setup_position_estimates(
+        hass, "entry", ((LEFT, "left"), (RIGHT, "right"))
+    )
+    assert again.renamed_ids == {read.id: (RIGHT, "x")}
     assert right_reading.id == "y"
     # The same name on both sides: a side tells them apart; keeping a name is no clash.
     assert manager.position("Reading", {"right"}) is right_reading

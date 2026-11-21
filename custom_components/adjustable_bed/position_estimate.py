@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import logging
 import time
 from collections.abc import Callable, Collection, Coroutine, Iterable, Mapping
@@ -434,7 +435,6 @@ class PositionEstimates:
             self.hass, self.entry_id, {bed.key: bed.address for bed in self.beds.values()}
         )
         session = domain_value(self.hass, _SESSION_KEY) or {}
-        rewritten = False
         for bed in self.beds.values():
             stored = await self._stores[bed.address].async_load() or {}
             trusted = session.pop(bed.address, {})
@@ -458,34 +458,33 @@ class PositionEstimates:
                         if isinstance(item, dict)
                         else None
                     )
-                    rewritten |= part is None or self._add_position_part(part, bed.address)
-        if rewritten:
-            self._save()
+                    if part is not None and part.targets:
+                        self._add_position_part(part, bed.address)
 
-    def _add_position_part(self, part: SavedPosition, address: str) -> bool:
-        """Add one bed's part of a saved position; True when its stored form changes.
+    def _add_position_part(self, part: SavedPosition, address: str) -> None:
+        """Add one bed's part of a saved position.
 
         Parts with the same id, name and button are one position stored by each
         side of a pair. Every other part stays a position of its own bed, so
         combining and separating keep each position's id and button. A part
-        whose id another position already uses gets a new one.
+        whose id another position already uses gets one derived from its bed
+        and old id: until a change saves it, every load derives the same id, so
+        its button can follow from the old one even after a failed setup.
         """
-        if not part.targets:
-            return True
         same = next((item for item in self.positions if item.id == part.id), None)
         if same is None:
             self.positions.append(part)
-            return False
+            return
         if (
             (same.name, same.button) == (part.name, part.button)
             and not same.targets.keys() & part.targets.keys()
         ):
             same.targets.update(part.targets)
-            return False
-        self.renamed_ids[(new_id := uuid4().hex[:12])] = (address, part.id)
+            return
+        new_id = hashlib.sha256(f"{address}:{part.id}".encode()).hexdigest()[:12]
+        self.renamed_ids[new_id] = (address, part.id)
         part.id = new_id
         self.positions.append(part)
-        return True
 
     def _stored(self, bed: BedEstimate) -> dict[str, Any]:
         return {
