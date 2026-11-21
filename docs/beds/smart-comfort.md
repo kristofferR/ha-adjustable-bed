@@ -47,7 +47,7 @@ not receive, and use no name rule or advertised service UUID.
 ### Aliases
 
 None. Each app keeps its own profile and setup identity. Matching command bytes
-do not establish identical application behavior or firmware.
+do not mean identical application behavior or firmware.
 
 ## Wire codec
 
@@ -91,7 +91,7 @@ The Android apps inherit the runtime characteristic's write type; they do not
 select ATT response mode. HA selects response writes when the connected
 characteristic advertises `write`, otherwise requires `write-without-response`.
 No application PIN, key exchange, characteristic read, MTU or connection-priority
-request is established. SYNARGY's recovered notify guard uses OR, not a notify-bit
+request is used. SYNARGY's notify guard uses OR, not a notify-bit
 AND test; platform subscription success still decides whether HA can proceed.
 SYNERGY has no such check.
 
@@ -256,10 +256,9 @@ Detection: none. Choose Smart Comfort (`com.synergy.okin`) explicitly.
 
 #### Timing
 
-The post-discovery notify delay is unproven, so this profile adds no delay there.
+The post-discovery notify delay is unknown, so this profile adds no delay there.
 This is an HA policy, not a claim that the SYNERGY app has zero delay. App-specific
-listener, background-navigation and motor-runnable guard evidence stays distinct;
-HA uses its own serialized lifecycle and cancellation policy.
+listener, background-navigation and motor-runnable guards are not copied; HA uses its own serialized lifecycle and cancellation policy.
 
 #### Evidence
 

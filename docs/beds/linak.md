@@ -238,7 +238,7 @@ Reference notifications are exactly four little-endian bytes:
 - Extension is converted to the configured angle range for the position entities;
   the read-only angle sensors are omitted because they would duplicate those same
   values.
-- The artifact does not prove a physical unit for extension or speed.
+- The app does not give a physical unit for extension or speed.
 
 ### Position seeking
 
@@ -266,11 +266,11 @@ Reference notifications are exactly four little-endian bytes:
   leg position during startup, while the other side returned `FE FF 00 00`. The
   earlier -2 cutoff discarded the right leg sample and left its number and cover
   entities `unknown`. This hardware observation extends the existing near-zero
-  handling by one count. It supplements the frozen Bed Control 6.0.9
-  reference-parser evidence; it does not change the packet parser, status flags,
+  handling by one count. It adds to the Bed Control 6.0.9 reference parser; it
+  does not change the packet parser, status flags,
   command timing or connection policy.
 - Upper endpoints retain the normal tolerance. No upper-endpoint exception is
-  enabled without supporting evidence.
+  enabled without a hardware report.
 
 ## Command Timing
 
@@ -354,17 +354,17 @@ characteristic; no movement or configuration commands were sent:
   characteristics were sampled before and after writes.
 - No usable light-state feedback was observed: the error read stayed empty,
   configuration stayed `FE`, and subsequent readable values were identical across
-  ON/OFF. Initial reference notifications were position values, not evidence of
-  light state.
+  ON/OFF. Initial reference notifications were position values, not the light
+  state.
 - This does not prove that every firmware lacks another feedback mechanism. The
   issue reporter's TD5 (Standard profile) has not been physically tested in this
   session.
-- This hardware evidence supplements the unchanged frozen app reports: absence of
-  an app caller did not establish that the peripheral rejects those constants. It
+- This hardware report adds to what the app shows: the app not using those
+  constants did not mean the bed rejects them. It
   does not enable other dead library commands (such as memories 5/6).
 - The modern-profile ON/OFF commands also restore the pre-v4 integration behavior
   reported working in #615. They are not gated on the position-feedback service
-  that distinguishes Standard from Advanced; the frozen modern AUX command enum
+  that distinguishes Standard from Advanced; the app's modern AUX command enum
   does not define a separate packet format for those models.
 
 ### Bed Connect exclusion
@@ -378,7 +378,7 @@ provisioning, cloud control or module firmware updates.
 
 ### App features
 
-Every reachable app feature, grouped by builder, lifecycle and control; the
+Every app feature, grouped by builder, lifecycle and control; the
 byte-level command tables above remain exhaustive.
 
 | Feature | Home Assistant |

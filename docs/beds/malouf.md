@@ -253,7 +253,7 @@ STOP arrives, up to 30 s, then sends the same STOP. The Keeson-framed
 ### Vectors
 
 `tests/malouf_vectors.py` freezes each profile's single frames: the app profiles
-take every reachable literal of their apps, and `malouf_new_okin`
+take every frame their apps send, and `malouf_new_okin`
 every frame its pre-v5 controller sent. `tests/test_malouf_vectors.py` proves
 each literal round-trips through the codec and that each profile sends exactly
 its frozen frames.
@@ -307,15 +307,14 @@ A STOP that fails during cleanup is logged, not raised.
 #### Evidence
 
 Reverse engineered from Malouf Base 2.4.3 and checked against Lucid Base 1.3.3.
-The route sends only its frozen pre-v5
-frames.
+The route sends the pre-v5 controller's frames.
 
 ### Malouf Base / Lucid Base family
 
 **Status:** Not yet tested
 
 The `malouf_app` bed type. Retail model, GATT transport and physical role are
-independent choices. Controls follow the selected model and its reachable app
+independent choices. Controls follow the selected model and the app's own
 routes; a model label alone never enables a command that has no endpoint in the
 selected app and transport.
 
@@ -325,7 +324,7 @@ Answer the Malouf question with the Android app used with your bed, then choose
 its exact model. Detection: none, this is an explicit choice.
 
 - Setup offers the app's packaged model picker (see [Models](#models)). Some
-  models are only reachable through the apps' persisted model selection; options
+  models are only available through the apps' saved model selection; options
   keep an existing persisted-only model for that same app. The app changes only
   through Reconfigure, which offers the new app's models. An entry of another
   bed type that Reconfigure switches to the app answers the app and model on one
@@ -373,7 +372,7 @@ connected transport removes routes it has no endpoint for:
 
 - Good Life combined movement has no OKIN endpoint and is suppressed there.
 - Altitude head tilt and full tilt are Richmat-only.
-- Richmat massage timers are direct 10/20/30-minute controls where reachable.
+- Richmat massage timers are direct 10/20/30-minute controls where the model has them.
   OKIN has a timer-step command rather than a direct duration. Massage off is
   Richmat-only.
 - Framed Richmat sends selector 1 on a secondary bed only for the actions listed
@@ -387,7 +386,7 @@ connected transport removes routes it has no endpoint for:
 Home Assistant selects physical targets explicitly, rather than importing the
 apps' persisted `ActiveBed` selection and `motorSwapped` UI state. Configure each
 physical bed's app/model/primary role first. Use the child device IDs as the main
-and partner targets. The apps do not establish synchronized physical motion.
+and partner targets. The apps do not guarantee the two beds move in step.
 
 For a supported main **Both/Dual** control and an inactive partner's **Legs**,
 use this parallel action sequence. The existing simultaneous-movement action
@@ -468,7 +467,7 @@ See [action examples](../SERVICES.md#set_alarm).
 
 #### Evidence
 
-Both app profiles send only their frozen frames.
+Based on Malouf Base 2.4.3 and Lucid Base 1.3.3.
 
 ### Malouf Base
 
@@ -539,8 +538,7 @@ Those devices are treated as this route.
 
 ### Hardware validation
 
-The APKs establish command construction, app reachability, timing and parsing.
-Physical motion directions, firmware acceptance and app/remote coexistence of the
+The commands, timing and parsing follow the apps. Physical motion directions, firmware acceptance and app/remote coexistence of the
 app profiles still need reports from real users.
 
 ### Analysis provenance

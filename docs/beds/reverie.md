@@ -91,8 +91,8 @@ and setup.
 
 The selected profile controls which movement, position, massage, memory,
 preset, lumbar, and body-tilt entities are created. A model capability flag for
-the Pillow surface has no matching reachable direct BLE command in the accepted
-evidence, so this integration does not create a Pillow control.
+the Pillow surface has no matching direct BLE command in the app, so this
+integration does not create a Pillow control.
 
 ## Commands
 
@@ -160,7 +160,7 @@ Command bytes below are wrapped by the Protocol 108 packet builder.
 | Lights Toggle | `0x5B 0x00` |
 
 The existing HA wave slider retains its compatibility range, but that UI
-limit is not a source-proven Protocol 108 input domain. The packet builder
+limit is not a Protocol 108 range taken from the app. The packet builder
 appends the supplied decimal integer to the text `4`, then applies the source
 checksum and complete-hex-pair decoder. For example, the existing slider's
 level 10 emits `55 41 04 45`, rather than treating 10 as a single nibble or
@@ -275,7 +275,7 @@ frame, not complete plaintext GATT writes.
 | Lumbar up / down / release | `01 07 FF 00` / `01 08 FF 00` / `01 09 00 00` | R510L only |
 | Back / legs / lumbar absolute position | `01 01 value 00` / `01 04 value 00` / `01 07 value 00` | 0–100; lumbar uses `100 − position` |
 | Flat / Zero-G / Anti-Snore | `01 1C 00 00` / `01 62 00 00` / `01 65 00 00` | Presets |
-| Recall memory 1–4 | `01 29 00 00`–`01 2C 00 00` | No reachable memory-save action |
+| Recall memory 1–4 | `01 29 00 00`–`01 2C 00 00` | The app has no memory-save action |
 | Head / foot massage | `01 4D value 00` / `01 4F value 00` | 0 for off; otherwise `5 × level + 15`, levels 1–10 |
 | Stop massage | `01 48 00 00` | Massage off |
 | Light on / off | `01 5C 00 00` / `01 5D 00 00` | Discrete light commands |
@@ -319,8 +319,8 @@ The selected-device central route is the default. It uses an explicit
 configured HomeID first, then the accepted HomeID from the bed's current
 manufacturer data, then the source-known app default `5566` when neither
 caller input nor advertisement supplies one. The default is decimal 5566 and
-normalizes to little-endian bytes `BE 15 00 00`; its provenance remains distinct
-from an explicit value or advertisement. It also uses Home Assistant's declared
+normalizes to little-endian bytes `BE 15 00 00`; it stays distinguishable from an
+explicit value or advertisement. It also uses Home Assistant's declared
 password policy: the known default text `1122` and
 explicit text are UTF-8 encoded and must produce exactly four bytes. An
 optional eight-digit hex value replaces those bytes only while the text remains
@@ -370,7 +370,7 @@ and payload `C0 FF 05`, the accepted HomeID in little-endian order, and six
 generated octets. The generated join address is distinct from the selected
 BlueZ adapter address. It has no local name, service UUID, service data, scan
 response, or includes. The source's Android advertise-mode integer is retained
-as evidence but is not treated as a BlueZ interval. HA requests a 100 ms host
+in diagnostics but is not treated as a BlueZ interval. HA requests a 100 ms host
 interval and requests +1 dBm only when BlueZ reports `CanSetTxPower`. These are
 declared host preferences, not measurements from the source phone. The source
 TxPowerLevel enum is not serialized as dBm, and `tx-power` is not requested as
@@ -412,7 +412,7 @@ descriptor behavior.
 Android's backup-peer branch processes an eligible write without calling its
 common `sendResponse`. BlueZ's public `WriteValue` contract instead maps method
 completion to ATT success and D-Bus errors to ATT errors, with no per-write
-silent-response disposition. The integration retains BlueZ completion rather
+silent-response handling. The integration retains BlueZ completion rather
 than leave a D-Bus request hanging. This platform qualification affects ATT
 acknowledgement only; source reply payloads, peer gates and processing remain
 separate. See the [BlueZ GATT API](https://bluez.readthedocs.io/en/latest/gatt-api/).

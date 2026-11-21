@@ -261,20 +261,20 @@ stopping it sets them off.
   the slider starts there when the entry loads. A model without a saved level,
   including one the bed newly advertises, starts at 255, the app's default.
 
-### Unused artifact constants
+### Unused app constants
 
-The apps also define constants that no reachable control sends. Earlier versions of this integration and document used several of them.
+The apps also define constants that no control in the app sends. Earlier versions of this integration and document used several of them.
 The names and values below come from that earlier documentation; they are
 not sent.
 
 | Constant | Value | Notes |
 |----------|-------|-------|
-| `STOP` | `0x0000` | Reachable controls use `0x0001` |
+| `STOP` | `0x0000` | The app's controls use `0x0001` |
 | `M4_STOP` / `M4_UP` / `M4_DOWN` | `0x010C` / `0x010D` / `0x010E` | Former tilt/neck cover |
 | `MOV_ML3` / `MOV_ML4` | `0x0315` / `0x0317` | Memory 3/4 recall |
 | `SET_ML3` / `SET_ML4` | `0x0314` / `0x0316` | Memory 3/4 save |
-| `DEF_ML1`–`DEF_ML4` | `0x0301`–`0x0304` | Formerly documented as Flat, Zero-G, TV, Anti-Snore; the reachable screens send `0x0301`–`0x0303` as Anti-snore, TV and Zero-G |
-| `MMODE_STOP`, `MMODE1_RUN`–`MMODE5_RUN` | `0x0200`, `0x0201`–`0x0205` | The reachable massage buttons send these codes as wave off and head/foot levels |
+| `DEF_ML1`–`DEF_ML4` | `0x0301`–`0x0304` | Formerly documented as Flat, Zero-G, TV, Anti-Snore; the app's screens send `0x0301`–`0x0303` as Anti-snore, TV and Zero-G |
+| `MMODE_STOP`, `MMODE1_RUN`–`MMODE5_RUN` | `0x0200`, `0x0201`–`0x0205` | The app's massage buttons send these codes as wave off and head/foot levels |
 | `MM12_RUN` / `MM1_RUN` / `MM2_RUN` | `0x0120` / `0x0121` / `0x0122` | Both / head / foot zone run |
 | `LED_W`, `LED_R`, `LED_G`, `LED_B` | `0x0502`–`0x0505` | White and color LEDs |
 | `LED_M1`–`LED_M3` | `0x0509`–`0x050B` | LED modes |
@@ -299,7 +299,7 @@ no STOP for a cancelled touch or a closed screen; that behavior is not copied.
 > Earlier versions of this document claimed movement repeats while held, four
 > memory slots, an RGB color picker and heat control. Only OneActivity's All
 > motors arrows stream; the apps expose two memory slots at most; RGB color and
-> heating have no reachable app route.
+> heating have no control in the apps.
 
 ## State
 
@@ -323,7 +323,7 @@ no STOP for a cancelled touch or a closed screen; that behavior is not copied.
 These app paths have no in-app route, need a network, or are dead code:
 full-color RGB and light auto-off delay, rocking timer,
 sleep-module settings and telemetry, Wi-Fi provisioning, the HTTP sleep report,
-the Jerome's sleep-module MAC query, and constants that no reachable control
+the Jerome's sleep-module MAC query, and constants that no control in the app
 sends (including the heating and LED mode codes earlier versions of this
 integration used).
 

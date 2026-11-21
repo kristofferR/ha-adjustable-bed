@@ -353,7 +353,7 @@ and model.
   buttons; the 5.5-second hold is available through `hold_control`. A cancelled
   hold cleans up without starting a new recall.
 - The **Massage timer** select offers the app's three timers as Step 1 to 3.
-  The bed reports the remaining time in steps of 600 units with no proven
+  The bed reports the remaining time in steps of 600 units with no known
   unit, so the steps are not shown as minutes.
 
 The **Child mode** switch is kept by Home Assistant across restarts; it does

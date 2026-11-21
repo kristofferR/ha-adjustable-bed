@@ -206,9 +206,9 @@ These names describe device commands and make no clinical efficacy claim.
 one-based slot, enabled state, minute-precision time, `weekdays` (`monday` to
 `sunday`, sent as the app's week mask: 1 Sunday, 2 Monday up to 64 Saturday;
 leave it empty for a one-time alarm) and triple-only soft wake. Alarms send the
-app's default alarm action (code `01`); the app's other four action codes have no
-established meaning, so they are not offered. This bed is not on the shared
-`set_alarm` action because its alarm actions have no established meaning. The action also prepares
+app's default alarm action (code `01`); what the app's other four action codes do
+is unknown, so they are not offered. This bed is not on the shared `set_alarm`
+action for the same reason. The action also prepares
 both beds of a combined pair before either writes and rechecks each bed's
 connection before the first write. All selected beds are validated before execution. For one-time masks, single
 alarms retain current seconds, clear subseconds, advance by an elapsed day when

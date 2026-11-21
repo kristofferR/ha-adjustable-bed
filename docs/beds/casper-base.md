@@ -245,8 +245,7 @@ Richmat guide's [catalog app timing](richmat.md#catalog-app-timing).
 | Report permission delay | one second |
 
 - The five-second sensor query bound is HA's; the one-second report permission
-  delay is proven. These bounds do not establish firmware acknowledgements or
-  radio timing.
+  delay is the app's. Neither is a firmware acknowledgement or radio timing.
 
 ## Notes
 
@@ -256,8 +255,8 @@ Richmat guide's [catalog app timing](richmat.md#catalog-app-timing).
 - It pairs write/notify roles within a coherent service, serializes
   operations, owns and cancels timers, limits malformed input and never
   disconnects unrelated devices.
-- These documented safety choices replace app bugs rather than changing proven
-  hardware commands.
+- These safety choices work around app bugs; they do not change the commands
+  the bed receives.
 - Excluded: phone microphone/DSP/recording/playback/sharing, app-local display
   names, privacy/permission/navigation/database/chart/export infrastructure,
   generic unused plugin APIs and datastore counters, cloud/firmware transfer
