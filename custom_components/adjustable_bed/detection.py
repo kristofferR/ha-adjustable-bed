@@ -1453,6 +1453,13 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
             return DetectionResult(None, 0.0, ["shared_service:no_name"])
         result.confidence = min(result.confidence, 0.5)
         result.signals.append("shared_service:no_name_match")
+    local_name = getattr(getattr(service_info, "advertisement", None), "local_name", None)
+    if relax_motion_matches(local_name, service_info.service_uuids or ()):
+        # Apps with different model gates share this service, so a new setup
+        # asks which app runs the bed. A configured bed is reviewed as before.
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "relax_motion"]))
+        result.signals.append("service:relax_motion_app_candidate")
+        result.confidence = min(result.confidence, 0.5)
     return result
 
 
@@ -1712,13 +1719,6 @@ def _detect_with_first_pass(
             result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
-    local_name = getattr(getattr(service_info, "advertisement", None), "local_name", None)
-    if relax_motion_matches(local_name, service_info.service_uuids or ()):
-        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "relax_motion"]))
-        result.signals.append("service:relax_motion_app_candidate")
-        # This service is shared by app profiles with different model gates.
-        # Discovery must ask which app runs the bed, even for a known receiver.
-        result.confidence = min(result.confidence, 0.5)
     return result
 
 
