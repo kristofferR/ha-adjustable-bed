@@ -889,6 +889,11 @@ class SleepAssistantController(ProfileExecution[app.SleepAssistantProfile], BedC
         return self.supports_lights
 
     @property
+    def supports_explicit_light_on_control(self) -> bool:
+        # lights_on toggles only when the bed reports the light off.
+        return self.supports_lights
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         return False
 

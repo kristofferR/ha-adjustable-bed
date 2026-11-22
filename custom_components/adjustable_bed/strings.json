@@ -384,9 +384,7 @@
           "read_positions": "Read bed position",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
-          "sleep_assistant_lighting": "Lighting model",
-          "sleep_assistant_identity": "Device identity",
-          "sleep_assistant_parameters": "Selected model settings"
+          "sleep_assistant_lighting": "Lighting model"
         },
         "data_description": {
           "jiecang_app_layout": "The layout set in the app.",
@@ -443,9 +441,7 @@
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
-          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
-          "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
-          "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data."
+          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist."
         },
         "sections": {
           "advanced": {
@@ -471,7 +467,9 @@
               "serta_mp_memory_3_foot": "Memory 3 foot angle",
               "serta_mp_memory_4_head": "Memory 4 head angle",
               "serta_mp_memory_4_foot": "Memory 4 foot angle",
-              "agingplace_bed_mode": "Sensor display mode"
+              "agingplace_bed_mode": "Sensor display mode",
+              "sleep_assistant_identity": "Device identity",
+              "sleep_assistant_parameters": "Selected model settings"
             },
             "data_description": {
               "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
@@ -494,7 +492,9 @@
               "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
               "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
               "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
-              "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two."
+              "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two.",
+              "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
+              "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data."
             }
           }
         }
@@ -1236,7 +1236,12 @@
           "agingplace_bed_mode": "Sensor display mode",
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
-          "read_positions": "Read bed position"
+          "read_positions": "Read bed position",
+          "sleep_assistant_presets": "Presets",
+          "sleep_assistant_controls": "Additional controls",
+          "sleep_assistant_lighting": "Lighting model",
+          "sleep_assistant_identity": "Device identity",
+          "sleep_assistant_parameters": "Selected model settings"
         },
         "data_description": {
           "sleeptracker_unit_number": "Leave at 0 unless the bed has more than one processor. Then use the number the app shows for this one.",
@@ -1314,7 +1319,12 @@
           "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
-          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
+          "sleep_assistant_controls": "Select only the controls shown for this bed.",
+          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
+          "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
+          "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data."
         }
       },
       "right_settings": {
@@ -1405,7 +1415,12 @@
           "agingplace_bed_mode": "Sensor display mode",
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
-          "read_positions": "Read bed position"
+          "read_positions": "Read bed position",
+          "sleep_assistant_presets": "Presets",
+          "sleep_assistant_controls": "Additional controls",
+          "sleep_assistant_lighting": "Lighting model",
+          "sleep_assistant_identity": "Device identity",
+          "sleep_assistant_parameters": "Selected model settings"
         },
         "data_description": {
           "sleeptracker_unit_number": "Leave at 0 unless the bed has more than one processor. Then use the number the app shows for this one.",
@@ -1483,7 +1498,12 @@
           "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
-          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
+          "sleep_assistant_controls": "Select only the controls shown for this bed.",
+          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
+          "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
+          "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data."
         }
       },
       "estimated_positions": {

@@ -3191,6 +3191,8 @@ class TestPairBedsConversion:
         )
         coord._client = client
         coord._controller = controller
+        # A live link finished start-up; one that never did loses its controller.
+        coord._link_ready = True
 
         release = asyncio.create_task(coord.async_release_for_pairing_transfer())
         await disconnect_started.wait()
@@ -3253,6 +3255,8 @@ class TestPairBedsConversion:
         )
         coord._client = client
         coord._controller = controller
+        # A live link finished start-up; one that never did loses its controller.
+        coord._link_ready = True
 
         with patch(
             "custom_components.adjustable_bed.coordinator_connection._PAIRING_RELEASE_RESTORE_TIMEOUT",
