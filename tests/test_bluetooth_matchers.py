@@ -66,7 +66,8 @@ def _advertisements(hint: Hint) -> list[MagicMock]:
         case ManufacturerHint():
             return [_info(manufacturer_data={hint.company_id: hint.data_start + b"\x00"})]
         case NameHint():
-            return [_info(name=glob.replace("*", "x")) for glob in hint.globs]
+            # TOO_BROAD patterns are first-pass only and have no matcher.
+            return [_info(name=m["local_name"].replace("*", "x")) for m in hint.matchers()]
     raise AssertionError(hint)
 
 
@@ -139,13 +140,39 @@ def test_matcher_count_stays_bounded() -> None:
     "name",
     [
         "Firmware Update", "WarmTouch 12", "Wormhole", "Warmup4ie", "Terminal",
-        "Sleep Sound", "SleepPhones", "Okinawa", "sTaRlInK",
+        "Sleep Sound", "SleepPhones", "Okinawa", "sTaRlInK", "warmup", "firmware",
     ],
 )
 def test_unrelated_names_do_not_reach_discovery(name: str) -> None:
     """Apps that read a name in any case still admit only the spellings beds advertise."""
     assert DOMAIN not in _gate().match_domains(_info(name=name))
     assert first_pass(_info(name=name)).hints == ()
+
+
+@pytest.mark.parametrize(
+    "name", ["TEST-ESP32", "TESTER", "SLEEPACE", "SLEEP SOUND", "1520X", "1320 printer"]
+)
+def test_too_broad_app_prefixes_do_not_start_discovery(name: str) -> None:
+    """These apps stay selectable by hand; their prefixes alone never offer a bed."""
+    assert DOMAIN not in _gate().match_domains(_info(name=name))
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["STARLINK-ROUTER", "Starkey", "COOLMASTER", "FIRMWARE", "TERMINAL", "WARMUP", "HARMONY"],
+)
+def test_broad_upper_case_names_are_only_candidates(name: str) -> None:
+    """A word that merely starts like a bed code is offered, if at all, as uncertain."""
+    info = _info(name=name)
+    assert DOMAIN in _gate().match_domains(info)
+    assert detect_bed_type_detailed(info).confidence < 0.7
+
+
+@pytest.mark.parametrize("name", ["QRRM157052", "6BRM-bed", "MFRM Base", "ZR10"])
+def test_a_full_richmat_code_is_confident(name: str) -> None:
+    result = detect_bed_type_detailed(_info(name=name))
+    assert result.bed_type == const.BED_TYPE_RICHMAT
+    assert result.confidence >= 0.7
 
 
 def test_richmat_fixed_name_is_discovered() -> None:

@@ -86,7 +86,6 @@ async def handle_command(call: ServiceCall) -> ServiceResponse:
     await _preflight_and_execute(
         targets,
         MLineController,
-        "M Line actions",
         execute,
         validate=validate,
         resource="*",

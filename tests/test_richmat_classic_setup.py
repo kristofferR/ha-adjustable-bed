@@ -46,14 +46,16 @@ def _setup(data: dict) -> dict:
     return {**staged, **PROFILE.settled(staged)}
 
 
-def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
+def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
     # Each app is an answer of the Richmat question and has its own searchable row.
     rows = {o['value']: o['label'] for o in get_bed_type_options()}
     for app, name in APP_NAMES.items():
-        assert rows['richmat_classic_apps:' + app] == f'{name} app'
+        # The current L&P app's row says so, beside its older version's own row.
+        suffix = ' (newer version)' if app == 'lp2' else ''
+        assert rows['richmat_classic_apps:' + app] == f'{name} app{suffix}'
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
-        'luunarise2': 604, 'powercool': 586, 'lp2': 559,
+        'luunarise2': 604, 'powercool': 586, 'sleepfunction': 558, 'lp2': 559,
         'bedsmart': 558,
         'jerome2': 532,
         'baseremote': 558,
@@ -144,13 +146,17 @@ def test_zrs6_picker_is_not_added_to_other_member_apps(app):
         _setup({"protocol_variant": app, "product_type": "ZRS6:CORN"})
 
 
-def test_manual_aliases_are_selectable_but_diagnostic_layouts_are_rejected():
+def test_manual_aliases_are_selectable():
     assert "B6RU" in _layouts("avocadoecobase")
     assert _setup({"protocol_variant": "avocadoecobase", "product_type": " b6ru "})["product_type"] == "B6RM"
+
+
+@pytest.mark.parametrize("app", ("avocadoecobase", "powercool", "lp2", "bedsmart"))
+def test_factory_test_layouts_are_never_offered(app):
     for layout in ("TEST", "RMCS"):
-        assert layout not in _layouts("avocadoecobase")
+        assert layout not in _layouts(app)
         with pytest.raises(ValueError):
-            _setup({"protocol_variant": "avocadoecobase", "product_type": layout})
+            _setup({"protocol_variant": app, "product_type": layout})
 
 
 def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
@@ -272,3 +278,56 @@ async def test_configure_rejects_another_apps_layout_and_saves_the_fallback(hass
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_PRODUCT_TYPE] == "B6RM"
     assert entry.data[CONF_RICHMAT_CLASSIC_THIRD_SERVICE] is True
+
+
+# What a v5 beta's setup stored for a bed on a factory-test layout (5.6, captured from that flow).
+BETA_ENTRY = {
+    "address": "AA:BB:CC:DD:EE:18",
+    "bed_type": "richmat_classic_apps",
+    "connection_mode": "idle",
+    "has_massage": False,
+    "idle_disconnect_seconds": 40,
+    "motor_count": 2,
+    "motor_pulse_count": 10,
+    "motor_pulse_delay_ms": 100,
+    "motor_pulse_user_set": True,
+    "name": "Classic bed",
+    "preferred_adapter": "auto",
+    "richmat_classic_third_service": False,
+}
+
+
+@pytest.mark.parametrize(
+    ("app", "layout"),
+    [("powercool", "TEST"), ("powercool", "RMCS"), ("lp2", "TEST"), ("lp2", "RMCS"), ("bedsmart", "TEST")],
+)
+async def test_a_beta_bed_on_a_factory_test_layout_loads_without_connecting(
+    hass, mock_bluetooth_api, enable_custom_integrations, app, layout
+):
+    from unittest.mock import AsyncMock, patch
+
+    from homeassistant.config_entries import ConfigEntryState
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import DOMAIN
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Classic bed",
+        data={**BETA_ENTRY, "protocol_variant": app, "product_type": layout},
+        version=5,
+        minor_version=6,
+        unique_id=BETA_ENTRY["address"],
+    )
+    entry.add_to_hass(hass)
+    connect = AsyncMock(return_value=True)
+    with patch.object(AdjustableBedCoordinator, "async_connect", connect):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    connect.assert_not_awaited()
+    # Configure refuses the saved layout until the bed's own is chosen.
+    with pytest.raises(ValueError):
+        _setup({**entry.data})

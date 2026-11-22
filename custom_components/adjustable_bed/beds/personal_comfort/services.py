@@ -66,14 +66,14 @@ async def handle_sequence(call: ServiceCall) -> None:
         for index, (parent, side) in enumerate(targets):
             scope = SIDE_BOTH if foot_sync else side
             if foot_sync and (not isinstance(parent, PairedBedCoordinator) or side == SIDE_BOTH):
-                raise ValueError("Choose one side of a combined pair for the peer-foot sequence")
+                raise ValueError("Target one side of a combined bed for this sequence")
             children = tuple(_command_targets(parent, scope))
             if (
                 isinstance(parent, PairedBedCoordinator)
                 and len(children) > 1
                 and parent.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
             ):
-                raise ValueError("This sequence requires both bases connected at once")
+                raise ValueError("This sequence needs both bases connected at the same time, and this combined bed connects one side at a time")
             selected = frozenset(id(child) for child in _command_targets(parent, side))
             controllers = {}
             for child in children:
@@ -105,16 +105,16 @@ async def handle_sequence(call: ServiceCall) -> None:
         # Preflight every request before the first physical write.
         for (parent, scope, controllers, roster), admission in zip(plans, admissions, strict=True):
             if _capture_command_admission(parent, scope, admission.resources) != admission:
-                raise ValueError("A target was stopped or replaced during validation")
+                raise ValueError("A bed was stopped or changed while the sequence was starting. Try again")
             if (
                 isinstance(parent, PairedBedCoordinator)
                 and tuple(parent.children.items()) != roster
             ):
-                raise ValueError("The combined bed changed during validation")
+                raise ValueError("The combined bed changed while the sequence was starting. Try again")
             for controller, (owner, _selected) in controllers.items():
                 controller.check_owner(owner, cleanup=True)
                 if controller._coordinator.stop_epoch != owner.stop_epoch:
-                    raise ValueError("The sequence was stopped during validation")
+                    raise ValueError("The sequence was stopped before it started")
 
         for (parent, scope, controllers, roster), admission in zip(plans, admissions, strict=True):
             running: list[_CommandAdmission] = []
@@ -128,7 +128,7 @@ async def handle_sequence(call: ServiceCall) -> None:
                 running: list[_CommandAdmission] = running,
             ) -> None:
                 if controller not in controllers:
-                    raise ValueError("The base changed during sequence admission")
+                    raise ValueError("A base changed while the sequence was starting. Try again")
                 if not running:
                     running.append(_capture_command_admission(parent, scope))
 
@@ -137,7 +137,7 @@ async def handle_sequence(call: ServiceCall) -> None:
                         isinstance(parent, PairedBedCoordinator)
                         and tuple(parent.children.items()) != roster
                     ):
-                        raise ValueError("The combined bed changed during admission")
+                        raise ValueError("The combined bed changed while the sequence was starting. Try again")
                     for participant, (captured, _selected) in controllers.items():
                         participant.check_owner(captured, cleanup=True)
                     current = _capture_command_admission(parent, scope)

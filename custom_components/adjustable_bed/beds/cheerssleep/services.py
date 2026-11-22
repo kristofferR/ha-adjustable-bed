@@ -106,7 +106,6 @@ async def handle_request(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         CheersSleepController,
-        "CheersSleep bed controls",
         execute,
         validate=validate,
         cancel_running=True,

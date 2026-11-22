@@ -82,7 +82,6 @@ async def handle_settings(call: ServiceCall) -> None:
             await _preflight_and_execute(
                 targets,
                 BaseRemoteController,
-                "Base Remote settings",
                 execute,
                 validate=validate,
                 cancel_running=False,

@@ -146,6 +146,7 @@ if TYPE_CHECKING:
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .starcode.star_elevate import StarElevateController as StarElevateController
+    from .superior_sleep.controller import SuperiorSleepController as SuperiorSleepController
     from .suta.controller import SutaController as SutaController
     from .svane.controller import SvaneController as SvaneController
     from .symphony.controller import SymphonyController as SymphonyController
@@ -159,6 +160,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "SuperiorSleepController": "superior_sleep.controller",
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "N32MotionBedController": "n32_motion_bed.controller",

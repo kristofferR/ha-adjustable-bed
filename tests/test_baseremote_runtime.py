@@ -755,10 +755,11 @@ async def test_group_failure_removes_primary_bluez_callback_on_retained_link(
     from unittest.mock import MagicMock
 
     from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
-    from bleak.exc import BleakDBusError, BleakError
+    from bleak.exc import BleakError
     from dbus_fast import Message, MessageType
 
     from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.errors import BedCommandFailedError
     from tests.error_helpers import raises_key
     from tests.test_richmat_classic_transport import Services
 
@@ -821,7 +822,7 @@ async def test_group_failure_removes_primary_bluez_callback_on_retained_link(
         virtual_clock(),
         raises_key("baseremote_group_disconnect")
         if group_only
-        else pytest.raises(BleakDBusError, match="notify failed"),
+        else pytest.raises(BedCommandFailedError, match="notify failed"),
     ):
         await hass.services.async_call(
             const.DOMAIN,

@@ -272,14 +272,7 @@ def test_every_brightness_value(address, value):
         assert frame[3] == value and frame[5] == 1 << address and sum(frame) % 256 == 255
 
 
-def test_discovery_literal_predicate_and_rename_portable_bounds():
-    for b6 in (0, 0xB0, 0xFF):
-        for b7 in (0, 0xB0, 0xFF):
-            for b8 in (0, 0xB0, 0xFF):
-                raw = bytes(6) + bytes((b6, b7, b8))
-                assert codec.matches_scan_record(raw) == (
-                    (b7 == 0xB0 or b8 == 0xFF) and (b6 == 0xB0 or b6 == 0xFF)
-                )
+def test_rename_and_address_bounds():
     for name in ("", "A" * 17, "Sofa ø"):
         with pytest.raises(ValueError):
             codec.rename(name)

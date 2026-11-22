@@ -30,7 +30,6 @@ async def handle_floyd_action(call: ServiceCall) -> None:
     from ...coordinator import AdjustableBedCoordinator
     from .floyd import FloydController
 
-    label = "Floyd Home actions"
     targets = _call_targets(call)
     action = call.data["action"]
     internal_side = call.data.get("internal_side", "first")
@@ -44,7 +43,7 @@ async def handle_floyd_action(call: ServiceCall) -> None:
     def validate(controller: FloydController) -> None:
         controller.validate_floyd_action(action, internal_side, confirm, room_id)
 
-    preflighted = await _preflight_capability(targets, FloydController, label, validate=validate)
+    preflighted = await _preflight_capability(targets, FloydController, validate=validate)
     try:
         for coordinator, side in targets:
             assignment_completed = False
@@ -62,7 +61,7 @@ async def handle_floyd_action(call: ServiceCall) -> None:
 
             try:
                 await _execute_sided(
-                    coordinator, side, _family_command(FloydController, label, execute),
+                    coordinator, side, _family_command(FloydController, execute),
                     resource="configuration" if action.startswith("save_") or action in {"assign_room", "confirm_add"} else None,
                 )
             finally:
@@ -75,7 +74,6 @@ async def handle_floyd_action(call: ServiceCall) -> None:
                     coordinator, side,
                     _family_command(
                         FloydController,
-                        label,
                         lambda controller: controller.floyd_action("confirm_add", "first", True, None),
                     ),
                     resource="configuration",

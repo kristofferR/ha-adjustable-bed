@@ -16,10 +16,9 @@ Most adjustable beds use Bluetooth Low Energy (BLE) to communicate with their re
 
 Home Assistant ranks the available Bluetooth paths each time it connects. The
 strongest signal is not always the path that can successfully establish a link.
-When more than one usable path is available, the integration allows at least
-five connection attempts and caps the exponential backoff at twice the base
-delay. This gives HA time to penalize failed paths and select an alternative
-within the same request. Single-path connections keep the normal three attempts.
+When more than one adapter or proxy can reach the bed, the integration tries a
+few more times, so Home Assistant can switch to another path when one keeps
+failing.
 
 The integration continues to use HA's routing, connection slots, and pairing
 ownership. It does not transfer bonds between proxies, force a particular route,
@@ -59,6 +58,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 | Leggett & Platt MlRM | ❌ No |
 | Nectar (DewertOkin protocol) | ❌ No |
 | DewertOkin | ❌ No |
+| Linak | ❌ No pairing step: the bed pairs by itself, but only during the first 3 minutes after power-on ([details](beds/linak.md#bonding-and-authentication)) |
 | Most other beds | ❌ No |
 
 *Note: the two Sleep Number entries are separate bed types, not variants of the same one: Sleep Number Fuzion always requires pairing, and Sleep Number BAM/MCR never does. Leggett & Platt requires pairing on its Okin and Gen2 routes, not on MlRM.*
@@ -173,12 +173,12 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 4. **Choose the app, then the settings**
    - **App or remote**: A discovered bed asks which app or remote controls it,
-     from its detected family, with **Another app or remote** for the full
+     from its detected family, with **Another app or remote: search every app** for the full
      list. The full list is searchable: type part of your app, brand or
      controller name. The app then asks its own questions; see
      [Initial Setup](CONFIGURATION.md#initial-setup)
    - **Name**: Friendly name for your bed
-   - **Number of motors** and **Has massage feature**: Shown when the app does not set them
+   - **Number of motors** and **Massage controls**: Shown when the app does not set them
    - **Bluetooth connection**: How long Home Assistant keeps the link after a command; usually leave the default
    - **Advanced: bed model or remote** (only for bed types with several): Usually leave on **Automatic (recommended)**
    - **Movement**: **Movement per tap**; usually leave the default
@@ -199,9 +199,10 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
    **Check again**. The ordinary capability check also allows finishing setup
    without a successful probe.
 
-   **Standard Octo is different:** its PIN check must report **accepted** or
-   **not required** before the entry is saved. A required, rejected, or
-   inconclusive PIN check offers a retry. This check does not move the bed.
+   **Standard Octo is different:** a PIN the bed says is required or rejected
+   must be entered or corrected before the entry is saved. An inconclusive
+   check offers **Check again** or **Finish setup anyway**. This check does not
+   move the bed.
    Star2 keeps its separate setup behavior. See [Octo setup](beds/octo.md#pin-verification-during-setup).
 
 For a split bed with independent controllers, add and verify each side first,
@@ -213,7 +214,7 @@ then use [Combine two beds into one](CONFIGURATION.md#two-independent-frames).
 
 After setup, you can adjust additional settings via **Settings > Devices & services > Adjustable Bed > Configure** (gear icon), then **Change settings**:
 
-- **Bed type, app or route** - Change it with
+- The app, model or remote is not here: change it with
   [Reconfigure](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
   in the entry's three-dots menu if the detected one is wrong
 - **Movement per tap** - How far a tap moves
@@ -239,7 +240,7 @@ If your bed isn't auto-discovered:
 
 **Using the Integration (Recommended):**
 1. Go to **Settings > Devices & services > Add Integration > Adjustable Bed**
-2. Choose **Pick any Bluetooth device** (or **Browse unsupported BLE devices** for inspection only)
+2. Choose **Pick any Bluetooth device** (or **Browse unsupported Bluetooth devices** for inspection only)
 3. The integration displays all discovered Bluetooth devices with their MAC addresses
 4. Find your bed in the list (look for names like "Desk XXXXX", "HHC...", your bed brand, etc.)
 
@@ -251,23 +252,16 @@ If your bed isn't auto-discovered:
 
 If your bed doesn't appear in Home Assistant at all (not visible to any adapter or proxy), use [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) on your phone to verify the device exists and check its range. If nRF Connect sees it but Home Assistant doesn't, the bed may be out of range of your HA Bluetooth adapter - consider adding an ESPHome proxy closer to the bed.
 
-**Tip:** If your bed type isn't recognized, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. See [Getting Help](GETTING_HELP.md) for details.
+**Tip:** If your bed type isn't recognized, use **Browse unsupported Bluetooth devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. See [Getting Help](GETTING_HELP.md) for details.
 
 ---
 
 ## Motor Count Configuration
 
-| Motors | Sections |
-|--------|----------|
-| 1 (Standard OCTO lift only) | TV/bed lift; `RTV` is detected automatically |
-| 2 (most common) | Back + Legs |
-| 3 | Head + Back + Legs |
-| 4 | Head + Back + Legs + Feet |
-
-**How to determine:** Count the distinct moving sections when using your remote, or check your bed's manual.
-
-Controller-specific layouts can expose additional axes. Malouf/Lucid and the
-explicit app profiles use their own layout settings; see [Configuration](CONFIGURATION.md).
+Where setup asks for **Number of motors**, count the distinct moving sections
+when using your remote, or check your bed's manual. See
+[Motor Count Details](CONFIGURATION.md#motor-count-details) for what each count
+controls. Many apps and remotes set the count themselves and do not ask.
 
 ---
 

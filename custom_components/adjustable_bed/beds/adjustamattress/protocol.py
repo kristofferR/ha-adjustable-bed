@@ -83,12 +83,6 @@ def model_from_name(name: str | None, *, reconnect: bool = True) -> Model:
     return "P3" if name.startswith("Smartbed") else "P1"
 
 
-def scan_admits(name: str | None) -> bool:
-    return bool(
-        name and (name.lower().startswith(("smartbed", "okin")) or name.startswith("SLEEP_V"))
-    )
-
-
 def dedicated_massage(model: Model, layout: int) -> bool:
     return model == "P2" and layout in (0, 1, 2, 3, 5)
 

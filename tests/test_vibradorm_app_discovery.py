@@ -12,7 +12,6 @@ from custom_components.adjustable_bed.beds.vibradorm.app_discovery import (
     manufacturer_discovery_diagnostics,
     parse_manufacturer_record,
     public_filter_verdict,
-    sdk_first_manufacturer,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM_APP,
@@ -69,23 +68,8 @@ def test_company_short_mask_is_not_payload_identifier(company, accepted):
     assert fields.identifier == 0x03B0
 
 
-def test_sdk_selects_first_ordered_record_not_lowest_or_first_accepted_company():
-    records = (
-        ManufacturerRecord(0xFFFF, b"first"),
-        ManufacturerRecord(0x03B0, b"second"),
-        ManufacturerRecord(0xFFFF, b"duplicate"),
-    )
-    assert sdk_first_manufacturer(records) is records[0]
-    reversed_records = tuple(reversed(records))
-    assert sdk_first_manufacturer(reversed_records) is records[2]
-    rejected_first = (ManufacturerRecord(1, b"rejected"), records[1])
-    assert not parse_manufacturer_record(sdk_first_manufacturer(rejected_first)).company_accepted
-
-
-def test_absent_sdk_record_uses_empty_payload_not_null_sentinel():
-    absent = sdk_first_manufacturer(())
-    assert absent == ManufacturerRecord(-1, b"")
-    fields = parse_manufacturer_record(absent)
+def test_absent_record_uses_empty_payload_not_null_sentinel():
+    fields = parse_manufacturer_record(ManufacturerRecord(-1, b""))
     assert fields.company_id == 0xFFFF
     assert fields.company_accepted
     assert fields.customer == 0xFFFF

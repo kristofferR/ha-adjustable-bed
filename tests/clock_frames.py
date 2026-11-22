@@ -58,13 +58,13 @@ async def capture(
         recorder = tool.Recorder(clock)
         with tool.deterministic_process_state(), tool.virtual_time(clock):
             client = tool.FakeClient(recorder, layout, scenario.replies)
-            controller = await tool._build(scenario, client)  # noqa: SLF001
-            await tool._connect(controller, recorder, clock)  # noqa: SLF001
+            controller = await tool._build(scenario, client)
+            await tool._connect(controller, recorder, clock)
             recorder.events.clear()
             clock.begin_phase()
             try:
-                result = await tool._timed(call(controller), recorder, clock)  # noqa: SLF001
+                result = await tool._timed(call(controller), recorder, clock)
             finally:
-                await tool._cancel_strays(baseline)  # noqa: SLF001
+                await tool._cancel_strays(baseline)
     assert result["status"] in ("ok", "no_writes"), result
     return result.get("writes", [])

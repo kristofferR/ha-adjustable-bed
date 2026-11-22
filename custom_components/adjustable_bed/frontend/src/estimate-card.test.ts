@@ -279,3 +279,26 @@ test("the full card's size follows the sections it shows", () => {
   expect(size({ show_graphic: false, show_saved_positions: false })).toBe(4);
   expect(size({ show_graphic: false, show_motors: false, show_saved_positions: false })).toBe(1);
 });
+
+test("only a save's confirmation says it replaces the saved preset", () => {
+  const { card } = fixture("tracking");
+  const ask = (id: string, role?: string): string => {
+    card.hass.states[id] = { entity_id: id, state: "unknown", last_changed: "", last_updated: "",
+      attributes: { requires_confirmation: true, ...(role ? { card_role: role } : {}) } };
+    return text((card as unknown as { _confirmDialog(id: string): TemplateResult })._confirmDialog(id));
+  };
+  expect(ask("button.save_tv", "save")).toContain("This replaces the saved preset.");
+  const reset = ask("button.factory_reset");
+  expect(reset).toContain("Send ");
+  expect(reset).toContain(" to the bed?");
+  expect(reset).not.toContain("saved preset");
+});
+
+test("a card whose bed was removed asks to pick the bed again", () => {
+  const { card } = fixture("tracking");
+  const render = (): string => text((card as unknown as { render(): TemplateResult }).render());
+  card.hass.devices = { other: { id: "other" } } as unknown as HomeAssistant["devices"];
+  expect(render()).toContain("Pick the bed again in the card settings.");
+  card.hass.devices = { bed: { id: "bed" } } as unknown as HomeAssistant["devices"];
+  expect(render()).not.toContain("Pick the bed again");
+});

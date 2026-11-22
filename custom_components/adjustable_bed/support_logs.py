@@ -6,14 +6,17 @@ import logging
 import re
 from collections import deque
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import copy
 from datetime import UTC, datetime
 
-from homeassistant.const import EVENT_HOMEASSISTANT_CLOSE
+from homeassistant.components import bluetooth
+from homeassistant.const import CONF_ADDRESS, EVENT_HOMEASSISTANT_CLOSE
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.util.hass_dict import HassKey
+
+from .const import DOMAIN
 
 MAX_LOG_ENTRIES = 500
 MAX_PAIRING_LOG_ENTRIES = 200
@@ -42,6 +45,10 @@ _BLE_GATT_PAYLOAD = re.compile(
 _BLE_NOTIFICATION_PAYLOAD = re.compile(
     r"(?im)(\bnotification\b[^\r\n]*?:\s*)(?:bytearray\(|b['\"]|[0-9a-f]{16,})[^\r\n]*"
 )
+# The integration's own notification lines, whatever the payload length.
+_GATT_NOTIFY_PAYLOAD = re.compile(
+    r"(\b(?:GATT notify from \S+ \([^)\r\n]*\)|Notification on \S+): )[0-9a-fA-F]+"
+)
 _FAILED_BLE_WRITE_PAYLOAD = re.compile(
     r"(?i)(\b(?:could not|failed to)\s+write\s+value\s+).+?"
     r"(\s+to\s+(?:characteristic|descriptor)\b)"
@@ -54,6 +61,7 @@ def sanitize_log_message(message: str) -> str:
     message = _SECRETS.sub(r"\1**REDACTED**", message)
     message = _BLE_GATT_PAYLOAD.sub(r"\1**REDACTED**", message)
     message = _BLE_NOTIFICATION_PAYLOAD.sub(r"\1**REDACTED**", message)
+    message = _GATT_NOTIFY_PAYLOAD.sub(r"\1**REDACTED**", message)
     message = _FAILED_BLE_WRITE_PAYLOAD.sub(r"\1**REDACTED**\2", message)
     return message[:MAX_LOG_MESSAGE_LENGTH]
 
@@ -189,6 +197,30 @@ class SupportLogBuffer(logging.Handler):
                     if logger.propagate is False:
                         logger.propagate = propagate
                 self._propagates.clear()
+
+
+@callback
+def known_bluetooth_addresses(hass: HomeAssistant, target: str) -> set[str]:
+    """Addresses a support file may name: the target, configured beds, own adapters.
+
+    Upper case with colons. Log lines naming any other address are about a
+    neighbour's or a household member's device and are left out.
+    """
+    # Imported here: pairing pulls in every app catalog, and this module loads early.
+    from .pairing import is_paired, pair_member_addresses
+
+    known = {target.upper()}
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if isinstance(address := entry.data.get(CONF_ADDRESS), str):
+            known.add(address.upper())
+        if is_paired(entry.data):
+            known.update(member.upper() for member in pair_member_addresses(entry.data))
+    # Diagnostics degrade rather than fail when Bluetooth is not running.
+    with suppress(RuntimeError):
+        known.update(
+            str(scanner.source).upper() for scanner in bluetooth.async_current_scanners(hass)
+        )
+    return known
 
 
 @callback

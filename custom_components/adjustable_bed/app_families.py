@@ -242,8 +242,9 @@ class Answer:
 
 
 KEEP: Final = Answer(bed_type="", keep=True)
-# The one wording every question uses for keeping the current route.
-KEEP_LABEL: Final = "Keep the current setup"
+# The one wording every family question uses for keeping its route: the
+# detected one on a new bed, the saved one in Reconfigure.
+KEEP_LABEL: Final = "Keep the detected or saved controls"
 
 
 @dataclass(frozen=True, slots=True)
@@ -1359,7 +1360,7 @@ SLEEP_NUMBER_FAMILY: Final = AppFamily(
     step="sleep_number_family",
     row=BED_TYPE_SLEEP_NUMBER,
     name="Sleep Number",
-    apps="SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases",
+    apps="SleepIQ app, Fuzion (Climate 360, FlexFit) and older (i8, 360 FlexFit 2) bases",
     answers={
         "fuzion": Answer(BED_TYPE_SLEEP_NUMBER),
         "mcr": Answer(BED_TYPE_SLEEP_NUMBER_MCR),
@@ -1439,6 +1440,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         "luniosmart": Answer("luniosmart", data=_NO_RMCONTROL),
         "sleep_evolution": Answer("sleep_evolution", data=_NO_RMCONTROL),
         "wsilver_legacy": Answer("wsilver_legacy", data=_NO_RMCONTROL),
+        "super_colchones": Answer("super_colchones", data=_NO_RMCONTROL),
         "sonicsleep": Answer("sonicsleep", data=_NO_RMCONTROL),
         "mlily": Answer(BED_TYPE_MLILY, data=_NO_RMCONTROL),
         "majestichome": Answer("majestichome", data=_NO_RMCONTROL),
@@ -1452,7 +1454,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "majestichome", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
+    routes=RICHMAT_MH_BED_TYPES | {"super_colchones", "luuna", "sonicsleep", "majestichome", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
     routes_show_row=False,
     lists_members=True,
     offers_keep=keep_never,
@@ -1511,7 +1513,7 @@ def _remacro_placeholders(visit: Visit) -> dict[str, str]:
     key, default = ("unknown", "Not reported yet") if model_id is None else ("unlisted", "Unknown model")
     try:
         words = async_get_cached_translations(visit.hass, visit.hass.config.language, "selector", DOMAIN)
-    except Exception:  # noqa: BLE001 - a missing translation must not block the question
+    except Exception:
         words = {}
     return {"model": words.get(f"component.{DOMAIN}.selector.remacro_model.options.{key}", default)}
 

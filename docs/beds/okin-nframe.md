@@ -1,4 +1,4 @@
-# Okin N-frame
+# Okin and DewertOkin
 
 **Status:** Partly tested: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 
@@ -15,18 +15,17 @@ the Adjustable bed (Lumbar) app, Rize Home and Resident Adjustable Base.
 
 ## Known Models
 
-Symphony Sleep Sense's P3 branches and fixed split helpers use this codec.
-See the [Symphony profile](okin-soundwave.md#symphony-sleep-sense) for its
-independent product/selector choices, model gates, alarms and session behavior.
-Its P1 and SoundWave branches are separately vector-tested.
+Symphony Sleep Sense beds on its P3 format, and its split beds, also use this
+format; see the [Symphony profile](okin-soundwave.md#symphony-sleep-sense) for
+their setup choices, controls and alarms.
 
 | Profile | Models |
 |---|---|
-| [Okimat](#okimat) | Okimat beds, Lucid L600, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are unverified |
+| [Okimat](#okimat) | Okimat beds, Lucid L600, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are not fully checked |
 | [DewertOkin](#dewertokin) | A H Beard, Hankook Gallery, beds with the DewertOkin HE150 controller, DewertOkin Bluetooth RF-Gateway receivers; see [DewertOkin brands](#dewertokin-brands) |
 | [RF ECO BT stair lift](#rf-eco-bt-stair-lift) | Elda BTH / RF ECO BT / MEGAMAT staircase from [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344); Device Information model `MEGAMAT MBZ`, advertising as `OKIN-050226` |
 | [Customatic](#customatic-family) | Customatic Clarity, Jerome's C and Remedy bases |
-| [Leggett Okin](#leggett-okin-family) | Leggett & Platt Prodigy Comfort Elite and similar control boxes, marked `LP BED CONTROL`; confirmed hardware DewertOkin CU170 |
+| [Leggett Okin](#leggett-okin-family) | Leggett & Platt Prodigy Comfort Elite and similar control boxes, marked `LP BED CONTROL`; tested on a DewertOkin CU170 control box |
 | [OKIN SmartBed CB24](#okin-smartbed-cb24) | SmartBed by Okin receivers (Amada and other OKIN beds) with the CB24, CB24AB, CB27, CB27New, CB1221 or Dacheng profile |
 | [Okin DOT](#okin-dot) | DewertOkin "DOT PROTOCOL" receivers for the RF1058, RF34 and RF6707 handsets |
 | [SIMMONS](#simmons) | Beds controlled with the SIMMONS app, regular and inclined |
@@ -40,11 +39,12 @@ Its P1 and SoundWave branches are separately vector-tested.
 | [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
 | [Okin 64-Bit](#okin-64-bit) | Okin controllers with the Adjustable bed app, including `NORA_CON` / `NORACON` |
 | [Adjustable bed app](#adjustable-bed-app) | Beds controlled with Adjustable bed 1.2.1 |
-| [OKIN Motion Bed](#okin-motion-bed) | Beds controlled with OKIN Motion Bed, physical mappings unverified |
-| [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 app remote profiles, hardware models unverified |
-| [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed, hardware models unverified |
-| [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base, hardware models unverified |
-| [Ultramatic Smart Bed](#ultramatic-smart-bed) | Nordic UART app profile, hardware models unverified |
+| [OKIN Motion Bed](#okin-motion-bed) | Beds controlled with OKIN Motion Bed; which button moves which motor is not yet tested on hardware |
+| [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 remotes in the app; not yet tested on hardware |
+| [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed; not yet tested on hardware |
+| [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base; not yet tested on hardware |
+| [Ultramatic Smart Bed](#ultramatic-smart-bed) | Beds controlled with Ultramatic Smart Bed; not yet tested on hardware |
+| [Superior sleep](#superior-sleep-ss350--ss650) | SS350 and SS650 |
 | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
 
 Customatic Z-Series beds use the separate [Customatic Z-Series](#customatic-z-series)
@@ -55,16 +55,16 @@ Customatic app profiles.
 
 | Analyzed | App | Package ID | Profile |
 |---|---|---|---|
-| ✅ | OKIN Motion Bed 1.0 (2), hardware unverified | `com.okin.motionbed` | [OKIN Motion Bed](#okin-motion-bed), explicit choice |
-| ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), unverified |
-| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), explicit Keeson profile |
-| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) unverified |
-| ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), unverified |
+| ✅ | OKIN Motion Bed 1.0 (2), not yet tested on hardware | `com.okin.motionbed` | [OKIN Motion Bed](#okin-motion-bed), chosen in setup |
+| ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), not fully checked |
+| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), not yet tested on hardware | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), a Keeson profile |
+| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) not fully checked |
+| ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), not fully checked |
 | ✅ | [Comfort Enhancement 3 / Comfort Plus3](https://play.google.com/store/apps/details?id=com.okin.apex) 1.4.0 (5) | `com.okin.apex` | [Comfort Enhancement 3](#comfort-enhancement-3) |
 | ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) 1.0.1 | `com.okin.bedding.rizeResident` | [Okin CST](#okin-cst) (Rize Resident) |
 | ✅ | [Customatic Technologies Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (5) | `com.okin.bedding.glory` | [Customatic Z-Series](#customatic-z-series) |
 | ✅ | [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (3) | `com.okin.bedding.tranquil` | [Jordan's Tranquil](#jordans-tranquil) |
-| ⚠️ | Jobs 賈伯斯 | `com.okin.bedding.jobs` | [Okimat](#okimat), unverified |
+| ⚠️ | Jobs 賈伯斯 | `com.okin.bedding.jobs` | [Okimat](#okimat), not fully checked |
 | ✅ | [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19) | `com.okin.okinsmartcomfort` | [Okimat](#okimat), [DewertOkin](#dewertokin), [RF ECO BT stair lift](#rf-eco-bt-stair-lift), [Okin DOT](#okin-dot) |
 | ✅ | [Customatic Clarity](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticclarity) 1.0.1 | `com.okin.bedding.customaticclarity` | [Customatic Clarity](#customatic-clarity) |
 | ✅ | [Customatic Jerome's](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticjeromes) 1.0.1 | `com.okin.bedding.customaticjeromes` | [Customatic Jerome's](#customatic-jeromes) |
@@ -87,6 +87,7 @@ Customatic app profiles.
 | ✅ | [Support 挺你 科技調整床](https://play.google.com/store/apps/details?id=com.okin.bedding.support) 1.0.4 (5) | `com.okin.bedding.support` | [Okin CST](#okin-cst) (Support) |
 | ✅ | [Nectar Move](https://play.google.com/store/apps/details?id=com.okin.bedding.nectarmotion) 1.0.1 (2) | `com.okin.bedding.nectarmotion` | [Okin CST](#okin-cst) (Nectar Move) |
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
+| ✅ | [Superior sleep](https://play.google.com/store/apps/details?id=com.okin.bedding.superior.superior) 1.0.0 (2) | `com.okin.bedding.superior.superior` | [SS350 / SS650](#superior-sleep-ss350--ss650) |
 | ✅ | [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12) | `com.okin.rize` | [Remedy III / Contempo IV](#rize-home-remedy-iii--contempo-iv) |
 | ✅ | [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38) | `com.okin.simmonskorea` | [N32 Motion Bed](#n32-motion-bed) |
 | ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1) | `com.okin.resident.release` | [Resident Adjustable Base](#resident-adjustable-base) |
@@ -95,10 +96,10 @@ Customatic app profiles.
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
 | ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | [eShine](#eshine) (E2000, E3000/E3100, E5000) |
 
-⚠️ Legacy analysis only: these apps have not been analyzed in full, so the
-profile listed for them is unverified and setup does not name them.
+⚠️ These apps are not fully checked, so the profile listed for them may not
+match your bed, and setup does not name them.
 
-Beds controlled with FurniMove handset IDs normally use the explicit
+Beds controlled with FurniMove handset IDs normally use the
 [FurniMove / OKIN Smart Remote](furnimove.md) app profile.
 
 ## Features
@@ -106,32 +107,32 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 | Feature | Okimat | DewertOkin | RF ECO BT stair | Customatic | Leggett Okin |
 |---|---|---|---|---|---|
 | Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
-| Simultaneous movement | ⚠️ Integration only: held motors combine (see [Controls](#okimat)) | ❌ | ❌ | ✅ `customatic_move_simultaneously`, and `timed_move` calls on different motors run together | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
+| Simultaneous movement | ⚠️ Held motors move together; the app cannot do this (see [Controls](#okimat)) | ❌ | ❌ | ✅ `customatic_move_simultaneously`, and `timed_move` calls on different motors run together | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
 | Hold until release | ❌ | ❌ | ❌ | ✅ Renewable `timed_move` and `hold_control` | ✅ Renewable `timed_move` and `hold_control` |
-| Position feedback | Some receivers (FFE4 required) | ❌ | ❌ | ❌ | ❌ |
+| Position feedback | ⚠️ Some receivers | ❌ | ❌ | ❌ | ❌ |
 | Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
 | Other presets | Zero-G, anti-snore / quiet sleep where the handset has them | Zero-G, TV, Quiet Sleep | ❌ | Named memory-page controls | Snore |
-| Memory presets | ✅ 1-4 slots per handset, save key | ✅ 2 slots, no save | ❌ | ❌ Numbered slots; ✅ named held controls | ✅ Prodigy: four favorites incl. fixed Snore; U Series: two held memory controls and SET |
+| Memory presets | ✅ 1-4 slots per handset, save key | ✅ 2 slots, no save | ❌ | ❌ Numbered slots; ✅ named hold buttons | ✅ Prodigy: four favorites incl. fixed Snore; U Series: two held memory controls and SET |
 | Massage | ✅ Handsets with massage keys | ✅ Wave, head, foot, off | ❌ | ❌ | ✅ Head/foot up/down, on/off toggle, wave step |
-| Under-bed lights | ✅ Toggle, handsets with a light key | ✅ Toggle | ❌ | ✅ Clarity/Remedy toggle; ❌ Jerome's | ✅ Toggle; Prodigy CE adds a notification-backed light entity |
+| Under-bed lights | ✅ Toggle, handsets with a light key | ✅ Toggle | ❌ | ✅ Clarity/Remedy toggle; ❌ Jerome's | ✅ Toggle; Prodigy CE adds a light that shows its state |
 | Sync, child lock | ✅ Handsets with those keys | ❌ | ❌ | ❌ | ❌ |
-| Sleep and alarm timers | ❌ | ❌ | ❌ | ❌ | ✅ Native timers |
-| Control mode | ❌ | ❌ | ❌ | ❌ | ⚠️ Prodigy profiles; press-and-hold refused on Prodigy CE |
+| Sleep and alarm timers | ❌ | ❌ | ❌ | ❌ | ✅ The bed's own timers |
+| Control mode | ❌ | ❌ | ❌ | ❌ | ⚠️ Prodigy apps; Prodigy CE has no press-and-hold mode |
 | Device Information | ❌ | ❌ | ❌ | ✅ Five diagnostic sensors | ✅ Diagnostics |
-| BLE pairing | ✅ Required | ❌ | ✅ Requested | ❌ | ✅ Required |
+| BLE pairing | ✅ Required | ❌ | ✅ Asked for | ❌ | ✅ Required |
 
 The 40-bit profiles:
 
 | Feature | CB24 | DOT | SIMMONS | SleepEase | Sleepy's legacy CB25 | AdjustableM5X4 | eShine |
 |---|---|---|---|---|---|---|---|
-| Motor control | ✅ Head, feet | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, union | ✅ Head, foot; E5000 adds Head Tilt |
+| Motor control | ✅ Head, feet | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, both together | ✅ Head, foot; E5000 adds Head Tilt |
 | Position feedback | ❌ | ❌ | ❌ | ❌ | ✅ 0-100 % | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Lounge, TV, Anti-snore | ✅ Flat; Zero-G, Quiet Sleep, Anti-snore on RF1058 | ✅ Flat; Zero-G, TV/PC, Anti-snore on a regular bed | ✅ Held (P1) or one-shot (P2) recalls | ✅ Flat, TV, Zero-G, Anti-snore, Lounge | ✅ Flat, TV, Lounge, Zero-G, Anti-snore | ✅ Held Flat, Zero-G, Anti-snore, Reading, TV, Flat + Zero-G |
 | Memory presets | ✅ 3 slots, no save | ✅ RF1058 and RF34 codes, tap to recall | ✅ Custom Mode, saved by a 5.5 s hold | ✅ Two recalls | ✅ 2 slots with save | ✅ Memory A, named saves and reset | ❌ |
-| Massage | ✅ | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Behind the massage-on gate | ✅ E3000/E3100, E5000 |
-| Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ Per selector | ✅ E3000/E3100, E5000: held toggle with feedback |
+| Massage | ✅ | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Intensity, wave and timer once massage is on | ✅ E3000/E3100, E5000 |
+| Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ By selector | ✅ E3000/E3100, E5000: hold-to-use toggle that shows its state |
 | Alarms and clock | ❌ | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ | ✅ Next-occurrence alarm, clock sync |
-| Single-address sides | ✅ Legacy CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Left and right on one address | ✅ Older CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Hold until release | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
 | BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
@@ -171,26 +172,26 @@ Sleepy's Elite, AdjustableM5X4 and eShine are explicit app choices.
 
 ### Home Assistant setup
 
-The bed-type list has one **Okin: FurniMove / OKIN Smart Remote app, Okimat,
-Lucid, DOT and RF ECO BT remotes** row for the [Okimat](#okimat),
+The bed-type list has one **FurniMove / OKIN Smart Remote app, Okimat, Lucid,
+DOT and RF ECO BT remotes · Okin** row for the [Okimat](#okimat),
 [Okin DOT](#okin-dot), [RF ECO BT stair lift](#rf-eco-bt-stair-lift) and
 [FurniMove](furnimove.md) routes. Setup then asks which app or remote you use;
 the receiver's name, label and services never decide it, and you don't need an
 RF remote to answer.
 
 1. **FurniMove / OKIN Smart Remote app:** choose the handset ID the app uses.
-2. **No app: Okimat or OKIN handset code:** choose the code printed on the
-   handset, the motor count, whether massage motors are fitted and whether to
-   read positions. Requires Bluetooth pairing.
+2. **No app: Okimat or OKIN handset code (requires pairing):** choose the code
+   printed on the handset, the motor count, whether massage motors are fitted
+   and whether to read positions.
 3. **No app: DOT remote (RF34 or RF6707):** choose the remote code, the motor
    count and whether massage motors are fitted. The RF1058 handsets belong to
    the FurniMove answer.
-4. **No app: single-actuator staircase, RF ECO BT:** confirms the staircase.
-   Requires Bluetooth pairing.
+4. **No app: single-actuator staircase, RF ECO BT (requires pairing):** confirms
+   the staircase.
 5. The apps the [app review](../CONFIGURATION.md#profile-recommendations) lists
    for a detected Okimat route, such as Jordan's Serenity or Adjustable bed
    (Lumbar), switch to that app's profile.
-6. When detection found a route, **I don't know: keep the detected controls**
+6. When detection found a route, **Keep the detected or saved controls**
    saves it.
 
 A bed set up as [Okin CST](#okin-cst), from its row or the discovery question,
@@ -202,7 +203,8 @@ can also move to another Okin route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
-The same question appears, with **Keep** leaving the entry as it is. Before the
+The same question appears, with **Keep the detected or saved controls**
+leaving the entry as it is. Before the
 review, each Okin route is checked for the command endpoint its controller
 writes, and the Okimat and staircase routes also check the bond; a bed without
 them keeps its setup. A saved `okimat` entry keeps that ID when its code
@@ -907,7 +909,7 @@ controls it supports; held motors send the OR of their primary words.
 | `head_foot_down` | `0000000A 00000000` | Customatic Z-230 | `0C 02 00 00 00 0A 00 00 00 00 00 00 00 00` |
 | `massage_intensity_cycle` | `00000C00 00000000` | Customatic Z-230 | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
 
-Each app's literal action table, by the app's action names.
+Each app's action table, by the app's action names.
 
 #### Resident Adjustable Base keys
 
@@ -1057,7 +1059,7 @@ builders.
 
 - Bed types `okimat` and `okin_uuid` select this profile; they are aliases with
   identical frames.
-- Choose **No app: Okimat or OKIN handset code**, then the handset's remote
+- Choose **No app: Okimat or OKIN handset code (requires pairing)**, then the handset's remote
   code (see [Home Assistant setup](#home-assistant-setup)). The code is
   printed on the back of the handset. If an exact code is not offered, use a
   captured code only when its button layout and keycodes have been verified for
@@ -1083,8 +1085,8 @@ the packet format. Priority:
    Information model `MEGAMAT MBZ` identifies the confirmed staircase, while an
    `OKIMAT` model identifies a full bed. The generic model `RF eco BT` is also
    used by full beds, so an explicitly selected valid handset code preserves the
-   Okin UUID profile. With ambiguous shared GATT signals and no stronger model
-   evidence, an already configured CST or RF ECO BT profile is preserved. A CST
+   Okin UUID profile. With ambiguous shared GATT signals and nothing else that
+   identifies the model, an already configured CST or RF ECO BT profile is preserved. A CST
    entry on an `OKIMAT` drive gets a [repair](furnimove.md#repairing-existing-configurations)
    instead of a silent switch.
 5. Device name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for an Okin-family protocol
@@ -1108,8 +1110,8 @@ provably complete catalog.
 - Motors held together send the sum of their words in one frame. This is
   integration behavior carried over from
   [smartbed-mqtt #66](https://github.com/richardhopton/smartbed-mqtt/pull/66),
-  not app evidence: the Okimat route has no app evidence (its frozen
-  vectors are the pre-v5 controller's frames), and FurniMove shows
+  not from an app: no app was analyzed for the Okimat route (its test vectors are
+  the pre-v5 controller's frames), and FurniMove shows
   only a single held key's refresh, with no combined held keys.
   FurniMove's two-axis movement is its explicit
   [`furnimove_move_simultaneously`](furnimove.md) action.
@@ -1218,13 +1220,11 @@ Some receivers report positions on the position characteristic (service
 GATT layout. See [Responses](#responses). FurniMove 2.2.0 exposes no alternate
 position path for receivers without it: its `62741625...` parser reports only
 under-bed light, sync and child-lock state, and it ignores notifications on
-`90311725...`. No reachable app path parses angle or motor position from either
-channel.
+`90311725...`. The app parses no angle or motor position from either channel.
 
 #### Evidence
 
-Okimat sends only its frozen frames. FurniMove handset evidence comes from
-FurniMove 2.2.0.
+The handset tables are based on FurniMove 2.2.0.
 
 ### DewertOkin
 
@@ -1266,7 +1266,7 @@ release.
 
 #### Evidence
 
-DewertOkin sends only its frozen frames, the pre-v5 controller's.
+DewertOkin sends the pre-v5 controller's frames.
 
 #### DewertOkin brands
 
@@ -1340,8 +1340,8 @@ emergency lowering.
 
 #### Setup
 
-Use manual setup, select the **Okin** row and answer **No app: single-actuator
-staircase, RF ECO BT** (bed type `okin_rf_eco_bt`). Detection: none from
+Use manual setup, select the **FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes · Okin** row and answer **No app: single-actuator
+staircase, RF ECO BT (requires pairing)** (bed type `okin_rf_eco_bt`). Detection: none from
 advertisements.
 
 - Choose it only for a single moving actuator. RF ECO BT is also the receiver
@@ -1372,7 +1372,7 @@ GATT signature, so it cannot choose a topology alone:
 
 - The exact `MEGAMAT MBZ` model remains the stronger staircase signal.
 - For other shared-GATT receivers, explicitly selecting a valid handset code
-  under the Okin UUID profile is stronger evidence than the generic receiver
+  under the Okin UUID profile counts for more than the generic receiver
   identity and keeps the multi-motor controller active.
 - Generic `OKIN-*` devices remain ambiguous because several unrelated OKIN
   protocols use that naming pattern.
@@ -1420,8 +1420,8 @@ FurniMove 2.2.0 (`com.okin.okinsmartcomfort`) proves the shipped
 offline two-axis fallback table's M2 keys and the six-byte frame; the M2
 staircase mapping comes from #344. If M2 is not the right channel for another
 installation, mapping it needs that owner's OKIN Smart Remote ID or QR contents;
-do not add M3, reversed, DOT or RF-Gateway variants to this profile without new
-evidence.
+do not add M3, reversed, DOT or RF-Gateway variants to this profile without a new
+app or hardware report.
 
 ### Customatic family
 
@@ -1429,7 +1429,7 @@ evidence.
 
 The three apps share one frame, transport and timing; each is its own bed type.
 The Clarity and Remedy packages publish their apps as **Rize Clarity** and
-**Rize Remedy**, and setup lists those names too.
+**Rize Remedy**, and setup's row names them too.
 
 | Profile | Package | Motors | Memory page | Light |
 |---|---|---|---|---|
@@ -1439,8 +1439,9 @@ The Clarity and Remedy packages publish their apps as **Rize Clarity** and
 
 #### Setup
 
-Choose the **Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps** row
-(or the **Customatic apps** brand), then the app supplied with the bed: Clarity,
+Choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps · Customatic** row
+(or the brand list's **Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize
+Remedy) and Z-Series apps** row), then the app supplied with the bed: Clarity,
 Jerome's C, Remedy, or Z-Series with its model. Detection: none. For an existing
 bed, use the entry's **Reconfigure**; a change first checks the new app's
 command characteristic, and **Configure** no longer changes the app.
@@ -1449,11 +1450,10 @@ command characteristic, and **Configure** no longer changes the app.
   which identify candidates, not the app. They share their service, command
   characteristic and names, and Device Information strings do not select
   capabilities either, so the profile is a manual choice.
-- Each package hard-codes its app layout; unreachable product selectors create
+- Each package hard-codes its app layout; product selectors the app never uses create
   no extra variants.
-- Clarity and Remedy can reconnect to a saved address. Jerome's reconnect
-  branch is unreachable; selecting a physical bed slot directly remains
-  reachable.
+- Clarity and Remedy can reconnect to a saved address. Jerome's app never
+  reconnects that way; selecting a physical bed slot directly still works.
 - **Write mode:** the apps leave the Android write type unchanged, so the
   runtime value is unknown. HA validates the exact command service and
   characteristic, and writes with response when it advertises `write`, otherwise
@@ -1469,11 +1469,12 @@ command characteristic, and **Configure** no longer changes the app.
 | Clarity app (Rize Clarity): back and legs, memory page and light | [Clarity](#customatic-clarity) |
 | Jerome's C app: back and legs, no memory page or light | [Jerome's](#customatic-jeromes) |
 | Remedy app (Rize Remedy): back, legs and lumbar, memory page and light | [Remedy](#customatic-remedy) |
-| Z-Series app with the Z-230 or Z-280 model | [Z-Series](#customatic-z-series), that model's page |
+| Z-Series app with the Z-230 model | [Z-Series](#customatic-z-series), that model's page |
+| Z-Series app with the Z-280 model | [Z-Series](#customatic-z-series), that model's page |
 
 The Jordan's row asks the same way between [Serenity](#jordans-serenity) and
 [Tranquil](#jordans-tranquil). An app's own row in the app question, such as
-Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
+Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)); **Keep the detected or saved controls** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
 characteristic; Z-Series, Serenity and Tranquil check their command and
 notification characteristics.
 
@@ -1531,7 +1532,7 @@ mask at once, after the own release of any move it pre-empts.
   example `04 02 00 00 00 05` for back and legs up. When one motor ends, the
   next frame drops its bit at once and the others keep moving; the zero write
   follows 100 ms after the last motor ends. A motor's own Stop ends only that
-  motor, while Stop All ends them all. HA uses one 120 ms lane instead of the
+  motor, while Stop all ends them all. HA uses one 120 ms lane instead of the
   app's duplicate phase-offset chains.
 - Each app streams a held mask until release, so `timed_move` and
   `hold_control` accept a renewable hold lease
@@ -1568,7 +1569,7 @@ data:
   selections are rejected before writing.
 - HA starts the selected composite mask immediately on one refresh lane. It does
   not replay Android touch-down sequences or their phase-dependent first tick,
-  which keeps the reachable masks while giving the action a deterministic
+  which keeps the app's masks while giving the action a deterministic
   duration.
 
 **Paired beds:** Jerome's app can send the same frame to two selected beds. Use
@@ -1579,9 +1580,9 @@ constant-true connection check.
 
 #### Evidence
 
-Each Customatic profile sends only its frozen frames. Physical
-verification of movement labels, save and reset effects, light behavior and
-write-property compatibility is deferred to users after release.
+Based on the Customatic Clarity, Jerome's and Remedy apps. Movement labels,
+save and reset effects, light behavior and write-property compatibility still
+need testing by owners.
 
 ### Customatic Clarity
 
@@ -1608,7 +1609,7 @@ Behaves as the [Customatic family](#customatic-family), except as below.
 - No memory page, no light and no lumbar.
 - Flat (the fresh screen) sends its alternate Flat word three times in a row,
   with no interval or release.
-- Its restored fragment has a separately reachable generic Flat: the
+- Its restored fragment has a separate generic Flat: the
   **Restored Flat** button sends the restored word once. That persisted route
   does not justify switching every Flat to it.
 
@@ -1635,10 +1636,10 @@ Adds the lumbar motor. Flat sends the Flat word once.
   "leggett", "l&p" or "lp bed" tell these beds from Okimat and Nectar beds on the
   same service UUID.
 - Choose the bed's app in the [L&P question](leggett-platt.md#home-assistant-setup);
-  each app selects its own profile. The default remains **Prodigy CE / Prodigy 4**,
+  each app selects its own profile. The default remains **Prodigy CE (Prodigy 4) app: back, feet, pillow and lumbar**,
   preserving existing configurations, and an existing entry changes it through
   **Reconfigure**. Device names
-  and shared service UUIDs cannot establish the physical actuator layout.
+  and shared service UUIDs do not tell the physical actuator layout.
 - App profile and wire revision are independent. The app picks the frame once
   per connection: the plain frame (revision 1) when the revision selector
   characteristic exists under the service, the
@@ -1697,7 +1698,7 @@ See the [Leggett Okin table](#leggett-okin-keys). Held keys combine into one fra
 - **Light and massage** keys are held keys: a tap leaves one command interval
   before the release burst. Previously the first zero could follow the press
   immediately, making the light toggle too short to register. The precise
-  minimum hardware debounce is not established.
+  minimum hardware debounce is not known.
 
 **Hold control:** `adjustable_bed.hold_control` exposes bounded holds for flat,
 Snore, lighting and massage; U Series also permits memory 1, memory 2 and SET.
@@ -1730,7 +1731,7 @@ See the [timing tables](#hold-and-release-timing).
   different motors, renewable or not, run together: each 100 ms frame carries
   the OR of every moving motor's key. When one motor ends, the next frame drops
   its key and the others keep moving; the four zero frames follow only when the
-  last motor ends. A motor's own Stop ends only that motor, while Stop All ends
+  last motor ends. A motor's own Stop ends only that motor, while Stop all ends
   them all. Prodigy 2 and 2L keep one motor at a time: their reports do not
   prove that one key can be released while another stays held.
 
@@ -1769,8 +1770,8 @@ ranges before writing; see their action descriptions for fields.
 
 #### Evidence
 
-Each Leggett profile sends only its frozen frames, plus the CU170 stop on Prodigy
-CE.
+Based on the Prodigy 2L, Prodigy 2, Prodigy CE and U Series apps, plus the CU170
+stop on Prodigy CE.
 
 ### Prodigy 2L
 
@@ -1861,7 +1862,7 @@ unknown and reports an error without retrying. State is not restored across Home
 Assistant sessions and clears on disconnect. After subscribing, startup sends the
 app's four idle zero frames, which request live status without toggling the
 light (the September report confirms a key write refreshes status); without a
-valid reply the state stays unknown. The redundant **Toggle Light** button is
+valid reply the state stays unknown. The redundant **Toggle light** button is
 removed; `light.toggle` stays available, as does the physical remote.
 
 **Remaining hardware observations:**
@@ -1932,7 +1933,7 @@ massage level with `03 03 <zone> <level> <selector>`.
 > legacy [CB24 keys](#cb24-keys), and the exact massage level sends the legacy
 > `03 03` frame. Every other CBNew control uses CBNew packets. The SmartBed 2.4.2
 > analysis is incomplete, so whether CBNew
-> receivers accept these frames is unproven.
+> receivers accept these frames is not known.
 
 #### Timing
 
@@ -1941,7 +1942,7 @@ recalls are one packet; see [CB.24 Preset Safety](#cb24-preset-safety).
 
 #### Evidence
 
-Frames are the pre-v5 controller's, frozen in `tests/okin_nframe_vectors.py`;
+Frames are the pre-v5 controller's, kept in `tests/okin_nframe_vectors.py`;
 `tests/test_okin_cb24.py` covers both packet families.
 
 ### Okin DOT
@@ -2021,7 +2022,7 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
 ##### Detection / Setup
 
 - If the code printed on your remote is **97450, 97544 or 98035**, choose the
-  **Okin** row and answer **No app: DOT remote (RF34 or RF6707)** in the
+  **FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes · Okin** row and answer **No app: DOT remote (RF34 or RF6707)** in the
   [Okin question](#home-assistant-setup), then pick that code. Okin DOT is not
   a row of its own. An existing entry changes its code through
   **Reconfigure**; Configure refuses a route or code change in the Okin family.
@@ -2433,8 +2434,8 @@ Based on SIMMONS 1.12.9 (`com.okin.simmons`).
 **Status:** Not yet tested
 
 Select **OKIN SleepEase (DoubleSleep / XiaoBao)** for the `com.okin.doublesleep`
-app. Support is based on the independently accepted 1.2.24 / code 109 artifact.
-Hardware behavior has not been confirmed. This is a separate integration profile;
+app. Support is based on app version 1.2.24 (109). Hardware behavior has not been
+confirmed. This is a separate integration profile;
 a Nordic UART service alone does not identify this app.
 
 #### Setup
@@ -2503,7 +2504,7 @@ Setup asks for the saved app model and the BLE driver separately. Automatic driv
 selection uses the advertisement name and company 89 payload. It waits for an
 advertisement rather than guessing an offline driver's controls. An explicit P1,
 P2 or P3 selection is available when the advertisement cannot be recovered.
-Changing a saved UI model does not change the driver inferred from an advertisement.
+Changing a saved UI model does not change the driver chosen from the advertisement.
 
 | Selection | Rule in the shipped selector |
 |---|---|
@@ -2819,7 +2820,7 @@ The action selector offers:
 
 - `alarm`: hour, minute, optional repeating weekdays, an app alarm action and
   massage. Empty weekdays schedule the next occurrence once. The app's Sunday
-  day-bit overflow is corrected using its proven Sunday-first weekday layout.
+  day-bit overflow is corrected using its Sunday-first weekday layout.
   Clock calibration precedes setup; the alarm is queried after 300 ms. The Disable
   alarm button uses the separate close command and subsequent query.
 - `anti_snore` and `anti_snore_demo`: app strength/mode 1–3. The operation byte is
@@ -2829,7 +2830,7 @@ The action selector offers:
   use its reported/default settings (PWM 30 when supported, timer 10).
 - `sensitivities`: optional P2 sensor-side value 1–3 and left/right Low, Medium or
   High values (1–3). Omitted fields retain reported values, defaulting to both
-  sensors and Low on a cold view. P3 can read sensor sides but has no reachable
+  sensors and Low on a cold view. P3 can read sensor sides but has no
   side-setting action.
   The saved sensor-only UI uses P3's JSON command; the other UI uses P2's binary command. An unavailable
   builder fails before writing. State is queried after 200 ms.
@@ -2900,7 +2901,7 @@ STOP commits it (#372).
 
 #### Evidence
 
-Frames are the pre-v5 translation table's, frozen in
+Frames are the pre-v5 translation table's, kept in
 `tests/okin_nframe_vectors.py`. The app is described in the [Sleepy's guide](sleepys.md).
 
 ### AdjustableM5X4
@@ -2940,7 +2941,7 @@ service UUID alone does not identify the app profile.
 | D8/9, UART | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | Without response | Enabled |
 
 - The D1 FFE9/FFE4 branch has no current writer and is excluded. Restoring C1
-  does not make D1 reachable: its packet/parser can operate over an independent
+  does not enable D1: its packet/parser can operate over an independent
   live D route.
 - Actual characteristic properties come from the peripheral. Notification versus
   indication and CCCD writes are host transport responsibilities.
@@ -3027,7 +3028,7 @@ manufacturer result; C is not a transport-readiness barrier.
 
 ##### Home Assistant setup
 
-Choose the **StarCode apps** row, then **AdjustableM5X4 app**. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings.
+Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps · StarCode** row, then **AdjustableM5X4 app**. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings.
 
 #### Controls
 
@@ -3040,7 +3041,7 @@ Choose the **StarCode apps** row, then **AdjustableM5X4 app**. Star names offer 
 | Presets | ✅ Flat, TV, Lounge, Zero Gravity, Anti-Snore |
 | Memory Presets | ✅ Memory A only (recall/save); named TV/Lounge/Zero Gravity saves and reset |
 | Massage | ✅ Toggle; relative head/foot intensity, wave and 10/20/30-minute timer behind the observed massage-on gate |
-| Floor light | ✅ Toggle, plus/minus, raw 1–6 brightness where reachable; feedback light and stateless on/off buttons per selector |
+| Floor light | ✅ Toggle, plus/minus, raw 1–6 brightness where available; feedback light, or an on/off light with assumed state where the app has on and off buttons |
 | Automatic white | ✅ (U8/9-consumed field 47 while connected) |
 | Paired beds | ✅ Two-address pairs; no one-address left/right selector |
 
@@ -3049,12 +3050,12 @@ Choose the **StarCode apps** row, then **AdjustableM5X4 app**. Star names offer 
 The required public controls are head/back and foot/legs up/down, native union
 up/down, STOP, Flat, TV, Lounge, Zero Gravity, Anti-Snore, Memory A recall/save,
 named TV/Lounge/Zero Gravity saves and reset. Both visual M1 and M2 in the app
-invoke Memory A. No independent second memory slot is supported by this evidence.
+invoke Memory A. There is no independent second memory slot.
 
 ###### Frame matrix
 
 Exact hex frames per command selector. `none`, `BOX24`, `BOX1221`, `BOX2422`
-and `BOX2442` share one table. A dash means the action is unreachable for that
+and `BOX2442` share one table. A dash means the app has no such action for that
 selector.
 
 | App action | C0/C2/C4/C5/C6 | C1 `BOX15` | C3 `BOX1220` | C7 `BOX3633` | C8 `BOX25` | C9 `BOX25_STAR` |
@@ -3147,7 +3148,7 @@ to every route.
 
 ###### Massage
 
-- Massage toggle is independently reachable.
+- Massage toggle is always available.
 - Positive relative intensity, wave and timer requests require the observed
   massage-on gate.
 - The timer's live raw inputs are 1, 2 and 3, displayed as 10, 20 and 30
@@ -3162,24 +3163,25 @@ to every route.
   transport subscribes. It remains unknown until a valid native callback (or
   same-address retained Home state), and commands do not optimistically change
   it.
-- Other profiles expose the native toggle button. Non-feedback C7/8/9
-  additionally expose stateless native on/off buttons with distinct accepted
-  frames. C0/1/2/3/4/5/6 on/off builders coincide, so no discrete power switch
-  or assumed on/off state is inferred.
+- Non-feedback C7/8/9 have distinct accepted on and off frames, so their floor
+  light is an on/off light with assumed state instead of a toggle button.
+  Other profiles expose the native toggle button. C0/1/2/3/4/5/6 on/off
+  builders coincide, so no discrete power switch or assumed on/off state is
+  inferred.
 - Brightness is a raw integer, not measured percent, lux or a calibrated
   hardware level. Zero selects the off action rather than a raw-zero slider
   frame.
 
-| Capability gate | Exact reachable behavior |
+| Capability gate | What is available |
 |---|---|
 | C0/1/2/4/5/6, restoration only | Positive massage gate has no enabling writer. Fresh light level 1 yields plus raw2 or minus off. No full 1–6 slider or newly built automatic-white operation. Toggle and required release/query remain reachable. |
-| C3/7 | Own-address state retained from a valid modern route can keep massage/light on and timer/level values, making conditional positive controls and raw 1–6 brightness reachable. Newly consumed legacy feedback remains UI-suppressed. |
+| C3/7 | Own-address state retained from a valid modern route can keep massage/light on and timer/level values, making conditional positive controls and raw 1–6 brightness available. Newly consumed legacy feedback remains UI-suppressed. |
 | C8/9 | Modern U8/9 feedback can enable positive massage, timer and light-level controls. A stale legacy U can still suppress updates; each command checks current observed gates. |
 
 ##### Entities and diagnostics
 
 - The controller-specific entities include a 10/20/30 timer select, 1–6
-  light-level number where reachable, union and light-step buttons, confirmed
+  light-level number where available, union and light-step buttons, confirmed
   save/reset actions, a diagnostic massage-state query, the massage wave and
   head intensity sensors and a massage binary sensor. Selectors, firmware and
   the raw app fields stay in diagnostics; each connection sends the wake frame
@@ -3191,8 +3193,8 @@ to every route.
 - The `starcode_abm5_4_use_detected_profile` button cancels and cleans up the
   current owner's work before adopting D into C/U. It retains own-address state
   and invalidates old callbacks.
-- Changing positive controls, the feedback light or the stateless native
-  power-button catalog defers a capability reload until the owned connection is
+- Changing positive controls, the feedback light or the native on/off light
+  defers a capability reload until the owned connection is
   released; unchanged catalogs do not trigger reload loops.
 - Each paired child persists its own selectors and rebuilds under the parent
   registry guard.
@@ -3275,9 +3277,9 @@ Initial fields 47 and 5f are true in the app model, separately from physical sta
   short recognized special `ed/80` frame of 4–6 bytes is rejected safely rather
   than falling through and overwriting fallback state.
 - Short-frame guards prevent out-of-bounds updates without inventing checksum
-  validation. The unreachable D1 fragment accumulator is not enabled by
+  validation. The unused D1 fragment accumulator is not enabled by
   selecting C1.
-- Identical parsed model updates preserve the artifact's equality suppression;
+- Identical parsed model updates keep the app's equality suppression;
   valid changed updates must retain exact formulas.
 
 ###### UI-consumed state
@@ -3337,9 +3339,9 @@ fixed entity catalog.
 - BOX1220/BOX3633 transports do not reclassify C.
 - UART transports can restore offline when either possible manufacturer result
   keeps the same complete catalog: positive controls, feedback light and
-  stateless power buttons. C7/8/9 qualify; C3 qualifies only with a consuming
+  native on/off light. C7/8/9 qualify; C3 qualifies only with a consuming
   U8/9. A nonconsuming U with C3 must finish live classification because C8/9
-  would add power buttons.
+  would add the on/off light.
 - UART with another C must connect and finish classification before its
   complete catalog is known. U remains independent.
 - Offline capabilities do not create observed feedback or permission for
@@ -3362,11 +3364,9 @@ fixed entity catalog.
 
 ###### Brightness binding
 
-Twelve frozen brightness probes using 15, 30 or 255 establish the private
-one-byte builder domain, not additional public brightness levels. Public
-brightness remains integral 1–6 with off as a separate action. The owner has
-flagged this binding distinction for independent review and requires explicit
-public-domain rejection tests; no accepted evidence or exclusion is rewritten.
+Twelve brightness test probes using 15, 30 or 255 cover the private one-byte
+builder, not additional public brightness levels. Public brightness remains
+integral 1–6 with off as a separate action.
 
 ###### Ownership, boundaries and validation
 
@@ -3375,7 +3375,7 @@ public-domain rejection tests; no accepted evidence or exclusion is rewritten.
   and selection changes cancel owned work and attempt required cleanup while the
   original connection is available.
 - The app's stale callback/state-transfer bugs are not implementation targets;
-  their reachable bed controls remain required.
+  their bed controls are still offered.
 - Nordic DFU payload/catalog/download/bond handling, Wi-Fi, handset
   permissions, licensing and navigation are product/host boundaries.
   Firmware-update activity still invalidates normal roles and control
@@ -3399,8 +3399,8 @@ expose. The [E6000 app profile](richmat.md#eshine) uses a different app and cont
 
 #### Setup
 
-Select **eShine app** and the same E2000, E3000/E3100 or E5000 selector used in
-the app. Choose the product explicitly: the name and service do not identify the
+Select **eShine app (E2000)**, **eShine app (E3000 / E3100)** or **eShine app
+(E5000)**, the same selector used in the app. Choose the product explicitly: the name and service do not identify the
 model. The app accepts a case-sensitive `Smartbed` substring anywhere in a device
 name. `Smartbed` advertisements offer an app candidate; they never select the
 product. Identical names at different addresses remain separate devices.
@@ -3517,7 +3517,7 @@ unknown. Overflow hours/minutes normalize in the local reference date; raw field
 remain available. Received actions never enable additional product capabilities.
 
 HA ignores incomplete or unknown notifications atomically. In particular, the
-app's unknown `fe 16` marker is not treated as a proven fragmentation format and
+app's unknown `fe 16` marker is not treated as a fragmentation format and
 cannot suppress the next valid delivery. State is invalidated on disconnect.
 
 #### Services
@@ -3548,13 +3548,12 @@ data:
 
 #### Evidence
 
-eShine sends only its frozen frames: its key frames, requests, clock and
-alarm frames are frozen in `tests/okin_nframe_vectors.py`.
+Based on eShine 1.1.8 (22); its key, request, clock and alarm frames are in
+`tests/okin_nframe_vectors.py`.
 
-- All physical behavior remains unverified, including STOP scope and long-hold
-  preset persistence. Do not infer either from the shared transport.
-- No WiFi/cloud/account/OTA management is included.
-- Real users may validate physical behavior.
+- Not yet tested on hardware, including what STOP stops and whether a long-hold
+  preset save is kept. Do not assume either from beds that share this transport.
+- Wi-Fi, cloud, account and firmware update features are not supported.
 
 ###### eShine analysis provenance
 
@@ -3582,12 +3581,12 @@ Based on eShine 1.1.8 (`com.okin.eshine`).
 
 ##### Choosing the app
 
-Choose the **Okin CST** row, whose label names each app, or choose **Okin CST**
-when discovery asks which Okin protocol the bed uses. Setup then asks the
+Choose the **Rize and Jordan's apps (and other Okin apps) · Okin** row, or the
+same name when discovery asks which Okin protocol the bed uses. Setup then asks the
 [Okin question](#home-assistant-setup) with the CST apps first, for example
-**Resident Adjustable Bed app (Rize Resident)**, because **Auto** keeps the
+**Resident Adjustable Bed app (Rize Resident)**, because **Keep the detected or saved controls** keeps the
 MF900 profile rather than detecting the product. The Nectar Move app has its
-own **Nectar Move** row, which answers the question itself.
+own **Nectar Move · Okin** row, which answers the question itself.
 
 ##### Protocol Details
 
@@ -3614,7 +3613,7 @@ commands use the secondary field.
 
 The accepted Android app does not set a numeric write type; it leaves the write
 characteristic at its runtime default. Home Assistant retains its existing
-write-with-response integration policy. The accepted artifacts do not establish
+write-with-response integration policy. The apps do not show
 the receiver's effective write mode or required characteristic properties, so
 the effective hardware behavior is deferred for real-user validation.
 
@@ -3644,7 +3643,7 @@ repair with a guided **Fix** button. ESPHome Bluetooth proxies can pair only on
 ESPHome ≥ 2024.3.0; a local adapter near the bed is the most reliable for the
 first bond.
 
-Nectar Move's accepted app has no app-issued bond request or authentication
+Nectar Move's app has no app-issued bond request or authentication
 gate, so its profile skips proactive pairing. Home Assistant still routes an
 actual GATT authentication failure through the existing bond-recovery repair.
 That repair, with its **Pair Now** action, stays until a later connection
@@ -3661,8 +3660,8 @@ succeeds. This does not change pairing policy for other CST profiles.
 
 - Manual selection may be needed since the service UUID is shared with other Okin protocols.
 - The shared UUID and the official apps' common `OKIN-*` name filter do not
-  distinguish the nine product layouts. Select the matching **Protocol variant**
-  in the integration options. `Auto` preserves the MF900 profile for existing
+  distinguish the nine product layouts. Choose the matching app or product in
+  the Okin question, in setup or in **Reconfigure**. Automatic preserves the MF900 profile for existing
   entries.
 - Do not choose CST solely because diagnostics show both the CSS and Nordic DFU
   services. That connected GATT signature is also exposed by RF ECO BT stair
@@ -3698,7 +3697,7 @@ the product profile is therefore required for safe zoned massage controls.
 
 ###### Nectar Move profile
 
-Choose **Nectar Move** in setup or the Protocol variant options. No shared OKIN
+Choose **Nectar Move** in the Okin question, in setup or in Reconfigure. No shared OKIN
 name, UUID, or Device Information result selects it. The profile is opt-in and
 keeps the other CST application profiles unchanged.
 
@@ -3777,7 +3776,7 @@ memories. Home Assistant exposes those as numbered memory slots:
 | Memory 2 | Incline |
 | Memory 3 | Lounge |
 
-Other product variants expose only the accepted app's reachable slots. Resident
+Other product variants expose only their app's slots. Resident
 adds a fourth `M` slot; Sanctuary and Bob expose Zero-G and Lounge; Carefree
 exposes only Zero-G. The other profiles use the three MF900 mappings above.
 
@@ -3836,7 +3835,7 @@ fields above.
 ###### Nectar Move
 
 - Nectar Move uses the same 100 ms held-command refresh and delayed STOP pair,
-  but its app also repeats every other reachable action only while held.
+  but its app also repeats every other action only while held.
 - Home Assistant movement commands are finite, so each one refreshes the axis
   at the app's 100 ms interval for the configured **Movement per tap**
   (default 10, about one second), then sends the STOP pair.
@@ -3931,7 +3930,8 @@ secondary field (both big-endian), then four zero bytes
 
 ##### Detection / Setup
 
-- Select **Jordan's Serenity** manually. Shared OKIN advertisements or GATT UUIDs
+- Select **Serenity and Tranquil apps · Jordan's** manually and answer **Jordan's
+  Serenity app**. Shared OKIN advertisements or GATT UUIDs
   do not identify this app.
 - Initial app discovery scans without a service filter and accepts names whose
   lowercase form starts with `okin`. This shared prefix cannot select Serenity.
@@ -3939,11 +3939,11 @@ secondary field (both big-endian), then four zero bytes
   Persisted bed-type settings do not change that selection.
 - Manufacturer values, including CST13/CST14, never select a protocol and always
   leave alarm controls disabled. Existing CST product profiles are separate.
-- There is no PIN, bonding, or pairing gate established by the artifact.
+- The app has no PIN, bonding or pairing step.
 
 ##### Home Assistant setup
 
-Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Serenity app**, for the accepted `com.okin.bedding.serenity` 1.0.1 (2) application profile. Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app proves two named axes, additional literal selectors, and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Serenity app**, for the profile based on `com.okin.bedding.serenity` 1.0.1 (2). Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app has two named axes, the additional selectors and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -3956,11 +3956,11 @@ Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Serenit
 | Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save TV) |
 | Presets | ✅ Flat, Zero Gravity, TV, Leisure (exposed through Lounge), Anti-Snore |
 | Massage | ✅ (head/foot/mode/timer cycles, toggle, off, Wave 1-3) |
-| Lights | ✅ (native toggle, assumed-state on/off **Under Bed Lights** light; no RGB or brightness) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under-bed lights** light; no RGB or brightness) |
 | Alarms | ❌ (alarm replies are parsed as diagnostic state only) |
 | Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
 
-##### Reachable commands
+##### App commands
 
 Values occupy the primary field unless a secondary value is listed. The
 held-control service (`hold_control`) uses these exact `control` values.
@@ -3982,7 +3982,7 @@ Touch labels and voice labels conflict for the extra selectors:
 - Voice lumbar selects 4 and headtilt selects 5.
 
 HA therefore exposes **Control 4 up/down** and **Control 5 up/down** buttons
-rather than guessing whether they move the lumbar or the head tilt. Only the proven head/feet
+rather than guessing whether they move the lumbar or the head tilt. Only the known head/feet
 controls create covers. All covers share the global scheduler resource because
 every release zeros the whole command.
 
@@ -4006,7 +4006,7 @@ every release zeros the whole command.
 | Save TV | `save_tv` | `0x08004000` | 0 |
 
 - Only M1 and M2 are numbered memory slots. Separate Save Zero Gravity and Save
-  TV buttons preserve the reachable Flat+preset chords.
+  TV buttons keep the app's Flat+preset chords.
 - Save buttons hold for five seconds, matching the bound app help gesture.
   Frames begin immediately; the app has no five-second command gate or storage
   acknowledgement.
@@ -4032,8 +4032,8 @@ every release zeros the whole command.
 | Light toggle | `light_toggle` | `0x20000` | 0 |
 | Light on, off | `light_on`, `light_off` | 0 | `0x40`, `0x80` |
 
-Light on/off is the **Under Bed Lights** light, which starts unknown and marks
-commanded values as assumed. The separate **Toggle Light** button preserves the app's
+Light on/off is the **Under-bed lights** light, which starts unknown and marks
+commanded values as assumed. The separate **Toggle light** button preserves the app's
 native toggle/cycle. Neither control has physical state feedback, RGB
 selection, or brightness selection.
 
@@ -4043,10 +4043,10 @@ selection, or brightness selection.
 
 | Operation | Hold | Source |
 |-----------|------|--------|
-| Every reachable touch action | Immediate stream repeated every 100 ms | App |
+| Every touch action | Immediate stream repeated every 100 ms | App |
 | Ordinary cover pulses | Configured count at the app's fixed 100 ms interval | HA setting |
 | Save buttons | Five seconds | App help gesture |
-| Flat | 1500 ms | Reachable voice path |
+| Flat | 1500 ms | Voice path |
 | Voice presets, light commands, direct massage commands | Stop requested after 500 ms | Voice path |
 | Other ordinary button actions | Bounded 500 ms | HA policy |
 | `hold_control` | 0.1–60 seconds, any literal control including saves and both extra selectors | HA service |
@@ -4064,7 +4064,7 @@ Release and cleanup:
 - A requested elapsed duration ends refresh before cleanup begins.
 - Exact Android repeat counts at the deadline depend on handler scheduling; HA
   uses an elapsed ceiling instead of reproducing the boundary race.
-- The app does not establish valid combined-motor packets. Its shared touch mask
+- The app has no valid combined-motor packets. Its shared touch mask
   is interpreted through exact switch cases; unknown combinations can leave a
   prior stream running. HA rejects unknown or combined held controls before
   writing.
@@ -4081,8 +4081,8 @@ The parser accepts each notification independently:
 - **Alarm reply** (byte 1 is 12): signed repeat/hour/minute from bytes 4/6/7,
   subtype byte 5 mapped to alarm type, enabled when byte 9 equals 1. Subtypes
   1–9 map to types 9/17/18/16/20/19/18/9/21; unknown subtypes retain the
-  previous type. Alarm replies are reachable even though alarm commands/UI are
-  dead. HA exposes diagnostic alarm state and adds no alarm-writing action.
+  previous type. Alarm replies are parsed even though the app has no alarm
+  commands or screen. HA exposes diagnostic alarm state and adds no alarm-writing action.
 - **Status code** (other notifications): signed byte 10 is a change-only status
   code.
   - With a pending save, the next changed code reports the source's local save
@@ -4114,7 +4114,7 @@ HA-specific handling:
 
 - Read one second after subscription, with the exact Information service/read
   property required. Missing information or read failures do not block control.
-- **Refresh Manufacturer** repeats the reachable on-resume read.
+- **Refresh Manufacturer** repeats the app's on-resume read.
 - Text decodes using UTF-8 with replacement, the modern Android default charset.
 - Manufacturer never enables alarms or changes capabilities.
 
@@ -4134,7 +4134,7 @@ HA-specific handling:
 
 ###### Exclusions
 
-- Excluded dead artifact paths: Z230 and legacy remote screens,
+- Left out, because the app never uses them: Z230 and legacy remote screens,
   alarm/current-time/query/clock-adjustment builders, combined selector-3
   helpers, direct massage level/timer/query helpers without callers, the unused
   presenter speech map, unused save timer/checksum helpers, and child-lock
@@ -4146,7 +4146,7 @@ HA-specific handling:
 
 ###### Validation
 
-- Focused vectors in `tests/test_serenity.py` account for all 45 reachable action
+- Focused vectors in `tests/test_serenity.py` account for all 45 app action
   rows, with CMD32 explicitly mapped to safe Stop rather than head-up.
 - They cover signed parser branches, unknown alarm types, save-event persistence
   and diversion, deadlines, cancellation-safe double release, independent
@@ -4203,7 +4203,8 @@ policy.
 
 ##### Detection / Setup
 
-- Select **Jordan's Tranquil app** manually. Shared OKIN names and GATT UUIDs do
+- Select **Serenity and Tranquil apps · Jordan's** manually and answer **Jordan's
+  Tranquil app**. Shared OKIN names and GATT UUIDs do
   not identify this app.
 - The app always shows its Z280 remote and massage pages; the stored model
   choice is ignored.
@@ -4212,7 +4213,7 @@ policy.
 
 ##### Home Assistant setup
 
-Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Tranquil app**, for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Tranquil app**, for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -4225,11 +4226,11 @@ Choose the **Jordan's: Serenity and Tranquil apps** row, then **Jordan's Tranqui
 | Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save Lounge) |
 | Presets | ✅ Flat, Zero Gravity, Lounge, Anti-Snore (voice only); no TV |
 | Massage | ✅ (head/foot/mode/timer cycles, toggle; voice-only off and Wave 1-3) |
-| Lights | ✅ (native toggle, assumed-state on/off **Under Bed Lights** light; no RGB or brightness) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under-bed lights** light; no RGB or brightness) |
 | Alarms | ❌ (no alarm page; alarm replies are parsed as diagnostic state only) |
 | Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
 
-##### Reachable commands
+##### App commands
 
 Values occupy the primary field unless a secondary value is listed. The
 `hold_control` name is the service's `control` value.
@@ -4267,7 +4268,7 @@ each selector is unverified.
 | Save Zero Gravity, Save Lounge (`save_zero_g`, `save_lounge`) | `0x08001000`, `0x08002000` | 0 | Flat + preset chord |
 | Save M1, Save M2 (`save_memory_1`, `save_memory_2`) | `0x08010000`, `0x08040000` | 0 | Flat + preset chord |
 
-Only M1 and M2 are numbered memory slots. **Save Zero Gravity** and **Save
+Only M1 and M2 are numbered memory slots. **Save Zero gravity** and **Save
 Lounge** buttons cover the other chords.
 
 ###### Massage
@@ -4287,7 +4288,7 @@ Lounge** buttons cover the other chords.
 | Light toggle (`light_toggle`) | `0x20000` | 0 | Massage page and voice |
 | Light on, off (`light_on`, `light_off`) | 0 | `0x40`, `0x80` | Voice only |
 
-Light on/off is the assumed-state **Under Bed Lights** light; **Toggle Light** sends the native
+Light on/off is the assumed-state **Under-bed lights** light; **Toggle light** sends the native
 toggle. There is no RGB or brightness command, although the app help mentions
 color cycling.
 
@@ -4404,8 +4405,9 @@ HA prefers acknowledged writes when `write` is advertised, otherwise
 
 ##### Detection / Setup
 
-- Choose the **Customatic** row and answer **Z-Series app with the Z-230
-  model** or **Z-280 model** in the [Customatic question](#customatic-family).
+- Choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and
+  Z-Series apps · Customatic** row and answer **Z-Series app with the Z-230
+  model** or **Z-Series app with the Z-280 model** in the [Customatic question](#customatic-family).
   The Z-Series apps are not rows of their own.
 - Pick the model you chose on the app's selection screen; it is stored as
   protocol variant `z230` or `z280`, which has no automatic choice.
@@ -4415,7 +4417,7 @@ HA prefers acknowledged writes when `write` is advertised, otherwise
 
 ##### Home Assistant setup
 
-For `com.okin.bedding.glory` 1.0.4 (5), choose the **Customatic** row, then **Z-Series app with the Z-230 model** or **Z-280 model** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable and also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
+For `com.okin.bedding.glory` 1.0.4 (5), choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps · Customatic** row, then **Z-Series app with the Z-230 model** or **Z-Series app with the Z-280 model** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable and also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
 
 #### Controls
 
@@ -4435,7 +4437,7 @@ For `com.okin.bedding.glory` 1.0.4 (5), choose the **Customatic** row, then **Z-
 The app has no voice control, waves, massage off or discrete light on/off, so
 those are not exposed.
 
-##### Reachable commands
+##### App commands
 
 Values occupy the primary field; the secondary field is always zero. The
 `hold_control` name is the service's `control` value.
@@ -4472,7 +4474,7 @@ and this app's builder operation 5 emits `0x10`/`0x20`. HA exposes
 | Save Zero Gravity, Save TV, Save M1 (`save_zero_g`, `save_tv`, `save_memory_1`) | `0x08001000`, `0x08004000`, `0x08010000` | yes | yes |
 | Save M2 (`save_memory_2`) | `0x08040000` | | yes |
 
-Numbered memory: Z-230 has M1, Z-280 has M1 and M2. **Save Zero Gravity** and
+Numbered memory: Z-230 has M1, Z-280 has M1 and M2. **Save Zero gravity** and
 **Save TV** buttons cover the named chords.
 
 ###### Massage
@@ -4554,7 +4556,7 @@ massage releases both end in that global STOP in HA.
 - `sync_clock` sends the clock frame and the same queries.
 - Times use Home Assistant's time zone.
 - The app's other wake-type mappings, the `-128` repeat sentinel and the
-  checksum clock-adjust builder are unreachable and are not implemented.
+  checksum clock-adjust builder are unused by the app and are not implemented.
 
 #### Evidence
 
@@ -4739,7 +4741,7 @@ Detection: none. Choose **Adjustable bed app** explicitly for this app, rather t
 
 `auto` lowercases the raw Bluetooth name: `okin` selects `36_33_04a`; `star` starts at `25_42_02` and switches to `35_22_01` only for exactly the four bytes `STAR` read from Device Information manufacturer 180A/2A29. Advertisement manufacturer data is not that read. Other names need an explicit variant. Each paired receiver owns its variant; no packet selects a split side. A fixed STAR-table variant is available for a known table.
 
-P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with response, as in the Lumbar transport table. An absent Device Information service aborts setup for either name. P3 also aborts on an absent manufacturer characteristic; P1 allows that missing characteristic and retains P1. This read is a selector, not bonding, authentication, or a proven firmware requirement. Home Assistant awaits it and fixes selection per connection, avoiding the app's asynchronous global asset/read race. A failed read retains the name-selected table as a deliberate integration fallback, not a claim about the app's error handling.
+P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with response, as in the Lumbar transport table. An absent Device Information service aborts setup for either name. P3 also aborts on an absent manufacturer characteristic; P1 allows that missing characteristic and retains P1. This read is a selector, not bonding, authentication, or a known firmware requirement. Home Assistant awaits it and fixes selection per connection, avoiding the app's asynchronous global asset/read race. A failed read retains the name-selected table as a deliberate integration fallback, not a claim about the app's error handling.
 
 #### Controls
 
@@ -4750,11 +4752,11 @@ P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with res
 | Programming | Save the four named presets with the Flat-plus-preset chord |
 | Massage | Global intensity up/down, waves 1–3, off and speech on |
 | Light | Toggle |
-| Positions / numbered memory / side packets | None established by this app |
+| Positions / numbered memory / side packets | None in this app |
 
-Covers and the preset, save, wave, intensity and light buttons use the touch route. The **Voice: …** buttons (diagnostic, disabled by default) send the commands the app's voice control sends, without speech recognition. On P2, the lumbar cover uses that dispatcher too: ordinary lumbar declarations are unreachable. No explicit light-on/off, brightness, color, numbered memory or alarm controls are inferred from unused declarations.
+Covers and the preset, save, wave, intensity and light buttons use the touch route. The **Voice: …** buttons (diagnostic, disabled by default) send the commands the app's voice control sends, without speech recognition. On P2, the lumbar cover uses that dispatcher too: the ordinary lumbar declarations are unused. No explicit light-on/off, brightness, color, numbered memory or alarm controls are inferred from unused declarations.
 
-Long tables use the N-frame encoder. The STAR-manufacturer table uses the [Okin 5A encoder](okin-5a.md), with no checksum despite the asset flag. The generated table contains the reachable ordinary and speech packets and raw query:
+Long tables use the N-frame encoder. The STAR-manufacturer table uses the [Okin 5A encoder](okin-5a.md), with no checksum despite the asset flag. The generated table contains the app's ordinary and speech packets and raw query:
 
 <!-- generated:adjustable-bed-commands -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -4870,7 +4872,7 @@ Standard movement, STOP and held-control actions work through the command queue.
 
 #### Evidence
 
-Based on `com.okin.bedding.adjustbed` 1.2.1 (33). Frozen literals cover all reachable command rows in `tests/fixtures/adjustable_bed_vectors.json`.
+Based on `com.okin.bedding.adjustbed` 1.2.1 (33). Its command rows are in `tests/fixtures/adjustable_bed_vectors.json`.
 
 Hardware effects, watchdogs, retail compatibility, real replies and preset storage need testing by owners. Home Assistant uses its own Bluetooth connection policy; the app SDK's MTU, timeout and Android calls are not firmware requirements. Speech/audio/help, Wi-Fi/cloud/accounts and firmware updates are outside the integration. The legacy Okin 64-Bit profile remains separate, with its historical additional commands, for existing entries.
 
@@ -4965,11 +4967,11 @@ Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the sha
 |---------|-----------|
 | Motor Control | ✅ Head, Feet, Lumbar |
 | Position Feedback | ❌ |
-| Memory Presets | ❌ No reachable numbered-memory action (see [Notes](#notes-8)) |
+| Memory Presets | ❌ No numbered-memory action (see [Notes](#notes-8)) |
 | Flat / Zero Gravity / Lounge / Incline / Anti-Snore | ✅ |
 | Preset saves | ⚠️ Save Zero Gravity / Lounge / Incline / Anti-Snore (storage unverified) |
 | Massage | ✅ Wave 1–3, intensity +/−, off, on (voice route), check |
-| Lights | ⚠️ One light frame (Toggle Light); no light on/off |
+| Lights | ⚠️ One light frame (Toggle light); no light on/off |
 | Timers / Alarms | ❌ |
 | BLE Pairing | ❌ No pairing, PIN or handshake |
 
@@ -5023,7 +5025,7 @@ are always attempted.
 | Home Assistant control | Behavior |
 |---|---|
 | Head, Feet and Lumbar covers | Stream for the configured pulse count at 100 ms (default 10, about 1 s), then the release STOPs. Motor count and pulse delay are fixed. |
-| Flat, Zero Gravity, Lounge, Incline, Anti-Snore presets; Toggle Light; Massage +/−; Wave 1–3 | App tap: one write, then the release STOPs. Use `hold_control` to hold longer. |
+| Flat, Zero Gravity, Lounge, Incline, Anti-Snore presets; Toggle light; Massage +/−; Wave 1–3 | App tap: one write, then the release STOPs. Use `hold_control` to hold longer. |
 | Massage off | Massage stop, then the release STOPs (the release replaces the app's +100 ms repeat). |
 | Save Zero Gravity / Lounge / Incline / Anti-Snore | Holds the Flat+preset save frame for 6 s, when the app reports "Setup" (its help text says 5 s), then the release STOPs. Whether the bed stores the position is unverified. |
 | Massage On | The app's voice route: one pre-STOP, then the massage-on frame twice, 100 ms apart. It is the only path to this frame. |
@@ -5042,15 +5044,15 @@ consumers. Raw replies still appear in support bundles.
 
 ##### Notes
 
-- The app has no reachable numbered-memory action, position feedback, light
+- The app has no numbered-memory action, position feedback, light
   on/off, timers, alarms or firmware update path. Constants for those in its
   tables are never sent. This describes the shipped app, not a hardware
   capability verdict.
 - [Issue #670](https://github.com/kristofferR/ha-adjustable-bed/issues/670)
   reports working numbered memory controls before 4.1.0, so their loss is a
   compatibility regression requiring the previous working bed type/variant,
-  exact recall/save buttons and current diagnostics. The accepted app report
-  alone supplies no numbered-memory save sequence; named preset saves above
+  exact recall/save buttons and current diagnostics. The app has no
+  numbered-memory save sequence; named preset saves above
   must not be presented as equivalent replacements or guessed numbered-slot
   mappings.
 - Not exposed: the app's speech-recognition commands (the same frames are
@@ -5070,7 +5072,7 @@ Based on Adjustable bed (Lumbar) 1.2.2.
 
 #### Setup
 
-Choose **Rize Home app (Remedy III / Contempo IV)**, then select the product.
+Choose **Rize Home app**, then select the product, **Remedy III** or **Contempo IV**.
 **Reconfigure** can change this selection later. A shared `smartbed` name is only an
 app candidate, never an automatic product or protocol identification. Rize Beds
 (Kaidi), the older Rize CST apps and Resident Adjustable Base are separate routes.
@@ -5152,8 +5154,8 @@ Save buttons stream the matching recall frame. Reset streams FLAT+ZG. Motion
 sensor buttons stream the corresponding ZG/LIGHT or ANTI-SNORE/LIGHT chord.
 Under-bed lighting is a toggle, with no readable light state or discrete on/off.
 
-Disabled-by-default **Voice action** entities expose all actions reachable through
-the app's common dispatcher, including actions absent from one product's screen.
+Disabled-by-default **Voice action** entities expose all actions of the app's
+common dispatcher, including actions absent from one product's screen.
 These are app actions, not confirmation of extra physical motors or presets.
 Speech acquisition and phrase aliases are phone features; use HA's own voice
 facilities to call these actions. An explicit command-source selector exposes
@@ -5223,7 +5225,7 @@ the direct BLE bed product boundary.
 
 #### Setup
 
-Choose **OKIN Motion Bed app (com.okin.motionbed)** explicitly and select the
+Choose **OKIN Motion Bed app** (`com.okin.motionbed`) explicitly and select the
 bed's MAC. Detection: none. The app scans without name, service or manufacturer
 filters. Shared advertisements do not identify this app. Home Assistant retains
 MAC ownership and checks fresh Bluetooth reachability; rescanning never retargets
@@ -5312,11 +5314,10 @@ and preset-stop buttons are also callable through `button.press`.
 
 #### Evidence
 
-Based on `com.okin.motionbed` 1.0 (2). All reachable command literals reproduce through the existing gateway
-encoder. Hardware remains unverified. External owners can validate
-mechanical mappings, light polarity, memory/preset behavior, release latency,
-GATT properties and reconnect ordering. Notification interpretation needs future
-physical captures; no static proven bed control is waiting on hardware.
+Based on `com.okin.motionbed` 1.0 (2); the existing gateway encoder reproduces
+all its commands. Not yet tested on hardware: owners can help confirm mechanical
+mappings, light polarity, memory/preset behavior, release latency, GATT
+properties, reconnect ordering and what the notifications mean.
 
 ### N32 Motion Bed
 
@@ -5326,7 +5327,7 @@ physical captures; no static proven bed control is waiting on hardware.
 
 #### Setup
 
-Choose **N32 Motion Bed app (com.okin.simmonskorea)** explicitly. The app
+Choose **N32 Motion Bed app** (`com.okin.simmonskorea`) explicitly. The app
 accepts nonempty platform names beginning with `smartbed` or `n32 motionbed`,
 ignoring case. These shared names offer an app choice, and the Nordic UART
 service alone does not identify this app. Confident receiver detection wins.
@@ -5337,7 +5338,7 @@ The profile fixes its three UI groups, disables angle sensing, light and
 massage, and owns its protocol and refresh cadence. Ordinary cover movement
 keeps the user's pulse count. No PIN, bonding, model selection or single-address
 side controls are required. Two independently configured physical receivers can
-use HA's two-address pairing; app-wide device iteration proves no physical sides.
+use HA's two-address pairing; the app itself has no physical sides.
 
 #### Controls
 
@@ -5388,7 +5389,7 @@ write latency never adds another refresh period to the requested duration.
 Captured link/characteristic ownership prevents old cleanup from writing into
 a new connection. HA schedules commands per selected physical target.
 
-Connection startup subscribes before querying all three source-proven slots,
+Connection startup subscribes before querying all three of the app's slots,
 then calibrates the clock. The generated session table gives the roles and
 schedule. The clock is generated when its queued write dispatches. HA's
 Bluetooth stack negotiates MTU and handles adapters/proxies; the Android
@@ -5453,7 +5454,7 @@ The layout is fixed: two motors and massage, with **Read bed position** off.
 each one and combine them; each keeps its own app. Left and Right controls on
 one receiver are not supported.
 
-Choose **Resident Adjustable Base app (com.okin.resident.release)**. Shared
+Choose **Resident Adjustable Base app** (`com.okin.resident.release`). Shared
 Okin service and name matches offer it as a candidate alongside existing
 receivers. Accepted name prefixes also offer a low-confidence candidate when
 no service UUID is advertised; the connection check validates the exact GATT
@@ -5546,7 +5547,7 @@ time zone, then query the clock. Clock setting is unrelated to motor calibration
 
 Resident 1.0.0 proves the single fixed profile,
 all command builders, response handling and lifecycle timings from Resident
-1.0.0. Its frozen vectors are in `tests/fixtures/resident_vectors.json` and the
+1.0.0. Its test vectors are in `tests/fixtures/resident_vectors.json` and the
 N-frame command census.
 
 A Nectar Premier base proved the link security the APK cannot show: a Bluetooth
@@ -5574,8 +5575,8 @@ indicate-only receivers are accepted. No PIN or mandatory bond is declared.
 
 The stored selector is Left (A), Both (AB, the default) or Right (B). Optional single-address
 Left/Right child devices route to A/B on the same connection. Each physical
-bed of a two-address pair retains its own selector. These names establish
-addressing only. The compatibility motor-count setting does not limit the
+bed of a two-address pair retains its own selector. Left and Right choose the
+protocol side within the same connection; they say nothing else about the bed. The compatibility motor-count setting does not limit the
 app's five control pairs or assert a physical actuator count.
 
 #### Controls
@@ -5591,7 +5592,7 @@ Memory 1/2** buttons, hold that preset's frame for the app's save gesture.
 **Reset saved positions** holds the fixed FLAT+ZG combination. The app's
 completion toast is not a device acknowledgement; the reset is not claimed to
 erase EEPROM or factory settings. TV and Read are
-not exposed because they have no reachable command.
+not exposed because the app has no command for them.
 
 Massage offers head/foot intensity steps, wave steps, timer cycling and a
 master toggle. No absolute intensity or wave setter is claimed. Light is a
@@ -5686,7 +5687,7 @@ Zero days and mismatched AB records use the app's local-time default. Invalid
 BCD nibbles and unknown type indices remain visible as diagnostics, but cannot
 be sent back by Toggle. Truncated recognized reports are safely ignored. The
 source's current-chunk FE16 buffering is bounded to one chunk and cleared on
-each connection; its retained prefix does not establish another protocol.
+each connection; its retained prefix is not another protocol.
 
 #### Services
 
@@ -5711,6 +5712,162 @@ HA is disconnected.
 Based on Ultramatic Smart Bed 1.1.2 (`com.okin.ultramaticSmartBed`). The app's
 frames and receive cases reproduce through the shared N-frame codec, including
 the corrected unequal wake-type/side alarm cases. Hardware still needs testing.
+
+### Superior sleep (SS350 / SS650)
+
+**App:** [Superior sleep](https://play.google.com/store/apps/details?id=com.okin.bedding.superior.superior) 1.0.0 (2), `com.okin.bedding.superior.superior`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **Superior sleep app (SS350 / SS650)**, then the app's exact product,
+**SS350** or **SS650**. **Exact Bluetooth name** selects the transport:
+a case-sensitive `BLE` prefix uses the `ble` route below; every other nonempty
+name uses `nordic`. The app accepts any named device, so an unrelated name must
+be selected manually. Shared `Smartbed`/`BLE` names offer only a weak candidate when the matching
+route service is advertised, and preserve stronger receiver identification.
+Name-only receivers remain available through explicit manual setup. No PIN, bonding or special MTU
+is required by this profile. Home Assistant adapters and proxies are supported.
+
+#### Controls
+
+The two layouts use the same command format. The app's Head/Foot rows appear
+as Back/Legs in Home Assistant. On SS650 the additional app Back row drives the
+`neckTilt` command; the integration calls this Head, without measured position
+or a claim about the mechanism. Lumbar is the fourth row.
+
+SS350 offers combined massage strength and wave controls. SS650 offers separate
+head/foot strength and mode controls. Their identically encoded wave-increase
+and mode-cycle functions belong to different product layouts. The timer button
+cycles the bed timer; it cannot select a fixed duration directly.
+
+<!-- generated:superior-sleep -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Profile | Bed type | App motor labels | Presets | Massage adjustments | Programmable |
+|---|---|---|---|---|---|
+| superior_sleep_ss350 | `superior_sleep` | head, foot | flat, zero_g, anti_snore, lounge, memory_1, memory_2 | massage_up, massage_down, wave_up, wave_down, massage_timer | memory_1, memory_2, lounge, zero_g |
+| superior_sleep_ss650 | `superior_sleep` | head, foot, back, lumbar | flat, zero_g, anti_snore | massage_head_up, massage_head_down, massage_foot_up, massage_foot_down, massage_mode, massage_timer | zero_g |
+
+| Name route | Service | Write without response | Notify |
+|---|---|---|---|
+| nordic | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+| ble | `00001000-0000-1000-8000-00805f9b34fb` | `00001001-0000-1000-8000-00805f9b34fb` | `00001002-0000-1000-8000-00805f9b34fb` |
+
+| Action | Frame |
+|---|---|
+| head_up | `05 02 00 00 00 01 00` |
+| head_down | `05 02 00 00 00 02 00` |
+| foot_up | `05 02 00 00 00 04 00` |
+| foot_down | `05 02 00 00 00 08 00` |
+| lumbar_up | `05 02 00 00 00 10 00` |
+| lumbar_down | `05 02 00 00 00 20 00` |
+| back_up | `05 02 00 00 00 40 00` |
+| back_down | `05 02 00 00 00 80 00` |
+| flat | `05 02 08 00 00 00 00` |
+| zero_g | `05 02 00 00 10 00 00` |
+| anti_snore | `05 02 00 00 80 00 00` |
+| lounge | `05 02 00 00 20 00 00` |
+| memory_1 | `05 02 00 01 00 00 00` |
+| memory_2 | `05 02 00 04 00 00 00` |
+| reset_memories | `05 02 08 00 10 00 00` |
+| light | `05 02 00 02 00 00 00` |
+| motion_on | `05 02 00 02 10 00 00` |
+| motion_off | `05 02 00 02 80 00 00` |
+| massage_on | `05 02 00 08 00 00 00` |
+| massage_off | `05 02 02 00 00 00 00` |
+| massage_head_up | `05 02 00 00 08 00 00` |
+| massage_head_down | `05 02 00 80 00 00 00` |
+| massage_foot_up | `05 02 00 00 04 00 00` |
+| massage_foot_down | `05 02 01 00 00 00 00` |
+| massage_up | `05 02 00 00 0C 00 00` |
+| massage_down | `05 02 01 80 00 00 00` |
+| massage_mode | `05 02 10 00 00 00 00` |
+| wave_up | `05 02 10 00 00 00 00` |
+| wave_down | `05 02 04 00 00 00 00` |
+| massage_timer | `05 02 00 00 02 00 00` |
+| stop | `05 02 00 00 00 00 00` |
+| speech_stop | `05 02 00 00 00 03 00` |
+| query_massage | `00 B0` |
+| query_alarm | `00 C0` |
+
+| Operation | Timing |
+|---|---|
+| Held refresh | 100 ms |
+| One-shot, STOP and queries | 2 attempts, 100 ms apart |
+| Save/reset gesture | 6000 ms of the recall/chord frame, then STOP |
+| Motion activation on/off | 5000 ms refresh, then end without STOP |
+| Massage release | Refresh continues until query starts after 100 ms; no STOP |
+| Startup massage / post-alarm query | +500 ms from operation start |
+
+Selected speech targets: `head_up`, `head_down`, `foot_up`, `foot_down`,
+`back_up`, `back_down`, `lumbar_up`, `lumbar_down`, `speech_stop`, `lounge`,
+`zero_g`, `anti_snore`, `flat`, `memory_1`, `memory_2`, `massage_on`,
+`massage_off`, `light`, `motion_on`, `motion_off`.
+<!-- /generated -->
+
+#### Timing
+
+Ordinary controls use button timing. The card and `hold_control` renew movement
+only for the active press, then run its release. A regular tap is bounded by
+**Movement per tap** at the profile's refresh interval. Massage release leaves
+the timer alive until its delayed query, including a refresh due in that window.
+Other held movement, preset and light controls release with STOP.
+
+Save buttons require confirmation and hold the existing recall frame. Reset
+saved presets is a disabled, confirmed maintenance button for the app's
+Flat + Zero gravity chord. Neither operation has a separate save opcode, and
+its physical effect has not been tested. Under-bed motion activation has no
+reported state; the switch shows a delivered command, or unknown after a
+partial command or disconnect. Its refresh ends without an invented STOP.
+The app's Massage on and Massage off keys are the **Massage** switch, shown the
+same way; the massage timer, mode and level sensors show what the bed reports.
+
+The command-input action preserves the selected speech callers' timing.
+Nonmotor preset, light and massage on/off targets use the one-shot attempts;
+selected motor targets refresh until the requested HA duration or cancellation.
+The app has no automatic timeout for speech motion, so HA bounds that duration.
+The ten massage adjustments have no selected speech input. No audio is used.
+
+#### Notifications
+
+Each live route passes complete notifications directly. Truncated frames are
+ignored safely. Massage reports use `A5 0B 0E`; remaining seconds are the
+bitwise OR of the shifted high byte and low byte. The app groups them into
+10/20/30-minute display buckets, with zero outside that range. Mode is the raw
+byte minus one. Levels retain the app's non-linear calculation; no absolute
+level setter or position slider is inferred.
+
+`A5 0C` reports alarm hour, minute, raw mask and transformed app selector
+(5 becomes 17, 6 becomes 19, other values become 9). The independent app display
+maps bits 6 through 1 to Monday through Saturday, with Sunday at bit 0.
+Outbound alarm writes use enable bit 7, Monday through Saturday at bits 1 through
+6 and Sunday at bit 0. These paths are independent: the integration never
+converts a received mask into an outbound schedule or asserts a round trip.
+Physical response semantics remain unknown. Alarm fields are diagnostic and
+remain unknown until reported; writes do not invent readback state.
+
+#### Services
+
+- `sync_clock` writes HA local time, including Monday=1 through Sunday=7.
+  Startup also sets the clock and queries massage state.
+- `set_alarm` supports weekdays and the app's `m1`/`m2` choices as
+  `wake_mode_1`/`wake_mode_2`. Both selected choices encode selector 6 in the
+  shipped builder. Disabling zeroes mask, hour and minute. A delayed query reads
+  the app display independently. There is no inferred memory/actuator meaning.
+- `hold_control` accepts the product's held button controls, excluding saves,
+  reset and fixed five-second motion-activation operations.
+- `superior_sleep_speech` accepts exactly the selected targets listed above.
+  It also makes the app's shared speech targets available when absent from a
+  product's ordinary page. No duplicate speech button entities are created.
+
+#### Evidence
+
+Based on Superior sleep 1.0.0 (2), as available on November 18, 2026, which
+sends these frames on both product routes. Hardware, physical save effects and
+notification scaling have not been tested.
+
 
 ## Notes
 
@@ -5914,7 +6071,7 @@ persistence need testing by owners.
 The remote decides every control. On a bed with two receivers, each side keeps
 its own remote.
 
-Choose **Comfort Enhancement 3 / Comfort Plus3** under Okin, then choose one of
+Choose **Comfort Enhancement 3 / Comfort Plus3 app**, then choose one of
 its remote indices or enter its exact printed code. The manual-code card is a
 setup route, not another hardware profile. Codes are case-sensitive; unknown
 codes and the app's pending-selection sentinels cannot enable controls.
@@ -6003,7 +6160,7 @@ a later STOP against another movement or physical bed.
 
 Presets and memories recall once and release. In Favorites, Zero Gravity's
 first callback writes, then a case mismatch makes subsequent callbacks reject
-until reset. HA preserves that proven single-press effect and does not expose a
+until reset. HA keeps that single-press effect and does not expose a
 uniform renewable preset stream. The System Tilt flag omission and unconditional
 release after rejected presses are unsafe Android ownership bugs.
 
@@ -6026,7 +6183,7 @@ capabilities; the model's HE150 comparison has no app effect. There are no
 startup control writes, authentication, bonding, PIN, position parser or
 heartbeat. The app requests MTU512 but does not prove a negotiated value; HA
 uses its normal queued GATT transport for these short packets. Notifications
-and ACKs establish no actuator, light or massage telemetry.
+and ACKs carry no actuator, light or massage telemetry.
 
 #### Services
 
@@ -6034,7 +6191,7 @@ and ACKs establish no actuator, light or massage telemetry.
 `set_alarm` selects the current or next day, a slot,
 optional massage/light and an exact supported preset. It removes the old slot
 before rebuilding. `set_alarm` removes one slot.
-There is no proven read/list operation or physical slot maximum.
+There is no known read/list operation or physical slot maximum.
 
 The schedule encoder concatenates `0B0D`, decimal slot/step text padded to two
 characters, eight hexadecimal delay characters, eight command characters and

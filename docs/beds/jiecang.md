@@ -9,7 +9,7 @@ route, four Jiecang app profiles and three LOGICDATA app profiles.
 This guide covers the codec first, then one section per profile. See
 [Protocol codecs and app profiles](../design/protocol-codecs.md) for the architecture.
 
-The accepted MOTIONrelax phone and tablet apps and the bed side of the Sleep Smart
+The MOTIONrelax phone and tablet apps and the bed side of the Sleep Smart
 Air Mattress app use the `logicdata_app` bed type
 ([LOGICDATA app family](#logicdata-app-family)). Existing working Jiecang
 configurations keep the legacy route.
@@ -28,10 +28,10 @@ Brands using Jiecang actuators:
   the Sleep Smart Air Mattress app
 - Jiecang-branded controllers
 
-The Comfort Motion app has no model, Bluetooth name, manufacturer or RSSI filter.
-The ERGOBALANCE, Dream Motion and Dream Motion HD apps share Bluetooth services,
-so a service UUID cannot say which app's layout or release behavior applies
-(see [Choosing a profile](#choosing-a-profile)).
+The Comfort Motion app does not check the model or Bluetooth name; it works with
+G1 and G2 receivers, not G3. The ERGOBALANCE, Dream Motion and Dream Motion HD apps look
+the same over Bluetooth, so pick the app you use in setup (see
+[Choosing a profile](#choosing-a-profile)).
 
 ## Apps
 
@@ -50,16 +50,16 @@ so a service UUID cannot say which app's layout or release behavior applies
 
 | Feature | Legacy route | Comfort Motion | ERGOBALANCE / Dream Motion | Dream Motion HD |
 |---------|--------------|----------------|----------------------------|-----------------|
-| Motor Control | ✅ (back and legs) | ✅ (movement and release; 2/3/4-motor layouts; the two-motor layout also exposes combined back/legs) | ✅ (determined by the selected layout) | ✅ (determined by the selected layout) |
-| Hold Until Release | ❌ (finite pulses) | ❌ (finite pulses; report PARTIAL) | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
-| Position Feedback | ❌ | ❌ (no motor angle, percentage or movement completion) | ❌ (actuator-status packets are not motor position feedback; no position sliders or angle sensors) | ❌ (same) |
+| Motor Control | ✅ (back and legs) | ✅ (2/3/4-motor layouts; the two-motor layout also moves back and legs together) | ✅ (by the layout you pick) | ✅ (by the layout you pick) |
+| Hold Until Release | ❌ (finite pulses) | ❌ (finite pulses) | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Anti-Snore | ✅ Flat, Zero-G, Anti-Snore | ✅ Flat, Zero-G, Anti-Snore; Yoga when the bed reports it | ✅ same |
-| Memory Presets | ✅ (3 slots, recall and program) | ✅ (two recalls, two saves) | ✅ (2 slots, separate recall and save) | ✅ (2 slots, different payload) |
-| Massage | ✅ (back/leg, 0-10 levels) | ✅ (independent back and foot levels 0-3, mode cycling, stop; no massage mode number) | ✅ (Off and levels 1-3 per layout zone, mode, stop) | ✅ (same) |
-| Lights | ✅ (toggle) | ✅ (toggle, with reported light state) | ✅ (toggle; RGB, brightness, timeout and automatic under-bed lighting when reported) | ✅ (same, with its own capability gates) |
-| Alarm | ❌ | ❌ (no BLE alarm programming) | ✅ (`adjustable_bed.set_alarm`) | ✅ |
+| Memory Presets | ✅ (3 slots, recall and save) | ✅ (2 slots, recall and save) | ✅ (2 slots, recall and save) | ✅ (2 slots, recall and save) |
+| Massage | ✅ (back/leg, 0-10 levels) | ✅ (back and foot levels 0-3, mode cycling, stop; current mode not shown) | ✅ (Off and levels 1-3 per layout zone, mode, stop) | ✅ (same) |
+| Lights | ✅ (toggle) | ✅ (toggle, with its state) | ✅ (toggle; RGB, brightness, timeout and automatic under-bed lighting when the bed reports them) | ✅ (same) |
+| Alarm | ❌ | ❌ | ✅ (`adjustable_bed.set_alarm`) | ✅ |
 | Wake Routine | ❌ | ✅ (`adjustable_bed.jiecang_wake`) | ✅ (`adjustable_bed.jiecang_wake`) | ✅ |
-| Clock | ❌ | ❌ (no clock-setting command) | ✅ (answered on the bed's clock request) | ✅ |
+| Clock | ❌ | ❌ | ✅ (set when the bed asks for it) | ✅ |
 | Bluetooth Rename | ❌ | ✅ (G1 only) | ✅ (G1 or G3) | ✅ (G1 or G3) |
 
 The LOGICDATA app profiles:
@@ -68,16 +68,16 @@ The LOGICDATA app profiles:
 |---------|----------------------------|-------------------|
 | Motor Control | ✅ (per layout) | ✅ Back, legs, both |
 | Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ (renewable hold) |
-| Position Feedback | ❌ (neither app reports motor positions) | ❌ |
+| Position Feedback | ❌ | ❌ |
 | Presets | ✅ P1: Flat, Zero-G, Anti-Snore. P2: Flat | ✅ Flat, Zero Gravity, Anti-Snore (hold-only) |
 | Memory Presets | ✅ (2 slots, recall and save, both families) | ✅ (1 slot) |
 | Held Presets | ✅ P2: `adjustable_bed.logicdata_hold_preset` | ✅ Every preset and memory 1 |
 | Massage | ✅ P1 only: Off and levels 1–3 per zone, mode, stop | ✅ (Off and levels 1–3 per zone, stop, mode, **Massage mode** sensor) |
-| Lights | ✅ (toggle with notification readback; no brightness or RGB) | ✅ (under-bed toggle) |
-| Clock | ✅ Phone app (both families); ❌ tablet | ✅ (answers clock requests) |
+| Lights | ✅ (a light that shows its state; no brightness or RGB) | ✅ (under-bed toggle) |
+| Clock | ✅ Phone app (both families); ❌ tablet | ✅ (set when the bed asks for it) |
 | Alarm | ✅ Phone app with P1; ❌ tablet | ❌ |
 | Factory Reset | ❌ | ⚠️ (disabled by default) |
-| Bluetooth Rename | ✅ (T1 or T3) | ✅ (T1 or T3 name role) |
+| Bluetooth Rename | ✅ (T1 or T3) | ✅ (T1 or T3) |
 
 Enable massage and light controls only when fitted.
 
@@ -88,23 +88,24 @@ profiles are explicit choices.
 
 ### Home Assistant setup
 
-The bed-type list has one **Jiecang: ERGOBALANCE, Dream Motion, Dream Motion HD
-and Comfort Motion apps, Glide and Lierda remotes** choice. Setup then asks which
+The bed-type list has one **ERGOBALANCE, Dream Motion, Dream Motion HD and
+Comfort Motion apps, Glide and Lierda remotes · Jiecang** choice. Setup then asks which
 app or remote you use; the bed's name and services never decide it.
 
 1. Choose the app on your phone: **ERGOBALANCE app (Dreamask)**, **Dream Motion
    app**, **Dream Motion HD app** or **Comfort Motion app**. Then choose the layout
-   the app shows and whether the bed has a light. The transport stays **Auto**
+   the app shows and whether the bed has a light. The transport stays **Automatic (recommended)**
    unless you open **Advanced**.
 2. Without an app, choose the remote's legacy controls: **No app: Glide or Comfort
-   Motion remote** (`jiecang`) or **No app: Comfort Motion / Lierda remote**
+   Motion remote** (`jiecang`) or **No app: Comfort Motion remote with a Lierda receiver**
    (`comfort_motion`), then the motor count. See the [legacy route](#legacy-route).
-3. When detection found a legacy bed, **I don't know: keep the current controls**
+3. When detection found a legacy bed, **Keep the detected or saved controls**
    saves the detected legacy route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
-The same question appears, with **Keep** leaving the entry as it is. Choosing an
+The same question appears, with **Keep the detected or saved controls** leaving
+the entry as it is. Choosing an
 app checks the bed's Bluetooth services with the app's own transport selection
 before anything is saved; a bed without that app's services keeps its setup.
 Choosing a legacy route needs no check. A review lists the added and removed
@@ -492,7 +493,7 @@ not motor position feedback, and no motor positions are decoded.
 - Presets and memory recall are sent once or repeated, then released as the
   profile specifies. Memory save is never followed by a release.
 - Massage stop is a separate frame and is not a movement release.
-- Physical emergency-stop semantics are unproven.
+- Whether this works as a physical emergency stop is not known.
 
 ### Vectors
 
@@ -506,8 +507,6 @@ has no report) the frames the pre-v5 controller sent.
 the LOGICDATA profiles, from the accepted MOTIONrelax phone 1.0.6, tablet 1.0.4
 and Sleep Smart 1.0.0 reports. The phone report states its massage-level rows as
 a template, which the vector file expands.
-`tests/test_codec_docs.py` checks that every frame spelled in this guide is one
-of those vectors and that the generated tables are current.
 Profile behavior is covered by `tests/test_jiecang.py`,
 `tests/test_jiecang_app_controller.py`, `tests/test_jiecang_app_entities.py`,
 `tests/test_jiecang_app_config.py` and `tests/test_dreamhd.py`; LOGICDATA behavior
@@ -586,7 +585,7 @@ the G1 (T1) and G3 (T3) services; neither app has a name, manufacturer-data or
 service-data filter. Detection turns either service into `comfort_motion`, whose
 profile review and Jiecang question offer the
 [LOGICDATA app](#logicdata-app-family). A bed that lands on `jiecang` by its name
-alone has no evidence of being a MOTIONrelax bed.
+alone is not known to be a MOTIONrelax bed.
 
 A MOTIONrelax bed that still runs this route, for example one whose services were
 missing from the advertisement, differs from the apps. This route:
@@ -629,7 +628,7 @@ Reconfigure's bed-type list, which then asks the app, packet family and layout.
 - Writable name roles are rediscovered per connection; G2 alone cannot reuse an
   old G1 name handle.
 - Write response mode comes from the discovered characteristic properties.
-- Comfort Motion sends only its frozen frames and the raw rename.
+- Comfort Motion sends only the app's frames and the raw rename.
 
 #### Controls
 
@@ -731,8 +730,8 @@ sections list what differs.
 
 - Detection: none. The apps use the same Bluetooth services, so a service UUID
   cannot determine which app's release behavior or layout applies. No pairing,
-  PIN or device-name pattern is inferred from these apps. Layout, massage and
-  light are user choices, never inferred from the name or a shared service.
+  PIN or device-name pattern comes from these apps. Layout, massage and light are
+  your choices; the name or a shared service never sets them.
 - Automatic transport selection uses a coherent GATT service and its
   corresponding write, notification and name channels, trying G3, then G1, then
   G2. Explicit G1/G2/G3 overrides are available.
@@ -786,7 +785,7 @@ light controls; HA answers clock requests with the clock frame.
 - `adjustable_bed.set_alarm` writes the app's weekly alarm configuration.
   It accepts a time, weekdays, wake preset and massage levels. Storing that
   configuration is separate from executing the Android app's local wake routine.
-- `adjustable_bed.jiecang_wake` executes the proven wake packet sequence. Use a
+- `adjustable_bed.jiecang_wake` executes the app's wake packet sequence. Use a
   Home Assistant time trigger when local scheduling is required. Yoga can be
   encoded in the alarm configuration but is not an implemented wake choice in any
   app's executor.
@@ -956,7 +955,7 @@ queries, without a light-status query.
   the layout is not split series.
 - Connection resets light visibility and cached color.
 - Automatic-light status treats zero as off and any nonzero value as on. Its
-  physical sensor meaning has not been established.
+  physical sensor meaning is not known.
 - Late capability and RGB replies add the corresponding controls without
   reloading HA. Repeated negative and positive feature replies retire and
   recreate the RGB, brightness, timer, automatic-light and Yoga controls as their
@@ -993,9 +992,10 @@ configurations retain their previous behavior.
 
 #### Setup
 
-1. Select **LOGICDATA: SILVERmotion (SimplicityFrame), MOTIONrelax phone and
-   tablet, and Sleep Smart Air Mattress apps** in the bed-type list, or
-   **LOGICDATA** under the brands. Searching for SILVERmotion, MOTIONrelax or Sleep
+1. Select **SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and
+   Sleep Smart Air Mattress apps · LOGICDATA** in the bed-type list, or
+   **LOGICDATA: SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and
+   Sleep Smart Air Mattress apps** under the brands. Searching for SILVERmotion, MOTIONrelax or Sleep
    Smart finds the same row.
 2. Choose the app: the MOTIONrelax phone or tablet app, or the Sleep Smart Air
    Mattress app's bed base. SILVERmotion runs the [SimplicityFrame](logicdata.md)
@@ -1014,7 +1014,7 @@ configurations retain their previous behavior.
   issue opens the Reconfigure question with **LOGICDATA app: MOTIONrelax, or the
   Sleep Smart Air Mattress bed base** as one more answer; that answer continues
   with these questions and the LOGICDATA transport check. The issue stays open
-  until a change is saved or you choose **Keep**.
+  until a change is saved or you choose **Keep the detected or saved controls**.
 
 - Detection: none. The Bluetooth service alone cannot identify those choices; the
   `ff12` and `fe60` services are shared with other Jiecang/Lierda-based apps, and
@@ -1024,7 +1024,7 @@ configurations retain their previous behavior.
   GATT is ambiguous, select one explicitly. Explicit T1, T2 and T3 choices are
   available.
 - Writes use a response when the characteristic advertises `write`, otherwise
-  write-without-response. No PIN or pairing flow is inferred from these artifacts.
+  write-without-response. The apps use no PIN or pairing flow.
 - For two separately addressed beds, configure each side before combining them.
   Shared paired-bed options preserve each side's app, packet family, layout and
   transport. Separate the combined bed temporarily to change those per-side settings.
@@ -1038,7 +1038,7 @@ configurations retain their previous behavior.
   head zone is the back (left back in `split_series`), the foot zone the legs,
   and the right zone the right back in `split_series`. Massage level and massage
   stop are single frames.
-- When lighting is enabled, the Under Bed Lights binary sensor exposes the
+- When lighting is enabled, the Under-bed lights binary sensor exposes the
   latest notification state. The light button remains toggle-only; pressing it
   does not optimistically replace the reported state.
 - Neither app reports motor positions, brightness or RGB color, so the
@@ -1166,8 +1166,8 @@ preserves that and only guards field bounds. Status replies `05`/`06` (any heade
 
 #### Evidence
 
-Every LOGICDATA profile sends only its frozen frames
-(`tests/test_logicdata_vectors.py`).
+Based on the MOTIONrelax phone, MOTIONrelax tablet and Sleep Smart Air Mattress
+apps (`tests/test_logicdata_vectors.py`).
 
 ### MOTIONrelax phone and tablet
 
@@ -1253,7 +1253,7 @@ being answered. The tablet decodes neither clock nor alarm replies.
 
 #### Evidence
 
-Both profiles send only their frozen frames.
+Based on MOTIONrelax phone 1.0.6 (7) and MOTIONrelax tablet 1.0.4 (5).
 
 ### Sleep Smart Air Mattress (bed)
 
@@ -1272,7 +1272,7 @@ Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
 |---|---|
 | Command family | `p1` for the Vienna and Toronto beds; `p2` for the Middle Rail bed |
 | Layout | `standard_2` (standard series) or `split_series` (split series) |
-| Massage | Enable when the bed has massage. The app's massage tab is reachable for every bed profile |
+| Massage | Enable when the bed has massage. The app shows its massage tab for every bed profile |
 | Light | Enable for under-bed lighting |
 | Transport | `auto`, `t1`, `t2` or `t3`, as for MOTIONrelax |
 
@@ -1331,7 +1331,7 @@ No positions, firmware, model or calibration are reported.
 
 #### Evidence
 
-Sleep Smart sends only its frozen frames.
+Based on Sleep Smart Air Mattress 1.0.0 (1).
 
 ## Notes
 

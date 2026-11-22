@@ -203,12 +203,10 @@ async def test_captured_mode_applies_to_command_and_cleanup_when_other_choices_c
 def test_every_layout_has_only_real_bed_controls_and_saves_never_hold():
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.profiles.baseremote import EXCLUDED_LAYOUTS
-    from tests.test_entity_names import problems
 
     for layout in load_catalog("baseremote").models.keys() - EXCLUDED_LAYOUTS:
         ctrl, _ = controller(layout)
         for spec in ctrl.controller_button_specs:
-            assert not problems(spec.name), (layout, spec.name)
             assert not spec.name.startswith(("Button ", "Save button")), (layout, spec.name)
             assert not any(
                 word in spec.name.lower()

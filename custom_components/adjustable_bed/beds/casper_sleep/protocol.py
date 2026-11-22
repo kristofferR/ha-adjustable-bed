@@ -66,6 +66,9 @@ def command(
         val = 0
     return envelope({"id": sequence, "cmd": wire_command(kind, action), "val": val}, sequence)
 
+# A sleep report, compressed or decoded. Bounds memory, not the protocol.
+MAX_REPORT_BYTES = 4 * 1024 * 1024
+
 
 class Receive:
     """Per-device parser state; preserve wire decoding without shared-device races."""
@@ -100,8 +103,8 @@ class Receive:
             import zlib
 
             decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
-            decoded = decoder.decompress(payload, 4 * 1024 * 1024 + 1)
-            if len(decoded) > 4 * 1024 * 1024 or not decoder.eof:
+            decoded = decoder.decompress(payload, MAX_REPORT_BYTES + 1)
+            if len(decoded) > MAX_REPORT_BYTES or not decoder.eof:
                 raise ValueError("Invalid or oversized sensor report")
             return cast(Json, json.loads(decoded.decode("latin1")))
         if not self.pending:

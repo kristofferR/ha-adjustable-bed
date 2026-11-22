@@ -440,28 +440,18 @@ class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
         """
         pulse_count, refresh_delay_ms = self.motor_pulse_settings()
         self._cleanup_stop_cancel_counter = None
-        try:
+        async with self.releasing(lambda: self._send_stop_sequence_after_command()):
             await self.write_command(
                 codec.frame96(motor_value),
                 repeat_count=pulse_count,
                 repeat_delay_ms=refresh_delay_ms,
             )
-        finally:
-            try:
-                await self._send_stop_sequence_after_command()
-            except TimeoutError, BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send Nectar Move STOP during cleanup", exc_info=True)
 
     async def _send_nectar_tap(self, *, motor_value: int = 0, control_value: int = 0) -> None:
         """Map a stateless HA press to one command and the bounded STOP pair."""
         self._cleanup_stop_cancel_counter = None
-        try:
+        async with self.releasing(lambda: self._send_stop_sequence_after_command()):
             await self.write_command(codec.frame96(motor_value, control_value))
-        finally:
-            try:
-                await self._send_stop_sequence_after_command()
-            except TimeoutError, BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send Nectar Move STOP during tap cleanup", exc_info=True)
 
     async def _send_repeated_command(
         self,
@@ -472,17 +462,12 @@ class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
         repeat_delay_ms: int,
     ) -> None:
         """Send a CST command with stop cleanup."""
-        try:
+        async with self.releasing(lambda: self._send_stop_sequence()):
             await self.write_command(
                 codec.frame96(motor_value, control_value),
                 repeat_count=repeat_count,
                 repeat_delay_ms=repeat_delay_ms,
             )
-        finally:
-            try:
-                await self._send_stop_sequence()
-            except (TimeoutError, BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP during CST cleanup", exc_info=True)
 
     @staticmethod
     def _press_timing(tap: Tap | None) -> Tap:

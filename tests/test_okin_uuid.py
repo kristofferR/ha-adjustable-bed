@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import dataclasses
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.okin_uuid.controller import (
@@ -28,6 +29,7 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.error_helpers import raises_key
 
 # Remote codes are plain strings now that the table is generated from the
 # DewertOkin handset backend; keep readable aliases for the tests.
@@ -182,18 +184,6 @@ def _variant_coordinator(hass, variant, motor_count=2):
 
 class TestOkinUuidController:
     """Test Okin UUID controller."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == OKIMAT_WRITE_CHAR_UUID
 
     async def test_build_command(
         self,
@@ -449,13 +439,12 @@ class TestOkinUuidPresets:
         mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test memory preset logs warning on basic remote without memory."""
+        """A basic remote without memory refuses a memory recall."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.preset_memory(1)
-
-        assert "not available on remote" in caplog.text
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.preset_memory(1)
 
     async def test_program_memory_available(
         self,
@@ -468,7 +457,8 @@ class TestOkinUuidPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_93329_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
+            await coordinator.controller.program_memory(1)
 
         # Should have written the memory save command
         calls = mock_bleak_client.write_gatt_char.call_args_list
@@ -482,13 +472,12 @@ class TestOkinUuidPresets:
         mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test program memory logs warning on basic remote."""
+        """A basic remote without a save key refuses to save memory."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
-
-        assert "Memory save not available" in caplog.text
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.program_memory(1)
 
     async def test_program_memory_94238_backend_hold_timing(
         self,
@@ -501,7 +490,8 @@ class TestOkinUuidPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_94238_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep") as sleep:
+            await coordinator.controller.program_memory(1)
 
         remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_94238]
         assert remote.memory_save == OkinUuidComplexCommand(0x10000, 25, 200)
@@ -510,6 +500,7 @@ class TestOkinUuidPresets:
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
         assert len(mock_bleak_client.write_gatt_char.call_args_list) == 25
+        assert sleep.await_args_list == [call(0.2)] * 24
 
     async def test_execute_command_honours_complex_timing(
         self,
@@ -754,7 +745,8 @@ class TestOkinUuidExtras:
         await coordinator.async_connect()
 
         assert coordinator.controller.supports_preset_flat is False
-        await coordinator.controller.preset_flat()
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.preset_flat()
         mock_bleak_client.write_gatt_char.assert_not_called()
 
     async def test_shifted_bit_remote_keeps_backend_keycodes(
@@ -779,9 +771,11 @@ class TestOkinUuidExtras:
         assert coordinator.controller.supports_sync is False
         assert coordinator.controller.supports_child_lock is False
         assert coordinator.controller.supports_preset_zero_g is False
-        # Calling them is a safe no-op.
-        await coordinator.controller.sync_positions()
-        await coordinator.controller.child_lock_toggle()
+        # Calling them is refused without a write.
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.sync_positions()
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.child_lock_toggle()
         mock_bleak_client.write_gatt_char.assert_not_called()
 
 

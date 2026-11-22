@@ -31,6 +31,10 @@ from custom_components.adjustable_bed import (
 from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS
 from custom_components.adjustable_bed.beds.solace.services import SERVICE_SOLACE_AUDIO
+from custom_components.adjustable_bed.bluetooth_freshness import (
+    AdvertisementEvidence,
+    FreshnessStatus,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
@@ -52,6 +56,7 @@ from custom_components.adjustable_bed.const import (
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_PRODUCT_ID,
@@ -69,6 +74,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KEESON_KSBT_CHAR_UUID,
@@ -264,6 +270,11 @@ class TestIntegrationSetup:
                 "powered on and in range",
             ),
             ([{"result": "device_not_found"}], "powered on and in range"),
+            # The default bed is a Linak: advertising, attempted, no link came up.
+            (
+                [{"result": "failed", "error_type": "BleakAbortedError"}],
+                "pairs only during the first 3 minutes after power-on",
+            ),
         ],
     )
     async def test_setup_retry_reason_distinguishes_startup_from_reachability(
@@ -286,6 +297,10 @@ class TestIntegrationSetup:
                 "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.connection_attempt_details",
                 new_callable=PropertyMock,
                 return_value=attempts,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.async_check_advertisement",
+                return_value=AdvertisementEvidence(FreshnessStatus.FRESH),
             ),
         ):
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -1150,6 +1165,8 @@ class TestMigration:
         migrated.pop(CONF_PROFILE_REVIEW_PENDING, None)
         assert migrated.pop(CONF_PROFILE_ID) == bed_type
         assert migrated.pop(CONF_PROFILE_MIGRATION)["from_version"] == 3
+        # The connection 4.x ran the entry with, which it had not saved.
+        assert migrated.pop(CONF_CONNECTION_MODE) == CONNECTION_MODE_IDLE
         # Schema 5.6 drops an angle-sensing value equal to the bed type's default.
         if CONF_DISABLE_ANGLE_SENSING not in migrated:
             before.pop(CONF_DISABLE_ANGLE_SENSING)
@@ -1494,6 +1511,88 @@ class TestServices:
 
         # Verify command was sent
         mock_bleak_client.write_gatt_char.assert_called()
+
+    async def test_stop_all_stops_a_loaded_bed_when_another_is_not_loaded(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A bed in setup retry is reported only after every other bed got its STOP."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_registry = dr.async_get(hass)
+        loaded_id = dr.async_entries_for_config_entry(
+            device_registry, mock_config_entry.entry_id
+        )[0].id
+        retrying = MockConfigEntry(
+            domain=DOMAIN, data=dict(mock_config_entry.data), unique_id="AA:BB:CC:DD:EE:01"
+        )
+        retrying.add_to_hass(hass)
+        retrying_id = device_registry.async_get_or_create(
+            config_entry_id=retrying.entry_id, identifiers={(DOMAIN, "AA:BB:CC:DD:EE:01")}
+        ).id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+
+        with (
+            patch.object(coordinator, "async_stop_command", new=AsyncMock()) as stop,
+            pytest.raises(ServiceValidationError),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_STOP_ALL,
+                {"device_id": [retrying_id, loaded_id]},
+                blocking=True,
+            )
+
+        stop.assert_awaited_once_with()
+
+    async def test_stop_all_rejects_an_empty_device_list(
+        self, hass: HomeAssistant, mock_config_entry, enable_custom_integrations
+    ):
+        """A template that renders no beds is an error, never a silent success."""
+        import voluptuous as vol
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        with pytest.raises(vol.Invalid):
+            await hass.services.async_call(
+                DOMAIN, SERVICE_STOP_ALL, {"device_id": []}, blocking=True
+            )
+
+    async def test_stop_all_with_a_side_stops_a_single_bed_whole(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A side a single bed lacks stops the whole bed, then reports the side."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_id = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )[0].id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+
+        with (
+            patch.object(coordinator, "async_stop_command", new=AsyncMock()) as stop,
+            raises_key("side_not_supported", ServiceValidationError),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_STOP_ALL,
+                {"device_id": [device_id], "side": "left"},
+                blocking=True,
+            )
+
+        stop.assert_awaited_once_with()
 
     async def test_linak_simultaneous_move_service_uses_combined_opcode_and_release(
         self,

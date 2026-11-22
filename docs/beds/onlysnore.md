@@ -6,8 +6,8 @@
 
 ## Known Models
 
-The app's model labels are in the generated parameter table below. They do not
-establish physical motor counts or packet-level side addressing.
+The app's model names are in the parameter table below. A model name does not
+tell how many motors your bed has.
 
 ## Apps
 
@@ -20,13 +20,13 @@ establish physical motor counts or packet-level side addressing.
 | Feature | Supported |
 |---|---|
 | Motor control | Head/back, foot/legs, lumbar, headrest and hips, as labelled by the app |
-| Position feedback | No motor angle/position data |
+| Position feedback | ❌ |
 | Presets | Flat, reading, TV, zero gravity, anti-snore, M1 and M2 |
 | Save | Six non-flat presets |
-| Massage | Massage switch (state from the reported timer option), wave, timer and head/foot strength cycles |
-| Lights | One light action; no proven discrete on/off or feedback |
-| Local settings | Privacy and snore detection switches, anti-snore intervention select and bounded level tests |
-| Alarms | One or three, according to BED configuration |
+| Massage | Massage switch (on while the bed reports a massage timer), wave, timer and head/foot strength steps |
+| Lights | One light button; no separate on and off, state not shown |
+| Local settings | Privacy and snore detection switches, anti-snore intervention select and level tests |
+| Alarms | One or three, depending on the bed |
 
 ## Choosing a profile
 
@@ -159,7 +159,7 @@ codecs cannot produce this app's frames.
 
 #### Setup
 
-Choose **Snore Monitor** in manual setup and select the model the app shows.
+Choose **Snore Monitor app** in manual setup and select the model the app shows.
 Discovery needs a name starting with `SLEEP_V` (any case), manufacturer
 company 89, and manufacturer data that holds the bed's address reversed.
 The model comes from byte 6 of that data. Wi-Fi setup is not supported. Reconfigure and
@@ -180,7 +180,7 @@ side at a time is refused before anything moves.
 The **Massage** switch starts and stops massage; it is on while the reported
 massage timer option is nonzero. That state is only as fresh as the last status
 query, so the switch shows separate on and off controls, and each always sends
-its start or stop command. Use the cycle buttons for wave (Massage: Mode),
+its start or stop command. Use the cycle buttons for wave (Massage mode),
 timer and head/foot strength. The reported option indices stay internal. No
 absolute massage level setter, light brightness, color or discrete light state is
 inferred.
@@ -206,9 +206,9 @@ These names describe device commands and make no clinical efficacy claim.
 one-based slot, enabled state, minute-precision time, `weekdays` (`monday` to
 `sunday`, sent as the app's week mask: 1 Sunday, 2 Monday up to 64 Saturday;
 leave it empty for a one-time alarm) and triple-only soft wake. Alarms send the
-app's default alarm action (code `01`); the app's other four action codes have no
-established meaning, so they are not offered. This bed is not on the shared
-`set_alarm` action because its alarm actions have no established meaning. The action also prepares
+app's default alarm action (code `01`); what the app's other four action codes do
+is unknown, so they are not offered. This bed is not on the shared `set_alarm`
+action for the same reason. The action also prepares
 both beds of a combined pair before either writes and rechecks each bed's
 connection before the first write. All selected beds are validated before execution. For one-time masks, single
 alarms retain current seconds, clear subseconds, advance by an elapsed day when

@@ -554,7 +554,7 @@ async def _async_connect_and_verify(
             report_action(SetupAction.PAIRING)
             try:
                 await client.pair()
-            except Exception as err:  # noqa: BLE001 - the verifier decides
+            except Exception as err:
                 # The RPC can create the bond and still raise, typically by
                 # timing out waiting for its own reply. The link is usually
                 # still up, so let the auth-gated read decide whether a bond
@@ -586,7 +586,7 @@ async def _async_connect_and_verify(
                 detail=str(pair_error) or pair_error.__class__.__name__,
             )
         return evidence
-    except Exception as err:  # noqa: BLE001 - a failure here is an outcome
+    except Exception as err:
         _LOGGER.warning("Bond recovery for %s failed: %s", name, err)
         return OperationResult(
             outcome=OperationOutcome.CONNECTION_FAILED,
@@ -603,10 +603,10 @@ async def _async_connect_and_verify(
             except asyncio.CancelledError:
                 try:
                     await _async_await_task_completion(disconnect)
-                except Exception:  # noqa: BLE001 - preserve cancellation
+                except Exception:
                     _LOGGER.debug("Disconnect after recovery failed", exc_info=True)
                 raise
-            except Exception:  # noqa: BLE001 - cleanup must not mask the result
+            except Exception:
                 _LOGGER.debug("Disconnect after recovery failed", exc_info=True)
 
 

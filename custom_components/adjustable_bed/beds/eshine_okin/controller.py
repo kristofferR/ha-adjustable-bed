@@ -256,8 +256,9 @@ class EshineOkinController(BedController):
                 _group_key(group),
                 "mdi:alarm" if group == "alarm" else "mdi:vibrate",
                 attribute_keys=(_group_data_key(group),),
-                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE if group == "massage" else CARD_UTILITY,
+                entity_registry_enabled_default=True,
+                entity_category=None,
             )
             for group in (("massage", "alarm") if self.supports_massage else ("alarm",))
         )
@@ -466,7 +467,7 @@ class EshineOkinController(BedController):
         if control not in self.held_control_options:
             raise ValueError("Unsupported eShine held control")
         if type(duration_ms) is not int or not 0 < duration_ms <= 60000:
-            raise ValueError("Duration must be an integer from 1 to 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -520,7 +521,7 @@ class EshineOkinController(BedController):
         foot_level: int = 0,
     ) -> None:
         if weekdays or head_level or foot_level:
-            raise ValueError("eShine selects a single next-occurrence day and no massage levels")
+            raise ValueError("This bed's alarm rings once, at the next matching time, and has no massage. Remove the weekdays and massage levels")
         if enabled and (
             preset not in self.clock_alarm_preset_options
             or type(hour) is not int
@@ -528,7 +529,7 @@ class EshineOkinController(BedController):
             or type(minute) is not int
             or not 0 <= minute <= 59
         ):
-            raise ValueError("Choose an available eShine action and minute-precision alarm time")
+            raise ValueError("Choose a wake action this bed offers and an alarm time")
         session = self._live()
         now = dt_util.now()
         packet = alarm_frame(now, hour, minute, preset) if enabled else COMMANDS["disable_alarm"]

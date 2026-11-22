@@ -60,7 +60,7 @@ async def test_hub_reload_keeps_registry_customization_through_inventory_changes
     assert not action.available
     assert registry.async_get(existing.entity_id) == customized
     writes = coord.client.write_gatt_char.await_count
-    with pytest.raises(ValueError, match="unavailable"):
+    with pytest.raises(ValueError, match="does not offer"):
         await action.async_press()
     assert coord.client.write_gatt_char.await_count == writes
     # A genuine profile change still removes stale hub-only identities.

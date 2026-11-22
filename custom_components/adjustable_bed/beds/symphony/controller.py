@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
@@ -40,6 +41,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..keeson.controller import KeesonController, _wait_unless_cancelled
 from ..lifecycle import ControllerSession
@@ -208,7 +210,7 @@ class SymphonyController(KeesonController):
             or not 1 <= color <= 7
             or not 20 <= brightness <= 80
         ):
-            raise ValueError("Choose a SoundWave light product, color 1..7 and brightness 20..80")
+            raise ValueError("Choose a color from 1 to 7 and a brightness from 20 to 80. Only SoundWave bed models have this light")
 
     def _roles(self) -> None:
         client = self.client
@@ -319,7 +321,7 @@ class SymphonyController(KeesonController):
             or isinstance(duration_ms, bool)
             or not 100 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a product motor and a duration of 100..30000 ms")
+            raise ValueError("Choose a motor this bed offers and a duration from 0.1 to 30 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -498,7 +500,7 @@ class SymphonyController(KeesonController):
             return (frame,)
         if self.app.product.page == "split_p3" and len(sides) > 1 and enabled:
             raise ValueError(
-                "Split P3 sides cannot share the same enabled alarm time; select one side"
+                "The two sides cannot have the same alarm time. Set the alarm on one side"
             )
         return frames
 
@@ -560,7 +562,7 @@ class SymphonyController(KeesonController):
     async def set_privacy(self, enabled: bool) -> None:
         if self.app.selector not in (2, 9):
             raise ValueError(
-                "The app's Privacy Settings are available only for Sleep Smart selectors 2 and 9"
+                "This bed model has no privacy settings"
             )
         frame = (
             okin_soundwave.record(7, 2, (int(enabled),))
@@ -901,6 +903,7 @@ class SymphonyController(KeesonController):
                 "on",
                 "mdi:lock",
                 local_set_fn=local,
+                entity_category=EntityCategory.CONFIG,
             )
         ]
         if self._privacy_settable:
@@ -911,6 +914,7 @@ class SymphonyController(KeesonController):
                     privacy,
                     k.PRIVACY,
                     icon="mdi:shield-lock",
+                    entity_category=EntityCategory.CONFIG,
                 )
             )
         if self._light_switchable:
@@ -959,15 +963,15 @@ class SymphonyController(KeesonController):
                     self._key(k.ALARM),
                 ),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         ]
         if self.supports_massage:
             specs.append(
-                ControllerStateSensorSpec(
+                massage_timer_sensor_spec(
                     "symphony_massage",
                     "symphony_massage",
                     self._key(k.TIMER),
-                    "mdi:vibrate",
                     attribute_keys=(
                         self._key(k.MASSAGE),
                         self._key(k.WAVE),
@@ -977,7 +981,6 @@ class SymphonyController(KeesonController):
                         self._key(k.PREMIER),
                     ),
                     card=CARD_MASSAGE_TIMER,
-                    entity_registry_enabled_default=True,
                 )
             )
         return tuple(specs)
@@ -1077,7 +1080,7 @@ class SymphonyController(KeesonController):
                     self._massage_received.set()
                 self._old_massage[side] = packet
                 self._publish(k.MASSAGE, massage.running, side)
-                self._publish(k.TIMER, massage.timer_index, side)
+                self._publish(k.TIMER, massage.timer_index * 10, side)
                 self._publish(k.WAVE, massage.wave, side)
                 self._publish(k.HEAD, massage.head, side)
                 self._publish(k.FOOT, massage.foot, side)

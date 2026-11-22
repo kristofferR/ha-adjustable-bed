@@ -58,6 +58,7 @@ from .command_scheduler import (
     DeviceCommandScheduler,
     HoldClaim,
     HoldLease,
+    HoldWindows,
     StreamDriver,
     StreamMember,
     command_frames_not_counted,
@@ -179,11 +180,17 @@ from .const import (
 from .controller_factory import create_controller
 from .controller_state import AnyStateKey, ControllerState, StateKey, StateUpdate
 from .coordinator_bonds import CoordinatorBondsMixin
-from .coordinator_connection import CoordinatorConnectionMixin
+from .coordinator_connection import _AUTO_RECONNECT_DELAY_SECONDS, CoordinatorConnectionMixin
 from .coordinator_positions import CoordinatorPositionsMixin
 from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     is_mac_like_name,
+)
+from .errors import (
+    BedCommandFailedError,
+    BedCommandTimedOutError,
+    BedNotConnectedError,
+    bluetooth_errors_translated,
 )
 from .execution import HOLD_CEILING_MS
 from .import_executor import async_import_modules
@@ -477,6 +484,8 @@ class AdjustableBedCoordinator(
         self._command_lock = asyncio.Lock()  # Separate lock for command serialization
         self._command_connection_holds = 0
         self._command_scheduler = DeviceCommandScheduler(self._address.replace(":", "_"))
+        # Held-control presses live and die with this runtime: a reload starts clean.
+        self.hold_windows = HoldWindows()
         self._connecting: bool = False  # Track if we're actively connecting
         self._intentional_disconnect: bool = (
             False  # Track intentional disconnects to skip auto-reconnect
@@ -600,8 +609,9 @@ class AdjustableBedCoordinator(
         self._connection_success_count: int = 0
         self._last_connection_attempt: datetime | None = None
         self._last_connection_error: str | None = None
-        # Set once a failed connect has been reported, so an outage warns once.
-        self._connect_failure_logged = False
+        # Wait before the next recovery of a bed that asks for one; it grows
+        # while the bed stays away.
+        self._recovery_retry_delay = _AUTO_RECONNECT_DELAY_SECONDS
         # Set once a connect finished startup; a drop before then is part of an outage.
         self._link_ready = False
         self._last_connection_error_type: str | None = None
@@ -708,7 +718,11 @@ class AdjustableBedCoordinator(
         )
 
     async def _async_reload_after_capability_change(self) -> None:
-        """Wait for commands to release the link, then reconcile entity platforms."""
+        """Wait for commands to release the link, then reconcile entity platforms.
+
+        The guard is released before the reload: the unload waits for every
+        admitted STOP, and a STOP needs the command lock the guard holds.
+        """
         try:
             loaded = loaded_runtime(self.hass, self.entry.entry_id)
             reload_guard = (
@@ -722,10 +736,12 @@ class AdjustableBedCoordinator(
                     reload_guard,
                 )
                 async with typed_reload_guard():
-                    await self._async_reload_if_capability_changed()
+                    reload = self._claim_capability_reload()
             else:
                 async with self.async_command_operation_guard():
-                    await self._async_reload_if_capability_changed()
+                    reload = self._claim_capability_reload()
+            if reload is not None:
+                await self._async_reload_capabilities(reload)
         finally:
             self._capability_reload_scheduled = False
 
@@ -746,15 +762,21 @@ class AdjustableBedCoordinator(
 
     async def _async_reload_if_capability_changed(self) -> None:
         """Reload if this disconnected coordinator still owns the loaded entry."""
+        reload = self._claim_capability_reload()
+        if reload is not None:
+            await self._async_reload_capabilities(reload)
+
+    def _claim_capability_reload(self) -> dict[tuple[str, str], RetainedAppState] | None:
+        """Take a due reload; return the Starcode app state to carry over it."""
         if (
             not self._pending_capability_reload
             or self._capability_reload_deferrals
             or self._shutting_down
             or self._pairing_transfer_active
         ):
-            return
+            return None
         if self._client is not None and self._client.is_connected:
-            return
+            return None
         loaded = loaded_runtime(self.hass, self.entry.entry_id)
         owns_loaded_child = False
         if isinstance(self.entry, ChildEntryView) and loaded is not None:
@@ -762,7 +784,7 @@ class AdjustableBedCoordinator(
             side = self.entry.data.get(CONF_SIDE)
             owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
         if loaded is not self and not owns_loaded_child:
-            return
+            return None
         from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         retained_states = {
@@ -773,12 +795,19 @@ class AdjustableBedCoordinator(
             and child.starcode_app_retained_state.address == child.address
         }
         self._pending_capability_reload = False
+        return retained_states
+
+    async def _async_reload_capabilities(
+        self, retained_states: dict[tuple[str, str], RetainedAppState]
+    ) -> None:
+        """Reload the entry and give Starcode children back their app state."""
         if not await self.hass.config_entries.async_reload(self.entry.entry_id):
             return
         if not retained_states:
             return
         await async_import_modules(self.hass, "beds.starcode.abm5_4")
         from .beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+        from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         reloaded = loaded_runtime(self.hass, self.entry.entry_id)
         for child in self._starcode_reload_coordinators(reloaded):
@@ -980,6 +1009,11 @@ class AdjustableBedCoordinator(
     def ble_device_name(self) -> str:
         """Return the observed BLE name or configured fallback for controller logic."""
         return self._ble_device_name
+
+    @property
+    def ble_model(self) -> str | None:
+        """Return the model string the bed reported over Bluetooth, if any."""
+        return self._ble_model
 
     @property
     def observed_ble_device_name(self) -> str | None:
@@ -1232,7 +1266,7 @@ class AdjustableBedCoordinator(
             # Auto-detected variant: needs a live client to resolve. Leave the
             # offline controller unset (this side behaves as today until connect).
             self._offline_controller = None
-        except Exception:  # noqa: BLE001 - capability priming must never block setup
+        except Exception:
             _LOGGER.debug(
                 "Offline capability-controller mint failed for %s",
                 self._name,
@@ -1874,94 +1908,6 @@ class AdjustableBedCoordinator(
         with command_frames_not_counted():
             await self._controller.async_refresh_auth()
 
-    async def async_write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_running: bool = True,
-    ) -> None:
-        """Write a command to the bed.
-
-        Motor commands cancel any running command for immediate response.
-        """
-        if cancel_running:
-            # Cancel any running command immediately
-            self.request_command_cancel()
-
-        # Capture cancel count at entry to detect if we get cancelled while waiting
-        entry_cancel_count = self._cancel_counter
-
-        async with self._command_demand_scope(), self._command_lock:
-            # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
-            self._hold_link_for_command()
-
-            # Check if we were cancelled while waiting for the lock
-            if self._cancel_counter > entry_cancel_count:
-                _LOGGER.debug("Command %s cancelled while waiting for lock", command.hex())
-                # Reset disconnect timer since we're bailing out
-                if self._client is not None and self._client.is_connected:
-                    self._reset_disconnect_timer()
-                return
-
-            try:
-                # Clear cancel signal for this command
-                self._cancel_command.clear()
-
-                logged_command = command.hex()
-                if self._bed_type == BED_TYPE_OCTO and self._controller is not None:
-                    trace_payload = self._controller._format_command_trace_payload(command)
-                    if trace_payload is not None:
-                        logged_command = str(trace_payload.get("hex", "**REDACTED**"))
-                _LOGGER.debug(
-                    "async_write_command: %s (repeat: %d, delay: %dms)",
-                    logged_command,
-                    repeat_count,
-                    repeat_delay_ms,
-                )
-                if not await self.async_ensure_connected(reset_timer=False):
-                    _LOGGER.error("Cannot write command: not connected to bed")
-                    raise ConnectionError("Not connected to bed")
-
-                if self._controller is None:
-                    _LOGGER.error("Cannot write command: no controller available")
-                    raise RuntimeError("No controller available")
-
-                await self._async_refresh_controller_auth()
-
-                # Start position polling during movement if angle sensing enabled
-                poll_stop: asyncio.Event | None = None
-                poll_task: asyncio.Task[None] | None = None
-                if (
-                    not self._disable_angle_sensing
-                    and self._controller.allow_position_polling_during_commands
-                ):
-                    poll_stop = asyncio.Event()
-                    poll_task = asyncio.create_task(
-                        self._async_poll_positions_during_movement(poll_stop)
-                    )
-
-                try:
-                    await self._controller.write_command(
-                        command, repeat_count, repeat_delay_ms, self._cancel_command
-                    )
-                finally:
-                    # Stop polling
-                    if poll_stop is not None:
-                        poll_stop.set()
-                    if poll_task is not None:
-                        poll_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await poll_task
-
-                # Final position read after command
-                if not self._disable_angle_sensing and not self._cancel_command.is_set():
-                    # Fire-and-forget with lock to prevent concurrent GATT ops
-                    self._start_background_position_read()
-            finally:
-                if self._client is not None and self._client.is_connected:
-                    self._reset_disconnect_timer()
-
     def _protocol_command_resources(self, resources: frozenset[str]) -> frozenset[str]:
         """Keep protocol-wide streams in the same scope as their release."""
         controller = self.capability_controller
@@ -2032,14 +1978,20 @@ class AdjustableBedCoordinator(
                 _LOGGER.exception("STOP failed after its caller was cancelled")
             raise
 
+    def _not_connected_error(self) -> BedNotConnectedError:
+        """Return why the bed could not be reached, naming a closed pairing window."""
+        if self.refused_outside_pairing_window:
+            return BedNotConnectedError("bed_pairing_window_closed")
+        return BedNotConnectedError()
+
     async def _async_send_stop_command(self) -> None:
         """Send STOP while owning the legacy wire and connection lifecycle lane."""
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
         # then waits for any cancelled controller cleanup to release the wire lock.
         async with self._command_demand_scope(), self._command_lock:
             self._hold_link_for_command()
-            if getattr(self, "_pairing_transfer_active", False) is True:
-                raise ConnectionError("Bed ownership is being transferred")
+            if self._pairing_transfer_active:
+                raise BedNotConnectedError("bed_combining")
             controller = self._controller
             disconnected_transport = controller is not None and (
                 controller.requires_disconnected_transport is True
@@ -2048,22 +2000,18 @@ class AdjustableBedCoordinator(
                 if disconnected_transport:
                     assert controller is not None
                     if controller.disconnected_transport_ready is not True:
-                        raise ConnectionError(
-                            "Selected disconnected transport is not ready for STOP"
-                        )
+                        raise BedNotConnectedError("pairlink_not_ready", device_name=self.name)
                 else:
                     if not await self.async_ensure_connected(reset_timer=False):
-                        _LOGGER.error("Cannot send stop: not connected to bed")
-                        raise ConnectionError("Not connected to bed")
+                        _LOGGER.debug("Cannot send stop: not connected to bed")
+                        raise self._not_connected_error()
 
                     # Connecting can rebuild the controller from the selected
                     # path. STOP must use that live instance, not the offline
                     # discovery-time controller captured before the connect.
                     controller = self._controller
                     if controller is None or controller.requires_disconnected_transport is True:
-                        raise ConnectionError(
-                            "Selected controller changed transport during STOP preparation"
-                        )
+                        raise BedNotConnectedError
 
                     try:
                         await self._async_refresh_controller_auth()
@@ -2082,7 +2030,8 @@ class AdjustableBedCoordinator(
                         )
 
                 # Use controller's stop_all method which knows the correct protocol
-                await controller.stop_all()
+                with bluetooth_errors_translated():
+                    await controller.stop_all()
                 _LOGGER.info("Stop command sent")
             finally:
                 if (
@@ -2103,8 +2052,8 @@ class AdjustableBedCoordinator(
 
     async def _async_prepare_controller_operation(self, operation_name: str) -> BedController:
         """Prepare the selected transport before any controller operation."""
-        if getattr(self, "_pairing_transfer_active", False) is True:
-            raise ConnectionError("Bed ownership is being transferred")
+        if self._pairing_transfer_active:
+            raise BedNotConnectedError("bed_combining")
         controller = self._controller
         if controller is not None and controller.requires_disconnected_transport is True:
             if controller.disconnected_transport_ready is not True:
@@ -2112,12 +2061,12 @@ class AdjustableBedCoordinator(
                     "Cannot execute %s: selected disconnected transport is not ready",
                     operation_name,
                 )
-                raise ConnectionError("Selected disconnected transport is not ready")
+                raise BedNotConnectedError("pairlink_not_ready", device_name=self.name)
             return controller
 
         if not await self.async_ensure_connected(reset_timer=False):
-            _LOGGER.error("Cannot execute %s: not connected to bed", operation_name)
-            raise ConnectionError("Not connected to bed")
+            _LOGGER.debug("Cannot execute %s: not connected to bed", operation_name)
+            raise self._not_connected_error()
 
         # async_ensure_connected may resolve a different usable path and
         # replace the offline controller. Return only the controller bound to
@@ -2128,9 +2077,7 @@ class AdjustableBedCoordinator(
                 "Cannot execute %s: current central controller is unavailable after connect",
                 operation_name,
             )
-            raise ConnectionError(
-                f"Selected controller changed transport during {operation_name} preparation"
-            )
+            raise BedNotConnectedError
         await self._async_refresh_controller_auth()
         if self._bed_type == BED_TYPE_OCTO:
             from .beds.octo.runtime import octo_controller
@@ -2442,6 +2389,12 @@ class AdjustableBedCoordinator(
                         self._start_background_position_read()
 
                 return result
+            except (BedCommandFailedError, BedCommandTimedOutError):
+                raise
+            # The one place a Bluetooth error or timeout from an admitted
+            # command or motor STOP gets the integration's wording.
+            except TimeoutError as err:
+                raise BedCommandTimedOutError from err
             except BleakError as err:
                 if _is_ble_authentication_error(err):
                     # A runtime auth failure is not the startup case: the
@@ -2457,7 +2410,7 @@ class AdjustableBedCoordinator(
                         # The unpaired proxy link is encrypted now and its bond
                         # verified; only this command failed. Nothing is
                         # dropped or cleared, so the next command works.
-                        raise
+                        raise BedCommandFailedError(err) from err
                     # After a failed proxy attempt the link counts as paired,
                     # so this only selects the one-connection beds' path.
                     encrypt_in_place = self._can_encrypt_link_in_place()
@@ -2466,7 +2419,7 @@ class AdjustableBedCoordinator(
                     )
                     if encrypt_in_place:
                         await self._async_encrypt_link_in_place()
-                raise
+                raise BedCommandFailedError(err) from err
             except _CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS:
                 if (
                     not preserve_idle_deadline
@@ -2665,9 +2618,11 @@ class AdjustableBedCoordinator(
                 operation_name="merged stream",
             )
 
-        return await self._command_scheduler.execute_stream_member(
-            member, resources, runner, expected_stop_epoch=expected_stop_epoch
-        )
+        # Members receive the stream's own errors, past the executor.
+        with bluetooth_errors_translated():
+            return await self._command_scheduler.execute_stream_member(
+                member, resources, runner, expected_stop_epoch=expected_stop_epoch
+            )
 
     def claim_hold_lease(
         self,
@@ -2753,12 +2708,6 @@ class AdjustableBedCoordinator(
                 # The group helper rejects public STOP during its await. Its
                 # own settled cleanup STOPs precede this individual admission.
                 expected_stop_epoch = self._command_scheduler.stop_epoch
-
-        if (
-            expected_stop_epoch is not None
-            and self._command_scheduler.stop_epoch != expected_stop_epoch
-        ):
-            return
 
         if (
             expected_stop_epoch is not None

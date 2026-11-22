@@ -23,6 +23,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.start import async_at_started
 
+from .automation_references import entity_users
 from .const import BED_TYPE_OCTO, DOMAIN
 from .paired_coordinator import entity_runtimes
 
@@ -64,12 +65,25 @@ RETYPES: Final[tuple[Retype, ...]] = (
             ),
         ),
     ),
+    # A massage state that was a text sensor.
+    Retype(
+        "sensor", "starcode_abm5_4_massage_on", "binary_sensor", "starcode_abm5_4_massage_active"
+    ),
     # Two-option settings that became switches.
     *(
         Retype(
             "select", f"controller_select_okin_app_{s}", "switch", f"controller_switch_okin_app_{s}"
         )
         for s in ("installation", "actuator_1", "actuator_2")
+    ),
+    *(
+        Retype("select", f"controller_select_{old}", "switch", f"controller_switch_{new}")
+        for old, new in (
+            ("reverie_pairlink_massage_rhythm", "reverie_pairlink_massage_rhythm"),
+            ("doublesleep_child_lock", "doublesleep_child_lock"),
+            ("adjustamattress_snore_control", "adjustamattress_snore_control"),
+            ("adjustamattress_alarm_commit", "adjustamattress_alarm"),
+        )
     ),
     # Toggle buttons whose state the bed reports.
     Retype(
@@ -80,6 +94,17 @@ RETYPES: Final[tuple[Retype, ...]] = (
     ),
     Retype(
         "button", "motion_bed_sleepmian", "switch", "controller_switch_motion_bed_sleep_enabled"
+    ),
+    Retype("button", "adjustamattress_sleep", "switch", "controller_switch_adjustamattress_sleep"),
+    # Light readings of beds that report their light: the light shows that state.
+    *(
+        Retype("binary_sensor", key, "light", "under_bed_lights")
+        for key in (
+            "under_bed_lights",
+            "furnimove_ubl",
+            "innova_light",
+            "adjustable_lite_light",
+        )
     ),
     # Massage level selects that became numbers.
     *(
@@ -319,9 +344,6 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
     row that kept its entity ID and only changed its options is still named by
     automations the user already fixed, so its line is raised once and kept.
     """
-    from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
-    from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
-
     registry = er.async_get(hass)
     reported = _reported_moves(hass, entry)
     rows = er.async_entries_for_config_entry(registry, entry.entry_id)
@@ -346,15 +368,7 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
         if not isinstance(old_entity_id, str):
             continue
         references = (old_entity_id, options.get(RETYPED_FROM_ID))
-        users = {
-            user
-            for reference in references
-            if isinstance(reference, str)
-            for user in (
-                *automations_with_entity(hass, reference),
-                *scripts_with_entity(hass, reference),
-            )
-        }
+        users = entity_users(hass, [ref for ref in references if isinstance(ref, str)])
         options_changed = bool(options.get(RETYPED_OPTIONS))
         if not users or options_changed:
             # Reported once (an options change), or nothing names the old entity.

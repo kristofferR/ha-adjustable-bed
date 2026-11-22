@@ -115,7 +115,6 @@ async def handle(call: ServiceCall) -> None:
         await _preflight_and_execute(
             _call_targets(call),
             SleepController,
-            "Richmat sleep session",
             lambda c: c.execute_request(request),
             validate=lambda c: c.validate_request(request),
         )
@@ -128,8 +127,7 @@ async def handle(call: ServiceCall) -> None:
             )
             for parent, side in targets
         ]
-        label = "Richmat app controls"
-        preflighted = await _preflight_capability(targets, RichmatAppController, label)
+        preflighted = await _preflight_capability(targets, RichmatAppController)
 
         async def validate_live(controller: RichmatAppController) -> None:
             await controller.prepare_request(request)
@@ -139,14 +137,14 @@ async def handle(call: ServiceCall) -> None:
         await _execute_preflighted(
             targets,
             preflighted,
-            _family_command(RichmatAppController, label, validate_live),
+            _family_command(RichmatAppController, validate_live),
             resource=resource,
             admissions=admissions,
         )
         await _execute_preflighted(
             targets,
             preflighted,
-            _family_command(RichmatAppController, label, lambda c: c.execute_request(request)),
+            _family_command(RichmatAppController, lambda c: c.execute_request(request)),
             resource=resource,
             admissions=admissions,
         )

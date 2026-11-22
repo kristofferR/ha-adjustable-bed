@@ -77,7 +77,8 @@ class SessionController(RichmatClassicController):
             self._record_command_trace(
                 destination.uuid, packet, response=response, characteristic=destination
             )
-            await session.client.write_gatt_char(destination, packet, response=response)
+            async with self._ble_lock:
+                await session.client.write_gatt_char(destination, packet, response=response)
             note_frame_written(cancel)
 
         await settled(write())

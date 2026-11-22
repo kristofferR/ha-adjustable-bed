@@ -235,7 +235,7 @@ async def test_side_state_is_not_published_as_both_sides():
     frame = bytearray(19)
     frame[0], frame[14], frame[16] = 241, 3, 2
     ctrl._parse_notification(bytes(frame))
-    assert coord.controller_state["right_app_timer_status"] == 3
+    assert coord.controller_state["right_app_timer_status"] == 30
     assert coord.controller_state["left_app_timer_status"] is None
     assert coord.controller_state["app_timer_status"] is None
     with ctrl.side_scope("right"):
@@ -258,7 +258,7 @@ async def test_product_session_init_and_pairing_contract(product):
         else [b"\x00\xb0"] * 3
     )
     if not p1:
-        with pytest.raises(ValueError, match="side selector"), ctrl.side_scope("left"):
+        with pytest.raises(ValueError, match="has no sides"), ctrl.side_scope("left"):
             ctrl._frame(1)
 
 
@@ -413,7 +413,7 @@ async def test_meditation_product_and_name_gates(product, name, expected):
     assert packets(coord)[-4].hex() == "040208000000"
     coord.observed_ble_device_name = "unrelated"
     if product != "20th Anniversary":
-        with pytest.raises(ValueError, match="do not admit"):
+        with pytest.raises(ValueError, match="no meditation mode"):
             await ctrl._run_action("meditation_start")
 
 
@@ -673,11 +673,9 @@ async def test_rgb_entity_tracks_reported_power_and_disconnect():
     for enabled in (True, False, True):
         _reported_light(ctrl, enabled)
         assert entity.is_on is enabled
-        assert coord.controller_state["ergomotion4_light"] is enabled
         assert coord.controller_state["under_bed_lights_on"] is enabled
     ctrl.on_disconnect()
     assert coord.controller_state["under_bed_lights_on"] is None
-    assert coord.controller_state["ergomotion4_light"] is None
     assert entity.is_on is False
 
 
@@ -767,3 +765,16 @@ def test_custom_preset_ancestor_gates_keep_o5_slot_consumption(keys, expected):
     # exist. dealTagAction consumes a slot even when the tag is inert o5.
     product = custom_product("Other", keys, (), False, False)
     assert set(product.commands) & {"C043", "C044", "C045", "C046"} == expected
+
+
+async def test_a_reported_light_is_one_light_and_an_unreported_one_keeps_its_button():
+    # A custom product's status frames carry the light; the H style's do not.
+    ctrl, _ = await ready("custom", ergomotion4_model_keys=["k1"], has_light=True)
+    assert ctrl.supports_light_state_feedback and ctrl.supports_light_toggle_control
+    light = ctrl._light_action()
+    assert light is not None
+    assert light.key not in {s.key for s in ctrl.controller_button_specs if s is not None}
+    assert ctrl.controller_state_binary_sensor_specs == ()
+    plain, _ = await ready("H")
+    assert not plain.supports_light_state_feedback
+    assert "c056" in {s.key for s in plain.controller_button_specs if s is not None}

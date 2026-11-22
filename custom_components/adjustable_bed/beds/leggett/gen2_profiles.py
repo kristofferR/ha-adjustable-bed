@@ -55,7 +55,7 @@ class Gen2Capabilities:
     is_chair: bool = False
 
 
-def _c(  # noqa: PLR0913 - mirrors the profile JSON fields one-to-one
+def _c(
     light: LightStyle,
     brightness: bool,
     pillow: bool,

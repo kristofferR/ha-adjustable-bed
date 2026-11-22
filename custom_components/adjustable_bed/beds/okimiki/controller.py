@@ -376,11 +376,11 @@ class OkimikiController(GoodVibeController):
         seconds = self._requests.get("seconds") if self.supports_lights else None
         repeat = self.model.alarm == "repeat"
         # The last record per slot, as the edit action reads it.
-        latest = {row.id: row for row in getattr(self, "_alarms", [])} if repeat else {}
+        latest = {row.id: row for row in self._alarms} if repeat else {}
         alarms = [latest[slot] for slot in sorted(latest)]
         self.forward_controller_state_updates(
             DURATION(seconds if type(seconds) is int else None),
-            ALARM_COUNT(len(alarms) if repeat and getattr(self, "_link", None) is not None else None),
+            ALARM_COUNT(len(alarms) if repeat and self._link is not None else None),
             ALARM_RECORDS([_alarm_record(row) for row in alarms]),
         )
 
@@ -409,6 +409,8 @@ class OkimikiController(GoodVibeController):
             ControllerStateSensorSpec(
                 "okimiki_alarms", "okimiki_alarms", ALARM_COUNT, "mdi:alarm",
                 attribute_keys=(ALARM_RECORDS,),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

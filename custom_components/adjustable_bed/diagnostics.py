@@ -80,7 +80,7 @@ async def _async_paired_diagnostics(
     for side, child in coordinator.children.items():
         child_controller = child.controller
         sides[side] = {
-            "address": getattr(child, "address", None),
+            "address": child.address,
             "connected": child.is_connected,
             "reachability": connection_reachability(hass, child.address),
             "controller_type": (
@@ -88,7 +88,7 @@ async def _async_paired_diagnostics(
                 if child_controller is not None
                 else None
             ),
-            "position_data": getattr(child, "position_data", None),
+            "position_data": child.position_data,
             "command_timing": child.command_timing,
             "connection": child.connection_settings,
             "config": dict(child.entry.data),
@@ -122,7 +122,7 @@ async def _async_paired_diagnostics(
         "paired": True,
         "pair_id": entry.data.get(CONF_PAIR_ID),
         "name": coordinator.name,
-        "connection_mode": getattr(coordinator, "connection_mode", None),
+        "connection_mode": coordinator.connection_mode,
         "is_connected": coordinator.is_connected,
         "config_entry": {
             "title": entry.title,

@@ -91,7 +91,7 @@ async def test_explicit_stop_drains_both_frames_across_epoch_changes():
     client.write_gatt_char.side_effect = sent
     with virtual_clock():
         await c.stop_all()
-    assert frames(client) == [COMMANDS["stop"]] * 2
+    assert frames(client) == [COMMANDS["stop"]] * 2 + [COMMANDS["voice_stop"]] * 2
 
 
 @pytest.mark.parametrize("resubscribe", [True, False])
@@ -350,7 +350,9 @@ async def test_stop_reconnect_is_not_cancelled_by_movement_admission(native, mot
         assert target.command_scheduler.stop_epoch == epoch
         finish.set()
         await asyncio.gather(stop, movement)
-    assert frames(client)[-3:] == [COMMANDS["stop"]] * 2 + [COMMANDS["voice_head_up"]]
+    assert frames(client)[-5:] == (
+        [COMMANDS["stop"]] * 2 + [COMMANDS["voice_stop"]] * 2 + [COMMANDS["voice_head_up"]]
+    )
 
 
 async def test_motor_stop_waiting_for_writer_survives_movement_admission(native):
@@ -370,7 +372,7 @@ async def test_motor_stop_waiting_for_writer_survives_movement_admission(native)
         target._command_lock.release()
     with virtual_clock():
         await stop
-    assert frames(client) == [COMMANDS["stop"]] * 2
+    assert frames(client) == [COMMANDS["stop"]] * 2 + [COMMANDS["voice_stop"]] * 2
 
 
 @pytest.mark.parametrize("motor", [False, True])

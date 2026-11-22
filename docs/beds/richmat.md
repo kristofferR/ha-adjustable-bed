@@ -31,6 +31,7 @@ Brands using Richmat actuators:
 - [Hush Base](#hush-base) (L200 to L500, S175 to S575 and SH split-head models)
 - FLEXX MOTION
 - Likimio
+- Super Colchones AFEG302 and AFEG350
 - Lunio Smart+
 - [Good Vibe Sleep](#good-vibe-sleep) (dedicated app profiles and independent sleep sensors)
 - Best Mattress Power Base
@@ -43,28 +44,30 @@ Brands using Richmat actuators:
 - Forty Winks ActivFlex
 - Superior
 - Richmat HJA5 series
+- [Dream Sense Bed](#dream-sense-bed)
 - [Saatva](#saatva)
-- Saatva
 - Lucid L300
 - Classic Brands
 - Eshine (E6000)
 
 The catalog apps name their layouts themselves: an RMControl product code, a
 Richmat MH model (the first four characters of the Bluetooth name), an HJBed
-or Good Vibe Sleep product or a classic app's four-character layout. Shared services and Bluetooth names do not identify a layout, so each
-is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
+or Good Vibe Sleep product or a classic app's four-character layout. The
+Bluetooth name does not tell which layout a bed has, so you pick it in setup (see
+[Choosing a profile](#choosing-a-profile)).
 
 ## Apps
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [Dream Sense Bed](https://play.google.com/store/apps/details?id=com.richmat.dreamsense) 1.0.4 | `com.richmat.dreamsense` | [Dream Sense Bed](#dream-sense-bed) |
 | ✅ | [Jerome's power base](https://play.google.com/store/apps/details?id=com.richmat.jerome2) 1.0.9 | `com.richmat.jerome2` | [Jerome's power base](#jeromes-power-base) |
 | ✅ | [Power Bob Base](https://play.google.com/store/apps/details?id=com.richmat.bobpowerbase) 1.0.9 (10900) | `com.richmat.bobpowerbase` | [Power Bob Base](#power-bob-base) |
 | ✅ | [BedSmart / X-Series](https://play.google.com/store/apps/details?id=com.richmat.bedsmart) 1.0.7 (8) | `com.richmat.bedsmart` | [BedSmart / X-Series](#bedsmart--x-series) |
 | ✅ | [Richmat](https://play.google.com/store/apps/details?id=com.richmat.richmat) 4.2.0 (42006) | `com.richmat.richmat` | [Richmat 4.2.0](#richmat-420) |
 | ✅ | [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.7 | `com.richmat.rmcontrol2` | [RMControl](#rmcontrol); the [Richmat remotes](#richmat-remotes) cover the same beds |
 | ✅ | [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) 7.1.3 (14) | `com.bedtech` | [BedTech](#bedtech) |
-| ✅ | [SleepFunction Bed Control](https://play.google.com/store/apps/details?id=com.richmat.sleepfunction) | `com.richmat.sleepfunction` | [Richmat remotes](#richmat-remotes) |
+| ✅ | [SleepFunction Bed Control](https://play.google.com/store/apps/details?id=com.richmat.sleepfunction) | `com.richmat.sleepfunction` | [SleepFunction Bed Control](#sleepfunction-bed-control) |
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25 | `com.richmat.lp2` | [L&P MlRM](#lp-mlrm), [Richmat remotes](#richmat-remotes) (QRRM) |
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp) 2.2.1 (13), legacy | `com.richmat.lp` | [L&P legacy app](#lp-legacy-app) |
 | ✅ | [LP Control](https://play.google.com/store/apps/details?id=com.leggett.android.universal) 2.9.0 | `com.leggett.android.universal` | [Leggett & Platt](leggett-platt.md) |
@@ -105,22 +108,23 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501) | `com.richmat.hushbase` | [Hush Base](#hush-base); setup, sleep sensors and remote finder in its [own guide](hush-base.md) |
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25 | `com.richmat.lp2` | [L&P Adjustable Base](#lp-adjustable-base) |
 | ✅ | [Saatva](https://play.google.com/store/apps/details?id=com.saatva) 1.1.0 | `com.saatva` | [Saatva](#saatva) |
+| ✅ | [Super Colchones](https://play.google.com/store/apps/details?id=com.richmat.supercolchones) 1.0.2 | `com.richmat.supercolchones` | [Super Colchones](#super-colchones) |
 
 ## Features
 
 | Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed | Classic apps | Eshine | Good Vibe Sleep | L&P legacy app | Casper Base | Hush Base |
 |---------|-----------------|---------|----------|-----------|------------|-------|------------|--------|-----------------|----------------|-------------|-----------|
-| Motor Control | ✅ (up to 7 motors) | ✅ Back/legs; BT6500 pillow/lumbar; FH head banks | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product | ✅ Exact app-labelled controls per selected layout | ✅ Head, feet, lumbar and pillow; global STOP | ✅ Exact app-labelled actions, with each product's gesture and operand | ⚠️ Layout-specific app buttons; no generic head, foot or lumbar axes | ✅ Product-specific; PRO back, legs and lumbar, MAX adds pillow | ✅ Product-specific back, legs, pillow, lumbar, combined and third motor |
-| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ Explicit 7.1.3 models, no release frame; legacy keeps finite pulses | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ✅ Keep buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds), release 50 ms after it ends); short, long and armed presses keep their gestures | ✅ ([renewable hold](../SERVICES.md#renewable-holds) and `hold_control`, then STOP) | ✅ Sustained-press controls only ([renewable hold](../SERVICES.md#renewable-holds)); short, long and short-and-long presses, and memory-mode controls while memory mode is on, keep their own gestures | ❌ Button gestures only | ❌ Finite pulses, then STOP | ❌ Finite pulses, then STOP |
+| Motor Control | ✅ (up to 7 motors) | ✅ Back/legs; BT6500 pillow/lumbar; FH head banks | ✅ Head, Feet | ✅ The product's motors, as in the app | ✅ Two motors; which ones depends on the model | ✅ Head, foot, combined, pillow, lumbar, tilt, foot box and sofa, by product | ✅ Your layout's controls, named as in the app | ✅ Head, feet, lumbar and pillow; Stop all | ✅ Your product's controls, named and pressed as in the app | ⚠️ Your layout's app buttons; no separate head, foot or lumbar covers | ✅ By product; PRO back, legs and lumbar, MAX adds pillow | ✅ Back, legs, pillow, lumbar, combined and a third motor, by product |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ Models chosen with the 7.1.3 app; the older route moves in steps | ✅ | ✅ Products whose app holds to move; others move in steps | ✅ | ✅ (controls the app holds) | ✅ Hold buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds)); other buttons press as in the app | ✅ ([renewable hold](../SERVICES.md#renewable-holds) and `hold_control`, then STOP) | ✅ Controls the app holds ([renewable hold](../SERVICES.md#renewable-holds)); other buttons press as in the app | ❌ | ❌ (moves in steps) | ❌ (moves in steps) |
 | [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks | ❌ (motor reports never populate position feedback or sliders) | ❌ No calibrated position controls; raw typed events remain visible | ❌ | ❌ Raw motor-number diagnostics only, not calibrated angles | ❌ Raw index, angle and height events only |
-| Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates | ❌ (named preset saves instead) | ✅ Product-specific short/long gestures and local memory mode | ⚠️ Only as the selected layout's named app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Product-specific recall and explicit save |
-| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Model-specific presets; Lounge only on legacy | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge actions where the product has them | ⚠️ Only as the selected layout's named app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ Product-specific, recall and save |
-| Massage | ✅ | ✅ Model-specific zone, mode and off actions; 20-minute **Massage: Timer** select | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage: Timer** select where the main page has several timers | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode and intensity buttons; **Massage: Timer** select (10, 20, 30 minutes) | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off; **Massage: Timer** select (10, 20, 30 minutes or off) | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
-| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Model-specific toggle; legacy also off | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB | ✅ Light buttons; ordinary light or RGB page where the product and its reply allow | ✅ RGB strip for lighting-flag products, colour and timer otherwise |
-| Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ✅ Where the layout has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ❌ | ❌ (one-address Left/Right on stored L400SH and L300SH) | ❌ (one-address Left/Right on side-flag products) |
-| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
-| Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) | ✅ Music page, external snore trigger, sensor-name query; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ | ⚠️ Angle numbers on VER1 models; **Reached position** shows when a memory move ends | ⚠️ Raw travel, angle and height values; no move-to-position | ❌ (desks show height, range, unit and errors) | ❌ | ❌ (raw position messages only) | ❌ | ❌ (raw motor values in diagnostics only) | ❌ (raw values only) |
+| Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the product has them | ✅ The model's memory slots | ✅ Recall and save buttons by product, including memory 1–4 | ✅ Recall and save as in the app, including its memory and hold buttons | ❌ (named preset saves instead) | ✅ Recall and save as in the app, including its memory mode | ⚠️ Only as your layout's app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Recall and save, by product |
+| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ By model; Lounge only on the older route | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the product has them | ✅ The model's standard presets | ✅ By product | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge where the product has them | ⚠️ Only as your layout's app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ By product, recall and save |
+| Massage | ✅ | ✅ Zone, mode and off by model; 20-minute **Massage timer** select | ✅ Head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage timer** select where the main page has several timers | ✅ The app's buttons; head/foot intensity numbers on VER1 models; **Massage timer** select where the model has more than one of the 10, 20 and 30 minute timers | ✅ Mode and intensity buttons by product; **Massage timer** select (10, 20, 30 minutes) | ✅ Levels, patterns, timers and choices, as in the app | ✅ Head and foot strength, mode, off; **Massage timer** select (10, 20, 30 minutes or off) | ✅ Your product's controls; massage countdown | ⚠️ Only as your layout's app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
+| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Toggle by model; the older route also has off | ✅ (toggle) | ⚠️ RGB, **Always On** or a **1 through 15 minutes** timer, on products with a light strip once the bed answers | ✅ RGB light or colour buttons, light timeout, button lights | ✅ Lamp buttons; timeout and RGB on products that have them, once the bed answers | ✅ The layout's light controls; RGB and timer where the bed has them | ✅ (toggle) | ✅ Light buttons, RGB settings and duration, by product | ⚠️ Only as your layout's app buttons; no RGB | ✅ Light buttons; a light or RGB control where the product has one and the bed confirms it | ✅ RGB strip on products with one; colour and timer otherwise |
+| Split-King Sync | ✅ (on/off; shows the last command sent) | ❌ | ❌ | ✅ Where the product has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ✅ Where the layout has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ❌ | ❌ (stored L400SH and L300SH have left and right sides on one address) | ❌ (products with two sides get left and right on one address, except on Nordic UART receivers) |
+| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, on products that have it | ✅ On models with alarms | ✅ Single or repeating alarms on products that have them, once the bed answers a clock request | ✅ Runs one of the layout's buttons once, at the next occurrence of the chosen time | ❌ | ✅ Single and repeating alarms, slots 1–7, by product | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating on restored products that have it |
+| Other | | | | ✅ The product's other app controls as buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock setting, layout choice, left and right sides on one address | ✅ Aroma (its state may not be confirmed); desks: target height, unit, three recall buttons and a fourth or reset button | ⚠️ Eleven diagnostic sensors | ✅ Snore settings on products that have them; separate type 1 and type 2 sleep sensors with live values and reports; only the sides the product lists. ❌ Firmware updates, Wi-Fi and cloud | ⚠️ A diagnostic sensor, disabled by default; Stop ends the current action only (the bed has no stop-all command) | ✅ Music, a snore trigger, the sleep sensor's name; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
 
 ## Choosing a profile
 
@@ -135,26 +139,30 @@ own: choose the app's row in the bed-type list, then its product.
 
 ### Home Assistant setup
 
-The bed-type list has one **Richmat** row naming RMControl, the five MH apps, the
-five classic apps, MLILY Control, SleepFunction, SVEN & SON and the Richmat remotes. Searching
-for any of those names finds it. A detected Richmat bed opens the same question.
+The bed-type list has one **RMControl, SleepFunction and SVEN & SON apps, and
+Richmat remotes · Richmat** row, and each other Richmat app has a row of its own,
+such as **Revive Control app · Richmat**. A detected Richmat bed opens the same
+question.
 Setup then asks which app you use; the bed's name and services never decide it.
 
 1. **RMControl app:** choose the exact product code RMControl shows, then the
    side the app commands (see [RMControl](#rmcontrol)).
-2. **Revive Control, Best Mattress, Blvd Home, HARMONY or Idealbed app:** choose
-   the model, or keep Auto to read it from the Bluetooth name (see
+2. **Revive Control app**, **Best Mattress app**, **Blvd Home app**, **HARMONY
+   app** or **Idealbed app**: choose the model, or keep **Automatic
+   (recommended)** to read it from the Bluetooth name (see
    [Richmat MH apps](#richmat-mh-apps)).
-3. **Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior app:**
-   choose the app's four-character layout (see
+3. **Avocado Eco Base app**, **CoasterSleep app**, **Forty Winks app**,
+   **Milemont app** or **Superior app**: choose the app's four-character layout (see
    [Classic Richmat apps](#classic-richmat-apps)).
-4. **SleepFunction or SVEN & SON app, or a Richmat remote:** choose the remote
+4. **SleepFunction Bed Control:** choose the four-character layout under
+   [SleepFunction Bed Control](#sleepfunction-bed-control).
+5. **SVEN & SON app, or a Richmat remote:** choose the remote
    code. A code the Bluetooth name carries is preselected (see
    [Richmat remotes](#richmat-remotes)).
 
 RMControl and the remote controls also offer the packet dialect under
-**Advanced**. An app picked from the **Richmat app profiles** brand list skips
-the question. Existing entries keep their bed type, settings and entity IDs.
+**Advanced**. An app picked by its own row in the bed-type list skips the
+question. Existing entries keep their bed type, settings and entity IDs.
 **Reconfigure** changes the same answers and lists each app by its own name, so an
 existing entry can switch to an MH or classic app there. In **Configure**, a remote
 entry opts in to RMControl by choosing a product, and an RMControl entry returns to the remote
@@ -223,6 +231,7 @@ sends STOP.
 | Classic Superior | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Luuna Rise | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Power Cool Sleep System | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic SleepFunction Bed Control | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic L&P Adjustable Base | `richmat_classic_apps` | W0, W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic BedSmart / X-Series | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Jerome's power base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
@@ -314,12 +323,12 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, Classic L&P Adjustable Base |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
@@ -566,7 +575,7 @@ that field retain Richmat behavior, including the confirmed Casper RGB-light mod
 
 QRRM is a generic controller name, not a single physical remote layout. For the
 L&P surface reported in issue #504, with Flat, Zero G, Custom 1, and Custom 2,
-choose **L&P QRRM** under the integration options. It remains an explicit profile
+choose **L&P QRRM (Head, Feet, Flat, Zero G, Custom 1/2)** under the integration options. It remains an explicit profile
 because the BLE name and GATT layout do not distinguish it from other QRRM
 surfaces.
 The current L&P and Richmat apps make the same explicit product-profile choice;
@@ -575,8 +584,8 @@ issue #504, Flat is confirmed. The other command frames are checked against the 
 across the apps but have not yet been validated on that physical bed.
 
 The QRRM receiver in issue #695 (Sven & Son, `WLT825X_H35_S`) is paired with an
-HJH89 remote whose label prints, and QR-encodes, `GGRM`. Choose **GGRM / HJH89**
-for that handset: head, feet, pillow (head tilt) and lumbar motors, Flat, Zero G,
+HJH89 remote whose label prints, and QR-encodes, `GGRM`. Choose **GGRM / HJH89 (Head, Feet, Pillow, Lumbar, M1, ZG, Anti-snore, Lights,
+Massage)** for that handset: head, feet, pillow (head tilt) and lumbar motors, Flat, Zero G,
 Anti-snore, one memory, massage and a white light toggle. The Revive Control,
 Blvd Home and HARMONY catalogs define the same GGRM controls and release with
 `0x6E`, so this profile does not use the `0x5E` compatibility stop, which those
@@ -655,9 +664,9 @@ Device name hints:
     color and timer. Timer range: 1-5 minutes or "Always On". Off is the toggle.
   - RGB-capable beds expose a **Light** entity with a color wheel instead of a
     simple on/off light. See [Lights](#lights) for the frames.
-- **Controller Sync** sends `BC` (on) or `BD` (off).
+- **Controller sync** sends `BC` (on) or `BD` (off).
 
-**Controller Sync** sends the selected controller's
+**Controller sync** sends the selected controller's
 sync command. It does not mirror commands between two Home Assistant entries.
 The displayed switch state records requested changes, not confirmed movement or
 sync status from the bed. In the HJC9 report, enabling it on both frames did not
@@ -709,7 +718,7 @@ release.
 
 #### Evidence
 
-The Richmat remotes send only their frozen frames. The GGRM catalog actions are
+The GGRM catalog actions are
 from the Revive Control, Blvd Home and HARMONY GGRM tables ( with the `main_6e` release and
 its 120 ms delay); the other frames are the pre-v5 controller's.
 
@@ -721,8 +730,8 @@ its 120 ms delay); the other frames are the pre-v5 controller's.
 
 #### Setup
 
-Choose **BedTech app**, then the exact model. Detection cannot select a model.
-Existing entries keep **Legacy BedTech controls**, including their field-reported
+Choose **BedTech app (newer app)**, then the exact model. Detection cannot select a model.
+Existing entries keep **Older BedTech controls, without a model**, including their field-reported
 `^` release and old pillow mapping. Select an explicit model to use the app's
 controls and release behavior. No automatic migration changes a working bed.
 
@@ -835,7 +844,7 @@ disconnect callback cannot interrupt a newer operation.
 
 No app initialization frame, notification subscription, position parser, read
 query, pairing/PIN handshake, MTU negotiation or bed acknowledgement is present.
-GATT write completion is not bed state. The **Massage: Timer** select's 20-minute choice sends one
+GATT write completion is not bed state. The **Massage timer** select's 20-minute choice sends one
 command; Off is offered only on models with a massage-off command. Neither reports the bed's state.
 There are no inferred position sensors or sliders.
 
@@ -853,13 +862,13 @@ See [the action reference](../SERVICES.md#bedtech-app).
 #### Evidence
 
 Based on `com.bedtech`
-7.1.3 (14): nine model routes and 148 frozen literal vectors. The Richmat codec
-reproduces every literal byte for byte, including bank 1. All 585 app
+7.1.3 (14): nine model routes and 148 test vectors. The Richmat codec
+reproduces every frame byte for byte, including bank 1. All 585 app
 model/action/side routes are retained as focused test vectors. Hardware remains
 unverified for the explicit profiles, including cessation of movement after
 refresh ends, bank mapping, memory saves and the timer 20 button.
 
-The earlier BedTech 7.1.3 Hermes checks (2026-07-10, issue #410) established
+The earlier BedTech 7.1.3 Hermes checks (2026-07-10, issue #410) showed
 write-with-response; the contrary light/Lounge experiment in issue #243 did
 not describe the official app's write mode. The legacy field-report behavior
 remains available independently of the explicit app profiles.
@@ -899,7 +908,7 @@ interval are in [Fixed-table routes](#fixed-table-routes).
 
 #### Evidence
 
-L&P MlRM sends only its frozen frames, the pre-v5 controller's.
+L&P MlRM sends the pre-v5 controller's frames.
 
 ### RMControl
 
@@ -970,13 +979,23 @@ replies; basic controls stay usable and late replies are accepted.
 #### Controls
 
 Standard movement, presets, memory programming, massage and lighting appear
-where the selected catalog supports them. Additional catalog actions are exposed
-as **disabled-by-default buttons**. Enable the relevant entities in the device's
-entity list.
+where the selected catalog supports them. The product's other catalog actions
+are buttons named the way the app names them, each where it belongs on the card:
+motor moves with the motors, positions with the presets, massage and light with
+theirs. Music, fans, resets and similar extras start disabled.
 
-- Button names retain the app getter/context and occurrence number where needed
-  to distinguish variants. Long-press actions have separate buttons; held
-  movement uses cancellable repeats and protocol-specific release cleanup.
+- A control with no button of its own sends exactly what a listed entity sends:
+  the same command on the bed's transport, held until STOP or sent once. That
+  entity is a standard one (motor, preset, memory recall and save, light, sync,
+  massage, the massage timer) or another page's identical copy, and the main
+  page's copy is the one listed.
+- A copy that sends something else keeps a disabled button whose name tells it
+  apart: the motor list's single tap of a held move is "… (short press)", and a
+  copy with another command under the same name is numbered.
+- A preset's or memory's own long operand saves it: that long press is its
+  **Save …** button, confirmed in the card. Another long operand is a disabled
+  "(long press)" button. Held movement uses cancellable repeats and
+  protocol-specific release cleanup.
 - This includes supported combined/extra motor commands and less common heating,
   fan, airbag, anti-pinch, aroma, music and sleep actions. It does not invent
   parameterized controls merely because the shared library can parse a report.
@@ -987,7 +1006,7 @@ entity list.
   strength-increase action retains its named product button; it does not expose
   that action as a zone on/off toggle.
 - A product whose main page has more than one fixed massage timer (10, 20 or 30
-  minutes) gets the **Massage: Timer** select instead of those buttons. It
+  minutes) gets the **Massage timer** select instead of those buttons. It
   offers only the durations, since no timer action turns the timer off. A timer
   button on another app page that sends different bytes stays.
 
@@ -995,7 +1014,7 @@ Sensors and binary sensors are added when their corresponding state is first
 reported, rather than creating permanently unknown entities for every catalog.
 Diagnostics retain the selected product, transport, capability replies, decoded
 state, supported alarm action names and all received alarm records. Reported
-numeric values without proven units are deliberately unitless. A numbered motor
+numeric values without known units are deliberately unitless. A numbered motor
 is not silently relabeled as a particular physical axis.
 
 ##### Lighting
@@ -1057,7 +1076,7 @@ current Home Assistant time to the alarm subsystem.
   operation.
 - The separate synchronization protocol encodes timezone offsets in whole hours,
   truncated toward zero. Half-hour and quarter-hour offsets cannot be represented
-  fully; this is a source-proven limitation, not an automatic adjustment by HA.
+  fully; this is a limit of the app, not an automatic adjustment by HA.
 - New alarm creation resolves the current selected product's effective command,
   including its override. It does not reproduce the app's separate restoration
   path that can discard an override.
@@ -1082,7 +1101,7 @@ anti-snore preset position.
 
 - The service also accepts the paired-bed `side` field.
 - The time mode deliberately does not claim seconds or minutes where the
-  artifact does not establish that unit.
+  app does not give that unit.
 - Configuring count/time is not equivalent to enabling the feature.
 
 This service requires the app's BLE sleep-monitoring metadata, a received sleep
@@ -1170,7 +1189,7 @@ list (timing in [Catalog app timing](#catalog-app-timing)):
 | Massage query | none | `6E 9A A0 00 A8` |
 | Button-light lock query | none | `6E 9A B0 00 B8` |
 
-The app's mattress literal ends in checksum `90`; the sender recomputes its
+The app's stored mattress frame ends in checksum `90`; the sender recomputes its
 checksum, so the bed receives the frame above.
 <!-- /generated -->
 
@@ -1199,12 +1218,12 @@ Answer the Richmat question with the app your phone uses, for example **Revive C
 | Surface | Entities | Frames |
 |---------|----------|--------|
 | Motors | Covers (KEEP at the control's interval, then STOP 120 ms after release) | `6e 01 M C SUM`, STOP `6e 01 M 6e SUM` |
-| Presets, memories, massage, motor-page buttons | Standard presets and memory slots, app-labelled buttons | Tap: one frame, STOP 120 ms later |
+| Presets, memories, massage, motor-page buttons | Standard presets and memory slots, buttons named for what their command does (below) | Tap: one frame, STOP 120 ms later |
 | LED page | Colour (RGB light when the motor page has the light toggle, else the colour action), light timeout 0–300 s (0 = always on) | `6e0c ff R s 6e0d G B s`, `6e 0b HH LL` |
 | Button-light page | Colour as above, timeout (Blvd Home: 0–15 min); **Button light off** only in Revive Control and Best Mattress, the apps with an emitting OFF button | as above, OFF `75` |
 | Smart set lock | **Toggle smart set lock** button, **Smart set lock** state | `6e 01 M 84` once |
 | Snore intervention | Select: off, anti-snore, zero gravity (the model's list) | `6e 13 M code` |
-| Detection | Start/stop buttons, **Component check** sensor with per-device results | `6e88c210c8`, `6e88c220d8` |
+| Detection | Start/stop buttons (diagnostic, disabled by default), **Component check** sensor with per-device results | `6e88c210c8`, `6e88c220d8` |
 | VER1 angles | Back/foot/pillow angle numbers in the model's range | `6e 88 (30\|bits<<2) angle`, 100 ms after release |
 | VER1 massage intensity | Head/foot intensity numbers (both zones sent) | `6e 88 a0 ((foot<<3)\|head)` |
 | VER1 motor mode | Select (left/right or mode 1–3) | `6e 88 (10\|bits<<2) 00` |
@@ -1218,6 +1237,27 @@ Answer the Richmat question with the app your phone uses, for example **Revive C
 - The light-page lock switch state is shown as **Smart light lock**; these apps
   never send its command.
 - Alarm, aroma, waist alarms and light colour are actions (below).
+
+Every MH-family app (these five, Nisco, MLILY Supreme, the RUF apps and Bed
+Tech's classic app) sends one command code per control, and its labels say the
+same thing many ways. A button is named by its command: `Msg Head Intensity
+Inc`, `Head Intensity+` and `Head+` are all **Massage head up**, `Mode` is
+**Massage mode**, and `Next` on the music page is **Next music track**. A
+label that says more than its code keeps its own button (`Start Stop` is
+**Massage toggle**), and a timer keeps the duration its label shows, because
+one timer code is 10 minutes on one model and 2 hours on another. A preset keeps
+the app's name for it, in the shared words (`Zg Back` is **Zero gravity**,
+`M2 Back` is **Memory 2**, `Lull` is **Sleep aid**). Where a label names
+another feature or action than its code (`Back Fan` on the head massage code),
+the button keeps the label and starts disabled. Command `62` is **Factory
+reset** in every app: it asks first and starts disabled.
+
+Fixed timer buttons, minutes or hours, are the **Massage timer** select
+(durations only) where a layout has more than one. A layout with all three
+massage intensity buttons (`67`, `AF`, `68`) has the **Massage intensity**
+number from 1 to 3 instead, and one with heat off, low, medium and high
+(`9C` to `9F`) the **Heat level** select. Each choice sends exactly what its
+button sent; a layout missing one of them keeps its buttons.
 
 <!-- generated:richmat-mh-fixed -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -1357,12 +1397,12 @@ See [Actions](../SERVICES.md).
 
 #### Evidence
 
-The Richmat MH apps send only frames frozen from their apps. Owners can help confirm model selection by
+Owners can help confirm model selection by
 name, KEEP/STOP behavior, alarm countdown semantics, LED timeout units and the
 waist mattress controls.
 
 `tools/generate_richmat_mh_catalog.py` builds `beds/richmat_mh/catalog.py` from the
-machine-local frozen reports (hash-pinned). It reads them from `--phase4-dir`,
+maintainer's local app reports (hash-pinned). It reads them from `--phase4-dir`,
 `$ADJUSTABLE_BED_PHASE4_DIR`, `disassembly/output/phase4-early` in the checkout,
 or the main checkout of a linked worktree; `--check` verifies the committed file
 and reports missing inputs instead of failing with a traceback.
@@ -1431,11 +1471,11 @@ Bluetooth names do not identify the layout.
 - HA's indexed name hints match those prefixes. Service/manual detection still accepts the keywords anywhere in a name.
 - Names with an earlier prefix and no eligible advertised service use manual device selection. HA rejects leading-wildcard manifest matchers.
 - E0FF uses name hints or manual selection because non-bed devices share it; all six listed transports work after explicit selection.
-- HA provides discovery and an explicit device/product picker. Names are scan hints, not capability evidence.
+- HA provides discovery and an explicit device/product picker. Names are scan hints, not a sign of capabilities.
 - Phone text/QR input searches the current 19 remote codes; persisted display keys use exact case-sensitive first-match selection.
 - HA stores an explicit profile per physical device, so ambiguous remote codes cannot change its layout.
 - The two later FlexxLink objects are shadowed by the first RFRN display-key match and are not independent selectable profiles. `None` is unused as a control profile.
-- No layout or feature is inferred from a generic Richmat remote table.
+- No layout or feature is taken from a generic Richmat remote table.
 
 Write selection requires `write`. A selected `write-without-response` property
 uses writes without response; otherwise writes use response. Selection retains
@@ -1451,7 +1491,7 @@ Choose HJBed and the exact app product. Its profile owns layout, massage, timing
 Covers represent actual selected up/down pairs. A lone combined-up action remains
 a button, without inventing combined-down. Named buttons retain each product's
 preset, save, massage, light, sync and sofa controls. The 10, 20 and 30-minute massage
-timers are the **Massage: Timer** select, with durations only: no action turns the
+timers are the **Massage timer** select, with durations only: no action turns the
 timer off. All eight independent
 MusicPage actions are available, including next/previous, even when the
 profile has no music tab. Music packets always use left 0, as configured.
@@ -1651,8 +1691,8 @@ parser rejection information. Bed
 observations include motor travel/angles/height, version/control modes, massage,
 white/RGB lighting, music, snore/off-bed/name/locks, coaxing, aroma, heating, fan,
 blanket and detection data. These passive readings do not enable an outbound
-command. Raw values are retained where physical units or motor mappings are not
-proven. Position seeking is not inferred from those observations.
+command. Raw values are kept where physical units or motor mappings are not
+known. Position seeking is not inferred from those observations.
 
 The six service/write pairs are in `beds/hjbed/controller.py:GATT`. The first
 eligible write and first notify characteristic are retained in returned order;
@@ -1740,13 +1780,32 @@ selected massage lists, and independently named music routes remain independent.
 The full per-product action and flag inventory is in the
 [HJBed catalog](../../custom_components/adjustable_bed/beds/hjbed/catalog.py).
 Alarm action keys are snake-case names such as `zero_gravity`, `anti_snoring`,
-`memory_position1`, `tv_position`, or `lounge_position`, and must belong to the
-selected product's alarm list.
+`memory_position1`, `t_v_position`, or `lounge_position`, and must belong to the
+selected product's alarm list; see [HJBed alarm actions](#hjbed-alarm-actions).
+
+##### HJBed alarm actions
+
+The `action` field of [`hjbed`](../SERVICES.md#hjbed) takes one of the selected
+product's alarm actions. Products not listed here have no alarm.
+
+| Product | Alarm actions |
+|---|---|
+| HC800 | `anti_snoring`, `zero_gravity`, `memory_position1` |
+| SN300 | `zero_gravity`, `anti_snoring`, `t_v_position`, `memory_position1` |
+| SN500 | `anti_snoring`, `zero_gravity` |
+| blue | `t_v_position`, `zero_gravity`, `lounge_position`, `anti_snoring`, `memory_position1`, `memory_position2` |
+| green, orange | `zero_gravity`, `t_v_position`, `memory_position1`, `anti_snoring` |
+| yellow | `zero_gravity`, `t_v_position`, `memory_position1`, `memory_position2`, `anti_snoring` |
+| AFEG300 | `lounge_position`, `zero_gravity`, `t_v_position`, `memory_position1` |
+| FlexxLink, Series 3 | `anti_snoring`, `zero_gravity`, `memory_position1` |
+| PB325 | `t_v_position`, `anti_snoring`, `zero_gravity`, `memory_position1` |
+| PB450 | `zero_gravity`, `anti_snoring`, `memory_position1` |
+| ABF03, ABF07 | `zero_gravity`, `anti_snoring`, `t_v_position`, `lounge_position`, `memory_position1` |
+| VIP 3.0, VIP 3.0-SH | `t_v_position`, `lounge_position`, `zero_gravity`, `memory_position1`, `memory_position2` |
 
 #### Evidence
 
-HJBed sends only frames frozen from its app. Physical
-effects, ATT behavior and firmware acceptance still need testing by owners.
+Based on HJBed 2.1.2 (21200). Physical effects, ATT behavior and firmware acceptance still need testing by owners.
 
 ### Eshine
 
@@ -1760,7 +1819,7 @@ named preset saves, massage and a light toggle.
 
 #### Setup
 
-- Detection: none. Choose **Eshine app (E6000)** manually. Shared Bluetooth
+- Detection: none. Choose **eShine app (E6000)** manually. Shared Bluetooth
   names and services do not identify this app, and existing Richmat entries keep
   their own behavior.
 - The profile owns the generic motor count, massage, angle and protocol fields,
@@ -1790,10 +1849,10 @@ named preset saves, massage and a light toggle.
 
 Head, feet, lumbar and pillow covers share one global STOP and one scheduling
 resource. Flat, Zero-G and Anti-Snore recall are each sent once.
-**Save Zero Gravity** and **Save Anti-Snore** are separate buttons for named
+**Save zero gravity** and **Save anti-snore** are separate buttons for named
 presets, not numbered memory slots. The phone app's three-second gesture chooses
 save, but the bed does not receive a three-second stream: each save button
-sends its save code once. Strength and mode labels do not establish physical
+sends its save code once. Strength and mode labels do not tell the physical
 cycle levels, persistence or discrete on/off values.
 
 The generic `hold_control` action accepts `head_up`, `head_down`, `feet_up`,
@@ -1861,9 +1920,9 @@ lock, music, mode and component checks.
   new writable capability.
 - No parsed reply enables new commands: the app's E6000 layout is fixed and its
   own UI has no subscribers for these parsed states.
-- Motor reports keep the artifact's numeric motor/type, status, angle, height
+- Motor reports keep the app's numeric motor/type, status, angle, height
   and monitor-height fields. Their mapping to physical head, feet, lumbar and
-  pillow axes is unproven, so they never populate position feedback or sliders.
+  pillow axes is unknown, so they never populate position feedback or sliders.
 - Alarm reports contain six ordered opaque integers. Sleep advertisement names
   stay byte lists.
 - Received side modes never enable single-address pairing or send a side
@@ -1887,8 +1946,7 @@ lock, music, mode and component checks.
 
 #### Evidence
 
-Eshine sends only frames frozen from its app, framed and
-bare. Desk data, firmware maintenance and OTA, empty pruned blanket and
+Based on Eshine 1.0.1 (10100), framed and bare. Desk data, firmware maintenance and OTA, empty pruned blanket and
 diagnostic models, unused enums and unrelated phone infrastructure are excluded;
 no bed Wi-Fi, provisioning, cloud or account path was found. Firmware
 acceptance, physical axis semantics, massage and light cycles and STOP behavior
@@ -1924,7 +1982,7 @@ package-local catalog. A compiled layout is not hardware confirmation.
 2. Choose the four-character layout the app shows. The list is the chosen app's
    own; choose the layout explicitly even when the Bluetooth name looks like one.
    Four-character app aliases resolve to their package-local layouts, and the
-   diagnostic TEST and RMCS layouts are excluded.
+   factory-test TEST and RMCS layouts are excluded.
 3. Forty Winks and Superior `ZRS6` is a layout picker: choose `ZRS6:CORN` or
    `ZRS6:CPRN` to use the `CORN` or `CPRN` controls. The picker itself sends no
    bed command.
@@ -1941,7 +1999,7 @@ package-local catalog. A compiled layout is not hardware confirmation.
   the detected Richmat route. A shared service UUID does not identify the app,
   its axes or a physical side.
 - One-address Left/Right pairing is unavailable: the app's mode labels do not
-  establish physical side roles.
+  tell which physical side is which.
 
 The first present fixed service wins, in the order W1, W2, N1, W4 (see
 [Transports](#transports)). N1 sends the decoded resource bytes unchanged (RAW);
@@ -1958,7 +2016,7 @@ write-without-response. That ATT choice is not a claim about the app's
 effective platform write type.
 
 `U3RM` remembers its third, fourth or fifth selector. The hardware meaning of a
-motor slot or Mode 1/2/3 is not inferred from a layout name.
+motor slot or Mode 1/2/3 is not guessed from a layout name.
 
 #### Controls
 
@@ -2246,16 +2304,38 @@ memory count or authentication API is inferred from dormant constants.
 `adjustable_bed.richmat_classic` sends the app's typed settings: `operation:
 query` requests the settings capabilities, then alarm and alarm cancel, RGB,
 lamp slider and Save timers, aroma, massage popup and slider, and the desk
-target, unit, recall buttons and reset. The layout's available alarm action IDs
-and the received state are in diagnostics. Wi-Fi, cloud and account,
+target, unit, recall buttons and reset. The alarm action names are under
+[Classic alarm actions](#classic-alarm-actions); the received state is in
+diagnostics. Wi-Fi, cloud and account,
 group and network administration, and the diagnostic endurance and
 motor-mapping configuration stay outside the supported surface. See
 [Actions](../SERVICES.md#classic-richmat-app-settings).
 
+##### Classic alarm actions
+
+The `action` field of [`richmat_classic`](../SERVICES.md#richmat_classic) takes
+one name of the form `node_<number>`, where the number is the control's place in
+your layout. A layout accepts only the controls the app can wake you with, such
+as TV, Lounge, Zero Gravity, Anti-snore, M1 and M2, and massage 1 and 2 intensity
+up. Which layouts have any differs slightly between the five apps. The numbers
+differ between layouts. These are the most common sets; the layouts listed have
+them in all five apps:
+
+| Layouts | Alarm actions |
+|---|---|
+| A0RN, UFRM, XJRM, XKRM, XZRM, Z5RM | `node_1` TV, `node_2` Lounge, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
+| O7RM, V4RM, XYRM, Z4RM, ZFRM | `node_1` TV, `node_2` Anti-snore, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_16` massage 2 intensity up |
+| AFRM, AGRM, AMRM, ANRM, XFRM | `node_1` Zero Gravity, `node_3` Anti-snore, `node_4` TV, `node_12` massage 1 intensity up, `node_14` massage 2 intensity up |
+| A9RM, DARM, WURM, Z6RM | `node_8` TV, `node_9` Anti-snore, `node_10` Zero Gravity, `node_11` massage 1 intensity up, `node_12` M1, `node_13` massage 2 intensity up, `node_15` M2 |
+| XGRM, Y1RM, Y7RM, YQRM | `node_1` Zero Gravity, `node_2` Anti-snore, `node_3` M1 |
+| H8RM, HTRM, Z8RM | `node_1` TV, `node_2` Anti-snore, `node_3` Zero Gravity, `node_10` M1, `node_11` M2, `node_14` massage 1 intensity up, `node_15` Lounge, `node_16` massage 2 intensity up |
+
+For another layout, download the bed's diagnostics: `controls` lists each
+control's number and name, and `alarm_actions` lists the names an alarm accepts.
+
 #### Evidence
 
-The classic apps send only frames frozen from their five apps. Hardware
-behavior is unverified.
+Based on the five classic apps. Not yet tested on hardware.
 
 ### Good Vibe Sleep
 
@@ -2295,8 +2375,8 @@ Single-address pairs expose only the selected product's admitted sides. A
 combined command uses native side 2 when the product offers it; products
 offering only sides 0 and 1 receive left then right commands on the same BLE link.
 
-The source app has no app-owned PIN, challenge, encryption or bond request. This
-does not establish that firmware never requires OS bonding. Home Assistant
+The app has no PIN, challenge, encryption or bond request. This does not mean
+the firmware never requires OS bonding. Home Assistant
 retains its normal adapter, proxy and setup infrastructure.
 
 ##### Normal-product GATT
@@ -2336,7 +2416,7 @@ without assigning a physical motor to a name alone.
 | Command | Bytes | Description |
 |---------|-------|-------------|
 | Generic short action | `6e 01 S C sum8` or `C` | `C` is the exact selected descriptor's short/legacy-short operand |
-| Generic long action | `6e 01 S L sum8` or `L` | `L` is the exact descriptor's reachable long operand |
+| Generic long action | `6e 01 S L sum8` or `L` | `L` is the exact descriptor's long operand |
 | Release / STOP | `6e 01 S 6e sum8` or `6e` | Sent by gestures that define release; no inferred firmware guarantee |
 
 The five-model memory predicate applies only to E3RM, GXRM, JDRM, JFRM and JGRM,
@@ -2366,8 +2446,8 @@ frame on each side, or the single code on the legacy service:
 <!-- /generated -->
 
 The Y6RM sustained controls refresh like any sustained press; a released control
-sends STOP through the same common builder. These labels do not establish
-physical axes for an untested bed.
+sends STOP through the same common builder. These labels do not tell the
+physical axes of an untested bed.
 
 ##### Lights
 
@@ -2444,7 +2524,7 @@ See [Catalog app timing](#catalog-app-timing).
   Incomplete normal data expires (see [Catalog app timing](#catalog-app-timing)).
   Malformed bounds and zero-length records are rejected without fabricating state.
 - Sleep ordinary assembly uses byte 12 and strips one 14-byte header. Type 1
-  routes by the retained request; type 2 uses the artifact's ordered
+  routes by the retained request; type 2 uses the app's ordered
   text-contains routing. Incoming bytewise text is separate from outbound UTF-8.
 - Report continuation preserves the type-specific whole-chunk versus
   per-chunk-header rule, then bounded GZip decoding and typed day/month schemas.
@@ -2460,7 +2540,7 @@ See [Catalog app timing](#catalog-app-timing).
 
 Use `adjustable_bed.goodvibe` for these settings and queries. The action
 validates every target before writing. The dashboard card includes app
-controls, local side selection, the **Light Timer** and **Massage: Timer**
+controls, local side selection, the **Light timer** and **Massage timer**
 selects, the **Synchronization** switch (where a product has Sync on and off),
 snore numbers and sleep state.
 
@@ -2549,8 +2629,7 @@ monitoring to protect the shared response selector.
 
 #### Evidence
 
-Good Vibe Sleep sends only frames frozen from its app's vectors
-(`tests/fixtures/goodvibe`). Hardware, ATT delivery, firmware acceptance and
+Based on Good Vibe Sleep 2.0.1 (20103) (vectors in `tests/fixtures/goodvibe`). Hardware, ATT delivery, firmware acceptance and
 physiological interpretation still need testing by owners.
 
 ### L&P legacy app
@@ -2562,14 +2641,14 @@ physiological interpretation still need testing by owners.
 The `leggett_lp_legacy` bed type follows the legacy app's 122 remote layouts,
 each selected by the four-character code used in that app's manual or QR setup
 (for example `A2RM`, `B1RM`, `ZR00`); the full list is `LP_LEGACY_PROFILE_CODES`
-in `beds/leggett/lp_legacy_profiles.py`. I0RM has no proven bed commands in this app and
+in `beds/leggett/lp_legacy_profiles.py`. I0RM has no bed commands in this app and
 therefore exposes no remote action buttons. It does not change existing Richmat
 or L&P QRRM configurations.
 
 #### Setup
 
-- Detection: none. Choose the **L&P Adjustable Base (legacy app)** row, or
-  answer **L&P Adjustable Base legacy app (2.2.1)** in the
+- Detection: none. Choose the **L&P Adjustable Base app (older version)** row (version 2.2.1),
+  or answer **L&P Adjustable Base app (older version)** in the
   [L&P question](leggett-platt.md#home-assistant-setup), then select the exact
   remote code and packet mode. An existing legacy entry reaches the other L&P
   routes through the same question in **Reconfigure**; **Configure** still
@@ -2617,7 +2696,7 @@ builds the packet for the entry's mode.
 | **Legacy** | The first character of the token as one byte, as Nordic framing sends a bare code |
 | **Framed** | `6E 01 hi lo sum8`: the token's four hex digits as two bytes, the codec's command with `hi` in the side byte |
 
-- Only controls with a proven encoding for the selected mode are exposed.
+- Only controls with a known encoding for the selected mode are exposed.
   Single-character tokens have no framed encoding.
 - The two modes can send different bytes for the same token, as 6BRM's `40024`
   below shows.
@@ -2653,20 +2732,20 @@ state decides how the integration sends them:
 
 See [Catalog app timing](#catalog-app-timing).
 
-- Held controls repeat at the app's proven cadence. The configured motor pulse
+- Held controls repeat at the app's cadence. The configured motor pulse
   count determines how long a button invocation holds the control. The wait
   between writes accounts for time spent awaiting the Bluetooth write.
 - The integration preserves each control's own release behavior and sends its
   release even when a running action is cancelled.
 - One-shot controls do not inherit a movement repeat loop.
 - The Stop button cancels the active action and performs its release cleanup.
-  It cannot stop movement started outside this integration: the artifact
+  It cannot stop movement started outside this integration: the app
   defines no separate global emergency-stop command.
 
 #### Notifications
 
 The optional app-response diagnostic reports only the three exact patterns the
-app recognizes. Their physical meaning is not established. They are not motor
+app recognizes. Their physical meaning is not known. They are not motor
 positions, battery readings, a capability query or proof that an alarm is set.
 
 <!-- generated:lp-legacy-notifications -->
@@ -2844,7 +2923,7 @@ byte. Operation `01` writes and `00` queries; replies use `02` and `03`.
 
 #### Evidence
 
-Both apps send only frames frozen from their apps
+Based on Casper Base 1.0.8 and Hush Base 1.0.5
 (`tests/casper_base_vectors.py`, `tests/hush_vectors.py`);
 `tests/test_casper_base_vectors.py` and `tests/test_hush_vectors.py` rebuild
 each one through this codec. Physical motor effects, firmware compatibility,
@@ -2861,10 +2940,10 @@ Behaves as the [Casper and Hush family](#casper-and-hush-family), except as belo
 
 #### Setup
 
-- The `casper_base` bed type. Choose **Casper Base app (select product)**, then
+- The `casper_base` bed type. Choose **Casper Base app**, then
   **PRO** or **MAX**, the app's own products. Its protocol variant is the product.
 - The 37 other choices, labelled **stored profile**, are products the app's
-  stored-product decoder accepts. They are explicit choices, never inferred.
+  stored-product decoder accepts. You pick one in setup; setup never picks it for you.
 - One-address sides: the stored L400SH and L300SH layouts.
 
 #### Controls
@@ -2946,7 +3025,7 @@ Only stored products use these further actions:
 
 #### Evidence
 
-Casper Base sends only the frames frozen from its app: its builder vectors
+Based on Casper Base 1.0.8: its builder vectors
 (`tests/fixtures/casper_base/builders.json`) and command bytes
 (`tests/fixtures/casper_base/command_bytes.json`).
 
@@ -2960,12 +3039,12 @@ Behaves as the [Casper and Hush family](#casper-and-hush-family), except as belo
 
 #### Setup
 
-- The `hush_base` bed type. Choose **Hush Base app (select product)**, then the
+- The `hush_base` bed type. Choose **Hush Base app**, then the
   exact model; the app's own twelve products, catalog indices 46 to 57, come
   first. Its protocol variant is the product.
 - The other catalog indices are products a phone restored under the shared
   catalog, labelled **restored profile**. They keep the Hush app's own rows and
-  are explicit choices, never inferred.
+  are choices you make in setup; setup never picks one for you.
 - One-address sides: the products with the side flag. Nordic has no side byte,
   so one-address pairing is rejected there. Two-address pairs keep independent
   profile and connection ownership.
@@ -3077,7 +3156,7 @@ Hush adds to the family's parser:
 
 #### Evidence
 
-Hush Base sends only the frames frozen from its app, whose
+Based on Hush Base 1.0.5, whose
 products, shared builders and auxiliary shards are listed in
 `tests/hush_vectors.py`.
 
@@ -3226,7 +3305,7 @@ Based on Lunio Smart+ 1.0.4 (`com.richmat.luniosmart`).
 
 #### Setup
 
-Choose **SonicSleep / 소닉슬립 app**. There are no further questions: the
+Choose **SonicSleep / 소닉슬립 app · Richmat**. There are no further questions: the
 product is fixed with two motors, and **Read bed position** is off. On a bed
 with two receivers, each side keeps its own settings.
 
@@ -3466,7 +3545,7 @@ writer supports it, otherwise writes use a response.
 Every product has Flat, Anti-Snore, Zero-G and Memory 1. Preset save buttons send
 their separate program opcode once. Rise Pro adds Memory 2; Rise Pro Light does
 not. Massage controls are one-shot actions, including intensity steps, mode
-and off; the three timer actions are the **Massage: Timer** select. The ordinary strip page requires both the
+and off; the three timer actions are the **Massage timer** select. The ordinary strip page requires both the
 Rise Pro Light flag and its exact light capability announcement.
 
 #### Timing
@@ -3507,11 +3586,12 @@ alarm/press records are rejected instead of indexing beyond their payload.
 
 #### Services
 
-`adjustable_bed.luuna` offers `alarm`, `alarm_cancel`, `light_rgb`, `light_seconds`,
-`light_warm`, `light_cold`, `light_off`, `sleep_name` and `time_sync`. Generic
-memory and movement actions use the same profile and command serialization.
+`adjustable_bed.luuna` offers `light_rgb`, `light_seconds`, `light_warm`,
+`light_cold`, `light_off` and `sleep_name`. `set_alarm` sets and cancels the
+alarm and `sync_clock` sets the clock (`time_sync`). Generic memory and movement
+actions use the same profile and command serialization.
 
-Alarms use one selected preset from that product's alarm list and a local hour
+Alarms use one wake action from that product's alarm list and a local hour
 and minute. The countdown ignores seconds; the current minute wraps to tomorrow.
 Both save and cancel write the low frame first, then the high/action frame.
 There is no weekday or repeating schedule on this live alarm path.
@@ -3536,7 +3616,7 @@ MTU remain for owners to validate.
 
 #### Setup
 
-1. Choose **MLILY Remote app**.
+1. Choose **MLILY Remote app · Richmat**.
 2. Choose the product (MS200, MS300, MS600, PowerCool or MS300-SH) and whether
    the bed is a single bed or a double bed with separate sides.
 
@@ -3544,7 +3624,7 @@ The product sets the motors and massage; PowerCool shows fan and cooling
 controls. **Read bed position** is off. On a bed with two receivers, each side
 keeps its own product and layout.
 
-Choose **Richmat → MLILY Remote**, then the exact product: MS200, MS300,
+Choose **MLILY Remote app · Richmat**, then the exact product: MS200, MS300,
 MS600, PowerCool or MS300-SH. This is independent of MLILY Control. Choose the
 app's single or double bed layout. The catalog codes are product identifiers,
 not Bluetooth-name mappings. Discovery recognizes the case-sensitive substrings
@@ -3565,19 +3645,19 @@ Only MS600 has alarm-mode choices. No shared receive parser expands these gates.
 
 | Entity | Products |
 |---|---|
-| Flat, Memory 1–3, Save to Memory 1–3 (shared preset buttons) | all, memory 3 on MS600 |
-| Zero Gravity, Anti-Snore and their Save buttons | all |
+| Flat, Memory 1–3, Save to memory 1–3 (shared preset buttons) | all, memory 3 on MS600 |
+| Zero gravity, Anti-snore and their Save buttons | all |
 | TV, Save TV | MS600 |
 | Lounge, Save Lounge | MS200 |
-| Toggle Light | all except MS200 |
-| Massage: Head/Foot Up, Massage mode, All Off, Massage: Timer 10/20/30 Minutes | MS300, MS300-SH, MS600 |
-| Massage: Lumbar Up | MS600 |
-| Fan: Head/Foot Up, Mode, Off, Timer 2/3/5 Hours | PowerCool |
+| Toggle light | all except MS200 |
+| Massage head/foot up, Massage mode, All off, Massage timer 10/20/30 minutes | MS300, MS300-SH, MS600 |
+| Massage lumbar up | MS600 |
+| Fan head/foot up, Fan mode, Fan off, Fan timer 2/3/5 hours | PowerCool |
 | Model (diagnostic, disabled by default) | all |
 
 PowerCool sends the massage codes to its fans, with 2/3/5-hour timers; the
 same codes on MS300, MS300-SH and MS600 are massage controls, with the
-10/20/30-minute timers as the **Massage: Timer** select. Discrete actions send once. Preset recall and Save
+10/20/30-minute timers as the **Massage timer** select. Discrete actions send once. Preset recall and Save
 buttons use distinct codes; Save waits the app's three-second programming
 threshold and asks for confirmation.
 
@@ -3700,7 +3780,7 @@ Based on MLILY Remote 1.0.1 (10103).
 
 #### Setup
 
-Choose **MLILY Control**, then the exact product or its explicit remote-choice
+Choose **MLILY Control app · Richmat**, then the exact product or its explicit remote-choice
 route. Search by the product code shown in the app. The name helper suggests
 an admitted product from the Bluetooth name, but shared services cannot identify
 the app. A remote-choice route records both the chooser and its selected remote.
@@ -3712,7 +3792,8 @@ bare byte only for selected-detail commands. Explicit RGB, timer, clock, repeat
 alarm, name and synchronization helpers retain their framed packets on Nordic.
 There is no app-owned encryption or PIN handshake in these routes.
 
-Independent **RM- (MM)** and **HJ- (SXB)** sleep devices need separate entries.
+Independent sleep devices need separate entries: **MLILY Control app · Richmat**,
+then **RM- sleep sensor (MM)** or **HJ- sleep sensor (SXB)**.
 Their advertised name selects the route, independently of the bed product.
 
 #### Controls
@@ -3722,7 +3803,7 @@ A hidden or disabled descriptor is retained as data and creates no button.
 Phone-light, Clock and Voice callbacks are local navigation; use the alarm action
 for scheduling. The MLILY menu expands to its four directional controls and reset.
 A normal None, title or logo descriptor can send zero and is not assumed to be a
-hardware no-op. Labels identify the app's controls without assigning unproven
+hardware no-op. Labels identify the app's controls without guessing
 physical axes to motor numbers.
 
 BRRM, APRM, YFRM and YGRM start in release mode. BRRM, YFRM and YGRM replace
@@ -4973,7 +5054,7 @@ requested. Native session identity prevents cross-device report and command race
 
 Based on MLILY Control 5.0.2. Literal vectors are in
 `tests/fixtures/mlily/`; all normal bed frames use the Richmat codec and sleep
-JSON uses the shared sleep-envelope codec. Static evidence does not establish
+JSON uses the shared sleep-envelope codec. Not yet tested on hardware:
 physical effects, over-air delivery, alarm accuracy or persistence.
 
 
@@ -4985,7 +5066,7 @@ physical effects, over-air delivery, alarm accuracy or persistence.
 
 #### Setup
 
-1. Choose **Richmat app**, then search for the product code the app shows.
+1. Choose **Richmat app · Richmat**, then search for the product code the app shows.
    Codes marked "restored product" are ones the app only reaches from a saved
    setup; choose one only when it is your bed's code.
 2. If your bed has a separate sleep sensor, add it as its own device with
@@ -4994,7 +5075,7 @@ physical effects, over-air delivery, alarm accuracy or persistence.
 The product sets the motors, massage and timing. On a bed with two receivers,
 add each one and combine them; each side keeps its own product.
 
-Choose **Richmat 4.2.0 app** and the exact product code. The searchable product
+Choose **Richmat app · Richmat** (version 4.2.0) and the exact product code. The searchable product
 question lists the app's manual products first and labels the additional restored
 products explicitly. QR text is a product code, not a Bluetooth address. Product
 identity, protocol version and selected physical side remain independent.
@@ -5003,8 +5084,8 @@ select an app or product. Home Assistant connects through its normal adapter or
 Bluetooth proxy selection. No PIN or bonding handshake is defined by this app.
 
 The bed's sleep-name reply appears in the status sensor's `events.sleep_device`.
-Add that physical device separately as **Richmat 4.2.0 sleep device**, choosing its
-RM-/MM or HJ-/public session. The restored demo options retain the old library's
+Add that physical device separately as **Richmat app sleep sensor**, choosing its
+session, **RM- sleep device (MM)** or **HJ- sleep device (public)**. The restored demo options retain the old library's
 service selection. Each entry owns its own link, sequence and cancellation; a
 sleep-device reply never changes the main bed's product. Use the exact advertised
 name to identify it. This replaces the Android global scanner and singleton
@@ -5014,9 +5095,20 @@ connection owners with independent HA entries.
 
 The product and observed protocol version choose movement pairs, presets and
 save buttons, massage controls and the angle/intensity sliders. Preset saving
-uses its separate button with the catalog's long opcode, without a save hold.
-Motor reset, light, synchronization and box-lock controls keep their own product
-gates. Catalog declarations without a live control binding do not create bed entities.
+uses its separate button with the catalog's long opcode, without a save hold;
+a tile whose action has no long opcode (the "Factory Reset" tile on 14 products)
+has no save button. Buttons take the action's name in the shared words
+(`deviceFunctionItemMassageHeadInstensityStrengthen` is **Massage head up**); a
+preset keeps the product's own name for it, a fixed timer the duration the
+product shows, and a label naming another feature than its action ("Head Fan +"
+on a massage action) keeps the label and starts disabled. A product with more
+than one fixed massage timer has the **Massage timer** select instead (with the
+durations its labels show), one with head or foot massage levels 1 to 3 a
+massage intensity number per zone (0 where the zone has its own off), and one
+with heat off, low, medium and high the **Heat level** select. The relieve
+zero-gravity and relieve snore setting actions reset a stored position: they
+ask first and start disabled. Motor reset, light, synchronization and box-lock
+controls keep their own product gates. Catalog declarations without a live control binding do not create bed entities.
 
 <!-- generated:richmat-app-commands -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -5202,9 +5294,9 @@ gates. Catalog declarations without a live control binding do not create bed ent
 | `cb4b51` | Music lock | `6E 01 00 D9 48` | `6E 01 00 00 6F` |
 | `cb4bd1` | Massage mode all off | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
 | `cb4c51` | Massage mode all off | `6E 01 00 34 A3` | `6E 01 00 00 6F` |
-| `cb4cd1` | Fan timer 5 hour | `6E 01 00 A8 17` | `6E 01 00 00 6F` |
-| `cb4d51` | Fan timer 3 hour | `6E 01 00 A7 16` | `6E 01 00 00 6F` |
-| `cb4dd1` | Fan timer 2 hour | `6E 01 00 A6 15` | `6E 01 00 00 6F` |
+| `cb4cd1` | Fan timer 5 hours | `6E 01 00 A8 17` | `6E 01 00 00 6F` |
+| `cb4d51` | Fan timer 3 hours | `6E 01 00 A7 16` | `6E 01 00 00 6F` |
+| `cb4dd1` | Fan timer 2 hours | `6E 01 00 A6 15` | `6E 01 00 00 6F` |
 | `cb4e51` | Fan change mode | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
 | `cb4ed1` | Fan all off | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
 | `cb4f51` | Fan 2 intensity up | `6E 01 00 8B FA` | `6E 01 00 00 6F` |
@@ -5228,8 +5320,8 @@ gates. Catalog declarations without a live control binding do not create bed ent
 | `cb5851` | Heating high | `6E 01 00 9F 0E` | `6E 01 00 00 6F` |
 | `cb58d1` | Heating medium | `6E 01 00 9E 0D` | `6E 01 00 00 6F` |
 | `cb5951` | Heating low | `6E 01 00 9D 0C` | `6E 01 00 00 6F` |
-| `cb59d1` | Heating 60 min | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
-| `cb5a51` | Heating 30 min | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
+| `cb59d1` | Heating 60 minutes | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
+| `cb5a51` | Heating 30 minutes | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
 | `cb5ad1` | Motor and massage all off | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
 | `cb5b51` | Massage 30 minute up and down | `6E 01 00 90 FF` | `6E 01 00 00 6F` |
 | `cb5bd1` | Massage 15 minute spine guard | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
@@ -5297,15 +5389,15 @@ gates. Catalog declarations without a live control binding do not create bed ent
 | Protocol version 1 | deviceFunctionVersionOneCurrentMassageMode | `6E 9A A0 00 A8` |
 | Protocol version 1 | deviceFunctionVersionOneCurrentBedLightStatus | `6E 9A B0 00 B8` |
 
-Named operations: `sync`, `detection`, `toggle_alarm`, `sleep_sync`, `query`,
-`single_alarm`, `cancel_alarm`, `repeat_alarm`, `delete_alarm`, `light_timer`,
-`light_rgb`, `strip_rgb`, `strip_timer`, `strip_groove`, `strip_color_mode`,
-`strip_breathe`, `strip_power`, `therapy_light`, `therapy_sound`, `therapy_timer`,
-`music_source`, `white_noise`, `snore`, `get_off_bed`, `snore_intervention`,
-`blanket_power`, `blanket_mode`, `blanket_temperature`, `blanket_delay`,
-`blanket_mite`, `blanket_settings`, `blanket_sleep`, `usb`, `demo`, `sleep_time`,
-`sleep_part`, `sleep_realtime`, `sleep_report`, `sleep_snore`,
-`sleep_sensitivity`, `sleep_init`, `sleep_cancel`, `sleep_poll`.
+Named operations: `detection`, `toggle_alarm`, `query`, `single_alarm`,
+`cancel_alarm`, `repeat_alarm`, `delete_alarm`, `light_timer`, `light_rgb`,
+`strip_rgb`, `strip_timer`, `strip_groove`, `strip_color_mode`, `strip_breathe`,
+`strip_power`, `therapy_light`, `therapy_sound`, `therapy_timer`, `music_source`,
+`white_noise`, `snore`, `get_off_bed`, `snore_intervention`, `blanket_power`,
+`blanket_mode`, `blanket_temperature`, `blanket_delay`, `blanket_mite`,
+`blanket_settings`, `blanket_sleep`, `usb`, `demo`, `sleep_time`, `sleep_part`,
+`sleep_realtime`, `sleep_report`, `sleep_snore`, `sleep_sensitivity`,
+`sleep_init`, `sleep_cancel`, `sleep_poll`.
 <!-- /generated -->
 
 Product identities and their two menu branches remain separate even when their
@@ -6457,7 +6549,7 @@ second command; cancellation prevents a stale delayed write.
 Blanket general temperature limits differ from its sleep-stage limits. Mite
 removal changes local warm temperatures through the general clamp and sends
 only the mite command. Sleep settings send before a changed main-mode frame.
-The main delay retains the artifact's raw multiply-by-sixty formula even though
+The main delay keeps the app's raw multiply-by-sixty formula even though
 its Android label says hours. Groove timers convert UI seconds to rounded
 minutes before encoding; received timers retain the separate base-sixty decode
 and subscriber multiplication. These values are not calibrated hardware units.
@@ -6498,8 +6590,8 @@ no action accepts arbitrary packet bytes.
 
 - Lighting: timer, palette/RGB and opacity, groove/color/breathe modes, power,
   therapy timer/color/sound and the local-music source.
-- Alarms: single countdown, cancellation, explicit repeat slot, toggle, deletion,
-  list refresh and time synchronization. Weekdays are Monday 0 through Sunday 6;
+- Alarms: single countdown, cancellation, explicit repeat slot, toggle, deletion
+  and list refresh. Weekdays are Monday 0 through Sunday 6;
   7 means once. Full tables require an explicit slot and never emit Android's -1.
 - Blanket: power, mode, selected-zone temperature, main delay, mite removal, all
   six settings flags and each zone's sleep schedule. Flags are child lock,
@@ -6508,10 +6600,13 @@ no action accepts arbitrary packet bytes.
   delay and four stage temperatures. Schedule duration is validated together.
 - Detection start/stop, anti-snore/off-bed settings, USB and cancellable automatic
   demos. Demo steps use known app enum names, sustain seconds and delay seconds.
-- Separate sleep entry: `sleep_sync`, time/part/realtime queries, polling,
+- Separate sleep entry: time/part/realtime queries, polling,
   sensitivity query, automatic anti-snore query/setting, report session, init and
   local cancellation. `sleep_snore` uses value 0 for query and 1 for setting.
-  There is no valid sensitivity setter in this artifact.
+  There is no valid sensitivity setter in this app.
+- Clock: the bed and the separate sleep entry set their clock with
+  [Set bed clock](../SERVICES.md#sync_clock); the sleep entry also sets it on
+  every connection.
 
 #### Evidence
 
@@ -6658,7 +6753,7 @@ local clock. Alarm actions are `anti_snore`,
 `zero_gravity`, `tv`, `memory_1` and `memory_2`. Weekdays are Monday=0 through
 Sunday=6; an empty list means once, and `enabled` occupies the low repeat bit.
 New alarms use the first unused observed id from 1 through 7; this app allocation
-range does not establish controller capacity. An explicit `alarm_id` avoids
+range does not show the controller's capacity. An explicit `alarm_id` avoids
 relying on an incomplete notification list. Light timeout accepts whole minutes
 from 0 through 15, supplied as seconds, with zero selecting the always-on sentinel.
 Color is two frames in one characteristic write. All requested targets and
@@ -6672,11 +6767,11 @@ Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
 
 **App:** [Majestic Home](https://play.google.com/store/apps/details?id=com.richmat.majestichome) 1.0.4 (10400), `com.richmat.majestichome`
 
-**Status:** Not yet tested (hardware unverified; external beta).
+**Status:** Not yet tested
 
 #### Setup
 
-Choose **Majestic Home**, then the exact FARM, JLRM, JGRN or JHRN identifier
+Choose **Majestic Home app · Richmat**, then the exact FARM, JLRM, JGRN or JHRN identifier
 shown in the app. Change it later in Reconfigure. Each physical side of a
 two-address pair keeps its own choice; separate a combined bed before changing
 either side's product. Imports and restored entries use the same
@@ -6690,15 +6785,15 @@ service selects raw versus framed commands even if earlier handles were retained
 Write-without-response is used only when that selected writable TX also advertises it.
 
 The embedded manuals cover headboard installation, power storage, electric bed
-controls and Hi-Lo Tilt. They ground labels, not inferred product-to-hardware
+controls and Hi-Lo Tilt. They inform labels only, not product-to-hardware
 aliases, BLE pairing, side commands or packet values. The unused Factory Reset
-title is not an action. Flat is the reachable MotorReset control.
+title is not an action. Flat is the app's MotorReset control.
 
 #### Controls
 
 Native motor entities expose each product's held directions. Presets and their
 separate save buttons, light toggle and every massage action are product-gated.
-The massage timer keys are one **Massage: Timer** select (Off sends All Off), and
+The massage timer keys are one **Massage timer** select (Off sends All Off), and
 each zone's level keys are one head or foot massage number (0 sends that zone's
 off key where the product has one).
 Saving uses the source long operand with a single short action, not a timed long
@@ -6826,7 +6921,7 @@ movement cleanup, drops cancelled work and applies a strict elapsed hold ceiling
 It sends the actual STOP after a submitted held refresh, with cancellation unable
 to suppress cleanup. A release before the first refresh sends nothing. Tap,
 preset, save, light and massage actions send once without an extra STOP. These HA
-ownership and cancellation guards do not establish a firmware watchdog.
+ownership and cancellation guards are not a firmware watchdog.
 
 #### Notifications
 
@@ -6853,8 +6948,8 @@ publish into a replacement physical session.
 `delete`; [`sync_clock`](../SERVICES.md#sync_clock) sets the clock. Alarm access requires the current connection's clock ACK.
 FARM/JLRM supply the four preset choices. `set` creates or replaces an explicit
 ID. `new` also requires an explicit ID from the app's range 1 through 7,
-without claiming firmware capacity. A nonempty cache cannot establish which
-slots are free: no list terminator or empty-list proof is known. Partial replies
+without claiming firmware capacity. A nonempty cache cannot show which slots
+are free: the bed sends no list terminator or empty-list marker. Partial replies
 and silence never authorize automatic allocation.
 
 Weekday bits run Monday through Sunday from bit 7 to bit 1; bit 0 enables the
@@ -6870,7 +6965,7 @@ closed link. On the execution connection HA validates the owner/product and
 inputs again, waits for the current clock ACK, and queries fresh target fields
 for toggles. Changed toggle fields abort instead of reusing the previous tuple.
 All topologies query a fresh requested-ID tuple before a toggle. Those reply
-waits have a five-second HA bound; they do not establish list completeness.
+waits have a five-second HA bound; they do not confirm the list is complete.
 An explicit list reads for five seconds from actual query submission, with slow
 writes consuming that window. Its optional response contains copied alarm tuples
 per physical address/side and `complete: false`, including for zero observations.
@@ -6893,7 +6988,8 @@ Based on Majestic Home 1.0.4 (10400).
 
 #### Setup
 
-Choose **L&P Adjustable Base app**, then the layout printed on the remote or
+Choose **L&P Adjustable Base app (newer version)**, then the layout printed on the
+remote or
 selected in the app. The `L&P-ADJBED` and `L&P ADJBED` names open a choice of
 APRM or AQRM. A Bluetooth name or shared service offers an app hint, never a
 physical left/right mapping. The special package service takes precedence
@@ -6905,8 +7001,39 @@ order. Third-service fallback requires the Advanced option.
 Each selected layout supplies its own motion, presets, saves, massage, light
 and extra controls. Saves use the card's save controls; long-press saves do not
 become renewable holds. On/off pairs use switches. Fixed massage durations
-use the **Massage: Timer** select. APRM has conflicting duration labels and retains
-its individual timer controls. There are no app screen, arming or side pickers.
+use the **Massage timer** select. APRM has conflicting duration labels and retains
+its individual timer controls. There are no app screen, arming or side pickers:
+every command uses the first mode.
+
+A bed takes either raw or framed commands, depending on its Bluetooth service.
+A control whose command differs between the two is listed only for the bed's own
+format, which is known from its first connection on and is remembered across
+restarts. Before that, only the controls both formats share are listed.
+
+##### L&P control numbers
+
+The `control` field of [`lp2`](../SERVICES.md#lp2) takes the control's number in
+your layout. These are the numbers for the layouts the app selects by product
+name (see the name table below):
+
+| Layout (product names) | Controls |
+|---|---|
+| A0RM (200U&I, 400I) | 1 Motor 1 up, 2 Motor 3 up, 3 Motor 2 up, 4 Motor 1 down, 5 Motor 3 down, 6 Motor 2 down, 7 Flat, 8 TV, 9 Anti-snore, 10 Zero Gravity, 11 Massage 1 intensity up, 12 M1, 13 Massage 2 intensity up, 14 Massage mode, 15 M2, 16 Massage off 3, 17 M3 |
+| A1RM (800I) | 1 Motor 1 up, 2 Motor 3 up, 3 Motor 2 up, 4 Motor 1 down, 5 Motor 3 down, 6 Motor 2 down, 7 Zero Gravity, 8 M1, 9 Motor 4 up, 10 M2, 11 Massage 1 intensity up, 12 Motor 4 down, 13 Massage 2 intensity up, 14 Massage mode, 15 Flat, 16 Massage off 3, 17 Underbed light on/off |
+| A8RM (200I, 200IV2, 208A14, FC200) | 1 Motor 1 up, 3 Motor 2 up, 4 Motor 1 down, 5 Underbed light on/off, 6 Motor 2 down, 7 Zero Gravity, 9 Flat |
+| B6RM (B6RU) | 1 Motor 1 up, 2 Motor 1 down, 3 Motor 2 up, 4 Motor 2 down, 5 Motor 1+2 up, 6 Motor 1+2 down |
+| BLRM (MPE_HJ008) | 1 TV, 2 Lounge, 3 Zero Gravity, 4 Motor 1 up, 5 Motor 3 up, 6 Motor 2 up, 7 Motor 1 down, 8 Motor 3 down, 9 Motor 2 down, 10 M1, 11 M2, 12 Flat, 14 Massage 1 intensity up, 15 Underbed light on/off, 16 Massage 2 intensity up, 17 and 20 Massage timer 10 minutes, 19 Massage mode, 21 Massage timer 20 minutes, 22 Massage timer 30 minutes |
+| BNRM (MPE_HJ006, MPE_HJ006-1) | 1 TV, 2 M3, 3 Zero Gravity, 4 Motor 1 up, 5 Motor 1+2 up, 6 Motor 2 up, 7 Motor 1 down, 8 Motor 1+2 down, 9 Motor 2 down, 10 M1, 11 M2, 12 Anti-snore, 14 Massage 1 intensity up, 15 Underbed light on/off, 16 Massage 2 intensity up, 17 Massage off 3, 19 Massage mode, 20 Massage timer 10 minutes, 21 Massage timer 20 minutes, 22 Massage timer 30 minutes |
+| S9RM (ZR90) | 1 Motor 1 up, 2 Motor 2 up, 3 Motor 1 down, 4 Motor 2 down, 5 Zero Gravity, 6 Anti-snore, 7 Reset, 8 Flat |
+| TWRM (MPE_HJ002) | 1 Motor 1 up, 2 Motor 1 down, 3 Motor 2 up, 4 Motor 2 down, 5 Motor 1+2 up, 6 Motor 1+2 down, 8 Flat (Lounge on beds that take raw commands) |
+| WPRM (MPE_HJ003, MPE_HJ005) | 1 Motor 1 up, 3 Motor 2 up, 4 Motor 1 down, 6 Motor 2 down, 7 M1, 8 M2, 9 TV |
+| ZRA2 (MPE_HJ001, MPE_HJ010, MPE_HJ011, MPE_HJ012) | 1 Motor 1 up, 2 Motor 1 down, 3 Motor 2 up, 4 Motor 2 down, 5 Motor 1+2 up, 6 Motor 1+2 down, 7 Flat, 8 M1, 9 Anti-snore, 10 M2, 11 Zero Gravity, 12 M3 |
+| ZRS3 (L&P ADJBED, L&P-ADJBED) | None: its two buttons only switch the app to the APRM or AQRM layout, and Run control refuses them. Use the numbers of the layout you chose |
+
+The layout table below lists every layout's control numbers from the app. Run
+control accepts only a number that sends a command for the chosen press and your
+bed's command format, and refuses the rest. The names of each number are in the
+bed's diagnostics download (`controls`).
 
 <!-- generated:lp2-controls -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -6945,23 +7072,6 @@ its individual timer controls. There are no app screen, arming or side pickers.
 | `2E` | `81` | `82` | `83` |
 | `2F` | `A6` | `A7` | `A8` |
 | `30` | `A9` | `AA` | `AB` |
-
-| Movement-test phase | Operand | Run, seconds | Rest, seconds |
-|---|---|---|---|
-| 1 | `24` | 10 | 5 |
-| 2 | `3F` | 10 | 5 |
-| 3 | `40` | 12 | 5 |
-| 4 | `25` | 12 | 5 |
-| 5 | `26` | 10 | 5 |
-| 6 | `41` | 10 | 5 |
-| 7 | `42` | 12 | 5 |
-| 8 | `27` | 12 | 5 |
-| 9 | `29` | 10 | 5 |
-| 10 | `3F` | 10 | 5 |
-| 11 | `40` | 12 | 5 |
-| 12 | `41` | 10 | 5 |
-| 13 | `42` | 12 | 5 |
-| 14 | `2A` | 12 | 5 |
 
 | Control | Press status | Framed short, mode 0 | Raw short | Long operand | Long threshold, ms |
 |---|---|---|---|---|---|
@@ -7022,23 +7132,12 @@ its individual timer controls. There are no app screen, arming or side pickers.
 | Massage 1 intensity up | 2 | `6E01004CBB` | `49` | none |  |
 | Massage 1 off | 2 | `6E010047B6` | `47` | none |  |
 | Massage 1 on/off | 2 | `6E010032A1` | `32` | none |  |
-| Massage 10 min | 2 | `6E01005FCE` | `5F` | none |  |
-| Massage 10 min | 2 | `6E01005FCE` | `39` | none |  |
-| Massage 10 min | 2 | `6E01005FCE` | `47` | none |  |
-| Massage 10 min | 2 | `6E01005FCE` | `49` | none |  |
-| Massage 10 min | 2 | `6E01005FCE` | `4C` | none |  |
-| Massage 10 min | 2 | `6E01005FCE` | `50` | none |  |
-| Massage 10 min | 2 | `6E0100A110` | `A1` | none |  |
 | Massage 2 intensity down | 2 | `6E01004FBE` | `4F` | none |  |
 | Massage 2 intensity down | 2 | `6E01004FBE` | `4B` | none |  |
 | Massage 2 intensity up | 2 | `6E01004EBD` | `4E` | none |  |
 | Massage 2 intensity up | 2 | `6E01004EBD` | `44` | none |  |
 | Massage 2 intensity up | 2 | `6E01004EBD` | `48` | none |  |
 | Massage 2 on/off | 2 | `6E010033A2` | `33` | none |  |
-| Massage 20 min | 2 | `6E010063D2` | `63` | none |  |
-| Massage 20 min | 2 | `6E0100A211` | `A2` | none |  |
-| Massage 30 min | 2 | `6E010061D0` | `61` | none |  |
-| Massage 30 min | 2 | `6E0100A312` | `A3` | none |  |
 | Massage aroma | 2 | `6E01003BAA` | `3B` | none |  |
 | Massage constant | 2 | `6E01003AA9` | `3A` | none |  |
 | Massage constant | 2 | `6E01003AA9` | `47` | none |  |
@@ -7071,6 +7170,17 @@ its individual timer controls. There are no app screen, arming or side pickers.
 | Massage speed down | 2 | `6E010037A6` | `49` | none |  |
 | Massage speed up | 2 | `6E010036A5` | `36` | none |  |
 | Massage speed up | 2 | `6E010036A5` | `48` | none |  |
+| Massage timer 10 minutes | 2 | `6E01005FCE` | `5F` | none |  |
+| Massage timer 10 minutes | 2 | `6E01005FCE` | `39` | none |  |
+| Massage timer 10 minutes | 2 | `6E01005FCE` | `47` | none |  |
+| Massage timer 10 minutes | 2 | `6E01005FCE` | `49` | none |  |
+| Massage timer 10 minutes | 2 | `6E01005FCE` | `4C` | none |  |
+| Massage timer 10 minutes | 2 | `6E01005FCE` | `50` | none |  |
+| Massage timer 10 minutes | 2 | `6E0100A110` | `A1` | none |  |
+| Massage timer 20 minutes | 2 | `6E010063D2` | `63` | none |  |
+| Massage timer 20 minutes | 2 | `6E0100A211` | `A2` | none |  |
+| Massage timer 30 minutes | 2 | `6E010061D0` | `61` | none |  |
+| Massage timer 30 minutes | 2 | `6E0100A312` | `A3` | none |  |
 | Massage wave | 2 | `6E010039A8` | `39` | none |  |
 | Massage wave | 2 | `6E010039A8` | `45` | none |  |
 | Massage wave | 3 | `6E010039A8` | `39` | `47` | 3000 |
@@ -7753,13 +7863,12 @@ Framed initialization waits 300 ms after notification registration. Layouts
 with alarm actions query the alarm capability, followed by light and aroma
 queries, with 500 ms gaps. Alarm frames are 300 ms apart. Aroma settings
 are 150 ms apart, and fan settings are 300 ms apart. RGB is one write
-containing both color frames. Motor programs use chunks of at most 20 bytes,
-10 ms apart, without a STOP or acknowledgement.
+containing both color frames.
 
 #### Notifications
 
 The session parser accepts checksum-framed replies and discards callbacks
-from previous connections. Alarm acknowledgements do not establish a stored
+from previous connections. Alarm acknowledgements do not confirm a stored
 schedule. Light and aroma settings need live capability replies. Table
 height and range values stay in diagnostics; they are not bed motor angles.
 
@@ -7767,12 +7876,10 @@ height and range values stay in diagnostics; they are not bed motor angles.
 
 Use `set_alarm` for the selected layout's wake actions and supported preset/massage
 combinations. The layout owns each selectable massage zone. Use `lp2` for color,
-light duration (0–300 seconds), aromatherapy, fans, explicit control gestures
-and RMCS movement programs. The head fan sends duration then intensity.
+light duration (0–300 seconds), aromatherapy, fans and explicit control
+gestures. The head fan sends duration then intensity.
 The foot fan sends its intensity twice and does not transmit a duration.
-Programming requires the RMCS layout and explicit confirmation. Program
-values are limited to 0–65535. The TEST layout offers one explicitly confirmed
-movement-test cycle, which can be stopped at any time. Generic `richmat_classic` actions provide
+Generic `richmat_classic` actions provide
 layout-bound massage popups, timer controls and table operations.
 
 #### Evidence
@@ -9130,13 +9237,11 @@ subframes in one write. No raw-command or separate-sensor service is exposed.
 
 #### Evidence
 
-Row A09's accepted whole-artifact reconciliation binds every selector to its
-current getters, installed copied configuration, screen route and session state.
-The 48,642 ordinary frozen literals are carried by `tests/fixtures/galaxy` and
-encoded by `codec/richmat.py`; focused tests also cover normal advanced builders,
-parsers, countdown commits and reconciled runtime transitions. This is static
-app evidence, not a claim of hardware validation. Real owners can
-validate firmware, physical sides and release behavior with timestamped captures.
+The 48,642 ordinary frames are in `tests/fixtures/galaxy` and encoded by
+`codec/richmat.py`; focused tests also cover advanced builders, parsers,
+countdown commits and runtime transitions. Not yet tested on hardware; owners
+can help confirm firmware, physical sides and release behavior with timestamped
+captures.
 
 Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
@@ -9148,7 +9253,7 @@ Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
 Select the app first, then its exact four-character layout. Luuna Rise has its
 own 604-layout catalog and Power Cool its own 586-layout catalog. An app name,
-shared Bluetooth service or matching opcode does not establish a product match.
+shared Bluetooth service or matching opcode does not mean a product match.
 Luuna's H-series layouts include HKRM with its own Left/Right selector. AHRM's
 one-shot action differs between apps; Luuna also has an H9RM reset-labelled
 action that is absent in Power Cool. That label does not prove a factory reset.
@@ -9159,15 +9264,13 @@ Layout-bound movement, combined movement, recall/save, massage, USB, fan, lock
 and light-labelled controls retain the selected app's gesture and visibility
 gates. Lock and vibration targets remain unknown. No motor position, battery,
 model identity or general command acknowledgment is reported by these apps.
-Settings provide alarm countdowns and combinations, RGB, lamp timers and the
-D1RM/D9RM/Y6RM timer utilities. A lamp capability reply reveals a timer number
+Settings provide RGB, lamp timers and the D1RM/D9RM/Y6RM timer utilities.
+`set_alarm` sets the alarm countdown: one of the layout's positions as
+`wake_action` (the wake modes are `wake_mode_1` and `wake_mode_2`, flat sleep
+`flat_sleep`), optional `massage` with a zone, or `none` with `massage` for
+massage alone. A position and massage pair the app has no alarm code for is
+refused. A lamp capability reply reveals a timer number
 entity without a reload. Its value is a local requested setting, not readback.
-
-Power Cool's explicit TEST layout offers a finite 14-step motor diagnostic
-cycle. Its RMCS layout programs a 12-record motor schedule. Select these layouts
-deliberately and use `adjustable_bed.richmat_rise`. RMCS has no proven readback,
-abort, commit or acknowledgment command. Radio selection is a field in the
-program; the phone still sends it over BLE.
 
 #### Detection / Setup
 
@@ -9205,9 +9308,9 @@ are limited to BRRM/YFRM/YGRM. GVRM's uninitialized old-long field emits no foot
 command. U3RM's selected tag changes its additional actuator bytes.
 
 The table preserves exact layout eligibility. Hidden controls remain hidden
-unless a proven overlay reveals them. Resource names are app labels, not proof
-of motor anatomy. Short music actions are unavailable while independently
-proven long lock-labelled gestures remain available.
+unless an app overlay reveals them. Resource names are app labels, not a map of
+the motors. Short music actions are unavailable while the long lock-labelled
+gestures remain available.
 
 <!-- generated:richmat-rise-commands -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -9709,24 +9812,35 @@ proven long lock-labelled gestures remain available.
 | ZRS1 | none | none | none | 2 | zri0 | 3000 | visible |
 
  </details>
-
-| Power Cool TEST opcode | Refresh seconds | Rest seconds |
-|---|---|---|
-| `24` | 10 | 5 |
-| `3F` | 10 | 5 |
-| `40` | 12 | 5 |
-| `25` | 12 | 5 |
-| `26` | 10 | 5 |
-| `41` | 10 | 5 |
-| `42` | 12 | 5 |
-| `27` | 12 | 5 |
-| `29` | 10 | 5 |
-| `3F` | 10 | 5 |
-| `40` | 12 | 5 |
-| `41` | 10 | 5 |
-| `42` | 12 | 5 |
-| `2A` | 12 | 5 |
 <!-- /generated -->
+
+#### Alarm actions
+
+Set the alarm with [`set_alarm`](../SERVICES.md#set_alarm). A layout accepts
+only the controls the app can wake you with; about 140 of each app's 600
+layouts have any. TV, Lounge, Zero Gravity, Anti-snore and Flat sleep are the
+`wake_action` values `tv`, `lounge`, `zero_g`, `anti_snore` and `flat_sleep`,
+M1 to M3 are `memory_1` to `memory_3`, and the two wake modes are `wake_mode_1`
+and `wake_mode_2`. Massage 1 and massage 2 intensity up are the `head` and
+`feet` massage zones, and both together (or the massage-on control) `both`. Add
+`massage: true` with a `massage_zone` to a position, or use `wake_action: none`
+with `massage: true` for massage alone. On UFRM, for example, `wake_action:
+zero_g` with `massage: true` and `massage_zone: head` wakes you with Zero
+Gravity and massage 1.
+
+These are the most common sets:
+
+| Layouts | Alarm actions |
+|---|---|
+| UFRM, XJRM, XKRM, XZRM, Z5RM | TV, Lounge, Zero Gravity, M1, M2, massage 1 intensity up, massage 2 intensity up |
+| O7RM, V4RM, XYRM, Z4RM, ZFRM | TV, Anti-snore, Zero Gravity, M1, M2, massage 1 intensity up, massage 2 intensity up |
+| AFRM, AGRM, AMRM, ANRM, XFRM | Zero Gravity, Anti-snore, TV, massage 1 intensity up, massage 2 intensity up |
+| A9RM, DARM, WURM, Z6RM | TV, Anti-snore, Zero Gravity, massage 1 intensity up, M1, massage 2 intensity up, M2 |
+| FHRM, G9RM, HLRM and HRRM (Luuna Rise only) | TV, Lounge, Anti-snore, Zero Gravity, M1 |
+| XGRM, Y1RM, Y7RM, YQRM | Zero Gravity, Anti-snore, M1 |
+
+For another layout, download the bed's diagnostics: `alarm_actions` lists the
+layout's alarm controls.
 
 #### Position Feedback / Notifications
 
@@ -9748,11 +9862,8 @@ zero has distinct slider (`FFFF`) and Save (`0000`) encodings with unverified
 physical meaning. Y6RM's app timer labels differ from its resource names, so
 they are retained as app choices rather than asserted firmware durations.
 
-Power Cool RMCS sends its 89-byte selected program in 20-byte chunks, 10 ms
-apart, without adding a STOP. TEST uses the generated run/rest sequence and
-the admitted route's release. Diagnostic movement participates in HA's movement
-scheduler and cancellation. Ordinary holds use renewable leases where the
-selected gesture actually refreshes until release.
+Ordinary holds use renewable leases where the selected gesture actually
+refreshes until release.
 
 #### Notes
 
@@ -9777,8 +9888,9 @@ Based on Luuna Rise 1.0.13 (`com.richmat.luunarise2`) and Power Cool Sleep Syste
 
 #### Setup
 
-Choose **Richmat**, then the exact app and its four-character layout. All four
-app names are searchable in setup and Reconfigure. A shared Bluetooth name or
+Choose the app's own row, **Lady Americana app · Richmat**, **ACAA app ·
+Richmat**, **STA Homecare app · Richmat** or **Zero Gravity app · Richmat**,
+then its four-character layout. All four are listed in setup and Reconfigure. A shared Bluetooth name or
 service suggests the family, and does not choose an app or physical layout.
 Each receiver in a two-address pair keeps its own app, layout and saved choices.
 There is no single-address Left/Right selector for these apps.
@@ -9788,8 +9900,7 @@ service wins even if its characteristics are incomplete. An explicit advanced
 option enables the source's third-service property fallback. HA resolves both
 characteristics from the current session and rejects an incomplete route.
 Android leaves write type unchanged; HA uses the selected characteristic's
-advertised write properties. No authentication or position-feedback contract
-is established.
+advertised write properties. There is no authentication or position feedback.
 
 #### Controls
 
@@ -9809,7 +9920,7 @@ The separate generic BED requests correspond to the app's recognized-command
 callbacks. They remain usable through `richmat_resource_bed`, independently of XML buttons and alarm choices. A
 `memory_three` request does not certify a third physical slot. Use the normal
 Stop action for movement release. `voice_stop_request` sends the app's separate
-request and then the protocol release; its label is not emergency STOP evidence.
+request and then the protocol release; it is not an emergency stop.
 Speech recognition and microphone machinery are not part of the integration.
 
 <!-- generated:richmat-resource-apps -->
@@ -10139,7 +10250,7 @@ rules.
 
 Alarm metadata, the received capability flag and direct alarm navigation are
 separate gates. LED support requires an actual current-session reply; saved
-menus and default RGB values do not establish device feedback. RGB is one
+menus and default RGB values are not device feedback. RGB is one
 concatenated write. The phone wheel drops updates while its sender is busy;
 HA serializes explicit action requests. Timeout retains the source's byte-pair
 folding rather than silently substituting a conventional 16-bit value.
@@ -10156,14 +10267,16 @@ or alarm-time feedback.
 
 #### Services
 
-`adjustable_bed.richmat_resource_bed` exposes `query`, `alarm`, `cancel_alarm`,
-`rgb`, `lamp_timeout`, `massage_timer` and `bed_command`. The status entity lists
-available alarm action names in layout order. Choose one bed preset and optional
-massage actions. The action validates every target before execution, and STOP
-fences later writes on every target even while another target is awaiting BLE.
+`adjustable_bed.richmat_resource_bed` exposes `query`, `rgb`, `lamp_timeout`,
+`massage_timer` and `bed_command`. The action validates every target before
+execution, and STOP fences later writes on every target even while another
+target is awaiting BLE.
 
-An alarm time selects its next local occurrence, with unset/equal time meaning
-the next day. Only the layout-owned combinations are accepted. Light timeout
+`set_alarm` sets and cancels the alarm: one of the layout's positions as
+`wake_action`, optional `massage` with a zone (`both`, `head` or `feet`), or
+`none` with `massage` for massage alone. The status entity lists the layout's
+alarm actions. An alarm time selects its next local occurrence, with an equal
+time meaning the next day. Only the layout-owned combinations are accepted. Light timeout
 requests are 0–300 seconds, with zero labelled keep on. The D1RM massage slider
 uses its actual 0–5 callback mapping. Requested values are labelled as requests,
 not device readback. Other layout actions use their named buttons and the
@@ -10173,8 +10286,8 @@ standard `hold_control` action; held buttons publish current card metadata.
 
 All four apps share the binding
 domain, both movement formats and direct settings builders. The Richmat codec
-reproduces their frozen literal vectors; the controllers use each member's
-explicit product scope and preserve its source-qualified limits. Hardware
+reproduces their test vectors; the controllers use each member's product scope
+and keep its limits. Hardware
 motion, physical axes, memory effects and optional features remain unverified.
 
 ### Lady Americana
@@ -10268,7 +10381,7 @@ Based on Zero Gravity 1.0.3 (4).
 
 #### Setup
 
-1. Choose **Okimiki app**.
+1. Choose **Okimiki app · Richmat**.
 2. Choose the product code the app shows: HCRN, IPRM, IQRM or KWRN. The bed's
    name does not tell them apart.
 
@@ -10276,7 +10389,7 @@ The product decides the memory, preset and alarm controls. The light and alarm
 controls appear once the bed has connected and reported them. Configure keeps
 the product; on a bed with two receivers each side keeps its own.
 
-Choose **Okimiki app**, then the exact product code shown in the app. Configure,
+Choose **Okimiki app · Richmat**, then the exact product code shown in the app. Configure,
 import and restored entries retain that product independently for each bed.
 Shared Bluetooth names/services do not select a product. Case-sensitive scan
 keywords match anywhere in the name; manual setup also accepts these candidates.
@@ -10381,7 +10494,7 @@ once, and leaving the field out keeps an edited alarm's days. The four modes are
 explicit `alarm_id` from 1 through 7 when creating a recurring alarm. The list
 has no completion marker, so Home Assistant does not infer a free slot from
 missing or delayed replies. The app's exhausted allocator serializes FF; that
-evidence is retained in codec tests, but Home Assistant requires an explicit
+case is kept in codec tests, but Home Assistant requires an explicit
 slot instead.
 
 A one-shot alarm uses the selected local time and a minute countdown; a positive
@@ -10406,7 +10519,7 @@ Based on Okimiki 1.0.1 (`com.richmat.okimiki`).
 
 #### Setup
 
-Choose **Nisco app (Richmat)** explicitly. Auto uses the first four Bluetooth
+Choose **Nisco app · Richmat** explicitly. Auto uses the first four Bluetooth
 name characters, lowercased, as the surface identifier. A saved explicit model
 wins over the name. QRRM asks for a real model. The six short identifiers
 3i/4i/4it/5i/6i/7i are dormant in this app and are not offered. Shared UUIDs and
@@ -10430,11 +10543,13 @@ frames. Snore intervention samples the current mode at the final dispatch
 boundary, including a mode changed while its write waited for the BLE lane.
 The dedicated `13`-family setting is separate from normal anti-snore recall/save.
 
-Button names come from the catalog's command names, shown in the Richmat MH
-buttons' wording; the catalog labels stay as recorded. For example `Massage Head
-Intensity Inc` is Massage: Head Up, `Massage 10Min` is Massage: Timer 10 Minutes,
-`Zg2 Back`/`Zg2 Set` are Zero Gravity 2 and Save Zero Gravity 2, and `Ubl Off` is
-Underbed light off.
+Buttons are named by their command, as in the
+[Richmat MH apps](#richmat-mh-apps); the catalog labels stay as recorded. For
+example `Massage Head Intensity Inc` is Massage: Head Up, `Zg2 Back`/`Zg2 Set`
+are Zero gravity 2 and Save Zero gravity 2, and `Ubl Off` is Under-bed light
+off. A model with more than
+one of `Massage 10Min`, `Massage 20Min` and `Massage 30Min` shows them as the
+**Massage timer** select (durations only); a model with one keeps its button.
 
 Nisco's light timer preserves the high and low duration bytes. Normal and
 waist mattress controls are dormant, even though startup probes and shared
@@ -10446,7 +10561,7 @@ the sibling's detailed offsets and controls are not borrowed.
 Ordinary KEEP uses the selected widget's interval. Fixed-layout remotes use
 150 ms refresh; their long-save gesture waits three one-second ticks and sends
 a checksummed save, followed by the 150 ms release sequence. The generic
-LONG-worker's malformed checksum-zero example is evidence of a distinct path,
+LONG-worker's malformed checksum-zero example belongs to a distinct path,
 not a reason to corrupt all saves or assume firmware tolerance.
 HA does not expose that raw threshold path, which no current Nisco widget is
 shown to use. Ordinary programming and the separately attached, checksummed
@@ -10505,9 +10620,9 @@ Based on Nisco 1.1.1 (3).
 
 #### Setup
 
-Choose **MLILY Supreme app (Richmat)** explicitly. This is a separate profile
+Choose **MLILY Supreme app · Richmat** explicitly. This is a separate profile
 from MLILY Control and other same-brand integrations. The name rule and GATT
-priority match Nisco's established common domains. Unlike Nisco, the six short
+priority match Nisco's common domains. Unlike Nisco, the six short
 manual surface identifiers are selectable. Choose the explicit normal-mattress
 variant only for that app-selected extra; a powered initialization must still
 arrive. Waist powered initialization accepts its own area. Configure and paired
@@ -10530,7 +10645,7 @@ setting domains. Pad selectors do not create another BLE recipient.
 #### Timing
 
 The shared query schedule and ordinary/fixed-remote caller timings apply only
-where established. Two-phase alarms use 300 ms. Mattress initialization
+where the app uses them. Two-phase alarms use 300 ms. Mattress initialization
 consumers run 300 ms after their accepted frames. Mattress commands are one-shot;
 mode zero and leg/pillow zero are explicit stop values.
 
@@ -10546,7 +10661,7 @@ stop resets progress and retains rows. Other valid INIT frames keep their generi
 fallback. The source length/checksum gate covers the whole accumulated buffer.
 
 Normal/waist cache keys, alarm tails and the source's fixed-end-index resync
-quirk remain distinct from Nisco's bounded evidence. Coalesced waist lengths are
+quirk remain distinct from Nisco's. Coalesced waist lengths are
 14, 18 and 19 bytes. The separate sleep receiver's live consumer requires a
 saved physical receiver; `Std` defaults to 1. HA rejects signed-length overflow
 headers and bounds malformed buffering rather than claiming Android recovered
@@ -11544,7 +11659,8 @@ and STOP response are not yet verified on hardware.
 
 #### Setup
 
-1. Choose **SleepEvolution app** or **W.Silver Products 3.x app** under Richmat.
+1. Choose **SleepEvolution app · Richmat** or **W.Silver Products app (older
+   version) · Richmat** (W.Silver Products 3.x).
    The newer W.Silver Products app is a separate choice.
 2. Choose the start of the bed's Bluetooth name (**Bed model or remote**). It is
    case-sensitive. A6, U3, U5 and X1 are offered only for SleepEvolution.
@@ -11553,8 +11669,8 @@ and STOP response are not yet verified on hardware.
 each one and combine them; each keeps its own app and name. Left and Right
 controls on one receiver are not supported. **Read bed position** is off.
 
-Search **SleepEvolution** or **W.Silver Products 3.x** under **Richmat** in setup
-or **Reconfigure**, then select the exact case-sensitive two-character name
+Search for **SleepEvolution app · Richmat** or **W.Silver Products app (older
+version) · Richmat** in setup or **Reconfigure**, then select the exact case-sensitive two-character name
 prefix. A matching name can suggest a prefix only after app selection. Shared
 prefixes and Nordic UART services cannot choose between the apps. The newer
 W.Silver MH app remains a separate choice. `Ml`, `Mr` and `Ms` are case
@@ -11570,12 +11686,12 @@ adapter/proxy discovery, connection acceptance and handoff.
 
 | Feature | Availability |
 |---|---|
-| Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and foot up, Upper Section Up, ...), without inferring physical motor count. |
-| Presets and memory | Exact named actions in the selected profile, including separate Save buttons where programming is proven. No universal slot count or numeric memory namespace. |
-| Massage and bed light | Profile-specific request buttons; local icon/flag changes do not confirm remote state. Where a remote has more than one fixed massage timer key (10MIN, 20MIN, 30MIN), they are the **Massage: Timer** select, with durations only; **Timer / Off** stays a button. |
+| Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and foot up, Upper Section Up, ...), without guessing the physical motor count. |
+| Presets and memory | Exact named actions in the selected profile, including separate Save buttons where the app can save. No universal slot count or numeric memory namespace. |
+| Massage and bed light | Profile-specific request buttons; local icon/flag changes do not confirm remote state. Where a remote has more than one fixed massage timer key (10MIN, 20MIN, 30MIN), they are the **Massage timer** select, with durations only; **Massage timer / off** stays a button. |
 | Factory Reset | Only where listed; requires confirmation in the native card, as do Save buttons. |
 | Position and device state feedback | None. |
-| Renewable holds | Proven motion controls only. Countdown, massage, programming and local selectors remain finite. |
+| Renewable holds | Motion controls only. Countdown, massage, programming and local selectors remain finite. |
 
 The command tables below describe raw single-character ASCII String bytes over
 Nordic UART. There is no packet envelope, terminator, checksum, sequence, side
@@ -13491,7 +13607,7 @@ Cleanup uses the captured physical connection and a fresh cancellation event.
 Already-submitted GATT work and the complete release batch drain independently
 of cancellation; unconditional cleanup is attempted even if a short-recall
 write fails. A stale callback cannot write to a replacement bed. These rules
-do not establish a mechanical stop guarantee.
+do not guarantee a mechanical stop.
 
 #### Notifications
 
@@ -13518,6 +13634,286 @@ for fields and an A1 recall/save example. There is no arbitrary-command interfac
 
 Based on SleepEvolution 3.5.5 (13) and W.Silver Products 3.3.7 (9).
 
+
+### SleepFunction Bed Control
+
+**App:** [SleepFunction Bed Control](https://play.google.com/store/apps/details?id=com.richmat.sleepfunction) 1.3.0, `com.richmat.sleepfunction`
+
+**Status:** Not yet tested on hardware.
+
+#### Setup
+
+Choose **SleepFunction Bed Control** from the Richmat app choices and search for
+its four-character layout. Choose the child layout directly for the ZRS0–ZRS3
+picker screens. Reconfigure uses the same choices. The actual GATT
+table selects FEE9/FB, FEE9/BB, Nordic UART, then FFF0 in that order. A missing
+characteristic on the first matching service fails setup. The third-service
+property fallback requires the explicit Advanced option. No PIN or clock
+synchronization is used. A shared service or name never identifies this app.
+
+#### Controls
+
+Movement, presets, memory saves, massage, lock and synchronization follow the
+selected layout's own resources. Preset saves ask for confirmation; memory saves
+use the card's Set mode. Controls
+hidden by the layout stay hidden; the separate save buttons on YFRM, YGRM and
+BRRM appear in continuous mode. **Continuous movement** sends the app's Hold or
+Release command and changes the effective preset gestures. Native buttons carry
+their own mode or side. Scoped movement actions keep their full names in
+Utility, and scoped memory actions are separate presets with confirmed saves.
+Raw Nordic writes ignore the mode, as in the app.
+
+RGB lighting and its 0–300 second timeout appear after a valid LED reply.
+D1RM and D9RM expose the named massage timer choices, rather than an unlabelled
+intensity scale. There is no measured bed position feedback.
+
+<!-- generated:sleepfunction-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Framed operand | Raw override | Long operand | Layouts |
+|---|---|---|---|---|
+| Anti-snore | 46 | none | 69 | 6DRM, 6ERM, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, BORM, BRRM, BVRM, C3RM, C4RM, C5RM, CBRM, CERM, CGRM, CIRM, CJRM, CLRM, CORM, CSRM, CTRM, CURM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D3RM, D4RM, D7RM, D9RM, DARM, DBRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DTRM, DURM, DVRM, DWRM, DZRM, E1RM, E5RM, E6RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EMRM, ENRM, EORM, EPRM, EQRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, F0RM, F1RM, F3RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FHRM, FKRM, FMRM, FNRM, FPRM, FQRM, FSRM, FTRM, FURM, FXRM, FYRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O1RM, O4RM, O7RM, O8RM, OARM, OPRM, OQRM, OTRM, OYRM, OZRM, P2RM, P3RM, P4RM, P5RM, P6RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TBRM, TCRM, TDRM, TERM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UBRM, UCRM, UDRM, UGRM, UIRM, UJRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VSRM, VVRM, VWRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X4RM, X5RM, X7RM, X9RM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XLRM, XMRM, XPRM, XSRM, XTRM, XURM, XVRM, XYRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, YQRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z6RM, Z8RM, Z9RM, ZARM, ZDRM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZMRM, ZORM, ZR40, ZR50, ZR51, ZRA0, ZRA2, ZRI0, ZSRM, ZTRM, ZURM, ZWRM, ZYRM |
+| Anti-snore | 46 | none | none | APRM, C2RM, C9RM, P1RM, UKRM |
+| Flat | 31 | 32 | none | TWRM, TZRM |
+| Flat | 31 | 38 | none | A6RM, ONRM |
+| Flat | 31 | none | none | 6CRM, 6DRM, 6ERM, 6FRM, A0RM, A1RM, A3RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ARRM, ATRM, AURM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B4RM, B5RM, B7RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BORM, BPRM, BRRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IKRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OWRM, OXRM, OYRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T2RM, T3RM, T5RM, T6RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XNRM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YTRM, YURM, YVRM, YXRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZCRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM |
+| Flat | none | 31 | none | GVRM |
+| Flat 2 | 6C | none | none | C6RM, C7RM, VRRM, ZNRM, ZRRM |
+| Flat sleep | F6 | none | F7 | FERM, FFRM |
+| Lock | 84 | none | none | DSRM, DTRM, F6RM |
+| Lock | none | none | 84 | AORM, E9RM, FGRM, FMRM, FNRM |
+| Lounge | 59 | 32 | none | A3RM, BERM, MMRM, ONRM, R2RM, THRM |
+| Lounge | 59 | none | 65 | ACRM, ADRM, AORM, ATRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BKRM, BLRM, BURM, BZRM, CDRM, CIRM, CKRM, CQRM, DCRM, DDRM, DERM, DLRM, DVRM, DWRM, DZRM, ECRM, EGRM, EMRM, ENRM, ESRM, ETRM, EWRM, F3RM, F8RM, F9RM, FDRM, FFRM, FHRM, FZRM, G5RM, G6RM, G8RM, G9RM, I3RM, IGRM, IQRM, IRRM, M3RM, M5RM, MRRM, O3RM, O6RM, O9RM, OMRM, OSRM, OXRM, OZRM, P1RM, R5RM, T7RM, TARM, TBRM, TCRM, TDRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, X0RM, X5RM, X7RM, X9RM, XERM, XHRM, XIRM, XJRM, XKRM, XSRM, XURM, XVRM, XZRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YPRM, YWRM, YXRM, YZRM, Z2RM, Z5RM, Z8RM, ZARM, ZERM, ZR11, ZR12, ZR50, ZR51, ZRA0, ZSRM, ZURM |
+| Lounge | 59 | none | none | BJRM, O2RM, O5RM, UZRM, YORM, YRRM |
+| Lounge | none | 32 | none | GVRM |
+| Lumbar | 91 | none | 92 | AERM, ALRM |
+| M1 | 2E | 42 | 2B | A3RM |
+| M1 | 2E | 42 | none | MMRM, R2RM |
+| M1 | 2E | none | 2B | A0RM, A1RM, A2RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, ALRM, AMRM, ANRM, ARRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BRRM, BSRM, BTRM, BURM, BVRM, BWRM, BXRM, BZRM, C0RM, C1RM, C3RM, C5RM, C6RM, C7RM, C8RM, CARM, CCRM, CDRM, CERM, CGRM, CIRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CVRM, CXRM, CYRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D9RM, DARM, DBRM, DCRM, DDRM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DZRM, E1RM, E3RM, E5RM, E6RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EWRM, F0RM, F1RM, F3RM, F4RM, F5RM, F6RM, F7RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FRRM, FSRM, FTRM, FURM, FVRM, FZRM, G3RM, G4RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UXRM, UYRM, UZRM, V1RM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VVRM, VWRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X0RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XDRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XNRM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XYRM, XZRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YYRM, YZRM, Z2RM, Z4RM, Z5RM, Z6RM, Z8RM, Z9RM, ZARM, ZBRM, ZDRM, ZERM, ZFRM, ZGRM, ZJRM, ZKRM, ZMRM, ZNRM, ZPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0, ZRRM, ZSRM, ZURM, ZWRM, ZYRM |
+| M1 | 2E | none | none | APRM, AQRM, C2RM, C9RM, VXRM |
+| M1 | none | 42 | none | GVRM |
+| M2 | 2F | 44 | 2C | A3RM |
+| M2 | 2F | 44 | none | MMRM, R2RM |
+| M2 | 2F | none | 2C | A0RM, A1RM, A2RM, A9RM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, ALRM, AMRM, ANRM, ARRM, AURM, AWRM, AXRM, AYRM, BJRM, BKRM, BLRM, BMRM, BPRM, BRRM, BSRM, BURM, BVRM, BXRM, BZRM, C0RM, C8RM, CERM, CGRM, CMRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CXRM, CYRM, D0RM, D1RM, D2RM, D3RM, D4RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DHRM, DIRM, DJRM, DKRM, DLRM, DNRM, DPRM, DQRM, DTRM, DVRM, DWRM, DZRM, E3RM, E5RM, E6RM, E8RM, E9RM, ECRM, EFRM, EGRM, EIRM, EJRM, EMRM, ENRM, EORM, EQRM, ERRM, ESRM, ETRM, EWRM, F1RM, F5RM, F6RM, F7RM, F8RM, FARM, FBRM, FDRM, FERM, FFRM, FIRM, FKRM, FPRM, FZRM, G3RM, G7RM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, M3RM, M5RM, M6RM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, TERM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UXRM, UZRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VWRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WURM, WXRM, X0RM, X7RM, X8RM, X9RM, XARM, XCRM, XDRM, XFRM, XHRM, XJRM, XKRM, XMRM, XPRM, XSRM, XTRM, XURM, XVRM, XYRM, XZRM, Y5RM, Y6RM, Y8RM, YBRM, YERM, YFRM, YGRM, YHRM, YMRM, YPRM, YSRM, YTRM, YURM, YVRM, YWRM, YYRM, Z2RM, Z4RM, Z5RM, Z6RM, Z8RM, ZBRM, ZDRM, ZERM, ZFRM, ZGRM, ZR12, ZR50, ZR51, ZR80, ZRA2, ZRRM, ZWRM, ZYRM |
+| M2 | 2F | none | none | APRM, AQRM, BNRM, C2RM, C9RM, VXRM |
+| M2 | 44 | none | none | BERM |
+| M2 | none | 44 | none | GVRM |
+| M3 | 30 | none | 2D | A0RM, A2RM, ADRM, BMRM, BNRM, BSRM, BZRM, CIRM, CMRM, CORM, CSRM, DDRM, DERM, DFRM, DGRM, E3RM, EIRM, ENRM, F8RM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, UZRM, V7RM, VWRM, W5RM, W7RM, WLRM, X0RM, YPRM, YSRM, YTRM, YURM, YVRM, YWRM, YYRM, ZRA2, ZWRM |
+| M3 | 30 | none | none | VXRM |
+| M4 | B2 | none | B3 | BSRM, C6RM, C7RM, E3RM, YSRM, YTRM, YURM, YVRM, ZNRM |
+| M5 | F4 | none | F5 | G5RM, G6RM |
+| Massage 1 intensity down | 4D | 49 | none | BERM |
+| Massage 1 intensity down | 4D | 4A | none | R2RM |
+| Massage 1 intensity down | 4D | none | none | ACRM, ADRM, APRM, C2RM, C9RM, D7RM, DIRM, EURM, F9RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, T9RM, U9RM, UARM, UBRM, UJRM, V7RM, VQRM, W5RM, Y3RM, YGRM, YZRM, ZHRM, ZIRM, ZKRM, ZLRM, ZRI0 |
+| Massage 1 intensity up | 4C | 42 | none | ONRM, THRM |
+| Massage 1 intensity up | 4C | 46 | none | BERM |
+| Massage 1 intensity up | 4C | 49 | none | R2RM |
+| Massage 1 intensity up | 4C | none | none | A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, C2RM, C4RM, C5RM, C7RM, C9RM, CARM, CBRM, CJRM, CLRM, CMRM, CORM, CPRM, CQRM, CSRM, CTRM, CURM, CVRM, CWRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D9RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DSRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EFRM, EMRM, EORM, ESRM, ETRM, EURM, EVRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G5RM, G7RM, G9RM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O1RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, U3RM, U4RM, U5RM, U9RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WNRM, WSRM, WURM, WXRM, X0RM, X2RM, X7RM, X9RM, XBRM, XCRM, XERM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XWRM, XYRM, XZRM, Y3RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z8RM, ZARM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZKRM, ZLRM, ZMRM, ZORM, ZR50, ZR51, ZRI0, ZSRM, ZTRM, ZURM, ZWRM |
+| Massage 1 off | 47 | none | none | OURM, OWRM |
+| Massage 1 off | none | 47 | none | GVRM |
+| Massage 1 on/off | 32 | none | none | B1RM, I9RM, INRM, O6RM, OMRM, OORM, R6RM, VGRM, WDRM, WERM |
+| Massage 2 intensity down | 4F | 4B | none | BERM, R2RM |
+| Massage 2 intensity down | 4F | none | none | ACRM, ADRM, APRM, B8TT, B9TT, C2RM, C9RM, D7RM, EURM, F9RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, U9RM, UARM, UBRM, UJRM, V7RM, VQRM, W5RM, Y3RM, YGRM, YZRM, ZHRM, ZIRM, ZKRM, ZLRM, ZRI0 |
+| Massage 2 intensity up | 4E | 44 | none | ONRM, THRM |
+| Massage 2 intensity up | 4E | 48 | none | BERM, R2RM |
+| Massage 2 intensity up | 4E | none | none | A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, B8TT, B9TT, BDRM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, C2RM, C4RM, C5RM, C7RM, C9RM, CARM, CBRM, CGRM, CIRM, CJRM, CLRM, CMRM, CORM, CPRM, CQRM, CSRM, CTRM, CURM, CVRM, CWRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D9RM, DARM, DCRM, DERM, DFRM, DHRM, DJRM, DPRM, DSRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EFRM, EMRM, EORM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G5RM, G7RM, G9RM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O1RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, TARM, TBRM, TCRM, TDRM, TERM, U3RM, U4RM, U5RM, U9RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WNRM, WSRM, WURM, WXRM, X0RM, X7RM, X9RM, XBRM, XCRM, XERM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XWRM, XYRM, XZRM, Y3RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z8RM, ZARM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZKRM, ZLRM, ZMRM, ZORM, ZR50, ZR51, ZRI0, ZSRM, ZTRM, ZURM, ZWRM |
+| Massage 2 on/off | 33 | none | none | B1RM, O6RM, OMRM, OORM, R6RM |
+| Massage aroma | 3B | none | none | UYRM, VYRM |
+| Massage constant | 3A | 47 | none | ONRM, THRM |
+| Massage constant | 3A | none | none | A2RM, O6RM, OMRM, OORM, R6RM |
+| Massage foot intensity 2 | A5 | none | none | BGRM |
+| Massage head intensity 2 | A4 | none | none | BGRM |
+| Massage intensity 1 | 67 | 4C | none | R2RM |
+| Massage intensity 1 | 67 | none | none | B1RM |
+| Massage intensity 2 | 4D | 4D | none | R2RM |
+| Massage intensity 3 | 68 | 4E | none | R2RM |
+| Massage intensity 3 | 68 | none | none | B1RM |
+| Massage intensity down | 35 | 4B | none | A3RM, MMRM, ONRM, THRM |
+| Massage intensity down | 35 | none | none | A2RM, BZRM, M6RM, O2RM, O6RM, OMRM, OORM, R6RM, U1RM, U2RM, UKRM, UZRM, W7RM, YWRM |
+| Massage intensity up | 34 | 48 | none | A3RM, MMRM |
+| Massage intensity up | 34 | 4A | none | ONRM, THRM |
+| Massage intensity up | 34 | none | none | A2RM, BZRM, FJRM, M6RM, O2RM, O6RM, OMRM, OORM, R6RM, U1RM, U2RM, UKRM, UZRM, W7RM, WDRM, WERM, YWRM |
+| Massage mode | 48 | 4A | none | A3RM, BERM, MMRM |
+| Massage mode | 48 | none | 47 | APRM, C2RM, C9RM, YGRM |
+| Massage mode | 48 | none | 5E | C7RM, CVRM, DSRM, YMRM, YPRM |
+| Massage mode | 48 | none | none | A0RM, A1RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, B8RM, BDRM, BGRM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CJRM, CLRM, CMRM, CORM, CPRM, CQRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D2RM, D4RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EFRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G5RM, G7RM, G9RM, I1RM, I2RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IRRM, M3RM, M6RM, M7RM, MARM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WSRM, WURM, WXRM, X0RM, X7RM, X9RM, XCRM, XERM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XWRM, XYRM, XZRM, Y6RM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YORM, YWRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z8RM, ZARM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZSRM, ZTRM, ZURM, ZWRM |
+| Massage off | 47 | none | none | BHRM, BIRM, E9RM, O4RM, P5RM, V6RM, YERM |
+| Massage off 2 | 5A | none | none | B1RM |
+| Massage off 3 | 5E | none | none | A0RM, A1RM, AARM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, AWRM, AXRM, BGRM, BNRM, BORM, C4RM, C5RM, CARM, CGRM, CIRM, CJRM, CLRM, CMRM, CPRM, CQRM, CSRM, CTRM, CURM, CWRM, CZRM, D0RM, D1RM, D3RM, D9RM, DCRM, DERM, DFRM, DHRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, EDRM, EFRM, EMRM, EORM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FRRM, FTRM, FZRM, G3RM, G5RM, G7RM, G9RM, I1RM, IBRM, IERM, IGRM, M6RM, M7RM, MARM, O8RM, P1RM, P6RM, T7RM, TCRM, TDRM, TERM, U4RM, U5RM, URRM, UTRM, UYRM, VBRM, VKRM, VLRM, VPRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VZRM, W6RM, W7RM, W9RM, WHRM, WJRM, WKRM, WNRM, WURM, WXRM, X7RM, XCRM, XERM, XFRM, XHRM, XIRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XWRM, XYRM, XZRM, Y8RM, YARM, YIRM, YORM, YYRM, YZRM, Z2RM, Z4RM, Z5RM, Z6RM, ZARM, ZERM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZSRM, ZTRM, ZURM, ZVRM, ZWRM |
+| Massage on | 5D | none | 47 | B9TT |
+| Massage on | 5D | none | none | AHRM, APRM, BVRM, C2RM, CORM, FCRM, I2RM, I7RM, I8RM, ICRM, IERM, IFRM, IHRM, IIRM, IRRM, O5RM, T3RM, V9RM, VIRM, VNRM, WIRM, X9RM, XVRM, YGRM |
+| Massage on/off | 6F | none | none | Y2RM |
+| Massage pulse | 38 | 46 | none | ONRM, THRM |
+| Massage pulse | 38 | none | none | A2RM, O6RM, OMRM, OORM, R6RM |
+| Massage pulse | none | 46 | none | GVRM |
+| Massage speed down | 37 | 49 | none | ONRM, THRM |
+| Massage speed down | 37 | none | none | A2RM, O4RM, O6RM, OMRM, OORM, R6RM |
+| Massage speed up | 36 | 48 | none | ONRM, THRM |
+| Massage speed up | 36 | none | none | A2RM, O4RM, O6RM, OMRM, OORM, R6RM |
+| Massage timer 10 minutes | 5F | 39 | none | ONRM |
+| Massage timer 10 minutes | 5F | 47 | none | BERM |
+| Massage timer 10 minutes | 5F | 49 | none | MMRM |
+| Massage timer 10 minutes | 5F | 4C | none | A3RM |
+| Massage timer 10 minutes | 5F | 50 | none | R2RM |
+| Massage timer 10 minutes | 5F | none | none | A3RM, A9RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D2RM, D3RM, D4RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IARM, IBRM, IORM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y3RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Massage timer 10 minutes | A1 | none | none | BGRM |
+| Massage timer 20 minutes | 63 | none | none | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IBRM, M3RM, MLRM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Massage timer 20 minutes | A2 | none | none | BGRM |
+| Massage timer 30 minutes | 61 | none | none | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FCRM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IBRM, M3RM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Massage timer 30 minutes | A3 | none | none | BGRM |
+| Massage wave | 39 | 45 | none | ONRM, THRM |
+| Massage wave | 39 | none | 47 | D7RM, EURM, I0RM, I4RM, I5RM, MLRM, O0RM, OTRM, OYRM, U9RM, UARM, UBRM, UJRM, V7RM, ZHRM, ZIRM, ZKRM, ZLRM, ZRI0 |
+| Massage wave | 39 | none | none | A2RM, O6RM, OMRM, OORM, R6RM |
+| Massage wave 3 | 4B | none | none | B8RM |
+| Motor 1 down | 25 | 37 | none | 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, A6RM, GMRM, ONRM, T4RM, THRM, TWRM, TZRM, V3RM |
+| Motor 1 down | 25 | 38 | none | A3RM, BERM, MMRM, R2RM |
+| Motor 1 down | 25 | none | none | A0RM, A1RM, A2RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ARRM, ASRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BSRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E2RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F2RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, TLRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XDRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM |
+| Motor 1 up | 24 | 34 | none | 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, A6RM, GMRM, ONRM, T4RM, THRM, TWRM, TZRM, V3RM |
+| Motor 1 up | 24 | 35 | none | A3RM, BERM, MMRM, R2RM |
+| Motor 1 up | 24 | none | none | A0RM, A1RM, A2RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ARRM, ASRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BSRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E2RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F2RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, TLRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XDRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM |
+| Motor 1 up 2 down | 21 | none | none | APRM, AQRM, BORM, BRRM, C2RM, C9RM, DYRM, OORM, OURM, OWRM, WYRM, YFRM, YGRM |
+| Motor 1 up once | 3D | none | none | DJRM, DKRM, DLRM, EVRM, EWRM, FDRM, FFRM, OWRM, XFRM, XGRM, XLRM, YIRM, YMRM, YNRM, YORM, YPRM |
+| Motor 1+2 down | 2A | 39 | none | 6BRM, A3RM, GMRM, MMRM, R2RM, T4RM, THRM, TWRM, V3RM, VYRM, W0RM, W2RM, YJRM |
+| Motor 1+2 down | 2A | none | none | A2RM, ATRM, AURM, AVRM, AWRM, AYRM, B6RM, B7RM, BFRM, BGRM, BHRM, BNRM, BQRM, BURM, C5RM, CBRM, CERM, CKRM, CORM, CYRM, D2RM, D5RM, DFRM, DHRM, DIRM, DMRM, DURM, DVRM, E0RM, E3RM, E5RM, EFRM, ENRM, EQRM, ESRM, ETRM, F3RM, F5RM, FARM, FBRM, FIRM, FRRM, FVRM, FYRM, G2RM, G3RM, G5RM, G8RM, G9RM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, O2RM, O3RM, O9RM, OARM, OPRM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R5RM, R6RM, T8RM, TARM, TCRM, TDRM, TLRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V4RM, VXRM, W5RM, W6RM, W7RM, WERM, WKRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, X4RM, X5RM, X7RM, X8RM, XERM, XHRM, XIRM, XJRM, XKRM, XNRM, XORM, XWRM, Y3RM, YHRM, YWRM, YYRM, YZRM, Z1RM, Z2RM, Z4RM, Z5RM, Z7RM, Z8RM, ZBRM, ZDRM, ZERM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZURM, ZZRM |
+| Motor 1+2 once up | 23 | none | none | AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AQRM, BRRM, C2RM, C9RM, OORM, Y1RM, YFRM, YGRM, YQRM |
+| Motor 1+2 up | 29 | 36 | none | A3RM, MMRM, R2RM |
+| Motor 1+2 up | 29 | 38 | none | 6BRM, 6CRM, 6DRM, GMRM, T4RM, THRM, TWRM, V3RM |
+| Motor 1+2 up | 29 | none | none | A2RM, ATRM, AURM, AVRM, AWRM, AYRM, B0RM, B6RM, B7RM, BFRM, BGRM, BHRM, BKRM, BNRM, BQRM, BURM, C5RM, CBRM, CERM, CKRM, CMRM, CORM, CSRM, CYRM, D2RM, D5RM, D7RM, DFRM, DHRM, DIRM, DMRM, DURM, DVRM, E0RM, E3RM, E5RM, EFRM, ENRM, EQRM, ESRM, ETRM, F3RM, F5RM, FARM, FBRM, FIRM, FRRM, FVRM, FYRM, G2RM, G3RM, G5RM, G8RM, G9RM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, M6RM, MARM, O2RM, O3RM, O9RM, OARM, OPRM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R5RM, R6RM, T8RM, TARM, TCRM, TDRM, TLRM, U0RM, U1RM, U4RM, U8RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V4RM, V5RM, V6RM, VARM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, X4RM, X5RM, X7RM, X8RM, XERM, XHRM, XIRM, XJRM, XKRM, XNRM, XORM, XWRM, Y3RM, YHRM, YJRM, YWRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z4RM, Z5RM, Z7RM, Z8RM, ZBRM, ZCRM, ZDRM, ZERM, ZJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZURM, ZZRM |
+| Motor 1+2 up | none | 38 | none | GVRM |
+| Motor 2 down | 27 | 41 | none | 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, A3RM, A6RM, BERM, GMRM, MMRM, ONRM, R2RM, T4RM, THRM, TWRM, TZRM, V3RM |
+| Motor 2 down | 27 | none | none | A0RM, A1RM, A2RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, TLRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM |
+| Motor 2 up | 26 | 36 | none | 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, A6RM, GMRM, ONRM, T4RM, THRM, TWRM, TZRM, V3RM |
+| Motor 2 up | 26 | 37 | none | A3RM, BERM, MMRM, R2RM |
+| Motor 2 up | 26 | none | none | A0RM, A1RM, A2RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, TLRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM |
+| Motor 2 up | none | 37 | none | GVRM |
+| Motor 2 up 1 down | 22 | none | none | APRM, AQRM, BORM, BRRM, C2RM, C9RM, DYRM, OORM, OURM, OWRM, YFRM, YGRM |
+| Motor 2 up once | 3E | none | none | OWRM |
+| Motor 2+3 down | 97 | none | none | ZORM |
+| Motor 2+3 up | 96 | none | none | ZORM |
+| Motor 3 down | 40 | 43 | none | BERM, TZRM |
+| Motor 3 down | 40 | none | none | A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AGRM, AHRM, AIRM, ALRM, ANRM, AXRM, BDRM, BGRM, BIRM, BLRM, BMRM, C2RM, C4RM, C6RM, C7RM, CARM, CBRM, CDRM, CGRM, CJRM, CKRM, CLRM, CPRM, CQRM, CTRM, CURM, CWRM, CZRM, D4RM, D6RM, DARM, DCRM, DKRM, DPRM, E1RM, E6RM, E7RM, E8RM, EDRM, EFRM, EMRM, ENRM, EORM, EVRM, EXRM, F0RM, F4RM, F9RM, FGRM, FHRM, FKRM, FPRM, FQRM, FTRM, FZRM, I0RM, I4RM, I5RM, I6RM, I8RM, ICRM, IGRM, M3RM, M5RM, MRRM, O1RM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TERM, U2RM, U5RM, U9RM, UARM, UBRM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WSRM, WTRM, WWRM, WXRM, X0RM, X4RM, X9RM, XCRM, XLRM, XMRM, XORM, XPRM, XTRM, XVRM, XWRM, XXRM, XYRM, XZRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, YSRM, YTRM, YURM, YVRM, Z3RM, Z6RM, Z9RM, ZARM, ZFRM, ZGRM, ZIRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZR11, ZR50, ZR51, ZRA0, ZRI0, ZRRM, ZSRM, ZTRM, ZVRM |
+| Motor 3 up | 3F | 42 | none | BERM, TZRM |
+| Motor 3 up | 3F | none | none | A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AGRM, AHRM, AIRM, ALRM, ANRM, AXRM, BDRM, BGRM, BIRM, BLRM, BMRM, C2RM, C4RM, C6RM, C7RM, CARM, CBRM, CDRM, CGRM, CJRM, CKRM, CLRM, CPRM, CQRM, CTRM, CURM, CWRM, CZRM, D4RM, D6RM, DARM, DCRM, DKRM, DPRM, E1RM, E6RM, E7RM, E8RM, EDRM, EFRM, EMRM, ENRM, EORM, EVRM, EXRM, F0RM, F4RM, F9RM, FGRM, FHRM, FKRM, FPRM, FQRM, FTRM, FZRM, I0RM, I4RM, I5RM, I6RM, I8RM, ICRM, IGRM, M3RM, M5RM, MRRM, O1RM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TERM, U2RM, U5RM, U9RM, UARM, UBRM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WSRM, WTRM, WWRM, WXRM, X0RM, X4RM, X9RM, XCRM, XLRM, XMRM, XORM, XPRM, XTRM, XVRM, XWRM, XXRM, XYRM, XZRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, YSRM, YTRM, YURM, YVRM, Z3RM, Z6RM, Z9RM, ZARM, ZFRM, ZGRM, ZIRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZR11, ZR50, ZR51, ZRA0, ZRI0, ZRRM, ZSRM, ZTRM, ZVRM |
+| Motor 3+4 down | 44 | none | none | AARM, B4RM, B9RM, BORM, BYRM, CJRM, CKRM, CNRM, E4RM, FLRM, ORRM, P2RM, P6RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 |
+| Motor 3+4 tilt down | 5C | none | none | E3RM, E4RM, FLRM, P2RM, ZR70, ZR80 |
+| Motor 3+4 tilt up | 5B | none | none | E3RM, E4RM, FLRM, P2RM, ZR70, ZR80 |
+| Motor 3+4 up | 43 | none | none | AARM, B4RM, B9RM, BORM, BYRM, CJRM, CKRM, CNRM, E4RM, FLRM, ORRM, P2RM, P6RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 |
+| Motor 4 down | 42 | 45 | none | BERM |
+| Motor 4 down | 42 | none | none | A1RM, AARM, AHRM, BDRM, BIRM, C2RM, C4RM, CARM, CJRM, CKRM, CLRM, CPRM, CURM, CZRM, D4RM, E1RM, E6RM, E7RM, EDRM, EXRM, F1RM, F7RM, FERM, FFRM, FQRM, FTRM, I5RM, O5RM, ORRM, P6RM, T1RM, TERM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, X9RM, XMRM, XPRM, XWRM, YARM, YIRM, YORM, YPRM, YSRM, YTRM, Z3RM, ZLRM, ZR50, ZRA0, ZTRM, ZVRM |
+| Motor 4 up | 41 | none | none | A1RM, AARM, AHRM, BDRM, BIRM, C2RM, C4RM, CARM, CJRM, CKRM, CLRM, CPRM, CURM, CZRM, D4RM, E1RM, E6RM, E7RM, EDRM, EXRM, F1RM, F7RM, FERM, FFRM, FQRM, FTRM, I5RM, O5RM, ORRM, P6RM, T1RM, TERM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, X9RM, XMRM, XPRM, XWRM, YARM, YIRM, YORM, YPRM, YSRM, YTRM, Z3RM, ZLRM, ZR50, ZRA0, ZTRM, ZVRM |
+| Motor 5 down | 72 | none | none | C2RM, E6RM, M5RM |
+| Motor 5 up | 71 | none | none | C2RM, CARM, E6RM, M5RM |
+| Motor 6 down | 74 | none | none | E6RM, M5RM |
+| Motor 6 up | 73 | none | none | E6RM, M5RM |
+| Motor 7 down | D1 | none | none | EURM |
+| Motor 7 up | D0 | none | none | EURM |
+| Motor keep 15 | 76 | none | none | AURM, E5RM |
+| Motor keep 30 | 90 | none | none | AURM, ILRM |
+| Read | F2 | none | F3 | EZRM, Y4RM |
+| Relax | 70 | none | 95 | ZHRM, ZIRM |
+| Relax | 70 | none | none | BZRM |
+| Reset | 62 | none | none | ABRM, ACRM, ADRM, B9TT, C0RM, D7RM, DHRM, DIRM, I0RM, I4RM, I5RM, M9RM, MLRM, O0RM, OTRM, S9RM, U0RM, U7RM, U8RM, U9RM, UARM, UBRM, UJRM, UNRM, UZRM, V0RM, V6RM, V7RM, VARM, VKRM, XARM, YHRM, YZRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZR21, ZRI0 |
+| Save Anti-snore | 69 | none | none | APRM, BRRM, C2RM, C9RM, YGRM |
+| Save M1 | 2B | 43 | none | MMRM, R2RM |
+| Save M1 | 2B | none | none | APRM, AQRM, BRRM, C2RM, C9RM, OMRM, VXRM, YFRM, YGRM |
+| Save M1 | none | 43 | none | GVRM |
+| Save M2 | 2C | 45 | none | MMRM, R2RM |
+| Save M2 | 2C | none | none | APRM, AQRM, BRRM, C2RM, C9RM, VXRM, YFRM, YGRM |
+| Save M2 | none | 45 | none | GVRM |
+| Save M3 | 2D | none | none | VXRM |
+| Save TV | 64 | none | none | APRM, BRRM, C2RM, C9RM, YGRM |
+| Save Zero Gravity | 66 | none | none | APRM, BRRM, C2RM, C9RM, YGRM |
+| Save button | none | 35 | none | GVRM |
+| Save flat sleep | F7 | none | F6 | FIRM, FRRM |
+| Save read | F3 | none | F2 | FIRM, FRRM |
+| Side sleeper | BA | none | BB | DMRM, DPRM |
+| Sleep | 8E | none | 8F | ZHRM, ZIRM |
+| Sync off | BD | none | none | E3RM |
+| Sync off | none | none | BD | DXRM |
+| Sync on | BC | none | none | E3RM |
+| Sync on | none | none | BC | DXRM |
+| TV | 58 | 33 | none | A3RM, BERM, MMRM, ONRM, R2RM, THRM |
+| TV | 58 | none | 64 | A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, ALRM, AMRM, ANRM, ATRM, AURM, AWRM, AXRM, AYRM, B4RM, B5RM, BDRM, BFRM, BGRM, BHRM, BIRM, BKRM, BLRM, BNRM, BRRM, BURM, BVRM, BZRM, C5RM, CBRM, CCRM, CDRM, CERM, CIRM, CKRM, CMRM, CORM, CQRM, CSRM, CTRM, CURM, CXRM, CYRM, CZRM, D4RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DHRM, DIRM, DLRM, DNRM, DQRM, DURM, DVRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EFRM, EIRM, EMRM, ENRM, ESRM, ETRM, EWRM, F0RM, F3RM, F8RM, F9RM, FCRM, FDRM, FFRM, FHRM, FSRM, FXRM, FYRM, FZRM, G3RM, G5RM, G6RM, G8RM, G9RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, M3RM, M5RM, MRRM, O1RM, O3RM, O4RM, O6RM, O7RM, O9RM, OARM, OMRM, OPRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, TCRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X0RM, X5RM, X6RM, X7RM, X9RM, XERM, XFRM, XHRM, XIRM, XJRM, XKRM, XMRM, XSRM, XURM, XVRM, XYRM, XZRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YYRM, Z2RM, Z4RM, Z5RM, Z6RM, Z8RM, Z9RM, ZARM, ZBRM, ZDRM, ZERM, ZFRM, ZGRM, ZMRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0, ZSRM, ZTRM, ZURM, ZWRM |
+| TV | 58 | none | none | APRM, BJRM, C2RM, C9RM, D2RM, O2RM, O5RM, UZRM, YRRM |
+| Underbed light off | 75 | none | none | P2RM, ZRA0 |
+| Underbed light on/off | 3C | 36 | none | BERM, MMRM |
+| Underbed light on/off | 3C | 43 | none | ONRM, THRM |
+| Underbed light on/off | 3C | 46 | none | A3RM, R2RM |
+| Underbed light on/off | 3C | none | 75 | CZRM, FGRM, FMRM, FNRM, W3RM, W9RM, WARM, WDRM, WERM |
+| Underbed light on/off | 3C | none | none | 6ERM, 6FRM, A1RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AHRM, AIRM, ALRM, AMRM, APRM, AQRM, ARRM, AWRM, AXRM, AYRM, B1RM, B4RM, BDRM, BHRM, BIRM, BJRM, BLRM, BMRM, BNRM, BORM, BRRM, BURM, BXRM, BZRM, C0RM, C2RM, C3RM, C4RM, C5RM, C7RM, C9RM, CBRM, CCRM, CGRM, CIRM, CJRM, CKRM, CLRM, CMRM, CPRM, CQRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DFRM, DHRM, DIRM, DJRM, DPRM, DQRM, DSRM, DWRM, DZRM, E1RM, E3RM, E5RM, E7RM, E9RM, EDRM, EFRM, EMRM, EORM, ESRM, EURM, EVRM, EWRM, EXRM, F0RM, F1RM, F5RM, F7RM, F9RM, FARM, FCRM, FHRM, FIRM, FJRM, FKRM, FPRM, FQRM, FRRM, FSRM, FTRM, FZRM, G2RM, G3RM, G7RM, G9RM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IMRM, M3RM, M5RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, ORRM, OSRM, OTRM, OYRM, OZRM, P0RM, P1RM, P2RM, R5RM, T1RM, T5RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TLRM, U1RM, U2RM, U3RM, U4RM, U5RM, U7RM, U8RM, U9RM, UARM, UBRM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UVRM, UWRM, UYRM, V0RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W5RM, W6RM, W7RM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WNRM, WORM, WSRM, WURM, WVRM, WXRM, WYRM, X0RM, X8RM, X9RM, XCRM, XERM, XFRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XSRM, XTRM, XYRM, XZRM, Y2RM, Y3RM, Y6RM, Y8RM, YARM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, YWRM, YZRM, Z3RM, Z4RM, Z5RM, Z6RM, ZARM, ZBRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZORM, ZR10, ZR11, ZR12, ZR50, ZR51, ZR60, ZRA0, ZRI0, ZSRM, ZTRM, ZURM, ZWRM, ZXRM, ZYRM |
+| Unwind | 8C | none | 8D | ZHRM, ZIRM |
+| Vibration | D6 | none | none | F4RM, FGRM, FMRM, FNRM |
+| Wakeup | 93 | none | 94 | ZHRM, ZIRM |
+| Yoga | F0 | none | F1 | DNRM, G5RM, G6RM, Y4RM |
+| Zero Gravity | 45 | 34 | 66 | A6RM |
+| Zero Gravity | 45 | 34 | none | A3RM, BERM, MMRM, R2RM |
+| Zero Gravity | 45 | 35 | none | ONRM, THRM |
+| Zero Gravity | 45 | none | 66 | 6DRM, 6ERM, A0RM, A1RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, ATRM, AURM, AWRM, AXRM, AYRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BDRM, BFRM, BGRM, BHRM, BIRM, BKRM, BLRM, BNRM, BORM, BRRM, BURM, BVRM, BZRM, C1RM, C3RM, C4RM, C5RM, C7RM, C8RM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CKRM, CLRM, CMRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D3RM, D4RM, D7RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DZRM, E1RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EMRM, ENRM, EORM, EPRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F3RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IGRM, IORM, IQRM, IRRM, M3RM, M5RM, M6RM, MLRM, MRRM, O0RM, O1RM, O3RM, O4RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OPRM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R5RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, ULRM, UMRM, UNRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XYRM, XZRM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YWRM, YXRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z8RM, Z9RM, ZARM, ZBRM, ZDRM, ZERM, ZFRM, ZGRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZRA0, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZWRM, ZYRM |
+| Zero Gravity | 45 | none | none | APRM, BCRM, BJRM, C2RM, C9RM, D2RM, IDRM, IERM, IHRM, O2RM, O5RM, T4RM, U0RM, UKRM, UORM, UPRM, UZRM, WORM |
+| Zero Gravity 2 | 6B | none | 6A | C7RM, DJRM, DKRM, DLRM, EVRM, EWRM, FDRM, FFRM, G7RM, M9RM, U3RM, ZNRM, ZRRM |
+
+| U3RM control | Raw | Framed mode 0 |
+|---|---|---|
+| Motor 3 up | `3F` | `6E 01 00 3F AE` |
+| Motor 4 up | `41` | `6E 01 00 41 B0` |
+| Motor 5 up | `71` | `6E 01 00 71 E0` |
+| Motor 3 down | `40` | `6E 01 00 40 AF` |
+| Motor 4 down | `42` | `6E 01 00 42 B1` |
+| Motor 5 down | `72` | `6E 01 00 72 E1` |
+
+| Direct utility | Bytes |
+|---|---|
+| Initialize after notifications | `6E 02 01 00 71` |
+| Release, raw | `6E` |
+| Release, framed mode 0 | `6E 01 00 6E DD` |
+| Alarm query | `6E 08 01 01 78` |
+| LED query | `6E 0A 00 01 79` |
+| Aroma query | `6E 1A 00 00 88` |
+| Cancel alarm | `6E 05 00 00 73` / `6E 06 00 00 74` |
+| RGB green, one write | `6E 0C FF 00 79 6E 0D FF 00 7A` |
+| Light timeout, 300 seconds | `6E 0B 01 2C A6` |
+| Head fan, 2 hours at 40 percent | `6E 01 D2 00 41` / `6E 01 D9 00 48` |
+| Foot fan, 40 percent | `6E 01 01 D9 49` / `6E 01 01 D9 49` |
+<!-- /generated -->
+
+#### Timing
+
+The actual Bluetooth name selects 170 ms for raw 6BRM, 110 ms for TWRM or MLRM,
+and 150 ms otherwise. Selecting a layout does not change that interval.
+Framed startup follows notification registration by 300 ms. Optional settings
+queries are spaced 500 ms apart. A held control releases after a 50 ms delay;
+a once or short press releases after 150 ms. Long actions retain their own
+3,000 or 5,000 ms threshold. On framed links, releasing a long-only control
+also schedules END after 50 ms; raw long-only release adds no frame.
+
+Home Assistant cancels refreshes and finishes release cleanup on cancellation.
+Cleanup belongs to the original native controller and BLE session. A reconnect
+or layout change cannot receive an older action or its release.
+
+#### Notifications
+
+The checksum-checked, ordered-prefix parser consumes fragmented five-, seven-
+and sixteen-byte replies. Alarm, LED and aroma capability replies are scoped
+to the current session. Malformed input is bounded and discarded. Desk replies
+never become bed position sensors. Alarm acknowledgements do not prove a saved
+schedule or its target time.
+
+#### Services
+
+Use **Set alarm** for the selected layout's presets and supported massage
+combinations. The bed receives relative minutes in two frames 300 ms apart.
+**Set SleepFunction bed settings** sends head/foot fan or aroma settings.
+Aroma durations are 1–60 minutes and its pause is 1–12 hours. Fan duration is
+0–6 hours and speed is 0–100 percent in steps of 20. The foot fan path sends its
+speed twice and does not transmit the selected time. Aroma writes are 150 ms
+apart and fan writes are 300 ms apart.
+
+#### Evidence
+
+Based on SleepFunction Bed Control 1.3.0. The raw, framed, RGB, alarm, aroma and
+fan builders reproduce the app's literal frames. Physical actuator wiring,
+END's stopping effect and optional features still need user hardware captures.
+
 ### BedSmart / X-Series
 
 **App:** [X-Series](https://play.google.com/store/apps/details?id=com.richmat.bedsmart) 1.0.7 (8), `com.richmat.bedsmart`
@@ -13529,7 +13925,7 @@ Based on SleepEvolution 3.5.5 (13) and W.Silver Products 3.3.7 (9).
 Choose **BedSmart / X-Series app** in the Richmat app question, then choose the
 four-character layout matching the app. **Reconfigure** changes the app or
 layout later. Each physical bed in a combined pair keeps its own choices.
-Name matches offer the app as a choice; they do not establish a physical model.
+Name matches offer the app as a choice; they do not identify a physical model.
 The manual aliases B6RU and ZR90 work without being automatic scan prefixes.
 ZRS0, ZRS1, ZRS2 and ZRS3 are menus: choose the matching destination layout
 during setup. If a layout correction cannot use a saved selection, that
@@ -13541,14 +13937,14 @@ requires it. The first existing fixed service owns both characteristics.
 |-------|---------|---------|
 | Bed layout | Shipped four-character layouts | Select the app's controls |
 | Third-service fallback | Off / On | Explicit property-based raw transport |
-| Bed mode | Left / Right, or Mode 1 / Mode 2 / Mode 3 | Labels of the selected layout only |
-| Selected motor | Motor 3 / Motor 4 / Motor 5 | U3RM shared up/down controls |
-| Head or foot | Head / Foot | GVRM getter selection; unavailable null getters stay unavailable |
 
-Nine layouts label selectors Left and Right; six label Mode 1, Mode 2 and
-Mode 3. Framed controls encode the selection as 0, 1 or 2. Raw controls ignore
-it. There is no Both selector or single-address pair capability. Physical side
-behavior has not been tested.
+Nine layouts have an app selector labelled Left and Right; six label it Mode 1,
+Mode 2 and Mode 3. On a bed that takes framed commands it is a select:
+**Controlled side** (Left / Right) or **Bed mode** (Mode 1 / Mode 2 / Mode 3).
+Choosing sends nothing; every later command carries the choice as 0, 1 or 2,
+and it is remembered across restarts. Raw commands carry no mode, so a raw bed,
+or one not yet connected, has no select. There is no Both selector or
+single-address pair capability. Physical side behavior has not been tested.
 
 #### Controls
 
@@ -13561,6 +13957,12 @@ D1RM and D9RM expose their exact slider indices, including indices 1 and 4.
 Y6RM keeps its app's 15/30/45-minute labels and corresponding operands.
 E3RM separates sustained recall from immediate saving. YFRM, YGRM and BRRM
 offer separate tap and held recall, with explicit save buttons.
+U3RM's two selected-motor buttons appear once per motor, as Motor 3, Motor 4
+and Motor 5 up and down, instead of the app's motor selector. GVRM's head or
+foot buttons always send their head command: the app has no foot command for
+them. GVRM's Set key is **Program**: it arms programming and saves nothing by
+itself, so it starts disabled and still asks first. As with L&P, a control whose command differs between raw and framed beds
+is listed only for the bed's own format, once that is known.
 
 <!-- generated:bedsmart-controls -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -13689,23 +14091,12 @@ offer separate tap and held recall, with explicit save buttons.
 | Massage 1 intensity up | 2 | 6E01004CBB | 49 | none |  |
 | Massage 1 off | 2 | 6E010047B6 | 47 | none |  |
 | Massage 1 on/off | 2 | 6E010032A1 | 32 | none |  |
-| Massage 10 min | 2 | 6E01005FCE | 5F | none |  |
-| Massage 10 min | 2 | 6E01005FCE | 39 | none |  |
-| Massage 10 min | 2 | 6E01005FCE | 47 | none |  |
-| Massage 10 min | 2 | 6E01005FCE | 49 | none |  |
-| Massage 10 min | 2 | 6E01005FCE | 4C | none |  |
-| Massage 10 min | 2 | 6E01005FCE | 50 | none |  |
-| Massage 10 min | 2 | 6E0100A110 | A1 | none |  |
 | Massage 2 intensity down | 2 | 6E01004FBE | 4F | none |  |
 | Massage 2 intensity down | 2 | 6E01004FBE | 4B | none |  |
 | Massage 2 intensity up | 2 | 6E01004EBD | 4E | none |  |
 | Massage 2 intensity up | 2 | 6E01004EBD | 44 | none |  |
 | Massage 2 intensity up | 2 | 6E01004EBD | 48 | none |  |
 | Massage 2 on/off | 2 | 6E010033A2 | 33 | none |  |
-| Massage 20 min | 2 | 6E010063D2 | 63 | none |  |
-| Massage 20 min | 2 | 6E0100A211 | A2 | none |  |
-| Massage 30 min | 2 | 6E010061D0 | 61 | none |  |
-| Massage 30 min | 2 | 6E0100A312 | A3 | none |  |
 | Massage aroma | 2 | 6E01003BAA | 3B | none |  |
 | Massage constant | 2 | 6E01003AA9 | 3A | none |  |
 | Massage constant | 2 | 6E01003AA9 | 47 | none |  |
@@ -13738,6 +14129,17 @@ offer separate tap and held recall, with explicit save buttons.
 | Massage speed down | 2 | 6E010037A6 | 49 | none |  |
 | Massage speed up | 2 | 6E010036A5 | 36 | none |  |
 | Massage speed up | 2 | 6E010036A5 | 48 | none |  |
+| Massage timer 10 minutes | 2 | 6E01005FCE | 5F | none |  |
+| Massage timer 10 minutes | 2 | 6E01005FCE | 39 | none |  |
+| Massage timer 10 minutes | 2 | 6E01005FCE | 47 | none |  |
+| Massage timer 10 minutes | 2 | 6E01005FCE | 49 | none |  |
+| Massage timer 10 minutes | 2 | 6E01005FCE | 4C | none |  |
+| Massage timer 10 minutes | 2 | 6E01005FCE | 50 | none |  |
+| Massage timer 10 minutes | 2 | 6E0100A110 | A1 | none |  |
+| Massage timer 20 minutes | 2 | 6E010063D2 | 63 | none |  |
+| Massage timer 20 minutes | 2 | 6E0100A211 | A2 | none |  |
+| Massage timer 30 minutes | 2 | 6E010061D0 | 61 | none |  |
+| Massage timer 30 minutes | 2 | 6E0100A312 | A3 | none |  |
 | Massage wave | 2 | 6E010039A8 | 39 | none |  |
 | Massage wave | 2 | 6E010039A8 | 45 | none |  |
 | Massage wave | 3 | 6E010039A8 | 39 | 47 | 3000 |
@@ -14386,23 +14788,6 @@ offer separate tap and held recall, with explicit save buttons.
 | ZXRM | 3, 4, 5, 6, 7, 8 | 0 |
 | ZYRM | 4, 5, 6, 8, 10, 12, 13, 15, 16, 18 | 0 |
 | ZZRM | 1, 2, 3, 4, 5, 6 | 0 |
-
-| Movement-test phase | Operand | Run, seconds | Rest, seconds |
-|---|---|---|---|
-| 1 | 24 | 10 | 5 |
-| 2 | 3F | 10 | 5 |
-| 3 | 40 | 12 | 5 |
-| 4 | 25 | 12 | 5 |
-| 5 | 26 | 10 | 5 |
-| 6 | 41 | 10 | 5 |
-| 7 | 42 | 12 | 5 |
-| 8 | 27 | 12 | 5 |
-| 9 | 29 | 10 | 5 |
-| 10 | 3F | 10 | 5 |
-| 11 | 40 | 12 | 5 |
-| 12 | 41 | 10 | 5 |
-| 13 | 42 | 12 | 5 |
-| 14 | 2A | 12 | 5 |
 <!-- /generated -->
 
 #### Timing
@@ -14413,7 +14798,6 @@ Release waits 50 ms after continuous movement, or 150 ms after a tap. The
 original session and mode own cleanup, including cancellation. Catalog, address
 or transport changes cannot inherit an old release. Timing and idle changes
 still permit STOP on the same retained physical session.
-The movement test makes one finite traversal of the generated sequence.
 
 #### Notifications
 
@@ -14432,7 +14816,7 @@ Use `adjustable_bed.set_alarm` for layout-owned wake actions and massage
 combinations. It sends a relative-minute alarm in two writes, 300 ms apart.
 Use **Refresh bed features** to issue settings queries. The
 [`adjustable_bed.bedsmart`](../SERVICES.md#bedsmart) action offers RGB color, light timeout, aroma times,
-a confirmed finite movement test and the app's named BED commands. It
+and the app's named BED commands. It
 preflights all selected beds before writing. Alarm and feature controls never
 expand a layout from a shared UUID. There is no clock synchronization command.
 
@@ -14451,8 +14835,8 @@ parser and event timing. Hardware is not yet tested.
 
 #### Setup
 
-Choose **Bed Tech app**, then your model. This is separate from the modern
-**BedTech app** and its legacy controls. Automatic uses the first four Bluetooth
+Choose **Bed Tech app (older app) · Richmat**, then your model. This is separate from the modern
+**BedTech app (newer app)** and its legacy controls. Automatic uses the first four Bluetooth
 name characters. **Cool Touch** and **QRRM** ask for a model. Short model names
 such as **5I** require an explicit selection. BT3000 and BT3000FH select the same
 controls. Combine two Bluetooth devices to control separate physical sides.
@@ -14466,8 +14850,8 @@ separate from physical bed sides. Set them and the declared motor group with
 Choose **Separate sleep and intervention receiver** for the auxiliary
 receiver. It exposes local single/double user mode and left/right intervention
 switches, with its own BLE session and clock. It has no motor controls or
-physiological report entities. Its intervention settings do not establish a
-mechanical bed movement effect. Normal mattress controls require the explicit
+physiological report entities. Its intervention settings are not known to move
+the bed. Normal mattress controls require the explicit
 normal-mattress option and powered initialization; waist controls require the
 receiver's waist initialization.
 
@@ -14804,7 +15188,7 @@ combined beds retain each physical bed’s settings.
 #### Controls
 
 The entities expose named actions, inverse on/off pairs as switches, known
-light state through the light platform, the **Massage: Timer** select (off, 10,
+light state through the light platform, the **Massage timer** select (off, 10,
 20 or 30 minutes on D1RM and D9RM; 15, 30 or 45 minutes on Y6RM, whose popup has
 no idempotent off), and the layout's real intensity range where present. Aroma
 times are configuration entities, disabled by default. Save controls use the card’s guarded Set mode or an explicit confirmation,
@@ -14909,14 +15293,8 @@ hint.
 | m3 | `30` | `6E 01 00 30 9F` | tap | 0 | A0RM, A2RM, ADRM, BMRM, BNRM, BSRM, BZRM, CIRM, CMRM, CORM, CSRM, DDRM, DERM, DFRM, DGRM, EIRM, ENRM, F8RM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, UZRM, V7RM, VWRM, W5RM, W7RM, WLRM, X0RM, YPRM, YSRM, YTRM, YURM, YVRM, YWRM, YYRM, ZRA2, ZWRM |
 | m4 | `B2` | `6E 01 00 B2 21` | continuous | 0 | E3RM |
 | m4 | `B2` | `6E 01 00 B2 21` | tap | 0 | BSRM, C6RM, C7RM, YSRM, YTRM, YURM, YVRM, ZNRM |
-| massage_10_min | `5F` | `6E 01 00 5F CE` | tap | 0 | A3RM, A9RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D2RM, D3RM, D4RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, I1RM, IARM, IBRM, IORM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y3RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
-| massage_10_min | `A1` | `6E 01 00 A1 10` | tap | 0 | BGRM |
 | massage_1_off | `47` | No write | continuous | 0 | GVRM |
 | massage_1_off | `47` | `6E 01 00 47 B6` | tap | 0 | OURM, OWRM |
-| massage_20_min | `63` | `6E 01 00 63 D2` | tap | 0 | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, I1RM, IBRM, M3RM, MLRM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
-| massage_20_min | `A2` | `6E 01 00 A2 11` | tap | 0 | BGRM |
-| massage_30_min | `61` | `6E 01 00 61 D0` | tap | 0 | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FCRM, FDRM, FERM, I1RM, IBRM, M3RM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
-| massage_30_min | `A3` | `6E 01 00 A3 12` | tap | 0 | BGRM |
 | massage_aroma | `3B` | `6E 01 00 3B AA` | tap | 0 | UYRM, VYRM |
 | massage_constant | `3A` | `6E 01 00 3A A9` | tap | 0 | A2RM, O6RM, OMRM, OORM, R6RM |
 | massage_constant | `47` | `6E 01 00 3A A9` | tap | 0 | ONRM, THRM |
@@ -14949,6 +15327,12 @@ hint.
 | massage_speed_down | `49` | `6E 01 00 37 A6` | tap | 0 | ONRM, THRM |
 | massage_speed_up | `36` | `6E 01 00 36 A5` | tap | 0 | A2RM, O4RM, O6RM, OMRM, OORM, R6RM |
 | massage_speed_up | `48` | `6E 01 00 36 A5` | tap | 0 | ONRM, THRM |
+| massage_timer_10_minutes | `5F` | `6E 01 00 5F CE` | tap | 0 | A3RM, A9RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D2RM, D3RM, D4RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, I1RM, IARM, IBRM, IORM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y3RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| massage_timer_10_minutes | `A1` | `6E 01 00 A1 10` | tap | 0 | BGRM |
+| massage_timer_20_minutes | `63` | `6E 01 00 63 D2` | tap | 0 | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, I1RM, IBRM, M3RM, MLRM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| massage_timer_20_minutes | `A2` | `6E 01 00 A2 11` | tap | 0 | BGRM |
+| massage_timer_30_minutes | `61` | `6E 01 00 61 D0` | tap | 0 | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FCRM, FDRM, FERM, I1RM, IBRM, M3RM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| massage_timer_30_minutes | `A3` | `6E 01 00 A3 12` | tap | 0 | BGRM |
 | massage_wave | `39` | `6E 01 00 39 A8` | tap | 0 | A2RM, D7RM, EURM, I0RM, I4RM, I5RM, MLRM, O0RM, O6RM, OMRM, OORM, OTRM, OYRM, R6RM, U9RM, UARM, UBRM, UJRM, V7RM, ZHRM, ZIRM, ZKRM, ZLRM, ZRI0 |
 | massage_wave | `45` | `6E 01 00 39 A8` | tap | 0 | ONRM, THRM |
 | massage_wave_3 | `4B` | `6E 01 00 4B BA` | tap | 0 | B8RM |
@@ -15314,13 +15698,366 @@ used. Motor positions, light state and massage levels are not reported.
 
 Use `timed_move` for back/legs movement and `stop_all` to end active refresh.
 Use `goto_preset` and `save_preset` for memory slots 1 and 2. Other controls are
-native buttons and the **Massage: Timer** select. See [Actions and
+native buttons and the **Massage timer** select. See [Actions and
 Automations](../SERVICES.md#movement-and-memory).
 
 #### Evidence
 
 Saatva 1.1.0 defines the model-specific controls and split-top head routing.
 Physical behavior and firmware compatibility need real-user testing.
+
+### Super Colchones
+
+**App:** [Super Colchones](https://play.google.com/store/apps/details?id=com.richmat.supercolchones) 1.0.2, `com.richmat.supercolchones`
+
+**Status:** Not yet tested (app-derived support)
+
+#### Setup
+
+Choose **Super Colchones app (AFEG302, AFEG350) · Richmat** and the product printed on your
+bed: **AFEG302** or **AFEG350**. Discovery matches the case-sensitive substring
+`QRRM`. The `NLRN` and `NMRN` product metadata do not select a product from the
+Bluetooth name. The product is always an explicit setup choice.
+
+Six GATT routes are supported. The first supported WRITE-property characteristic
+and first NOTIFY-property characteristic are retained in discovered service
+order. A later supported service selects framing independently of those roles.
+The actual notification characteristic need not match the nominal notify UUID.
+Nordic uses framed commands; the other five routes use raw command bytes.
+Writes use without-response only when the selected writable characteristic
+supports it. No PIN, forced bonding or required MTU is added.
+
+#### Controls
+
+Head and foot movement and flat are common to both products. AFEG350 adds lumbar,
+light toggle, foot massage, massage mode/all-off and a 10/20/30-minute timer select.
+AFEG302 has one memory and head massage; AFEG350 has two memories. Both have
+anti-snore and zero gravity. AFEG350 also has coaxing sleep mode.
+
+Each preset's alternate byte is offered through a **Save** button. Named preset
+saves ask for confirmation; numbered-memory saves use the card's **Set** mode.
+The alternate bytes come from the app; save/program intent follows the app's
+three-second preset gesture. Their physical effects have not been verified.
+No numeric massage range, decrement or light on/off state is inferred from a
+cycle/toggle command. Timer state is unknown until a successful timer write.
+
+<!-- generated:super-colchones -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Metadata | Controls |
+|---|---|---|
+| AFEG302 | NLRN | Head up, Head down, Foot up, Foot down, Flat, Massage head intensity strengthen, Anti-snore, Zero Gravity, Memory 1 |
+| AFEG350 | NMRN | Head up, Head down, Foot up, Foot down, Lumbar up, Lumbar down, Flat, Bed light, Massage head intensity strengthen, Massage foot intensity strengthen, Massage mode change, Massage mode all off, Massage 10 minute timer, Massage 20 minute timer, Massage 30 minute timer, Anti-snore, Zero Gravity, Memory 1, Memory 2, Coaxing sleep mode |
+
+| GATT route | Service | Write | Nominal notify | Wire |
+|---|---|---|---|---|
+| n1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | framed |
+| w1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | raw |
+| w5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | raw |
+| w4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | raw |
+| w3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | raw |
+| w2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | raw |
+
+| Action | Raw | Framed | Alternate raw | Alternate framed | Products |
+|---|---|---|---|---|---|
+| Head up | `24` | `6E 01 00 24 93` | none | none | AFEG302, AFEG350 |
+| Head down | `25` | `6E 01 00 25 94` | none | none | AFEG302, AFEG350 |
+| Foot up | `26` | `6E 01 00 26 95` | none | none | AFEG302, AFEG350 |
+| Foot down | `27` | `6E 01 00 27 96` | none | none | AFEG302, AFEG350 |
+| Lumbar up | `3F` | `6E 01 00 3F AE` | none | none | AFEG350 |
+| Lumbar down | `40` | `6E 01 00 40 AF` | none | none | AFEG350 |
+| Flat | `31` | `6E 01 00 31 A0` | none | none | AFEG302, AFEG350 |
+| Bed light | `3C` | `6E 01 00 3C AB` | none | none | AFEG350 |
+| Massage head intensity strengthen | `4C` | `6E 01 00 4C BB` | none | none | AFEG302, AFEG350 |
+| Massage foot intensity strengthen | `4E` | `6E 01 00 4E BD` | none | none | AFEG350 |
+| Massage mode change | `48` | `6E 01 00 48 B7` | none | none | AFEG350 |
+| Massage mode all off | `5E` | `6E 01 00 5E CD` | none | none | AFEG350 |
+| Massage 10 minute timer | `5F` | `6E 01 00 5F CE` | none | none | AFEG350 |
+| Massage 20 minute timer | `63` | `6E 01 00 63 D2` | none | none | AFEG350 |
+| Massage 30 minute timer | `61` | `6E 01 00 61 D0` | none | none | AFEG350 |
+| Anti-snore | `46` | `6E 01 00 46 B5` | `69` | `6E 01 00 69 D8` | AFEG302, AFEG350 |
+| Zero Gravity | `45` | `6E 01 00 45 B4` | `66` | `6E 01 00 66 D5` | AFEG302, AFEG350 |
+| Memory 1 | `2E` | `6E 01 00 2E 9D` | `2B` | `6E 01 00 2B 9A` | AFEG302, AFEG350 |
+| Memory 2 | `2F` | `6E 01 00 2F 9E` | `2C` | `6E 01 00 2C 9B` | AFEG350 |
+| Coaxing sleep mode | `86` | `6E 01 00 86 F5` | `89` | `6E 01 00 89 F8` | AFEG350 |
+
+| Startup/release | Raw | Framed |
+|---|---|---|
+| deviceFunctionItemExitLimit | `00` | `6E 02 01 00 71` |
+| deviceFunctionItemCheckClock | `01` | `6E 08 01 01 78` |
+| deviceFunctionItemCheckLight | `01` | `6E 0A 00 01 79` |
+| STOP | `6E` | `6E 01 00 6E DD` |
+
+| Timing | Value |
+|---|---|
+| Movement refresh | 100 ms |
+| App alternate threshold | 3000 ms |
+| Residual expiry | 500 ms |
+| HA scheduling allowance at exact end tick (not hardware timing) | 5 ms |
+<!-- /generated -->
+
+#### Timing
+
+Movement starts on the first 100 ms tick. Releasing before it sends neither
+movement nor STOP. A held operation refreshes until its deadline or cancellation,
+then sends the app's global STOP on its captured connection with a fresh
+cancellation event. Expired queued ticks are discarded at dispatch; the small HA
+scheduling allowance at an exact end tick is listed above. Preset recalls and
+alternate saves send once. Save buttons replace the app's three-second gesture
+with the card's confirmation dialog or numbered-memory **Set** mode.
+
+Initialization subscribes first, then sends exit-limit, clock-capability and
+light-capability queries once in that order. These replies do not gate controls.
+No automatic retry, auth handshake or minimum idle-write spacing is inferred.
+
+#### Notifications
+
+Common state and checked extension records are retained in a disabled diagnostic
+sensor. Inherited parser support does not enable extra controls or calibrated
+position feedback. Alarm records preserve `field_7`, `field_f`, `field_17`,
+`field_1f`, `field_27` and `field_2f`; no calendar meanings are assigned.
+Diagnostic detail events retain an empty details object.
+
+Every new notification cancels the old residual-buffer deadline. Residual bytes
+left after parsing expire after 500 ms. Expiry only clears, without parsing;
+a late suffix cannot complete an expired prefix. Malformed unchecked accesses
+are dropped safely and zero-progress extraction is bounded. Common messages
+retain their source splitter's embedded-header behavior and unchecked checksum.
+
+#### Services
+
+Shared `hold_control`, `timed_move`, `move_to_preset` and `save_preset` actions use
+the selected product's controls. Clock/alarm replies are diagnostic only: this
+app has no clock-setting or alarm-programming producer, so `sync_clock` and
+`set_alarm` are unavailable for this profile.
+
+#### Evidence
+
+Super Colchones 1.0.2 supplies both products, six GATT selections and both wire
+formats. Its final automatic anti-snore BLE command is the same anti-snore recall
+exposed here. Microphone/audio detection is outside this integration.
+
+### Dream Sense Bed
+
+**App:** [Dream Sense Bed](https://play.google.com/store/apps/details?id=com.richmat.dreamsense) 1.0.4, `com.richmat.dreamsense`
+
+**Status:** Not yet tested on hardware.
+
+#### Setup
+
+Choose **Dream Sense Bed**, then **Blue**, **Green**, **Orange** or **Yellow**,
+matching the app. **Saved product** choices reproduce the exact product name
+already saved by the app; a remote label does not identify a product. Only the
+four colors appear in the normal app chooser. Home Assistant retains the chosen
+product across restarts and keeps each paired side's product data separate.
+
+Case-sensitive names containing `QRRM`, `COOL`, `MPE_`, `209A` or `BED-` offer this
+app as a candidate. Shared services and names never choose its product. The
+**Controlled side** select offers Right only for products that offer sides and a
+link that encodes them. The selected side survives controller rebuilds for that product. On a link that
+cannot encode sides, choose **Left** to recover from a retained Right selection;
+Right movement is rejected and STOP remains available. The last discovered
+framing also restricts choices while the bed is disconnected.
+Green, Orange and Blue separately offer split/standard control. The
+**Synchronization** switch, on products with Sync on and Sync off, starts disabled.
+
+#### Controls
+
+Direction buttons support `hold_control`. Flat, presets, saves and massage keep
+their own gestures. Confirmed saves never have a renewable hold. Fixed massage
+timers use the shared duration select; intensity steps do not imply absolute
+levels. L2RM has no combined Down control: the app's generated counterpart has
+no known physical meaning. RGB conversion matches the app. The physical
+vibration effect and measured position mappings remain unverified.
+
+<!-- generated:dreamsense -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+##### Products and setup labels
+
+| Product choice | Saved product | Remote label | Alarm | Lighting | Side choice |
+|---|---|---|---|---|---|
+| Saved product: HC800 (LTRM) | `HC800` | LTRM | Single alarm | Reply required | none |
+| Saved product: SN300 (B3RN) | `SN300` | B3RN | Single alarm | Reply required | none |
+| Saved product: SN500 (LTRM) | `SN500` | LTRM | Single alarm | Reply required | none |
+| Blue | `blue` | LTRM | Single alarm | Reply required | none |
+| Green | `green` | HARM | Single alarm | Reply required | none |
+| Orange | `orange` | JMRM | Single alarm | Reply required | Left / Right |
+| Yellow | `yellow` | HBRM | Single alarm | Reply required | none |
+| Saved product: AFEG300 (L5RN) | `AFEG300` | L5RN | Existing repeat records | none | none |
+| Saved product: AFEG300-SH (LPRN) | `AFEG300-SH` | LPRN | none | none | Left / Right |
+| Saved product: PB250 (VJRM) | `PB250` | VJRM | none | none | none |
+| Saved product: PB300 (FARM) | `PB300` | FARM | none | none | none |
+| Saved product: PB325 (FARM) | `PB325` | FARM | Existing repeat records | Reply required | none |
+| Saved product: PB450 (MPRM) | `PB450` | MPRM | Single alarm | Reply required | none |
+| Saved product: PB450-SH (LVRN) | `PB450-SH` | LVRN | none | Reply required | Left / Right |
+| Saved product: BJRN | `BJRN` | BJRN | none | none | none |
+| Saved product: BYRN | `BYRN` | BYRN | none | none | none |
+| Saved product: E3RM | `E3RM` | E3RM | none | none | none |
+| Saved product: FARM | `FARM` | FARM | none | none | none |
+| Saved product: HZRM | `HZRM` | HZRM | none | none | none |
+| Saved product: JGRM | `JGRM` | JGRM | none | none | none |
+| Saved product: JHRM | `JHRM` | JHRM | none | none | none |
+| Saved product: JJRM | `JJRM` | JJRM | none | none | none |
+| Saved product: KZRM | `KZRM` | KZRM | none | none | none |
+| Saved product: L2RM | `L2RM` | L2RM | none | none | none |
+| Saved product: VJRM | `VJRM` | VJRM | none | none | none |
+| Saved product: ABM10 (UTRM) | `ABM10` | UTRM | none | Reply required | none |
+| Saved product: Series 1 (GURN) | `Series 1` | GURN | none | none | none |
+| Saved product: Series 2 (GVRN) | `Series 2` | GVRN | none | none | none |
+| Saved product: Series 3 (GWRN) | `Series 3` | GWRN | Existing repeat records | Reply required | none |
+| Saved product: ABF03 (BNRN) | `ABF03` | BNRN | Single alarm | Reply required | none |
+| Saved product: ABF07 (DNRN) | `ABF07` | DNRN | Existing repeat records | Reply required | none |
+| Saved product: NUPG400 (BVRN) | `NUPG400` | BVRN | none | none | none |
+| Saved product: VIP 3.0 | `VIP 3.0` | none | Existing repeat records | Reply required | none |
+| Saved product: VIP 3.0-SH | `VIP 3.0-SH` | none | Existing repeat records | Reply required | Left / Right |
+
+##### GATT routes
+
+| Service | Write | Generic commands |
+|---|---|---|
+| `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | Side-scoped 6E frame |
+| `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | Single byte |
+| `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | Single byte |
+| `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | Single byte |
+| `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | Single byte |
+| `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | Single byte |
+
+The first writable matching endpoint and first notify-property characteristic are
+retained. The last recognized service selects the generic framing, in the device’s
+service order. Write requires the write property; write-without-response is used
+when also present. Special alarm, split, light and clock frames are sent unchanged
+on every route.
+
+##### Motor, preset, memory and massage commands
+
+| Control | Products | Single byte | Side 0 | Save | Timing / release |
+|---|---|---|---|---|---|
+| Head up | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB250, PB300, PB325, PB450, PB450-SH, BJRN, E3RM, FARM, HZRM, JGRM, JHRM, JJRM, KZRM, L2RM, VJRM, ABM10, Series 1, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `24` | `6E 01 00 24 93` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Head down | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB250, PB300, PB325, PB450, PB450-SH, BJRN, E3RM, FARM, HZRM, JGRM, JHRM, JJRM, KZRM, L2RM, VJRM, ABM10, Series 1, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `25` | `6E 01 00 25 94` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Feet up | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB250, PB300, PB325, PB450, PB450-SH, BJRN, E3RM, FARM, HZRM, JGRM, JHRM, KZRM, L2RM, VJRM, ABM10, Series 1, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `26` | `6E 01 00 26 95` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Feet down | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB250, PB300, PB325, PB450, PB450-SH, BJRN, E3RM, FARM, HZRM, JGRM, JHRM, KZRM, L2RM, VJRM, ABM10, Series 1, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `27` | `6E 01 00 27 96` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Lumbar up | HC800, SN500, blue, PB450-SH, BJRN, Series 3 | `3F` | `6E 01 00 3F AE` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Lumbar down | HC800, SN500, blue, PB450-SH, BJRN, Series 3 | `40` | `6E 01 00 40 AF` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Toggle light board | HC800, SN300, SN500, PB450, PB450-SH | `50` | `6E 01 00 50 BF` | none | Once; STOP after delivery |
+| Toggle underbed light | HC800, SN300, SN500, AFEG300, AFEG300-SH, PB300, PB325, BJRN, E3RM, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, ABF03, VIP 3.0, VIP 3.0-SH | `3C` | `6E 01 00 3C AB` | none | Once; STOP after delivery |
+| Flat | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB250, PB300, PB325, PB450, PB450-SH, FARM, VJRM, ABM10, Series 1, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `31` | `6E 01 00 31 A0` | none | Once; STOP after delivery |
+| Head massage intensity step | HC800, SN300, SN500, blue, yellow, AFEG300, AFEG300-SH, PB300, PB325, PB450, PB450-SH, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `4C` | `6E 01 00 4C BB` | none | Once; STOP after delivery |
+| Foot massage intensity step | HC800, SN300, SN500, blue, yellow, AFEG300, AFEG300-SH, PB300, PB325, PB450, PB450-SH, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `4E` | `6E 01 00 4E BD` | none | Once; STOP after delivery |
+| Massage mode step | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB300, PB325, PB450, PB450-SH, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `48` | `6E 01 00 48 B7` | none | Once; STOP after delivery |
+| Massage off | HC800, SN300, SN500, blue, AFEG300, AFEG300-SH, PB300, PB325, PB450, PB450-SH, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `5E` | `6E 01 00 5E CD` | none | Once; STOP after delivery |
+| Massage 10 min | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB300, PB325, PB450, PB450-SH, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `5F` | `6E 01 00 5F CE` | none | Once; STOP after delivery |
+| Massage 20 min | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB300, PB325, PB450, PB450-SH, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `63` | `6E 01 00 63 D2` | none | Once; STOP after delivery |
+| Massage 30 min | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB300, PB325, PB450, PB450-SH, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `61` | `6E 01 00 61 D0` | none | Once; STOP after delivery |
+| Anti-snore | HC800, SN300, SN500, blue, green, orange, yellow, PB325, PB450, PB450-SH, ABM10, Series 1, Series 2, Series 3, ABF03, ABF07, NUPG400 | `46` | `6E 01 00 46 B5` | `6E 01 00 69 D8` | Once; no STOP |
+| Zero gravity | HC800, SN300, SN500, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB300, PB325, PB450, PB450-SH, FARM, ABM10, Series 1, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `45` | `6E 01 00 45 B4` | `6E 01 00 66 D5` | Once; no STOP |
+| Memory 1 | HC800, SN300, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB250, PB300, PB325, PB450, PB450-SH, BJRN, E3RM, FARM, HZRM, JGRM, KZRM, VJRM, ABM10, Series 1, Series 2, Series 3, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `2E` | `6E 01 00 2E 9D` | `6E 01 00 2B 9A` | Once; no STOP |
+| Head and feet up | SN300, green, orange, AFEG300, AFEG300-SH, PB300, PB325, BJRN, E3RM, FARM, L2RM, ABM10, Series 1, Series 2, ABF03, ABF07, VIP 3.0, VIP 3.0-SH | `29` | `6E 01 00 29 98` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Head and feet down | SN300, green, orange, AFEG300, AFEG300-SH, PB300, PB325, BJRN, E3RM, FARM, ABM10, Series 1, Series 2, ABF03, ABF07, VIP 3.0, VIP 3.0-SH | `2A` | `6E 01 00 2A 99` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| TV | SN300, blue, green, orange, yellow, AFEG300, AFEG300-SH, PB300, PB325, FARM, Series 1, ABF03, ABF07, NUPG400, VIP 3.0, VIP 3.0-SH | `58` | `6E 01 00 58 C7` | `6E 01 00 64 D3` | Once; no STOP |
+| Pillow up | SN500, blue, BJRN, Series 3 | `41` | `6E 01 00 41 B0` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Pillow down | SN500, blue, BJRN, Series 3 | `42` | `6E 01 00 42 B1` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Lounge | blue, AFEG300, AFEG300-SH, PB300, FARM, Series 1, ABF03, ABF07, VIP 3.0, VIP 3.0-SH | `59` | `6E 01 00 59 C8` | `6E 01 00 65 D4` | Once; no STOP |
+| Memory 2 | blue, yellow, PB300, BJRN, E3RM, FARM, HZRM, JGRM, KZRM, ABM10, Series 2, NUPG400, VIP 3.0, VIP 3.0-SH | `2F` | `6E 01 00 2F 9E` | `6E 01 00 2C 9B` | Once; no STOP |
+| Massage intensity step | green, orange | `34` | `6E 01 00 34 A3` | none | Once; STOP after delivery |
+| Toggle massage | green, orange, yellow | `6F` | `6E 01 00 6F DE` | none | Once; STOP after delivery |
+| Pillow up | yellow, NUPG400 | `3F` | `6E 01 00 3F AE` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Pillow down | yellow, NUPG400 | `40` | `6E 01 00 40 AF` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Sleep aid | AFEG300, AFEG300-SH | `86` | `6E 01 00 86 F5` | none | Once; no STOP |
+| Synchronization on | AFEG300-SH, E3RM | `BC` | `6E 01 00 BC 2B` | none | Once; STOP after delivery |
+| Lumbar up | PB450 | `41` | `6E 01 00 41 B0` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Lumbar down | PB450 | `42` | `6E 01 00 42 B1` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Flat | BJRN, HZRM, JGRM, JHRM, JJRM, KZRM, L2RM | `31` | `6E 01 00 31 A0` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Memory 3 | BJRN, E3RM, HZRM, KZRM | `30` | `6E 01 00 30 9F` | `6E 01 00 2D 9C` | Once; no STOP |
+| Storage lift up | BYRN | `24` | `6E 01 00 24 93` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Storage lift down | BYRN | `25` | `6E 01 00 25 94` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Tilt up | E3RM | `5B` | `6E 01 00 5B CA` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Tilt down | E3RM | `5C` | `6E 01 00 5C CB` | none | First tick 100 ms, then every 100 ms; STOP after delivery |
+| Synchronization off | E3RM | `BD` | `6E 01 00 BD 2C` | none | Once; STOP after delivery |
+| Memory 4 | E3RM | `B2` | `6E 01 00 B2 21` | `6E 01 00 B3 22` | Once; no STOP |
+| TV | HZRM, JGRM, JHRM, JJRM, KZRM, L2RM | `58` | `6E 01 00 58 C7` | none | Once; no STOP |
+| Zero gravity | HZRM, JGRM, JHRM, KZRM, L2RM | `45` | `6E 01 00 45 B4` | none | Once; no STOP |
+| Anti-snore | JGRM, JHRM | `46` | `6E 01 00 46 B5` | none | Once; no STOP |
+
+Saves use a separate confirmed action and never a renewable hold. BJRN waits three
+seconds before its save write. Other save icons write once immediately. Fixed
+massage timers appear as the shared duration select. Intensity step controls do
+not imply absolute intensity levels.
+
+##### Startup and settings
+
+| Operation | Frame / behavior |
+|---|---|
+| Initialize, once after subscription | `6E 02 01 00 71` or single byte `00` |
+| CheckClock | `6E 08 01 01 78` or single byte `01` |
+| CheckLight | `6E 0A 00 01 79` or single byte `01` |
+| CheckMusic | `6E 15 01 01 85` or single byte `01` |
+| Split control | `6E 20 09 0B 02 01 00 00 A5` |
+| Standard control | `6E 20 09 0B 02 01 00 02 A7` |
+| Read split mode | `6E 20 08 0B 02 00 00 A3` |
+| Light duration: always on / 300 seconds | `6E 0B FF FF 77` / `6E 0B 01 2C A6` |
+| RGB example: red | `6E 0C FF FF 78 6E 0D 00 00 7B` |
+| Light off, side 0, no release | `6E 01 00 75 E4` |
+| Vibration mode, side 0, no release | `6E 01 00 D6 45` |
+| Single alarm: cancel | `6E 05 00 00 73` then `6E 06 00 00 74` |
+| List existing repeat alarms | `6E 20 08 05 01 00 00 9C` |
+| Update existing alarm 1 example | `6E 20 0D 05 01 01 01 01 45 07 1E 00 0E` |
+| Delete existing alarm 1 example | `6E 20 08 05 02 01 01 9F` |
+
+Clock, light and music capability probes run in that order at 300 ms intervals,
+without product or reply gates. Clock-enabled products also synchronize timezone
+and local calendar independently of the clock reply. Clock synchronization uses
+shared sync_clock. Alarms require a current clock reply and the selected product’s
+alarm choices. Lighting settings and light off require a current light reply and
+the product’s lighting flag. Vibration mode requires the product’s vibration page
+and a music-capability reply; no audio action is exposed. Green, Orange and Blue
+offer split/standard control independently of GATT framing.
+<!-- /generated -->
+
+#### Timing
+
+The app uses a 100 ms write queue with no command retry. A held arrow first writes
+at 100 ms and refreshes until release. Ending before that first tick sends no
+movement or STOP. Cleanup drains on the original connection and side only after
+a control write. Single configuration and preset callbacks have no invented STOP.
+Startup runs once after subscription, before the product menu. Clock sync does
+not wait for the clock reply. Menu probes run regardless of product flags/replies.
+
+#### Notifications
+
+Current-session clock, light and music replies enable their product-gated pages.
+Ordinary frames retain the app's splitting behavior, including early consumption
+of ordinary fragments. Extended records wait for their length and pass sum8
+validation. Pending bytes expire after 500 ms and are cleared. Alarm list/push
+records and standard/split replies update connection-scoped state. Retired-session
+notifications cannot change the current state.
+
+The library's angle and status events are not used as motor positions.
+No position slider or guessed range is exposed. Disconnect clears observed alarm
+records and commanded settings. Stored capability knowledge may retain entity
+visibility, but never admits writes on a new connection.
+
+#### Services
+
+Use `dreamsense_light` for RGB color and 0–300 second duration; zero means always
+on. Lighting settings and light off require a current light reply. A native
+light-duration number appears once lighting support has been reported.
+
+Clock-enabled products use shared `sync_clock` and `set_alarm`. Repeat alarm
+updates require an explicit `slot` returned by the current connection's list.
+Turning a repeat alarm off clears its enabled bit while preserving its record;
+`dreamsense_delete_alarm` removes an existing `alarm_number`. New repeat-record
+creation is unavailable. **Refresh alarms** retrieves IDs; **Alarm response**
+includes the records as attributes. Both diagnostic entities start disabled.
+
+Clock, alarm, light, split and vibration settings target the physical bed without
+a side. Ordinary controls follow the selected side where supported. Audio,
+phone controls, network and device administration are outside the integration.
+
+#### Evidence
+
+Based on Dream Sense Bed 1.0.4 (`com.richmat.dreamsense`), as delivered by
+Google Play on November 18, 2026. Not yet tested on hardware.
 
 ## Notes
 
@@ -15435,14 +16172,14 @@ mode selector.
 | Motor 1 down | `38` | `25` | none | held | A3RM, BERM, MMRM, R2RM |
 | M1 | `42` | `2E` | `2B` | state 3; 3000 ms threshold | A3RM |
 | M2 | `44` | `2F` | `2C` | state 3; 3000 ms threshold | A3RM |
-| Massage 10 min | `4C` | `5F` | none | once | A3RM |
+| Massage timer 10 minutes | `4C` | `5F` | none | once | A3RM |
 | Underbed light on/off | `46` | `3C` | none | once | A3RM, R2RM |
 | Massage intensity up | `48` | `34` | none | once | A3RM, MMRM |
 | Massage mode | `4A` | `48` | none | once | A3RM, BERM, MMRM |
 | Massage intensity down | `4B` | `35` | none | once | A3RM, MMRM, ONRM, THRM |
-| Massage 10 min | `5F` | `5F` | none | once | A3RM, A9RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D2RM, D3RM, D4RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IARM, IBRM, IORM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y3RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
-| Massage 20 min | `63` | `63` | none | once | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IBRM, M3RM, MLRM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
-| Massage 30 min | `61` | `61` | none | once | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FCRM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IBRM, M3RM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Massage timer 10 minutes | `5F` | `5F` | none | once | A3RM, A9RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D2RM, D3RM, D4RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IARM, IBRM, IORM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y3RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Massage timer 20 minutes | `63` | `63` | none | once | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IBRM, M3RM, MLRM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Massage timer 30 minutes | `61` | `61` | none | once | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FCRM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IBRM, M3RM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
 | Flat | `38` | `31` | none | once | A6RM, ONRM |
 | Zero Gravity | `34` | `45` | `66` | state 3; 3000 ms threshold | A6RM |
 | Motor 3+4 up | `43` | `43` | none | held | AARM, B4RM, B9RM, BORM, BYRM, CJRM, CKRM, CNRM, E4RM, FLRM, ORRM, P2RM, P6RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 |
@@ -15485,15 +16222,15 @@ mode selector.
 | Motor 4 down | `45` | `42` | none | held | BERM |
 | Underbed light on/off | `36` | `3C` | none | once | BERM, MMRM |
 | Massage 1 intensity up | `46` | `4C` | none | once | BERM |
-| Massage 10 min | `47` | `5F` | none | once | BERM |
+| Massage timer 10 minutes | `47` | `5F` | none | once | BERM |
 | Massage 2 intensity up | `48` | `4E` | none | once | BERM, R2RM |
 | Massage 1 intensity down | `49` | `4D` | none | once | BERM |
 | Massage 2 intensity down | `4B` | `4F` | none | once | BERM, R2RM |
 | Massage head intensity 2 | `A4` | `A4` | none | once | BGRM |
 | Massage foot intensity 2 | `A5` | `A5` | none | once | BGRM |
-| Massage 10 min | `A1` | `A1` | none | once | BGRM |
-| Massage 20 min | `A2` | `A2` | none | once | BGRM |
-| Massage 30 min | `A3` | `A3` | none | once | BGRM |
+| Massage timer 10 minutes | `A1` | `A1` | none | once | BGRM |
+| Massage timer 20 minutes | `A2` | `A2` | none | once | BGRM |
+| Massage timer 30 minutes | `A3` | `A3` | none | once | BGRM |
 | Massage off | `47` | `47` | none | once | BHRM, BIRM, E9RM, O4RM, P5RM, V6RM, YERM |
 | TV | `58` | `58` | none | once | BJRM, D2RM, O2RM, O5RM, UZRM |
 | Lounge | `59` | `59` | none | once | BJRM, O2RM, O5RM, UZRM |
@@ -15552,9 +16289,9 @@ mode selector.
 | Save M1 | `43` | `2B` | none | once | MMRM, R2RM |
 | M2 | `44` | `2F` | none | once | MMRM, R2RM |
 | Save M2 | `45` | `2C` | none | once | MMRM, R2RM |
-| Massage 10 min | `49` | `5F` | none | once | MMRM |
+| Massage timer 10 minutes | `49` | `5F` | none | once | MMRM |
 | Zero Gravity | `35` | `45` | none | once | ONRM, THRM |
-| Massage 10 min | `39` | `5F` | none | once | ONRM |
+| Massage timer 10 minutes | `39` | `5F` | none | once | ONRM |
 | Massage 1 intensity up | `42` | `4C` | none | once | ONRM, THRM |
 | Underbed light on/off | `43` | `3C` | none | once | ONRM, THRM |
 | Massage 2 intensity up | `44` | `4E` | none | once | ONRM, THRM |
@@ -15570,7 +16307,7 @@ mode selector.
 | Underbed light off | `75` | `75` | none | once | P2RM, ZRA0 |
 | Massage 1 intensity up | `49` | `4C` | none | once | R2RM |
 | Massage 1 intensity down | `4A` | `4D` | none | once | R2RM |
-| Massage 10 min | `50` | `5F` | none | once | R2RM |
+| Massage timer 10 minutes | `50` | `5F` | none | once | R2RM |
 | Massage intensity 1 | `4C` | `67` | none | once | R2RM |
 | Massage intensity 2 | `4D` | `4D` | none | once | R2RM |
 | Massage intensity 3 | `4E` | `68` | none | once | R2RM |

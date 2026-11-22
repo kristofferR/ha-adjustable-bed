@@ -93,7 +93,7 @@ def test_dynamic_rows_reproduce_the_report_vectors():
 
 @pytest.mark.parametrize("name", ["", "Å", "Bed 1", "A" * 21, "bed\n", "Bett-1"])
 def test_rename_uses_the_edit_alphabet_and_length(name):
-    with pytest.raises(ValueError, match="1..20"):
+    with pytest.raises(ValueError, match="1 to 20"):
         profiles.rename_schedule(SLEEP_SMART, "t3", name)
     assert len(SLEEP_SMART.name_rule.encode("ÄÖÜäöüß" + "a" * 13)) == 27
 

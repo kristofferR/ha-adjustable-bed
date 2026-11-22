@@ -239,12 +239,12 @@ class RizeController(KaidiAppController):
 
     async def preset_tv(self) -> None:
         if not self.profile.extended:
-            raise ValueError("Reading requires a Rize voice layout")
+            raise ValueError("This bed model has no Reading preset")
         await self._action("book")
 
     async def preset_lounge(self) -> None:
         if not self.profile.extended:
-            raise ValueError("Leisure requires a Rize voice layout")
+            raise ValueError("This bed model has no Leisure preset")
         await self._action("leisure")
 
     async def _special(self, parameter: int, parameter2: int = 0) -> None:
@@ -274,7 +274,7 @@ class RizeController(KaidiAppController):
 
     def validate_program_preset(self, preset: str, confirm: bool) -> None:
         if not confirm or preset not in self.profile.programmable_presets:
-            raise ValueError("Confirm programming a supported Rize default preset")
+            raise ValueError("Choose a preset this bed can save and turn on Confirm")
 
     async def program_preset(self, preset: str, confirm: bool) -> None:
         """Capture one physical target under HA command admission, with no pre-save."""

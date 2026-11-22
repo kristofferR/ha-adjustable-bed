@@ -77,7 +77,6 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     [
         {},
         {const.CONF_PRODUCT_TYPE: "unknown"},
-        {const.CONF_PRODUCT_TYPE: "bed", const.CONF_LIMOSS_REMOTE_THEME: "made_up"},
     ],
 )
 async def test_invalid_profile_never_finishes_setup(hass, invalid):
@@ -125,14 +124,12 @@ async def test_enabling_local_features_saves_options_without_ble(hass):
         {
             const.CONF_HAS_LIGHT: True,
             const.CONF_HAS_MASSAGE: True,
-            const.CONF_LIMOSS_REMOTE_THEME: "bed_clear",
             const.CONF_REVERSE_MOTORS[0]: True,
         }
     )
     assert result["type"] == "create_entry"
     assert entry.data[const.CONF_HAS_LIGHT] is True
     assert entry.data[const.CONF_HAS_MASSAGE] is True
-    assert entry.data[const.CONF_LIMOSS_REMOTE_THEME] == "bed_clear"
     assert entry.data[const.CONF_REVERSE_MOTORS[0]] is True
 
 
@@ -278,15 +275,15 @@ async def test_a_pair_receiver_finishes_its_off_bursts_before_saving(
 
 def test_limoss_group_requires_explicit_app_or_legacy_selection():
     """The brand opens the Limoss question, which offers both apps and the generic controls."""
-    from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
     from custom_components.adjustable_bed.app_families import LIMOSS_FAMILY
+    from custom_components.adjustable_bed.config_flow import _family_rows
     from custom_components.adjustable_bed.const import (
         BED_TYPE_FSM_RELAX,
         BED_TYPE_LIMOSS,
         BED_TYPE_LIMOSS_REMOTE,
     )
 
-    assert ACTUATOR_GROUPS["limoss"] == ((BED_TYPE_LIMOSS, None),)
+    assert BED_TYPE_LIMOSS in dict(_family_rows())
     assert {answer.bed_type for answer in LIMOSS_FAMILY.answers.values()} == {
         BED_TYPE_LIMOSS,
         BED_TYPE_LIMOSS_REMOTE,

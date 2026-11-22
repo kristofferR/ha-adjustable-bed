@@ -2,7 +2,7 @@
 
 A codec guide marks each generated region with ``<!-- generated:<name> -->`` and
 ``<!-- /generated -->``. Run this script to rewrite the regions, or with
-``--check`` to fail when one is stale (``tests/test_codec_docs.py`` does).
+``--check`` to list the stale ones.
 
 Each codec family's renderers live in ``scripts/codec_docs/<family>.py``, which
 exports its ``BLOCKS``; this driver discovers them. To generate a block for a

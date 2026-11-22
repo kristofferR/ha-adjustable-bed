@@ -89,8 +89,6 @@ class RichmatProfile:
     motor_repeat_ms: int | None = None
     """Fixed app refresh cadence; None keeps the entry settings."""
     recall: Recall = Recall()
-    quiet_release: bool = True
-    """Movement cleanup logs a failed STOP instead of raising it."""
     epoch_first_hex: bool = False
     """Keep the app's first-eight-hex-digit epoch serialization."""
 
@@ -182,7 +180,6 @@ BEDTECH: Final = RichmatProfile(
     memory=((0x2E, 0x2B), (0x2F, 0x2C)),
     # Field reports: BT6500 variants stop only on ``^``.
     stop=COMPAT_STOP,
-    quiet_release=False,
 )
 # BedTech 7.1.3 (14): only ordinary UI actions that pass their model guards.
 # E_UI/E_CATALOG in BedTech 7.1.3; literals in bedtech_vectors.json.
@@ -242,7 +239,7 @@ BEDTECH_APP_PROFILES: Final = {
     for model, codes in BEDTECH_APP_CODES.items()
 }
 BEDTECH_VARIANTS: Final = {
-    "auto": "Legacy BedTech controls (existing hardware reports)",
+    "auto": "Older BedTech controls, without a model",
     **{model: f"BedTech app: {model.upper()}" for model in BEDTECH_APP_PROFILES},
 }
 
@@ -320,7 +317,7 @@ MLILY_REMOTE: Final = RichmatProfile(key="mlily_remote", transports=("n1", "w1",
 CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
 RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
-    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool", "lp2", "bedsmart", "jerome2", "baseremote", *RESOURCE_APPS)
+    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool", "sleepfunction", "lp2", "bedsmart", "jerome2", "baseremote", *RESOURCE_APPS)
 }
 
 RICHMAT_CLASSIC["lp2"] = RichmatProfile(key="richmat_classic_lp2", transports=("w0", *CLASSIC_TRANSPORTS))

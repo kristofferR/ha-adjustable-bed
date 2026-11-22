@@ -14,7 +14,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 
 from .beds.entity_specs import ControllerSelectSpec
-from .beds.octo.runtime import octo_controller
+from .beds.octo.runtime import octo_controls_locked
 from .card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE_TIMER, CardPlacement
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
@@ -360,39 +360,48 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
             self._unregister_callback()
         await super().async_will_remove_from_hass()
 
+    def _live_spec(self) -> ControllerSelectSpec | None:
+        with self._side_scope():
+            controller = self._coordinator.capability_controller
+            specs = controller.controller_select_specs if controller is not None else ()
+            return next((spec for spec in specs if spec.key == self._spec.key), None)
+
     @callback
     def _handle_controller_state_update(self, state: ControllerState) -> None:
-        if self._spec.state_key in state:
+        spec = self._live_spec() or self._spec
+        options = list(spec.options)
+        if spec.state_key in state or options != self._attr_options:
+            self._attr_options = options
             self.async_write_ha_state()
 
     @property
+    def options(self) -> list[str]:
+        # Reconnects retain the entity, but can replace its controller's choices.
+        return list((self._live_spec() or self._spec).options)
+
+    @property
     def current_option(self) -> str | None:
-        value = self._coordinator.controller_state.get(self._spec.state_key)
-        return value if value in self._spec.options else None
+        spec = self._live_spec() or self._spec
+        value = self._coordinator.controller_state.get(spec.state_key)
+        return value if value in spec.options else None
 
     async def async_select_option(self, option: str) -> None:
-        if option not in self._spec.options:
+        live = self._live_spec()
+        if live is None or option not in live.options:
             raise invalid("option_unavailable")
-        if self._spec.local_select_fn is not None:
-            # No frame is sent, so do not take the bed's single BLE link.
-            controller = self._coordinator.capability_controller
-            specs = controller.controller_select_specs if controller is not None else ()
-            live = next(
-                (spec for spec in specs if spec.key == self._spec.key),
-                None,
-            )
-            if live is None or live.local_select_fn is None or option not in live.options:
-                raise invalid("option_unavailable")
-            live.local_select_fn(option)
+        if live.local_select_fn is not None:
+            # Local choices use the current controller without acquiring a link.
+            with self._side_scope():
+                live.local_select_fn(option)
             return
 
         async def select(ctrl: BedController) -> None:
-            live = next(
+            current = next(
                 (spec for spec in ctrl.controller_select_specs if spec.key == self._spec.key), None
             )
-            if live is None or option not in live.options:
+            if current is None or option not in current.options:
                 raise invalid("option_unavailable")
-            await live.select_fn(ctrl, option)
+            await current.select_fn(ctrl, option)
 
         await self._coordinator.async_execute_controller_command(select)
 
@@ -458,18 +467,12 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         formatted = f"{minutes} min"
         if minutes and formatted in self._attr_options:
             return formatted
-        return "Off" if self._has_off else None
+        return "Off" if self._has_off and minutes in (None, 0) else None
 
     async def async_select_option(self, option: str) -> None:
         """Set the massage timer duration."""
-        # Validate option against allowed options
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid timer option '%s' - allowed options: %s",
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         _LOGGER.info(
             "Massage timer set requested: %s (device: %s)",
@@ -502,11 +505,10 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         """Respect Octo's PIN gate and the controller's own gate for live settings."""
         with self._side_scope():
             controller = self._coordinator.capability_controller
-            octo = octo_controller(controller)
             available_fn = self.entity_description.available_fn
             return (
                 super().available
-                and (octo is None or octo.normal_controls_available)
+                and not octo_controls_locked(controller)
                 and (available_fn is None or controller is not None and available_fn(controller))
             )
 
@@ -555,15 +557,8 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Set the controller-backed option."""
-        # Validate option against allowed options
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid %s option '%s' - allowed options: %s",
-                self.entity_description.key,
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         _LOGGER.info(
             "%s set requested: %s (device: %s)",
@@ -625,18 +620,12 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the side this preset selector targets."""
-        return {"side": self.entity_description.side}
+        return {**self._base_attributes(), "side": self.entity_description.side}
 
     async def async_select_option(self, option: str) -> None:
         """Set the side-specific option through the controller."""
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid %s option '%s' - allowed options: %s",
-                self.entity_description.key,
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         async def _set_option(ctrl: BedController) -> None:
             await self.entity_description.select_fn(ctrl, self.entity_description.side, option)

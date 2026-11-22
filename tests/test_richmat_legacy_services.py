@@ -79,7 +79,7 @@ async def test_whole_batch_invalid_profile_has_no_writes(clock, hass):
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
         pytest.raises(ServiceValidationError),
-    ):  # noqa: SIM117
+    ):
         await hass.services.async_call(
             DOMAIN,
             "richmat_legacy",

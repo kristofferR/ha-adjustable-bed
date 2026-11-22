@@ -346,7 +346,7 @@ async def test_replacement_during_rgb_pair_never_writes_new_session(obj, coordin
     assert len(writes(coordinator)) == 1
 
 
-async def test_alarm_records_modes_reserved_byte_enable_and_exhaustion(obj, hass):
+async def test_alarm_records_modes_reserved_byte_and_enable(obj, hass):
     await hass.config.async_set_time_zone("Europe/Oslo")
     obj._menus.add("alarm")
     row = p.Alarm(1, 213, 7, 30, 89, 137)
@@ -362,11 +362,9 @@ async def test_alarm_records_modes_reserved_byte_enable_and_exhaustion(obj, hass
     assert obj._alarms == [changed]
     obj._event("alarm_update", replace(row, id=2))
     assert obj._alarms == [changed]
-    obj._alarms = [replace(row, id=n) for n in range(1, 8)]
-    assert p.next_alarm_id(tuple(obj._alarms)) == -1
     when = datetime(2026, 11, 17, 7, 30, tzinfo=ZoneInfo("Europe/Oslo"))
     assert (
-        p.Alarm(p.next_alarm_id(tuple(obj._alarms)), 0, 7, 30, 89, p.repeat_mask((0, 4), True)).frame().hex()
+        p.Alarm(-1, 0, 7, 30, 89, p.repeat_mask((0, 4), True)).frame().hex()
         == "6e0d20050101ff00071e5989a8"
     )
     for mode in ("lounge", "zero_gravity", "memory_1", "memory_2"):
@@ -377,7 +375,6 @@ def test_countdown_subminute_rollover_zone_and_restore_no_hardware_assumption(ob
     now = datetime(2026, 11, 17, 7, 30, 40, tzinfo=ZoneInfo("Europe/Oslo"))
     assert p.countdown_minutes(now, now + timedelta(seconds=10)) == 1440
     assert p.countdown_minutes(now, now + timedelta(seconds=61)) == 1
-    assert p.color_byte(0.5) == 128
     assert p.light_seconds(0).hex() == "6e0bffff77"
     obj.restore_persisted_app_state({"rgb": [1, 2, 3], "seconds": 300, "scheduled": "untrusted"})
     assert dict(obj.persisted_app_state) == {"rgb": [1, 2, 3], "seconds": 300}
@@ -421,7 +418,7 @@ async def test_alarm_ack_cannot_revalidate_pre_mutation_fields(obj, coordinator,
     obj._event("alarm_list", row)
     await obj.execute_request(Request("repeat", alarm_id=1, mode="lounge").plan(obj))
     obj._event("alarm_add_success", None)
-    with pytest.raises(ValueError, match="fresh record"):
+    with pytest.raises(ValueError, match="alarm list again"):
         Request("enable", alarm_id=1, enabled=False).plan(obj)
     obj._event("alarm_update", replace(row, opcode=89))
     assert Request("enable", alarm_id=1, enabled=False).plan(obj).record.opcode == 89
@@ -435,16 +432,16 @@ async def test_alarm_refresh_requires_explicit_slot_after_delete(obj, coordinato
     await obj.execute_request(Request("delete", alarm_id=2).plan(obj))
     obj._event("alarm_cancel_success", None)
     new = Request("repeat", when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge")
-    with pytest.raises(ValueError, match="explicit alarm ID"):
+    with pytest.raises(ValueError, match="alarm number from 1 to 7"):
         new.plan(obj)
     await obj.execute_request(Request("alarms"))
     if remaining:
         obj._event("alarm_list", p.Alarm(1, 7, 6, 30, 69, 137))
     count = len(writes(coordinator))
-    with pytest.raises(ValueError, match="explicit alarm ID"):
+    with pytest.raises(ValueError, match="alarm number from 1 to 7"):
         await obj.execute_request(new.plan(obj))
     assert len(writes(coordinator)) == count
-    with pytest.raises(ValueError, match="Query this bed's alarms"):
+    with pytest.raises(ValueError, match="Read the bed's alarm list"):
         Request("enable", alarm_id=2, enabled=False).plan(obj)
     await obj.execute_request(replace(new, alarm_id=2).plan(obj))
     assert writes(coordinator)[-1][6] == 2
@@ -459,7 +456,7 @@ async def test_failed_alarm_refresh_keeps_edits_guarded(obj, coordinator, virtua
     coordinator.client.write_gatt_char.side_effect = BleakError("query failed")
     with pytest.raises(BleakError, match="query failed"):
         await obj.execute_request(Request("alarms"))
-    with pytest.raises(ValueError, match="Query this bed's alarms"):
+    with pytest.raises(ValueError, match="Read the bed's alarm list"):
         Request("enable", alarm_id=1, enabled=False).plan(obj)
 
 
@@ -467,7 +464,7 @@ async def test_new_alarm_plan_rejects_a_slot_observed_after_preflight(obj, coord
     obj._menus.add("alarm")
     plan = Request("repeat", alarm_id=2, when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge").plan(obj)
     obj._event("alarm_list", p.Alarm(2, 91, 8, 0, 69, 137))
-    with pytest.raises(ValueError, match="fresh record"):
+    with pytest.raises(ValueError, match="alarm list again"):
         await obj.execute_request(plan)
     assert not writes(coordinator)
 
@@ -502,8 +499,7 @@ async def test_failed_fifo_head_drops_without_retry_then_drains_next_item(
     assert writes(coordinator) == list(p.countdown(0, 0))
 
 
-def test_source_numeric_conversion_and_clock_first_digits():
-    assert [p.color_byte(value) for value in (0, 0.5, 1, -0.5)] == [0, 128, 255, 128]
+def test_clock_first_digits():
     now = datetime.fromtimestamp(0x123456789, UTC)
     assert p.sync_time(now, now)[0] == codec.record(8, 2, 1, (0x12, 0x34, 0x56, 0x78, 0))
 

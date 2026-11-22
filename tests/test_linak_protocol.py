@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.linak.protocol import (
     LinakCapabilitySnapshot,
     LinakModelVariant,
     LinakProfile,
+    advertises_pairing_window,
     build_automatic_drive,
     build_simultaneous_command,
     build_timer_event,
@@ -204,3 +205,19 @@ def test_performance_snapshot_has_four_memories_without_position_claims() -> Non
 
     assert snapshot.memory_slots == 4
     assert snapshot.position_axes == ()
+
+
+@pytest.mark.parametrize(
+    ("advertisement", "expected"),
+    [
+        # Captured from an Advanced controller: after power-on, then afterwards.
+        ("020105 020a04 11068af715029c00498a24108a330100fa99", True),
+        ("020104 020af8", False),
+        # A flags structure without its byte must not read the next length as flags.
+        ("0101 03ff0000", False),
+        ("", False),
+    ],
+)
+def test_pairing_window_is_the_limited_discoverable_flag(advertisement: str, expected: bool) -> None:
+    assert advertises_pairing_window(bytes.fromhex(advertisement)) is expected
+    assert advertises_pairing_window(None) is False

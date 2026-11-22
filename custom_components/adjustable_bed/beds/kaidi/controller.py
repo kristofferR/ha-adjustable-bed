@@ -105,7 +105,7 @@ class KaidiController(BedController):
         self._massage_mode_index = 0
         self._set_massage_timer_mode(0)
 
-        entry_data = getattr(getattr(self._coordinator, "entry", None), "data", {})
+        entry_data = self._coordinator.entry.data
         cached_room_id = entry_data.get(CONF_KAIDI_ROOM_ID)
         cached_target_vaddr = entry_data.get(CONF_KAIDI_TARGET_VADDR)
         cached_product_id = entry_data.get(CONF_KAIDI_PRODUCT_ID)
@@ -412,9 +412,7 @@ class KaidiController(BedController):
 
     def _try_resolve_room_id_from_ha(self) -> None:
         """Attempt to resolve room ID from Home Assistant's Bluetooth scanner."""
-        hass = getattr(self._coordinator, "hass", None)
-        if hass is None:
-            return
+        hass = self._coordinator.hass
         try:
             from .metadata import resolve_kaidi_advertisement
             advertisement = resolve_kaidi_advertisement(
@@ -638,20 +636,14 @@ class KaidiController(BedController):
         if delay > 0:
             # A renewable hold (#483) repeats until its lease ends, within its ceiling.
             count = self.leased_hold_ms(count * delay) // delay
-        try:
+        async with self.releasing(
+            lambda: self._write_control_command(stop_command, cancel_event=asyncio.Event())
+        ):
             await self._write_control_command(
                 move_command,
                 repeat_count=count,
                 repeat_delay_ms=delay,
             )
-        finally:
-            try:
-                await self._write_control_command(
-                    stop_command,
-                    cancel_event=asyncio.Event(),
-                )
-            except ConnectionError:
-                _LOGGER.debug("Kaidi cleanup stop skipped because device disconnected")
 
     def _require_memory_command(self, command_map: Mapping[int, int], memory_num: int) -> int:
         """Resolve a Kaidi memory command or raise a helpful error."""
@@ -855,7 +847,7 @@ class KaidiController(BedController):
     # Direct position control
     # ------------------------------------------------------------------
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Kaidi uses percentage-style progress writes for direct position targeting."""
         return max(0, min(100, int(round(angle))))
 

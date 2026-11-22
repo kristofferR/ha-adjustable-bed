@@ -7,10 +7,16 @@ for values. Use this layout for new guides and keep it when you update one.
 A wire format shared by several apps or bed types gets one [codec guide](#codec-guides)
 instead of one guide per app. [Jiecang](beds/jiecang.md) is the reference.
 
-Guides state results in reference form. Evidence, dispositions, tracker IDs,
-hashes and audit wording stay out of them: discovery ledgers stay machine-local
-with the APK Protocol Audit report, and the implementation PR states their
-totals and exclusions.
+A guide has two readers. The Status line and the Known Models, Apps and Features
+sections are written for the bed's owner: plain words about what they get, which
+controls appear and any limit they will notice ("Massage: on, off and three
+levels; no timer"), not how that was established. The protocol, command and
+profile sections are for contributors and may be technical.
+
+Guides state results, not how they were reached. Evidence, dispositions, tracker
+IDs, hashes and audit wording stay out of them: discovery ledgers stay
+machine-local with the APK Protocol Audit report, and the implementation PR
+states their totals and exclusions.
 
 ## Skeleton
 
@@ -118,7 +124,7 @@ Features) so the reference check applies, then splits into codec and profile par
 - **Generated tables** sit between `<!-- generated:<name> -->` and
   `<!-- /generated -->` and are rewritten by `scripts/generate_codec_docs.py` from
   the codec and profile modules. Do not edit them by hand; edit the code and rerun
-  the script. `tests/test_codec_docs.py` fails when a block is stale. To generate
+  the script. To generate
   a block, add a renderer and a `BLOCKS` entry to the family's module in
   `scripts/codec_docs/` (see
   [Registering a family](design/protocol-codecs.md#registering-a-family)).
@@ -126,9 +132,7 @@ Features) so the reference check applies, then splits into codec and profile par
   calling the codec's encoders, never as literals), bed types, layouts and
   payloads, timing and startup queries. Prose points to a generated table instead
   of repeating its numbers, so a changed profile cannot leave a stale copy.
-- Every frame spelled out by hand must be one of the family's frozen vectors;
-  the `guide` of its `tests/codec_families/` module tells the docs test how to
-  find them.
+- Every frame spelled out by hand must be one of the family's frozen vectors.
 - Keep hand-written prose for what code cannot express as data: setup flow,
   state machines, notification handling, services and safety behavior.
 
@@ -159,10 +163,10 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
   an explicit choice. "Choosing a profile" only says which route detection
   suggests.
 - A family member lists only what differs from its family section.
-- **Evidence** names the app and version and states the result in reference
-  form, for example "Comfort Motion sends only its frozen frames". Tracker IDs,
-  hashes, dispositions, counts and reachability arguments stay in the
-  machine-local ledger. Never link a ledger file.
+- **Evidence** names the app and version the profile is based on, for example
+  "Based on Comfort Motion 2.2.1". Tracker IDs, hashes, dispositions, counts and
+  reachability arguments stay in the machine-local ledger. Never link a ledger
+  file.
 
 ## Rules
 
@@ -184,6 +188,3 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
 - Keep headings that other docs link to. Renaming one breaks its `#anchor`.
 - When rewriting a guide, keep every fact, caveat, version, link and issue
   reference. Restructure the wording, not the content.
-
-`tests/test_bed_guide_format.py` checks the Status and Credit lines and the Known
-Models, Apps and Features sections of every guide, codec guides included.

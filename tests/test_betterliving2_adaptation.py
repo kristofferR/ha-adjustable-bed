@@ -35,7 +35,7 @@ from custom_components.adjustable_bed.paired_topology import PairedSideError
 from custom_components.adjustable_bed.profiles import betterliving2 as app
 from custom_components.adjustable_bed.services import async_register_services
 from tests.hold_lease_wire import virtual_clock
-from tests.test_betterliving2_review import (
+from tests.test_betterliving2_holds_and_sides import (
     NOW,
     action_frames,
     alarm_prefix,

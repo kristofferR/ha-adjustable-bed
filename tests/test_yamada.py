@@ -332,7 +332,7 @@ async def test_p1_queued_alarm_save_cannot_restore_an_old_other_slot():
         # A delayed pre-save response is visible but cannot authorize a table write.
         receive(sender, bytearray(original))
         assert coordinator.controller_state[yamada.HOUR_1] == 6
-        with pytest.raises(ValueError, match="Waiting for the written P1"):
+        with pytest.raises(ValueError, match="has not confirmed the last alarm change"):
             c.prepare_alarm(slot=2, enabled=True, hour=9, minute=0, weekday=130, preset="flat")
 
         receive(sender, bytearray(first.frame))

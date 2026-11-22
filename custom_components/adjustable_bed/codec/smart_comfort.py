@@ -93,15 +93,10 @@ def rename(name: str) -> bytes:
     try:
         data = name.encode("ascii")
     except UnicodeEncodeError as err:
-        raise ValueError("Smart Comfort names must use ASCII") from err
+        raise ValueError("Use only unaccented letters, digits and common symbols in the name") from err
     if not 1 <= len(data) <= 16:
-        raise ValueError("Smart Comfort names must be 1..16 ASCII bytes")
+        raise ValueError("Use a name of 1 to 16 characters")
     return data
-
-
-def matches_scan_record(raw: bytes) -> bool:
-    """Preserve the app predicate; HA's parsed advertisements cannot reconstruct it."""
-    return len(raw) >= 9 and (raw[7] == 0xB0 or raw[8] == 0xFF) and raw[6] in (0xB0, 0xFF)
 
 
 @dataclass(frozen=True)

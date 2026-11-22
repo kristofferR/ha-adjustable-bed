@@ -216,7 +216,7 @@ class OreUltramaticController(OreComfortBedController):
     async def preset_memory(self, memory_num: int) -> None:
         self.validate_memory_recall(memory_num)
         if self._capture_link().route != "P1" or memory_num not in (1, 2):
-            raise ValueError("Ultramatic P2 has no memory recall")
+            raise ValueError("This bed model cannot recall that memory position")
         await self._preset(f"memory_{memory_num}")
 
     async def _save(self, name: str) -> None:
@@ -226,7 +226,7 @@ class OreUltramaticController(OreComfortBedController):
 
     async def program_memory(self, memory_num: int) -> None:
         if memory_num not in (1, 2):
-            raise ValueError("Choose memory1 or2")
+            raise ValueError("Choose memory position 1 or 2")
         await self._save(f"memory_{memory_num}")
 
     async def program_flat(self) -> None:
@@ -294,7 +294,7 @@ class OreUltramaticController(OreComfortBedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 1 <= duration_ms <= 30000:
-            raise ValueError("Choose a P2 massage control and hold of1..30000ms")
+            raise ValueError("Choose a massage control this bed offers and a duration of up to 30 seconds")
 
     async def lights_toggle(self) -> None:
         if self._capture_link().route != "P2":
@@ -373,7 +373,7 @@ class OreUltramaticController(OreComfortBedController):
     async def sync_clock(self) -> None:
         link = self._capture_link()
         if link.route != "P2":
-            raise ValueError("P1 clock is part of alarm/query records")
+            raise ValueError("This bed sets its clock together with its alarm. Set the alarm instead")
         await self._single_on(link, codec.clock(dt_util.now()))
 
     async def query_alarm(self) -> None:
@@ -491,7 +491,13 @@ class OreUltramaticController(OreComfortBedController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
             ControllerStateSensorSpec(
-                str(TIME), str(TIME), TIME, "mdi:alarm", attribute_keys=(REPEAT, ACTION)
+                str(TIME),
+                str(TIME),
+                TIME,
+                "mdi:alarm",
+                attribute_keys=(REPEAT, ACTION),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
             ControllerStateSensorSpec(
                 str(INTENSITY),
@@ -499,6 +505,8 @@ class OreUltramaticController(OreComfortBedController):
                 INTENSITY,
                 "mdi:vibrate",
                 attribute_keys=(TIMER,),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

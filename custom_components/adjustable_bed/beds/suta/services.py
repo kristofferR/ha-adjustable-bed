@@ -58,7 +58,7 @@ async def handle_request(call: ServiceCall) -> None:
                     raise rejected(error) from error
         await _execute_preflighted(
             targets, preflighted,
-            _family_command(SutaController, "SUTA Smart Home", lambda controller: controller.execute_request(request)),
+            _family_command(SutaController, lambda controller: controller.execute_request(request)),
             admissions=admissions,
         )
     finally:

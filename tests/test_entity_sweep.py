@@ -624,3 +624,35 @@ def test_rmcontrol_expects_reported_telemetry_and_pending_light() -> None:
     assert {("light", "under_bed_lights"), ("select", "light_timer")} <= expected
     strip._accept_notification(Notification("capability", {"light": True}))
     assert not {("light", "under_bed_lights"), ("select", "light_timer")} & strip.retained_entity_keys
+
+
+async def test_lp2_keeps_both_formats_until_its_format_is_known(hass: HomeAssistant) -> None:
+    """L&P and BedSmart list a format's own controls once the bed's format is known."""
+    from custom_components.adjustable_bed.beds.richmat_classic.lp2 import (
+        SYNCHRONIZED,
+        Lp2Controller,
+    )
+
+    entry = _entry(
+        hass,
+        **{CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS},
+        protocol_variant="lp2",
+        product_type="6BRM",
+    )
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    controller = Lp2Controller(coordinator)
+    coordinator._controller = controller
+    raw = _row(hass, entry, "button", "richmat_classic_1_raw")
+    framed = _row(hass, entry, "button", "richmat_classic_1_framed")
+    platforms = (Platform.BUTTON, Platform.SWITCH)
+
+    created = await async_setup_platforms_and_sweep(hass, entry, coordinator, platforms)
+    assert _exists(hass, raw) and _exists(hass, framed)
+    assert framed.unique_id not in {entity.unique_id for entity in created}
+
+    # The first connection resolves the format: its buttons arrive, the other's go.
+    controller._wire = "FRAMED"
+    coordinator.handle_controller_state_updates(SYNCHRONIZED(None))
+    await hass.async_block_till_done()
+    assert framed.unique_id in {entity.unique_id for entity in created}
+    assert _exists(hass, framed) and not _exists(hass, raw)

@@ -137,7 +137,7 @@ class MajesticHomeController(GoodVibeController):
         ):
             raise ConnectionError("Majestic Home physical controller was replaced")
         if self.command_side is not None:
-            raise ValueError("Majestic Home has no single-address side selector")
+            raise ValueError("This bed has no sides. Leave out the side")
         return link
 
     async def _pace(self, cleanup: bool) -> bool:
@@ -191,7 +191,7 @@ class MajesticHomeController(GoodVibeController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - propagate the settled result below.
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():
@@ -332,7 +332,7 @@ class MajesticHomeController(GoodVibeController):
             or not MIN_FINITE_HOLD_MS <= duration_ms <= 60000
         ):
             raise ValueError(
-                "Choose an available Majestic Home movement and a duration from 200 to 60000 ms"
+                "Choose a movement this bed offers and a duration from 0.2 to 60 seconds"
             )
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
@@ -493,10 +493,10 @@ class MajesticHomeController(GoodVibeController):
         if request.number is not None and (
             type(request.number) is not int or not 0 <= request.number <= 255
         ):
-            raise ValueError("Alarm ID must be a byte")
+            raise ValueError("Choose an alarm number from 0 to 255")
         if request.operation in ("new", "set", "toggle", "delete") and request.number is None:
             raise ValueError(
-                "Choose an explicit alarm ID; received records do not prove a complete list"
+                "Choose an alarm number. The bed has not reported its full alarm list, so a free alarm cannot be picked for you"
             )
         if request.operation in ("new", "set"):
             if (
@@ -507,15 +507,15 @@ class MajesticHomeController(GoodVibeController):
                 or not 0 <= request.minute <= 59
                 or any(type(day) is not int or day not in range(7) for day in request.weekdays)
             ):
-                raise ValueError("Choose a product alarm preset, valid time and weekdays")
+                raise ValueError("Choose a wake action this bed offers, an alarm time and weekdays")
             if (
                 request.operation == "new"
                 and request.number is not None
                 and request.number not in range(1, 8)
             ):
-                raise ValueError("New alarms use the app's IDs 1 through 7")
+                raise ValueError("Choose an alarm number from 1 to 7 for a new alarm")
         if request.operation == "sync_clock" and not self.layout.alarms:
-            raise ValueError("This product has no clock synchronization schedule")
+            raise ValueError("This bed model has no clock")
 
     def prepare(self, request: Request) -> Plan:
         self.validate_request(request)
@@ -667,7 +667,7 @@ class MajesticHomeController(GoodVibeController):
             or tuple(self.alarms.values()) != plan.records
             or frozenset(self._stale) != plan.stale
         ):
-            raise ValueError("The Majestic Home session or alarm list changed during admission")
+            raise ValueError("The bed's connection or alarm list changed while the action was starting. Try again")
 
     async def execute_prepared(
         self,

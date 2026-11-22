@@ -263,21 +263,34 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
         entry = self._entry()
         if entry is None:
             return self.async_abort(reason="entry_missing")
-        current = _target_data(entry, self._side).get(CONF_FURNIMOVE_REMOTE)
+        data = _target_data(entry, self._side)
+        current = data.get(CONF_FURNIMOVE_REMOTE)
         choices = furnimove_handset_choices(current)
+        # A repair dialog has no Back, so an OKIMAT drive whose handset is not
+        # listed can still take the Okimat controls from this list.
+        okimat = _issue_kind(data) == _OKIMAT_CST
         errors: dict[str, str] = {}
         if user_input is not None:
             handset_id = user_input.get(CONF_FURNIMOVE_REMOTE)
+            if okimat and handset_id == "okimat":
+                return await self._save({CONF_BED_TYPE: BED_TYPE_OKIMAT})
             if isinstance(handset_id, str) and handset_id in choices:
                 return await self._save(_furnimove_patch(handset_id))
             errors[CONF_FURNIMOVE_REMOTE] = "handset_required"
+        options = [
+            selector.SelectOptionDict(value=key, label=label) for key, label in choices.items()
+        ]
+        if okimat:
+            options.append(selector.SelectOptionDict(value="okimat", label="okimat"))
         return self.async_show_form(
             step_id="handset", errors=errors,
             data_schema=vol.Schema({vol.Required(CONF_FURNIMOVE_REMOTE): selector.SelectSelector(
-                selector.SelectSelectorConfig(options=[
-                    selector.SelectOptionDict(value=key, label=label)
-                    for key, label in choices.items()
-                ], mode=selector.SelectSelectorMode.DROPDOWN)
+                selector.SelectSelectorConfig(
+                    options=options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    # Translates only the Okimat row; a handset keeps its own label.
+                    translation_key=_OKIMAT_CST,
+                )
             )}),
         )
 
