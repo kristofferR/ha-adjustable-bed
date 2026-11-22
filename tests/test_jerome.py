@@ -1427,6 +1427,11 @@ def test_a_nordic_bed_lists_what_its_light_button_sends():
     assert not nordic.supports_light_state_feedback
     with pytest.raises(ServiceValidationError):
         nordic.validate_action("toggle_underbed_light")
+    # BERM's off key sends the head massage off operand there, whatever its icon.
+    assert "massage_off" in controller("BERM", "FRAMED")[0]._actions
+    assert {"massage_1_off"} == {
+        key for key in controller("BERM", "RAW")[0]._actions if "off" in key
+    }
     # A restart names the controls from the stored format before it reconnects.
     restored, _ = controller("MMRM", "FRAMED")
     restored._session = restored._wire = None

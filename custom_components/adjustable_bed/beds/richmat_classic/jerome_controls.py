@@ -31,6 +31,7 @@ def excluded(button: Control) -> bool:
 def label(button: Control, *, long: bool = False, raw: bool = False) -> str:
     """Name a control; ``raw`` names what its short press sends over Nordic UART."""
     background = button.resource_keys.get("android:background", "")
+    legacy = nordic_label(button) if raw and not long else None
     if not long:
         if button.tag == "63":
             return {
@@ -55,7 +56,8 @@ def label(button: Control, *, long: bool = False, raw: bool = False) -> str:
         if background == "@drawable/sel_rec_pos1":
             return "Position 1"
         if (
-            button.short_old is not None
+            not legacy
+            and button.short_old is not None
             and button.resource_keys.get("press_short") == "@string/com_msg_10min"
         ):
             if background == "@drawable/sel_rec_msg_on":
@@ -68,9 +70,7 @@ def label(button: Control, *, long: bool = False, raw: bool = False) -> str:
     key = key or button.resource_keys.get("press_short_old")
     if key is None:
         return ""
-    name = resource_label(key.removeprefix("@string/"))
-    if raw and not long:
-        name = nordic_label(button) or name
+    name = legacy or resource_label(key.removeprefix("@string/"))
     names = {
         "Motor 1 up": "Head up",
         "Motor 1 down": "Head down",

@@ -613,3 +613,8 @@ async def test_a_nordic_bed_lists_what_its_buttons_send(instant):
     assert "richmat_classic_17" in names(restored)
     restored.restore_persisted_app_state({"wire": "RAW"})
     assert "richmat_classic_17_raw" in names(restored)
+    # A motor key that saves a memory on a Nordic bed is no held control.
+    saving, _ = controller("coastersleep", "BERM", "RAW")
+    save = next(s for s in saving.controller_button_specs if s.key == "richmat_classic_10_raw")
+    assert save.name == "Save M1" and save.hold is None
+    assert save.key not in saving.held_control_options

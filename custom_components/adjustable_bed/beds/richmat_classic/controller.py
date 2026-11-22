@@ -674,15 +674,16 @@ class RichmatClassicController(BedController):
             key = f"richmat_classic_{button.node}" + ("_raw" if legacy else "")
             label = legacy or resource_label(button.label)
             press = partial(_press, node=button.node, raw=legacy is not None)
+            control = classify(label)
             if not button.excluded_short:
                 result.append(catalog_button(
                 key, label, press,
                 # The Set key only arms programming: it is a tap, as the saves it arms are.
-                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if (button.status == 1 or button.mem_special and not self._selection.armed) and label != "Program" else None,
+                # A motor key that saves on a Nordic bed is a tap too.
+                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if (button.status == 1 or button.mem_special and not self._selection.armed) and label != "Program" and not (control and control.kind is Kind.SAVE) else None,
                 ))
             if button.hold_affected and not button.view_id.endswith("Long"):
                 held_key = key + "_hold"
-                control = classify(label)
                 result.append(catalog_button(
                     held_key, f"{label} (hold)", press,
                     kind=control.kind if control is not None else None,
@@ -693,7 +694,7 @@ class RichmatClassicController(BedController):
                 if button.excluded_short or button.short is None and button.short_old is None:
                     # The long press is this button's only action.
                     result.append(catalog_button(key + "_long", label, long))
-                elif (control := classify(label)) is not None and control.kind in (Kind.PRESET, Kind.MEMORY):
+                elif control is not None and control.kind in (Kind.PRESET, Kind.MEMORY):
                     # A preset's long press saves the position there.
                     result.append(catalog_button(key + "_long", "Save " + label, long, kind=Kind.SAVE))
                 elif button.long != button.short:
