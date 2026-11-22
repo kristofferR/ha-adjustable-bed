@@ -1081,6 +1081,27 @@ alarm actions are listed under
 The [Hush Base guide](beds/hush-base.md#configuration-actions) explains each
 operation and how to add the separate sleep sensor and remote.
 
+## Instant Comfort
+
+<a id="instant_comfort_firmness"></a>
+**`instant_comfort_firmness`**: Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. When both change, the lumbar firmness is sent after the main adjustment has finished.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `sleeper` | Sleeper | The left or the right sleeper of the air unit. One of `left` or `right`. |
+| `firmness` | Main firmness | Main firmness, a whole number from 5 to 50. |
+| `lumbar_firmness` | Lumbar firmness | Lumbar firmness, a whole number from 5 to 50. Only for an ANM V5 air unit set up with four channels. |
+
+Give at least one of the two. An ANM V5 air unit must be idle and report the
+layout it was set up with before a firmness is sent: wait for a running
+adjustment to finish, or use `stop_all` first. If the main adjustment does not
+finish, the lumbar firmness is not sent, and Stop cancels it. ANM V3 and RA air
+units take only `firmness` and cannot stop the pump. See the
+[Instant Comfort guide](beds/personal-comfort.md#instant-comfort).
+
+Bases set up with the Instant Comfort app also run
+[`personal_comfort_sequence`](#personal_comfort_sequence).
+
 ## Jerome's power base
 
 <a id="jerome_bed"></a>
@@ -1826,22 +1847,6 @@ sequence. See the [Personal Comfort guide](beds/personal-comfort.md).
 The same action runs on Instant Comfort bases. Instant Comfort Malouf and Reverie
 V2 bases take `goto_preset` and `save_preset` for memories 1 and 2; Reverie V1
 bases and air units have no bed memory.
-
-<a id="instant_comfort_firmness"></a>
-**`instant_comfort_firmness`**: Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. When both change, the lumbar firmness is sent after the main adjustment has finished.
-
-| Field | Name | Meaning |
-|-------|------|---------|
-| `sleeper` | Sleeper | The left or the right sleeper of the air unit. One of `left` or `right`. |
-| `firmness` | Main firmness | Main firmness, a whole number from 5 to 50. |
-| `lumbar_firmness` | Lumbar firmness | Lumbar firmness, a whole number from 5 to 50. Only for an ANM V5 air unit set up with four channels. |
-
-Give at least one of the two. An ANM V5 air unit must be idle and report the
-layout it was set up with before a firmness is sent: wait for a running
-adjustment to finish, or use `stop_all` first. If the main adjustment does not
-finish, the lumbar firmness is not sent, and Stop cancels it. ANM V3 and RA air
-units take only `firmness` and cannot stop the pump. See the
-[Instant Comfort guide](beds/personal-comfort.md#instant-comfort).
 
 ## Power Bob Base
 
