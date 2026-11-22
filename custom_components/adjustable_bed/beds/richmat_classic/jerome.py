@@ -97,8 +97,6 @@ class JeromeController(RichmatClassicController):
         super().__init__(coordinator, app=app or "jerome2", device_name=device_name)
         if self.layout in EXCLUDED_LAYOUTS:
             raise invalid("jerome_layout")
-        self._actions = actions(self.layout)
-        self._pairs = inverse_pairs(self.layout)
         self._preferences = {}
         self._light_on: bool | None = None
         saved = capability_snapshot or {}
@@ -119,10 +117,21 @@ class JeromeController(RichmatClassicController):
         return self.layout in SIDE_LAYOUTS and self._wire == "FRAMED"
 
     @property
+    def _actions(self) -> dict[str, Action]:
+        return actions(self.layout, self._resolved_wire == "RAW")
+
+    @property
+    def _pairs(self) -> dict[str, tuple[str, str]]:
+        return inverse_pairs(self.layout, self._resolved_wire == "RAW")
+
+    @property
     def persisted_app_state(self) -> Mapping[str, object]:
-        return {}
+        # Only the bed's command format is kept: it names the controls before
+        # the first connection.
+        return {"wire": self._wire} if self._wire else {}
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        self._restore_wire(state)
         # Phone screen history cannot add alarm actions or establish bed state.
         self._preferences = {}
 

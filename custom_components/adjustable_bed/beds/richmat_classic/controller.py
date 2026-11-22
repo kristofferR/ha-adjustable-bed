@@ -43,7 +43,7 @@ from ..entity_specs import (
 )
 from ..richmat.labels import resource_label
 from . import rise
-from .caller import RETAIN, Selection, effective_status, transition
+from .caller import RETAIN, Selection, effective_status, nordic_label, transition
 from .profiles import RISE_APPS, Control, controls, load_catalog
 from .protocol import (
     ALARM_QUERY,
@@ -87,18 +87,26 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 
-def _node(control: str) -> int:
-    """The catalog node behind a held control key (``richmat_classic_<node>[_hold]``)."""
-    return int(control.removeprefix("richmat_classic_").removesuffix("_hold"))
+def control_node(key: str) -> int:
+    """The catalog node behind a control key (``richmat_classic_<node>[_raw][_long|_hold]``)."""
+    node = key.removeprefix("richmat_classic_")
+    for suffix in ("_hold", "_long", "_raw"):
+        node = node.removesuffix(suffix)
+    return int(node)
 
 
 # Settings rows a capability reply reveals (``ReceiveState.menu``).
 _MENU_ROWS = frozenset({"alarm", "light", "aroma"})
 
 
-async def _press(controller: BedController, node: int, long: bool = False) -> None:
+async def _press(
+    controller: BedController, node: int, long: bool = False, raw: bool = False
+) -> None:
     if not isinstance(controller, RichmatClassicController):
         raise TypeError("This action requires the selected app controller")
+    if raw != controller.named_for_nordic(node):
+        # Listed for the other connection, where this control does something else.
+        raise invalid("richmat_classic_control")
     await controller.execute_action(node, long=long)
 
 
@@ -192,9 +200,31 @@ class RichmatClassicController(BedController):
         return {**self._preferences, "mode": self._mode, "selection": {
             "press_flag": self._selection.press_flag, "head": self._selection.head,
             "armed": self._selection.armed, "hold": self._selection.hold,
-        }, "menu": sorted(self._receive.menu)}
+        }, "menu": sorted(self._receive.menu), "wire": self._wire}
+
+    def _restore_wire(self, state: Mapping[str, object]) -> None:
+        """Take the stored command format: it names the controls before the first connection."""
+        wire = state.get("wire")
+        if wire not in (None, "RAW", "FRAMED"):
+            raise ValueError("Invalid stored command format")
+        if wire is not None:
+            self._wire = wire
+
+    @property
+    def _resolved_wire(self) -> Wire | None:
+        """The command format of this session, else of the last one."""
+        return self._session.wire if self._session else self._wire
+
+    def _nordic_label(self, button: Control) -> str | None:
+        """The control's own name on a Nordic connection, when it differs."""
+        return nordic_label(button) if self._resolved_wire == "RAW" else None
+
+    def named_for_nordic(self, node: int) -> bool:
+        """Whether this connection lists the control under its Nordic name."""
+        return self._nordic_label(self._button(node)) is not None
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        self._restore_wire(state)
         minutes = state.get("lamp_minutes", 0)
         color = state.get("lamp_rgb", "ffffff")
         selected = state.get("alarm_selection")
@@ -255,7 +285,12 @@ class RichmatClassicController(BedController):
 
     @property
     def has_dynamic_controller_entities(self) -> bool:
-        return self.app in RISE_APPS
+        return self.app in RISE_APPS or self.has_dynamic_buttons
+
+    @property
+    def has_dynamic_buttons(self) -> bool:
+        # The first connection lists a Nordic bed's own controls.
+        return any(c.rich_button and nordic_label(c) for c in self._controls)
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -497,7 +532,7 @@ class RichmatClassicController(BedController):
         controls = frozenset(
             control
             for control in self.held_control_options
-            if self._keeps(self._button(_node(control)), self._selection)
+            if self._keeps(self._button(control_node(control)), self._selection)
         )
         if not controls:
             return NO_EXECUTION_CAPABILITIES
@@ -605,15 +640,16 @@ class RichmatClassicController(BedController):
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
-        await self.execute_action(_node(control), hold_ms=duration_ms)
+        await self.execute_action(control_node(control), hold_ms=duration_ms)
 
     def controller_button_available(self, key: str) -> bool:
         if key == "richmat_classic_release":
             return True
         try:
-            node = int(key.removeprefix("richmat_classic_").removesuffix("_long").removesuffix("_hold"))
-            button = self._button(node)
+            button = self._button(control_node(key))
         except ValueError:
+            return False
+        if ("_raw" in key) != (self._nordic_label(button) is not None):
             return False
         if button.hold_affected:
             if button.view_id.endswith("Long") or key.endswith("_hold"):
@@ -633,28 +669,32 @@ class RichmatClassicController(BedController):
                 continue
             if button.short is None and button.short_old is None and button.long is None and button.tag is None:
                 continue
-            key = f"richmat_classic_{button.node}"
-            label = resource_label(button.label)
+            # A control a Nordic bed gives another function is another entity.
+            legacy = self._nordic_label(button)
+            key = f"richmat_classic_{button.node}" + ("_raw" if legacy else "")
+            label = legacy or resource_label(button.label)
+            press = partial(_press, node=button.node, raw=legacy is not None)
+            control = classify(label)
             if not button.excluded_short:
                 result.append(catalog_button(
-                key, label, partial(_press, node=button.node),
+                key, label, press,
                 # The Set key only arms programming: it is a tap, as the saves it arms are.
-                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if (button.status == 1 or button.mem_special and not self._selection.armed) and label != "Program" else None,
+                # A motor key that saves on a Nordic bed is a tap too.
+                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if (button.status == 1 or button.mem_special and not self._selection.armed) and label != "Program" and not (control and control.kind is Kind.SAVE) else None,
                 ))
             if button.hold_affected and not button.view_id.endswith("Long"):
                 held_key = key + "_hold"
-                control = classify(label)
                 result.append(catalog_button(
-                    held_key, f"{label} (hold)", partial(_press, node=button.node),
+                    held_key, f"{label} (hold)", press,
                     kind=control.kind if control is not None else None,
                     hold=ControllerHoldSpec(held_key, release_button_key="richmat_classic_release"),
                 ))
             if button.status == 3 and button.long and not button.excluded_long and not button.mem_special and not button.select_special:
-                long = partial(_press, node=button.node, long=True)
+                long = partial(press, long=True)
                 if button.excluded_short or button.short is None and button.short_old is None:
                     # The long press is this button's only action.
                     result.append(catalog_button(key + "_long", label, long))
-                elif (control := classify(label)) is not None and control.kind in (Kind.PRESET, Kind.MEMORY):
+                elif control is not None and control.kind in (Kind.PRESET, Kind.MEMORY):
                     # A preset's long press saves the position there.
                     result.append(catalog_button(key + "_long", "Save " + label, long, kind=Kind.SAVE))
                 elif button.long != button.short:

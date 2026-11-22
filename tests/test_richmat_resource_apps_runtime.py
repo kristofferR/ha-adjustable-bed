@@ -206,6 +206,35 @@ async def test_real_button_select_and_current_hold_metadata_survive_recreation(h
     assert written(client)[0] == "37" and written(client)[-1] == "6e"
 
 
+@pytest.mark.parametrize("runtime", [("acaa", "MMRM", "RAW")], indirect=True)
+async def test_the_first_connection_lists_a_nordic_beds_own_buttons(hass, runtime):
+    """MMRM's light key sends the head and foot up operand over Nordic UART."""
+    target, client = runtime
+
+    def buttons():
+        return {
+            e._spec.key: e
+            for e in _button_entities_for(hass, target)
+            if isinstance(e, ControllerActionButton)
+        }
+
+    light = buttons()["richmat_classic_17"]
+    light.hass = hass
+    assert light._spec.name == "Underbed light on/off"
+    # The press connects, finds a Nordic bed and sends nothing.
+    with pytest.raises(ServiceValidationError):
+        await light.async_press()
+    assert written(client) == []
+    listed = buttons()
+    assert "richmat_classic_17" not in listed
+    both_up = listed["richmat_classic_17_raw"]
+    both_up.hass = hass
+    assert both_up._spec.name == "Motor 1+2 up" and both_up.available
+    await both_up.async_press()
+    assert written(client)[0] == "36"
+    assert target.controller.persisted_app_state["wire"] == "RAW"
+
+
 @pytest.mark.parametrize("operation", ["query", "bed_command"])
 async def test_registered_all_target_stop_epoch_captured_before_first_await(hass, operation):
     async_register_resource_bed_services(hass)

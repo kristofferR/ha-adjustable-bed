@@ -24,7 +24,7 @@ from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec
 from . import resource_protocol as p
 from .caller import Selection, selected_operand
-from .controller import APP, LAYOUT, PREFERENCES, REJECTION, STATE, STATUS
+from .controller import APP, LAYOUT, PREFERENCES, REJECTION, STATE, STATUS, control_node
 from .protocol import (
     ALARM_QUERY,
     ALARM_SPACING_MS,
@@ -101,9 +101,11 @@ class ResourceBedController(SessionController):
             **self._preferences,
             "press_flag": self._selection.press_flag,
             "head": self._selection.head,
+            "wire": self._wire,
         }
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        self._restore_wire(state)
         flag, head = state.get("press_flag", "53"), state.get("head", True)
         if flag not in ("53", "54", "55") or type(head) is not bool:
             raise ValueError("Invalid saved app selector")
@@ -232,8 +234,7 @@ class ResourceBedController(SessionController):
         buttons = []
         for spec in super().controller_button_specs:
             if spec.hold is not None:
-                node = int(spec.hold.control.removeprefix("richmat_classic_"))
-                if not self._keeps(self._button(node), self._selection):
+                if not self._keeps(self._button(control_node(spec.hold.control)), self._selection):
                     spec = replace(spec, hold=None)
             buttons.append(spec)
         return tuple(buttons)
@@ -244,7 +245,7 @@ class ResourceBedController(SessionController):
         if key == "richmat_classic_release":
             return True
         try:
-            button = self._button(int(key.removeprefix("richmat_classic_").removesuffix("_long")))
+            button = self._button(control_node(key))
         except ValueError:
             return False
         if key.endswith("_long"):

@@ -173,8 +173,12 @@ _RESOURCE_WORDS: Final[dict[str, str]] = {
 
 
 # Resources whose words alone mislead: the remote's Set key arms programming and
-# saves nothing itself.
-_RESOURCE_NAMES: Final[dict[str, str]] = {"com_set_old": "Program", "k_set_old": "Program"}
+# saves nothing itself, and the light key of the massage remotes is the light.
+_RESOURCE_NAMES: Final[dict[str, str]] = {
+    "com_set_old": "Program",
+    "k_set_old": "Program",
+    "com_msg_ubl_on_off_old": "Underbed light on/off",
+}
 
 
 def resource_label(name: str) -> str:
