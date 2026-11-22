@@ -536,17 +536,6 @@ def octo_snapshot_from_descriptor(
     return dict(octo) if isinstance(octo, Mapping) else None
 
 
-def pair_layout_from_descriptor(
-    descriptor: Mapping[str, Any] | None,
-) -> dict[str, Any] | None:
-    """Return the persisted generic motor-layout snapshot for one side."""
-    if not descriptor:
-        return None
-    caps = descriptor.get("capabilities") or {}
-    layout = caps.get(PAIR_LAYOUT_CAPABILITY_KEY)
-    return dict(layout) if isinstance(layout, Mapping) else None
-
-
 def single_data_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
     """Reconstruct standalone entry data from a paired child descriptor.
 
@@ -734,6 +723,8 @@ def build_pair_entry_data(
     pair's setup re-homes that entry's registry rows in place instead of letting
     the platforms recreate them (preserving per-side history/customizations).
     """
+    if any(item.get(CONF_BED_TYPE) == "sleep_assistant" for item in (left_data, right_data)):
+        raise ValueError("Sleep Assist supports standalone entries only")
     if any(item.get(CONF_BED_TYPE) == "personal_comfort" for item in (left_data, right_data)) and any(
         item.get(CONF_BED_TYPE) != "personal_comfort"
         or item.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}

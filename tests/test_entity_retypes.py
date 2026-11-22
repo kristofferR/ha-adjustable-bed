@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -17,6 +18,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.const import BED_TYPE_OCTO, DOMAIN
 from custom_components.adjustable_bed.entity_retypes import (
     ISSUE_PREFIX,
+    RETYPES,
     async_carry_over_retyped_entities,
     async_retyped_entities_built,
 )
@@ -392,7 +394,7 @@ async def test_the_repair_goes_once_nothing_names_the_old_entity(hass: HomeAssis
 
     # The user points the automation at the light; the next startup clears both.
     with patch(
-        "homeassistant.components.automation.automations_with_entity", return_value=[]
+        "custom_components.adjustable_bed.entity_retypes.entity_users", return_value=set()
     ):
         async_carry_over_retyped_entities(hass, entry, _runtime())
         await hass.async_block_till_done()
@@ -490,8 +492,24 @@ async def test_a_resolved_line_goes_even_if_the_issue_was_not_saved(hass: HomeAs
     assert light is not None
     registry.async_update_entity_options(light.entity_id, DOMAIN, {})
     with patch(
-        "homeassistant.components.automation.automations_with_entity", return_value=[]
+        "custom_components.adjustable_bed.entity_retypes.entity_users", return_value=set()
     ):
         async_carry_over_retyped_entities(hass, entry, _runtime())
         await hass.async_block_till_done()
     assert issues.async_get_issue(DOMAIN, issue_id) is None
+
+
+
+def test_v5_builds_the_new_entity_and_not_the_old_one() -> None:
+    """A row pointing at nothing loses the settings; building both, the sweep keeps both."""
+    from tests.entity_surface import devices
+
+    built = {
+        (entity.domain, (entity.unique_id or "").removeprefix("aa:"))
+        for device in asyncio.run(devices())
+        for entity in device.entities
+    }
+    for retype in RETYPES:
+        assert (retype.new_domain, retype.new_key) in built, retype
+        if not retype.keep_on:
+            assert (retype.old_domain, retype.old_key) not in built, retype

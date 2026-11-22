@@ -22,11 +22,9 @@ async def handle_comfy_control(call: ServiceCall) -> None:
     from .comfy import ComfyController
 
     targets, action = _call_targets(call), call.data["action"]
-    label = "KomfyD/ComfyDS control"
     await _preflight_and_execute(
         targets,
         ComfyController,
-        label,
         lambda c: c.control(action),
         validate=lambda c: c.validate_control(action),
         cancel_running=True,

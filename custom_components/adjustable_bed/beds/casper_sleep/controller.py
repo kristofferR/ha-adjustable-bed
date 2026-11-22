@@ -369,11 +369,11 @@ class CasperSleepController(BedController, CasperBaseActions):
         ):
             raise ValueError("Choose a sensor operation")
         if r.operation == "sensor_info" and self.kind != "sxb":
-            raise ValueError("s_init requires SXB")
+            raise ValueError("This sensor model cannot do that. Only the SXB sensor can")
         if r.operation in ("sensor_part", "sensor_report") and r.part not in (
             (1, 2) if self.kind == "mm" else (11, 12, 13)
         ):
-            raise ValueError("Unsupported sensor partition")
+            raise ValueError("Choose a sensor area this sensor offers")
 
     async def async_execute_casper_base_request(self, request: Request) -> None:
         r = request
@@ -485,7 +485,7 @@ class CasperRemoteController(CasperSleepController):
 
     def validate_casper_base_request(self, request: Request) -> None:
         if request.operation != "remote_find":
-            raise ValueError("This entry is a remote, not a bed or sensor")
+            raise ValueError("This device is a remote, so it has no bed or sensor settings")
 
     async def async_execute_casper_base_request(self, request: Request) -> None:
         self.validate_casper_base_request(request)

@@ -1018,7 +1018,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 # async_pair_now() clears the runtime bond marker itself, which
                 # editing entry.data alone would not do.
                 paired = bool(await coordinator.async_pair_now())
-            except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+            except Exception as err:
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
             if not paired and coordinator.pairing_supported is False:
@@ -1071,7 +1071,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         )
         try:
             await self.hass.config_entries.async_reload(self._entry_id)
-        except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+        except Exception as err:
             _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
             return False
         bonded = self._bonded_now()
@@ -1170,7 +1170,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                     use_services_cache=False,
                     **connect_kwargs,
                 )
-            except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+            except Exception as err:
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
 
@@ -1197,7 +1197,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                             err,
                         )
                         return False
-                    except Exception as err:  # noqa: BLE001 - the verifier decides
+                    except Exception as err:
                         pair_error = err
                         _LOGGER.warning(
                             "Repair: pairing %s raised (%s); verifying the bond",
@@ -1250,7 +1250,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                                 err,
                             )
                             bonded = True
-                    except Exception as err:  # noqa: BLE001
+                    except Exception as err:
                         _LOGGER.debug(
                             "Repair: bond verification inconclusive for %s: %s",
                             self._address,
@@ -1275,7 +1275,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 if client is not None:
                     try:
                         await client.disconnect()
-                    except Exception:  # noqa: BLE001
+                    except Exception:
                         pass
 
         if reload_entry_id is not None:

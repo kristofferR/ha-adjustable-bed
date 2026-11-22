@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
+    from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
     from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
@@ -133,6 +134,7 @@ if TYPE_CHECKING:
     from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
     from .silvermotion.controller import SilvermotionController as SilvermotionController
     from .simmons.controller import SimmonsController as SimmonsController
+    from .sleep_assistant.controller import SleepAssistantController as SleepAssistantController
     from .sleep_number.controller import SleepNumberController as SleepNumberController
     from .sleep_number.mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
@@ -146,6 +148,7 @@ if TYPE_CHECKING:
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .starcode.star_elevate import StarElevateController as StarElevateController
+    from .superior_sleep.controller import SuperiorSleepController as SuperiorSleepController
     from .suta.controller import SutaController as SutaController
     from .svane.controller import SvaneController as SvaneController
     from .symphony.controller import SymphonyController as SymphonyController
@@ -159,6 +162,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "SuperiorSleepController": "superior_sleep.controller",
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "N32MotionBedController": "n32_motion_bed.controller",
@@ -187,6 +191,7 @@ _EXPORT_MODULES = {
     'SertaMPRemoteController': 'serta_mp_remote',
     'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
     'ErgomotionAppController': 'ergomotion_app',
+    'BaseRemoteController': 'baseremote.controller',
     'RichmatClassicController': 'richmat_classic.controller',
     'Ergomotion4Controller': 'ergomotion4.controller',
     'RowControlController': 'row_control',
@@ -206,6 +211,7 @@ _EXPORT_MODULES = {
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
     "SealyController": ("sealy.controller", "SealyController"),
+    "SleepAssistantController": "sleep_assistant.controller",
     "YamadaController": ("keeson.yamada", "YamadaController"),
     "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
     "GlideawayMotionController": "glideaway_motion.controller",
@@ -310,6 +316,7 @@ __all__ = [
     'SertaMPRemoteController',
     'OmazzAdjustoIIIController',
     'ErgomotionAppController',
+    'BaseRemoteController',
     'RichmatClassicController',
     'Ergomotion4Controller',
     'RowControlController',

@@ -88,7 +88,7 @@ async def test_control_changes_compare_entity_sets_and_name_automations(
     changes = await async_control_changes(hass, entry, {**_caresse(), CONF_NAME: "Bedroom"})
 
     assert changes.known
-    assert "Memory 1" in changes.removed and "Under Bed Lights" in changes.removed
+    assert "Memory 1" in changes.removed and "Under-bed lights" in changes.removed
     assert "All motors down" in changes.added
     # Kept controls (address-based IDs) are neither added nor removed.
     assert "Back" not in changes.added + changes.removed

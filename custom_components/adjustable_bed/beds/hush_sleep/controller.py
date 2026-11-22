@@ -235,15 +235,15 @@ class HushSleepController(CasperSleepController):
             "sensor_anti_snore",
         ):
             if self.kind != "sxb":
-                raise ValueError("This setting requires SXB")
+                raise ValueError("This sensor model cannot do that. Only the SXB sensor can")
             return
         if op == "sensor_info":
             raise ValueError(
-                "Use sensor_time or sensor_query_time; firmware initialization is excluded"
+                "Use the sensor time or read sensor time operation instead"
             )
         if op == "sensor_report":
             if request.part not in ((1, 2, 3) if self.kind == "mm" else (1, 2)):
-                raise ValueError("Unsupported report partition")
+                raise ValueError("Choose a report area this sensor offers")
             return
         super().validate_casper_base_request(request)
 

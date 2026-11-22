@@ -537,7 +537,7 @@ async def test_new_day_report_request_resets_prior_aggregation_and_retains_other
     rig.controller._activate("day_report")
     rig.controller._handle_notification(bytes.fromhex("FFFFFFFF05000107"))
     rig.controller._handle_notification(bytes.fromhex("FFFFFFFF02000414010A1403010203040506"))
-    assert rig.controller.protocol_diagnostics["day_received_segments"] == "[1]"
+    assert rig.controller._state.to_updates()["day_received_segments"] == "[1]"
     request = MotionBedWrite(
         "sleep_report",
         (bytes.fromhex("FFFFFFFF0200130B001C04"),),
@@ -546,9 +546,9 @@ async def test_new_day_report_request_resets_prior_aggregation_and_retains_other
         historical_day=True,
     )
     await rig.controller.async_execute_motion_bed_write(request)
-    assert rig.controller.protocol_diagnostics["day_received_segments"] == "[]"
-    assert rig.controller.protocol_diagnostics["day_slots"] == str([0] * 24)
-    assert rig.controller.protocol_diagnostics["day_total"] is None
+    assert rig.controller._state.to_updates()["day_received_segments"] == "[]"
+    assert rig.controller._state.to_updates()["day_slots"] == str([0] * 24)
+    assert rig.controller._state.to_updates()["day_total"] is None
     assert rig.controller.protocol_diagnostics["brightness"] == 7
     assert rig.controller._route.historical_day and rig.controller._route.day_window_offset == 2
 
@@ -562,7 +562,7 @@ async def test_persistent_write_confirmation_and_profile_validation_precede_traf
         await rig.controller.async_execute_motion_bed_write(request)
     rig.client.write_gatt_char.assert_not_awaited()
     unsupported = MotionBedWrite("thermal_schedule", (STOP,), "thermal_schedule")
-    with pytest.raises(ValueError, match="unavailable"):
+    with pytest.raises(ValueError, match="does not offer"):
         await rig.controller.async_execute_motion_bed_write(unsupported)
     rig.client.write_gatt_char.assert_not_awaited()
 

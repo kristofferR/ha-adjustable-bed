@@ -344,8 +344,9 @@ async def test_massage_switch_shows_the_last_sent_command(runtime):
             await switch.async_turn_off()
         assert _written(client)[-1] == "e5fe1610000010e6"
         assert switch.is_on is False
+        # The integration's own disconnect says nothing about the bed.
         await coord.async_disconnect()
-        assert switch.is_on is None
+        assert switch.is_on is False
     finally:
         await switch.async_will_remove_from_hass()
 

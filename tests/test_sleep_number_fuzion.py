@@ -189,7 +189,7 @@ def test_auto_light_disable_uses_low_and_bound_side_is_enforced() -> None:
     controller, _client = controller_with_client()
     token = controller._command_side.set("left")
     try:
-        with pytest.raises(ValueError, match="physical bed side"):
+        with pytest.raises(ValueError, match="targeted side"):
             controller.validate_sleep_number_command("get_current_preset", {"side": "right"})
     finally:
         controller._command_side.reset(token)

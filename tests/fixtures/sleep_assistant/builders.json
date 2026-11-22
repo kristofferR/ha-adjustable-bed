@@ -1,0 +1,555 @@
+[
+  {
+    "id": "instruction_0",
+    "builder": "instruction",
+    "inputs": {
+      "value": 0
+    },
+    "expected_bytes": "aa03000a00040100000000faf355"
+  },
+  {
+    "id": "instruction_1",
+    "builder": "instruction",
+    "inputs": {
+      "value": 1
+    },
+    "expected_bytes": "aa03000a00040101000000f9f355"
+  },
+  {
+    "id": "instruction_2",
+    "builder": "instruction",
+    "inputs": {
+      "value": 2
+    },
+    "expected_bytes": "aa03000a00040102000000f8f355"
+  },
+  {
+    "id": "instruction_3",
+    "builder": "instruction",
+    "inputs": {
+      "value": 4
+    },
+    "expected_bytes": "aa03000a00040104000000f6f355"
+  },
+  {
+    "id": "instruction_4",
+    "builder": "instruction",
+    "inputs": {
+      "value": 8
+    },
+    "expected_bytes": "aa03000a00040108000000f2f355"
+  },
+  {
+    "id": "rgb_5",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 0,
+      "value": 1
+    },
+    "expected_bytes": "aa010010000a01000000000001bb00000038ef55"
+  },
+  {
+    "id": "rgb_6",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 0,
+      "value": 5
+    },
+    "expected_bytes": "aa010010000a01000000000005bb00000034ef55"
+  },
+  {
+    "id": "light_7",
+    "builder": "light",
+    "inputs": {
+      "value": 0,
+      "query": true
+    },
+    "expected_bytes": "aa01000901210000020000d155"
+  },
+  {
+    "id": "serial_identity_8",
+    "builder": "serial_identity",
+    "inputs": {
+      "serial": "12345678"
+    },
+    "expected_bytes": "3744304530303445333832323043414235344331"
+  },
+  {
+    "id": "clock_9",
+    "builder": "clock",
+    "inputs": {
+      "fields": [
+        20,
+        26,
+        11,
+        19,
+        4,
+        7,
+        30,
+        0
+      ]
+    },
+    "expected_bytes": "37333038313431413042313330343037314530303046"
+  },
+  {
+    "id": "alarm_10",
+    "builder": "alarm",
+    "inputs": {
+      "slot": 1,
+      "hour": 7,
+      "minute": 30,
+      "position": "0",
+      "week_mask": 0,
+      "enabled": true
+    },
+    "expected_bytes": "3742303730313037314530303130303030313436"
+  },
+  {
+    "id": "clear_alarm_11",
+    "builder": "clear_alarm",
+    "inputs": {
+      "slot": 1
+    },
+    "expected_bytes": "3742303730313030303030303030303030303743"
+  },
+  {
+    "id": "anti_snore_12",
+    "builder": "anti_snore",
+    "inputs": {
+      "level": 1,
+      "intensity": 2,
+      "package": 3,
+      "period": 4,
+      "movement": 5
+    },
+    "expected_bytes": "373831353031303230303030303330303030303530303030303030303030303430303633"
+  },
+  {
+    "id": "anti_snore_13",
+    "builder": "anti_snore",
+    "inputs": {
+      "level": 3,
+      "intensity": 2,
+      "package": 3,
+      "period": 4,
+      "movement": 5
+    },
+    "expected_bytes": "373831353033303030303032303030303033303030303035303030303030303430303631"
+  },
+  {
+    "id": "anti_hours_14",
+    "builder": "anti_hours",
+    "inputs": {
+      "begin": 6,
+      "end": 21
+    },
+    "expected_bytes": "374130363036303030303135303030303634"
+  },
+  {
+    "id": "storage_15",
+    "builder": "storage",
+    "inputs": {
+      "enabled": 0
+    },
+    "expected_bytes": "3630303437333635334430303836"
+  },
+  {
+    "id": "storage_16",
+    "builder": "storage",
+    "inputs": {
+      "enabled": 1
+    },
+    "expected_bytes": "3630303437333635334430313835"
+  },
+  {
+    "id": "storage_query_17",
+    "builder": "storage_query",
+    "inputs": {},
+    "expected_bytes": "3631303437333635334433463436"
+  },
+  {
+    "id": "bed_calibration_18",
+    "builder": "bed_calibration",
+    "inputs": {
+      "lift_time": 0,
+      "lift_speed": 0,
+      "down_time": 0,
+      "down_speed": 0
+    },
+    "expected_bytes": "aa05010900000000000000f055"
+  },
+  {
+    "id": "bed_calibration_19",
+    "builder": "bed_calibration",
+    "inputs": {
+      "lift_time": 4660,
+      "lift_speed": 86,
+      "down_time": 30874,
+      "down_speed": 188
+    },
+    "expected_bytes": "aa050109003412569a78bc8655"
+  },
+  {
+    "id": "gain_20",
+    "builder": "gain",
+    "inputs": {
+      "side": "0",
+      "value_hex": "12"
+    },
+    "expected_bytes": "3735303431323030313230303632"
+  },
+  {
+    "id": "gain_21",
+    "builder": "gain",
+    "inputs": {
+      "side": "1",
+      "value_hex": "ab"
+    },
+    "expected_bytes": "3735303441423030414230303330"
+  },
+  {
+    "id": "out_of_bed_22",
+    "builder": "out_of_bed",
+    "inputs": {
+      "queue": "0000000000000000",
+      "king": "0000000000000000"
+    },
+    "expected_bytes": "3744313330303030303030303030303030303030303030303030303030303030303030303646"
+  },
+  {
+    "id": "out_of_bed_23",
+    "builder": "out_of_bed",
+    "inputs": {
+      "queue": "0102030405060708",
+      "king": "1112131415161718"
+    },
+    "expected_bytes": "3744313330313032303330343035303630373038313131323133313431353136313731384137"
+  },
+  {
+    "id": "serial_identity_24",
+    "builder": "serial_identity",
+    "inputs": {
+      "serial": "00000000"
+    },
+    "expected_bytes": "3744304530303030303030303030414235343735"
+  },
+  {
+    "id": "clock_25",
+    "builder": "clock",
+    "inputs": {
+      "fields": [
+        20,
+        26,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "37333038313431413031303130313030303030303533"
+  },
+  {
+    "id": "rgb_26",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 1,
+      "value": 1,
+      "red": 16,
+      "green": 32,
+      "blue": 48
+    },
+    "expected_bytes": "aa010010000a01000000000101bb102030d7ef55"
+  },
+  {
+    "id": "rgb_27",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 1,
+      "value": 1,
+      "red": 0,
+      "green": 0,
+      "blue": 0
+    },
+    "expected_bytes": "aa010010000a01000000000101bb00000037ef55"
+  },
+  {
+    "id": "anti_snore_28",
+    "builder": "anti_snore",
+    "inputs": {
+      "level": 0,
+      "intensity": 2,
+      "package": 3,
+      "period": 4,
+      "movement": 5
+    },
+    "expected_bytes": "373831353030303030303030303030303030303030303030303030303030303030303732"
+  },
+  {
+    "id": "anti_snore_29",
+    "builder": "anti_snore",
+    "inputs": {
+      "level": 2,
+      "intensity": 2,
+      "package": 3,
+      "period": 4,
+      "movement": 5
+    },
+    "expected_bytes": "373831353032303030323030303030333030303030353030303030303030303430303632"
+  },
+  {
+    "id": "anti_hours_30",
+    "builder": "anti_hours",
+    "inputs": {
+      "begin": -1,
+      "end": 21
+    },
+    "expected_bytes": "374130363330303030303135303030303146"
+  },
+  {
+    "id": "instruction_31",
+    "builder": "instruction",
+    "inputs": {
+      "value": 16
+    },
+    "expected_bytes": "aa03000a00040110000000eaf355"
+  },
+  {
+    "id": "instruction_32",
+    "builder": "instruction",
+    "inputs": {
+      "value": 32
+    },
+    "expected_bytes": "aa03000a00040120000000daf355"
+  },
+  {
+    "id": "instruction_33",
+    "builder": "instruction",
+    "inputs": {
+      "value": 64
+    },
+    "expected_bytes": "aa03000a00040140000000baf355"
+  },
+  {
+    "id": "instruction_34",
+    "builder": "instruction",
+    "inputs": {
+      "value": 128
+    },
+    "expected_bytes": "aa03000a000401800000007af355"
+  },
+  {
+    "id": "instruction_35",
+    "builder": "instruction",
+    "inputs": {
+      "value": 256
+    },
+    "expected_bytes": "aa03000a00040100010000f9f355"
+  },
+  {
+    "id": "instruction_36",
+    "builder": "instruction",
+    "inputs": {
+      "value": 512
+    },
+    "expected_bytes": "aa03000a00040100020000f8f355"
+  },
+  {
+    "id": "instruction_37",
+    "builder": "instruction",
+    "inputs": {
+      "value": 1024
+    },
+    "expected_bytes": "aa03000a00040100040000f6f355"
+  },
+  {
+    "id": "instruction_38",
+    "builder": "instruction",
+    "inputs": {
+      "value": 2048
+    },
+    "expected_bytes": "aa03000a00040100080000f2f355"
+  },
+  {
+    "id": "instruction_39",
+    "builder": "instruction",
+    "inputs": {
+      "value": 4096
+    },
+    "expected_bytes": "aa03000a00040100100000eaf355"
+  },
+  {
+    "id": "instruction_40",
+    "builder": "instruction",
+    "inputs": {
+      "value": 8192
+    },
+    "expected_bytes": "aa03000a00040100200000daf355"
+  },
+  {
+    "id": "instruction_41",
+    "builder": "instruction",
+    "inputs": {
+      "value": 16384
+    },
+    "expected_bytes": "aa03000a00040100400000baf355"
+  },
+  {
+    "id": "instruction_42",
+    "builder": "instruction",
+    "inputs": {
+      "value": 32768
+    },
+    "expected_bytes": "aa03000a000401008000007af355"
+  },
+  {
+    "id": "instruction_43",
+    "builder": "instruction",
+    "inputs": {
+      "value": 65536
+    },
+    "expected_bytes": "aa03000a00040100000100f9f355"
+  },
+  {
+    "id": "instruction_44",
+    "builder": "instruction",
+    "inputs": {
+      "value": 131072
+    },
+    "expected_bytes": "aa03000a00040100000200f8f355"
+  },
+  {
+    "id": "instruction_45",
+    "builder": "instruction",
+    "inputs": {
+      "value": 8388608
+    },
+    "expected_bytes": "aa03000a000401000080007af355"
+  },
+  {
+    "id": "instruction_46",
+    "builder": "instruction",
+    "inputs": {
+      "value": 16777216
+    },
+    "expected_bytes": "aa03000a00040100000001f9f355"
+  },
+  {
+    "id": "instruction_47",
+    "builder": "instruction",
+    "inputs": {
+      "value": 134217728
+    },
+    "expected_bytes": "aa03000a00040100000008f2f355"
+  },
+  {
+    "id": "instruction_48",
+    "builder": "instruction",
+    "inputs": {
+      "value": 1073741824
+    },
+    "expected_bytes": "aa03000a00040100000040baf355"
+  },
+  {
+    "id": "rgb_49",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 0,
+      "value": 0
+    },
+    "expected_bytes": "aa010010000a01000000000000bb00000039ef55"
+  },
+  {
+    "id": "rgb_50",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 0,
+      "value": 2
+    },
+    "expected_bytes": "aa010010000a01000000000002bb00000037ef55"
+  },
+  {
+    "id": "rgb_51",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 0,
+      "value": 3
+    },
+    "expected_bytes": "aa010010000a01000000000003bb00000036ef55"
+  },
+  {
+    "id": "rgb_52",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 0,
+      "value": 4
+    },
+    "expected_bytes": "aa010010000a01000000000004bb00000035ef55"
+  },
+  {
+    "id": "rgb_53",
+    "builder": "rgb",
+    "inputs": {
+      "mode": 0,
+      "value": 6
+    },
+    "expected_bytes": "aa010010000a01000000000006bb00000033ef55"
+  },
+  {
+    "id": "clear_alarm_54",
+    "builder": "clear_alarm",
+    "inputs": {
+      "slot": 2
+    },
+    "expected_bytes": "3742303730323030303030303030303030303742"
+  },
+  {
+    "id": "clear_alarm_55",
+    "builder": "clear_alarm",
+    "inputs": {
+      "slot": 3
+    },
+    "expected_bytes": "3742303730333030303030303030303030303741"
+  },
+  {
+    "id": "clear_alarm_56",
+    "builder": "clear_alarm",
+    "inputs": {
+      "slot": 4
+    },
+    "expected_bytes": "3742303730343030303030303030303030303739"
+  },
+  {
+    "id": "clear_alarm_57",
+    "builder": "clear_alarm",
+    "inputs": {
+      "slot": 5
+    },
+    "expected_bytes": "3742303730353030303030303030303030303738"
+  },
+  {
+    "id": "clear_alarm_58",
+    "builder": "clear_alarm",
+    "inputs": {
+      "slot": 6
+    },
+    "expected_bytes": "3742303730363030303030303030303030303737"
+  },
+  {
+    "id": "constant_59",
+    "builder": "constant",
+    "inputs": {
+      "name": "ALARM_QUERY"
+    },
+    "expected_bytes": "37313032303630363830"
+  },
+  {
+    "id": "constant_60",
+    "builder": "constant",
+    "inputs": {
+      "name": "ANTI_SNORE_QUERY"
+    },
+    "expected_bytes": "373930333136303230313641"
+  }
+]

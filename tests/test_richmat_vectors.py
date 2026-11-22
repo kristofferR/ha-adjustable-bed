@@ -379,6 +379,14 @@ def _census(key: str) -> set[str]:
         frames.update(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in (0, 2, 3, 5))
         frames.update(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP)
         return {frame.hex() for frame in frames}
+    if key == "richmat_classic_baseremote":
+        # Base Remote has no desk, manufacturing or TEST command path.
+        return {frame.hex() for frame in (
+            classic.release("RAW"), classic.release("FRAMED"), classic.INITIALIZE,
+            classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY,
+            *classic.alarm(0, 0),
+            *(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP),
+        )}
     if key.removeprefix("richmat_classic_") in RESOURCE_APPS:
         # These bed-only apps do not expose the older apps' desk or aroma writers.
         # Parameterized alarm/RGB/timeout builders have their own literal harness.
@@ -398,6 +406,14 @@ def _census(key: str) -> set[str]:
             *(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in range(6)),
         }
         return {frame.hex() for frame in frames}
+    if key == "richmat_classic_sleepfunction":
+        return {frame.hex() for frame in (
+            classic.release("RAW"), *(classic.release("FRAMED", mode) for mode in (0, 1, 2)), classic.INITIALIZE,
+            classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY,
+            *classic.alarm(0, 0),
+            *(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP),
+            *(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in (0,2,3,5)),
+        )}
     if key in ("richmat_classic_lp2", "richmat_classic_bedsmart"):
         return {classic.release("RAW").hex(), classic.release("FRAMED").hex(), classic.INITIALIZE.hex(), classic.ALARM_QUERY.hex(), classic.LAMP_QUERY.hex(), classic.AROMA_QUERY.hex()}
     if key.startswith("richmat_classic_"):
@@ -445,3 +461,22 @@ def test_nisco_query_addendum_round_trips_through_codec(source_id: str) -> None:
     else:
         assert row["literal_hex"] == row["expected_hex"]
     assert _decode(expected) == expected
+
+
+def test_super_colchones_complete_frozen_wire_corpus():
+    """Both app formats, including all three non-command prefixes."""
+    from tests.super_colchones_vectors import WIRE
+
+    assert len(WIRE) == 58
+    prefixes = {
+        (110, 2, 1): "deviceFunctionItemExitLimit",
+        (110, 8, 1): "deviceFunctionItemCheckClock",
+        (110, 10, 0): "deviceFunctionItemCheckLight",
+    }
+    for row in WIRE:
+        args = row["inputs"]
+        actual = codec.function(
+            args["opcode"], action=prefixes.get(tuple(args["prefix"]), ""),
+            single=args["mode"] == "raw",
+        )
+        assert actual == bytes.fromhex(row["expected_bytes"]), row["id"]

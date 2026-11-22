@@ -456,7 +456,7 @@ class RemacroController(BedController):
                 elapsed = offset
                 try:
                     await self.write_command(self._serial.hold(code), cancel_event=event)
-                except Exception as error:  # noqa: BLE001 - the apps schedule each STOP independently
+                except Exception as error:
                     failure = failure or error
             if failure is not None:
                 raise failure

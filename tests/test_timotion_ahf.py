@@ -19,7 +19,6 @@ from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.timotion_ahf import (
     STATUS_READINESS_TIMEOUT_SECONDS,
-    TiMOTIONAhfCommands,
     TiMOTIONAhfController,
     build_timotion_ahf_command,
 )
@@ -333,7 +332,7 @@ async def test_idle_disconnected_hold_reconnects_then_checks_current_status(
     ):
         if lock_mask:
             # The live check rejects it the way preflight would have.
-            with pytest.raises(ServiceValidationError, match="disabled by status lock bit 0"):
+            with pytest.raises(ServiceValidationError, match="locked on the bed"):
                 await hass.services.async_call(DOMAIN, "hold_control", call_data, blocking=True)
         else:
             await hass.services.async_call(DOMAIN, "hold_control", call_data, blocking=True)
@@ -411,7 +410,7 @@ async def test_app_action_vectors_and_finite_button_pulse(
 
 
 def test_command_builder_is_immutable_neutral_based_and_eleven_bytes() -> None:
-    packet = build_timotion_ahf_command(group1=TiMOTIONAhfCommands.CONTROL_2_UP)
+    packet = build_timotion_ahf_command(group1=0x04)
 
     assert packet == bytes.fromhex("ddddff0404000000000000")
     assert len(packet) == 11
@@ -763,7 +762,7 @@ def test_lock_mask_gates_only_app_actions(mask: int, disabled: set[str]) -> None
             key not in disabled
         )
         if key in disabled:
-            with pytest.raises(ValueError, match="disabled by status lock bit"):
+            with pytest.raises(ValueError, match="locked on the bed"):
                 controller.validate_hold_control(key, 100)
         else:
             controller.validate_hold_control(key, 100)

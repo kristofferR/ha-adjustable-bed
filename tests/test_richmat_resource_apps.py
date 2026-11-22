@@ -130,7 +130,7 @@ async def test_direct_settings_query_alarm_and_light_without_movement_wrapping(c
     assert packets(coordinator) == ["6e05a00013", "6e060545be"]
     assert ctrl._receive.alarm_enabled is None
     coordinator.client.write_gatt_char.reset_mock()
-    with pytest.raises(ValueError, match="LED"):
+    with pytest.raises(ValueError, match="reported a light"):
         await ctrl.execute_request(p.Request("lamp_timeout", seconds=300))
     ctrl._notification(ctrl._session, ctrl._session.notify, bytearray.fromhex("6E0E00037F"))
     await ctrl.execute_request(p.Request("lamp_timeout", seconds=300))
@@ -259,3 +259,14 @@ def test_alarm_ownership_order_combinations_and_unreachable_helpers():
         0x83,
     }
     assert not {0x30, 0x80, 0x7A, 0x7D} & all_outputs
+
+
+async def test_write_waits_for_another_gatt_operation_to_finish():
+    ctrl, coordinator = controller()
+    async with ctrl.ble_lock:
+        send = asyncio.create_task(ctrl._send(b"\x01"))
+        for _ in range(3):
+            await asyncio.sleep(0)
+        assert not coordinator.client.write_gatt_char.await_count
+    await send
+    assert packets(coordinator) == ["01"]

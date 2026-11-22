@@ -227,10 +227,14 @@ LATE_CLOCK_SYNC = frozenset(
         "DoubleSleepController",
         "GmmotorController",
         "GoodVibeController",
+        "HJBedController",
+        "LuunaController",
         "MajesticHomeController",
         "MlilyRemoteController",
         "MotionBedController",
         "OkimikiController",
+        "RichmatAppController",
+        "SleepController",
         "SonicSleepController",
         "SutaController",
     }
@@ -547,6 +551,10 @@ def _argument_commands(controller: Any) -> list[Command]:
         out.append(Command(name, _method(method, *args, **kwargs), declared))
 
     if _flag(c, "supports_light_level_control"):
+        if c._coordinator.bed_type == "sleep_assistant":
+            # Brightness carries RGB too. Prepare an explicit color, as the
+            # native light caller does, instead of guessing one after reconnect.
+            add(True, "set_light_color", "light_color_before_brightness", (255, 128, 0))
         low, high = int(_value(c, "light_level_min", 0)), int(_value(c, "light_level_max", 10))
         mid = (low + high) // 2
         levels = (
@@ -1146,6 +1154,7 @@ class Coordinator:
         self.name = "Contract Test Bed"
         self.ble_device_name = "Contract Test Bed"
         self.observed_ble_device_name = None
+        self.ble_model = None
         self.motor_count = 2
         self.has_massage = True
         self.is_shutting_down = False
@@ -1158,7 +1167,8 @@ class Coordinator:
         self.controller_state: dict[str, Any] = {}
         self.capability_controller = None
         self.starcode_app_retained_state = None
-        self.furnimove_widget_state = None
+        self.furnimove_widget_state = (False, None, None)
+        self.rize_home_source = "button"
         self.okin_cb = None
         self.client: Any = None
         self.controller: Any = None
@@ -1224,7 +1234,7 @@ class Coordinator:
     remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
     remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
-    remember_sleep_number_mcr_client_id = _ignore
+    remember_sleep_number_mcr_client_id = remember_richmat_mh_snapshot = _ignore
     _ble_bond_established = False
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore
@@ -1332,6 +1342,18 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "super_colchones":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
+    if bed_type == "superior_sleep":
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="ss350",
+            entry_data={"ble_device_name": "Smartbed123"},
+            layout_id="superior_sleep:nordic",
+        )
+    if bed_type == "dreamsense":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="blue",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "blue", const.CONF_PRODUCT_TYPE: "blue"})
     if bed_type == "saatva":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
@@ -1370,6 +1392,8 @@ def default_scenario(bed_type: str) -> Scenario:
     replies: dict[str, str] = {}
     if bed_type == "sealy_posturematic":
         data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
+    if bed_type == "sleep_assistant":
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="sleep_assistant")
     if bed_type == const.BED_TYPE_LINX:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
@@ -1611,6 +1635,10 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(dataclasses.replace(default_scenario("symphony"),
             id=f"symphony:{product}:{selector}", protocol_variant=selector,
             entry_data={const.CONF_PRODUCT_TYPE: product}, layout_id="symphony"))
+    for product in ("afeg302", "afeg350"):
+        for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
+            scenarios.append(Scenario(id=f"super_colchones:{product}:{route}", bed_type="super_colchones",
+                protocol_variant=product, entry_data={const.CONF_PROTOCOL_VARIANT: product}, layout_id=f"super_colchones:{route}"))
     for route in ("S1", "S3", "S4", "S5", "S6"):
         scenarios.append(Scenario(id=f"luniosmart:{route}", bed_type="luniosmart", layout_id=f"luniosmart:{route}"))
     for route in ("Nordic", "W2", "W3", "W4", "W5"):
@@ -1889,9 +1917,9 @@ def route_scenarios() -> list[Scenario]:
                     + ("" if layout_id == const.BED_TYPE_RICHMAT_CLASSIC_APPS else ":nordic"),
                     bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
                     protocol_variant=app,
-                    entry_data={const.CONF_PRODUCT_TYPE: layout},
+                    entry_data={const.CONF_PRODUCT_TYPE: layout, **({const.CONF_PROTOCOL_VARIANT: app} if app == "sleepfunction" else {})},
                     factory_kwargs={"device_name": "6BRM-advertised"}
-                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart") else {},
+                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart", "baseremote") else {},
                     layout_id=layout_id,
                 )
             )
@@ -1918,6 +1946,14 @@ def route_scenarios() -> list[Scenario]:
                     layout_id="eshine_okin",
                 )
             )
+    if "superior_sleep" in const.SUPPORTED_BED_TYPES:
+        for product in ("ss350", "ss650"):
+            for route, name in (("nordic", "Smartbed123"), ("ble", "BLE123")):
+                scenarios.append(Scenario(
+                    id=f"superior_sleep:{product}:{route}", bed_type="superior_sleep",
+                    protocol_variant=product, layout_id=f"superior_sleep:{route}",
+                    factory_kwargs={"device_name": name}, entry_data={"ble_device_name": name},
+                ))
     if "rize_home" in const.SUPPORTED_BED_TYPES:
         for product in ("remedy_iii", "contempo_iv"):
             scenarios.append(Scenario(
@@ -1940,12 +1976,21 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("luunarise2", "AHRM", "richmat_classic_apps_nordic"),
     ("powercool", "AHRM", "richmat_classic_apps"),
     ("powercool", "E3RM", "richmat_classic_apps_nordic"),
+    ("sleepfunction", "6BRM", "richmat_classic_apps_nordic"),
+    ("sleepfunction", "YGRM", "richmat_classic_apps"),
+    ("sleepfunction", "DXRM", "richmat_classic_apps"),
+    ("sleepfunction", "DHRM", "richmat_classic_apps"),
     ("bedsmart", "DHRM", "richmat_classic_apps"),
     ("bedsmart", "6BRM", "richmat_classic_apps_nordic"),
     ("lp2", "APRM", "richmat_classic_apps"),
     ("lp2", "6BRM", "richmat_classic_apps_nordic"),
+    # 6BRM's motion controls differ between the formats; each format lists its own.
+    ("bedsmart", "6BRM", "richmat_classic_apps"),
+    ("lp2", "6BRM", "richmat_classic_apps"),
     ("jerome2", "6BRM", "richmat_classic_apps"),
     ("jerome2", "DXRM", "richmat_classic_apps_nordic"),
+    ("baseremote", "6BRM", "richmat_classic_apps"),
+    ("baseremote", "6BRM", "richmat_classic_apps_nordic"),
     # Independent accepted Richmat resource apps, both GATT-selected wire formats.
     *((app, "6BRM", wire) for app in ("lady_americana", "acaa", "sta2", "zerogravity")
       for wire in ("richmat_classic_apps", "richmat_classic_apps_nordic")),
@@ -2170,6 +2215,18 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    # Dream Sense: each saved BED product plus all six accepted GATT routes.
+    from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
+    for product in DREAMSENSE_PROFILES:
+        scenarios.append(Scenario(
+            id=f"dreamsense:{product}", bed_type="dreamsense", protocol_variant=product,
+            entry_data={"protocol_variant": product, "product_type": product}, layout_id="dreamsense",
+        ))
+    for route in range(1, 6):
+        scenarios.append(dataclasses.replace(
+            default_scenario("dreamsense"), id=f"dreamsense:gatt:{route}",
+            layout_id=f"dreamsense:gatt:{route}",
+        ))
     # Linx 1.0.7: all independent model/route combinations, preserving
     # the existing Keeson JSON scenarios and their characteristic fixtures.
     for model in ("quest", "orbes"):
@@ -2179,6 +2236,15 @@ def build_scenarios() -> list[Scenario]:
                 protocol_variant=route, layout_id="linx",
                 entry_data={"product_type": model, "ble_device_name": "KSWF07D00000000"},
             ))
+    for name, lighting, presets in (
+        ("selected", "4193", ["o1", "o2", "o3", "o4"]),
+        ("palette", "sleep8", ["o2", "o5"]),
+    ):
+        scenarios.append(Scenario(id=f"sleep_assistant:{name}", bed_type="sleep_assistant",
+            layout_id="sleep_assistant", entry_data={"sleep_assistant_presets": presets,
+                "sleep_assistant_controls": ["m1", "m2", "m3", "m4", "m7", "m8"],
+                "sleep_assistant_lighting": lighting, "has_light": True},
+            replies={"*": "dd000000000000000000000000004002000000"}))
     scenarios.extend(ultramatic_scenarios())
     scenarios.extend(mh_app_scenarios())
     # Bedgear A12: each selected layout, dynamic zone array and independent M gate.
@@ -2309,13 +2375,13 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"rize_home", "okin_64bit", "betterliving2", "ultramatic_smart_bed"}:
-            session = SimpleNamespace(async_start_notify=controller.start_notify)
+        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed"}:
+            session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

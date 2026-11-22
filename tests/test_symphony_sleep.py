@@ -444,7 +444,7 @@ async def test_family_alarm_all_targets_validated_before_requested_writes_and_la
     mock_bleak_client.write_gatt_char.reset_mock()
     original_live = second.controller._live
     second.controller._live = MagicMock(side_effect=ConnectionError("invalid later GATT"))
-    with pytest.raises(ServiceValidationError, match="invalid later GATT"):
+    with pytest.raises(ServiceValidationError, match="Reconnect the bed"):
         await hass.services.async_call(DOMAIN, service, {"device_id": devices, **data}, blocking=True)
     assert not frames(mock_bleak_client)
     second.controller._live = original_live

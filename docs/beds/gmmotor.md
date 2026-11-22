@@ -6,11 +6,11 @@
 
 ## Known Models
 
-- Exact GM Control product codes, selected in setup.
-- `V9RM`, `V9RM (standard)` and `V9RM (split head)` retain distinct catalogs. Select the configuration actually used by the app.
-- `FWRM` and `WFRM` use the dedicated desk controller.
-- MM and SXB sleep modules are separate Bluetooth devices and separate integration entries.
-- Shared Bluetooth names or UUIDs do not establish that another app uses this catalog.
+- GM Control product codes, selected in setup.
+- `V9RM`, `V9RM (standard)` and `V9RM (split head)` have different controls. Pick the one your app uses.
+- `FWRM` and `WFRM` are desk controllers.
+- MM and SXB sleep modules are separate Bluetooth devices and are added as separate beds.
+- Another app's bed with a similar Bluetooth name does not use these controls.
 
 ## Apps
 
@@ -22,16 +22,16 @@
 
 | Feature | Product controller | FWRM / WFRM desk | MM / SXB module |
 |---------|--------------------|------------------|-----------------|
-| Motor Control | Exact named app controls and holds | Up, down, reset | None |
-| Position Feedback | Raw indexed reports; no inferred axis mapping | Raw height, unit, bounds and state | None |
-| Memory Presets | Exact product controls, including state-dependent recall/program gestures | Three short recalls; long memory callback sends nothing | None |
-| Massage | Exact product controls; bottom countdown where admitted; **Massage: Timer** select for products with several fixed timers | None | None |
-| Lights | Product controls; RGB/timeout menu requires its capability reply | None | None |
-| Alarms | Countdown or repeat table according to product; requires clock reply | None | None |
-| Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | Incoming raw state only |
-| Sleep Monitoring | BLE module name query where admitted | None | **Live sleep data** switch; heart rate, breathing rate, in bed, snoring and body movement; part settings, day/month reports, clock, raw sensitivity query on SXB |
-| Paired Beds | Separate addresses retain their own product and app side; one address requires that product's side choices | Separate physical devices | Separate physical devices |
-| Firmware / Cloud / Bed Network | Outside integration boundary | Outside integration boundary | Outside integration boundary |
+| Motor Control | The app's controls for your product, with the app's names | Up, down, reset | None |
+| Position Feedback | ❌ Not shown as bed positions | Desk height, unit, limits and state | None |
+| Memory Presets | Your product's recall and save controls; where the app saves with a long press, you get a **Save …** button | Three memory recalls; no save | None |
+| Massage | Your product's controls; a countdown where the product has one; **Massage timer** select for products with several fixed timers | None | None |
+| Lights | Your product's controls; the RGB and timeout controls appear once the bed reports it has them | None | None |
+| Alarms | Countdown or repeating alarms, by product; appear once the bed answers a clock request | None | None |
+| Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | ❌ |
+| Sleep Monitoring | `sleep_name` request on products with sleep monitoring | None | **Live sleep data** switch; heart rate, breathing rate, in bed, snoring and body movement; on SXB also settings, day and month reports and clock |
+| Paired Beds | Two addresses each keep their own product and side; one address offers the sides its product has | Separate devices | Separate devices |
+| Firmware updates, cloud and bed Wi-Fi | ❌ | ❌ | ❌ |
 
 ## Protocol Details
 
@@ -71,12 +71,12 @@ without retry. Product and sleep sessions share one native-write mutex within HA
 
 ## Detection / Setup
 
-1. Choose **GM Control**, then the exact product code and its app side. A matching
+1. Choose **GM Control app**, then the exact product code and its app side. A matching
    raw Bluetooth name supplies a suggestion; it cannot resolve a remote picker.
 2. For an app remote picker or QR code, select its resulting concrete product.
    `QRRM` itself is not a final controller profile.
-3. Choose **GM Control MM sleep module** or **GM Control SXB sleep module** for an
-   independent module. Never select a sensor mode from the bed's transport UUID.
+3. Choose **GM Control sleep module (name starts with RM-)** (MM) or **GM Control
+   sleep module (name starts with HJ-)** (SXB) for an independent module. Never select a sensor mode from the bed's transport UUID.
 
 The app's name filter is a case-sensitive substring test, with uppercase product
 selection and explicit aliases afterward. HA background matchers require a
@@ -98,11 +98,11 @@ replies are still obtained separately for each connection.
 
 ### Home Assistant setup
 
-Choose **GM Control**, its exact product/configuration and the app bed side.
+Choose **GM Control app**, its exact product/configuration and the app bed side.
 Standard and split-head catalogs remain distinct. Remote pickers and QR codes
 require the resulting concrete product; shared services cannot select it.
 Product-owned controls use their exact labels and gestures, without generic
-motor-count or inferred-axis settings. FWRM/WFRM select a dedicated desk route.
+motor-count or axis settings. FWRM/WFRM select a dedicated desk route.
 
 **GM Control MM sleep module** and **GM Control SXB sleep module** are separate
 Bluetooth entries. Each physical address owns its session, and a paired bed
@@ -113,10 +113,16 @@ covers commands, raw state and static-only status.
 
 ## Commands
 
-The named buttons come from the selected catalog. The card places motor,
-preset, memory, massage and light buttons in their own sections and the rest
-under Utility, with continuous holds for sustain actions and separate buttons
-for finite short/long callbacks. The `hold_control` action
+The named buttons come from the selected catalog, named the way the app names
+them. The card places motor, preset, memory, massage and light buttons in their
+own sections and the rest under Utility, disabled by default, with continuous
+holds for sustain actions and separate buttons for finite short/long callbacks.
+A preset's or memory's own long operand saves it, so that long press is its
+**Save …** button. Another long operand is a disabled "(long press)" button; a
+long press that writes only what its short press writes has no button. Empty
+app slots and menu headings that send no command have none either; an empty
+slot that sends one takes that command's name. A control the app lists twice
+has one button. The `hold_control` action
 accepts the button's `held_control` identifier and a bounded duration.
 
 ### Example: 6BRM product, framed Left

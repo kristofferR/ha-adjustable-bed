@@ -252,9 +252,9 @@ CONNECTION_MODE_IDLE: Final = "idle"
 CONNECTION_MODE_ALWAYS: Final = "always"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
-# Global (not per-entry) toggle to suppress automatic Bluetooth discovery cards.
-# Stored separately via discovery_settings, surfaced as a checkbox in the options
-# flow. Manual "Add Integration" is unaffected.
+# The key a legacy per-entry copy of the integration-wide discovery switch used.
+# The switch lives in discovery_settings' own Store and is set from the "Add
+# Integration" menu; entries only drop this key (schema 5.2 and options saves).
 CONF_DISABLE_DISCOVERY: Final = "disable_discovery"
 CONF_BLE_DEVICE_NAME: Final = "ble_device_name"
 CONF_OCTO_PIN: Final = "octo_pin"
@@ -438,6 +438,7 @@ BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniM
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
+BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
 BED_TYPE_ONLYSNORE: Final = "onlysnore"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
 BED_TYPE_SYMPHONY_SLEEP: Final = "symphony_sleep"
@@ -499,6 +500,7 @@ BED_TYPE_GOODVIBE: Final = "goodvibe"
 BED_TYPE_MLILY: Final = "mlily"
 BED_TYPE_MAJESTICHOME: Final = "majestichome"
 BED_TYPE_OKIMIKI: Final = "okimiki"
+BED_TYPE_DREAMSENSE: Final = "dreamsense"
 BED_TYPE_SAATVA: Final = "saatva"
 BED_TYPE_BOBPOWERBASE: Final = "bobpowerbase"
 BED_TYPE_MLILY_REMOTE: Final = "mlily_remote"
@@ -547,7 +549,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_DREAMSENSE, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 ).union({BED_TYPE_BETTERLIVING2})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
@@ -568,6 +570,7 @@ BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Resident Adjustable Base 1.0.0, com.okin.resident.release, fixed 36_33_01a table.
 BED_TYPE_RESIDENT: Final = "resident"
 BED_TYPE_ULTRAMATIC_SMART_BED: Final = "ultramatic_smart_bed"
+BED_TYPE_SUPERIOR_SLEEP: Final = "superior_sleep"
 BED_TYPE_RIZE_HOME: Final = "rize_home"
 BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
 BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
@@ -579,6 +582,7 @@ BED_TYPE_MLINE: Final = "mline"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
 BED_TYPE_SLEEP_EVOLUTION: Final = "sleep_evolution"
 BED_TYPE_WSILVER_LEGACY: Final = "wsilver_legacy"
+BED_TYPE_SUPER_COLCHONES: Final = "super_colchones"
 BED_TYPE_SONICSLEEP: Final = "sonicsleep"
 BED_TYPE_LUNIOSMART: Final = "luniosmart"
 BED_TYPE_HUSH_BASE: Final = "hush_base"
@@ -758,6 +762,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_CHEERSSLEEP,
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
+    BED_TYPE_SLEEP_ASSISTANT,
     BED_TYPE_ONLYSNORE,
     BED_TYPE_ENSO,
     BED_TYPE_SEALY_POSTUREMATIC,
@@ -775,6 +780,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_MLILY,
     BED_TYPE_MAJESTICHOME,
     BED_TYPE_OKIMIKI,
+    BED_TYPE_DREAMSENSE,
     BED_TYPE_SAATVA,
     BED_TYPE_BOBPOWERBASE,
     BED_TYPE_MLILY_REMOTE,
@@ -800,6 +806,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_MLINE,
     BED_TYPE_SLEEP_EVOLUTION,
     BED_TYPE_WSILVER_LEGACY,
+    BED_TYPE_SUPER_COLCHONES,
     BED_TYPE_SONICSLEEP,
     BED_TYPE_LUNIOSMART,
     BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
@@ -845,6 +852,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_RESIDENT,
     BED_TYPE_RIZE_HOME,
+    BED_TYPE_SUPERIOR_SLEEP,
     BED_TYPE_ULTRAMATIC_SMART_BED,
     BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_COMFORT_ENHANCEMENT3,
@@ -970,11 +978,13 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_DREAMSENSE,
         BED_TYPE_PERSONAL_COMFORT,
         BED_TYPE_BEDGEAR,
         BED_TYPE_L2MOTION,
         BED_TYPE_SLEEP_EVOLUTION,
         BED_TYPE_WSILVER_LEGACY,
+        BED_TYPE_SUPER_COLCHONES,
         BED_TYPE_SONICSLEEP,
         BED_TYPE_LUNIOSMART,
         BED_TYPE_MOTOMOTION,
@@ -1022,6 +1032,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_RESIDENT,
         BED_TYPE_RIZE_HOME,
+    BED_TYPE_SUPERIOR_SLEEP,
         BED_TYPE_ULTRAMATIC_SMART_BED,
         BED_TYPE_OKIN_MOTIONBED,
         BED_TYPE_COMFORT_ENHANCEMENT3,
@@ -1786,11 +1797,11 @@ SIMMONS_VARIANT_INCLINED_SMARTBED: Final = "simmons_inclined_smartbed"
 SIMMONS_NAME_RULE_VARIANTS: Final = frozenset({VARIANT_AUTO, SIMMONS_VARIANT_INCLINED})
 SIMMONS_VARIANTS: Final = {
     VARIANT_AUTO: "Regular bed (recommended)",
-    SIMMONS_VARIANT_OKIN: "Regular bed, OKIN-name protocol",
-    SIMMONS_VARIANT_SMARTBED: "Regular bed, SmartBed-name protocol",
-    SIMMONS_VARIANT_INCLINED: "Inclined bed, protocol from the Bluetooth name",
-    SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, OKIN-name protocol",
-    SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, SmartBed-name protocol",
+    SIMMONS_VARIANT_OKIN: "Regular bed, as for an OKIN Bluetooth name",
+    SIMMONS_VARIANT_SMARTBED: "Regular bed, as for a SmartBed Bluetooth name",
+    SIMMONS_VARIANT_INCLINED: "Inclined bed, chosen by its Bluetooth name",
+    SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, as for an OKIN Bluetooth name",
+    SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, as for a SmartBed Bluetooth name",
 }
 # AdjustaMattress 1.6.0: model and manual layout are independent choices.
 ADJUSTAMATTRESS_LAYOUTS: Final = (
@@ -1799,8 +1810,8 @@ ADJUSTAMATTRESS_LAYOUTS: Final = (
 )
 ADJUSTAMATTRESS_VARIANTS: Final = {
     VARIANT_AUTO: "AdjustaBed (recommended)",
-    **{f"P{model}_L{layout}": f"{name} (P{model}: {transport})"
-       for model, transport in enumerate(("CB", "JLDP", "CB24", "SleepSnore"), 1)
+    **{f"P{model}_L{layout}": f"{name} (receiver P{model})"
+       for model in range(1, 5)
        for layout, name in enumerate(ADJUSTAMATTRESS_LAYOUTS)},
 }
 # Adjustable bed (Lumbar) app: "auto" applies the app's Bluetooth-name rule.
@@ -2782,7 +2793,7 @@ OKIN_64BIT_VARIANT_CUSTOM: Final = "custom"
 OKIN_64BIT_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     OKIN_64BIT_VARIANT_NORDIC: "Standard receiver",
-    OKIN_64BIT_VARIANT_CUSTOM: "Custom OKIN receiver",
+    OKIN_64BIT_VARIANT_CUSTOM: "Receiver that needs Bluetooth pairing",
 }
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does
@@ -3006,6 +3017,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement
     BED_TYPE_ADJUSTABLE_BED: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
+    BED_TYPE_SUPERIOR_SLEEP: (10, 100),
     BED_TYPE_RIZE_HOME: (3, 200),  # Rize Home fixed 200 ms refresh; bounded HA tap.
     BED_TYPE_OKIN_MOTIONBED: (5, 200),  # Fixed 200 ms app refresh, ~1 s HA tap.
     BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),

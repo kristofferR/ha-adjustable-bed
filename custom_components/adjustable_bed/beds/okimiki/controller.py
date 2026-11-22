@@ -18,6 +18,7 @@ from ...card import CARD_HIDDEN, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...execution import ExecutionCapabilities
 from ...profiles.okimiki import CATALOG, CONTROLS, LIGHT_DELAY_S, PRODUCTS, QUERY_S, SAVE_S, TICK_S
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
@@ -375,11 +376,11 @@ class OkimikiController(GoodVibeController):
         seconds = self._requests.get("seconds") if self.supports_lights else None
         repeat = self.model.alarm == "repeat"
         # The last record per slot, as the edit action reads it.
-        latest = {row.id: row for row in getattr(self, "_alarms", [])} if repeat else {}
+        latest = {row.id: row for row in self._alarms} if repeat else {}
         alarms = [latest[slot] for slot in sorted(latest)]
         self.forward_controller_state_updates(
             DURATION(seconds if type(seconds) is int else None),
-            ALARM_COUNT(len(alarms) if repeat and getattr(self, "_link", None) is not None else None),
+            ALARM_COUNT(len(alarms) if repeat and self._link is not None else None),
             ALARM_RECORDS([_alarm_record(row) for row in alarms]),
         )
 
@@ -408,6 +409,8 @@ class OkimikiController(GoodVibeController):
             ControllerStateSensorSpec(
                 "okimiki_alarms", "okimiki_alarms", ALARM_COUNT, "mdi:alarm",
                 attribute_keys=(ALARM_RECORDS,),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 
@@ -494,7 +497,7 @@ class OkimikiController(GoodVibeController):
             raise ValueError("This control has no save action")
         context = current_command_context()
         if context is not None and context.lease is not None and not control.held:
-            raise ValueError("Only motor controls support renewable holds")
+            raise invalid("control_hold_renewal_not_supported")
         loop = asyncio.get_running_loop()
         started = loop.time()
         deadline = started + self.leased_hold_ms(duration) / 1000

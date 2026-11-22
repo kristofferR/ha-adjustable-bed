@@ -24,7 +24,8 @@ timing metadata per remote code:
 - Base (production): `https://2df12gl0m0.execute-api.eu-central-1.amazonaws.com/prod`
 - `GET /mobile-data/button/{code}` — keycodes (the table we want)
 - `GET /mobile-data/object/{code}` — model description
-- Header: `authorizationToken: 9FIqFcwHRgdlyPa2MgVizuwuLH0mxhkN`
+- Header: `authorizationToken`, read from the `FURNIMOVE_AUTHORIZATION_TOKEN`
+  environment variable
 
 These values were extracted from the FurniMove 2.0.1 APK
 (`disassembly/output/com.dewertokin.okinsmartcomfort/`). The API/token may
@@ -48,7 +49,7 @@ path below is your supplied file, not a file included in this repository.
 
 ```bash
 # Fetch object and button responses for the supplied IDs
-uv run fetch_handsets.py "cache" "/path/to/remote-ids.txt"
+FURNIMOVE_AUTHORIZATION_TOKEN=... uv run fetch_handsets.py "cache" "/path/to/remote-ids.txt"
 # Rebuild the normalized dataset from the cached responses
 uv run build_master.py        # -> master.json
 ```

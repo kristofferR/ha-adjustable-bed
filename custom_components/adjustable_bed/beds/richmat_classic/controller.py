@@ -9,6 +9,7 @@ import asyncio
 import math
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, replace
+from datetime import time
 from functools import partial
 from typing import TYPE_CHECKING, Final
 
@@ -16,6 +17,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_HIDDEN, CARD_UTILITY
 from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import (
@@ -25,6 +27,7 @@ from ...const import (
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
 )
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import RICHMAT_CLASSIC
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
@@ -60,6 +63,8 @@ from .protocol import (
     Wire,
     Worker,
     alarm,
+    alarm_capability,
+    alarm_choices,
     alarm_delay,
     aroma,
     control,
@@ -74,6 +79,7 @@ from .protocol import (
     worker_interval,
 )
 from .receive import MalformedFrame, ReceiveState
+from .removed_layouts import REMOVED_LAYOUTS
 from .requests import Request
 from .transport import Transport, select
 
@@ -124,8 +130,8 @@ class RichmatClassicController(BedController):
         self.app = app or str(coordinator.entry.data[CONF_PROTOCOL_VARIANT])
         self.profile = RICHMAT_CLASSIC[self.app]
         self.layout = str(coordinator.entry.data[CONF_PRODUCT_TYPE]).strip().upper()
-        if self.layout in ("TEST", "RMCS") and self.app not in ("powercool", "lp2", "bedsmart"):
-            raise ValueError("Diagnostic endurance and motor-mapping layouts are excluded")
+        if self.layout in REMOVED_LAYOUTS:
+            raise ValueError("This layout ran a factory test; choose the bed's layout in Configure")
         if self.app in RISE_APPS and self.layout in ("WFRM", "FWRM"):
             raise ValueError("Standalone desk layouts are outside the bed integration")
         self._controls = controls(self.app, self.layout)
@@ -384,7 +390,8 @@ class RichmatClassicController(BedController):
             raise ConnectionError("No current app BLE session")
         # Calls are admitted under the coordinator command lock. Never retry an
         # actuator write or carry cached Android objects across connections.
-        await session.client.write_gatt_char(session.write, packet, response=session.response)
+        async with self._ble_lock:
+            await session.client.write_gatt_char(session.write, packet, response=session.response)
         note_frame_written(cancel)
 
     async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = TICK_MS, cancel_event: asyncio.Event | None = None) -> None:
@@ -433,7 +440,7 @@ class RichmatClassicController(BedController):
         for button in self._controls:
             if button.node == node and button.rich_button:
                 return button
-        raise ValueError("Choose an action from the selected app layout")
+        raise ValueError("Choose an action this bed model offers")
 
     def _apply(self, button: Control, event: str, selection: Selection) -> Selection:
         session = self._session
@@ -501,7 +508,7 @@ class RichmatClassicController(BedController):
         if button.status not in (1, 2, 3):
             raise ValueError("This node uses a separate local or settings action")
         if self._hidden(button) and not (button.hold_affected and self._selection.hold is True):
-            raise ValueError("This control is hidden in the selected app state")
+            raise ValueError("This control is not available right now")
         if long and button.hold_affected and self._selection.hold is True:
             raise ValueError("Choose the separate save button in Hold mode")
         if button.excluded_long if long else button.excluded_short:
@@ -513,7 +520,7 @@ class RichmatClassicController(BedController):
         context = current_command_context()
         if context is not None and context.lease is not None and not self._keeps(button, selection):
             # Admission checks the scope too; a selector may change after it.
-            raise ValueError("This control does not support renewable holds")
+            raise invalid("control_hold_renewal_not_supported")
         status = effective_status(button, self.layout, selection)
         programmed = button.mem_special and selection.armed or button.select_special and selection.armed
         up_applied = False
@@ -594,7 +601,7 @@ class RichmatClassicController(BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not self.controller_button_available(control) or not 1 <= duration_ms <= 60000:
-            raise ValueError("Choose an available held control and duration of 1 to 60000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -631,7 +638,8 @@ class RichmatClassicController(BedController):
             if not button.excluded_short:
                 result.append(catalog_button(
                 key, label, partial(_press, node=button.node),
-                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if button.status == 1 or button.mem_special and not self._selection.armed else None,
+                # The Set key only arms programming: it is a tap, as the saves it arms are.
+                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if (button.status == 1 or button.mem_special and not self._selection.armed) and label != "Program" else None,
                 ))
             if button.hold_affected and not button.view_id.endswith("Long"):
                 held_key = key + "_hold"
@@ -668,7 +676,7 @@ class RichmatClassicController(BedController):
         elif kind == "head_foot" and value in ("head", "foot"):
             self._selection = replace(self._selection, head=value == "head")
         else:
-            raise ValueError("Selection is unavailable on this app layout")
+            raise ValueError("This bed model does not offer that choice")
         self._publish()
 
     @property
@@ -706,10 +714,10 @@ class RichmatClassicController(BedController):
         feature = "alarm" if op in ("alarm", "cancel_alarm") else "light" if op in ("rgb", "lamp_slider", "lamp_save") else "aroma" if op == "aroma" else None
         if feature and feature not in self._receive.menu:
             if feature != "alarm" or not any(c.status == 7 for c in self._controls):
-                raise ValueError("The app's capability/menu gate has not enabled this feature")
+                raise ValueError("The bed has not reported that it offers this. Reconnect it and try again")
         if op == "alarm":
             if request.action not in self._alarm_actions() or request.when is not None and (request.when.second or request.when.microsecond):
-                raise ValueError("Choose one selected-layout alarm action and a time with minute precision")
+                raise ValueError("Choose an alarm action this bed model offers and an alarm time")
         elif op == "rgb":
             if request.color is None or len(request.color) != 3 or any(not 0 <= v <= 255 for v in request.color):
                 raise ValueError("Choose an RGB color")
@@ -721,16 +729,16 @@ class RichmatClassicController(BedController):
                 raise ValueError("Aroma times are 1 to 60 minutes, 1 to 60 minutes, and 1 to 12 hours")
         elif op == "massage_popup":
             if request.popup not in ("15", "30", "45", "toggle") or not any(c.tag == "65" for c in self._controls):
-                raise ValueError("Choose a timer offered by this layout’s massage popup")
+                raise ValueError("Choose a massage timer this bed model offers")
         elif op == "massage_timer":
             if request.progress is None:
-                raise ValueError("Choose the massage timer slider value")
+                raise ValueError("Choose a massage timer value")
             massage_timer(self.layout, request.progress)
         elif op.startswith("desk_"):
             if self.layout not in ("FWRM", "WFRM"):
                 raise ValueError("The desk action requires an exact desk layout")
             if op in ("desk_target", "desk_unit", "desk_recall") and not self._receive.modern_controls:
-                raise ValueError("The app's old-desk response has hidden this control")
+                raise ValueError("This desk does not offer that control")
             if op == "desk_reset" and not self._receive.error_confirmation_pending:
                 raise ValueError("The desk has no reported error awaiting confirmation")
             if op == "desk_target" and (request.height is None or self._receive.minimum is None or self._receive.maximum is None):
@@ -738,13 +746,13 @@ class RichmatClassicController(BedController):
             if op == "desk_target":
                 assert request.height is not None and self._receive.minimum is not None and self._receive.maximum is not None
                 if not math.isfinite(request.height) or not self._receive.minimum <= request.height <= self._receive.maximum or not self._receive.modern_controls:
-                    raise ValueError("Choose a target within the current app ruler range")
+                    raise ValueError("Choose a height within the desk's range")
             if op == "desk_unit" and request.unit not in ("cm", "inches"):
                 raise ValueError("Choose cm or inches")
             if op == "desk_recall" and request.slot not in (1, 2, 3, 4):
                 raise ValueError("Choose desk button 1 through 4")
             if op == "desk_recall" and not 1 <= request.duration_ms <= 60000:
-                raise ValueError("Desk button duration must be between 1 and 60000 ms")
+                raise ValueError("Choose a duration of up to 60 seconds")
 
     async def async_execute_richmat_classic_request(self, request: Request) -> None:
         self.validate_richmat_classic_request(request)
@@ -817,39 +825,53 @@ class RichmatClassicController(BedController):
             self._receive.error_confirmation_pending = False
         self._publish()
 
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        # The other classic apps keep their alarm in their own action.
+        capability = alarm_capability(self._alarm_actions()) if self.app in RISE_APPS else None
+        # The bed reports its alarm page on each connection.
+        return replace(capability, live_check=True) if capability else None
+
+    def _rise_alarm(self, alarm: AlarmRequest) -> rise.Request:
+        if not alarm.enabled:
+            return rise.Request("cancel_alarm")
+        actions = alarm_choices(self._alarm_actions(), alarm)
+        return rise.Request("alarm", actions=actions, when=time(alarm.hour, alarm.minute))
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_richmat_rise_request(self._rise_alarm(alarm), live=False)
+
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_richmat_rise_request(self._rise_alarm(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.async_execute_richmat_rise_request(self._rise_alarm(alarm))
+
     def validate_richmat_rise_request(self, request: rise.Request, *, live: bool = True) -> None:
         if self.app not in RISE_APPS:
             raise ValueError("Choose a Luuna Rise or Power Cool profile")
         op = request.operation
         feature = "alarm" if op in ("alarm", "cancel_alarm") else "light" if op in ("rgb", "lamp_timer") else None
         if live and feature and (self._session is None or feature not in self._receive.menu):
-            raise ValueError("The current bed session has not reported this capability")
+            raise ValueError("The bed has not reported that it offers this. Reconnect it and try again")
         if op == "alarm":
             rise.alarm_action(self._alarm_actions(), request.actions)
             if request.when and (request.when.second or request.when.microsecond):
                 raise ValueError("Choose a time with minute precision")
         elif op == "rgb":
             if request.color is None or len(request.color) != 3 or any(type(v) is not int or not 0 <= v <= 255 for v in request.color):
-                raise ValueError("Choose three RGB bytes")
+                raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
         elif op == "lamp_timer":
             if request.seconds is None:
                 raise ValueError("Choose the lamp timer in seconds")
             rise.lamp_timer(request.seconds, save=request.timer_save)
         elif op == "massage_timer":
             if request.progress is None:
-                raise ValueError("Choose a timer slider index")
+                raise ValueError("Choose a timer value")
             massage_timer(self.layout, request.progress)
         elif op == "massage_popup":
             if request.popup not in ("15", "30", "45", "toggle") or not any(c.tag == "65" for c in self._controls):
-                raise ValueError("This layout does not offer the selected timer popup")
-        elif op in ("program_schedule", "diagnostic_cycle"):
-            required = "RMCS" if op == "program_schedule" else "TEST"
-            if self.app != "powercool" or self.layout != required:
-                raise ValueError(f"This operation requires Power Cool's explicit {required} layout")
-            if op == "program_schedule":
-                if request.schedule is None:
-                    raise ValueError("Provide all schedule parameters")
-                request.schedule.encode()
+                raise ValueError("This bed model does not offer that timer")
         elif op not in ("query", "cancel_alarm"):
             raise ValueError("Unknown bed utility")
 
@@ -857,35 +879,6 @@ class RichmatClassicController(BedController):
         self.validate_richmat_rise_request(request)
         op = request.operation
         cancel = self._coordinator.cancel_command
-        if op == "diagnostic_cycle":
-            session = self._session
-            if session is None:
-                raise ConnectionError("No current bed session")
-            mode = self._mode
-            for code, seconds in rise.DIAGNOSTIC_CYCLE:
-                try:
-                    elapsed = 0
-                    while elapsed < seconds * 1000 and not cancel.is_set():
-                        await self.write_command(control(bytes((code,)), session.wire, mode))
-                        if not await self._wait(self._worker.tick_ms, cancel):
-                            break
-                        elapsed += self._worker.tick_ms
-                finally:
-                    await self._release(HELD_RELEASE_MS, mode=mode)
-                if not await self._wait(5000, cancel):
-                    break
-            return
-        if op == "program_schedule":
-            assert request.schedule is not None
-            data = request.schedule.encode()
-            for offset in range(0, len(data), 20):
-                if cancel.is_set():
-                    return
-                await self.write_command(data[offset:offset + 20])
-                if offset + 20 < len(data) and not await self._wait(10, cancel):
-                    return
-            # Programming has no source-defined STOP/commit/ACK.
-            return
         delay = 0
         if op == "query":
             frames = ([ALARM_QUERY] if any(c.alarm_clock is not None for c in self._controls) else []) + [LAMP_QUERY]
@@ -965,8 +958,18 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
             ctx.coordinator, app=ctx.variant, device_name=ctx.device_name,
             capability_snapshot=ctx.stored_capabilities("richmat_classic_apps"),
         )
+    if ctx.variant == "baseremote":
+        await ctx.preload("baseremote.controller")
+        from ..baseremote.controller import BaseRemoteController
+
+        return BaseRemoteController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
     from ...profiles.richmat_resource_apps import APPS
 
+    if ctx.variant == "sleepfunction":
+        await ctx.preload("richmat_classic.sleepfunction")
+        from .sleepfunction import SleepFunctionController
+
+        return SleepFunctionController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
     if ctx.variant == "bedsmart":
         await ctx.preload("richmat_classic.bedsmart")
         from .bedsmart import BedSmartController

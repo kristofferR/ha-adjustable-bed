@@ -7,6 +7,7 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const, services
+from custom_components.adjustable_bed.app_state_store import discard_app_state_store
 from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.setup_questions import _classic_layouts
@@ -157,7 +158,10 @@ async def test_bedsmart_cannot_reach_lp2_admin_service(hass, runtime):
     _, client = runtime
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
-            const.DOMAIN, "lp2", {"device_id": "bed", "operation": "motor_program"}, blocking=True
+            const.DOMAIN,
+            "lp2",
+            {"device_id": "bed", "operation": "fan", "fan": "head", "intensity": 20, "duration": 1},
+            blocking=True,
         )
     client.write_gatt_char.assert_not_awaited()
 
@@ -166,7 +170,7 @@ async def test_unknown_and_excluded_actions_fail_before_any_write(hass, runtime)
     import voluptuous as vol
 
     _, client = runtime
-    for op in ("fan", "motor_program", "wifi", "control"):
+    for op in ("fan", "motor_program", "movement_test", "wifi", "control"):
         with pytest.raises(vol.Invalid):
             await hass.services.async_call(
                 const.DOMAIN, "bedsmart", {"device_id": "bed", "operation": op}, blocking=True
@@ -366,33 +370,6 @@ async def test_stop_on_other_target_during_bedsmart_readiness_prevents_first_wri
     second.settings.assert_not_awaited()
 
 
-async def test_movement_test_cancelled_during_release_marks_remaining_stages(runtime, monkeypatch):
-    import asyncio
-    import contextlib
-
-    from custom_components.adjustable_bed.command_scheduler import Delivery, delivered
-
-    coordinator, _ = runtime
-    await coordinator.async_execute_controller_command(lambda c: c.read_positions())
-    c = coordinator.controller
-    real_release = c._release
-
-    async def release_then_cancel(*args, **kwargs):
-        await real_release(*args, **kwargs)
-        raise asyncio.CancelledError
-
-    monkeypatch.setattr(c, "_release", release_then_cancel)
-    seen = []
-
-    async def operation(controller):
-        with delivered(seen.append):
-            await controller.diagnostic_cycle()
-
-    with contextlib.suppress(asyncio.CancelledError):
-        await coordinator.async_execute_controller_command(operation)
-    assert seen == [Delivery.PARTIAL]
-
-
 async def test_native_stop_after_idle_setting_change_keeps_physical_session(runtime, hass):
     coordinator, client = runtime
     await coordinator.async_execute_controller_command(lambda c: c.read_positions())
@@ -404,3 +381,26 @@ async def test_native_stop_after_idle_setting_change_keeps_physical_session(runt
     await coordinator.async_stop_command()
     assert coordinator.controller is original
     assert [call.args[1].hex() for call in client.write_gatt_char.await_args_list] == ["6e01006edd"]
+
+
+async def test_command_format_survives_a_restart_before_the_first_connection(hass, runtime):
+    coordinator, _client = runtime
+    offline = coordinator.capability_controller
+    assert isinstance(offline, BedSmartController)
+    assert ("button", "richmat_classic_1_framed") in offline.retained_entity_keys
+    assert not any(s.key.endswith("_framed") for s in offline.controller_button_specs)
+    assert await coordinator.async_connect()
+    await coordinator._app_state_store.async_save()
+    await coordinator.async_shutdown()
+    # A restart reads the stored format, not this process's store object.
+    discard_app_state_store(hass, coordinator.address)
+
+    restarted = AdjustableBedCoordinator(hass, coordinator.entry)
+    await restarted.async_prime_offline_controller()
+    controller = restarted.capability_controller
+    assert isinstance(controller, BedSmartController)
+    assert controller.retained_entity_keys == frozenset()
+    keys = {s.key for s in controller.controller_button_specs}
+    assert "richmat_classic_1_framed" in keys
+    assert not any(key.endswith("_raw") for key in keys)
+    await restarted.async_shutdown()

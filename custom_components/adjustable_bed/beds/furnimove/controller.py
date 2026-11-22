@@ -14,12 +14,12 @@ import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Final
 
-from ...card import CARD_HIDDEN, CARD_LIGHTING
+from ...card import CARD_HIDDEN
 from ...codec import keeson as codec
 from ...const import CONF_FURNIMOVE_REMOTE
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
-from ...state_keys import massage_intensity
+from ...state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
 from ..base import BedController, require_controller
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -30,6 +30,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from .profiles import FurniMoveAction, get_furnimove_profile
 
@@ -172,7 +173,7 @@ def validate_furnimove_name(name: str) -> None:
     """Validate the app's trimmed-copy UTF-16 limit without altering wire text."""
     trimmed = name.strip(" \t\n\r\f\v")
     if not trimmed or len(trimmed.encode("utf-16-le", errors="surrogatepass")) // 2 > 18:
-        raise ValueError("FurniMove name must contain 1–18 UTF-16 units after trimming")
+        raise ValueError("Use a name of 1 to 18 characters. Emoji count as two")
 
 
 def _action_callback(row_index: int) -> MotorCommandCallable:
@@ -208,12 +209,9 @@ class FurniMoveController(BedController):
         self._notifying: list[BleakGATTCharacteristic] = []
         self._dot = False
         self._massage_busy_until = 0.0
-        self._widget_pending = False
-        self._widget_last: bytes | None = None
-        self._widget_before_last: bytes | None = None
-        widget_state = getattr(coordinator, "furnimove_widget_state", None)
-        if isinstance(widget_state, tuple):
-            self._widget_pending, self._widget_last, self._widget_before_last = widget_state
+        self._widget_pending, self._widget_last, self._widget_before_last = (
+            coordinator.furnimove_widget_state
+        )
         self._cleanup_kind: str | None = None
         self._cleanup_dot = True
         self._cleanup_query = False
@@ -300,6 +298,8 @@ class FurniMoveController(BedController):
     def _publish(self, key: str, value: object) -> None:
         self._state[key] = value
         self.forward_controller_state_update(_state_key(key), value)
+        if key == "furnimove_ubl":
+            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(bool(value)))
         if key in _MASSAGE_SESSION_FIELDS:
             self.forward_controller_state_updates(*self._massage_levels())
 
@@ -316,6 +316,8 @@ class FurniMoveController(BedController):
         )
 
     def _clear_session(self) -> None:
+        # The light switches from this link's own report, never a retained one.
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
         self._write_characteristic = self._feedback_characteristic = None
         self._rf_name = self._gap_name = None
         self._info.clear()
@@ -496,6 +498,9 @@ class FurniMoveController(BedController):
             if value is not None and (
                 value != self._state[state_key]
                 or type(self._coordinator.controller_state.get(_state_key(state_key))) is not bool
+                # Every light report is the truth, also over a value just sent.
+                or key == "ubl"
+                and self._coordinator.controller_state.get(UNDER_BED_LIGHTS_ON) is not value
             ):
                 self._publish(state_key, value)
 
@@ -504,14 +509,13 @@ class FurniMoveController(BedController):
         return tuple(
             ControllerStateBinarySensorSpec(
                 key,
-                "under_bed_light_state" if key == "furnimove_ubl" else key,
+                key,
                 _state_key(key),
                 icon,
                 entity_registry_enabled_default=enabled,
-                card=CARD_LIGHTING if key == "furnimove_ubl" else CARD_HIDDEN,
+                card=CARD_HIDDEN,
             )
             for key, icon, enabled in (
-                ("furnimove_ubl", "mdi:led-strip-variant", True),
                 ("furnimove_sync", "mdi:sync", False),
                 ("furnimove_child_lock", "mdi:lock", True),
                 ("furnimove_massage_running", "mdi:vibrate", True),
@@ -522,7 +526,11 @@ class FurniMoveController(BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
+                "furnimove_" + key, "furnimove_" + key, StateKey[int | None]("furnimove_" + key)
+            )
+            if key == "massage_timer_minutes"
+            else ControllerStateSensorSpec(
                 "furnimove_" + key,
                 "furnimove_" + key,
                 _state_key("furnimove_" + key),
@@ -684,7 +692,7 @@ class FurniMoveController(BedController):
             or first_axis not in self.simultaneous_movement_axes
             or second_axis not in self.simultaneous_movement_axes
         ):
-            raise ValueError("Select two different axes present in the handset table")
+            raise ValueError("Choose two different motors this remote has")
         self._require(_AXES[first_axis] + ("Out" if first_up else "In"))
         self._require(_AXES[second_axis] + ("Out" if second_up else "In"))
 
@@ -915,16 +923,13 @@ class FurniMoveController(BedController):
     def supports_light_toggle_control(self) -> bool:
         return self.supports_lights
 
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        return self.supports_lights
+
     async def lights_toggle(self) -> None:
         await self._hold([self._require("UBL")])
 
-    async def lights_on(self) -> None:
-        if not self._state["furnimove_ubl"]:
-            await self.lights_toggle()
-
-    async def lights_off(self) -> None:
-        if self._state["furnimove_ubl"]:
-            await self.lights_toggle()
 
     @property
     def supports_massage(self) -> bool:
@@ -1134,7 +1139,7 @@ class FurniMoveController(BedController):
         if not self.supports_massage or isinstance(program, bool) or program not in (1, 2, 3, 4):
             raise ValueError("FurniMove massage program must be 1–4")
         if program not in self._massage_programs:
-            raise ValueError("Massage program is absent from the selected handset")
+            raise ValueError("This remote has no such massage program")
 
     async def set_furnimove_massage_program(self, program: int) -> None:
         self.validate_furnimove_massage_program(program)
@@ -1257,28 +1262,28 @@ class FurniMoveController(BedController):
         self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
     ) -> tuple[str, str]:
         if isinstance(row_index, bool) or not 0 <= row_index < len(self.profile.actions):
-            raise ValueError("Unknown FurniMove action row")
+            raise ValueError("This remote has no such button")
         row = self.profile.actions[row_index]
         self._validate_duration(duration_ms)
         if consumer not in ("app", "widget"):
             raise ValueError("Unknown FurniMove consumer")
         if consumer == "widget":
             if row.action not in _WIDGET or duration_ms is not None:
-                raise ValueError("Widget action uses the exact whitelist and fixed duration")
+                raise ValueError("This button runs for a fixed time. Leave out the duration")
         elif not self._reachable(row):
-            raise ValueError("This row has no direct reachable app action")
+            raise ValueError("This button cannot be run from Home Assistant")
         elif (
             duration_ms is not None
             and row.type not in ("actuator", "actuator-init", "memory", "memory-preset")
             and row.action not in _MAIN_NAMES
         ):
-            raise ValueError("This consumer uses its captured duration")
+            raise ValueError("This button runs for a fixed time. Leave out the duration")
         if (
             row.action in {"Sync", "ChildLock", "SwitchToPH", "SwitchToPR"}
             and row.duration_ms > 0
             and row.frequency_ms <= 0
         ):
-            raise ValueError("The captured timer cannot be safely executed")
+            raise ValueError("This button's timer cannot be run from Home Assistant")
         return row.action, row.type
 
     async def async_execute_furnimove_action(
@@ -1363,7 +1368,7 @@ class FurniMoveController(BedController):
         self.validate_furnimove_rename(name)
         characteristic = self._rf_name or self._gap_name
         if characteristic is None:
-            raise ValueError("No FurniMove rename characteristic was discovered")
+            raise ValueError("This receiver cannot be renamed")
         await self._write_gatt_with_retry(
             characteristic.uuid,
             name.encode("utf-8"),

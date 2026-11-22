@@ -134,7 +134,7 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
         ):
             raise ConnectionError("Lunio Smart+ physical session changed")
         if self.command_side is not None:
-            raise ValueError("Lunio Smart+ has no single-address side selector")
+            raise ValueError("This bed has no sides. Leave out the side")
         return current
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -248,7 +248,7 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
             or type(duration_ms) is not int
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Choose a Lunio Smart+ direction and 1 to 60000 ms")
+            raise ValueError("Choose a direction and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -334,7 +334,7 @@ async def _settle(task: asyncio.Task[None]) -> None:
             await asyncio.shield(task)
         except asyncio.CancelledError:
             cancelled = True
-        except Exception:  # noqa: BLE001 - result below preserves the actual failure.
+        except Exception:
             break
     task.result()
     if cancelled:

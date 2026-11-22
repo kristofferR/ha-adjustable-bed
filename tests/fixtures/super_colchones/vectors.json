@@ -1,0 +1,988 @@
+[
+  {
+    "id": "raw-deviceFunctionItemAntiSnoring",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring recall",
+    "inputs": {
+      "opcode": 70,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "46",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemAntiSnoring",
+    "protocol": "P1",
+    "action": "deviceFunctionItemAntiSnoring recall",
+    "inputs": {
+      "opcode": 70,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 46 b5",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemAntiSnoring-long",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring long-press alternate",
+    "inputs": {
+      "opcode": 105,
+      "press": "long",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "69",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemAntiSnoring-long",
+    "protocol": "P1",
+    "action": "deviceFunctionItemAntiSnoring long-press alternate",
+    "inputs": {
+      "opcode": 105,
+      "press": "long",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 69 d8",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemBedLight",
+    "protocol": "P2",
+    "action": "deviceFunctionItemBedLight",
+    "inputs": {
+      "opcode": 60,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "3c",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemBedLight",
+    "protocol": "P1",
+    "action": "deviceFunctionItemBedLight",
+    "inputs": {
+      "opcode": 60,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 3c ab",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemCoaxingSleepMode",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCoaxingSleepMode recall",
+    "inputs": {
+      "opcode": 134,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "86",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemCoaxingSleepMode",
+    "protocol": "P1",
+    "action": "deviceFunctionItemCoaxingSleepMode recall",
+    "inputs": {
+      "opcode": 134,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 86 f5",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemCoaxingSleepMode-long",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCoaxingSleepMode long-press alternate",
+    "inputs": {
+      "opcode": 137,
+      "press": "long",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "89",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemCoaxingSleepMode-long",
+    "protocol": "P1",
+    "action": "deviceFunctionItemCoaxingSleepMode long-press alternate",
+    "inputs": {
+      "opcode": 137,
+      "press": "long",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 89 f8",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemFootDown",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "opcode": 39,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "27",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemFootDown",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "opcode": 39,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 27 96",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemFootUp",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "opcode": 38,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "26",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemFootUp",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "opcode": 38,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 26 95",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemHeadDown",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadDown",
+    "inputs": {
+      "opcode": 37,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "25",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemHeadDown",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadDown",
+    "inputs": {
+      "opcode": 37,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 25 94",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemHeadUp",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadUp",
+    "inputs": {
+      "opcode": 36,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "24",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemHeadUp",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadUp",
+    "inputs": {
+      "opcode": 36,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 24 93",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemLumberDown",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberDown",
+    "inputs": {
+      "opcode": 64,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "40",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemLumberDown",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLumberDown",
+    "inputs": {
+      "opcode": 64,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 40 af",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemLumberUp",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberUp",
+    "inputs": {
+      "opcode": 63,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "3f",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemLumberUp",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLumberUp",
+    "inputs": {
+      "opcode": 63,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 3f ae",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMassage10MinuteTimer",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage10MinuteTimer",
+    "inputs": {
+      "opcode": 95,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "5f",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMassage10MinuteTimer",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage10MinuteTimer",
+    "inputs": {
+      "opcode": 95,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 5f ce",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMassage20MinuteTimer",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage20MinuteTimer",
+    "inputs": {
+      "opcode": 99,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "63",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMassage20MinuteTimer",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage20MinuteTimer",
+    "inputs": {
+      "opcode": 99,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 63 d2",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMassage30MinuteTimer",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage30MinuteTimer",
+    "inputs": {
+      "opcode": 97,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "61",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMassage30MinuteTimer",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage30MinuteTimer",
+    "inputs": {
+      "opcode": 97,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 61 d0",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMassageFootInstensityStrengthen",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen",
+    "inputs": {
+      "opcode": 78,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "4e",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMassageFootInstensityStrengthen",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen",
+    "inputs": {
+      "opcode": 78,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 4e bd",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMassageHeadInstensityStrengthen",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen",
+    "inputs": {
+      "opcode": 76,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "4c",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMassageHeadInstensityStrengthen",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen",
+    "inputs": {
+      "opcode": 76,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 4c bb",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMassageModeAllOff",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeAllOff",
+    "inputs": {
+      "opcode": 94,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "5e",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMassageModeAllOff",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeAllOff",
+    "inputs": {
+      "opcode": 94,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 5e cd",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMassageModeChange",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeChange",
+    "inputs": {
+      "opcode": 72,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "48",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMassageModeChange",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeChange",
+    "inputs": {
+      "opcode": 72,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 48 b7",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMemoryPosition1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1 recall",
+    "inputs": {
+      "opcode": 46,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "2e",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMemoryPosition1",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition1 recall",
+    "inputs": {
+      "opcode": 46,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 2e 9d",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMemoryPosition1-long",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1 long-press alternate",
+    "inputs": {
+      "opcode": 43,
+      "press": "long",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "2b",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMemoryPosition1-long",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition1 long-press alternate",
+    "inputs": {
+      "opcode": 43,
+      "press": "long",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 2b 9a",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMemoryPosition2",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2 recall",
+    "inputs": {
+      "opcode": 47,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "2f",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMemoryPosition2",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition2 recall",
+    "inputs": {
+      "opcode": 47,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 2f 9e",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMemoryPosition2-long",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2 long-press alternate",
+    "inputs": {
+      "opcode": 44,
+      "press": "long",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "2c",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMemoryPosition2-long",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition2 long-press alternate",
+    "inputs": {
+      "opcode": 44,
+      "press": "long",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 2c 9b",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemMotorReset",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMotorReset",
+    "inputs": {
+      "opcode": 49,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "31",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemMotorReset",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMotorReset",
+    "inputs": {
+      "opcode": 49,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 31 a0",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemZeroGravity",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity recall",
+    "inputs": {
+      "opcode": 69,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "45",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemZeroGravity",
+    "protocol": "P1",
+    "action": "deviceFunctionItemZeroGravity recall",
+    "inputs": {
+      "opcode": 69,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 45 b4",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-deviceFunctionItemZeroGravity-long",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity long-press alternate",
+    "inputs": {
+      "opcode": 102,
+      "press": "long",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "66",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-deviceFunctionItemZeroGravity-long",
+    "protocol": "P1",
+    "action": "deviceFunctionItemZeroGravity long-press alternate",
+    "inputs": {
+      "opcode": 102,
+      "press": "long",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 66 d5",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-STOP",
+    "protocol": "P2",
+    "action": "STOP",
+    "inputs": {
+      "opcode": 110,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-STOP",
+    "protocol": "P1",
+    "action": "STOP",
+    "inputs": {
+      "opcode": 110,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e 01 00 6e dd",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-connect exit limit",
+    "protocol": "P2",
+    "action": "connect exit limit",
+    "inputs": {
+      "opcode": 0,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        2,
+        1
+      ]
+    },
+    "expected_bytes": "00",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-connect exit limit",
+    "protocol": "P1",
+    "action": "connect exit limit",
+    "inputs": {
+      "opcode": 0,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        2,
+        1
+      ]
+    },
+    "expected_bytes": "6e 02 01 00 71",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-query clock capability",
+    "protocol": "P2",
+    "action": "query clock capability",
+    "inputs": {
+      "opcode": 1,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        8,
+        1
+      ]
+    },
+    "expected_bytes": "01",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-query clock capability",
+    "protocol": "P1",
+    "action": "query clock capability",
+    "inputs": {
+      "opcode": 1,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        8,
+        1
+      ]
+    },
+    "expected_bytes": "6e 08 01 01 78",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "raw-query light capability",
+    "protocol": "P2",
+    "action": "query light capability",
+    "inputs": {
+      "opcode": 1,
+      "press": "short",
+      "mode": "raw",
+      "prefix": [
+        110,
+        10,
+        0
+      ]
+    },
+    "expected_bytes": "01",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  },
+  {
+    "id": "framed-query light capability",
+    "protocol": "P1",
+    "action": "query light capability",
+    "inputs": {
+      "opcode": 1,
+      "press": "short",
+      "mode": "framed",
+      "prefix": [
+        110,
+        10,
+        0
+      ]
+    },
+    "expected_bytes": "6e 0a 00 01 79",
+    "provenance": "Literal frozen result of the shipped enum operands and reachable builder; statically reconstructed, not a device capture."
+  }
+]

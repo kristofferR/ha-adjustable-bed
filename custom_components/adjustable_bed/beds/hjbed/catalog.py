@@ -1,6 +1,7 @@
 """HJBed 2.1.2 exact selectable profiles and static details.
 
-Generated outside this repository from the app; no generator is checked in, so edits are by hand. Hardware unverified.
+Data extracted from the HJBed app outside this repository; not edited by hand.
+Hardware unverified.
 """
 
 from __future__ import annotations

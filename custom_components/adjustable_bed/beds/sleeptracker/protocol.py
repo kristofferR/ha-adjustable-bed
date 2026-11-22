@@ -109,34 +109,34 @@ def validate_request(request: Request, model: Model) -> None:
         if model.id == 0:
             available = PRESETS[:5]
         if request.preset not in available or (request.save and request.preset == "all_flat"):
-            raise ValueError("Preset is unavailable for the selected Sleeptracker layout")
+            raise ValueError("This bed cannot use or save that preset. Choose another preset")
     elif request.kind == "climate":
         if not model.breeze or request.fan_side not in ("left", "right", "both"):
-            raise ValueError("ActiveBreeze climate controls require an ActiveBreeze layout")
+            raise ValueError("Only ActiveBreeze bed models have climate controls")
         if type(request.level) is not int or request.level not in range(4):
             raise ValueError("ActiveBreeze level must be 0 through 3")
     elif request.kind == "wave":
         if not model.premium:
-            raise ValueError("Relaxation requires a ProSmart or ActiveBreeze layout")
+            raise ValueError("Only ProSmart and ActiveBreeze bed models have relaxation modes")
         if (
             request.frequency not in FREQUENCIES
             or type(request.minutes) is not int
             or request.minutes not in range(5, 106, 5)
         ):
-            raise ValueError("Wave uses 28/40/52/68/88 Hz and 5–105 minutes in steps of 5")
+            raise ValueError("Choose a wave frequency of 28, 40, 52, 68 or 88 Hz and a duration from 5 to 105 minutes in steps of 5")
     elif request.kind == "massage":
         if request.massage_action not in ("head", "foot", "pattern", "28Hz", "40Hz", "off"):
             raise ValueError("Unknown Sleeptracker massage action")
         if request.massage_action in ("head", "foot") and not model.zones:
-            raise ValueError("This layout exposes pattern massage only")
+            raise ValueError("This bed model offers only pattern massage")
         if request.massage_action in ("28Hz", "40Hz") and not model.premium:
-            raise ValueError("Direct frequency requires ProSmart or ActiveBreeze")
+            raise ValueError("Only ProSmart and ActiveBreeze bed models can set a massage frequency")
     elif request.kind in ("wind_down", "local_animation"):
         if not model.premium or (request.kind == "wind_down" and request.mode not in (1, 2)):
-            raise ValueError("Select a supported ProSmart/ActiveBreeze relaxation mode")
+            raise ValueError("Choose a relaxation mode this bed offers")
     elif request.kind == "identify":
         if request.mode not in (1, 2):
-            raise ValueError("Unknown light identification route")
+            raise ValueError("This bed model cannot be identified with its light")
     else:
         raise ValueError("Unknown Sleeptracker action")
 

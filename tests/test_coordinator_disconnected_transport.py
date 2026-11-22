@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.errors import BedNotConnectedError
 
 from .conftest import make_controller_mock
+from .error_helpers import raises_key
 
 
 async def test_local_role_operation_skips_the_central_connection_path(
@@ -73,7 +74,7 @@ async def test_unready_local_role_fails_before_the_operation(
             "async_ensure_connected",
             new=AsyncMock(side_effect=AssertionError("central fallback was attempted")),
         ) as ensure_connected,
-        pytest.raises(ConnectionError, match="disconnected transport is not ready"),
+        raises_key("pairlink_not_ready", BedNotConnectedError),
     ):
         await coordinator.async_execute_controller_command(
             operation,

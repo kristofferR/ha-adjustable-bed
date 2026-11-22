@@ -87,7 +87,7 @@ def make_controller_mock(**overrides: object) -> MagicMock:
             continue
         try:
             default = member.fget(controller)
-        except Exception:  # noqa: BLE001 - property needs real state; leave it a Mock
+        except Exception:
             continue
         # The default seek policy is seeded as one instance, so a test can tune
         # it in place or replace it.
@@ -161,6 +161,7 @@ def _shorten_unanswered_probe_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
     Tests that deliver replies, or need a specific deadline, patch these again.
     """
     monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.OCTO_FEATURE_TIMEOUT", 0.01)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.OCTO_SESSION_RESPONSE_TIMEOUT", 0.01)
     monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0.01)
 
 

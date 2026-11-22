@@ -182,7 +182,7 @@ async def test_switch_command_without_a_frame_is_an_error(hass, topology) -> Non
         assert switch.is_on is None
 
 
-async def test_sequential_side_switch_is_unknown_after_its_release(hass) -> None:
+async def test_switch_keeps_its_sent_value_until_the_link_drops_on_its_own(hass) -> None:
     async with beds(hass, topology="sequential", connected=False) as made:
         for bed in made.items:
             _settings(bed)
@@ -195,7 +195,12 @@ async def test_sequential_side_switch_is_unknown_after_its_release(hass) -> None
             await switch.async_turn_on()
         assert made.items[0].sent == ["massage True"]  # type: ignore[attr-defined]
         assert not made.items[0].is_connected
-        # The bed may change while nobody watches, so the sent value is unknown.
+        # Releasing the side is the integration's own doing, not news from the bed.
+        assert made.items[0].last_disconnect_reason == "sequential_switch"
+        assert switch.is_on is True
+        # A link that drops on its own may mean the bed changed: unknown.
+        made.items[0]._last_disconnect_reason = "unexpected"
+        switch._handle_connection_state(False)
         assert switch.is_on is None
 
 

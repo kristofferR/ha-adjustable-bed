@@ -88,13 +88,19 @@ function keyIsShared(hass: HomeAssistant, entityId: string): boolean {
 // translation key (app-labelled presets). A side resolves an id saved from
 // another side to its counterpart: the same key and, when the key is shared,
 // the same name. Older cards stored translation keys; those still resolve to
-// the last action with that key, as they always did.
+// the last action with that key, as they always did. 4.x saved a key without
+// its trailing side word, so Simmons "Inclined left" was saved as
+// "simmons_inclined" and meant the last of the inclined positions.
 export function resolveCompactAction(
   hass: HomeAssistant,
   options: CompactAction[],
   saved: string,
 ): CompactAction | undefined {
-  if (!saved.includes(".")) return [...options].reverse().find((a) => a.key === saved);
+  if (!saved.includes(".")) {
+    const latest = [...options].reverse();
+    return latest.find((a) => a.key === saved) ??
+      latest.find((a) => a.key.replace(/_(left|right|both)$/, "") === saved);
+  }
   const exact = options.find((a) => a.entityId === saved);
   if (exact) return exact;
   const key = hass.entities[saved]?.translation_key;

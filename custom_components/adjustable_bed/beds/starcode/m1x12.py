@@ -15,6 +15,7 @@ from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...card import (
@@ -192,9 +193,27 @@ def _action(name: str) -> Callable[[BedController], Coroutine[object, object, No
     return run
 
 
-# Reported values a typical user wants on a dashboard.
-# Massage and sonic levels and modes only mirror the step buttons (the bed
-# takes no direct level), so those readbacks start hidden.
+# Massage levels and alarms are bed state for the dashboard.
+_DASHBOARD: Final = frozenset(
+    {
+        "massage_head_level",
+        "massage_foot_level",
+        "sonic_head_level",
+        "sonic_foot_level",
+        "alarm_0",
+        "alarm_1",
+    }
+)
+
+
+def _reading_icon(key: str) -> str:
+    if key.startswith("alarm_"):
+        return "mdi:alarm"
+    return "mdi:vibrate" if key.endswith("_level") else "mdi:information-outline"
+
+
+# Reported values a typical user wants on a dashboard. Massage and sonic modes
+# only mirror the step buttons, so those readbacks start hidden.
 _ENABLED_STATE: Final = frozenset(
     {
         "massage_active",
@@ -528,14 +547,15 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 key=f"starcode_m1x12_{key}",
                 translation_key=f"starcode_m1x12_{key}",
                 state_key=spec_key(key),
-                icon="mdi:information-outline",
+                icon=_reading_icon(key),
                 native_unit_of_measurement=POSITION_UNIT_PERCENT
                 if key.endswith("_position")
                 else None,
                 attribute_keys=(field_key("light_rgb"), field_key("light_rgb_mode"))
                 if key == "light_color_index"
                 else ((field_key(key + "_details"),) if key.startswith("alarm_") else ()),
-                entity_registry_enabled_default=key in _ENABLED_STATE,
+                entity_registry_enabled_default=key in _ENABLED_STATE or key in _DASHBOARD,
+                entity_category=None if key in _DASHBOARD else EntityCategory.DIAGNOSTIC,
                 card=_state_card(key),
             )
             for key in keys
@@ -569,7 +589,7 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
         if control not in self.held_control_options:
             raise ValueError(f"Unsupported M1X12 held control: {control}")
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= MAX_HOLD_MS:
-            raise ValueError("M1X12 held controls require 100 ms to 60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         client = self._coordinator.client
@@ -1117,12 +1137,12 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
         elif memory_num in (1, 2):
             await self.app_action(f"memory_{memory_num}")
         else:
-            raise ValueError("M1X12 recall memory accepts 1, 2 or raw MemoryType 8")
+            raise ValueError("Choose memory position 1 or 2")
 
     async def program_memory(self, memory_num: int) -> None:
         actions = {1: "save_memory_1", 2: "save_memory_2"}
         if memory_num not in actions:
-            raise ValueError("M1X12 programming supports memory slots 1 and 2")
+            raise ValueError("Choose memory position 1 or 2")
         await self.app_action(actions[memory_num])
 
     async def massage_head_up(self) -> None:
@@ -1240,7 +1260,7 @@ class StarElevateM1X12Controller(StarElevateController):
         if control not in self.held_control_options:
             raise ValueError(f"Unsupported M1X12 ELEVATE held control: {control}")
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= MAX_HOLD_MS:
-            raise ValueError("M1X12 ELEVATE holds require 100 ms to 60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

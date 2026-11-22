@@ -27,6 +27,7 @@ from .adapter import (
 )
 from .address_lock import async_get_connect_lock
 from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
+from .codec.keeson import parse_json_indication
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_OKIMAT,
@@ -38,6 +39,7 @@ from .const import (
     DEVICE_INFO_CHARS,
     DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
+    KEESON_JSON_NOTIFY_CHAR_UUID,
     SUPPORTED_BED_TYPES,
 )
 from .detection import (
@@ -54,7 +56,7 @@ from .diagnostic_payloads import (
     payload_ascii_preview,
     summarize_repeated_payloads,
 )
-from .redaction import SLEEPTRACKER_SECRET_CHARACTERISTICS
+from .redaction import CREDENTIAL_PAYLOAD, SLEEPTRACKER_SECRET_CHARACTERISTICS
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -456,7 +458,7 @@ class BLEDiagnosticRunner:
             )
             try:
                 connected = await self.coordinator.async_ensure_connected(reset_timer=False)
-            except Exception as err:  # noqa: BLE001 - preserve a standalone diagnostic fallback
+            except Exception as err:
                 connected = False
                 message = f"Coordinator connection failed before diagnostics: {err}"
                 _LOGGER.warning(message)
@@ -708,11 +710,20 @@ class BLEDiagnosticRunner:
 
         try:
             value = await self._read_gatt_char(target)
-            char_info.read_result = (
-                {"hex": "**REDACTED**", "length": len(value), "ascii_preview": None}
-                if char_info.uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
-                else format_payload(value)
-            )
+            controller = self.coordinator.controller if self.coordinator is not None else None
+            control_uuid = controller.control_characteristic_uuid.lower() if controller else None
+            if char_info.uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
+                char_info.read_result = {
+                    "hex": "**REDACTED**",
+                    "length": len(value),
+                    "ascii_preview": None,
+                }
+            elif controller is not None and char_info.uuid.lower() == control_uuid:
+                # A command characteristic can read back the last frame written,
+                # such as a PIN: redact it as the command trace does.
+                char_info.read_result = controller._format_command_trace_payload(bytes(value))
+            else:
+                char_info.read_result = format_payload(value)
         except asyncio.CancelledError:
             raise
         except Exception as err:
@@ -1017,7 +1028,17 @@ class BLEDiagnosticRunner:
         """Handle an incoming notification."""
         timestamp = datetime.now(UTC).isoformat()
         payload = bytes(data)
-        sensitive = characteristic_uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
+        sensitive = (
+            characteristic_uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS
+            # Both capture modes: a raw-address capture bypasses the controller.
+            or CREDENTIAL_PAYLOAD.search(payload) is not None
+            # Dawn House sends whole JSON documents; one that does not parse may
+            # be part of a Wi-Fi password, as its controller also assumes.
+            or (
+                characteristic_uuid.lower() == KEESON_JSON_NOTIFY_CHAR_UUID
+                and parse_json_indication(payload) is None
+            )
+        )
         if sensitive:
             payload = bytes(len(payload))
 

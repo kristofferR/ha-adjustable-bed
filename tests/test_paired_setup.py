@@ -27,7 +27,6 @@ from custom_components.adjustable_bed import (
     _build_paired_children,
     _make_child_persist_cb,
     _maybe_create_pairing_issue_for,
-    _shared_child_fields,
     async_unpair_entry,
     paired_topology,
 )
@@ -55,7 +54,9 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_DEVICE_NAME,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_RESOLVED_VARIANT,
@@ -81,6 +82,7 @@ from custom_components.adjustable_bed.const import (
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
     CONF_VMATBASIC_PROFILE,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
     ESHINE_OKIN_PROFILES,
     KAIDI_VARIANT_SEAT_1,
@@ -115,6 +117,7 @@ from custom_components.adjustable_bed.pairing import (
     KEY_ABSORBED_ENTRY_ID,
     effective_child_data,
     get_child,
+    inheritable_child_fields,
     is_paired,
     octo_snapshot_from_descriptor,
     pair_member_addresses,
@@ -193,6 +196,13 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
     )
     entry.add_to_hass(hass)
     return entry
+
+
+def _record_bond(hass: HomeAssistant, entry: MockConfigEntry) -> None:
+    """Record a bond on one side, so the entry offers to remove it."""
+    data = {**entry.data, CONF_PAIR_CHILDREN: [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]}
+    data[CONF_PAIR_CHILDREN][0][CONF_BLE_BOND_ESTABLISHED] = True
+    hass.config_entries.async_update_entry(entry, data=data)
 
 
 class TestPairedSetup:
@@ -402,7 +412,8 @@ class TestPairedSetup:
         # The options flow always opens on a menu, so a bed that cannot pair its
         # sides is proven by the absence of the entry, not by skipping the menu.
         assert result["type"] == FlowResultType.MENU
-        expected = {"settings", "remove_bond"}
+        # A Kaidi bed never pairs, so it has no bond to remove.
+        expected = {"settings"}
         if offers_pairing:
             expected.add("pair_sides")
         assert set(result["menu_options"]) == expected
@@ -438,7 +449,7 @@ class TestPairedSetup:
 
         result = await hass.config_entries.options.async_init(entry.entry_id)
         assert result["type"] == FlowResultType.MENU
-        assert set(result["menu_options"]) == {"settings", "pair_sides", "remove_bond"}
+        assert set(result["menu_options"]) == {"settings", "pair_sides"}
         result = await hass.config_entries.options.async_configure(
             result["flow_id"], {"next_step_id": "pair_sides"}
         )
@@ -491,10 +502,12 @@ class TestPairedSetup:
         await async_unpair_entry(hass, entry)
         await hass.async_block_till_done()
 
-        # Only the schema 5 profile id and migration record were added.
+        # Only the schema 5 profile id and migration record were added, and the
+        # connection 4.x ran this entry with, which it had not saved.
         restored = dict(entry.data)
         assert restored.pop(CONF_PROFILE_ID) == resolve_profile_id(original_data)
         assert restored.pop(CONF_PROFILE_MIGRATION)["from_version"] == 4
+        assert restored.pop(CONF_CONNECTION_MODE) == CONNECTION_MODE_IDLE
         assert restored == original_data
         assert entry.unique_id == LEFT_ADDR
         assert not is_paired(entry.data)
@@ -577,7 +590,6 @@ class TestPairedSetup:
             "left_settings",
             "right_settings",
             "unpair",
-            "remove_bond",
         }
 
         result = await hass.config_entries.options.async_configure(
@@ -607,6 +619,7 @@ class TestPairedSetup:
     ) -> None:
         """A combined parent never guesses which child address the action means."""
         entry = _paired_entry(hass)
+        _record_bond(hass, entry)
 
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
@@ -646,6 +659,7 @@ class TestPairedSetup:
             version=4,
         )
         entry.add_to_hass(hass)
+        _record_bond(hass, entry)
 
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
@@ -673,6 +687,7 @@ class TestPairedSetup:
             version=4,
         )
         entry.add_to_hass(hass)
+        _record_bond(hass, entry)
 
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
@@ -703,6 +718,7 @@ class TestPairedSetup:
             version=4,
         )
         entry.add_to_hass(hass)
+        _record_bond(hass, entry)
 
         menu = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
@@ -734,6 +750,7 @@ class TestPairedSetup:
             version=4,
         )
         entry.add_to_hass(hass)
+        _record_bond(hass, entry)
         original_remove_bond = AdjustableBedOptionsFlow.async_step_remove_bond
         selected: list[str | None] = []
 
@@ -798,6 +815,84 @@ class TestPairedSetup:
         assert all(candidate.state == ConfigEntryState.SETUP_RETRY for candidate in restored)
         for candidate in restored:
             candidate.async_cancel_retry_setup()
+
+    async def test_unpair_moves_a_first_beta_pair_store_to_each_bed(
+        self,
+        hass: HomeAssistant,
+        hass_storage: dict[str, Any],
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A pair that has not loaded since the update still hands each bed its estimates."""
+        from custom_components.adjustable_bed import position_estimate as pe
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        legacy = pe.entry_storage_key(entry.entry_id)
+        hass_storage[legacy] = {
+            "version": pe.STORAGE_VERSION,
+            "key": legacy,
+            "data": {
+                "beds": {LEFT_ADDR: {"back": {"up_s": 20.0, "down_s": 10.0, "percent": 30.0}}},
+                "positions": [
+                    {
+                        "id": "reading",
+                        "name": "Reading",
+                        "button": False,
+                        "targets": {SIDE_LEFT: {"back": 30.0}},
+                    }
+                ],
+            },
+        }
+
+        restored = await async_unpair_entry(hass, entry)
+        await hass.async_block_till_done()
+
+        left = next(item for item in restored if item.data[CONF_ADDRESS] == LEFT_ADDR)
+        manager = pe.position_estimates(hass, left.entry_id)
+        assert manager is not None
+        assert manager.beds[LEFT_ADDR].motors["back"].percent == 30.0
+        assert [(p.id, p.targets) for p in manager.positions] == [("reading", {"bed": {"back": 30.0}})]
+        assert legacy not in hass_storage
+
+    async def test_cancelled_unpair_still_finishes_removing_the_pair(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Past the commit point a cancelled caller leaves no orphaned pair rows."""
+        import custom_components.adjustable_bed as integration
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        ent_reg = er.async_get(hass)
+        assert er.async_entries_for_config_entry(ent_reg, entry.entry_id)
+        in_hook = asyncio.Event()
+        release = asyncio.Event()
+        real_remove = integration.async_remove_entry
+
+        async def slow_remove(hass_: HomeAssistant, removed) -> None:
+            in_hook.set()
+            await release.wait()
+            await real_remove(hass_, removed)
+
+        with patch.object(integration, "async_remove_entry", slow_remove):
+            unpair = hass.async_create_task(async_unpair_entry(hass, entry))
+            await in_hook.wait()
+            # Cancelled twice while the removal is still running.
+            for _ in range(2):
+                unpair.cancel()
+                await asyncio.sleep(0)
+            release.set()
+            with pytest.raises(asyncio.CancelledError):
+                await unpair
+        await hass.async_block_till_done()
+
+        assert hass.config_entries.async_get_entry(entry.entry_id) is None
+        assert not er.async_entries_for_config_entry(ent_reg, entry.entry_id)
 
     async def test_unpair_rolls_back_if_second_single_cannot_be_added(
         self,
@@ -1143,7 +1238,7 @@ class TestPairedSetup:
 class TestPairedBuilders:
     """Unit tests for the child-construction helpers (no BLE)."""
 
-    def test_shared_child_fields_excludes_pair_keys(self):
+    def testinheritable_child_fields_excludes_pair_keys(self):
         data = {
             **_paired_entry_data(),
             "ble_bond_established": True,
@@ -1151,7 +1246,7 @@ class TestPairedBuilders:
             "ble_bond_context": {"transport": "local"},
             "ble_bond_attempted_source": "hci0",
         }
-        shared = _shared_child_fields(data)
+        shared = inheritable_child_fields(data)
         assert CONF_PAIR_ID not in shared
         assert CONF_PAIR_CHILDREN not in shared
         assert CONF_PAIR_MODE not in shared
@@ -1188,7 +1283,7 @@ class TestPairedBuilders:
 
     async def test_child_persist_writes_delta_to_correct_descriptor(self, hass: HomeAssistant):
         entry = _paired_entry(hass)
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
 
         # Persist a change (e.g. a BLE bond marker) for the left side.
@@ -1208,7 +1303,7 @@ class TestPairedBuilders:
             entry,
             options={"ble_bond_established": False},
         )
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
 
         persist({**baseline, "ble_bond_established": True})
@@ -1220,7 +1315,7 @@ class TestPairedBuilders:
     async def test_child_persist_noop_when_unchanged(self, hass: HomeAssistant):
         entry = _paired_entry(hass)
         before = entry.data
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
         persist(dict(baseline))  # no change
         assert entry.data is before  # entry not updated
@@ -1229,7 +1324,7 @@ class TestPairedBuilders:
         # A value set then reverted must still be written (compares against the
         # live descriptor, not a stale build-time baseline).
         entry = _paired_entry(hass)
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
 
         persist({**baseline, "ble_bond_established": True})
@@ -1240,7 +1335,7 @@ class TestPairedBuilders:
     async def test_child_persist_removes_runtime_bond_keys(self, hass: HomeAssistant):
         """Confirmed removal must delete markers instead of leaving stale overrides."""
         entry = _paired_entry(hass)
-        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        baseline = {**inheritable_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
         persist(
             {
@@ -2267,6 +2362,233 @@ class TestPairBedsConversion:
         assert final_device.name_by_user == "Left headboard"
         assert final_device.via_device_id is None
 
+    async def test_combine_and_separate_keep_estimates_and_saved_positions(
+        self,
+        hass: HomeAssistant,
+        hass_storage: dict[str, Any],
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Calibration, estimates and saved positions follow each bed (PLAT-1)."""
+        from custom_components.adjustable_bed import position_estimate as pe
+
+        ent_reg = er.async_get(hass)
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+        saved: dict[str, dict[str, tuple[str, bool]]] = {}
+        for entry, address, positions in (
+            (left, LEFT_ADDR, (("Reading", True),)),
+            (right, RIGHT_ADDR, (("Reading", True), ("Sleep", False))),
+        ):
+            manager = pe.position_estimates(hass, entry.entry_id)
+            assert manager is not None
+            bed = manager.beds[address]
+            bed.configure({"back": (20.0, 10.0)})
+            bed.set_reference()
+            saved[address] = {
+                manager.save_position(name, [bed], button=button).id: (name, button)
+                for name, button in positions
+            }
+        await hass.async_block_till_done()
+        buttons = {
+            position_id: ent_reg.async_get_entity_id(
+                "button", DOMAIN, f"{address}_saved_position_{position_id}"
+            )
+            for address, positions in saved.items()
+            for position_id, (_name, button) in positions.items()
+            if button
+        }
+        assert all(buttons.values())
+        # A renamed entity ID and a disabled button are registry settings to keep.
+        left_reading, right_reading = (
+            next(pid for pid, (name, _b) in saved[address].items() if name == "Reading")
+            for address in (LEFT_ADDR, RIGHT_ADDR)
+        )
+        ent_reg.async_update_entity(
+            buttons[left_reading], new_entity_id="button.my_reading", name="My reading"
+        )
+        buttons[left_reading] = "button.my_reading"
+        ent_reg.async_update_entity(
+            buttons[right_reading], disabled_by=er.RegistryEntryDisabler.USER
+        )
+        registry_settings = {
+            entity_id: (row.name, row.disabled_by, row.hidden_by)
+            for entity_id in buttons.values()
+            if (row := ent_reg.async_get(entity_id)) is not None
+        }
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id),
+                CONF_NAME: "Master Bed",
+            },
+        )
+        await hass.async_block_till_done()
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        pair = next(e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data))
+
+        manager = pe.position_estimates(hass, pair.entry_id)
+        assert manager is not None
+        for address in (LEFT_ADDR, RIGHT_ADDR):
+            # Combining within one run keeps the estimate trusted.
+            assert manager.beds[address].tracking(["back"])
+            assert ent_reg.async_get_entity_id(
+                "number", DOMAIN, f"{address}_back_position_estimated"
+            )
+        # Each bed's positions become its side's, with their ids and buttons.
+        sides = {LEFT_ADDR: SIDE_LEFT, RIGHT_ADDR: SIDE_RIGHT}
+        assert {
+            (position.id, position.name, position.button, *position.targets)
+            for position in manager.positions
+        } == {
+            (position_id, name, button, sides[address])
+            for address, positions in saved.items()
+            for position_id, (name, button) in positions.items()
+        }
+        # Two sides' "Reading" are told apart by side; on their own they are refused.
+        with pytest.raises(ServiceValidationError):
+            manager.position("Reading")
+        assert manager.position("Reading", {SIDE_RIGHT}).targets == {SIDE_RIGHT: {"back": 0.0}}
+        # Every button keeps its entity ID on the pair's device.
+        for position_id, entity_id in buttons.items():
+            row = ent_reg.async_get(entity_id)
+            assert row is not None
+            assert row.unique_id == f"{pair.data[CONF_PAIR_ID]}_saved_position_{position_id}"
+            assert row.config_entry_id == pair.entry_id
+            assert (row.name, row.disabled_by, row.hidden_by) == registry_settings[entity_id]
+
+        await async_unpair_entry(hass, pair)
+        await hass.async_block_till_done()
+        for entry, address in ((left, LEFT_ADDR), (right, RIGHT_ADDR)):
+            manager = pe.position_estimates(hass, entry.entry_id)
+            assert manager is not None
+            assert manager.beds[address].tracking(["back"])
+            assert {
+                position.id: (position.name, position.button) for position in manager.positions
+            } == saved[address]
+            assert all(position.targets == {"bed": {"back": 0.0}} for position in manager.positions)
+        # Each bed's buttons are its own again: the same rows, settings kept.
+        for entry, address in ((left, LEFT_ADDR), (right, RIGHT_ADDR)):
+            for position_id in saved[address]:
+                if position_id not in buttons:
+                    continue
+                row = ent_reg.async_get(buttons[position_id])
+                assert row is not None
+                assert row.unique_id == f"{address}_saved_position_{position_id}"
+                assert row.config_entry_id == entry.entry_id
+                assert (row.name, row.disabled_by, row.hidden_by) == registry_settings[row.entity_id]
+
+        # Removing a bed forgets its store; the other bed keeps its own.
+        await hass.config_entries.async_remove(left.entry_id)
+        await hass.async_block_till_done()
+        assert pe.storage_key(LEFT_ADDR) not in hass_storage
+        assert pe.storage_key(RIGHT_ADDR) in hass_storage
+
+    async def test_failed_separate_returns_a_side_button_to_the_pair(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A split that rolls back leaves the moved button row as it was, and a
+        split of a pair that is not loaded still moves it (PLAT-1)."""
+        from custom_components.adjustable_bed import position_estimate as pe
+
+        ent_reg = er.async_get(hass)
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+        manager = pe.position_estimates(hass, left.entry_id)
+        assert manager is not None
+        bed = manager.beds[LEFT_ADDR]
+        bed.configure({"back": (20.0, 10.0)})
+        bed.set_reference()
+        position_id = manager.save_position("Reading", [bed], button=True).id
+        await hass.async_block_till_done()
+        button = ent_reg.async_get_entity_id(
+            "button", DOMAIN, f"{LEFT_ADDR}_saved_position_{position_id}"
+        )
+        assert button is not None
+        ent_reg.async_update_entity(
+            button, new_entity_id="button.my_reading", disabled_by=er.RegistryEntryDisabler.USER
+        )
+        result = await self._reach_pair_step(hass)
+        await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(left.entry_id, right.entry_id),
+                CONF_NAME: "Master Bed",
+            },
+        )
+        await hass.async_block_till_done()
+        pair = next(e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data))
+        before = ent_reg.async_get("button.my_reading")
+        assert before is not None and before.config_entry_id == pair.entry_id
+        # A position of both sides keeps its pair button until the split commits.
+        pair_estimates = pe.position_estimates(hass, pair.entry_id)
+        assert pair_estimates is not None
+        pair_estimates.beds[RIGHT_ADDR].configure({"back": (20.0, 10.0)})
+        pair_estimates.beds[RIGHT_ADDR].set_reference()
+        both_id = pair_estimates.save_position(
+            "TV", pair_estimates.beds.values(), button=True
+        ).id
+        await hass.async_block_till_done()
+        both = ent_reg.async_get_entity_id(
+            "button", DOMAIN, f"{pair.data[CONF_PAIR_ID]}_saved_position_{both_id}"
+        )
+        assert both is not None
+        ent_reg.async_update_entity(
+            both, new_entity_id="button.my_tv", disabled_by=er.RegistryEntryDisabler.USER
+        )
+        both_before = ent_reg.async_get("button.my_tv")
+        assert both_before is not None
+
+        with (
+            patch.object(
+                hass.config_entries,
+                "async_set_disabled_by",
+                side_effect=RuntimeError("injected load failure"),
+            ),
+            pytest.raises(RuntimeError, match="injected load failure"),
+        ):
+            await async_unpair_entry(hass, pair)
+        await hass.async_block_till_done()
+
+        after = ent_reg.async_get("button.my_reading")
+        assert after is not None
+        assert (after.id, after.unique_id, after.config_entry_id, after.disabled_by) == (
+            before.id,
+            before.unique_id,
+            pair.entry_id,
+            er.RegistryEntryDisabler.USER,
+        )
+        assert after.device_id == before.device_id
+        # A both-sides position's pair button is untouched until the split commits.
+        both_after = ent_reg.async_get("button.my_tv")
+        assert both_after is not None
+        assert (both_after.id, both_after.unique_id, both_after.disabled_by) == (
+            both_before.id,
+            both_before.unique_id,
+            er.RegistryEntryDisabler.USER,
+        )
+        assert both_after.modified_at == both_before.modified_at
+        restored_pair = hass.config_entries.async_get_entry(pair.entry_id)
+        assert restored_pair is not None and restored_pair.state == ConfigEntryState.LOADED
+
+        # As after a failed reload: no estimates are loaded for the pair.
+        await hass.config_entries.async_unload(pair.entry_id)
+        await async_unpair_entry(hass, pair)
+        await hass.async_block_till_done()
+        moved = ent_reg.async_get("button.my_reading")
+        assert moved is not None
+        assert (moved.id, moved.unique_id, moved.config_entry_id, moved.disabled_by) == (
+            before.id,
+            f"{LEFT_ADDR}_saved_position_{position_id}",
+            left.entry_id,
+            er.RegistryEntryDisabler.USER,
+        )
+
     async def test_split_keeps_current_connection_preferences(
         self,
         hass: HomeAssistant,
@@ -2865,6 +3187,7 @@ class TestPairBedsConversion:
             start_notify=AsyncMock(),
             stop_keepalive=AsyncMock(),
             async_resume_session=AsyncMock(),
+            restore_notifications_after_cancel=True,
         )
         coord._client = client
         coord._controller = controller
@@ -2926,6 +3249,7 @@ class TestPairBedsConversion:
             start_notify=AsyncMock(side_effect=stalled_start_notify),
             stop_keepalive=AsyncMock(),
             async_resume_session=AsyncMock(),
+            restore_notifications_after_cancel=True,
         )
         coord._client = client
         coord._controller = controller
@@ -3989,6 +4313,7 @@ class TestCombinedPositionSliders:
         from custom_components.adjustable_bed.number import (
             PairedBedCombinedPositionNumber,
             _build_position_description,
+            _combined_position_entities_for,
         )
 
         back = build_position_number_spec("back", max_value=68, unit="°")
@@ -4001,11 +4326,12 @@ class TestCombinedPositionSliders:
         coord.children = {SIDE_LEFT: left, SIDE_RIGHT: right}
         coord.async_seek_position = AsyncMock()
 
+        # A side kept by its own entry leaves nothing to combine.
+        assert _combined_position_entities_for(coord, [left]) == []
         entity = PairedBedCombinedPositionNumber(coord, _build_position_description(back))
         assert entity.native_value == 25.0
+        # One side's angle is not the whole bed's.
         right.position_data.clear()
-        assert entity.native_value == 20.0
-        left.position_data.clear()
         assert entity.native_value is None
 
         await entity.async_set_native_value(40)
@@ -4070,7 +4396,7 @@ class TestCombinedPositionSliders:
         assert all(row.device_id == parent.id for row in both_numbers.values())
         state = hass.states.get(both_numbers[f"{PAIR_ID}_back_position_both"].entity_id)
         assert state is not None
-        assert state.name == "Master Bed Back Position"
+        assert state.name == "Master Bed Back position"
         # The per-side sliders still live on the children.
         assert registry.async_get_entity_id("number", DOMAIN, f"{LEFT_ADDR}_back_position")
 

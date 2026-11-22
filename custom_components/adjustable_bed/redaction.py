@@ -3,12 +3,23 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from typing import Any
 
-from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.const import CONF_NAME
 
+from .beds.reverie.pairlink_protocol import (
+    PAIRLINK_LOW_POWER_NOTIFY_UUID,
+    PAIRLINK_LOW_POWER_SERVICE_UUID,
+    PAIRLINK_LOW_POWER_WRITE_UUID,
+    PAIRLINK_NOTIFY_UUID,
+    PAIRLINK_WRITE_UUID,
+)
 from .const import (
+    BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_SLEEP_NUMBER,
+    CONF_BLE_DEVICE_NAME,
+    CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_JENSEN_PIN,
     CONF_OCTO_PIN,
     CONF_PAIRLINK_PASSWORD_HEX,
@@ -16,7 +27,9 @@ from .const import (
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 
-# Credentials are secret even in support bundles that retain device identities.
+REDACTED = "**REDACTED**"
+
+# Credentials are secret in every file.
 _CREDENTIAL_KEYS = {
     CONF_JENSEN_PIN,
     CONF_OCTO_PIN,
@@ -28,115 +41,118 @@ _CREDENTIAL_KEYS = {
     "token",
     "password",
 }
+# Text the user typed or renamed: often a person's name, never needed to debug.
+_USER_TEXT_KEYS = {"title", "origin_title", CONF_BLE_DEVICE_NAME, CONF_FSM_RELAX_MEMORY_NAMES}
 KEYS_TO_REDACT = {
     CONF_NAME,
-    "title",
     "serial",
     "serial_number",
     "configuration_url",
-} | _CREDENTIAL_KEYS
+} | _USER_TEXT_KEYS | _CREDENTIAL_KEYS
+# The support bundle keeps device names: they are what bed detection matches.
+_BUNDLE_KEYS_TO_REDACT = _USER_TEXT_KEYS | _CREDENTIAL_KEYS
 
-# Keys containing MAC addresses (partial redaction - keep OUI)
-MAC_ADDRESS_KEYS = {CONF_ADDRESS, "address"}
+# A Bluetooth address with one consistent separator.
+_HEX = "[0-9A-Fa-f]"
+MAC_ADDRESS_PATTERN = re.compile(
+    rf"(?<!{_HEX})({_HEX}{{2}})([:\-_])({_HEX}{{2}})\2({_HEX}{{2}})"
+    rf"\2{_HEX}{{2}}\2{_HEX}{{2}}\2{_HEX}{{2}}(?!{_HEX})"
+)
 
-# Regex pattern for MAC addresses (colon or hyphen separated)
-MAC_ADDRESS_PATTERN = re.compile(r"([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}")
-
-
-def _redact_mac_address(mac: str | None | Any) -> str | Any:
-    """Redact the last 3 bytes of a MAC address, keeping the OUI (manufacturer ID).
-
-    Example: AA:BB:CC:DD:EE:FF -> AA:BB:CC:**:**:**
-
-    This function is designed to handle any input type defensively. Non-string
-    inputs (including None, integers, etc.) are returned unchanged.
-
-    Args:
-        mac: The MAC address to redact. Accepts str, None, or any other type.
-
-    Returns:
-        The partially redacted MAC address, or "**REDACTED**" for invalid formats,
-        or the original value if not a string or empty.
-    """
-    if not mac or not isinstance(mac, str):
-        return mac
-
-    # Handle both : and - separators
-    sep = ":" if ":" in mac else "-"
-    parts = mac.upper().replace("-", ":").split(":")
-
-    if len(parts) != 6:
-        return "**REDACTED**"
-
-    # Keep first 3 bytes (OUI), redact last 3
-    return f"{parts[0]}{sep}{parts[1]}{sep}{parts[2]}{sep}**{sep}**{sep}**"
+# Health and presence readings: the key stays, the value becomes its type.
+# Matched on whole words of the key, so "motion_bed" or "anti_snore" never match.
+_HEALTH_KEY = re.compile(
+    r"_(?:heart|heartbeat|breath|breathing|respiration|respiratory|apnea|hrv|occupancy"
+    r"|occupied|presence|inbed|onbed|outbed|awake|awakening|snoring|in_bed|on_bed|out_bed"
+    r"|bed_exit|leave_bed|body_move|body_movement|body_revolve|snore_duration"
+    r"|sleep_(?:report|data|stage|score|history|status|quality)|report_cache)_"
+)
 
 
-def redact_string(text: str) -> str:
-    """Redact MAC addresses found within a string."""
-
-    def replace_mac(match: re.Match[str]) -> str:
-        return _redact_mac_address(match.group(0))
-
-    return MAC_ADDRESS_PATTERN.sub(replace_mac, text)
+def _is_health_key(key: str) -> bool:
+    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", key).lower()
+    return _HEALTH_KEY.search(f"_{re.sub('[^a-z0-9]+', '_', words)}_") is not None
 
 
-def redact_data(data: Any, depth: int = 0) -> Any:
-    """Recursively redact sensitive data from a dictionary.
+def _mask_match(match: re.Match[str]) -> str:
+    sep = match.group(2)
+    prefix = sep.join(match.group(index).upper() for index in (1, 3, 4))
+    return f"{prefix}{sep}**{sep}**{sep}**"
 
-    - Fully redacts name, title, PIN and serial fields
-    - Partially redacts MAC addresses (keeps OUI for debugging)
 
-    Args:
-        data: The data structure to redact.
-        depth: Current recursion depth (for infinite loop prevention).
+def redact_text(text: str) -> str:
+    """Keep only the manufacturer prefix of every Bluetooth address in ``text``."""
+    return MAC_ADDRESS_PATTERN.sub(_mask_match, text)
 
-    Returns:
-        A copy of the data with sensitive values redacted.
-    """
+
+def _redact(data: Any, keys: set[str], depth: int) -> Any:
     if depth > 20:  # Prevent infinite recursion
         return data
-
     if isinstance(data, dict):
-        result = {}
+        result: dict[Any, Any] = {}
         for key, value in data.items():
             key_lower = key.lower() if isinstance(key, str) else key
-            if key in KEYS_TO_REDACT or key_lower in KEYS_TO_REDACT:
-                result[key] = "**REDACTED**"
-            elif key in MAC_ADDRESS_KEYS or key_lower in MAC_ADDRESS_KEYS:
-                result[key] = _redact_mac_address(value) if isinstance(value, str) else value
+            out_key = redact_text(key) if isinstance(key, str) else key
+            if key in keys or key_lower in keys:
+                result[out_key] = REDACTED
+            elif isinstance(key, str) and _is_health_key(key):
+                result[out_key] = f"<{type(value).__name__}>"
             else:
-                result[key] = redact_data(value, depth + 1)
+                result[out_key] = _redact(value, keys, depth + 1)
         return result
-    elif isinstance(data, list):
-        return [redact_data(item, depth + 1) for item in data]
-    elif isinstance(data, str):
-        return redact_string(data)
-    else:
-        return data
-
-
-def redact_pins_only(data: Any, depth: int = 0) -> Any:
-    """Redact credentials, leaving names/addresses/MACs intact.
-
-    Used for support bundles where BLE device names and MAC addresses are
-    essential debugging information and should not be stripped.
-    """
-    if depth > 20:
-        return data
-
-    if isinstance(data, dict):
-        result = {}
-        for key, value in data.items():
-            key_lower = key.lower() if isinstance(key, str) else key
-            if key in _CREDENTIAL_KEYS or key_lower in _CREDENTIAL_KEYS:
-                result[key] = "**REDACTED**"
-            else:
-                result[key] = redact_pins_only(value, depth + 1)
-        return result
-    if isinstance(data, list):
-        return [redact_pins_only(item, depth + 1) for item in data]
+    if isinstance(data, list | tuple):
+        return [_redact(item, keys, depth + 1) for item in data]
+    if isinstance(data, str):
+        return redact_text(data)
     return data
+
+
+def redact_data(data: Any) -> Any:
+    """Redact the diagnostics download.
+
+    Removes names, typed text, serials and credentials, keeps only the
+    manufacturer prefix of every Bluetooth address and hides health readings.
+    """
+    return _redact(data, KEYS_TO_REDACT, 0)
+
+
+def redact_bundle(data: Any) -> Any:
+    """Redact a support bundle: the diagnostics policy, but device names stay."""
+    return _redact(data, _BUNDLE_KEYS_TO_REDACT, 0)
+
+
+def names_pattern(names: Iterable[str]) -> re.Pattern[str] | None:
+    """Match typed names as whole words, the longest first so none is left half shown."""
+    words = sorted(
+        {name.strip() for name in names if isinstance(name, str) and len(name.strip()) >= 3},
+        key=len,
+        reverse=True,
+    )
+    if not words:
+        return None
+    return re.compile(
+        "(?i)" + "|".join(rf"(?<!\w){re.escape(word)}(?!\w)" for word in words)
+    )
+
+
+def _addresses_in(text: str) -> set[str]:
+    return {
+        match.group(0).upper().replace(match.group(2), ":")
+        for match in MAC_ADDRESS_PATTERN.finditer(text)
+    }
+
+
+def mentions_only(text: str, addresses: set[str]) -> bool:
+    """Whether every Bluetooth address in ``text`` is one of ``addresses``.
+
+    ``addresses`` are upper case with colons.
+    """
+    return _addresses_in(text) <= addresses
+
+
+def mentions_any(text: str, addresses: set[str]) -> bool:
+    """Whether ``text`` names one of ``addresses`` (upper case with colons)."""
+    return not _addresses_in(text).isdisjoint(addresses)
 
 
 def redact_sleep_number_sessions(report: dict[str, Any]) -> None:
@@ -193,5 +209,49 @@ def redact_sleeptracker_sessions(report: dict[str, Any]) -> None:
         report.get("notification_summary", {}).get("by_characteristic", {}).items()
     ):
         if uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
+            summary["top_repeated_payloads"] = []
+            summary["ascii_previews"] = []
+
+
+# Pairlink keys its frames with the home ID, which the bed advertises, and a
+# four-byte password: one captured frame lets anyone recover the password
+# offline. The low-power characteristics use generic UUIDs, so they are
+# redacted only for a Pairlink bed.
+_PAIRLINK_CHARACTERISTICS = frozenset({PAIRLINK_WRITE_UUID, PAIRLINK_NOTIFY_UUID})
+_PAIRLINK_LOW_POWER_CHARACTERISTICS = frozenset(
+    {PAIRLINK_LOW_POWER_WRITE_UUID, PAIRLINK_LOW_POWER_NOTIFY_UUID}
+)
+
+# A JSON credential, such as a bed's Wi-Fi provisioning message.
+CREDENTIAL_PAYLOAD = re.compile(rb'(?i)"(?:ssid|pswd|password|passwd|pwd)"\s*:')
+
+
+def redact_pairlink_frames(report: dict[str, Any]) -> None:
+    """Keep Pairlink frame lengths and counts, never their bytes."""
+    secret = set(_PAIRLINK_CHARACTERISTICS)
+    # A capture by address alone knows no bed type: the complete low-power
+    # profile, which no other supported bed uses, is enough.
+    low_power_profile = any(
+        str(service.get("uuid", "")).lower() == PAIRLINK_LOW_POWER_SERVICE_UUID
+        and {str(char.get("uuid", "")).lower() for char in service.get("characteristics", [])}
+        >= _PAIRLINK_LOW_POWER_CHARACTERISTICS
+        for service in report.get("gatt_services", [])
+    )
+    if low_power_profile or BED_TYPE_REVERIE_PAIRLINK in (
+        report.get("detection", {}).get("bed_type"),
+        report.get("integration", {}).get("bed_type"),
+    ):
+        secret |= _PAIRLINK_LOW_POWER_CHARACTERISTICS
+    for service in report.get("gatt_services", []):
+        for characteristic in service.get("characteristics", []):
+            result = characteristic.get("read_result")
+            if str(characteristic.get("uuid", "")).lower() in secret and isinstance(result, dict):
+                result["hex"] = REDACTED
+                result["ascii_preview"] = None
+    for notification in report.get("notifications", []):
+        if str(notification.get("characteristic", "")).lower() in secret:
+            notification["data_hex"] = REDACTED
+    for uuid, summary in report.get("notification_summary", {}).get("by_characteristic", {}).items():
+        if uuid.lower() in secret:
             summary["top_repeated_payloads"] = []
             summary["ascii_previews"] = []

@@ -37,7 +37,6 @@ from custom_components.adjustable_bed.execution import (
     HOLD_CEILING_MS,
     NO_EXECUTION_CAPABILITIES,
 )
-from tests.error_helpers import raises_key
 from tests.hold_lease_wire import intervals, leased_hold, virtual_clock
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_goodvibe_ha import runtime as goodvibe_runtime
@@ -116,10 +115,10 @@ def _hold(control: str, errors: list[str] | None = None) -> Callable[[Any], Awai
         try:
             # A leased hold_control runs to the stream ceiling, as the service runs it.
             await controller.hold_control(control, HOLD_CEILING_MS)
-        except ValueError as err:
+        except ServiceValidationError as err:
             if errors is None:
                 raise
-            errors.append(str(err))
+            errors.append(str(err.translation_key))
 
     return move
 
@@ -159,7 +158,7 @@ async def test_a_lease_never_drives_a_gesture_control(control: str) -> None:
         "goodvibe:selector-0004", _hold(control, errors), end_after_s=4, end="expire"
     )
 
-    assert errors == ["This control does not support renewable holds"]
+    assert errors == ["control_hold_renewal_not_supported"]
     assert wire.held == wire.after == ()
 
 
@@ -175,7 +174,7 @@ async def test_memory_mode_after_admission_refuses_the_lease_without_writing() -
         "goodvibe:selector-0004", move, end_after_s=1, end="expire", variant=MEMORY
     )
 
-    assert errors == ["This control does not support renewable holds"]
+    assert errors == ["control_hold_renewal_not_supported"]
     assert wire.held == wire.after == ()
 
 
@@ -254,13 +253,17 @@ async def test_renewals_keep_a_sustained_control_streaming_until_the_lease_lapse
 
 
 @pytest.mark.parametrize("control", [BED_LIGHT, ZERO_GRAVITY])
-async def test_a_gesture_control_refuses_a_lease_as_an_undeclared_bed_does(
+async def test_a_gesture_control_never_takes_a_lease(
     bed: Any, clock: Any, control: str
 ) -> None:
-    hass, _coordinator, writes = bed
-    with raises_key("hold_renewal_not_supported", ServiceValidationError):
-        await _hold_control(hass, control, 1)
-    assert writes == []
+    hass, coordinator, writes = bed
+    # A renewed press runs the gesture's own hold, which ends as a STOP ends it
+    # once renewals stop: Bed Light sends its short operand and its release,
+    # and Zero Gravity's short-and-long press ends before either operand.
+    await _hold_control(hass, control, 1)
+    assert writes == ([(0.0, _packet(control)), (0.75, RELEASE)] if control == BED_LIGHT else [])
+    assert all(r.kind is not CommandKind.HOLD for r in coordinator._command_scheduler.recent_records)
+    writes.clear()
     # Its finite gesture is unchanged: one short operand when released early.
     await _hold_control(hass, control, None, duration=1)
     frames = [data for _at, data in writes]
@@ -287,13 +290,20 @@ async def test_the_memory_control_moves_its_positions_out_of_the_lease(
     assert "hold_lease_mode" not in buttons[MEMORY_1].extra_state_attributes
     assert buttons[E3RM_HEAD_UP].extra_state_attributes["hold_lease_mode"] == "stream"
     writes.clear()
-    with raises_key("hold_renewal_not_supported", ServiceValidationError):
-        await _hold_control(hass, MEMORY_1, 1)
-    assert writes == []
-    assert controller.choices.memory
+    # A renewed press in memory mode is the app's press, never a lease: one
+    # long operand saves the position and ends local mode. The save makes the
+    # control a sustained press, yet its renewal still only renews this press.
+    start = asyncio.create_task(_hold_control(hass, MEMORY_1, 1))
+    await asyncio.sleep(0.25)
+    await asyncio.wait_for(_hold_control(hass, MEMORY_1, 1), 0.05)
+    await asyncio.wait_for(start, 2)
+    assert all(r.kind is not CommandKind.HOLD for r in coordinator._command_scheduler.recent_records)
+    long_operand = p.action_frame(ACTIONS[MEMORY_1.removeprefix("goodvibe_")], 0, False, True)
+    assert [data for _at, data in writes if data != RELEASE] == [long_operand]
+    assert not controller.choices.memory
+    writes.clear()
 
     # Outside memory mode the position is a sustained press again.
-    controller.choices.memory = False
     start = asyncio.create_task(_hold_control(hass, MEMORY_1, 2))
     await asyncio.wait_for(start, 2)
     assert [data for _at, data in writes] == [_packet(MEMORY_1)] * 7 + [RELEASE]

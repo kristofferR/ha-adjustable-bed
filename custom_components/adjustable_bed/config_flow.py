@@ -53,7 +53,6 @@ from homeassistant.helpers.translation import async_get_translations
 from homeassistant.loader import IntegrationNotFound, async_get_integration
 from homeassistant.setup import async_setup_component
 
-from .actuator_groups import ACTUATOR_GROUPS
 from .adapter import (
     discover_services,
     find_service_info_by_address,
@@ -205,6 +204,7 @@ from .const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
+    BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
@@ -290,6 +290,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_LAYOUT_APP_BED_TYPES,
+    LEGACY_BED_TYPE_MAPPING,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
@@ -345,6 +346,7 @@ from .detection import (
     bed_type_label,
     detect_bed_type,
     detect_bed_type_detailed,
+    detect_new_bed,
     detect_richmat_remote_from_name,
     get_bed_type_options,
     is_mac_like_name,
@@ -430,9 +432,11 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 # Below it, or when detection is ambiguous (shared-UUID guesses such as OKIN
 # receivers), nothing is suggested and the user chooses.
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
+# Detection's confidence in a candidate only an app's scan name suggests.
+_NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {"saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {"super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic"}
 )
 
@@ -473,7 +477,7 @@ async def _async_translation(hass: HomeAssistant, category: str, key: str, defau
     """
     try:
         translations = await async_get_translations(hass, hass.config.language, category, {DOMAIN})
-    except Exception:  # noqa: BLE001 - a missing translation must not block a flow
+    except Exception:
         return default
     return translations.get(f"component.{DOMAIN}.{category}.{key}", default)
 
@@ -484,7 +488,7 @@ async def _async_selector_labels(hass: HomeAssistant, selector: str) -> dict[str
         translations = await async_get_translations(
             hass, hass.config.language, "selector", {DOMAIN}
         )
-    except Exception:  # noqa: BLE001 - a missing translation must not block a flow
+    except Exception:
         return {}
     prefix = f"component.{DOMAIN}.selector.{selector}.options."
     return {
@@ -515,6 +519,12 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
         "❌ Couldn't connect. Beds allow one connection at a time, so close the bed's app "
         "and put the remote down, or move the bed closer. You can still finish setup and "
         "try again later."
+    ),
+    "check_pairing_window": (
+        "❌ The bed is advertising but did not accept the connection, which usually means "
+        "it has not paired with this Bluetooth adapter. It pairs only during the first 3 "
+        "minutes after power-on: unplug the bed for 60 seconds, plug it back in, then "
+        "select **Check again** and finish setup within 3 minutes."
     ),
     "check_connected": "✅ Connected",
     "check_connected_via": "✅ Connected through {source}",
@@ -879,6 +889,22 @@ def _route_section(bed_type: str | None, default: str) -> section | None:
     )
 
 
+def _errors_on_shown_fields(
+    errors: Mapping[str, str], schema: Mapping[Any, Any]
+) -> dict[str, str]:
+    """Move an error on a field the form does not show to the form's own error.
+
+    Home Assistant draws an error only under a field it shows, so an error on a
+    hidden one would leave Save redrawing the form with nothing to read.
+    """
+    shown = {str(marker) for marker in schema} | {"base"}
+    moved = {key: error for key, error in errors.items() if key in shown}
+    for key, error in errors.items():
+        if key not in shown:
+            moved.setdefault("base", error)
+    return moved
+
+
 def _variant_errors_to_base(errors: dict[str, str]) -> dict[str, str]:
     """Show a route error on a form that has no route field."""
     if (error := errors.pop(CONF_PROTOCOL_VARIANT, None)) is not None:
@@ -966,9 +992,6 @@ def _bed_type_selector(
                 ),
             )
         )["label"]
-        if show_saved_id and label != bed_type:
-            # Configure names the saved ID beside its friendly label.
-            label = f"{label} (saved as {bed_type})"
         options.insert(0, SelectOptionDict(value=default, label=label))
     # Configure still accepts a family's route by its ID, as a suggested profile
     # submits it; the picker itself shows only the family row.
@@ -1015,7 +1038,12 @@ class _SearchableSelect(SelectSelector):
         listed: Any = SelectSelector(
             SelectSelectorConfig(options=[*self._choices, *self._labels, *self._accepted])
         )
-        value = listed(cast(Any, super()).__call__(data))
+        try:
+            value = listed(cast(Any, super()).__call__(data))
+        except vol.Invalid as err:
+            # The frontend shows this as the translated error under the field,
+            # not as every row the list has.
+            raise vol.Invalid("choice_not_listed") from err
         return self._choices.get(value, value)
 
 
@@ -1098,50 +1126,32 @@ def _family_rows(
 ) -> list[tuple[str, str]]:
     """Return the brand list's rows, as (choice, label), from the bed-type list.
 
-    Each brand group gives the rows that open a family question, as the list
-    shows its routes; a group with one bed type gives that row, and a group
-    with no family question gives its own rows. Its protocol-named routes,
-    which the app question does not list, are rows too. A ``detected`` route
+    Every row of the bed-type list gives its brand's row: an app its family's
+    question offers gives the family row, and any other row gives itself, named
+    brand first. The protocol-named routes, which the app question does not
+    list, share one row that asks which receiver it is. A ``detected`` route
     keeps its place under its family's row, as in the app question.
     """
     listed = {choice: label for label, choice in _bed_type_selector(detected).rows().items()}
     by_label = {label: choice for choice, label in listed.items()}
 
-    def row_for(choice: str) -> str | None:
-        if choice in listed:
-            return choice
-        # A family route is reached through its family's row.
-        return by_label.get(str(_bed_type_selector(choice).shown(choice)))
-
     def family_row(choice: str) -> str:
         # An app its family's question offers is reached through the family row.
         family = answer_family(*resolve_bed_type_choice(choice))
-        if family is None or (row := row_for(family.row)) is None:
+        if family is None:
             return choice
-        return row
+        if family.row in listed:
+            return family.row
+        # A detected route stands in for its family's row, under the row's label.
+        return by_label.get(str(_bed_type_selector(family.row).shown(family.row)), choice)
 
     rows: dict[str, str] = {}
-    for routes in ACTUATOR_GROUPS.values():
-        choices = [row_for(bed_type_choice(bed_type, variant)) for bed_type, variant in routes]
-        families = [
-            choice
-            for choice in choices
-            if choice is not None
-            and (family := question_family(choice)) is not None
-            and family.picks_route
-        ]
-        for choice in families or choices:
-            if choice is not None:
-                choice = family_row(choice)
-                rows.setdefault(choice, _brand_first(choice, listed[choice]))
-        # The protocol-named routes are off the app question. One row asks which
-        # receiver it is in plain words; a detected one keeps its own row.
-        for bed_type, _variant in routes:
-            if bed_type in PROTOCOL_ROUTES:
-                if bed_type == detected:
-                    rows.setdefault(bed_type, bed_type_label(bed_type))
-                else:
-                    rows.setdefault(_OKIN_RECEIVERS, other_receivers)
+    for choice in listed:
+        if resolve_bed_type_choice(choice)[0] == BED_TYPE_DIAGNOSTIC:
+            continue
+        row = family_row(choice)
+        rows.setdefault(row, _brand_first(row, listed[row]))
+    rows.setdefault(_OKIN_RECEIVERS, other_receivers)
     return sorted(rows.items(), key=lambda row: row[1].lower())
 
 
@@ -1159,13 +1169,14 @@ def _brand_first(choice: str, label: str) -> str:
     return f"{family.name}: {family.apps}"
 
 
-def _family_name(info: BluetoothServiceInfoBleak) -> str:
+def _family_name(info: BluetoothServiceInfoBleak, bed_type: str | None = None) -> str:
     """Name a discovered bed's family as its row in the bed-type list names it.
 
+    ``bed_type`` is the route the flow offers, when it already has one.
     A family row reads "<Family>: <its apps>" and another row "<Name> (<apps or
     models>)", so the part before the colon or parenthesis names the family.
     """
-    bed_type = detect_bed_type(info) or BED_TYPE_DIAGNOSTIC
+    bed_type = bed_type or detect_bed_type(info) or BED_TYPE_DIAGNOSTIC
     if (family := _row_family(bed_type)) is not None:
         return family
     return bed_type_label(bed_type).split(" (", 1)[0]
@@ -1358,6 +1369,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_COMFYDS,
         BED_TYPE_RIZE,
         "rize_home",
+        "superior_sleep",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
         "bedgear",
@@ -1386,6 +1398,20 @@ def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, s
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
+
+
+def _svane_fixed_settings(variant: str) -> dict[str, Any]:
+    """Return the settings a Svane Remote profile fixes; Jensen LinOn fixes none."""
+    if variant not in SVANE_VARIANTS:
+        raise ValueError("Unknown Svane Remote profile")
+    if variant == SVANE_VARIANT_JENSEN_LINON:
+        return {}
+    return {
+        CONF_MOTOR_COUNT: 2,
+        CONF_HAS_MASSAGE: False,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_MOTOR_PULSE_USER_SET: False,
+    }
 
 
 def _motor_count_options(
@@ -1500,7 +1526,8 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
             candidate not in _EXPLICIT_APP_HINTS for candidate in (result.ambiguous_types or ())
         )
     ):
-        return result.bed_type
+        # A new bed gets the current route; compatibility IDs stay with old entries.
+        return LEGACY_BED_TYPE_MAPPING.get(result.bed_type, result.bed_type)
     return None
 
 
@@ -2223,12 +2250,12 @@ def _parse_settings(
         try:
             seconds = int(float(submitted[CONF_IDLE_DISCONNECT_SECONDS]))
         except ValueError, TypeError:
-            errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_number"
+            errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_idle_seconds"
         else:
             if 1 <= seconds <= MAX_IDLE_DISCONNECT_SECONDS:
                 values[CONF_IDLE_DISCONNECT_SECONDS] = seconds
             else:
-                errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_number"
+                errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_idle_seconds"
     for key, default in _ANGLE_LIMITS.items():
         if key not in submitted:
             continue
@@ -2262,9 +2289,10 @@ _OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
     OctoPinStatus.REQUIRED: "The bed requires a PIN. Enter it below and submit to check again.",
     OctoPinStatus.REJECTED: "The bed rejected the PIN. Correct it below and submit to check again.",
     OctoPinStatus.INCONCLUSIVE: (
-        "PIN verification could not be completed. This does not mean the PIN is wrong. "
-        "Wake the bed, close other apps connected to it, and check that your Bluetooth "
-        "adapter or proxy is available. Submit to retry; the entry has not been saved."
+        "The PIN could not be checked. This does not mean the PIN is wrong. Wake the bed, "
+        "close other apps connected to it and choose **Check again**, or choose **Finish "
+        "setup anyway**. If the PIN turns out to be wrong, the bed ignores commands until "
+        "you correct it under **Configure**."
     ),
 }
 
@@ -2328,6 +2356,9 @@ class CapabilityReport:
     model: str | None = None
     position_feedback: bool = False
     error: str | None = None
+    # The connect was aborted before a link came up, as a bed outside its
+    # pairing window does to an adapter it has not paired with.
+    connection_aborted: bool = False
     octo_pin_status: OctoPinStatus | None = None
     starcode_transport_valid: bool | None = None
     starcode_transport_selector: str | None = None
@@ -2890,7 +2921,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ):
             # The previous bed type's own settings must not steer pairing, the
             # check or the saved entry, such as a VMAT app's bond and timeout.
-            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(
                 data, data[CONF_BED_TYPE]
             )
         if self._migration is not None and grants_one_connection_per_pairing_window(
@@ -3176,7 +3207,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._select_family_route(answer.bed_type, answer.variant)
         if changed and family.clears_other_profiles:
             # A new app starts without the old one's own settings, as in Configure.
-            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, answer.bed_type)  # noqa: SLF001
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, answer.bed_type)
         for key, value in answer.data.items():
             if value is REMOVED:
                 data.pop(key, None)
@@ -3383,27 +3414,33 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         }
 
     def _prepare_disambiguation(self, detection_result: DetectionResult) -> bool:
-        """Prepare the focused bed-type chooser for an ambiguous detection."""
+        """Prepare the focused bed-type chooser for an ambiguous detection.
+
+        Every uncertain match asks here, even with one candidate, because the
+        chooser says the device may not be a bed. A new bed is offered current
+        routes, never a compatibility ID. The detected type leads when its own
+        evidence ranks it above a name-only candidate; otherwise every
+        candidate is equally likely and the list is alphabetical.
+        """
         self._disambiguation_types = None
         self._disambiguated_bed_type = None
 
         bed_type = detection_result.bed_type
-        if (
-            bed_type is None
-            or detection_result.confidence >= 0.7
-            or (not detection_result.ambiguous_types and bed_type != BED_TYPE_MOTION_BED)
-        ):
+        if bed_type is None or detection_result.confidence >= 0.7:
             return False
 
-        seen: set[str] = set()
-        disambiguation_types: list[str] = []
+        candidates: list[str] = []
         for candidate in (bed_type, *(detection_result.ambiguous_types or ())):
+            candidate = LEGACY_BED_TYPE_MAPPING.get(candidate, candidate)
             if candidate in VIBRADORM_FAMILY.asks:
                 candidate = BED_TYPE_VIBRADORM
-            if candidate not in seen:
-                seen.add(candidate)
-                disambiguation_types.append(candidate)
-        self._disambiguation_types = disambiguation_types
+            if candidate not in candidates:
+                candidates.append(candidate)
+        lead = candidates[:1] if detection_result.confidence > _NAME_ONLY_CONFIDENCE else []
+        self._disambiguation_types = [
+            *lead,
+            *sorted(candidates[len(lead) :], key=lambda key: bed_type_label(key).lower()),
+        ]
         return True
 
     async def _get_config_translation(self, key: str, default: str) -> str:
@@ -3431,7 +3468,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 prediction,
                 pairing_required=bool(bed_type and requires_pairing(bed_type, protocol_variant)),
             )
-        except Exception:  # noqa: BLE001 - never block setup on a preview
+        except Exception:
             _LOGGER.debug("Could not describe the connection path for %s", address, exc_info=True)
             return ""
 
@@ -3443,7 +3480,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_sleep_number",
                 "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
-                "2. Click 'Pair Now'",
+                "2. Choose **Pair now**, then select **Submit**.",
             )
         if bed_type == BED_TYPE_LEGGETT_GEN2 or (
             bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
@@ -3455,7 +3492,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "1. Unplug your bed's power cord and remove any batteries from the power supply.\n"
                 "2. Plug the bed back in. Wait for a small chime and a pulsing blue light "
                 "under the bed.\n"
-                "3. While the light is pulsing, promptly click 'Pair Now'.",
+                "3. While the light is pulsing, promptly choose **Pair now** and select **Submit**.",
             )
         if bed_type in {
             BED_TYPE_OKIMAT,
@@ -3464,6 +3501,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             BED_TYPE_OKIN_UUID,
             BED_TYPE_LEGGETT_OKIN,
             BED_TYPE_LEGGETT_PLATT,
+            # Their guides send the user to the same OKIN pairing mode.
+            BED_TYPE_OKIN_64BIT,
+            BED_TYPE_RESIDENT,
         }:
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_okin",
@@ -3472,12 +3512,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it "
                 "until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn "
                 "button on the box only syncs the RF remote.\n"
-                "2. While the light is active, click 'Pair Now'.",
+                "2. While the light is active, choose **Pair now** and select **Submit**.",
             )
         return await self._get_config_translation(
             "step.bluetooth_pairing.data_description.pairing_instructions_generic",
-            "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n"
-            "2. Click 'Pair Now'",
+            # No documented procedure for these beds, so none is invented here.
+            "1. Put the bed into Bluetooth pairing mode as its manual describes.\n"
+            "2. Choose **Pair now**, then select **Submit**.",
         )
 
     def _get_octo_split_setup_note(
@@ -3573,7 +3614,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         return "remacro_model_not_in_app" if problem == "not_in_app" else None
 
-    def _async_abort_diagnostic_browser(
+    async def _async_abort_diagnostic_browser(
         self,
         *,
         address: str,
@@ -3582,19 +3623,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         connectable: bool | None,
     ) -> ConfigFlowResult:
         """Finish the BLE browser flow without creating a config entry."""
-        if connectable is True:
-            connectable_text = "Yes"
-        elif connectable is False:
-            connectable_text = "No (scanner says non-connectable)"
+        if connectable is None:
+            connectable_text = ""
         else:
-            connectable_text = "Unknown"
-
+            key = "connectable" if connectable else "not_connectable_note"
+            connectable_text = await self._get_config_translation(
+                f"step.diagnostic.data.{key}",
+                "Home Assistant can connect to it."
+                if connectable
+                else "The adapter or proxy that found it cannot connect to it.",
+            )
         return self.async_abort(
             reason="diagnostic_browser_ready",
             description_placeholders={
-                "name": name or "Unknown",
+                "name": name
+                or await self._get_config_translation("step.diagnostic.data.unknown_name", "Unnamed"),
                 "address": address,
-                "source": source or "unknown",
+                "source": source or "-",
                 "connectable": connectable_text,
             },
         )
@@ -3732,7 +3777,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         controller = coordinator.capability_controller
         if controller is None:
             return None
-        specs = list(getattr(controller, "motor_control_specs", ()))
+        specs = list(controller.motor_control_specs)
         configured_motor_count = entry.options.get(
             CONF_MOTOR_COUNT,
             entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
@@ -3745,10 +3790,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return {
             "motor_count": int(configured_motor_count),
             "motor_keys": sorted(spec.key for spec in specs),
-            "discrete_motor_control": bool(
-                getattr(controller, "has_discrete_motor_control", False)
-            ),
-            "supports_motor_control": bool(getattr(controller, "supports_motor_control", False)),
+            "discrete_motor_control": controller.has_discrete_motor_control,
+            "supports_motor_control": controller.supports_motor_control,
         }
 
     def _is_absorbed_pair_member(self, address: str) -> bool:
@@ -3811,11 +3854,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
             return self.async_abort(reason="discovery_disabled")
 
-        # First-time setup can fail before any entry exists. Load the domain
-        # so the support action and its download route are already available.
-        await async_setup_component(self.hass, DOMAIN, {})
-
-        _LOGGER.info(
+        _LOGGER.debug(
             "Bluetooth discovery triggered for device: %s (name: %s, RSSI: %s)",
             discovery_info.address,
             discovery_info.name,
@@ -3840,7 +3879,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_abort(reason="already_configured")
 
         # Use detailed detection to get confidence and ambiguity info
-        detection_result = detect_bed_type_detailed(discovery_info)
+        detection_result = detect_new_bed(discovery_info)
         bed_type = detection_result.bed_type
 
         if bed_type is None:
@@ -3856,6 +3895,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 discovery_info.address,
             )
             return self.async_abort(reason="not_supported")
+
+        # First-time setup can fail before any entry exists. Load the domain
+        # so the support action and its download route are already available.
+        await async_setup_component(self.hass, DOMAIN, {})
 
         _LOGGER.info(
             "Detected supported bed: %s at %s (name: %s) with confidence %.1f",
@@ -3880,7 +3923,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 confidence=detection_result.confidence,
                 signals=detection_result.signals,
             )
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             _LOGGER.warning(
                 "Failed to record auto-detection for %s: %s",
                 device_info.address,
@@ -3904,11 +3947,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_bluetooth_disambiguate(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle disambiguation when BLE detection is ambiguous.
+        """Ask which candidate app runs a device whose detection is uncertain.
 
-        Shows a focused list of 2-4 candidate bed types instead of the full
-        dropdown with 20+ options, making it easier for users to select the
-        correct type when the BLE service UUID matches multiple protocols.
+        Shows the candidates detection found, in ``_prepare_disambiguation``'s
+        order, instead of every app. The device may not be a bed, and every
+        app stays one choice away.
         """
         assert self._discovery_info is not None
         assert self._disambiguation_types is not None
@@ -3926,16 +3969,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             _LOGGER.debug("User disambiguated bed type to: %s", selected)
             return await self.async_step_bluetooth_confirm()
 
-        # Build options for disambiguation - only the relevant 2-4 types
+        # Build options for disambiguation - only the detected candidates
         options: list[SelectOptionDict] = []
         for bed_type in self._disambiguation_types:
             display_name = bed_type_label(bed_type)
             options.append(SelectOptionDict(value=bed_type, label=display_name))
 
-        # Add "Show all bed types" fallback option with translated label
+        # Every app stays one choice away, with a translated label
         show_all_label = await self._get_config_translation(
             "step.bluetooth_disambiguate.data.show_all_option",
-            "Show all bed types...",
+            "Another app or remote: search every app",
         )
         options.append(SelectOptionDict(value="show_all", label=show_all_label))
 
@@ -3975,8 +4018,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         self._new_bed_origin = "discovered"
         staged = self._unasked_route
-        detection = detect_bed_type_detailed(self._discovery_info)
-        detected = self._disambiguated_bed_type or detection.bed_type
+        detection = detect_new_bed(self._discovery_info)
+        # A new bed gets the current route; compatibility IDs stay with old entries.
+        detected = self._disambiguated_bed_type or (
+            detection.bed_type and LEGACY_BED_TYPE_MAPPING.get(detection.bed_type, detection.bed_type)
+        )
         if user_input is None and staged is None:
             if self._disambiguated_bed_type is None and self._prepare_disambiguation(detection):
                 return await self.async_step_bluetooth_disambiguate()
@@ -4026,14 +4072,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # A bed type that runs only as one of its apps suggests none of them.
             route = None
         default = picker.shown(route) if isinstance(picker, _SearchableSelect) else route
-        if detection.confidence < 0.7 and detection.ambiguous_types:
-            # A paragraph of its own; translations carry no surrounding space.
-            detection_note = "\n\n" + await self._get_config_translation(
-                "step.bluetooth_confirm.data.uncertain",
-                "Detection is not certain, so check that the app below is yours.",
-            )
-        else:
-            detection_note = ""
         marker = (
             vol.Required(CONF_BED_TYPE, default=default)
             if default is not None
@@ -4045,8 +4083,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={
                 "name": self._discovery_info.name or "Unknown",
                 "address": self._discovery_info.address.upper(),
-                "family": _family_name(self._discovery_info),
-                "detection_note": detection_note,
+                "family": _family_name(self._discovery_info, detected),
             },
         )
 
@@ -4438,8 +4475,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if octo_split_note is not None:
             notes["setup_note"] = f"\n\n{octo_split_note}"
         if info is not None and self._new_bed_origin == "discovered":
-            # A one-click "this isn't my bed" report, built from the live
-            # (unredacted) advertisement because the user chooses to open it.
+            # A one-click "this isn't my bed" report. The issue is public, so
+            # build_misidentified_issue_url keeps only the address prefix.
             detection = detect_bed_type_detailed(info)
             try:
                 integration = await async_get_integration(self.hass, DOMAIN)
@@ -4454,9 +4491,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 integration_version=version,
                 ha_version=HA_VERSION,
             )
-            notes["report_note"] = (
-                f"\n\nWrong device, or not a bed? [Report a misidentified device]({url})"
+            report = await self._get_config_translation(
+                "step.finish_settings.data_description.report_misidentified",
+                "Wrong device, or not a bed? [Report a misidentified device]({url})",
             )
+            notes["report_note"] = "\n\n" + report.format(url=url)
         return notes
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -4642,11 +4681,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         # A device picked first suggests its confidently detected route, and its
         # family row keeps that route, as the generic form's list does.
-        detected = (
-            _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
-            if self._app_after_device == "device" and self._discovery_info is not None
-            else None
-        )
+        detected = self._detected_route()
         rows = _bed_type_selector(detected).rows()
         picker = _SearchableSelect(
             [
@@ -4875,14 +4910,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """
         not_sure = await self._get_config_translation(
             "step.select_family.data.not_sure",
-            "Not sure: run diagnostics or browse unsupported devices",
+            "Not sure, or not listed",
         )
         # A device picked first keeps its confidently detected route.
-        detected = (
-            _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
-            if self._app_after_device == "device" and self._discovery_info is not None
-            else None
-        )
+        detected = self._detected_route()
         other_receivers = await self._get_config_translation(
             "step.select_family.data.okin_receivers", "Okin (other receivers)"
         )
@@ -4900,8 +4931,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is not None:
             choice = picker(user_input[CONF_BED_TYPE])
             if choice == _FAMILY_NOT_SURE:
-                self._app_after_device = None
-                return await self.async_step_diagnostic()
+                return await self._async_not_sure()
             if choice == _OKIN_RECEIVERS:
                 return await self.async_step_okin_receiver()
             bed_type, variant = resolve_bed_type_choice(choice)
@@ -4913,11 +4943,45 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=vol.Schema({vol.Required(CONF_BED_TYPE): picker}),
         )
 
+    def _detected_route(self) -> str | None:
+        """Return a device picked first's confidently detected route, if any."""
+        if self._app_after_device != "device" or self._discovery_info is None:
+            return None
+        return _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
+
+    async def _async_not_sure(self) -> ConfigFlowResult:
+        """Offer the detected controls before diagnostics, when the device was detected."""
+        detected = self._detected_route()
+        if detected is None:
+            self._app_after_device = None
+            return await self.async_step_diagnostic()
+        return self.async_show_menu(
+            step_id="not_sure",
+            menu_options=["not_sure_detected", "diagnostic"],
+            description_placeholders={
+                "detected": str(_bed_type_selector(detected).shown(detected))
+            },
+        )
+
+    async def async_step_not_sure_detected(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Set the device up with the controls detection chose for it."""
+        detected = self._detected_route()
+        if detected is None:
+            return await self.async_step_diagnostic()
+        self._selected_bed_type, self._selected_protocol_variant = resolve_bed_type_choice(
+            detected
+        )
+        return await self._async_after_app_choice()
+
     async def async_step_okin_receiver(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which Okin receiver it is, by the beds and remotes it came with."""
         if user_input is not None:
+            if user_input["choice"] == _FAMILY_NOT_SURE:
+                return await self._async_not_sure()
             self._selected_bed_type = user_input["choice"]
             self._selected_protocol_variant = None
             return await self._async_after_app_choice()
@@ -4927,7 +4991,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 {
                     vol.Required("choice"): SelectSelector(
                         SelectSelectorConfig(
-                            options=list(OKIN_RECEIVER_ROUTES),
+                            options=[*OKIN_RECEIVER_ROUTES, _FAMILY_NOT_SURE],
                             translation_key="okin_receiver_choice",
                             mode=SelectSelectorMode.LIST,
                         )
@@ -5026,25 +5090,51 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
         retrying_suffix = await self._get_retrying_option_suffix()
-        devices = {}
-        for address, info in sorted_devices:
-            label = f"{info.name or 'Unknown'} ({address})"
-            if getattr(info, "connectable", True) is False:
-                label += " [scanner says non-connectable]"
-            devices[address] = label
+        devices = await self._async_device_rows("manual", sorted_devices)
         for address, (entry, info) in sorted_retrying_devices:
-            devices[f"{CONFIGURED_RETRY_PREFIX}{address}"] = self._format_retrying_option_label(
-                address,
-                entry,
-                info,
-                suffix=retrying_suffix,
+            devices.append(
+                SelectOptionDict(
+                    value=f"{CONFIGURED_RETRY_PREFIX}{address}",
+                    label=self._format_retrying_option_label(
+                        address,
+                        entry,
+                        info,
+                        suffix=retrying_suffix,
+                    ),
+                )
             )
-        devices["manual_entry"] = "Enter address manually"
+        devices.append(
+            SelectOptionDict(
+                value="manual_entry",
+                label=await self._get_config_translation(
+                    "step.manual.data.manual_entry", "Enter the address yourself"
+                ),
+            )
+        )
 
         return self.async_show_form(
             step_id="manual",
-            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): _SearchableSelect(devices)}),
         )
+
+    async def _async_device_rows(
+        self, step_id: str, devices: Iterable[tuple[str, BluetoothServiceInfoBleak]]
+    ) -> list[SelectOptionDict]:
+        """Return a device list's rows: detected beds first, named with their family."""
+        unknown = await self._get_config_translation(f"step.{step_id}.data.unknown_name", "Unnamed")
+        not_connectable = await self._get_config_translation(
+            f"step.{step_id}.data.not_connectable", "cannot connect"
+        )
+        rows: list[tuple[bool, SelectOptionDict]] = []
+        for address, info in devices:
+            label = f"{info.name or unknown} ({address})"
+            if (bed_type := detect_bed_type(info)) is not None:
+                label += f" · {_family_name(info, bed_type)}"
+            if getattr(info, "connectable", True) is False:
+                label += f" ({not_connectable})"
+            rows.append((bed_type is None, SelectOptionDict(value=address, label=label)))
+        # Stable: each group keeps the order it was given in.
+        return [row for _later, row in sorted(rows, key=lambda row: row[0])]
 
     async def async_step_manual_entry(
         self, user_input: dict[str, Any] | None = None
@@ -5355,7 +5445,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         #461 requires the replace action to route through confirmation. Naming
         the exact adapter matters: on a host with more than one, "remove the
-        bond" is ambiguous until it says which.
+        bond" is ambiguous until it says which. A setup dialog has no Back, so
+        keeping the bond is the menu's other answer rather than closing it.
         """
         assert self._manual_data is not None
         record = self._pairing_remove_record
@@ -5363,42 +5454,56 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._async_pairing_step(
                 self._pairing_origin_step or "bluetooth_pairing", None
             )
-
-        if user_input is not None:
-            address = self._manual_data.get(CONF_ADDRESS, "")
-            current = await async_read_local_bonds(address)
-            current_record = current.sole_bond
-            if current_record is None or not current_record.is_same_bond_as(record):
-                # The confirmation named one exact BlueZ record. If it changed
-                # while the dialog was open, never apply that stale approval to
-                # whatever now occupies the same deterministic object path.
-                # Identity, not equality: a bed that merely reconnects flips
-                # ``connected``/``trusted`` and is still the approved bond.
-                self._pairing_remove_record = None
-                return await self._async_pairing_step(
-                    self._pairing_origin_step or "bluetooth_pairing", None
-                )
-            self._pairing_mode = "replace_local"
-            # A previous proxy retry must not route the replacement away from
-            # the host bond the user just approved removing.
-            self._pairing_retry_source = None
-            self._pairing_origin_step = self._pairing_origin_step or "bluetooth_pairing"
-            return await self._async_start_pairing_operation(
-                address,
-                async_predict_path(
-                    self.hass,
-                    address,
-                    self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
-                ),
-            )
-
-        return self.async_show_form(
+        return self.async_show_menu(
             step_id="pairing_replace_confirm",
-            data_schema=vol.Schema({}),
+            menu_options=["pairing_replace_bond", "pairing_keep_bond"],
             description_placeholders={
                 "name": self._manual_data.get(CONF_NAME, "Unknown"),
                 "transport": record.adapter_address or record.adapter_path,
             },
+        )
+
+    async def async_step_pairing_replace_bond(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Replace the bond the confirmation named, if it is still that bond."""
+        assert self._manual_data is not None
+        record = self._pairing_remove_record
+        origin = self._pairing_origin_step or "bluetooth_pairing"
+        address = self._manual_data.get(CONF_ADDRESS, "")
+        current = await async_read_local_bonds(address)
+        current_record = current.sole_bond
+        if record is None or current_record is None or not current_record.is_same_bond_as(record):
+            # The confirmation named one exact BlueZ record. If it changed
+            # while the dialog was open, never apply that stale approval to
+            # whatever now occupies the same deterministic object path.
+            # Identity, not equality: a bed that merely reconnects flips
+            # ``connected``/``trusted`` and is still the approved bond.
+            self._pairing_remove_record = None
+            return await self._async_pairing_step(origin, None)
+        self._pairing_mode = "replace_local"
+        # A previous proxy retry must not route the replacement away from
+        # the host bond the user just approved removing.
+        self._pairing_retry_source = None
+        self._pairing_origin_step = origin
+        return await self._async_start_pairing_operation(
+            address,
+            async_predict_path(
+                self.hass,
+                address,
+                self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
+            ),
+        )
+
+    async def async_step_pairing_keep_bond(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Keep the existing bond and continue with it, as the pairing form offers."""
+        self._pairing_remove_record = None
+        # The pairing form re-reads the bond and offers "use it" only while it
+        # still can; otherwise it shows its choices again.
+        return await self._async_pairing_step(
+            self._pairing_origin_step or "bluetooth_pairing", {"action": "use_existing_bond"}
         )
 
     def _async_deferred_pairing_entry(self) -> ConfigFlowResult | None:
@@ -5634,7 +5739,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 outcome=OperationOutcome.PAIRING_NOT_SUPPORTED,
                 detail=str(err) or err.__class__.__name__,
             )
-        except Exception as err:  # noqa: BLE001 - classified below
+        except Exception as err:
             _LOGGER.warning("Pairing failed for %s: %s", address, err)
             return OperationResult(
                 outcome=_classify_connection_failure(err),
@@ -6220,7 +6325,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         # The backend cannot pair at all; an unauthenticated
                         # read would misreport this as stale proxy keys.
                         raise
-                    except Exception as err:  # noqa: BLE001 - verify before judging the RPC
+                    except Exception as err:
                         pair_error = err
                         _LOGGER.warning(
                             "Pairing %s raised (%s); verifying whether a bond was made",
@@ -6285,13 +6390,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
                         try:
                             await async_close_vmat_setup(client)
-                        except Exception:  # noqa: BLE001 - always disconnect the setup-owned client
+                        except Exception:
                             _LOGGER.debug("VMAT setup close failed", exc_info=True)
                 finally:
                     pending_failure = sys.exception()
                     try:
                         await client.disconnect()
-                    except Exception:  # noqa: BLE001 - cleanup must not mask the result
+                    except Exception:
                         if (
                             (vmat_profile or self._migration is not None)
                             and client.is_connected
@@ -6331,7 +6436,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             from homeassistant.components.bluetooth import async_scanner_count
 
             return async_scanner_count(self.hass, connectable=True) > 0
-        except Exception:  # noqa: BLE001 - absence of scanners must not break setup
+        except Exception:
             return False
 
     async def _async_create_selected_app_entry(
@@ -6345,25 +6450,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if data.get(CONF_BED_TYPE) != self._migration.data.get(CONF_BED_TYPE):
                 # The running bed type's own settings must not steer the final
                 # one, such as a VMAT app's connection timeout.
-                AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+                AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(
                     data, data[CONF_BED_TYPE]
                 )
             self._pending_entry = data
             return await self._async_show_migration_confirm()
         self._record_selected_app_intent(data)
         if data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
-            variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
-            if variant not in SVANE_VARIANTS:
-                raise ValueError("Unknown Svane Remote profile")
-            if variant != SVANE_VARIANT_JENSEN_LINON:
-                data.update(
-                    {
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_HAS_MASSAGE: False,
-                        CONF_DISABLE_ANGLE_SENSING: True,
-                        CONF_MOTOR_PULSE_USER_SET: False,
-                    }
-                )
+            data.update(_svane_fixed_settings(data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)))
         return self.async_create_entry(title=title, data=data)
 
     def _record_selected_app_intent(self, data: dict[str, Any]) -> None:
@@ -6398,18 +6492,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         Octo must verify PIN requirements even when no scanner is available yet.
         """
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
-            variant = entry_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
-            if variant not in SVANE_VARIANTS:
-                raise ValueError("Unknown Svane Remote profile")
-            if variant != SVANE_VARIANT_JENSEN_LINON:
-                entry_data.update(
-                    {
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_HAS_MASSAGE: False,
-                        CONF_DISABLE_ANGLE_SENSING: True,
-                        CONF_MOTOR_PULSE_USER_SET: False,
-                    }
-                )
+            entry_data.update(
+                _svane_fixed_settings(entry_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO))
+            )
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_RF_ECO_BT:
             from .beds.furnimove.repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
 
@@ -6691,7 +6776,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         interrupted, and a link left open holds the bed's only connection.
         """
         from bleak import BleakClient
-        from bleak_retry_connector import establish_connection
+        from bleak_retry_connector import BleakAbortedError, establish_connection
 
         def _report(action: SetupAction) -> None:
             if reporter is not None:
@@ -6828,7 +6913,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         _report(SetupAction.DISCONNECTING)
                         try:
                             await client.disconnect()
-                        except Exception:  # noqa: BLE001 - generic probes are best-effort
+                        except Exception:
                             if migration_check is not None and client.is_connected:
                                 raise
                         else:
@@ -6845,13 +6930,28 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         finally:
                             if migration_check is not None and client.is_connected:
                                 self.async_retain_failed_setup_client(client, address)
-        except Exception as err:  # noqa: BLE001 - probe is best-effort
+        except Exception as err:
             if migration_check is not None:
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
+            report.connection_aborted = isinstance(err, BleakAbortedError)
             _LOGGER.debug("Capability probe for %s failed: %s", address, err)
 
         return report
+
+    def _pending_pairing_window_closed(self, report: CapabilityReport) -> bool:
+        """Return whether a bed that pairs only after power-on advertised but refused the check."""
+        assert self._pending_entry is not None
+        return (
+            report.freshness in (None, FreshnessStatus.FRESH)
+            and report.device_found
+            and not report.connected
+            and report.connection_aborted
+            and bed_traits(
+                self._pending_entry.get(CONF_BED_TYPE),
+                self._pending_entry.get(CONF_PROTOCOL_VARIANT),
+            ).pairing_window_at_power_on
+        )
 
     async def _format_capabilities(self, report: CapabilityReport) -> str:
         """Build the ✅/❌/⚠️/ℹ️ checklist shown in verify_connection."""
@@ -6874,7 +6974,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         lines = [await line("check_found")]
         if not report.connected:
-            lines.append(await line("check_not_connected"))
+            lines.append(
+                await line(
+                    "check_pairing_window"
+                    if self._pending_pairing_window_closed(report)
+                    else "check_not_connected"
+                )
+            )
             return "\n".join(lines)
 
         if report.actual_path is not None:
@@ -6993,10 +7099,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
 
         schema: dict[vol.Marker, Any] = {}
-        if report.freshness is not None and report.freshness is not FreshnessStatus.FRESH:
+        if (
+            report.freshness is not None and report.freshness is not FreshnessStatus.FRESH
+        ) or self._pending_pairing_window_closed(report):
             # "Finish" stays the default so Submit keeps meaning what it always
             # meant here: setup is never blocked by a failed check. Retry is one
-            # click away for the common case of "let me go wake the bed first".
+            # click away for the common case of "let me go wake the bed first",
+            # or power-cycle a bed that pairs only after power-on.
             schema[vol.Required("action", default="finish")] = SelectSelector(
                 SelectSelectorConfig(
                     options=["finish", "retry"],
@@ -7018,7 +7127,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_verify_octo_pin(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Finish only after PIN acceptance, or let the user correct and retry."""
+        """Finish after PIN acceptance, or let the user correct and retry.
+
+        A check that could not reach a verdict (a sleeping or out-of-range bed)
+        also offers to finish without it; a PIN the bed refused blocks setup.
+        """
         assert self._pending_entry is not None
         result = self.operation.result
         report = result.payload if result is not None else None
@@ -7029,8 +7142,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         errors: dict[str, str] = {}
         if user_input is not None and self._octo_pin_form_shown:
+            title = self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed")
             if status.allows_setup:
-                title = self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed")
                 if self._migration is not None:
                     # Reconfigure saves only after its review is applied.
                     return await self._async_create_selected_app_entry(
@@ -7038,8 +7151,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                 return self.async_create_entry(title=title, data=self._pending_entry)
             pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, ""))
+            finish = (
+                status is OctoPinStatus.INCONCLUSIVE and user_input.get("action") == "finish"
+            )
             if not is_valid_octo_pin(pin):
                 errors[CONF_OCTO_PIN] = "invalid_pin"
+            elif finish:
+                self._pending_entry[CONF_OCTO_PIN] = pin
+                if self._migration is not None:
+                    return await self._async_create_selected_app_entry(
+                        title=title, data=self._pending_entry
+                    )
+                return self.async_create_entry(title=title, data=self._pending_entry)
             else:
                 self._pending_entry[CONF_OCTO_PIN] = pin
                 self._octo_pin_form_shown = False
@@ -7049,9 +7172,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         schema: dict[vol.Marker, Any] = {}
         if not status.allows_setup:
             errors.setdefault("base", f"octo_pin_{status.value}")
+            # A suggestion, not a default: a PIN the user clears must stay cleared.
             schema[
-                vol.Optional(CONF_OCTO_PIN, default=self._pending_entry.get(CONF_OCTO_PIN, ""))
+                vol.Optional(
+                    CONF_OCTO_PIN,
+                    description={"suggested_value": self._pending_entry.get(CONF_OCTO_PIN, "")},
+                )
             ] = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
+        if status is OctoPinStatus.INCONCLUSIVE:
+            schema[vol.Required("action", default="retry")] = SelectSelector(
+                SelectSelectorConfig(
+                    options=["retry", "finish"],
+                    mode=SelectSelectorMode.LIST,
+                    translation_key="verify_action",
+                )
+            )
         self._octo_pin_form_shown = True
         return self.async_show_form(
             step_id="verify_octo_pin",
@@ -7080,7 +7215,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
             _LOGGER.info("User selected device from BLE browser: %s", address)
             discovery_info = self._all_ble_devices[address]
-            return self._async_abort_diagnostic_browser(
+            return await self._async_abort_diagnostic_browser(
                 address=discovery_info.address.upper(),
                 name=discovery_info.name,
                 source=getattr(discovery_info, "source", None),
@@ -7120,17 +7255,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._all_ble_devices.items(),
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
-        devices = {}
-        for address, info in sorted_devices:
-            label = f"{info.name or 'Unknown'} ({address})"
-            if getattr(info, "connectable", True) is False:
-                label += " [scanner says non-connectable]"
-            devices[address] = label
-        devices["manual"] = "Enter address manually"
+        devices = await self._async_device_rows("diagnostic", sorted_devices)
+        devices.append(
+            SelectOptionDict(
+                value="manual",
+                label=await self._get_config_translation(
+                    "step.diagnostic.data.manual", "Enter the address yourself"
+                ),
+            )
+        )
 
         return self.async_show_form(
             step_id="diagnostic",
-            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): _SearchableSelect(devices)}),
         )
 
     async def async_step_diagnostic_manual(
@@ -7150,7 +7287,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     address,
                     allow_non_connectable=True,
                 )
-                return self._async_abort_diagnostic_browser(
+                return await self._async_abort_diagnostic_browser(
                     address=address,
                     name=user_input.get(CONF_NAME) or getattr(service_info, "name", None),
                     source=getattr(service_info, "source", None),
@@ -7162,7 +7299,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_ADDRESS): str,
-                    vol.Optional(CONF_NAME, default="Unknown BLE Device"): str,
+                    vol.Optional(CONF_NAME): str,
                 }
             ),
             errors=errors,
@@ -7210,16 +7347,15 @@ def _pairlink_settings_schema(
             for item in pairlink_host_adapter_inventory(hass)
             if item.transport == "local" and item.active
         ]
-    except Exception:  # noqa: BLE001 - setup revalidates current inventory
+    except Exception:
         local_sources = []
 
     current_source = current_data.get(CONF_PAIRLINK_HOST_SOURCE)
     if isinstance(current_source, str) and current_source and all(
         option["value"] != current_source for option in local_sources
     ):
-        local_sources.append(
-            {"value": current_source, "label": f"{current_source} (not currently active)"}
-        )
+        # Its help text says a saved adapter that is not active now stays listed.
+        local_sources.append({"value": current_source, "label": current_source})
     source_selector: Any = (
         SelectSelector(
             SelectSelectorConfig(options=local_sources, mode=SelectSelectorMode.DROPDOWN)
@@ -7231,11 +7367,12 @@ def _pairlink_settings_schema(
         vol.Optional(
             CONF_PAIRLINK_ROLE,
             default=current_data.get(CONF_PAIRLINK_ROLE, PAIRLINK_ROLE_CENTRAL),
-        ): vol.In(
-            {
-                PAIRLINK_ROLE_CENTRAL: "Selected-bed central connection",
-                PAIRLINK_ROLE_PERIPHERAL: "Join from this host adapter",
-            }
+        ): SelectSelector(
+            SelectSelectorConfig(
+                options=[PAIRLINK_ROLE_CENTRAL, PAIRLINK_ROLE_PERIPHERAL],
+                translation_key="pairlink_role",
+                mode=SelectSelectorMode.LIST,
+            )
         ),
         vol.Optional(
             CONF_PAIRLINK_HOST_SOURCE,
@@ -7516,8 +7653,22 @@ class AdjustableBedOptionsFlow(
         ):
             menu_options.append("pair_sides")
         menu_options.extend(self.estimate_menu_options())
-        if data.get(CONF_ADDRESS) or (
-            data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS and bool(iter_children(data))
+        # A bed that never pairs has no bond to remove, unless one was recorded.
+        may_hold_bond = any(
+            side.get(CONF_BLE_BOND_ESTABLISHED)
+            or side.get(CONF_BLE_BOND_CONTEXT)
+            or requires_pairing(
+                side.get(CONF_BED_TYPE) or data.get(CONF_BED_TYPE) or "",
+                side.get(CONF_PROTOCOL_VARIANT, data.get(CONF_PROTOCOL_VARIANT)),
+            )
+            for side in (data, *iter_children(data))
+        )
+        if may_hold_bond and (
+            data.get(CONF_ADDRESS)
+            or (
+                data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS
+                and bool(iter_children(data))
+            )
         ):
             menu_options.append("remove_bond")
         return self.async_show_menu(step_id="init", menu_options=menu_options)
@@ -7696,7 +7847,7 @@ class AdjustableBedOptionsFlow(
         return self.async_show_form(
             step_id=f"{side}_settings",
             data_schema=vol.Schema(schema),
-            errors=errors,
+            errors=_errors_on_shown_fields(errors, schema),
             description_placeholders={"name": child.get(CONF_NAME, side.title())},
         )
 
@@ -7725,7 +7876,7 @@ class AdjustableBedOptionsFlow(
                     return
                 try:
                     await async_unpair_entry(self.hass, entry)
-                except Exception:  # noqa: BLE001 - task must report transaction failure
+                except Exception:
                     _LOGGER.exception("Could not unpair config entry %s", entry_id)
 
             # The options flow belongs to the entry being removed. Schedule the
@@ -7827,7 +7978,7 @@ class AdjustableBedOptionsFlow(
                     self.hass.config_entries.async_update_entry(entry, data=paired_data)
                     if not await self.hass.config_entries.async_setup(entry.entry_id):
                         raise RuntimeError("paired entry setup failed")
-                except Exception:  # noqa: BLE001 - restore the working standalone entry
+                except Exception:
                     self.hass.config_entries.async_update_entry(
                         entry,
                         data=original_data,
@@ -7877,7 +8028,7 @@ class AdjustableBedOptionsFlow(
                     resource="configuration",
                     read_positions_after_operation=False,
                 )
-        except Exception as err:  # noqa: BLE001 - report, the user can retry
+        except Exception as err:
             _LOGGER.debug("Side support check for %s failed: %s", self.config_entry.title, err)
         if supported is None:
             # A command preempted during preparation returns without running.
@@ -8164,7 +8315,9 @@ class AdjustableBedOptionsFlow(
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
-                    errors={CONF_PROTOCOL_VARIANT: remacro_error},
+                    errors=_errors_on_shown_fields(
+                        {CONF_PROTOCOL_VARIANT: remacro_error}, schema_dict
+                    ),
                 )
             if variants:
                 user_input[CONF_PROTOCOL_VARIANT] = requested_variant
@@ -8225,7 +8378,9 @@ class AdjustableBedOptionsFlow(
                 app_data = declared.staged(before, answers)
                 if app_errors := declared.errors(app_data, context):
                     return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
+                        step_id=step_id,
+                        data_schema=vol.Schema(schema_dict),
+                        errors=_errors_on_shown_fields(app_errors, schema_dict),
                     )
                 # The answers, and whatever normalizing corrected, are saved.
                 for key in answers.keys() - app_data.keys():
@@ -8262,15 +8417,7 @@ class AdjustableBedOptionsFlow(
                         data_schema=vol.Schema(schema_dict),
                         errors={"base": "invalid_variant_for_bed_type"},
                     )
-                if svane_variant != SVANE_VARIANT_JENSEN_LINON:
-                    user_input.update(
-                        {
-                            CONF_MOTOR_COUNT: 2,
-                            CONF_HAS_MASSAGE: False,
-                            CONF_DISABLE_ANGLE_SENSING: True,
-                            CONF_MOTOR_PULSE_USER_SET: False,
-                        }
-                    )
+                user_input.update(_svane_fixed_settings(svane_variant))
             if self.config_entry.data.get(
                 CONF_PAIR_MODE
             ) == PAIR_MODE_SINGLE_ADDRESS and not supports_single_address_pairing(
@@ -8733,7 +8880,7 @@ class AdjustableBedOptionsFlow(
         try:
             async with coordinator.async_transport_operation("unpair"):
                 return await self._async_remove_and_apply(record)
-        except Exception as err:  # noqa: BLE001 - report, do not remove blindly
+        except Exception as err:
             _LOGGER.warning("Could not remove the bond for %s: %s", self.config_entry.title, err)
             return OperationResult(
                 outcome=OperationOutcome.UNPAIR_FAILED,

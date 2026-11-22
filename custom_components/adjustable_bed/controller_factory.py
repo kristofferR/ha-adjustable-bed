@@ -143,6 +143,7 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SUPERIOR_SLEEP,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
@@ -364,14 +365,17 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # Bed types whose controller needs the variant, entry data, the advertisement
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
+    "super_colchones": _BuilderSpec("super_colchones.controller"),
     "agingplace": _BuilderSpec("keeson.agingplace"),
     "sleep_evolution": _BuilderSpec("richmat_legacy.controller"),
     "wsilver_legacy": _BuilderSpec("richmat_legacy.controller"),
+    BED_TYPE_SUPERIOR_SLEEP: _BuilderSpec("superior_sleep.controller"),
     BED_TYPE_RIZE_HOME: _BuilderSpec("rize_home.controller"),
     "nerum": _BuilderSpec("nerum.controller"),
     "cheerssleep": _BuilderSpec("cheerssleep.controller"),
     "smart_sleep": _BuilderSpec("smart_sleep.controller"),
     BED_TYPE_SUTA: _BuilderSpec("suta.controller"),
+    "sleep_assistant": _BuilderSpec("sleep_assistant.controller"),
     "onlysnore": _BuilderSpec("onlysnore.controller"),
     BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),
     BED_TYPE_N32_MOTION_BED: _BuilderSpec("n32_motion_bed.controller"),
@@ -410,6 +414,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_MLILY: _BuilderSpec("mlily"),
     "majestichome": _BuilderSpec("majestichome.controller"),
     BED_TYPE_OKIMIKI: _BuilderSpec("okimiki.controller"),
+    "dreamsense": _BuilderSpec("dreamsense.controller"),
     "saatva": _BuilderSpec("saatva"),
     BED_TYPE_BOBPOWERBASE: _BuilderSpec("bobpowerbase"),
     BED_TYPE_MLILY_REMOTE: _BuilderSpec("mlily_remote.controller"),

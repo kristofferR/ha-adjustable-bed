@@ -162,7 +162,7 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional state attributes."""
-        attrs: dict[str, Any] = {}
+        attrs = self._base_attributes()
 
         # Last connected timestamp
         if self._coordinator.last_connected:
@@ -255,7 +255,10 @@ class AdjustableBedControllerStateBinarySensor(AdjustableBedEntity, BinarySensor
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return parser metadata selected by the controller spec."""
         state = self._coordinator.controller_state
-        return {key: state[key] for key in self._spec.attribute_keys if key in state}
+        return {
+            **self._base_attributes(),
+            **{key: state[key] for key in self._spec.attribute_keys if key in state},
+        }
 
 
 class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
@@ -310,7 +313,7 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional presence metadata."""
-        attrs: dict[str, Any] = {}
+        attrs = self._base_attributes()
         side = self.entity_description.side or self._coordinator.controller_state.get(
             BED_PRESENCE_SIDE
         )

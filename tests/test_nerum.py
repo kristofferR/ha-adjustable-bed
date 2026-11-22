@@ -14,9 +14,10 @@ import pytest
 
 from custom_components.adjustable_bed.beds.nerum import controller as runtime
 from custom_components.adjustable_bed.beds.nerum import state
-from custom_components.adjustable_bed.card import CARD_HIDDEN, CARD_LIGHT_STATE, CARD_LIGHTING
+from custom_components.adjustable_bed.card import CARD_LIGHTING
 from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.profiles import nerum as app
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.hold_lease_wire import virtual_clock
 
 FIXTURE = Path(__file__).parent / "fixtures/nerum"
@@ -242,14 +243,24 @@ async def test_preset_release_is_not_a_duplicate_motor_release():
     assert frames(client) == [app.build("p2", 10)] + [app.build("p2", 6)] * 2
 
 
-def test_light_toggle_and_state_sit_together_in_the_card():
-    ctrl = bed("p1")[0]
-    light = next(s for s in ctrl.controller_button_specs if s.key == "nerum_light")
+def test_only_p1_reports_its_light_so_only_p2_and_p3_keep_the_toggle_button():
+    p1, p2 = bed("p1")[0], bed("p2")[0]
+    assert p1.supports_light_state_feedback and p1.supports_light_toggle_control
+    assert not any(s.key == "nerum_light" for s in p1.controller_button_specs)
+    assert not p2.supports_light_state_feedback and not p2.supports_light_toggle_control
+    light = next(s for s in p2.controller_button_specs if s.key == "nerum_light")
     assert light.card == CARD_LIGHTING
-    cards = {s.key: s.card for s in ctrl.controller_state_binary_sensor_specs}
-    assert cards == {str(state.MASSAGE): CARD_HIDDEN, str(state.LIGHT): CARD_LIGHT_STATE}
-    enabled = {s.key for s in ctrl.controller_state_binary_sensor_specs if s.entity_registry_enabled_default}
-    assert enabled == {str(state.LIGHT)}
+
+
+async def test_p1_light_sends_the_light_key_only_when_the_reported_state_differs():
+    ctrl, co, client = bed("p1")
+    await ctrl.async_discover_capabilities()
+    co.controller_state[UNDER_BED_LIGHTS_ON] = True
+    with virtual_clock():
+        await ctrl.lights_on()
+        assert frames(client) == []
+        await ctrl.lights_off()
+    assert frames(client)[0] == app.build("p1", 14)
 
 
 async def test_a_frame_the_app_does_not_send_is_not_held_back():

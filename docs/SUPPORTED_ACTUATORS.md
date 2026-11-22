@@ -21,7 +21,9 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Bedgear | [Bedgear](beds/motomotion.md#bedgear) |
 | BedJet | [BedJet PowerLayer](beds/bedjet-powerlayer.md) (the frame, not the BedJet climate unit) |
 | Bedre Nætter | [Linak](beds/linak.md) |
-| BedTech | [BedTech](beds/richmat.md#bedtech) |
+| Bed Tech | [Bed Tech, older app](beds/richmat.md#bed-tech) |
+| BedSmart / X-Series | [Richmat](beds/richmat.md#bedsmart--x-series) |
+| BedTech | [BedTech, newer app](beds/richmat.md#bedtech), [Bed Tech, older app](beds/richmat.md#bed-tech) |
 | Caresse | [Vibradorm](beds/vibradorm.md) |
 | Casper | [Casper Base](beds/casper-base.md), [Richmat](beds/richmat.md) |
 | CheersSleep | [CheersSleep](beds/cheerssleep.md) |
@@ -31,11 +33,11 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Dawn House | [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) |
 | DewertOkin | [DewertOkin ELEVATE](beds/okin-5a.md#dewertokin-elevate), [Okin](beds/okin-nframe.md) |
 | Dream Motion | [Jiecang](beds/jiecang.md) |
+| Dream Sense | [Dream Sense Bed](beds/richmat.md#dream-sense-bed) |
 | Elda BTH / MEGAMAT | [Okin](beds/okin-nframe.md) |
 | Ergomotion | [Keeson](beds/keeson.md) |
 | ErgoSportive | [Keeson](beds/keeson.md) |
-| eShine | [eShine](beds/okin-nframe.md#eshine) |
-| Eshine | [Eshine E6000](beds/richmat.md#eshine) |
+| eShine | [eShine E2000 to E5000](beds/okin-nframe.md#eshine), [eShine E6000](beds/richmat.md#eshine) |
 | Floyd | [Kaidi](beds/kaidi.md) |
 | GhostBed | [Keeson](beds/keeson.md) |
 | Glideaway | [Jiecang](beds/jiecang.md), [Keeson](beds/keeson.md) |
@@ -46,7 +48,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | HHC | [MotoSleep / Power Bob](beds/motomotion.md#motosleep-and-power-bob-family) |
 | HJBed | [HJBed](beds/richmat.md#hjbed) |
 | Hush | [Hush Base](beds/hush-base.md) (L200 to L500, S175 to S575 and SH split-head models) |
-| iFlex | [Okin](beds/okin-nframe.md) |
+| iFlex | [Mattress Firm 900 / iFlex](beds/okin-5a.md#mattress-firm-900--iflex) |
 | Jensen | [Jensen / Svane](beds/jensen.md) (JMC400, LinON Entry, LinOn), [Linak](beds/linak.md) |
 | Jerome's | [Customatic](beds/okin-nframe.md#customatic-family), [Remacro](beds/remacro.md), [Richmat](beds/richmat.md) |
 | Jiecang | [Jiecang](beds/jiecang.md) |
@@ -58,15 +60,17 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Linx | [Linx](beds/linx.md) |
 | LOGICDATA | [Jiecang](beds/jiecang.md), [LOGICDATA](beds/logicdata.md) |
 | Lucid | [Malouf / Lucid](beds/malouf.md), [Okin](beds/okin-nframe.md) |
+| Lunio | [Lunio Smart+](beds/richmat.md#lunio-smart) |
 | Luuna | [Richmat](beds/richmat.md) |
+| Majestic Home | [Majestic Home](beds/richmat.md#majestic-home) |
 | Malouf | [Malouf / Lucid](beds/malouf.md) |
 | Mattress Firm | [Sleepy's Elite](beds/sleepys.md) |
-| Mattress Firm 900 | [Okin](beds/okin-nframe.md) |
+| Mattress Firm 900 | [Mattress Firm 900 / iFlex](beds/okin-5a.md#mattress-firm-900--iflex) |
 | Mattress Firm 900-O | [Okin CST](beds/okin-nframe.md#okin-cst) |
 | Member's Mark | [Keeson](beds/keeson.md) |
 | MLILY | [MLILY Control](beds/richmat.md#mlily-control), [MLILY Remote](beds/richmat.md#mlily-remote), [MLILY Supreme](beds/richmat.md#mlily-supreme), [Richmat](beds/richmat.md) |
 | MotoMotion | [MotoMotion](beds/motomotion.md) |
-| Nectar | [Okin](beds/okin-nframe.md), [Okin CST](beds/okin-nframe.md#okin-cst) |
+| Nectar | [Nectar](beds/okin-5a.md#nectar), [Nectar Move (Okin CST)](beds/okin-nframe.md#nectar-move-profile), [Nectar Premier (Resident Adjustable Base)](beds/okin-nframe.md#resident-adjustable-base) |
 | Nerum | [Nerum](beds/nerum.md) |
 | Nisco | [Nisco](beds/richmat.md#nisco) |
 | NORA_CON / NORACON | [Okin](beds/okin-nframe.md) |
@@ -87,15 +91,16 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Restonic | [Keeson](beds/keeson.md) |
 | Reverie | [Reverie](beds/reverie.md) |
 | Rize | [Customatic](beds/okin-nframe.md#customatic-family) (Clarity, Remedy), [Kaidi](beds/kaidi.md) (Remedy III and newer Mouselet-based beds), [Okin](beds/okin-nframe.md), [Okin CST](beds/okin-nframe.md#okin-cst) (Sanctuary, Aviada, Bob, Contempo, II Carefree, II Clarity) |
-| Sealy | [Solace](beds/ff_frame.md) |
-| Sealy Posturematic | [Okin](beds/okin-nframe.md) |
+| Saatva | [Saatva](beds/richmat.md#saatva) |
+| Sealy | [Solace](beds/ff_frame.md) (Sealy MotionFlex), [Sealy Posturematic](beds/okin-5a.md#sealy-posturematic-cb35) |
+| Sealy Posturematic | [Sealy Posturematic (CB35)](beds/okin-5a.md#sealy-posturematic-cb35), tested; the [Sealy Posturematic app](beds/okin-5a.md#sealy-posturematic-app) route is not yet tested |
 | SealyMF | [Solace](beds/ff_frame.md) |
 | Serta | [Keeson](beds/keeson.md) |
 | SILVERmotion | [LOGICDATA](beds/logicdata.md) |
 | Simmons | [Okin](beds/okin-nframe.md) |
 | SimplicityFrame | [LOGICDATA](beds/logicdata.md) |
 | Sleep Number | [Sleep Number](beds/sleep_number.md) |
-| Sleep Smart Vienna / Toronto / Middle Rail | [LOGICDATA](beds/logicdata.md) |
+| Sleep Smart Vienna / Toronto / Middle Rail | [Sleep Smart Air Mattress](beds/jiecang.md#sleep-smart-air-mattress-bed) |
 | SleepSpa | [SleepSpa S9000AI](beds/sleepstar.md) |
 | Sleepy's | [Sleepy's Elite](beds/sleepys.md) |
 | Slumberland | [Remacro](beds/remacro.md) |
@@ -108,6 +113,8 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Structures | [Malouf / Lucid](beds/malouf.md) |
 | SUTA | [SUTA Smart Home](beds/suta.md) |
 | Svane | [Jensen / Svane](beds/jensen.md) |
+| Super Colchones | [Super Colchones](beds/richmat.md#super-colchones) |
+| Superior Sleep | [Superior sleep SS350 / SS650](beds/okin-nframe.md#superior-sleep-ss350--ss650), [Superior app](beds/richmat.md#classic-richmat-apps) |
 | Sven & Son | [Richmat](beds/richmat.md) |
 | Symphony | [Okin](beds/okin-nframe.md) |
 | SYNARGY | [Smart Comfort seats](beds/smart-comfort.md) |

@@ -27,12 +27,14 @@ from ...command_scheduler import (
     note_frame_written,
 )
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import GOODVIBE, RichmatProfile
 from ...profiles.richmat_catalog import Catalog
 from ...state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..catalog_buttons import (
     EXTRA_KEY,
     Kind,
@@ -100,6 +102,8 @@ SLEEP_SERVICES = frozenset(
 
 STATUS: Final = StateKey[str | None]("goodvibe_status")
 EVENTS: Final = StateKey[dict[str, object]]("goodvibe_events")
+MAX_CACHED_REPORTS: Final = 4
+_SLEEP_DATA_EVENTS: Final = frozenset({"q_realtime", "report", "report_cache"})
 REJECTION: Final = StateKey[str | None]("goodvibe_rejection")
 SIDE: Final = StateKey[str | None]("goodvibe_side")
 MONITORING: Final = StateKey[bool]("goodvibe_monitoring")
@@ -505,7 +509,12 @@ class GoodVibeController(BedController):
             "app": self.catalog.key,
             "profile": self.product_key,
             "hardware_verified": False,
-            "events": deepcopy(self.choices.events),
+            # Live vital signs and sleep reports stay out of files users post.
+            "events": {
+                key: deepcopy(value)
+                for key, value in self.choices.events.items()
+                if key not in _SLEEP_DATA_EVENTS
+            },
             "rejection": self._rejection,
             "monitoring": self.choices.monitoring,
         }
@@ -777,7 +786,12 @@ class GoodVibeController(BedController):
                         if self._report_context is not None:
                             cache = self.choices.events.setdefault("report_cache", {})
                             if isinstance(cache, dict):
-                                cache[":".join(map(str, self._report_context))] = deepcopy(obj)
+                                key = ":".join(map(str, self._report_context))
+                                cache.pop(key, None)
+                                cache[key] = deepcopy(obj)
+                                # Each report can be a megabyte: keep the newest few.
+                                while len(cache) > MAX_CACHED_REPORTS:
+                                    cache.pop(next(iter(cache)))
                         self._report_done.set()
                     self._event(route, obj)
                     if self.kind == 3 and route in ("s_time", "q_time"):
@@ -1257,7 +1271,7 @@ class GoodVibeController(BedController):
         context = current_command_context()
         if gesture != "sustainPress" and context is not None and context.lease is not None:
             # Admission checks the scope too; memory mode may change after it.
-            raise ValueError("This control does not support renewable holds")
+            raise invalid("control_hold_renewal_not_supported")
         side, link = self._side(), self._current_link()
         bed = self.catalog.bed
         finite_bed_hold = (
@@ -1390,7 +1404,7 @@ class GoodVibeController(BedController):
             release_required = (attempted or bed is not None and not cancel.is_set()) and gesture == "sustainPress"
             if release_required or attempted and gesture == "shortPress" and bed is None:
                 if bed is None:
-                    await self._send(_stop(side, link), cleanup=True, link=link)
+                    await settled(self._send(_stop(side, link), cleanup=True, link=link))
                 else:
                     release = asyncio.create_task(self._send(_stop(side, link), cleanup=True, link=link))
                     cancelled = False
