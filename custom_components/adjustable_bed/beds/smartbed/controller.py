@@ -1477,7 +1477,7 @@ async def build_controller(ctx: BuildContext) -> SmartBedController:
     variant = receiver_variant(ctx.data, ctx.variant)
     selected = select_profile(
         variant or "auto",
-        ctx.data.get(CONF_BLE_DEVICE_NAME, ctx.device_name),
+        ctx.data.get(CONF_BLE_DEVICE_NAME) or ctx.device_name,
         motors=ctx.data.get(CONF_MOTOR_COUNT, ctx.coordinator.motor_count),
     )
     return SmartBedController(

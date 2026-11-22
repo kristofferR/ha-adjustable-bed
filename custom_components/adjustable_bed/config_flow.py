@@ -1354,6 +1354,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         *KEESON_LAYOUT_APP_BED_TYPES,
         "ergomotion_4",
         "relax_motion",
+        "smartbed",
         # One row each asks the app's exact product.
         *PRODUCT_QUESTION_BED_TYPES,
         # The layout is BedSense's own question.
@@ -2080,6 +2081,7 @@ TAP_COUNT_UNUSED: Final = frozenset(
         BED_TYPE_BOBPOWERBASE,
         BED_TYPE_MOTOMOTION,
         BED_TYPE_REVERIE,
+        "smartbed",
     }
 )
 _PULSE_COUNT_RANGE: Final = (1, 100)

@@ -827,3 +827,58 @@ async def test_unknown_smartbed_timer_remains_unknown_after_disconnect(make, con
     assert timer.current_option == {None: "10 min", "left": "20 min", "right": "30 min"}[controller_side]
     c.on_disconnect()
     assert timer.current_option is None
+
+
+@pytest.mark.parametrize(
+    ("answers", "saved"),
+    [
+        # CB24 with five motors is the app's fourth packet format.
+        ({"protocol_variant": "cb24", "motor_count": 5}, {"motor_count": 5, "cb24_bed_selection": 0}),
+        # Only a CB24AB receiver is asked for a side.
+        (
+            {"protocol_variant": "cb24_ab", "motor_count": 3, "cb24_bed_selection": 1},
+            {"motor_count": 3, "cb24_bed_selection": 1},
+        ),
+        # A headboard has one layout, whatever count was left in the form.
+        ({"protocol_variant": "headboard126", "motor_count": 4}, {"motor_count": 2}),
+        # Dacheng has no five-motor layout.
+        ({"protocol_variant": "dacheng", "motor_count": 5}, None),
+    ],
+)
+async def test_setup_asks_the_receiver_with_the_answers_that_depend_on_it(hass, answers, saved):
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from tests.form_helpers import start_new_bed
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
+    result = await start_new_bed(flow, "typed", BED_TYPE_SMARTBED)
+    assert result["step_id"] == "profile_questions"
+    result = await flow.async_step_profile_questions(answers)
+    if saved is None:
+        assert result["errors"] == {"motor_count": "invalid_motor_count_for_bed_type"}
+        return
+    assert result["step_id"] == "finish_settings"
+    # Taps use each receiver's own timing, so there is no repeat count to set.
+    assert "timing" not in {marker.schema for marker in result["data_schema"].schema}
+    await flow.async_step_finish_settings({})
+    entry = flow._finish_with_verify.await_args.args[0]
+    assert entry["protocol_variant"] == answers["protocol_variant"]
+    assert {key: entry[key] for key in saved} == saved
+
+
+async def test_a_cleared_bluetooth_name_falls_back_to_the_advertised_one(make):
+    from custom_components.adjustable_bed.beds.builder import BuildContext
+    from custom_components.adjustable_bed.beds.smartbed.controller import build_controller
+    from custom_components.adjustable_bed.const import CONF_BLE_DEVICE_NAME
+
+    controller = make()[0]
+    ctx = SimpleNamespace(
+        coordinator=controller._coordinator,
+        data={CONF_BLE_DEVICE_NAME: ""},
+        variant="auto",
+        device_name="Headboard126123",
+        stored_capabilities=lambda _key: None,
+    )
+    built = await build_controller(cast(BuildContext, ctx))
+    assert built.profile.key == "headboard126"
