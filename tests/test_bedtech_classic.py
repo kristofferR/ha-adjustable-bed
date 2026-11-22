@@ -767,3 +767,12 @@ async def test_native_cached_three_slot_plan_cannot_write_new_calendar_page(hass
         await call_set_alarm(hass, ctrl, {"enabled": False, "slot": 2})
     configure.assert_not_awaited()
     ctrl.client.write_gatt_char.assert_not_called()
+
+
+def test_a_memory_slot_outside_the_standard_ones_keeps_recall_and_save_together():
+    """H2RM's memory 5 has no slots 1-4: its recall and save share the card's slot 5,
+    so Set mode guards the save beside the recall it overwrites."""
+    specs = {s.key: s for s in make("h2rm").controller_button_specs}
+    recall, save = specs["richmat_mh_f4"], specs["richmat_mh_f5"]
+    assert (recall.card.section, recall.card.slot) == (save.card.section, save.card.slot)
+    assert recall.translation_key == "preset_memory_5" and save.translation_key == "program_memory_5"

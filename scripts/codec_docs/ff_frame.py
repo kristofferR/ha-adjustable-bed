@@ -167,9 +167,9 @@ def render_ff_frame_profiles() -> str:
         woosa_startup,
         "### BedSense layouts",
         layouts,
-        "### Motion Bed callsites",
-        f"{len(commands)} app callsites over {len(set(commands.values()))} distinct frames, "
-        "each gated by layout, module and state.",
+        "### Motion Bed actions",
+        f"{len(commands)} app actions over {len(set(commands.values()))} distinct frames; "
+        "which ones appear depends on the layout, module and state.",
     )
 
 

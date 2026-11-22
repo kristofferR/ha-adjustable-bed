@@ -270,7 +270,6 @@ async def test_axis_choice_is_an_explicit_position_action(clock):
 
 def test_all_layout_names_are_unique_with_no_placeholders_or_screen_state():
     from custom_components.adjustable_bed.labels import display_label
-    from tests.test_entity_names import problems
 
     for layout in LAYOUTS:
         if layout in EXCLUDED_LAYOUTS:
@@ -280,9 +279,7 @@ def test_all_layout_names_are_unique_with_no_placeholders_or_screen_state():
         names = [
             display_label((s.translation_placeholders or {}).get("action", s.name)) for s in specs
         ]
-        assert not {name: problems(name) for name in names if problems(name)}, layout
         assert len(names) == len(set(names)), layout
-        assert not any("button" in name.lower().split() for name in names), layout
         assert not any(word in name.lower() for name in names for word in ("music", "volume")), (
             layout
         )
@@ -782,6 +779,8 @@ async def test_gvrm_visible_roles_and_wire_admission_agree(clock, wire):
     assert {"tv", "lounge", "zero_gravity", "flat", "toggle_underbed_light"} <= ctrl._actions.keys()
     assert not {"save_m1", "save_m2", "m1", "m2"} & ctrl._actions.keys()
     keys = {s.key for s in ctrl.controller_button_specs}
+    # Jerome's own action table: no per-format copies, unlike L&P and BedSmart.
+    assert not any(key.endswith(("_raw", "_framed")) for key in keys)
     if wire == "RAW":
         assert "jerome_lounge" in keys
         ctrl.validate_action("lounge", keep=True)

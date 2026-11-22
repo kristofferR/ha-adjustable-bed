@@ -29,7 +29,6 @@ if TYPE_CHECKING:
 
 async def _execute_zseries_alarm(
     call: ServiceCall,
-    label: str,
     command: Callable[[ZSeriesController], Awaitable[None]],
     validate: Callable[[ZSeriesController], None] | None = None,
 ) -> None:
@@ -43,7 +42,6 @@ async def _execute_zseries_alarm(
     preflighted = await _preflight_capability(
         targets,
         ZSeriesController,
-        label,
         supported=lambda zseries: zseries.alarm_not_ruled_out,
         validate=validate,
     )
@@ -67,7 +65,7 @@ async def _execute_zseries_alarm(
                     raise _invalid(
                         "feature_not_supported",
                         device_name=target.name,
-                        feature=label,
+                        feature="this action",
                     )
                 state = await live.resolve_alarm_state()
                 if opened and len(physical) > 1:
@@ -91,12 +89,12 @@ async def _execute_zseries_alarm(
                 raise _invalid(
                     "feature_not_supported",
                     device_name=target.name,
-                    feature=label,
+                    feature="this action",
                 )
         for coordinator, side in targets:
             # The app cancels the running stream first; HA also releases it safely.
             await _execute_sided(
-                coordinator, side, _family_command(ZSeriesController, label, command)
+                coordinator, side, _family_command(ZSeriesController, command)
             )
     except ValueError as err:
         await _release_preflighted(preflighted)

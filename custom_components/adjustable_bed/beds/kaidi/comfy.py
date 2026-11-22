@@ -14,6 +14,7 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.components.sensor import SensorDeviceClass
 
 from ...app_session import app_session
 from ...card import CARD_PRESETS, CARD_UTILITY
@@ -250,6 +251,7 @@ class ComfyController(KaidiAppController):
                 "mdi:timer-outline",
                 "s",
                 entity_registry_enabled_default=True,
+                device_class=SensorDeviceClass.DURATION,
             ),
         )
 
@@ -522,7 +524,7 @@ class ComfyController(KaidiAppController):
         if self._target is not None and not (self._target > 0 or self._target == -2):
             raise ValueError("Ordinary app controls require a positive destination or -2")
         if not release and self._lock_status != "unlocked":
-            raise ValueError("The app control panel is locked")
+            raise ValueError("The bed's control panel is locked. Unlock it and try again")
 
     def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:
         self._axis(motor)
@@ -531,7 +533,7 @@ class ComfyController(KaidiAppController):
     def validate_memory_recall(self, memory_num: int) -> None:
         super().validate_memory_recall(memory_num)
         if self._lock_status != "unlocked":
-            raise ValueError("The app control panel is locked")
+            raise ValueError("The bed's control panel is locked. Unlock it and try again")
 
     @property
     def requires_linked_live_readiness(self) -> bool:
@@ -672,13 +674,13 @@ class ComfyController(KaidiAppController):
 
     async def program_memory(self, memory_num: int) -> None:
         if not self.supports_memory_programming or memory_num not in (1, 2, 3, 4):
-            raise ValueError("Memory save requires a store-capable bed and slot 1-4")
+            raise ValueError("This bed cannot save memory positions, or the position is not 1 to 4")
         await self._ensure_session()
         await self._send_opcode(self._opcode(f"save_{memory_num}"))
 
     async def select_timer(self, minutes: int) -> None:
         if type(minutes) is not int or minutes not in (10, 20, 30, 40, 50):
-            raise ValueError("The app timer selections are 10, 20, 30, 40 or 50 minutes")
+            raise ValueError("Choose a timer of 10, 20, 30, 40 or 50 minutes")
         lane = self._feature_lane("timer")
         await self._ensure_session()
         self._ordinary_guard()

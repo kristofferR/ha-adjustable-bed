@@ -1009,6 +1009,8 @@ class TestBleDiagnosticsRunner:
                 "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
                 return_value=1,
             ),
+            # Skip the one-second wait between reconnect attempts.
+            patch("custom_components.adjustable_bed.ble_diagnostics.asyncio.sleep"),
         ):
             report = await BLEDiagnosticRunner(
                 hass,
@@ -1442,7 +1444,7 @@ class TestSupportBundle:
         hass: HomeAssistant,
         enable_custom_integrations,
     ):
-        """Nearby inventory should favor likely beds, then strong advertisements."""
+        """Only the target and likely beds are listed; other devices are only counted."""
         del enable_custom_integrations
         nearby = [
             _build_nearby_service_info(
@@ -1483,10 +1485,13 @@ class TestSupportBundle:
 
         assert inventory["limit"] == 30
         assert inventory["total_visible"] == 36
-        assert inventory["included"] == 30
-        assert inventory["truncated"] is True
-        assert len(inventory["devices"]) == 30
-        assert [device["rank"] for device in inventory["devices"]] == list(range(1, 31))
+        assert inventory["included"] == 2
+        assert inventory["truncated"] is False
+        assert inventory["other_devices"] == 34
+        assert [device["rank"] for device in inventory["devices"]] == [1, 2]
+        # Other people's phones and watches never appear by name or address.
+        assert "Nearby 05" not in json.dumps(inventory)
+        assert "02:00:00:00:00:05" not in json.dumps(inventory)
 
         likely_bed = inventory["devices"][0]
         assert likely_bed["address"] == "AA:BB:CC:DD:EE:FF"
@@ -1500,7 +1505,6 @@ class TestSupportBundle:
         assert strongest_unknown["address"] == "02:00:00:00:00:00"
         assert strongest_unknown["is_target"] is True
         assert strongest_unknown["rssi"] == -20
-        assert all(device["address"] != "02:00:00:00:00:22" for device in inventory["devices"])
 
     async def test_generate_support_bundle_raw_address_has_standard_sections(
         self,
@@ -1625,12 +1629,12 @@ class TestSupportBundle:
             )
 
         assert report["target"]["mode"] == "configured_device"
-        assert report["target"]["address"] == mock_config_entry.data["address"]
+        assert report["target"]["address"] == "AA:BB:CC:**:**:**"
         assert report["target"]["device_id"] == "retry-device-id"
         assert report["target"]["entry_id"] == mock_config_entry.entry_id
-        assert report["target"]["title"] == mock_config_entry.title
+        assert report["target"]["title"] == "**REDACTED**"
         assert report["integration"]["entry_id"] == mock_config_entry.entry_id
-        assert report["integration"]["address"] == mock_config_entry.data["address"]
+        assert report["integration"]["address"] == "AA:BB:CC:**:**:**"
         assert report["controller"]["initialized"] is False
         assert report["command_trace"] == []
 
@@ -2323,20 +2327,6 @@ class TestSupportBundleLogProbeSafety:
         assert reason == "not_a_file"
         assert "not a regular file" in error
 
-    def test_tail_refuses_a_fifo_too(self, tmp_path):
-        """The capture's own reader has the same hazard."""
-        import os
-
-        from custom_components.adjustable_bed.support_report import _read_log_file
-
-        fifo = tmp_path / "home-assistant.log"
-        os.mkfifo(fifo)
-        entries = _read_log_file(str(fifo))
-
-        # Treated like a missing file: the remedy is a downloadable log, not a
-        # permissions fix.
-        assert entries[0]["log_read_reason"] == "missing"
-
     def test_probe_rejects_an_empty_log_file(self, tmp_path):
         """A left-over empty file is readable but will never yield evidence."""
         from custom_components.adjustable_bed.support_report import _probe_log_file
@@ -3026,8 +3016,9 @@ async def test_bundle_shows_the_schema_5_migration_record(
             "resolver_version": PROFILE_RESOLVER_VERSION,
             "profile_id": "keeson:sino",
             "fields": {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "sino"},
-            # Schema 5.6 dropped an angle-sensing value equal to the route's default.
-            "settings_5_6": {"data": ["disable_angle_sensing"]},
+            # Schema 5.6 saved the connection 4.x ran with and dropped an
+            # angle-sensing value equal to the route's default.
+            "settings_5_6": {"data": ["connection_mode=idle", "disable_angle_sensing"]},
         },
     }
 

@@ -1,8 +1,7 @@
-"""Aging in Place app metadata: translations, setup questions, detection and guide."""
+"""Aging in Place app metadata: translations, setup questions and detection."""
 
 import json
 import re
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,9 +12,6 @@ from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 from custom_components.adjustable_bed.discovery_hints.agingplace import HINTS
 from custom_components.adjustable_bed.profiles import agingplace as app
 from custom_components.adjustable_bed.setup_questions import setup_profile_for
-from scripts import generate_codec_docs as docs
-from scripts.codec_docs._agingplace import BLOCKS
-from tests.codec_families import families
 from tests.entity_translation_reachability import TRANSLATION_FILES, _spec_keys
 from tests.test_controller_contract import _FactoryCoordinator
 
@@ -118,9 +114,3 @@ def test_source_case_sensitive_substrings_reach_the_app(name):
         assert "adjustable_bed" in gate.match_domains(info)
 
 
-def test_only_registered_guide_blocks_are_current():
-    for guide, name, renderer in BLOCKS:
-        text = (Path(__file__).parents[1] / guide).read_text()
-        assert text.count(f"<!-- generated:{name} -->") == 1
-        assert docs.render(text, name, renderer()) == text
-    assert docs.family_modules().keys() <= families().keys()

@@ -567,10 +567,10 @@ class FsmRelaxController(ProfileExecution[LimossProfile], BedController):
         if type(slot) is not int or not 1 <= slot <= self.memory_slot_count:
             raise ValueError("Selected memory slot is unavailable")
         if not self._subscribed or not self._live_capabilities:
-            raise ConnectionError("Fresh capability subscription required")
+            raise ConnectionError("Reconnect the bed so it reports its memory positions, then try again")
         if self._quarantined:
             raise RuntimeError(
-                "Memory operations quarantined until disconnect and fresh subscription"
+                "Reconnect the bed so it reports its memory positions, then try again"
             )
 
     def _quarantine(self) -> None:
@@ -586,15 +586,15 @@ class FsmRelaxController(ProfileExecution[LimossProfile], BedController):
         super().validate_memory_recall(memory_num)
         positions = self.session.slots.get(memory_num)
         if positions is None or 0 not in positions:
-            raise ValueError("Memory has no motor-zero target")
+            raise ValueError("Save this memory position before recalling it")
         validate_positions(positions)
         if self._quarantined or self._quarantine_client is not None:
-            raise ValueError("Memory operations quarantined until disconnect and fresh subscription")
+            raise ValueError("Reconnect the bed so it reports its memory positions, then try again")
         client = self.client
         if client is not None and client.is_connected and (
             not self._subscribed or not self._live_capabilities
         ):
-            raise ValueError("Fresh capability subscription required")
+            raise ValueError("Reconnect the bed so it reports its memory positions, then try again")
 
     async def program_memory(self, memory_num: int) -> None:
         async with self._memory_lock:
@@ -671,7 +671,7 @@ class FsmRelaxController(ProfileExecution[LimossProfile], BedController):
         if confirmed is not True:
             raise ValueError("Calibration requires explicit confirmation")
         if not self._live_capabilities:
-            raise ConnectionError("Fresh capability subscription required")
+            raise ConnectionError("Reconnect the bed so it reports its memory positions, then try again")
         # One attempt only. A write failure does not prove hardware did nothing.
         await self.write_command(codec.flagged(codec.CALIBRATE, self.setup.reversals))
 

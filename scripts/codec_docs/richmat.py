@@ -41,6 +41,7 @@ from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import bobpowerbase as bob_profiles
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
+from custom_components.adjustable_bed.profiles import dreamsense, saatva
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
@@ -48,7 +49,6 @@ from custom_components.adjustable_bed.profiles import majestichome as majestic
 from custom_components.adjustable_bed.profiles import mlily_remote as remote162
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
-from custom_components.adjustable_bed.profiles import saatva
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
@@ -58,10 +58,13 @@ from scripts.codec_docs import (
     _okimiki,
     _richmat_legacy,
     _richmat_mh_apps,
+    _sleepfunction,
 )
 from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._dreamsense import BLOCKS as DREAMSENSE_BLOCKS
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
+from scripts.codec_docs._super_colchones import BLOCKS as SUPER_COLCHONES_BLOCKS
 
 GUIDE = "docs/beds/richmat.md"
 # The Casper Base and Hush Base apps: their profile class and controller module.
@@ -180,10 +183,13 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
 
 
 def bed_types() -> dict[str, tuple[str, ...]]:
-    """Bed types per profile; ``tests/test_codec_docs.py`` checks them against the factory."""
+    """Bed types per profile."""
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
+        **{p.key: ("dreamsense",) for p in dreamsense.PROFILES.values()},
         "one": (_const.BED_TYPE_SONICSLEEP,),
+        "afeg302": ("super_colchones",),
+        "afeg350": ("super_colchones",),
         **{p.key: ("saatva",) for p in saatva.PROFILES.values()},
         "luniosmart": (_const.BED_TYPE_LUNIOSMART,),
         **{key: (profile.app,) for key, profile in legacy_profiles().items()},
@@ -549,7 +555,7 @@ def render_richmat_mh_setup() -> str:
                 *(row(names[frame], frame) for frame in steps),
             ],
         ),
-        f"The app's mattress literal ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
+        f"The app's stored mattress frame ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
         "its checksum, so the bed receives the frame above.",
     )
 
@@ -1426,9 +1432,6 @@ def render_rise_commands() -> str:
             (", ".join(sorted(set(layouts))), *key) for key, layouts in sorted(groups.items())
         ]))
         lines.append("\n</details>\n")
-    lines.append(_table(("Power Cool TEST opcode", "Refresh seconds", "Rest seconds"), [
-        (_code_hex(code), str(seconds), "5") for code, seconds in rise_frames.DIAGNOSTIC_CYCLE
-    ]))
     return _block(*lines)
 
 
@@ -1470,6 +1473,7 @@ BLOCKS: list[Block] = [
     (GUIDE, "hush-base-commands", render_hush_base_commands),
 ]
 
+BLOCKS += SUPER_COLCHONES_BLOCKS
 BLOCKS += _galaxy.BLOCKS
 BLOCKS += _okimiki.BLOCKS
 BLOCKS += _richmat_mh_apps.BLOCKS
@@ -1765,6 +1769,9 @@ def render_mlily_remote() -> str:
 
 BLOCKS.append((GUIDE, "mlily-remote-commands", render_mlily_remote))
 
+
+BLOCKS += _sleepfunction.BLOCKS
+
 BLOCKS += _bedtech_classic.BLOCKS
 
 
@@ -1867,3 +1874,64 @@ def render_jerome_controls() -> str:
 
 
 BLOCKS.append((GUIDE, "jerome-controls", render_jerome_controls))
+
+
+BLOCKS += DREAMSENSE_BLOCKS
+
+
+def render_baseremote() -> str:
+    from custom_components.adjustable_bed.beds.baseremote import protocol as base_frames
+    from custom_components.adjustable_bed.beds.richmat.labels import resource_label
+    from custom_components.adjustable_bed.profiles.baseremote import EXCLUDED_LAYOUTS, MODE_LABELS
+
+    catalog = load_catalog("baseremote")
+    commands: dict[tuple[str, str, str, str, int, int], list[str]] = {}
+    for layout, model in catalog.models.items():
+        if layout in EXCLUDED_LAYOUTS:
+            continue
+        for c in model.controls:
+            if c.excluded_short and c.excluded_long or c.status not in (1, 2, 3):
+                continue
+            short = None if c.excluded_short else c.short
+            old = None if c.excluded_short else c.short_old
+            long = None if c.excluded_long else c.long
+            if not any((short, old, long)):
+                continue
+            resource = (c.resource_keys.get("press_long") if c.excluded_short else c.resource_keys.get("press_short") or c.resource_keys.get("press_short_old") or c.resource_keys.get("press_long")) or ""
+            key = (
+                "Set" if resource == "@string/k_set_old" else resource_label(resource.removeprefix("@string/")),
+                short or "", old or "", long or "", c.status, c.threshold_ms,
+            )
+            commands.setdefault(key, []).append(layout)
+    return _block(
+        _table(("Layouts", "Mode labels"), (
+            (", ".join(layout for layout in catalog.models if layout not in EXCLUDED_LAYOUTS and layout not in MODE_LABELS), "Default"),
+            *((layout, ", ".join(labels.values())) for layout, labels in MODE_LABELS.items()),
+        )),
+        _table(("Control", "Nordic operand", "Framed operand", "Long operand", "Gesture", "Layouts"), (
+            (label, f"`{old or short}`" if old or short else "none",
+             f"`{short}`" if short else "none", f"`{long}`" if long else "none",
+             f"state {status}; {threshold} ms threshold" if status == 3 else "held" if status == 1 else "once",
+             ", ".join(dict.fromkeys(layouts)))
+            for (label, short, old, long, status, threshold), layouts in commands.items()
+        )),
+        _table(("Settings", "Write", "Gate"), (
+            ("Startup", _hex(classic_frames.INITIALIZE), "Framed, 300 ms after notification setup"),
+            ("Alarm query", _hex(classic_frames.ALARM_QUERY), "Layout has alarm actions"),
+            ("Light query", _hex(classic_frames.LAMP_QUERY), "Every bed layout"),
+            ("Aromatherapy query", _hex(classic_frames.AROMA_QUERY), "Every bed layout"),
+            ("Default green", _hex(codec.rgb(0x98, 0xCB, 0)), "LED capability reply"),
+            ("Countdown, 1440 minutes, memory 1", " / ".join(_hex(f) for f in classic_frames.alarm(1440, 0x2E)), "Selected-layout alarm action"),
+            ("Light timeout", "0–300 seconds; zero keeps on", "LED capability reply"),
+            ("Aromatherapy times", "1–60 minutes, 1–60 minutes, 1–12 hours", "Aroma capability reply"),
+            ("Group removal", "`" + codec.local_group(None).hex(" ").upper() + "`", "FFE0/FFE2 local group service"),
+        )),
+        _table(("Alarm action", "Operand", "Massage combinations (both / head / feet)"), (
+            (label, f"`{code:02X}`", " / ".join(f"`{v:02X}`" for v in rise_frames.ALARM_COMBINATIONS[code]) if code in rise_frames.ALARM_COMBINATIONS else "none")
+            for code, label in base_frames.ALARM_ACTIONS.items()
+            if any(c.alarm_clock and int(c.alarm_clock, 16) == code for m in catalog.models.values() for c in m.controls)
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "baseremote", render_baseremote))

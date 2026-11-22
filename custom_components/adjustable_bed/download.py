@@ -24,8 +24,13 @@ _LOGGER = logging.getLogger(__name__)
 
 # Only serve files matching this pattern (prevents path traversal)
 _BUNDLE_FILENAME_RE = re.compile(
-    r"^adjustable_bed_support_(bundle|report)_[0-9a-f]+_\d{8}_\d{6}\.json$"
+    r"^adjustable_bed_support_(bundle|report)_[0-9a-f]+_\d{8}_\d{6}(?:_[0-9a-f]{6})?\.json$"
 )
+
+
+def is_bundle_filename(name: str) -> bool:
+    """Whether a file name is one this integration wrote as a support file."""
+    return _BUNDLE_FILENAME_RE.fullmatch(name) is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,7 +74,7 @@ class SupportBundleDownloadView(HomeAssistantView):
 
         filepath = grant.path
         filename = filepath.name
-        if not _BUNDLE_FILENAME_RE.match(filename):
+        if not is_bundle_filename(filename):
             return web.Response(status=403, text="Invalid file", headers=_NO_STORE)
 
         try:

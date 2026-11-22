@@ -38,7 +38,6 @@ async def handle_jiecang_wake(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         JiecangProfileController,
-        "Jiecang wake routines",
         wake,
         supported=lambda controller: controller.supports_wake_routine,
         cancel_running=True,
@@ -54,7 +53,6 @@ async def handle_jiecang_stop_wake(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         JiecangProfileController,
-        "Jiecang wake routines",
         lambda controller: controller.stop_wake_routine(),
         supported=lambda controller: controller.supports_wake_routine,
         cancel_running=True,

@@ -119,20 +119,20 @@ def test_response_replace_first_and_group_member_quirks() -> None:
 
 def test_diagnostics_disallows_network_upload_or_arbitrary_tests() -> None:
     spec, args = format_command(
-        "run_diagnostics", {"diagnostics": {"tests": ["actuator-test"], "group": "Base"}}
+        "run_diagnostics", {"diagnostics": {"tests": ["power-health-test"], "group": "Base"}}
     )
     assert spec.key == "DSRS"
     request = json.loads(args[0])
     assert request["uploadToCloud"] is False
     assert request["metadata"]["clientLogin"] == ""
-    assert request["testIds"] == [{"testId": "actuator-test"}]
-    for test in ("connectivity-test", "ble-wifi-test", "unknown-test"):
+    assert request["testIds"] == [{"testId": "power-health-test"}]
+    for test in ("connectivity-test", "ble-wifi-test", "actuator-test", "unknown-test"):
         with pytest.raises(ValueError):
             format_command("run_diagnostics", {"diagnostics": {"tests": [test], "group": "Base"}})
     with pytest.raises(ValueError):
         format_command(
             "run_diagnostics",
-            {"diagnostics": {"tests": ["actuator-test"], "group": "Base", "uploadToCloud": True}},
+            {"diagnostics": {"tests": ["power-health-test"], "group": "Base", "uploadToCloud": True}},
         )
     assert "get_system_status" not in COMMANDS
     spec, args = format_command("reset_articulation_presets", {"side": "right", "preset": "all"})

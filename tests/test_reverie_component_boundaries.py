@@ -195,7 +195,7 @@ async def test_alarm_service_rejects_missing_or_unsupported_lumbar_without_write
 ):
     async with _ready_local(hass, monkeypatch, model) as (entry, _, sock):
         device = _device_for_address(hass, entry.data["address"])
-        with pytest.raises(ServiceValidationError, match="lumbar|every supported value"):
+        with pytest.raises(ServiceValidationError, match="lumbar|every comfort setting"):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT,

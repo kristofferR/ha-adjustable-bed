@@ -20,6 +20,11 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Literal
 
+# ``hold_control`` loads this module in the import executor on its first call.
+# That runs on real time, which the virtual clock cannot see, so the first hold
+# of a test process would start late. Loading it here covers every test that
+# takes its clock from this module.
+import custom_components.adjustable_bed.beds.vmatbasic.services  # noqa: F401
 from custom_components.adjustable_bed.command_scheduler import (
     _CURRENT_COMMAND_CONTEXT,
     CommandContext,
@@ -117,11 +122,11 @@ async def leased_hold(
             clock = tool.FakeClock(frozen)
             recorder = tool.Recorder(clock)
             with tool.deterministic_process_state(), tool.virtual_time(clock):
-                controller = await tool._build(  # noqa: SLF001
+                controller = await tool._build(
                     scenario, tool.FakeClient(recorder, layout, scenario.replies)
                 )
-                await tool._connect(controller, recorder, clock)  # noqa: SLF001
-                coordinator = controller._coordinator  # noqa: SLF001
+                await tool._connect(controller, recorder, clock)
+                coordinator = controller._coordinator
                 cancel = coordinator.cancel_command
                 cancel.clear()
                 context = CommandContext(

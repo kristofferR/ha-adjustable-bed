@@ -12,6 +12,7 @@ from collections.abc import Callable, Coroutine
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Final
 
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...card import (
@@ -127,7 +128,7 @@ def profile_from_name(name: str) -> str | None:
 
 def _app(controller: BedController) -> StarcodeM5X5Controller:
     if not isinstance(controller, StarcodeM5X5Controller):
-        raise ValueError("This action requires the AdjustableM5X5 app profile")
+        raise ValueError("This action works only on Adjustable M5X5 beds")
     return controller
 
 
@@ -138,9 +139,27 @@ def _action(action: str) -> Callable[[BedController], Coroutine[object, object, 
     return run
 
 
-# Reported values a typical user wants on a dashboard.
-# Massage and sonic levels and modes only mirror the step buttons (the bed
-# takes no direct level), so those readbacks start hidden.
+# Massage levels and alarms are bed state for the dashboard.
+_DASHBOARD: Final = frozenset(
+    {
+        "massage_head_level",
+        "massage_foot_level",
+        "sonic_head_level",
+        "sonic_foot_level",
+        "alarm_0",
+        "alarm_1",
+    }
+)
+
+
+def _reading_icon(key: str) -> str:
+    if key.startswith("alarm_"):
+        return "mdi:alarm"
+    return "mdi:vibrate" if key.endswith("_level") else "mdi:information-outline"
+
+
+# Reported values a typical user wants on a dashboard. Massage and sonic modes
+# only mirror the step buttons, so those readbacks start hidden.
 _ENABLED_STATE: Final = frozenset(
     {
         "massage_active",
@@ -471,11 +490,12 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 f"starcode_{key}",
                 f"starcode_{key}",
                 spec_key(key),
-                "mdi:information-outline",
+                _reading_icon(key),
                 attribute_keys=(field_key("light_rgb"), field_key("light_rgb_mode"))
                 if key == "light_color_index"
                 else (field_key(key + "_details"),),
-                entity_registry_enabled_default=key in _ENABLED_STATE,
+                entity_registry_enabled_default=key in _ENABLED_STATE or key in _DASHBOARD,
+                entity_category=None if key in _DASHBOARD else EntityCategory.DIAGNOSTIC,
             )
             for key in keys
         )

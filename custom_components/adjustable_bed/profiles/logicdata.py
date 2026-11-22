@@ -156,7 +156,7 @@ MOTIONRELAX_LAYOUTS: Final[dict[Layout, tuple[Axis, ...]]] = {
     "middle": ("back", "legs"),
 }
 _MOTIONRELAX_NAME: Final = NameRule(
-    r"[ -~]{1,255}", "Name must contain 1..255 printable ASCII characters"
+    r"[ -~]{1,255}", "Use a name of 1 to 255 characters, using only unaccented letters, digits, spaces and common symbols"
 )
 PHONE: Final = LogicdataProfile(
     key="phone",
@@ -233,7 +233,7 @@ SLEEP_SMART: Final = LogicdataProfile(
     # The edit field's alphabet and maxLength 20; at most 40 UTF-8 bytes.
     name_rule=NameRule(
         r"[0-9a-zA-ZäöüÄÖÜß]{1,20}",
-        "Name must contain 1..20 letters, digits, ä, ö, ü or ß",
+        "Use a name of 1 to 20 characters, using only the letters A to Z, ä, ö, ü and ß, and digits",
         encoding="utf-8",
     ),
     bare_t1_name=False,

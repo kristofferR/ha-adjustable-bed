@@ -97,7 +97,6 @@ async def handle(call: ServiceCall, *, hush: bool = False, luuna: bool = False) 
     await _preflight_and_execute(
         _call_targets(call),
         CasperBaseActions,
-        "Hush Base controls" if hush else "Casper Base controls",
         lambda controller: controller.async_execute_casper_base_request(request),
         supported=lambda controller: (
             controller.supports_hush_base_controls
@@ -161,7 +160,7 @@ def async_register_casper_base_services(hass: HomeAssistant) -> None:
 
     luuna_schema = schema.extend({
         vol.Required("operation"): vol.In((
-            "alarm", "alarm_cancel", "light_rgb", "light_seconds", "light_off", "light_warm", "light_cold", "sleep_name", "time_sync",
+            "light_rgb", "light_seconds", "light_off", "light_warm", "light_cold", "sleep_name",
         )),
     })
     hass.services.async_register(

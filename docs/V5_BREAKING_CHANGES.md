@@ -29,17 +29,20 @@ Changes between betas are in each beta's
 
 ## Before you upgrade
 
-**v5 requires Home Assistant 2026.11.0 or newer** (4.x needs 2026.9.0).
+**v5 requires Home Assistant 2026.11.0 or newer** (4.x needs 2026.9.0). On an
+older Home Assistant, v5 does not load, and the log's "Setup failed" line names
+the version it needs.
 
 1. Update Home Assistant to 2026.11.0 or newer and check that it runs.
 2. Create a full backup under **Settings > System > Backups**. Keep it until
    you have decided to stay on v5.
 3. Note the integration version you run now.
-4. Under **Settings > Marketplace**, open **Adjustable Bed**. In its three-dots
-   menu, choose **Include pre-releases** and confirm. The beta then shows as an
-   update under **Settings > Updates**. To pick one beta instead, choose
-   **Install another version** in the same menu and select the `v5.0.0bN`
-   version.
+4. Under **Settings > Updates**, install the latest 5.x version of Adjustable
+   Bed. Betas show there only after you open **Adjustable Bed** under
+   **Settings > Marketplace** and choose **Include pre-releases** in its
+   three-dots menu. **Install another version** in the same menu installs one
+   chosen version. If you copied the integration by hand, copy the 5.x release
+   archive instead, as the [README](../README.md#manual) describes.
 5. Install the update, then restart Home Assistant and reload the dashboard
    page.
 
@@ -54,9 +57,10 @@ once Home Assistant runs 2026.11.
 
 1. **Repairs.** Open **Settings > System > Repairs**. When an entity changed
    type and an automation or script still references the old entity, the bed
-   gets a repair that lists them. Templates and dashboards are not checked,
-   so look through those yourself. Some beds get one question about the app
-   they use.
+   gets a repair that lists them. Another repair lists the automations and
+   scripts that still call a removed action, field or option, with what to
+   use instead. Templates and dashboards are not checked, so look through
+   those yourself. Some beds get one question about the app they use.
 2. **Alarm automations.** The per-bed alarm actions are one action,
    [`adjustable_bed.set_alarm`](SERVICES.md#set_alarm), with new field names.
    See [Actions and automations](#actions-and-automations).
@@ -91,14 +95,15 @@ the migration changed, under `profile_migration`.
 |-------------|----|
 | **Position update mode** (`position_mode`) | Removed. When a command asks for a position read afterwards, it happens as with the default "Speed": in the background while the link stays open, and before the link is released with **Release right after each command**. No read is made when **Read bed position** is off or another command is waiting |
 | **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: by default a 25 s connect timeout (shorter on a few beds whose app uses one), 3 and 6 s backoff and a 1 s pause after connecting |
-| **Disconnect after each command** and **Idle disconnect timeout** (including its `0`, "keep connected") | One **Bluetooth connection** setting: **Release right after each command** (was Disconnect after each command on), **Stay connected for a while** with **Seconds to stay connected** (was off, with its timeout), or **Always stay connected** (was a timeout of `0` with Disconnect after each command off). Hidden for beds that always keep their link. What changed in how a dropped link is handled is under [Connection](#connection) |
+| **Disconnect after each command** and **Idle disconnect timeout** (including its `0`, "keep connected") | One **Bluetooth connection** setting: **Release right after each command** (was Disconnect after each command on), **Stay connected for a while** with **Seconds to stay connected** (was off, with its timeout), or **Always stay connected** (was a timeout of `0` with Disconnect after each command off). An entry that never saved Disconnect after each command keeps 4.x's behavior: off. Hidden for beds that always keep their link. What changed in how a dropped link is handled is under [Connection](#connection) |
 | LP Comfort Connect (Leggett & Platt Gen2, and Leggett & Platt on Automatic) kept its link permanently | Follows **Bluetooth connection** and stays connected for a while by default. If a reconnect stalls, it keeps the link until you disconnect it or Home Assistant restarts. Choose **Always stay connected** for the old behavior |
-| **Disable angle sensing** | **Read bed position**, on by default and shown only for beds that report a position. A saved choice equal to the bed's default is dropped, so the bed's default applies |
+| **Disable angle sensing** | **Read bed position**, on by default and shown only for beds that report a position. A saved choice equal to the bed's default is dropped, so the bed's default applies. An entry that never saved a choice keeps 4.x's behavior: the position is not read |
 | **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, usually 1 to 100; a few beds allow more), hidden for beds that never repeat a tap. The delay is no longer shown; each bed uses its own, and a saved delay still applies |
 | **Stop discovering new Bluetooth devices**, in each bed's Configure | **Add Integration > Adjustable Bed > Find new beds automatically** |
 | **Bed type** and **Protocol variant** in Configure | **Reconfigure**, for every bed. The protocol variant is now called **Bed model or remote** |
 | **Has massage feature**, maximum angles and a motor count with one choice, shown for beds that ignore them | Hidden |
 | A bed added through **Pick any Bluetooth device** saved the scanner that found it as its adapter | Saves **Automatic**, like a discovered bed |
+| **App artwork theme** (Limoss Remote) | Removed. It changed no control. A saved theme is kept and still shows in diagnostics |
 | A combined bed's saved pair connection mode (`pair_connection_mode`) | Removed. A combined bed with two Bluetooth addresses starts with both links and switches between the two beds one at a time only when the adapter cannot hold both |
 
 Three layouts with no massage showed massage buttons in 4.x when Massage was
@@ -166,19 +171,24 @@ Every other saved setting, bed type and ID loads unchanged.
   Bluetooth name is spelled the way beds of its app advertise it. A bed that
   advertises an unusual spelling of an app-only name, for example lowercase
   `a0rm1234`, may no longer be offered; add it manually or pick the app in
-  Reconfigure.
+  Reconfigure. A device that advertises only a shared Bluetooth service and no
+  name, or only a name starting with `TEST`, is no longer offered either; add
+  it from the integration by its app.
 
 ## Entities
 
 - **Renamed entities keep their entity IDs, history and settings.** Only the
   shown name changes: brand and app names, notes such as "(app)" or "(raw)",
-  protocol words and ALL-CAPS labels are gone. A name you set yourself stays.
+  protocol words and ALL-CAPS labels are gone, and every name is in sentence
+  case ("Zero Gravity" is **Zero gravity**, "Massage: Mode" is **Massage
+  mode**). A name you set yourself stays.
 - **Removed entities disappear by themselves** once the bed has connected.
   Remove them from dashboards, automations and scripts. Their values stay in
   diagnostics and support bundles.
 - **Entities that change type keep your settings.** When an entity becomes
   another kind (a switch that became a light, a text sensor that became a
-  binary sensor, a select that became a switch or number), the new entity
+  binary sensor, a select or button that became a switch, a select that
+  became a number), the new entity
   takes the old object ID where it is free (`switch.bed_under_bed_lights`
   becomes `light.bed_under_bed_lights`) and the name, icon, area, labels,
   categories, aliases and disabled or hidden state you gave the old one. When
@@ -195,27 +205,54 @@ Every other saved setting, bed type and ID loads unchanged.
 - **Refresh and query buttons are diagnostic** and disabled by default where
   the bed reports the value itself. So is the generic **Wake controller**
   button.
+- **Linak's Reset defaults button is disabled by default** on new installs,
+  because one press resets the bed. A button you already have stays as it is.
 - **No device shows one name twice**, and a paired bed's Left, Right and Both
   entities are named from their devices, as Home Assistant 2026.11 does, so
   the card no longer shows doubled names such as "Bed Left Back".
+
+### Entities that change type
+
+These entities keep their object ID and your settings when their type
+changes, and a repair lists the automations and scripts that still use the
+old entity. Other entities that changed type or were replaced, such as an
+on and off button pair that became one switch, start as new entities:
+[Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists them.
+
+| Bed or app | 4.x type | v5 entity |
+|------------|----------|-----------|
+| Every bed with an on/off under-bed light, except Octo | `switch` | **Under-bed lights** `light` |
+| INNOVA, Keeson Adjustable Lite, Logicdata app and FurniMove light readings | `binary_sensor` | **Under-bed lights** `light` |
+| Casper, Hush, Good Vibe and Richmat sleep sensors | `sensor` | **Left in bed**, **Right in bed**, **Left body movement**, **Right body movement**, **Left snoring**, **Right snoring** `binary_sensor` |
+| StarCode AdjustableM5X4 | `sensor` | **Massage** `binary_sensor` |
+| Heal Every Night (OKIN apps) | `select` | **Reversed installation**, **Reverse actuator 1**, **Reverse actuator 2** `switch` |
+| Pairlink | `select` | **Massage rhythm** `switch` |
+| DoubleSleep (OKIN SleepEase) | `select` | **Child lock** `switch` |
+| AdjustaMattress | `select` | **Alarm**, **Intelligent anti-snore** `switch` |
+| AdjustaMattress | `button` | **Sleep mode** `switch` |
+| AdjustaMattress | `select` | **Massage head intensity**, **Massage foot intensity**, **Massage wave intensity** `number` |
+| Motion Bed app | `button` | **Night light**, **Smart sleep** `switch` |
 
 ### One shape per control
 
 The same control now looks the same on every bed:
 
 - **Under-bed lights.** Every on/off under-bed light is a `light` entity
-  (**Under Bed Lights**), on every bed except Octo, whose light depends on its
+  (**Under-bed lights**), on every bed except Octo, whose light depends on its
   PIN session and its own light timer. A bed that cannot report the light's
-  state shows it as assumed, as the switch did.
+  state shows it as assumed, as the switch did. A bed that reports its light
+  now has one enabled light that shows that state and switches the light, in
+  place of the light reading, the toggle button and the optional estimated
+  light.
 - **On and off pairs are switches.** A pair of on and off buttons, or a
   two-choice select, for one setting is one switch. A switch whose bed never
   reports the setting shows what was last sent, and separate on and off
   controls.
 - **Timers are selects.** Where the bed can set a duration directly,
   fixed-time buttons ("Massage 20 minutes") and bed-specific timer selects
-  became the shared **Massage: Timer** and **Light Timer** selects. A bed
+  became the shared **Massage timer** and **Light timer** selects. A bed
   without an off command offers only its durations. A bed that can only step
-  through its timers keeps one cycle button. The **Massage: Timer** select
+  through its timers keeps one cycle button. The **Massage timer** select
   shows unknown until a timer is sent or reported.
 - **Massage levels are numbers.** Where the bed has an intensity number, the up
   and down step buttons for the same zone are gone; beds that can only step
@@ -224,8 +261,8 @@ The same control now looks the same on every bed:
 - **Buttons from an app or remote layout show what they are.** Motor up and
   down buttons sit in the card's motor rows, presets and memories in their
   tiles, and massage and light controls in their sections. A preset, memory or
-  massage step every bed has takes the shared name (**Zero Gravity**,
-  **Memory 1**, **Massage: Head Up**); other buttons keep the app's label
+  massage step every bed has takes the shared name (**Zero gravity**,
+  **Memory 1**, **Massage head up**); other buttons keep the app's label
   without internal identifiers ("MasFootAdd" is **Increase foot massage**,
   "Ubb" is **Under-bed light**). Where an app lists two controls under one
   label, the second is numbered (**Wave 2**). Empty app slots and buttons that
@@ -244,6 +281,17 @@ The same control now looks the same on every bed:
   integration had created disabled is enabled once; one you disabled stays
   disabled. The DoubleSleep breathing rate's unit changes from brpm to
   breaths/min, and Home Assistant offers to update its statistics.
+- **Massage timer readings are durations.** They show minutes (or seconds),
+  are no longer under Diagnostic and are enabled on new installs; entities you
+  already have keep their enabled state. Readings that showed the app's timer
+  code instead ("-1", "1" to "3" on the Keeson app layouts and Ergomotion 4)
+  show 0 to 30 minutes, and the StarCode ABM5-4 and Keeson **Massage: Timer
+  Mode** readings show a number of minutes instead of text. The AdjustaMattress
+  massage timer reading loses its minutes unit: the bed reports a step, not
+  minutes.
+- **Readings carry their device class.** Temperature, signal strength, height
+  and countdown readings, low battery and low water use Home Assistant's device
+  classes, so a temperature follows your unit system (°F where you use it).
 - **Sleep Number bed presence** is enabled by default and named **In bed**,
   **Left in bed** and **Right in bed**. It updates only while the bed is
   connected (see [Connection](#connection)).
@@ -272,8 +320,17 @@ on every entity that tells the dashboard card where it belongs.
 
 ## Actions and automations
 
-Update scripts and automations that call these actions. The
+Update scripts and automations that call these actions. A repair lists the
+automations and scripts that still call a removed action, or a field or option
+removed below, with what to use instead; it is checked again at every start
+and goes away once none does. Templates are not checked. The
 [Actions and Automations](SERVICES.md) guide describes every current action.
+
+Entities removed or folded into another one are handled the same way: once
+the bed has connected and they are gone, a repair lists the automations and
+scripts that still use one, and goes away at the first start where none does.
+[Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) says what
+replaced each. Dashboards are not checked.
 
 | 4.x action | Use now |
 |------------|---------|
@@ -352,21 +409,24 @@ Other action changes:
   defaults), and the sleep report's `part` and `report_type` take `left` or
   `right` and `day` or `month` instead of 1 and 2.
 - `goodvibe` no longer offers `operation: sync`; use `sync_clock`.
+- `goto_preset` and `save_preset` refuse a memory number that is not a whole
+  number, such as `1.5`; 4.x quietly used memory 1.
 - `furnimove_action` no longer takes `consumer`.
 - `sleep_number_command` no longer offers `reboot_system`,
   `starts_actuator_homing`, `set_system_time`, the cooling and core-temperature
   module commands (`get_frosty_mode`, `set_frosty_mode`, `get_frosty_presence`,
   `get_heidi_mode`, `set_heidi_mode`, `get_heidi_presence`) or
-  `get_system_status` (network and update status). Restarting and homing are
+  `get_system_status` (network and update status), and MCR beds no longer
+  offer `preset_reset`, which reset a saved position without asking first.
+  Restarting and homing are
   buttons now (see **New controls** under [Entities](#entities)); **Restart
   bed** always restarts both components, so one component can no longer be
   restarted alone. Set the clock with `sync_clock`, which writes Home
   Assistant's current time and takes no `date_time`. Cooling and heating modes
-  are the **Climate** entities and their duration the **Climate Timer**
+  are the **Climate** entities and their duration the **Climate timer**
   selects; module presence is detected automatically. `kid_outlet` and
   `kid_outlet_status` accept only `device: 0`. New
-  commands: `reset_articulation_presets`, `run_diagnostics`, `bind_foundation`
-  and `underbed_intensity`. See the
+  commands: `run_diagnostics`, `bind_foundation` and `underbed_intensity`. See the
   [Sleep Number command guide](beds/sleep-number-services.md).
 - `timed_move` and `hold_control` gain optional `hold_owner` and
   `hold_generation` fields for renewable holds. Calls without them work as
@@ -382,18 +442,12 @@ Other action changes:
   (`estimate_save_position`, `estimate_recall_position`,
   `estimate_set_reference`, `lower_to_flat` and others), useful only after you
   enable estimated positions.
+- `generate_support_bundle` needs an administrator. Its file keeps only the
+  manufacturer prefix of Bluetooth addresses, leaves out names you typed,
+  health readings and other nearby devices, and only the five newest bundles
+  are kept. See [what the files share](GETTING_HELP.md#what-the-files-share).
 
 ### If you ran a v5 beta
-
-Saatva app support is new in v5: select its Adjustable Base or Adjustable Base
-Plus model and installation during setup. Existing 4.4.2 BedTech and Richmat
-entries retain their own profiles. See [Saatva](beds/richmat.md#saatva).
-
-Instant Comfort is new in v5, compared with v4.4.2. Select its app in setup,
-then a concrete air-unit or base route. ANM V5's two/four-channel pressure
-layout is saved explicitly; four-channel units add lumbar firmness numbers.
-It uses the shared memory and base-sequence actions.
-
 
 These actions existed only in v5 betas and are gone. Older field names are not
 accepted.
@@ -414,17 +468,40 @@ sensors with the same object ID where it is free, and its
 intervention selects are the **Left snore intervention** and **Right snore
 intervention** switches.
 
-Galaxy and MLILY (`operation: sync`) and SonicSleep (`operation: sync_clock`)
-set their clock with `sync_clock` now, like Good Vibe Sleep. Beds added during
+The factory motor tests and motor programming are gone: `richmat_rise`
+`operation: diagnostic_cycle` and `program_schedule` with its `schedule` field,
+`lp2` `operation: motor_program` and `movement_test` with its `schedule` field,
+`bedsmart` `operation: movement_test` with its `confirm` field, and the BedSmart
+**Movement test** button. Nothing replaces them. A bed set up with the TEST or
+RMCS layout loads without controls until you choose its layout in Configure.
+
+Galaxy and MLILY (`operation: sync`), SonicSleep (`operation: sync_clock`) and
+the Richmat app beds (`richmat_app` `operation: sync` and `sleep_sync`) set
+their clock with `sync_clock` now, like Good Vibe Sleep. Bedgear (`bedgear`
+`operation: alarm`), Luuna + (`luuna` `operation: alarm` and `alarm_cancel`),
+and the Lady Americana and partner beds and Luuna Rise and Power Cool
+(`richmat_resource_bed` and `richmat_rise` `operation: alarm` and
+`cancel_alarm`) set their alarm with `set_alarm` now, and Luuna + sets its
+clock with `sync_clock` (`operation: time_sync`). Beds added during
 the betas changed their entities too (clock buttons, timer selects, switches
 and sleep readings, as described under [Entities](#entities)); each beta's
 release notes list them.
+
+`symphony_preset`, added in beta 8, is gone. Use the Symphony bed's preset,
+memory and save buttons instead.
+
+`sleep_number_command` no longer offers `reset_articulation_presets`; reset
+saved positions with the **Reset saved positions** button, which the card asks
+about before it runs.
 
 ## Dashboard card
 
 - Quick actions (`compact_actions`) are saved as entity IDs. Cards that list
   the old keys keep working, and the editor rewrites them to entity IDs the
-  next time you edit the card, if every side keeps the same actions.
+  next time you edit the card, if every side keeps the same actions. A quick
+  action for an app preset on a Richmat bed (`richmat_mh_preset`) no longer
+  shows: that key named all of the bed's app presets at once, so pick the
+  preset again in the card editor.
 - Preset save buttons are never offered as quick actions, and they ask for
   confirmation in the card.
 - A button that asks for confirmation is a plain tap: holding it never sends
@@ -543,9 +620,9 @@ release notes list them.
 > 4.x.** Installing 4.x over v5 leaves every Adjustable Bed entry failing to
 > load. See [Going back to 4.x](TROUBLESHOOTING.md#going-back-to-4x).
 
-Report beta problems in the pinned v5 beta feedback issue
-([#914](https://github.com/kristofferR/ha-adjustable-bed/issues/914)), or open
-a bug report. Include diagnostics or a
+Report problems in
+[a bug report](https://github.com/kristofferR/ha-adjustable-bed/issues/new/choose).
+A beta's own feedback issue is linked from the notification the beta shows. Include diagnostics or a
 [support bundle](GETTING_HELP.md#generating-a-support-bundle) and the version.
 
 ## Appendix A: removed and replaced entities by bed
@@ -556,39 +633,45 @@ described under [One shape per control](#one-shape-per-control).
 
 | Bed or app | Removed | Replaced by |
 |------------|---------|-------------|
-| AdjustaMattress | Privacy-agreement select, reported alarm and strength sensors, sleeping, alarm, anti-snore and auxiliary status binary sensors, clock sync, alarm query and massage query buttons | Alarm commit and anti-snore selects and the sleep button: **Alarm**, **Intelligent anti-snore** and **Sleep mode** switches. Head, foot and wave selector selects: **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Wave Intensity** numbers (1-4). Timer 10, 20 and 30 buttons: **Massage: Timer** select |
-| BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons, massage timer and light duration sensors | Memory recall buttons of slots 3 to 5: **TV**, **Zero Gravity** and **Anti-Snore** (**Flat** on layouts 6 and 8), which recall those slots; their saves stay. Massage timer and cancel buttons, light 10 min, 8 h and 10 h buttons: **Massage: Timer** and **Light Timer** selects |
-| BedTech | | Massage 20 minutes button: **Massage: Timer** select |
-| Casper Base, Hush Base | | "Memory position 1-3", "Save Memory position 1-3" and "Motor reset": **Memory 1-3**, **Save to Memory 1-3** and **Flat**, which send the same commands. Massage 10, 20 and 30 minute buttons: **Massage: Timer** select (durations only) |
+| AdjustaMattress | Privacy-agreement select, reported alarm and strength sensors, sleeping, alarm, anti-snore and auxiliary status binary sensors, clock sync, alarm query and massage query buttons | Alarm commit and anti-snore selects and the sleep button: **Alarm**, **Intelligent anti-snore** and **Sleep mode** switches. Head, foot and wave selector selects: **Massage head intensity**, **Massage foot intensity** and **Massage wave intensity** numbers (1-4). Timer 10, 20 and 30 buttons: **Massage timer** select |
+| BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons, massage timer and light duration sensors | Memory recall buttons of slots 3 to 5: **TV**, **Zero gravity** and **Anti-snore** (**Flat** on layouts 6 and 8), which recall those slots; their saves stay. Massage timer and cancel buttons, light 10 min, 8 h and 10 h buttons: **Massage timer** and **Light timer** selects |
+| BedTech | | Massage 20 minutes button: **Massage timer** select |
+| Casper Base, Hush Base | | "Memory position 1-3", "Save Memory position 1-3" and "Motor reset": **Memory 1-3**, **Save to memory 1-3** and **Flat**, which send the same commands. Massage 10, 20 and 30 minute buttons: **Massage timer** select (durations only) |
 | Comfort Enhancements | Cycle massage timer button (the timer select already sets it) | |
-| Customatic Z-Series | | App "Toggle light": **Toggle Light** |
-| DoubleSleep (OKIN SleepEase) | Four flag binary sensors, parser-error, privacy, massage running and sonic running sensors, "Sync clock" and "Refresh clock" buttons | Child lock select and privacy buttons: **Child lock** and **Privacy** switches. Massage and sonic on/off buttons: **Massage** and **Sonic massage** switches. The app's "Stop all" is **Stop movement** (**Stop All** stops the bed). Clock: the **Set bed clock** action |
-| eShine (E6000) | | Massage 10, 20 and 30 minute buttons: **Massage: Timer** select, with Off |
+| Customatic Z-Series | | App "Toggle light": **Toggle light** |
+| DoubleSleep (OKIN SleepEase) | Four flag binary sensors, parser-error, privacy, massage running and sonic running sensors, "Sync clock" and "Refresh clock" buttons | Child lock select and privacy buttons: **Child lock** and **Privacy** switches. Massage and sonic on/off buttons: **Massage** and **Sonic massage** switches. The app's "Stop all" is **Stop movement** (**Stop all** stops the bed). Clock: the **Set bed clock** action |
+| Ergomotion 4.0 | | Where the light reports its state (RGB, M16, M19 and custom products): light reading and "Light toggle" button: **Under-bed lights** light |
+| eShine (E6000) | | Massage 10, 20 and 30 minute buttons: **Massage timer** select, with Off |
 | eShine OKIN | Alarm refresh and "Sync bed clock" buttons | Clock: the **Set bed clock** action |
 | FSM Relax | 11 count, acknowledgement, calibration, information and raw motor sensors | |
-| FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
-| GM Control | | Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only), on products with more than one duration |
+| FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | Light reading and **Toggle Light** button: **Under-bed lights** light |
+| GM Control | "None", "Logo" and "Title …" buttons from empty app slots and menu headings that send no command; "(long press)" buttons whose long press writes only what the short press writes; a control the app lists twice (the second Pillow up and Pillow down on DWRN) | A preset's or memory's long press that sends its save: the **Save …** button (same entity ID). Massage 10, 20 and 30 minute timer buttons: **Massage timer** select (durations only), on products with more than one duration |
 | GM Control sleep module | Time and Query part buttons (the clock is set on every connection; the `gmmotor` action still queries the part) | Start and stop live data buttons: **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
-| Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save: the **Save …** button. Massage 10, 20 and 30 minute buttons and the "Massage timer" select: **Massage: Timer** select (with Off where the app has a countdown off; the select keeps its entity ID). "Light duration (seconds)" select: **Light Timer** select (same entity ID). Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both |
+| Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save: the **Save …** button. Massage 10, 20 and 30 minute buttons and the "Massage timer" select: **Massage timer** select (with Off where the app has a countdown off; the select keeps its entity ID). "Light duration (seconds)" select: **Light timer** select (same entity ID). Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both |
 | Good Vibe, Casper and Hush sleep sensors | | In-bed, snoring and movement text sensors: **In bed**, **Snoring** and **Body movement** binary sensors, with the same object ID; heart and breathing rate sensors take the shared names and keep their IDs |
 | Heal Every Night (OKIN apps) | | Installation and actuator direction selects: **Reversed installation**, **Reverse actuator 1** and **Reverse actuator 2** switches |
-| HJBed | | Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both. Massage 10, 20 and 30 minute timer buttons: **Massage: Timer** select (durations only) |
+| HJBed | | Sync on and Sync off buttons: **Synchronization** switch, disabled by default, on products that have both. Massage 10, 20 and 30 minute timer buttons: **Massage timer** select (durations only) |
+| INNOVA | | Light reading and **Toggle Light** button: **Under-bed lights** light |
+| Keeson Adjustable Lite | | Light reading and **Toggle Light** button: **Under-bed lights** light |
 | Keeson app layouts (TEMPUR AU, Tempur Curve, Ergomotion, Q-Plus, Serta MP Remote, Omazz, ROW Control, Ergo Slim) | | The app's Flat button: **Flat** |
+| Logicdata app | | Light reading and **Toggle Light** button: **Under Bed Lights** light |
 | Limoss Remote | Repeated motor channel buttons, capability count, calibration reply and raw position sensors | Covers are named **Motor 1** to **Motor 4** |
-| Motion Bed app | 83 state sensors (preset-selected flags, raw positions, calibration samples, day and month report arrays, module and pressure readings), alarm-sound preview buttons, massage timer and brightness sensors, five mirror binary sensors | Alarm, climate timer, fault and sleep report details: attributes of their sensors. Massage timer, light timer and brightness 0-10 buttons: **Massage: Timer** and **Light Timer** selects and the **Light brightness** number. Night light, smart sleep, module light, module massage, climate timer and adaptive air toggles or on/off pairs: switches |
+| Motion Bed app | 83 state sensors (preset-selected flags, raw positions, calibration samples, day and month report arrays, module and pressure readings), alarm-sound preview buttons, massage timer and brightness sensors, five mirror binary sensors | Alarm, climate timer, fault and sleep report details: attributes of their sensors. Massage timer, light timer and brightness 0-10 buttons: **Massage timer** and **Light timer** selects and the **Light brightness** number. Night light, smart sleep, module light, module massage, climate timer and adaptive air toggles or on/off pairs: switches |
 | OKIN bedding apps (Jordan's Serenity and Tranquil, Customatic Z-Series) | Status, timer and save-event code sensors | |
-| OKIN CST | | Memory recall buttons for slots a named preset recalls: **Zero Gravity**, **Incline**, **Reading** or **Lounge**; the slot's save stays |
-| ORE comfort-bed apps (Avanti, Bedsense, Dynasty, MaxCoil Una), StarCode ABM5-4 | | Bed-specific massage timer select: **Massage: Timer** select (durations only; same entity ID) |
+| OKIN CST | | Memory recall buttons for slots a named preset recalls: **Zero gravity**, **Incline**, **Reading** or **Lounge**; the slot's save stays |
+| ORE comfort-bed apps (Avanti, Bedsense, Dynasty, MaxCoil Una), StarCode ABM5-4 | | Bed-specific massage timer select: **Massage timer** select (durations only; same entity ID) |
 | Reverie, Reverie Nightstand, Pairlink, Jiecang app | Wave sensor, Pairlink massage mode and timer sensors (the select and number show them), head and foot massage up and down buttons where an intensity number exists | Pairlink massage rhythm select: **Massage rhythm** switch |
-| RMControl | Protocol version, bed mode and last alarm record sensors | Massage timer buttons: **Massage: Timer** select (durations only), on products with more than one duration. A timer button on another app page that sends different bytes stays |
+| Richmat MH apps (Revive, Best Mattress, Blvd Home, Harmony, Idealbed) | | Massage 10, 20 and 30 minute timer buttons: **Massage timer** select (durations only), on layouts with more than one of them. Massage intensity 1, 2 and 3 buttons: **Massage intensity** number (1 to 3), on layouts with all three. Buttons are named for what their command does, keeping their entity IDs ("Head Intensity+" is **Massage head up**, "Start Stop" is **Massage toggle**, "Next" on the music page is **Next music track**); music controls that the app filed with massage ("Vibration Mode", "Previous", "Next") and the start and stop component check buttons start disabled. **Factory reset** always asks first |
+| RMControl | Protocol version, bed mode and last alarm record sensors. Disabled catalog buttons that send exactly what a standard entity sends (motor covers, presets, memory recall and save, light, sync and massage controls), and another app page's identical copy of a control | Massage timer buttons: **Massage timer** select (durations only), on products with more than one duration. The other catalog buttons keep their entity IDs, lose the app page and position from their names and, except music, fans, resets and similar extras, start enabled. A copy that sends something else stays disabled, named "… (short press)" (the motor list's single tap of a held move) or numbered. A preset's long press that sends its save: the **Save …** button |
 | Serta MP Remote | Memory request sensor | |
 | SIMMONS | "Sync Clock" button | Clock: the **Set bed clock** action |
 | Sleeptracker | Massage pattern and strength sensors (the selects show them) | |
-| Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons (the light entity drives the light) | Motion sensor on/off buttons: **Motion sensor** switch. Massage timer code select and cycle massage timer button: **Massage: Timer** select (10, 20, 30 min; same entity ID). BOX25 Massage on and Massage off buttons: **Massage** switch. Axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
-| StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time and brightness sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
-| StarCode AdjustableM5X4 | 19 raw field sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor: **Massage** binary sensor |
+| Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons (the light entity drives the light) | Motion sensor on/off buttons: **Motion sensor** switch. Massage timer code select and cycle massage timer button: **Massage timer** select (10, 20, 30 min; same entity ID). BOX25 Massage on and Massage off buttons: **Massage** switch. Axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
+| StarCode ABM5-4 | **Toggle Light** button where the app has on and off buttons | Light on and off buttons: **Under-bed lights** light, enabled |
+| StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still reachable through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time, brightness and RGB-mode sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
+| StarCode AdjustableM5X4 | Raw app field, automatic-white and floor light sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor: **Massage** binary sensor |
 | StarCode AdjustableM5X5 | Raw time, brightness, RGB-mode and motor part 4-6 sensors, motor-stopped, light-on, firmware-read and kneading-demo binary sensors | |
-| SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor, the "Sync clock" button | Lock and unlock: a **Lock** switch with a new entity ID. Head and foot massage off, 1, 2 and 3 buttons and Massage level 0 to 3 buttons: **Massage: Head Intensity**, **Massage: Foot Intensity** and **Massage: Intensity** numbers (0-3). MOON left and right massage strength 1, 2 and 3 buttons: **Left massage intensity** and **Right massage intensity** numbers (1-3). MOON left and right massage timer 10, 20 and 30 minute buttons: **Left massage timer** and **Right massage timer** selects (durations only). Clock: the **Set bed clock** action |
+| SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor, the "Controller Sync" switch, the "Sync clock" button | Lock and unlock: a **Lock** switch with a new entity ID. Head and foot massage off, 1, 2 and 3 buttons and Massage level 0 to 3 buttons: **Massage head intensity**, **Massage foot intensity** and **Massage intensity** numbers (0-3). MOON left and right massage strength 1, 2 and 3 buttons: **Left massage intensity** and **Right massage intensity** numbers (1-3). MOON left and right massage timer 10, 20 and 30 minute buttons: **Left massage timer** and **Right massage timer** selects (durations only). Clock: the **Set bed clock** action |
 | Svane | Head, feet and position byte sensors | |
 | V-MAT Basic | ED motor status binary sensor | |
 
@@ -617,7 +700,7 @@ runs the bed. Rows that left the top-level list keep their bed type and ID.
 | Remacro | Slumberland, The Brick or Jerome's, using the model the bed advertises |
 | Reverie | The Nightstand app or the Protocol 110 or 108 receiver, then the model. Pairlink keeps its own row |
 | Richmat | RMControl, the Richmat MH apps, the classic apps, SleepFunction, SVEN & SON and Richmat remotes. Each app is also its own searchable row |
-| Sleep Number | Fuzion (Climate 360, FlexFit) or BAM/MCR (i8, 360 FlexFit 2). A Fuzion bed then asks its side |
+| Sleep Number | Fuzion (Climate 360, FlexFit) or an older base (i8, 360 FlexFit 2). A Fuzion bed then asks its side |
 | Sleepy's Elite | The MFRM Sleepy's Elite app, or the BOX15, BOX24 or BOX25 receiver |
 | Solace | HomeKobo, Sealy MotionFlex or Sweet Night; Woosa Sleep; Motion Bed; or BedSense |
 | StarCode | AdjustableM5X4, AdjustableM5X5 or Adjustable Comfort M1X12 |
@@ -636,27 +719,27 @@ Other setup changes:
 ## Appendix C: moved guides
 
 Per-bed guides that share commands were folded into one guide per family, with
-one section per app. Old links to these files on the `v5` branch return 404.
+one section per app. Links to the old file names no longer work.
 
 | Old guide | New section |
 |-----------|-------------|
-| `beds/adjustable-lumbar.md` | [Okin N-frame: Adjustable bed (Lumbar)](beds/okin-nframe.md#adjustable-bed-lumbar) |
+| `beds/adjustable-lumbar.md` | [Okin and DewertOkin: Adjustable bed (Lumbar)](beds/okin-nframe.md#adjustable-bed-lumbar) |
 | `beds/adjustamattress.md` | [Keeson: AdjustaMattress](beds/keeson.md#adjustamattress) |
-| `beds/bedsense.md` | [FFFF frame: BedSense](beds/ff_frame.md#bedsense) |
+| `beds/bedsense.md` | [Solace and related apps: BedSense](beds/ff_frame.md#bedsense) |
 | `beds/bedtech.md` | [Richmat: BedTech](beds/richmat.md#bedtech) |
 | `beds/bf-cherish.md` | [Keeson: BF and Cherish](beds/keeson.md#bf-and-cherish) |
 | `beds/comfort-enhancements.md` | [Keeson: Comfort Enhancements](beds/keeson.md#comfort-enhancements) |
 | `beds/comfort-motion.md` | [Jiecang: Comfort Motion app](beds/jiecang.md#comfort-motion-app) |
 | `beds/coolbase.md` | [Keeson: Cool Base](beds/keeson.md#cool-base) |
-| `beds/customatic.md` | [Okin N-frame: Customatic family](beds/okin-nframe.md#customatic-family) |
-| `beds/customatic-z-series.md` | [Okin N-frame: Customatic Z-Series](beds/okin-nframe.md#customatic-z-series) |
-| `beds/dewertokin.md` | [Okin N-frame: DewertOkin](beds/okin-nframe.md#dewertokin) |
-| `beds/doublesleep.md` | [Okin N-frame: OKIN SleepEase](beds/okin-nframe.md#okin-sleepease) |
+| `beds/customatic.md` | [Okin and DewertOkin: Customatic family](beds/okin-nframe.md#customatic-family) |
+| `beds/customatic-z-series.md` | [Okin and DewertOkin: Customatic Z-Series](beds/okin-nframe.md#customatic-z-series) |
+| `beds/dewertokin.md` | [Okin and DewertOkin: DewertOkin](beds/okin-nframe.md#dewertokin) |
+| `beds/doublesleep.md` | [Okin and DewertOkin: OKIN SleepEase](beds/okin-nframe.md#okin-sleepease) |
 | `beds/ergo-slim.md` | [Keeson: Ergo Slim](beds/keeson.md#ergo-slim) |
 | `beds/ergomotion.md` | [Keeson: Ergomotion app](beds/keeson.md#ergomotion-app) |
 | `beds/ergomotion-4.md` | [Keeson: Ergomotion 4.0](beds/keeson.md#ergomotion-40) |
 | `beds/eshine.md` | [Richmat: Eshine](beds/richmat.md#eshine) |
-| `beds/eshine-okin.md` | [Okin N-frame: eShine](beds/okin-nframe.md#eshine) |
+| `beds/eshine-okin.md` | [Okin and DewertOkin: eShine](beds/okin-nframe.md#eshine) |
 | `beds/floyd.md` | [Kaidi: Floyd Home](beds/kaidi.md#floyd-home) |
 | `beds/fsm_relax.md` | [Limoss: FSM Relax](beds/limoss.md#fsm-relax) |
 | `beds/glideaway-motion.md` | [Keeson: Glideaway Motion](beds/keeson.md#glideaway-motion) |
@@ -664,21 +747,21 @@ one section per app. Old links to these files on the `v5` branch return 404.
 | `beds/hjbed.md` | [Richmat: HJBed](beds/richmat.md#hjbed) |
 | `beds/isleep.md` | [Kaidi: ISleep](beds/kaidi.md#isleep) |
 | `beds/jiecang-app.md` | [Jiecang: Dream app family](beds/jiecang.md#dream-app-family) |
-| `beds/leggett-okin.md` | [Okin N-frame: Leggett Okin family](beds/okin-nframe.md#leggett-okin-family) |
+| `beds/leggett-okin.md` | [Okin and DewertOkin: Leggett Okin family](beds/okin-nframe.md#leggett-okin-family) |
 | `beds/limoss-remote.md` | [Limoss: Limoss Remote](beds/limoss.md#limoss-remote) |
 | `beds/lp-legacy.md` | [Richmat: L&P legacy app](beds/richmat.md#lp-legacy-app) |
 | `beds/logicdata-app.md` | [Jiecang: LOGICDATA app family](beds/jiecang.md#logicdata-app-family) |
 | `beds/malouf-app.md` | [Malouf: Malouf Base / Lucid Base family](beds/malouf.md#malouf-base--lucid-base-family) |
-| `beds/mattressfirm.md` | [Okin 5A: Mattress Firm 900 / iFlex](beds/okin-5a.md#mattress-firm-900--iflex) |
-| `beds/motion_bed.md` | [FFFF frame: Motion Bed](beds/ff_frame.md#motion-bed) |
-| `beds/motosleep.md` | [HHC `$#` frames: MotoSleep and Power Bob family](beds/motomotion.md#motosleep-and-power-bob-family) |
-| `beds/nectar.md` | [Okin 5A: Nectar](beds/okin-5a.md#nectar) |
-| `beds/okimat.md` | [Okin N-frame: Okimat](beds/okin-nframe.md#okimat) |
-| `beds/okin-64bit.md` | [Okin N-frame: Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) |
-| `beds/okin-cb35.md` | [Okin 5A: Sealy Posturematic (CB35)](beds/okin-5a.md#sealy-posturematic-cb35) |
-| `beds/okin-cst.md` | [Okin N-frame: Okin CST](beds/okin-nframe.md#okin-cst) |
-| `beds/okin-dot.md` | [Okin N-frame: Okin DOT](beds/okin-nframe.md#okin-dot) |
-| `beds/okin-rf-eco-bt.md` | [Okin N-frame: RF ECO BT stair lift](beds/okin-nframe.md#rf-eco-bt-stair-lift) |
+| `beds/mattressfirm.md` | [Nectar, Mattress Firm 900 and Sealy: Mattress Firm 900 / iFlex](beds/okin-5a.md#mattress-firm-900--iflex) |
+| `beds/motion_bed.md` | [Solace and related apps: Motion Bed](beds/ff_frame.md#motion-bed) |
+| `beds/motosleep.md` | [MotoMotion and MotoSleep: MotoSleep and Power Bob family](beds/motomotion.md#motosleep-and-power-bob-family) |
+| `beds/nectar.md` | [Nectar, Mattress Firm 900 and Sealy: Nectar](beds/okin-5a.md#nectar) |
+| `beds/okimat.md` | [Okin and DewertOkin: Okimat](beds/okin-nframe.md#okimat) |
+| `beds/okin-64bit.md` | [Okin and DewertOkin: Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) |
+| `beds/okin-cb35.md` | [Nectar, Mattress Firm 900 and Sealy: Sealy Posturematic (CB35)](beds/okin-5a.md#sealy-posturematic-cb35) |
+| `beds/okin-cst.md` | [Okin and DewertOkin: Okin CST](beds/okin-nframe.md#okin-cst) |
+| `beds/okin-dot.md` | [Okin and DewertOkin: Okin DOT](beds/okin-nframe.md#okin-dot) |
+| `beds/okin-rf-eco-bt.md` | [Okin and DewertOkin: RF ECO BT stair lift](beds/okin-nframe.md#rf-eco-bt-stair-lift) |
 | `beds/omazz-adjusto-iii.md` | [Keeson: Omazz Adjusto III](beds/keeson.md#omazz-adjusto-iii) |
 | `beds/ore-comfort-bed.md` | [Keeson: ORE comfort-bed profiles](beds/keeson.md#ore-comfort-bed-profiles) |
 | `beds/q-plus-adjustable-remote.md` | [Keeson: Q-Plus Adjustable Remote](beds/keeson.md#q-plus-adjustable-remote) |
@@ -689,17 +772,17 @@ one section per app. Old links to these files on the `v5` branch return 404.
 | `beds/row-control.md` | [Keeson: ROW Control](beds/keeson.md#row-control) |
 | `beds/sbi.md` | [Keeson: SBI / Q-Plus (Costco)](beds/keeson.md#sbi--q-plus-costco) |
 | `beds/scott-living.md` | [Keeson: Scott Living](beds/keeson.md#scott-living) |
-| `beds/serenity.md` | [Okin N-frame: Jordan's Serenity](beds/okin-nframe.md#jordans-serenity) |
+| `beds/serenity.md` | [Okin and DewertOkin: Jordan's Serenity](beds/okin-nframe.md#jordans-serenity) |
 | `beds/serta.md` | [Keeson: Serta](beds/keeson.md#serta) |
 | `beds/serta-mp-remote.md` | [Keeson: Serta MP Remote](beds/keeson.md#serta-mp-remote) |
-| `beds/simmons.md` | [Okin N-frame: SIMMONS](beds/okin-nframe.md#simmons) |
-| `beds/solace.md` | [FFFF frame: Solace name routes](beds/ff_frame.md#solace-name-routes) |
-| `beds/star-elevate.md` | [Okin 5A: DewertOkin ELEVATE](beds/okin-5a.md#dewertokin-elevate) |
-| `beds/starcode-abm5-4.md` | [Okin N-frame: AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) |
+| `beds/simmons.md` | [Okin and DewertOkin: SIMMONS](beds/okin-nframe.md#simmons) |
+| `beds/solace.md` | [Solace and related apps: Solace name routes](beds/ff_frame.md#solace-name-routes) |
+| `beds/star-elevate.md` | [Nectar, Mattress Firm 900 and Sealy: DewertOkin ELEVATE](beds/okin-5a.md#dewertokin-elevate) |
+| `beds/starcode-abm5-4.md` | [Okin and DewertOkin: AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) |
 | `beds/tempur-au.md` | [Keeson: TEMPUR AU](beds/keeson.md#tempur-au) |
 | `beds/tempur-curve.md` | [Keeson: Tempur Curve](beds/keeson.md#tempur-curve) |
-| `beds/tranquil.md` | [Okin N-frame: Jordan's Tranquil](beds/okin-nframe.md#jordans-tranquil) |
+| `beds/tranquil.md` | [Okin and DewertOkin: Jordan's Tranquil](beds/okin-nframe.md#jordans-tranquil) |
 | `beds/vibradorm_app.md` | [Vibradorm: Caresse and Werkmeister](beds/vibradorm.md#caresse-and-werkmeister) |
 | `beds/vmat.md` | [Vibradorm: VMAT](beds/vibradorm.md#vmat) |
 | `beds/vmatbasic.md` | [Vibradorm: V-MAT Basic](beds/vibradorm.md#v-mat-basic) |
-| `beds/woosa.md` | [FFFF frame: Woosa Sleep](beds/ff_frame.md#woosa-sleep) |
+| `beds/woosa.md` | [Solace and related apps: Woosa Sleep](beds/ff_frame.md#woosa-sleep) |

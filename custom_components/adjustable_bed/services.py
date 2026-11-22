@@ -25,6 +25,7 @@ from collections.abc import (
     Sequence,
 )
 from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, Final, cast
 
@@ -35,7 +36,10 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.service import async_get_device_and_config_entry
+from homeassistant.helpers.service import (
+    async_get_device_and_config_entry,
+    async_register_admin_service,
+)
 from homeassistant.util import dt as dt_util
 
 from .alarm import (
@@ -54,8 +58,10 @@ from .beds.base import BedController, controller_as
 from .beds.entity_specs import POSITION_UNIT_DEGREES, POSITION_UNIT_PERCENT
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
+    CommandOutcome,
     HoldClaim,
     HoldLease,
+    HoldWindow,
     StaleHoldLease,
     command_resources,
     current_command_context,
@@ -258,6 +264,12 @@ SIDE_FIELD = {vol.Optional(ATTR_SIDE): vol.In([SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH]
 DEVICE_IDS = vol.All(cv.ensure_list, vol.Length(min=1))
 
 
+def local_datetime(value: object) -> datetime:
+    """A date and time; one without a zone, as the action form sends it, is local time."""
+    when = cv.datetime(value)
+    return when if when.tzinfo else when.replace(tzinfo=dt_util.get_default_time_zone())
+
+
 def _resolve_sided_target(
     hass: HomeAssistant, device_id: str
 ) -> tuple[BedTarget, str | None] | None:
@@ -266,7 +278,8 @@ def _resolve_sided_target(
     ``inferred_side`` is the left/right of a targeted paired child sub-device
     (matched by its MAC identifier), or ``None`` for a single bed or the
     paired parent device. Lets a caller targeting one side's device act on
-    just that side without passing ``side`` explicitly.
+    just that side without passing ``side`` explicitly. ``SIDE_BOTH`` marks a
+    device of a paired entry that is neither a side nor the pair itself.
     """
     selected = dr.async_get(hass).async_get(device_id)
     # HA's validation helper accepts full devices only. Validate a native
@@ -293,7 +306,7 @@ def _resolve_sided_target(
             if domain == DOMAIN
         }
         if inferred_side is None and not identifiers.intersection(parent_identifiers):
-            raise invalid("side_unavailable")
+            inferred_side = SIDE_BOTH
     return coordinator, inferred_side
 
 
@@ -301,6 +314,8 @@ def _resolve_sided_targets(
     hass: HomeAssistant,
     device_ids: list[str],
     explicit_side: str | None,
+    *,
+    problems: list[BaseException] | None = None,
 ) -> tuple[list[tuple[BedTarget, str]], list[str]]:
     """Group sided-service targets by coordinator, merging inferred sides.
 
@@ -308,22 +323,40 @@ def _resolve_sided_targets(
     collapses to a single ``both`` fan-out - preserving the both-failure
     contract - instead of two separate side commands. Each coordinator
     appears once in first-seen order. Returns (targets, missing_device_ids).
+
+    With ``problems`` (STOP), nothing raises: a device that cannot be resolved
+    is recorded there and skipped, and a side that cannot be honoured is
+    recorded and widened to the whole bed, so every reachable bed still stops.
     """
     ordered: list[int] = []
     by_key: dict[int, tuple[BedTarget, set[str | None]]] = {}
     missing: list[str] = []
     for device_id in device_ids:
-        resolved = _resolve_sided_target(hass, device_id)
+        try:
+            resolved = _resolve_sided_target(hass, device_id)
+        except Exception as err:
+            if problems is None:
+                raise
+            problems.append(err)
+            continue
         if resolved is None:
+            if problems is not None:
+                problems.append(invalid("devices_not_found", device_ids=device_id))
             missing.append(device_id)
             continue
         coordinator, inferred_side = resolved
-        if (
-            inferred_side is not None
-            and explicit_side is not None
-            and explicit_side != inferred_side
-        ):
-            raise invalid("side_selection_conflict", inferred_side=inferred_side, side=explicit_side)
+        problem: ServiceValidationError | None = None
+        if inferred_side == SIDE_BOTH:
+            problem = invalid("side_unavailable")
+        elif inferred_side is not None and explicit_side not in (None, inferred_side):
+            problem = invalid(
+                "side_selection_conflict", inferred_side=inferred_side, side=explicit_side
+            )
+        if problem is not None:
+            if problems is None:
+                raise problem
+            problems.append(problem)
+            inferred_side = SIDE_BOTH
         key = id(coordinator)
         if key not in by_key:
             by_key[key] = (coordinator, set())
@@ -333,7 +366,10 @@ def _resolve_sided_targets(
     targets: list[tuple[BedTarget, str]] = []
     for key in ordered:
         coordinator, sides = by_key[key]
-        if explicit_side is not None:
+        if SIDE_BOTH in sides:
+            # Only a STOP whose side could not be honoured gets here.
+            side = SIDE_BOTH
+        elif explicit_side is not None:
             side = explicit_side
         elif sides == {SIDE_LEFT}:
             side = SIDE_LEFT
@@ -870,7 +906,7 @@ async def handle_save_preset(call: ServiceCall) -> None:
             not controller.supports_memory_programming
             or not 1 <= preset <= controller.memory_slot_count
         ):
-            raise ValueError("The fresh Limoss Remote profile cannot program this memory slot")
+            raise ValueError("This remote cannot save to that memory position. Choose another position")
 
     async with _limoss_remote_reload_transaction(targets):
         await _preflight_live_limoss_remote(targets, validate_remote_slot)
@@ -900,30 +936,30 @@ async def handle_stop_all(call: ServiceCall) -> None:
 
     _LOGGER.info("Service stop_all called (side=%s)", explicit_side)
 
-    targets, missing_device_ids = _resolve_sided_targets(hass, device_ids, explicit_side)
+    # STOP is a safety action: attempt every bed that resolves before surfacing
+    # an error, so one bad target never leaves another bed still moving.
+    problems: list[BaseException] = []
+    targets, _missing = _resolve_sided_targets(hass, device_ids, explicit_side, problems=problems)
 
     async def _stop_one(coordinator: BedTarget, side: str) -> None:
-        # Validate that side applies (rejects left/right on a single bed).
-        _command_targets(coordinator, side)
+        try:
+            _command_targets(coordinator, side)
+        except ServiceValidationError as err:
+            # A side this bed does not have stops the whole bed.
+            problems.append(err)
+            side = SIDE_BOTH
         if isinstance(coordinator, PairedBedCoordinator):
             await coordinator.async_stop_command(side=side)
         else:
             await coordinator.async_stop_command()
 
-    # STOP is a safety action: attempt every target before surfacing an
-    # error, so one bed's failure never leaves another still moving.
     results = await asyncio.gather(
         *(_stop_one(coordinator, side) for coordinator, side in targets),
         return_exceptions=True,
     )
-    stop_errors = [r for r in results if isinstance(r, BaseException)]
-
-    if missing_device_ids:
-        raise invalid("devices_not_found", device_ids=", ".join(missing_device_ids))
-
-    if stop_errors:
-        # Every target was attempted; surface the first failure.
-        raise stop_errors[0]
+    problems.extend(r for r in results if isinstance(r, BaseException))
+    if problems:
+        raise problems[0]
 
 
 async def _set_position_plan(
@@ -1329,7 +1365,13 @@ async def _timed_move_plan(
 
         if hold_control is not None:
             if hold_control not in controller.held_control_options:
-                raise invalid("action_rejected", reason=f"Motor '{motor}' declares unsupported held control '{hold_control}'")
+                # The bed declares a motor it cannot hold: it has no such timed move.
+                raise invalid(
+                    "invalid_motor_for_bed_type",
+                    motor=motor,
+                    device_name=coordinator.name,
+                    valid_motors=", ".join(sorted(valid_motors - {motor})),
+                )
             try:
                 controller.validate_hold_control(hold_control, duration_ms)
             except ValueError as err:
@@ -1790,7 +1832,6 @@ async def _preflight_each(
 async def _preflight_capability[T](
     targets: list[tuple[BedTarget, str]],
     interface: type[T],
-    label: str,
     supported: Callable[[T], bool] | None = None,
     validate: Callable[[T], None] | None = None,
 ) -> PreflightedSides:
@@ -1806,7 +1847,7 @@ async def _preflight_capability[T](
             raise invalid(
                 "feature_not_supported",
                 device_name=target.name,
-                feature=label,
+                feature="this action",
             )
         if validate is not None:
             validate(family)
@@ -1815,7 +1856,7 @@ async def _preflight_capability[T](
 
 
 def _family_command[T](
-    interface: type[T], label: str, command: Callable[[T], Awaitable[None]]
+    interface: type[T], command: Callable[[T], Awaitable[None]]
 ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
     """Adapt a family command to the scheduler; a ``ValueError`` is a validation error."""
 
@@ -1824,8 +1865,8 @@ def _family_command[T](
         if family is None:
             raise invalid(
                 "feature_not_supported",
-                device_name="This bed",
-                feature=label,
+                device_name=controller._coordinator.name,
+                feature="this action",
             )
         try:
             await command(family)
@@ -1838,7 +1879,6 @@ def _family_command[T](
 async def _preflight_and_execute[T](
     targets: list[tuple[BedTarget, str]],
     interface: type[T],
-    label: str,
     command: Callable[[T], Awaitable[None]],
     *,
     supported: Callable[[T], bool] | None = None,
@@ -1869,7 +1909,7 @@ async def _preflight_and_execute[T](
             else None
             for coordinator, side in targets
         ]
-    preflighted = await _preflight_capability(targets, interface, label, supported, validate)
+    preflighted = await _preflight_capability(targets, interface, supported, validate)
     if prepare is not None:
         try:
             # An ingress update may affect an already running operation. Admit
@@ -1887,7 +1927,7 @@ async def _preflight_and_execute[T](
     await _execute_preflighted(
         targets,
         preflighted,
-        _family_command(interface, label, command),
+        _family_command(interface, command),
         cancel_running=cancel_running,
         skip_disconnect=skip_disconnect,
         resource=resource,
@@ -2058,6 +2098,16 @@ async def handle_hold_control(call: ServiceCall) -> None:
             raise invalid(
                 "control_hold_renewal_not_supported",
             )
+        if route is None and _windowed_press(targets, lease, control):
+            await _async_hold_window(
+                call.hass,
+                targets,
+                lease,
+                lambda window: _hold_targets(
+                    targets, control, HOLD_CEILING_MS, admissions=admissions, window=window
+                ),
+            )
+            return
         held = lease
         await _async_with_hold_lease(
             targets,
@@ -2085,6 +2135,108 @@ async def handle_hold_control(call: ServiceCall) -> None:
         await _hold_vmatbasic_floor(targets, control, duration_ms)
     else:
         await _hold_targets(targets, control, duration_ms, admissions=admissions)
+
+
+def _declares_hold(targets: list[tuple[BedTarget, str]], control: str) -> bool:
+    """Whether every executing target declares a renewable hold on ``control``."""
+    controllers = [
+        target.capability_controller
+        for coordinator, side in targets
+        for target in _command_targets(coordinator, side)
+    ]
+    return bool(controllers) and all(
+        controller is not None and controller.execution.hold_for(control) is not None
+        for controller in controllers
+    )
+
+
+def _windowed_press(
+    targets: list[tuple[BedTarget, str]], lease: HoldLease, control: str
+) -> bool:
+    """Route a press once, so its renewals follow it when capabilities change.
+
+    A press of a control the bed declares no renewable hold for takes a window;
+    the rest take the scheduler lease. A Good Vibe memory save, for one, makes
+    its control a sustained press the moment it lands.
+    """
+    if len(targets) != 1:
+        return not _declares_hold(targets, control)
+    coordinator, side = targets[0]
+    press = coordinator.hold_windows.get(side, lease.owner)
+    if press is not None and press.generation >= lease.generation:
+        return press.windowed
+    if _declares_hold(targets, control):
+        coordinator.hold_windows.remember(
+            side,
+            lease.owner,
+            HoldWindow(control, lease.generation, math.inf, windowed=False, ended=True),
+        )
+        return False
+    return True
+
+
+async def _async_hold_window(
+    hass: HomeAssistant,
+    targets: list[tuple[BedTarget, str]],
+    lease: HoldLease,
+    run: Callable[[HoldWindow], Awaitable[None]],
+) -> None:
+    """Hold a control that declares no renewable hold until its renewals stop.
+
+    The hold is the bounded one ``hold_control`` always runs, so the bed gets
+    the same frames. A renewal (same owner, generation and control) only moves
+    the deadline and writes nothing. When the deadline passes, the commands
+    this press started are cancelled as a STOP cancels them, so each runs its
+    release, and nothing else is touched; one not yet started never starts.
+    """
+    if len(targets) != 1:
+        raise invalid("hold_one_bed")
+    coordinator, side = targets[0]
+    now = asyncio.get_running_loop().time()
+    window = coordinator.hold_windows.get(side, lease.owner)
+    if window is not None and window.generation >= lease.generation:
+        if window.generation > lease.generation or window.control != lease.action:
+            raise invalid("hold_ended")
+        # A renewal in flight when the hold ended moves nothing.
+        if not window.ended:
+            window.deadline = now + lease.duration_s
+        return
+    window = HoldWindow(lease.action, lease.generation, now + lease.duration_s)
+    coordinator.hold_windows.remember(side, lease.owner, window)
+    # A dropped caller (a closed dashboard) must not take the deadline with it.
+    task = hass.async_create_background_task(
+        _run_hold_window(window, run), "adjustable_bed hold window"
+    )
+    await asyncio.shield(task)
+
+
+async def _run_hold_window(
+    window: HoldWindow, run: Callable[[HoldWindow], Awaitable[None]]
+) -> None:
+    loop = asyncio.get_running_loop()
+    hold = asyncio.ensure_future(run(window))
+    try:
+        while not hold.done():
+            remaining = window.deadline - loop.time()
+            if remaining <= 0:
+                _LOGGER.debug("Held %s stopped renewing; ending its hold", window.control)
+                window.expired = True
+                for context in window.commands:
+                    # Ended as a STOP ends it, so a pair takes it as cleanup;
+                    # a command already cancelled keeps its own reason.
+                    if not context.cancel_event.is_set():
+                        context.request_cancel(CommandOutcome.STOPPED)
+                break
+            await asyncio.wait((hold,), timeout=remaining)
+        await asyncio.wait((hold,))
+        if not hold.cancelled():
+            hold.result()
+    except asyncio.CancelledError:
+        # Shutdown or unload: the hold must not outlive its deadline keeper.
+        hold.cancel()
+        raise
+    finally:
+        window.ended = True
 
 
 def _require_held_control(
@@ -2118,6 +2270,7 @@ async def _hold_targets(
     *,
     lease: HoldLease | None = None,
     admissions: Sequence[_CommandAdmission] | None = None,
+    window: HoldWindow | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     bounded_catalog = lease is None and all(
@@ -2153,6 +2306,12 @@ async def _hold_targets(
         # Automatic link-slot fallback may have changed topology after admission.
         if not bounded_catalog:
             _require_hold_topology(targets)
+        if window is not None:
+            # Renewals stopped before this command began: start nothing.
+            if window.lapsed:
+                return
+            if (context := current_command_context()) is not None:
+                window.commands.append(context)
         await controller.hold_control(
             control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
         )
@@ -2161,6 +2320,9 @@ async def _hold_targets(
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            if window is not None and window.lapsed:
+                # Renewals stopped during preflight: never replace another command.
+                break
             if isinstance(coordinator, SingleAddressPairedCoordinator) and any(
                 _plan_key(target) in shared_receivers
                 for target in _command_targets(coordinator, side)
@@ -2240,6 +2402,8 @@ def _check_alarm(
     capability = controller.alarm_capability
     if capability is None:
         raise invalid("alarm_not_supported", device_name=device_name)
+    if capability.requires_slot and "slot" not in given:
+        raise invalid("alarm_slot_required", device_name=device_name)
     for name in given:
         if not capability.accepts(name):
             raise invalid("alarm_option_not_supported", device_name=device_name, option=name)
@@ -2294,17 +2458,32 @@ def _with_bed_defaults(
         ("wake_action", capability.wake_actions if bed_alarm else ()),
         ("sound", capability.sounds),
         ("massage_duration", capability.massage_durations),
-        ("massage_zone", capability.massage_zones),
+        ("massage_zone", capability.massage_zones if capability.default_massage_zone else ()),
     ):
         if name not in given and choices:
             defaults[name] = choices[0]
     return dataclasses.replace(alarm, **defaults) if defaults else alarm
 
 
+# Values of set_alarm fields that ask nothing of the bed.
+_ALARM_NOTHING: Final[dict[str, object]] = {
+    ATTR_WEEKDAYS: [],
+    ATTR_MASSAGE: False,
+    "light": False,
+}
+
+
 async def handle_set_alarm(call: ServiceCall) -> None:
     """Validate one alarm on every physical target, then write it to each."""
     alarm = _alarm_request(call)
-    given = [name for name in ALARM_OPTIONAL_FIELDS if name in call.data]
+    # No repeat days, no massage and no light ask nothing of a bed without
+    # those options, so a bed is not refused for them.
+    given = [
+        name
+        for name in ALARM_OPTIONAL_FIELDS
+        if name in call.data
+        and (name not in _ALARM_NOTHING or call.data[name] != _ALARM_NOTHING[name])
+    ]
     targets = _call_targets(call)
 
     route = _profile_route(
@@ -2342,12 +2521,14 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         # are checked on every target, connecting where needed, before anything
         # is scheduled.
         async def write_zseries(controller: BedController) -> None:
-            await controller.configure_alarm(_check_alarm("", controller, alarm, given))
+            await controller.configure_alarm(
+                _check_alarm(controller._coordinator.name, controller, alarm, given)
+            )
 
         def check_zseries(controller: BedController) -> None:
             _check_alarm(controller._coordinator.name, controller, alarm, given)
 
-        await _execute_zseries_alarm(call, "alarms", write_zseries, validate=check_zseries)
+        await _execute_zseries_alarm(call, write_zseries, validate=check_zseries)
         return
 
     selection = _Selection.capture(targets)
@@ -2425,7 +2606,7 @@ async def _write_checked_alarms(
                 )
             await run(controller, capability)
 
-        return _family_command(BedController, "alarms", execute)
+        return _family_command(BedController, execute)
 
     async def prepare_side(parent: BedTarget, side: str, child: BedChild) -> None:
         plan = plans[id(child)]
@@ -2582,7 +2763,7 @@ async def handle_sync_clock(call: ServiceCall) -> None:
         from .beds.serenity.services import _execute_zseries_alarm
 
         # Z-Series clocks live on the alarm page, gated by a live manufacturer read.
-        await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
+        await _execute_zseries_alarm(call, sync)
         return
 
     def check(target: BedChild, controller: BedController) -> None:
@@ -2693,12 +2874,8 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         target = _get_support_bundle_target_from_device(hass, selected_device_id)
         if target is not None:
             address, coordinator, entry = target
-            device_name = coordinator.name if coordinator is not None else entry.title
-            _LOGGER.info(
-                "Generating support bundle for configured device %s at %s",
-                device_name,
-                address,
-            )
+            # By address only: the device name is typed text the bundle leaves out.
+            _LOGGER.info("Generating support bundle for configured device at %s", address)
         else:
             raise _missing_device_error(selected_device_id)
     else:
@@ -2890,6 +3067,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
 def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     """Import the family action modules, which import this one, in the import executor."""
+    from .beds.baseremote.services import register_services as register_baseremote_services
     from .beds.bedgear.services import async_register_bedgear_services
     from .beds.bedtech.services import register_services as register_bedtech_services
     from .beds.casper_base.services import async_register_casper_base_services
@@ -2897,6 +3075,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.comfort_enhancement3.services import register_services as register_apex_services
     from .beds.customatic.services import async_register_customatic_services
     from .beds.doublesleep.services import async_register_doublesleep_services
+    from .beds.dreamsense.services import async_register_dreamsense_services
     from .beds.fsm_relax.services import async_register_fsm_relax_services
     from .beds.furnimove.services import async_register_furnimove_services
     from .beds.gmmotor.services import async_register_gmmotor_services
@@ -2937,6 +3116,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.richmat_classic.resource_services import async_register_resource_bed_services
     from .beds.richmat_classic.rise_services import async_register_richmat_rise_services
     from .beds.richmat_classic.services import async_register_richmat_classic_services
+    from .beds.richmat_classic.sleepfunction_services import async_register_sleepfunction_services
     from .beds.richmat_legacy.services import async_register_richmat_legacy_services
     from .beds.richmat_mh.app_services import (
         register_services as register_mh_app_services,
@@ -2948,6 +3128,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.solace.services import async_register_solace_services
     from .beds.sonicsleep.services import async_register_sonicsleep_services
     from .beds.starcode.accessory_group import register_group_services
+    from .beds.superior_sleep.services import register_services as register_superior_sleep_services
     from .beds.suta.services import register_services as register_suta_services
     from .beds.svane.services import async_register_svane_services
     from .beds.symphony.services import register_services as register_symphony_sense_services
@@ -2974,9 +3155,12 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_mh_app_services,
         async_register_position_estimate_services,
         async_register_richmat_classic_services,
+        async_register_sleepfunction_services,
         async_register_lp2_services,
         async_register_jerome_services,
+        register_baseremote_services,
         async_register_resource_bed_services,
+        async_register_dreamsense_services,
         async_register_richmat_legacy_services,
         async_register_richmat_rise_services,
         async_register_motomotion_services,
@@ -3011,6 +3195,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_jiecang_app_services,
         async_register_svane_services,
         register_group_services,
+        register_superior_sleep_services,
     )
 
 
@@ -3029,8 +3214,8 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_goto_preset,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+                vol.Required(ATTR_PRESET): vol.All(_whole_number, vol.Range(min=1)),
                 vol.Optional(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
             }
@@ -3042,8 +3227,8 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_save_preset,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+                vol.Required(ATTR_PRESET): vol.All(_whole_number, vol.Range(min=1)),
                 **SIDE_FIELD,
             }
         ),
@@ -3054,7 +3239,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_stop_all,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 **SIDE_FIELD,
             }
         ),
@@ -3065,7 +3250,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_set_position,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_MOTOR): vol.In(POSITION_MOTOR_OPTIONS),
                 # No max cap here - per-motor validation handles bed-specific limits
                 vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0)),
@@ -3079,7 +3264,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_set_positions,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_POSITIONS): vol.All(
                     [
                         {
@@ -3101,7 +3286,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_timed_move,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_MOTOR): vol.In(TIMED_MOVE_MOTOR_OPTIONS),
                 vol.Required(ATTR_DIRECTION): vol.In(["up", "down"]),
                 vol.Required(ATTR_DURATION_MS): vol.All(
@@ -3155,7 +3340,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(ATTR_ENABLED): cv.boolean,
                 vol.Optional(ATTR_TIME): cv.time,
                 vol.Optional(ATTR_WEEKDAYS): vol.All(cv.ensure_list, [vol.In(ALARM_WEEKDAYS)]),
-                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=0, max=99)),
+                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=0, max=255)),
                 vol.Optional("wake_action"): vol.In(WAKE_ACTIONS),
                 vol.Optional(ATTR_MASSAGE): cv.boolean,
                 vol.Optional("head_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
@@ -3177,7 +3362,9 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_sync_clock,
         schema=vol.Schema({vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD}),
     )
-    hass.services.async_register(
+    # Admin only: it captures any address and writes a file anyone can download.
+    async_register_admin_service(
+        hass,
         DOMAIN,
         SERVICE_GENERATE_SUPPORT_BUNDLE,
         handle_generate_support_bundle,

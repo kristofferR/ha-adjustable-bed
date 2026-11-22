@@ -230,12 +230,16 @@ async def test_the_brand_list_asks_which_okin_receiver_in_plain_words(hass):
     result = await flow.async_step_select_family({const.CONF_BED_TYPE: "Okin (other receivers)"})
     assert result["step_id"] == "okin_receiver"
     selector = result["data_schema"].schema["choice"]
-    assert selector.config["options"] == list(OKIN_RECEIVER_ROUTES)
+    # The dialog has no Back, so the question itself offers a way out.
+    assert selector.config["options"] == [*OKIN_RECEIVER_ROUTES, "not_sure"]
     assert selector.config["translation_key"] == "okin_receiver_choice"
     with patch.object(flow, "_async_after_app_choice", new=AsyncMock()) as after:
         await flow.async_step_okin_receiver({"choice": const.BED_TYPE_OKIN_FFE})
     after.assert_awaited_once()
     assert flow._selected_bed_type == const.BED_TYPE_OKIN_FFE
+    with patch.object(flow, "async_step_diagnostic", new=AsyncMock()) as diagnostic:
+        await flow.async_step_okin_receiver({"choice": "not_sure"})
+    diagnostic.assert_awaited_once()
     # A protocol route submitted by its ID, as the brand list once offered it, still works.
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}

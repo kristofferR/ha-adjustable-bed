@@ -300,14 +300,14 @@ async def _async_managed_objects() -> dict[str, Any] | None:
                     member="GetManagedObjects",
                 )
             )
-    except Exception as err:  # noqa: BLE001 - any failure means "cannot answer"
+    except Exception as err:
         _LOGGER.debug("Could not read BlueZ objects: %s", err)
         return None
     finally:
         if bus is not None:
             try:
                 bus.disconnect()
-            except Exception:  # noqa: BLE001 - cleanup must not mask the result
+            except Exception:
                 _LOGGER.debug("Failed to close the D-Bus connection", exc_info=True)
 
     if reply is None or getattr(reply, "message_type", None) != MessageType.METHOD_RETURN:
@@ -422,7 +422,7 @@ async def async_remove_local_bond(record: LocalBondRecord) -> BondRemovalResult:
             # tree verification below can overlap a new advertisement whose
             # recreated Device1 object is already safe to reconnect through.
             removed_at = advertisement_time_marker()
-    except Exception as err:  # noqa: BLE001 - any failure means "not removed"
+    except Exception as err:
         _LOGGER.warning("Could not remove the host bond for %s: %s", record.address, err)
         return BondRemovalResult(
             status=BondRemovalStatus.RPC_FAILED,
@@ -433,7 +433,7 @@ async def async_remove_local_bond(record: LocalBondRecord) -> BondRemovalResult:
         if bus is not None:
             try:
                 bus.disconnect()
-            except Exception:  # noqa: BLE001 - cleanup must not mask the result
+            except Exception:
                 _LOGGER.debug("Failed to close the D-Bus connection", exc_info=True)
 
     if reply is None or getattr(reply, "message_type", None) != MessageType.METHOD_RETURN:
@@ -470,53 +470,3 @@ async def async_remove_local_bond(record: LocalBondRecord) -> BondRemovalResult:
         record=record,
         removed_at=removed_at,
     )
-
-
-async def async_remove_host_bond(
-    address: str,
-    *,
-    adapter_address: str | None = None,
-) -> BondRemovalResult:
-    """Find and remove the host bond for ``address``, refusing when ambiguous.
-
-    ``adapter_address`` names which local adapter owns the bond, and is required
-    whenever more than one of them holds one: with two adapters bonded to the
-    same bed there is no safe way to guess which the user meant.
-    """
-    inventory = await async_read_local_bonds(address)
-    if not inventory.readable:
-        return BondRemovalResult(
-            status=BondRemovalStatus.BACKEND_UNAVAILABLE, error="bluez_unavailable"
-        )
-
-    bonded = inventory.bonded_records
-    if not bonded:
-        return BondRemovalResult(status=BondRemovalStatus.ALREADY_ABSENT)
-
-    if adapter_address:
-        wanted = adapter_address.upper()
-        matching = [
-            record
-            for record in bonded
-            if (record.adapter_address or "").upper() == wanted
-        ]
-        if len(matching) == 1:
-            return await async_remove_local_bond(matching[0])
-        if not matching:
-            # Nothing on the adapter that was named. That is not the same as
-            # "there is no bond": another adapter may still hold one, and a
-            # caller that cleared its marker here would be wrong.
-            return BondRemovalResult(
-                status=BondRemovalStatus.ALREADY_ABSENT,
-                error="no_bond_on_named_adapter" if bonded else None,
-            )
-        return BondRemovalResult(
-            status=BondRemovalStatus.AMBIGUOUS_OWNER, error="multiple_records_on_adapter"
-        )
-
-    sole = inventory.sole_bond
-    if sole is None:
-        return BondRemovalResult(
-            status=BondRemovalStatus.AMBIGUOUS_OWNER, error="multiple_adapters_bonded"
-        )
-    return await async_remove_local_bond(sole)

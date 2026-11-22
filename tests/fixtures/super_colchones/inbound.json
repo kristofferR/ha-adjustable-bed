@@ -1,0 +1,1185 @@
+[
+  {
+    "id": "motor-height-min",
+    "decoder": "extension",
+    "bytes": "6e 20 0b 01 02 02 01 00 7b 01 1b",
+    "expected": [
+      {
+        "event": "deviceMotorCurrentHeightStatusEvent",
+        "value": {
+          "height": 12.3,
+          "type": 1,
+          "angle": -1,
+          "monitorHeight": 0
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68dbd0..0x68e1f8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "motor-height-angle-monitor",
+    "decoder": "extension",
+    "bytes": "6e 20 0e 01 02 03 02 01 2c 04 2d 00 7d 7f",
+    "expected": [
+      {
+        "event": "deviceMotorCurrentHeightStatusEvent",
+        "value": {
+          "height": 30,
+          "type": 4,
+          "angle": 45,
+          "monitorHeight": 12.5
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68dbd0..0x68e1f8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "motor-angle",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 01 03 03 01 63 2d 30",
+    "expected": [
+      {
+        "event": "deviceVersionOneMotorAngleEvent",
+        "value": {
+          "position": 1,
+          "angle": 45
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68dbd0..0x68e1f8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "motor-reject-short-height",
+    "decoder": "extension",
+    "bytes": "6e 20 09 01 02 02 01 00 9d",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68dbd0..0x68e1f8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "motor-reject-short-angle",
+    "decoder": "extension",
+    "bytes": "6e 20 08 01 03 02 01 9d",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68dbd0..0x68e1f8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "motor-ignore-type",
+    "decoder": "extension",
+    "bytes": "6e 20 0b 01 02 01 01 00 7b 01 1a",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68dbd0..0x68e1f8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "motor-ignore-property",
+    "decoder": "extension",
+    "bytes": "6e 20 0b 01 01 02 01 00 7b 01 1a",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68dbd0..0x68e1f8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-pair-list",
+    "decoder": "extension",
+    "bytes": "6e 20 0d 02 01 02 01 03 02 05 09 07 bb",
+    "expected": [
+      {
+        "event": "deviceMassageHeadStrengthStatusEvent",
+        "value": 3
+      },
+      {
+        "event": "deviceMassageFootStrengthStatusEvent",
+        "value": 5
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-empty",
+    "decoder": "extension",
+    "bytes": "6e 20 07 02 01 03 9b",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-odd-payload",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 02 01 02 01 03 02 a3",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-property-2",
+    "decoder": "extension",
+    "bytes": "6e 20 09 02 02 03 00 04 a2",
+    "expected": [
+      {
+        "event": "deviceMassageModeStatusEvent",
+        "value": 4
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-property-4",
+    "decoder": "extension",
+    "bytes": "6e 20 09 02 04 03 00 07 a7",
+    "expected": [
+      {
+        "event": "deviceMassageFrequencStatusEvent",
+        "value": 7
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-property-5",
+    "decoder": "extension",
+    "bytes": "6e 20 09 02 05 03 00 09 aa",
+    "expected": [
+      {
+        "event": "deviceMusicShakeStatusEvent",
+        "value": 9
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-property-6",
+    "decoder": "extension",
+    "bytes": "6e 20 09 02 06 03 00 01 a3",
+    "expected": [
+      {
+        "event": "deviceMassagePowerStatusEvent",
+        "value": true
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-power-off",
+    "decoder": "extension",
+    "bytes": "6e 20 09 02 06 02 00 02 a3",
+    "expected": [
+      {
+        "event": "deviceMassagePowerStatusEvent",
+        "value": false
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "massage-short",
+    "decoder": "extension",
+    "bytes": "6e 20 07 02 02 02 9b",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68d438..0x68dbcc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "white-on",
+    "decoder": "extension",
+    "bytes": "6e 20 09 03 01 02 00 01 9e",
+    "expected": [
+      {
+        "event": "deviceWhiteLedStatusEvent",
+        "value": true
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "white-off",
+    "decoder": "extension",
+    "bytes": "6e 20 09 03 01 03 00 00 9e",
+    "expected": [
+      {
+        "event": "deviceWhiteLedStatusEvent",
+        "value": false
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "white-short",
+    "decoder": "extension",
+    "bytes": "6e 20 07 03 01 02 9b",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "rgb-color",
+    "decoder": "extension",
+    "bytes": "6e 20 0b 04 01 02 00 10 80 ff 2f",
+    "expected": [
+      {
+        "event": "deviceRGBStripColorStatusEvent",
+        "value": {
+          "rgb": [
+            16,
+            128,
+            255
+          ],
+          "alpha": 1,
+          "space": "sRGB"
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "rgb-timer",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 04 02 03 00 02 1e c1",
+    "expected": [
+      {
+        "event": "deviceRGBStripTimerStatusEvent",
+        "value": 150
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "rgb-3-0",
+    "decoder": "extension",
+    "bytes": "6e 20 09 04 03 02 00 00 a0",
+    "expected": [
+      {
+        "event": "deviceRGBStripMotionStatusEvent",
+        "value": false
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "rgb-3-1",
+    "decoder": "extension",
+    "bytes": "6e 20 09 04 03 02 00 01 a1",
+    "expected": [
+      {
+        "event": "deviceRGBStripMotionStatusEvent",
+        "value": true
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "rgb-4-0",
+    "decoder": "extension",
+    "bytes": "6e 20 09 04 04 02 00 00 a1",
+    "expected": [
+      {
+        "event": "deviceRGBStripStatusEvent",
+        "value": false
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "rgb-4-1",
+    "decoder": "extension",
+    "bytes": "6e 20 09 04 04 02 00 01 a2",
+    "expected": [
+      {
+        "event": "deviceRGBStripStatusEvent",
+        "value": true
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "rgb-short-color",
+    "decoder": "extension",
+    "bytes": "6e 20 09 04 01 02 00 10 ae",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "rgb-short-timer",
+    "decoder": "extension",
+    "bytes": "6e 20 08 04 02 02 00 9e",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68cca0..0x68d434",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "alarm-2",
+    "decoder": "extension",
+    "bytes": "6e 20 0d 05 01 02 01 02 03 04 05 06 b8",
+    "expected": [
+      {
+        "event": "deviceRepeatAlarmListStatusEvent",
+        "value": {
+          "field_7": 1,
+          "field_f": 2,
+          "field_17": 3,
+          "field_1f": 4,
+          "field_27": 5,
+          "field_2f": 6
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c990..0x68cc90",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "alarm-3",
+    "decoder": "extension",
+    "bytes": "6e 20 0d 05 01 03 01 02 03 04 05 06 b9",
+    "expected": [
+      {
+        "event": "deviceRepeatAlarmListEscalationStatusEvent",
+        "value": {
+          "field_7": 1,
+          "field_f": 2,
+          "field_17": 3,
+          "field_1f": 4,
+          "field_27": 5,
+          "field_2f": 6
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c990..0x68cc90",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "alarm-short-failure",
+    "decoder": "extension",
+    "bytes": "6e 20 0b 05 01 02 01 02 03 04 ab",
+    "expected": {
+      "error": "IndexError"
+    },
+    "source": "bluetooth_util.dart:0x68c990..0x68cc90",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-1-0",
+    "decoder": "extension",
+    "bytes": "6e 20 09 06 01 02 00 00 a0",
+    "expected": [
+      {
+        "event": "deviceAntiSnoreEvent",
+        "value": false
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-1-1",
+    "decoder": "extension",
+    "bytes": "6e 20 09 06 01 02 00 01 a1",
+    "expected": [
+      {
+        "event": "deviceAntiSnoreEvent",
+        "value": true
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-2-0",
+    "decoder": "extension",
+    "bytes": "6e 20 09 06 02 02 00 00 a1",
+    "expected": [
+      {
+        "event": "deviceGetOffBedStatusEvent",
+        "value": false
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-2-1",
+    "decoder": "extension",
+    "bytes": "6e 20 09 06 02 02 00 01 a2",
+    "expected": [
+      {
+        "event": "deviceGetOffBedStatusEvent",
+        "value": true
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-name",
+    "decoder": "extension",
+    "bytes": "6e 20 0b 06 03 03 00 41 42 43 6b",
+    "expected": [
+      {
+        "event": "deviceSleepAdvNameEvent",
+        "value": [
+          65,
+          66,
+          67
+        ]
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-name-short-failure",
+    "decoder": "extension",
+    "bytes": "6e 20 07 06 03 02 a0",
+    "expected": {
+      "error": "IndexError"
+    },
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-stop-audio",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 06 04 03 00 01 01 a7",
+    "expected": [
+      {
+        "event": "deviceCharacteristicsSubscriptionSnoreStopPlayMusicEvent",
+        "value": null
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-stop-audio-no-event",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 06 04 02 00 01 00 a5",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-count",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 06 05 02 00 01 04 aa",
+    "expected": [
+      {
+        "event": "deviceAntiSnoreConfigCountEvent",
+        "value": 4
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-time",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 06 05 03 00 02 5a 02",
+    "expected": [
+      {
+        "event": "deviceAntiSnoreConfigTimeEvent",
+        "value": 90
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-unknown-config",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 06 05 02 00 03 5a 02",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "snore-short-config-failure",
+    "decoder": "extension",
+    "bytes": "6e 20 08 06 05 02 00 a3",
+    "expected": {
+      "error": "IndexError"
+    },
+    "source": "bluetooth_util.dart:0x68c2b8..0x68c98c",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "lock-on",
+    "decoder": "extension",
+    "bytes": "6e 20 09 07 02 02 00 01 a3",
+    "expected": [
+      {
+        "event": "deviceCharacteristicsSubscriptionBoxLockEvent",
+        "value": null
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c0f4..0x68c2b4",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "lock-off",
+    "decoder": "extension",
+    "bytes": "6e 20 09 07 02 03 00 02 a5",
+    "expected": [
+      {
+        "event": "deviceCharacteristicsSubscriptionCancelBoxLockEvent",
+        "value": null
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68c0f4..0x68c2b4",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "lock-short",
+    "decoder": "extension",
+    "bytes": "6e 20 07 07 02 02 a0",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68c0f4..0x68c2b4",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "press-1",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0b 01 02 00 03 a8",
+    "expected": [
+      {
+        "event": "devicePressModeEvent",
+        "value": 3
+      }
+    ],
+    "source": "bluetooth_util.dart:0x688c38..0x688ecc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "press-2",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0b 02 02 00 02 a8",
+    "expected": [
+      {
+        "event": "deviceStrandardAndSplitControlEvent",
+        "value": true
+      }
+    ],
+    "source": "bluetooth_util.dart:0x688c38..0x688ecc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "press-4",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0b 04 02 00 04 ac",
+    "expected": [
+      {
+        "event": "deviceSameAndSplitControlEvent",
+        "value": 4
+      }
+    ],
+    "source": "bluetooth_util.dart:0x688c38..0x688ecc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "press-split-false",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0b 02 03 00 01 a8",
+    "expected": [
+      {
+        "event": "deviceStrandardAndSplitControlEvent",
+        "value": false
+      }
+    ],
+    "source": "bluetooth_util.dart:0x688c38..0x688ecc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "press-short-failure",
+    "decoder": "extension",
+    "bytes": "6e 20 07 0b 01 02 a3",
+    "expected": {
+      "error": "IndexError"
+    },
+    "source": "bluetooth_util.dart:0x688c38..0x688ecc",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "check-1",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0a 01 01 80 ff 22",
+    "expected": [
+      {
+        "event": "deviceCheckEvent",
+        "value": [
+          1,
+          [
+            110,
+            32,
+            9,
+            10,
+            1,
+            1,
+            128,
+            255,
+            34
+          ]
+        ]
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68a12c..0x68a7a8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "check-2",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0a 02 01 80 ff 23",
+    "expected": [
+      {
+        "event": "deviceCheckEvent",
+        "value": [
+          2,
+          [
+            110,
+            32,
+            9,
+            10,
+            2,
+            1,
+            128,
+            255,
+            35
+          ]
+        ]
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68a12c..0x68a7a8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "check-3",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0a 03 01 80 ff 24",
+    "expected": [
+      {
+        "event": "deviceCheckEvent",
+        "value": [
+          3,
+          [
+            110,
+            32,
+            9,
+            10,
+            3,
+            1,
+            128,
+            255,
+            36
+          ]
+        ]
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68a12c..0x68a7a8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "check-4",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0a 04 01 80 ff 25",
+    "expected": [
+      {
+        "event": "deviceCheckEvent",
+        "value": [
+          4,
+          [
+            110,
+            32,
+            9,
+            10,
+            4,
+            1,
+            128,
+            255,
+            37
+          ]
+        ]
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68a12c..0x68a7a8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "check-5",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0a 05 01 80 ff 26",
+    "expected": [
+      {
+        "event": "deviceCheckEvent",
+        "value": [
+          5,
+          [
+            110,
+            32,
+            9,
+            10,
+            5,
+            1,
+            128,
+            255,
+            38
+          ]
+        ]
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68a12c..0x68a7a8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "check-6",
+    "decoder": "extension",
+    "bytes": "6e 20 09 0a 06 01 80 ff 27",
+    "expected": [
+      {
+        "event": "deviceCheckEvent",
+        "value": [
+          6,
+          [
+            110,
+            32,
+            9,
+            10,
+            6,
+            1,
+            128,
+            255,
+            39
+          ]
+        ]
+      }
+    ],
+    "source": "bluetooth_util.dart:0x68a12c..0x68a7a8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "check-unknown",
+    "decoder": "extension",
+    "bytes": "6e 20 07 0a 07 02 a8",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x68a12c..0x68a7a8",
+    "provenance": "Synthetic literal from artifact offset/branch arithmetic; not observed traffic"
+  },
+  {
+    "id": "common-check-capability",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c1 01 c0",
+    "expected": [
+      {
+        "event": "deviceCharacteristicsSubscriptionDetectionEvent",
+        "value": null
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-check-stop",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c1 2f 00",
+    "expected": [
+      {
+        "event": "deviceDetectionStatusEvent",
+        "value": "stop"
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-check-unknown-default",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c1 f0 00",
+    "expected": [
+      {
+        "event": "deviceDetectionStatusEvent",
+        "value": "start"
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-check-pause",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c1 30 00",
+    "expected": [
+      {
+        "event": "deviceDetectionStatusEvent",
+        "value": "pause"
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-check-repeat",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c1 40 00",
+    "expected": [
+      {
+        "event": "deviceDetectionStatusEvent",
+        "value": "repeat"
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-detail-3",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c3 21 00",
+    "expected": [
+      {
+        "event": "deviceDetectionMessageEvent",
+        "value": {
+          "class": "RMDeviceDetectionDataDetails",
+          "fields": {}
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-detail-4",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c4 21 00",
+    "expected": [
+      {
+        "event": "deviceDetectionMessageEvent",
+        "value": {
+          "class": "RMDeviceDetectionDataDetails",
+          "fields": {}
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-detail-5",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c5 21 00",
+    "expected": [
+      {
+        "event": "deviceDetectionMessageEvent",
+        "value": {
+          "class": "RMDeviceDetectionDataDetails",
+          "fields": {}
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-detail-6",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c6 21 00",
+    "expected": [
+      {
+        "event": "deviceDetectionMessageEvent",
+        "value": {
+          "class": "RMDeviceDetectionDataDetails",
+          "fields": {}
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "common-check-unknown-property",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 cf 20 00",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x685828..0x686284; device_common_enum.dart; objs.txt@9160c1..9161a1",
+    "provenance": "Synthetic literal from artifact bitfields"
+  },
+  {
+    "id": "bad-checksum",
+    "decoder": "extension",
+    "bytes": "6e 20 09 03 01 02 00 01 00",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x681954..0x684440,0x68876c..0x688c34",
+    "provenance": "Synthetic malformed literal"
+  },
+  {
+    "id": "bad-length",
+    "decoder": "extension",
+    "bytes": "6e 20 ff 03 01 02 00 01 9e",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x681954..0x684440,0x68876c..0x688c34",
+    "provenance": "Synthetic malformed literal"
+  },
+  {
+    "id": "bad-prefix",
+    "decoder": "extension",
+    "bytes": "6f 20 09 03 01 02 00 01 9f",
+    "expected": [],
+    "source": "bluetooth_util.dart:0x681954..0x684440,0x68876c..0x688c34",
+    "provenance": "Synthetic malformed literal"
+  },
+  {
+    "id": "alarm-unhandled-type-short-still-fails",
+    "decoder": "extension",
+    "bytes": "6e 20 0b 05 01 01 01 02 03 04 aa",
+    "expected": {
+      "error": "IndexError"
+    },
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "alarm-unhandled-type-full-no-event",
+    "decoder": "extension",
+    "bytes": "6e 20 0d 05 01 01 01 02 03 04 05 06 b7",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "press-ignored-type-no-read",
+    "decoder": "extension",
+    "bytes": "6e 20 07 0b 01 01 a2",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "snore-short-bool-no-event",
+    "decoder": "extension",
+    "bytes": "6e 20 07 06 01 02 9e",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "snore-short-pair-no-event",
+    "decoder": "extension",
+    "bytes": "6e 20 08 06 04 02 00 a2",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "snore-empty-name",
+    "decoder": "extension",
+    "bytes": "6e 20 08 06 03 02 00 a1",
+    "expected": [
+      {
+        "event": "deviceSleepAdvNameEvent",
+        "value": []
+      }
+    ],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "rgb-short-power-no-event",
+    "decoder": "extension",
+    "bytes": "6e 20 07 04 04 03 a0",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "rgb-short-motion-no-event",
+    "decoder": "extension",
+    "bytes": "6e 20 07 04 03 03 9f",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "massage-ignored-property",
+    "decoder": "extension",
+    "bytes": "6e 20 09 02 03 02 00 09 a7",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "white-ignored-property",
+    "decoder": "extension",
+    "bytes": "6e 20 09 03 02 02 00 01 9f",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "lock-ignored-property",
+    "decoder": "extension",
+    "bytes": "6e 20 09 07 01 03 00 01 a3",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "press-ignored-property",
+    "decoder": "extension",
+    "bytes": "6e 20 07 0b 03 02 a5",
+    "expected": [],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "check-ignores-type-and-has-no-data-minimum",
+    "decoder": "extension",
+    "bytes": "6e 20 07 0a 01 ff 9f",
+    "expected": [
+      {
+        "event": "deviceCheckEvent",
+        "value": [
+          1,
+          [
+            110,
+            32,
+            7,
+            10,
+            1,
+            255,
+            159
+          ]
+        ]
+      }
+    ],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "press-minimum-1-fails",
+    "decoder": "extension",
+    "bytes": "6e 20 07 0b 01 02 a3",
+    "expected": {
+      "error": "IndexError"
+    },
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "press-minimum-2-fails",
+    "decoder": "extension",
+    "bytes": "6e 20 07 0b 02 02 a4",
+    "expected": {
+      "error": "IndexError"
+    },
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "press-minimum-4-fails",
+    "decoder": "extension",
+    "bytes": "6e 20 07 0b 04 02 a6",
+    "expected": {
+      "error": "IndexError"
+    },
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "motor-minimum-checksum-is-type",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 01 02 02 00 01 02 a0",
+    "expected": [
+      {
+        "event": "deviceMotorCurrentHeightStatusEvent",
+        "value": {
+          "height": 25.8,
+          "type": 160,
+          "angle": -1,
+          "monitorHeight": 0
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "rgb-minimum-checksum-is-blue",
+    "decoder": "extension",
+    "bytes": "6e 20 0a 04 01 02 00 10 20 cf",
+    "expected": [
+      {
+        "event": "deviceRGBStripColorStatusEvent",
+        "value": {
+          "rgb": [
+            16,
+            32,
+            207
+          ],
+          "alpha": 1,
+          "space": "sRGB"
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "alarm-minimum-checksum-is-final-field",
+    "decoder": "extension",
+    "bytes": "6e 20 0c 05 01 02 01 02 03 04 05 b1",
+    "expected": [
+      {
+        "event": "deviceRepeatAlarmListStatusEvent",
+        "value": {
+          "field_7": 1,
+          "field_f": 2,
+          "field_17": 3,
+          "field_1f": 4,
+          "field_27": 5,
+          "field_2f": 177
+        }
+      }
+    ],
+    "source": "bluetooth_util.dart:in-scope domain source spans in INBOUND.md",
+    "provenance": "Synthetic literal minimum-length/type boundary; no hardware"
+  },
+  {
+    "id": "common-check-start-0",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c1 00 00",
+    "expected": [
+      {
+        "event": "deviceDetectionStatusEvent",
+        "value": "start"
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x685a74",
+    "provenance": "Synthetic bitfield literal"
+  },
+  {
+    "id": "common-check-start-1",
+    "decoder": "common_diagnostics",
+    "bytes": "6e 90 c1 10 00",
+    "expected": [
+      {
+        "event": "deviceDetectionStatusEvent",
+        "value": "start"
+      }
+    ],
+    "source": "bluetooth_util.dart:0x685828..0x685a74",
+    "provenance": "Synthetic bitfield literal"
+  }
+]

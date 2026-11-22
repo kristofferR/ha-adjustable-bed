@@ -9,10 +9,12 @@ names the classic apps' own opcodes and their source quirks.
 from __future__ import annotations
 
 import struct
+from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Final, Literal
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...codec import richmat as codec
 
 Wire = Literal["RAW", "FRAMED"]
@@ -108,6 +110,63 @@ def alarm(delay_minutes: int, command: int) -> tuple[bytes, bytes]:
     if not 0 <= delay_minutes <= 1440:
         raise ValueError("Alarm delay must be between 0 and 1440 minutes")
     return codec.countdown(delay_minutes, command)
+
+
+# The shared alarm's name for each alarm control of the resource and Rise apps.
+# A layout with massage also offers "none": massage alone.
+ALARM_WAKE_ACTIONS: Final = {
+    0x58: "tv",
+    0x46: "anti_snore",
+    0x45: "zero_g",
+    0x59: "lounge",
+    0x2E: "memory_1",
+    0x2F: "memory_2",
+    0x30: "memory_3",
+    0xB0: "wake_mode_1",
+    0xB1: "wake_mode_2",
+    0xF6: "flat_sleep",
+    0x5D: "massage",
+    0x4C: "head_massage",
+    0x4E: "foot_massage",
+}
+_MASSAGE_ZONES: Final = {"both": 0x5D, "head": 0x4C, "feet": 0x4E}
+
+
+def alarm_capability(available: Mapping[str, int]) -> AlarmCapability | None:
+    """What the shared alarm offers for a layout's alarm controls."""
+    codes = set(available.values())
+    zones = tuple(
+        zone
+        for zone, code in _MASSAGE_ZONES.items()
+        if code in codes or zone == "both" and {0x4C, 0x4E} <= codes
+    )
+    actions = tuple(
+        dict.fromkeys(ALARM_WAKE_ACTIONS[c] for c in available.values() if c in ALARM_WAKE_ACTIONS)
+    )
+    if zones:
+        actions = (*actions, "none")
+    if not actions:
+        return None
+    return AlarmCapability(
+        wake_actions=actions, massage=bool(zones), massage_zones=zones, requires_wake_action=True
+    )
+
+
+def alarm_choices(available: Mapping[str, int], alarm: AlarmRequest) -> tuple[str, ...]:
+    """The app's alarm control selection for a shared alarm request.
+
+    The app's own rules then turn the selection into one alarm code.
+    """
+    keys = {code: key for key, code in reversed(list(available.items()))}
+    chosen = [
+        key for code, key in keys.items() if ALARM_WAKE_ACTIONS.get(code) == alarm.wake_action
+    ][:1]
+    if alarm.massage:
+        code = _MASSAGE_ZONES[alarm.massage_zone or "both"]
+        chosen += [keys[code]] if code in keys else [keys[0x4C], keys[0x4E]]
+    if not chosen:
+        raise ValueError("Choose an alarm preset or massage offered by this bed layout")
+    return tuple(dict.fromkeys(chosen))
 
 
 def massage_popup(choice: str) -> bytes:

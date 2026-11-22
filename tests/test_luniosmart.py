@@ -274,7 +274,7 @@ async def test_single_address_side_selector_is_rejected(clock):
     ctrl, c = make()
     await ctrl.start_notify()
     c.client.write_gatt_char.reset_mock()
-    with ctrl.side_scope("left"), pytest.raises(ValueError, match="side selector"):
+    with ctrl.side_scope("left"), pytest.raises(ValueError, match="has no sides"):
         await ctrl.action("flat")
     assert not frames(c)
 

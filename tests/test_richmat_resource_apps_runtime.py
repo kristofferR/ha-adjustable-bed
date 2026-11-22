@@ -129,7 +129,21 @@ async def test_real_connect_startup_public_alarm_query_and_reconnect(hass, runti
     await invoke(hass, "query")
     assert written(client) == ["6e08010178", "6e0a000179", "6e1a000088"]
     client.write_gatt_char.reset_mock()
-    await invoke(hass, "alarm", actions=["zero_gravity", "massage_head", "massage_foot"])
+    now = bed.dt_util.now().replace(hour=10, minute=0, second=0, microsecond=0)
+    with patch.object(bed.dt_util, "now", return_value=now):
+        await hass.services.async_call(
+            const.DOMAIN,
+            "set_alarm",
+            {
+                "device_id": "bed",
+                "enabled": True,
+                "time": "10:00:00",
+                "wake_action": "zero_g",
+                "massage": True,
+                "massage_zone": "both",
+            },
+            blocking=True,
+        )
     assert written(client) == ["6e05a00013", "6e060579f2"]
     old = live._session
     live._notification(old, old.notify, bytearray.fromhex("6e0e00037f"))
@@ -143,7 +157,7 @@ async def test_real_connect_startup_public_alarm_query_and_reconnect(hass, runti
     assert current is not live
     assert not current._receive.light_capable
     live._notification(old, old.notify, bytearray.fromhex("6e0e00037f"))
-    with pytest.raises(ServiceValidationError, match="LED"):
+    with pytest.raises(ServiceValidationError, match="reported a light"):
         await invoke(hass, "lamp_timeout", seconds=300)
 
 

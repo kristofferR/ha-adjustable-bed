@@ -1,0 +1,414 @@
+[
+  {
+    "id": "remote_fields_0",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee09a10000ff0000"
+    },
+    "expected_state": {
+      "palette": 255
+    }
+  },
+  {
+    "id": "remote_fields_1",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee1494000000000000000000000040000000c80000",
+      "hw218": true
+    },
+    "expected_state": {
+      "brightness_logged": 200,
+      "light": true
+    }
+  },
+  {
+    "id": "remote_fields_2",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee1494000000000000000000000080000000c80000",
+      "hw218": true
+    },
+    "expected_state": {
+      "brightness_logged": 200,
+      "light": false
+    }
+  },
+  {
+    "id": "remote_fields_3",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee00010000000000000000000040ff000000",
+      "hw218": true
+    },
+    "expected_state": {
+      "timer": -1,
+      "massage": true,
+      "light": true
+    }
+  },
+  {
+    "id": "remote_fields_4",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee0001000000000000000000004002000000",
+      "hw218": false
+    },
+    "expected_state": {
+      "light": true,
+      "timer": 1
+    }
+  },
+  {
+    "id": "remote_fields_5",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee00010000000000000000000000c0010000000000"
+    },
+    "expected_state": {
+      "light": false,
+      "timer": 0
+    }
+  },
+  {
+    "id": "remote_fields_6",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee00010000000000000000000000000300000000000000000000000000000000"
+    },
+    "expected_state": {
+      "timer": 2
+    }
+  },
+  {
+    "id": "remote_fields_7",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee000100000000000000000000000000000080000200000000000000000000"
+    },
+    "expected_state": {
+      "timer": 1,
+      "light": false
+    }
+  },
+  {
+    "id": "remote_fields_8",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "0000109c00000000000000000000000000600000000000"
+    },
+    "expected_state": {
+      "one_key": true
+    }
+  },
+  {
+    "id": "remote_fields_9",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "00000000000000000000000000109c0000f000000000000000000000500000"
+    },
+    "expected_state": {}
+  },
+  {
+    "id": "remote_fields_10",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "0000049d0000000000000000000000000000000000000000000000030000000000"
+    },
+    "expected_state": {
+      "massage": true,
+      "timer": 2
+    }
+  },
+  {
+    "id": "remote_fields_11",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "0000000000000000000000000000000000000000000000ddee0001000000000000000000000000ff0000000000"
+    },
+    "expected_state": {
+      "massage": true,
+      "timer": -1
+    }
+  },
+  {
+    "id": "raw_fields_12",
+    "parser": "raw_fields",
+    "inputs": {
+      "data": "8a0000000000000000800a0b00040001",
+      "bt": 2.99
+    },
+    "expected_state": {
+      "side": "left",
+      "absent": false,
+      "heart": -128,
+      "breathing": 10,
+      "movement": 0,
+      "increment_twitch": false
+    }
+  },
+  {
+    "id": "raw_fields_13",
+    "parser": "raw_fields",
+    "inputs": {
+      "data": "8a0000000000000000800a0b00040000",
+      "bt": 3
+    },
+    "expected_state": {
+      "side": "right",
+      "absent": false,
+      "heart": -128,
+      "breathing": 11,
+      "movement": 4,
+      "increment_twitch": true
+    }
+  },
+  {
+    "id": "raw_fields_14",
+    "parser": "raw_fields",
+    "inputs": {
+      "data": "8a0000000000000000800a0b00040101",
+      "bt": 3
+    },
+    "expected_state": {
+      "side": "left",
+      "absent": true,
+      "heart": "--",
+      "breathing": "--",
+      "twitch_reset": 0
+    }
+  },
+  {
+    "id": "raw_fields_15",
+    "parser": "raw_fields",
+    "inputs": {
+      "data": "8a0000000000000000800a0b00040002",
+      "bt": 3
+    },
+    "expected_state": {}
+  },
+  {
+    "id": "raw_fields_16",
+    "parser": "raw_fields",
+    "inputs": {
+      "data": "8d000012340102030405060708090a0b0c0d0e0f1000"
+    },
+    "expected_state": {
+      "gain_queue": 18,
+      "gain_king": 52,
+      "queue": "0403020108070605",
+      "king": "0c0b0a09100f0e0d"
+    }
+  },
+  {
+    "id": "raw_fields_17",
+    "parser": "raw_fields",
+    "inputs": {
+      "data": "90000000000000"
+    },
+    "expected_state": {
+      "storage": false
+    }
+  },
+  {
+    "id": "raw_fields_18",
+    "parser": "raw_fields",
+    "inputs": {
+      "data": "9000000000ff00"
+    },
+    "expected_state": {
+      "storage": true
+    }
+  },
+  {
+    "id": "version_fields_21",
+    "parser": "version_fields",
+    "inputs": {
+      "data": "000000031a000000000000",
+      "kind": 1
+    },
+    "expected_state": "3.10"
+  },
+  {
+    "id": "version_fields_22",
+    "parser": "version_fields",
+    "inputs": {
+      "data": "0000000000000000000209",
+      "kind": 2
+    },
+    "expected_state": "2.09"
+  },
+  {
+    "id": "version_fields_23",
+    "parser": "version_fields",
+    "inputs": {
+      "data": "0000000000000001050000",
+      "kind": 3
+    },
+    "expected_state": "1.05"
+  },
+  {
+    "id": "dsp_fields_24",
+    "parser": "dsp_fields",
+    "inputs": {
+      "data": "951100312e322e332e342e2e2e2e2e"
+    },
+    "expected_state": "1.23"
+  },
+  {
+    "id": "dsp_fields_25",
+    "parser": "dsp_fields",
+    "inputs": {
+      "data": "951100302c35302e2e2e2e2e2e2e2e"
+    },
+    "expected_state": "1.50"
+  },
+  {
+    "id": "scalar_fields_26",
+    "parser": "scalar_fields",
+    "inputs": {
+      "data": "840000000000101112202122000000300000"
+    },
+    "expected_state": {
+      "level": "OFF",
+      "trigger": [
+        48,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "scalar_fields_27",
+    "parser": "scalar_fields",
+    "inputs": {
+      "data": "840001000000101112202122000000300000"
+    },
+    "expected_state": {
+      "level": "HIGH",
+      "trigger": [
+        48,
+        16,
+        32,
+        1
+      ]
+    }
+  },
+  {
+    "id": "scalar_fields_28",
+    "parser": "scalar_fields",
+    "inputs": {
+      "data": "840002000000101112202122000000300000"
+    },
+    "expected_state": {
+      "level": "MID",
+      "trigger": [
+        48,
+        17,
+        33,
+        2
+      ]
+    }
+  },
+  {
+    "id": "scalar_fields_29",
+    "parser": "scalar_fields",
+    "inputs": {
+      "data": "840003000000101112202122000000300000"
+    },
+    "expected_state": {
+      "level": "LOW",
+      "trigger": [
+        48,
+        18,
+        34,
+        3
+      ]
+    }
+  },
+  {
+    "id": "scalar_fields_30",
+    "parser": "scalar_fields",
+    "inputs": {
+      "data": "830000071e0010030100"
+    },
+    "expected_state": {
+      "time": "07:30",
+      "position": "Zero G",
+      "state": "open",
+      "week": "Mon, Sun"
+    }
+  },
+  {
+    "id": "scalar_fields_31",
+    "parser": "scalar_fields",
+    "inputs": {
+      "data": "830000173b00007f0100"
+    },
+    "expected_state": {
+      "time": "",
+      "position": "",
+      "state": "",
+      "week": ""
+    }
+  },
+  {
+    "id": "remote_fields_34",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "dd000000000000000000000000004001000000",
+      "hw218": false
+    },
+    "expected_state": {
+      "light": true,
+      "timer": 0
+    }
+  },
+  {
+    "id": "remote_fields_35",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "dd000000000000000000000000008003000000",
+      "hw218": false
+    },
+    "expected_state": {
+      "light": false,
+      "timer": 2
+    }
+  },
+  {
+    "id": "remote_fields_36",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee1494000000000000000000000040000000c80000",
+      "hw218": false
+    },
+    "expected_state": {
+      "brightness_logged": 200,
+      "light": true
+    }
+  },
+  {
+    "id": "remote_fields_37",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "ddee1494000000000000000000000080000000c80000",
+      "hw218": false
+    },
+    "expected_state": {
+      "brightness_logged": 200,
+      "light": false
+    }
+  },
+  {
+    "id": "remote_fields_38",
+    "parser": "remote_fields",
+    "inputs": {
+      "data": "dd000000000000000000000000000040000000000000",
+      "hw218": false
+    },
+    "expected_state": {
+      "light": true
+    }
+  }
+]

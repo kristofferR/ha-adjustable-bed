@@ -266,7 +266,7 @@ async def test_paired_side_stop_during_hold_preflight_drops_only_stale_side(
     await async_register_services(hass)
     monkeypatch.setattr(
         "custom_components.adjustable_bed.services._resolve_sided_targets",
-        lambda *_args: ([(pair, released_side)], []),
+        lambda *_args, **_kwargs: ([(pair, released_side)], []),
     )
     call = {"device_id": ["paired-bed"], "control": "head_up", "duration": 60}
     pending = asyncio.create_task(

@@ -24,23 +24,23 @@
 
 ## Features
 
-Features are enabled from the connected bed's system or foundation capability
-responses. A model name alone does not enable optional hardware.
+Controls appear according to what the connected bed reports it has; the model
+name alone adds none.
 
 | Feature | Fuzion | MCR |
 |---|---|---|
 | Head/foot movement and percentage targets | ✅ Yes (0-100%) | ✅ When foundation supports them |
-| Position feedback | ✅ Queried | ✅ Foundation response |
+| Position feedback | ✅ | ✅ |
 | Foundation presets | ✅ Supported presets (Flat, Zero-G, Anti-Snore, TV) | ✅ Supported presets per side |
 | Favorite memory | ✅ Slot 1: recall and save | ✅ `Favorite` foundation preset |
 | Firmness (Sleep Number setting) | ✅ Configured side | ✅ Left and right |
 | Favorite firmness and responsive air | ✅ Named service commands | ✅ Named service commands |
 | Under-bed lighting | ✅ Level and timer | ✅ Foundation lighting and options |
-| Core heating/cooling | ✅ Hardware dependent (unified entity; heating only on Heidi-equipped beds) | ❌ Not in this transport's exposed controls |
-| Footwarming | ✅ Hardware dependent | ✅ Supported foundation |
-| Temperature schedules | ✅ Named service commands | ❌ Not exposed by the app |
-| Massage and outlets | ❌ Not exposed by this transport | ✅ Supported foundation commands |
-| Presence polling | ✅ Left/right, disabled by default | ❌ Not exposed as occupancy sensors |
+| Core heating/cooling | ✅ On beds that have it (one climate entity; heating only on beds with Heidi) | ❌ |
+| Footwarming | ✅ On beds that have it | ✅ On bases that have it |
+| Temperature schedules | ✅ Named service commands | ❌ |
+| Massage and outlets | ❌ | ✅ On bases that have them |
+| Presence polling | ✅ Left/right, disabled by default | ❌ |
 
 Use the normal cover, position, firmness, preset, lighting and climate entities
 for everyday controls. Additional controls and structured queries are available
@@ -82,7 +82,7 @@ pair a connection whose bond is still usable.
 **Transport and bonding:**
 
 - Recovery tracks the adapter or Bluetooth proxy that actually carried the
-  connection. Pairing on the Home Assistant host does not establish a bond on a
+  connection. Pairing on the Home Assistant host does not create a bond on a
   separate ESPHome proxy. Use the integration's pairing repair for the active
   transport and close the phone app before connecting.
 - If the bed isn't discoverable, hold the side button until the indicator
@@ -109,7 +109,7 @@ pair a connection whose bond is still usable.
 - **#574:** the September 22 captures show that the ESPHome proxy completed
   pairing and retained a bond, while the subsequent Auth read returned zero
   bytes. Other GATT reads worked. That identifies the failed step but does not
-  establish why the bed returned an empty Auth value.
+  show why the bed returned an empty Auth value.
 - **#660:** support bundles from the same bed show four different handle layouts
   for the Fuzion service across ten days: same characteristics, different order.
   After a power outage, the ESPHome proxy kept serving the table it had cached
@@ -127,8 +127,8 @@ pair a connection whose bond is still usable.
   not require a separate diagnostic HA build or manual debug-log download. The
   standard ESPHome API cannot report stored bond keys or link-security details;
   those fields require proxy firmware support.
-- The runtime recovery correction does not establish successful Climate 360
-  hardware operation.
+- The runtime recovery correction is not yet confirmed to work on Climate 360
+  hardware.
 
 ### MCR
 
@@ -194,8 +194,8 @@ Detection uses the unique Sleep Number service UUID for each protocol family:
 - `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` (Fuzion)
 - `ffffd1fd-388d-938b-344a-939d1f6efee0` (MCR)
 
-The bed-type list has one **Sleep Number: SleepIQ app, Fuzion (Climate 360,
-FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases** row. When Home Assistant has
+The bed-type list has one **SleepIQ app, Fuzion (Climate 360, FlexFit) and older
+(i8, 360 FlexFit 2) bases · Sleep Number** row. When Home Assistant has
 seen the advertisement, setup confirms the transport from its service without
 asking; otherwise it asks which base the bed is, and a detected transport stays
 one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks no
@@ -320,17 +320,17 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 
 | Entity | Transport | Notes |
 |--------|-----------|-------|
-| `Under Bed Lights` light | Fuzion, MCR | |
-| `Light Level` number | Fuzion | Values `0-3` |
-| `Light Timer` select | Fuzion | `Off`, `15 min`, `30 min`, `45 min`, `1 hr`, `2 hr`, and `3 hr` |
+| `Under-bed lights` light | Fuzion, MCR | |
+| `Light level` number | Fuzion | Values `0-3` |
+| `Light timer` select | Fuzion | `Off`, `15 min`, `30 min`, `45 min`, `1 hr`, `2 hr`, and `3 hr` |
 | `Left in bed` / `Right in bed` binary sensors | Fuzion | Enabled by default. They update only while the bed is connected and never keep it connected |
-| `Sleep Number Setting` number | Fuzion | Configured side |
-| `Sleep Number Setting Left` / `Sleep Number Setting Right` numbers | MCR | |
-| `Foundation Preset Left` / `Foundation Preset Right` selects | MCR | `Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`, as supported |
+| `Sleep Number setting` number | Fuzion | Configured side |
+| `Sleep Number setting left` / `Sleep Number setting right` numbers | MCR | |
+| `Foundation preset left` / `Foundation preset right` selects | MCR | `Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`, as supported |
 | `Climate` climate | Fuzion | Unified entity routed to whichever module the bed has. HVAC modes `off`, `cool`, and (Heidi only) `heat`; preset modes `low`, `medium`, `high`, and (Heidi only) `boost` |
 | `Footwarming` climate | Fuzion | `low`, `medium`, and `high` presets |
-| `Climate Timer` select | Fuzion | `30 min` through `10 hr` |
-| `Footwarming Timer` select | Fuzion | `30 min` through `6 hr` |
+| `Climate timer` select | Fuzion | `30 min` through `10 hr` |
+| `Footwarming timer` select | Fuzion | `30 min` through `6 hr` |
 
 - Occupancy polling sends a grouped `BAMG` request for both sides in one call,
   then publishes separate left/right binary sensors. The poll runs only over
@@ -429,8 +429,9 @@ reports; the additional diagnostic and configuration actions need hardware testi
 
 #### Setup
 
-Choose **Sleep Number**, then the route advertised by the bed. The app remains
-findable as **SleepIQ** in setup and Reconfigure. Service UUIDs determine the
+Choose **SleepIQ app, Fuzion (Climate 360, FlexFit) and older (i8, 360 FlexFit
+2) bases · Sleep Number**, then the route advertised by the bed: **Fuzion base:
+Climate 360, FlexFit or FlexFit Smart** or **Older base: i8 or 360 FlexFit 2**. Service UUIDs determine the
 route; Bluetooth names and product names do not enable optional hardware.
 Fuzion requires readable Auth and TransferInfo, readable/notifiable/writable
 BulkTransfer and public command characteristics. BulkTransfer is validated but

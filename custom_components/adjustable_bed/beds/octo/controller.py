@@ -1560,7 +1560,7 @@ class OctoController(BedController, OctoPacketCodec):
             isinstance(duration_ms, bool)
             or not 100 <= duration_ms <= OCTO_CARD_HOLD_MAX_SECONDS * 1000
         ):
-            raise ValueError("OCTO hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     def _held_session_is_current(self, client: BleakClient | None, session_generation: int) -> bool:
         """Keep an admitted PIN hold bound to its original live controller link."""
@@ -1849,7 +1849,7 @@ class OctoController(BedController, OctoPacketCodec):
     async def enroll_pin(self, pin: str) -> None:
         """Set a four-digit PIN on an active receiver that does not have one."""
         if len(pin) != 4 or not pin.isascii() or not pin.isdecimal():
-            raise ValueError("OCTO PIN must contain exactly four ASCII digits")
+            raise ValueError("Enter a PIN of exactly four digits")
         if not self._session_ready or not self._pin_feature_active:
             raise ValueError("OCTO PIN control is not available")
         if self._has_pin is not False or self._pin_locked is not False:

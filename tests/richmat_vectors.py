@@ -2278,6 +2278,26 @@ def _nisco_supreme_frames() -> dict[str, frozenset[str]]:
 FROZEN_FRAMES.update(_nisco_supreme_frames())
 
 
+def _sleepfunction_frames() -> frozenset[str]:
+    import gzip
+    import json
+    from pathlib import Path
+
+    rows = json.loads(gzip.decompress((Path(__file__).parent / "fixtures/sleepfunction/frames.json.gz").read_bytes()))
+    frames=set()
+    for row in rows:
+        value=row["expected_bytes"].lower()
+        if len(value)<=10:
+            frames.add(value)
+        if len(value)>10 and len(value)%10==0:
+            frames.update(value[i:i+10] for i in range(0,len(value),10))
+    frames.update({"6e01016ede", "6e01026edf", "6e", "6e05000073", "6e06000074", "6e01006edd", "6e01008bfa"})
+    return frozenset(frames)
+
+
+FROZEN_FRAMES["richmat_classic_sleepfunction"] = _sleepfunction_frames()
+
+
 # Bed Tech has its own literals, separate from both modern and older sibling apps.
 FROZEN_FRAMES["richmat_mh_bedtech_classic"] = BEDTECH_CLASSIC_FRAMES
 
@@ -2300,3 +2320,14 @@ def _bedsmart_frames() -> frozenset[str]:
 
 
 FROZEN_FRAMES["richmat_classic_bedsmart"] = _bedsmart_frames()
+
+
+def _baseremote_frames() -> frozenset[str]:
+    rows = json.loads(gzip.decompress((Path(__file__).parent / "fixtures/baseremote/commands.json.gz").read_bytes()))
+    return frozenset(row[5].lower() for row in rows if row[5]) | frozenset({
+        "6e", "6e01006edd", "6e02010071", "6e08010178", "6e0a000179", "6e1a000088",
+        "6e0cff9811", "6e0dcb0046", "6e05a00013", "6e06052ea7", "6e05000073", "6e06000074",
+    })
+
+
+FROZEN_FRAMES["richmat_classic_baseremote"] = _baseremote_frames()

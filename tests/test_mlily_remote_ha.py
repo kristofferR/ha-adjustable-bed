@@ -187,7 +187,7 @@ async def test_one_address_children_keep_side_and_reject_nordic_side_alias(hass)
     assert frames(c) == ["6e01013cac"]
     c._client.write_gatt_char.reset_mock()
     obj._link = Link(obj._link.client, obj._link.tx, obj._link.rx, True)
-    with pytest.raises(ValueError, match="side selector"), obj.side_scope("right"):
+    with pytest.raises(ValueError, match="has no sides"), obj.side_scope("right"):
         await obj.hold_control("mlily_remote_HeadUp", 100)
     assert not frames(c)
     await shutdown(c)

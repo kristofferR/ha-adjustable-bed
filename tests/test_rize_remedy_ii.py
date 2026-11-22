@@ -87,7 +87,7 @@ async def test_save_chord_then_remaining_key_or_both_released(slot, action, pend
         ctrl.client.write_gatt_char.reset_mock()
         await ctrl.preset_memory(slot)
         assert written(ctrl)[0] == dict(VECTORS)[action.removeprefix("save_")]
-    assert ctrl.memory_slot_names == ("Zero Gravity", "Incline", "Leisure")
+    assert ctrl.memory_slot_names == ("Zero gravity", "Incline", "Leisure")
     with pytest.raises(ValueError):
         await ctrl.program_memory(4)
 

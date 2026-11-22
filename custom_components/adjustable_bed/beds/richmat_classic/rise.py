@@ -13,8 +13,7 @@ from typing import Final, Literal
 from ...codec import richmat as codec
 
 Operation = Literal[
-    "query", "alarm", "cancel_alarm", "rgb", "lamp_timer", "massage_timer",
-    "massage_popup", "diagnostic_cycle", "program_schedule",
+    "query", "alarm", "cancel_alarm", "rgb", "lamp_timer", "massage_timer", "massage_popup",
 ]
 ALARM_COMBINATIONS: Final = {
     0x58: (0x77, 0x7A, 0x7D), 0x46: (0x78, 0x7B, 0x7E),
@@ -23,39 +22,6 @@ ALARM_COMBINATIONS: Final = {
     0x30: (0xA9, 0xAA, 0xAB),
 }
 MASSAGE_CODES: Final = (0x5D, 0x4C, 0x4E)
-DIAGNOSTIC_CYCLE: Final = (
-    (0x24, 10), (0x3F, 10), (0x40, 12), (0x25, 12), (0x26, 10),
-    (0x41, 10), (0x42, 12), (0x27, 12), (0x29, 10), (0x3F, 10),
-    (0x40, 12), (0x41, 10), (0x42, 12), (0x2A, 12),
-)
-
-
-@dataclass(frozen=True, slots=True)
-class Schedule:
-    """RMCS selected-parameter form. Rows follow the app's fixed motor order."""
-
-    records: tuple[tuple[int, int, int], ...]
-    rest: int
-    count: int
-    radio: Literal["rf", "ble"]
-    code: Literal["new", "old"]
-    identifier: int
-    motors: tuple[int, ...]
-
-    def encode(self) -> bytes:
-        if len(self.records) != 12 or sorted(row[0] for row in self.records) != list(range(1, 13)):
-            raise ValueError("Schedule order must be a permutation of 1 through 12")
-        if sorted(self.motors) != [1, 2, 3, 4]:
-            raise ValueError("Motor mapping must be a permutation of 1 through 4")
-        if self.radio not in ("rf", "ble") or self.code not in ("new", "old") or not 1 <= self.identifier <= 9:
-            raise ValueError("Choose the schedule radio, code and identifier")
-        values = [self.rest, self.count, *(v for row in self.records for v in row[1:])]
-        if any(type(v) is not int or not 0 <= v <= 2147483647 for v in values):
-            raise ValueError("Schedule times and count must be nonnegative Java integers")
-        return codec.motor_test_schedule(
-            self.records, self.rest, self.count, 1 if self.radio == "rf" else 3,
-            1 if self.code == "new" else 2, self.identifier, self.motors,
-        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,7 +34,6 @@ class Request:
     timer_save: bool = False
     progress: int | None = None
     popup: str | None = None
-    schedule: Schedule | None = None
 
 
 def alarm_action(available: dict[str, int], choices: tuple[str, ...]) -> int:

@@ -20,6 +20,7 @@ from homeassistant.helpers.issue_registry import (
 )
 
 from .const import DOMAIN
+from .redaction import redact_text
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -59,7 +60,11 @@ class UnsupportedDeviceInfo:
         integration_version: str | None = None,
         ha_version: str | None = None,
     ) -> str:
-        """Format GitHub issue details for a device wrongly auto-detected as a bed."""
+        """Format GitHub issue details for a device wrongly auto-detected as a bed.
+
+        The issue is public and the device is often someone's phone, so the
+        address keeps only its manufacturer prefix.
+        """
         if self.manufacturer_data:
             mfr_str = "\n".join(
                 f"  - `{hex(k)}`: `{v.hex()}`" for k, v in self.manufacturer_data.items()
@@ -72,7 +77,9 @@ class UnsupportedDeviceInfo:
         else:
             uuid_str = "  None"
 
-        signal_str = "\n".join(f"  - `{signal}`" for signal in signals) if signals else "  None"
+        signal_str = (
+            "\n".join(f"  - `{redact_text(signal)}`" for signal in signals) if signals else "  None"
+        )
         confidence_pct = round(confidence * 100)
 
         return f"""## Misidentified device
@@ -85,11 +92,13 @@ all, or it is a different brand/model.
 |----------|-------|
 | Detected as | `{detected_bed_type or "unknown"}` |
 | Confidence | {confidence_pct}% |
-| Address | `{self.address}` |
-| Name | `{self.name or "Unknown"}` |
+| Address | `{redact_text(self.address)}` |
+| Name | `{redact_text(self.name) if self.name else "Unknown"}` |
 | RSSI | {self.rssi or "N/A"} |
 | Integration version | `{integration_version or "unknown"}` |
 | Home Assistant | `{ha_version or "unknown"}` |
+
+This issue is public. Remove the name above if it is personal, such as a phone's name.
 
 ### Detection signals
 {signal_str}
@@ -140,7 +149,8 @@ def build_misidentified_issue_url(
     Targets the ``misidentified-bed.yml`` issue form, prefilling its ``details``
     textarea (field id) with the captured detection data.
     """
-    title = f"[Misidentified] {device_info.name or device_info.address}"
+    # The title is public and the device is not the user's: never its name.
+    title = f"[Misidentified] Detected as {detected_bed_type or 'a bed'}"
     details = device_info.to_misidentified_details(
         detected_bed_type,
         confidence,

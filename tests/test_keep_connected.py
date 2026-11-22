@@ -120,7 +120,7 @@ async def test_options_reject_seconds_out_of_range(hass: HomeAssistant) -> None:
 
     result = await flow.async_step_settings({const.CONF_IDLE_DISCONNECT_SECONDS: 301})
 
-    assert result["errors"] == {const.CONF_IDLE_DISCONNECT_SECONDS: "invalid_number"}
+    assert result["errors"] == {const.CONF_IDLE_DISCONNECT_SECONDS: "invalid_idle_seconds"}
 
 
 @pytest.mark.parametrize("bed_type", ["doublesleep", "sleep_number_mcr", "okin_rf_eco_bt"])

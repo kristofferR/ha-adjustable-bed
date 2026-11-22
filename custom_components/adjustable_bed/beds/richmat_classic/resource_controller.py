@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Mapping
-from contextlib import contextmanager
-from contextvars import ContextVar
 from dataclasses import replace
+from datetime import time
 from functools import partial
 from math import ceil
 from time import monotonic
@@ -15,8 +14,9 @@ from typing import TYPE_CHECKING, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_UTILITY
-from ...command_scheduler import current_command_context, note_frame_written
+from ...command_scheduler import current_command_context
 from ...const import CONF_MOTOR_PULSE_COUNT, CONF_RICHMAT_CLASSIC_THIRD_SERVICE
 from ...controller_state import StateKey
 from ...profiles.richmat_resource_apps import APPS, worker_interval
@@ -24,7 +24,7 @@ from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec
 from . import resource_protocol as p
 from .caller import Selection, selected_operand
-from .controller import APP, LAYOUT, PREFERENCES, REJECTION, STATE, STATUS, RichmatClassicController
+from .controller import APP, LAYOUT, PREFERENCES, REJECTION, STATE, STATUS
 from .protocol import (
     ALARM_QUERY,
     ALARM_SPACING_MS,
@@ -34,27 +34,26 @@ from .protocol import (
     QUERY_SPACING_MS,
     SETTINGS_SPACING_MS,
     alarm,
+    alarm_capability,
+    alarm_choices,
     alarm_delay,
     control,
     massage_timer,
-    release,
     rgb,
 )
 from .resource_receive import ResourceReceiveState
+from .session import SessionController
 from .transport import Transport, select
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
     from .requests import Request
 
-_SCOPE: ContextVar[tuple[BedController, Transport] | None] = ContextVar(
-    "richmat_resource_session", default=None
-)
 LAMP_TIMEOUT: Final = StateKey[int | None]("richmat_resource_lamp_timeout")
 MASSAGE_TIMER: Final = StateKey[int | None]("richmat_resource_massage_timer")
 
 
-class ResourceBedController(RichmatClassicController):
+class ResourceBedController(SessionController):
     """Resource getters stay shared; app timing, parser and utilities are explicit."""
 
     def __init__(
@@ -140,47 +139,6 @@ class ResourceBedController(RichmatClassicController):
             _selection_key("head_foot")("head" if self._selection.head else "foot")
         )
 
-    @contextmanager
-    def _transaction(self):
-        session = self._session
-        if session is None:
-            raise ConnectionError("The bed has no current BLE session")
-        token = _SCOPE.set((self, session))
-        try:
-            yield session
-        finally:
-            _SCOPE.reset(token)
-
-    def _captured_session(self) -> Transport | None:
-        scope = _SCOPE.get()
-        return scope[1] if scope is not None and scope[0] is self else self._session
-
-    async def _send(self, packet: bytes, cancel: asyncio.Event | None = None) -> None:
-        session = self._captured_session()
-        if (
-            session is None
-            or self._session is not session
-            or self.client is not session.client
-            or not session.client.is_connected
-        ):
-            raise ConnectionError("The captured bed session has ended")
-        self._record_command_trace(
-            session.write.uuid, packet, response=session.response, characteristic=session.write
-        )
-        task = asyncio.create_task(
-            session.client.write_gatt_char(session.write, packet, response=session.response)
-        )
-        cancelled = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                cancelled = True
-        task.result()
-        note_frame_written(cancel)
-        if cancelled:
-            raise asyncio.CancelledError
-
     def _notification(
         self, session: Transport, _sender: BleakGATTCharacteristic, data: bytearray
     ) -> None:
@@ -263,29 +221,6 @@ class ResourceBedController(RichmatClassicController):
             finally:
                 self._deadline = None
                 self._worker.cancel()
-
-    async def _release(self, delay_ms: int = 0, *, mode: int | None = None) -> None:
-        session = self._captured_session()
-        if session is None or self._session is not session or not session.client.is_connected:
-            return
-
-        async def cleanup() -> None:
-            if delay_ms:
-                await asyncio.sleep(delay_ms / 1000)
-            # Cleanup is owned by the admitted session, never a reconnect.
-            if self._session is session:
-                await self._send(release(session.wire))
-
-        task = asyncio.create_task(cleanup())
-        cancelled = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                cancelled = True
-        task.result()
-        if cancelled:
-            raise asyncio.CancelledError
 
     async def stop_all(self) -> None:
         self._worker.cancel()
@@ -388,6 +323,22 @@ class ResourceBedController(RichmatClassicController):
             actions[key] = code
         return actions
 
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        return alarm_capability(self._alarm_actions())
+
+    def _alarm_request(self, alarm: AlarmRequest) -> p.Request:
+        if not alarm.enabled:
+            return p.Request("cancel_alarm")
+        actions = alarm_choices(self._alarm_actions(), alarm)
+        return p.Request("alarm", actions=actions, when=time(alarm.hour, alarm.minute))
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_request(self._alarm_request(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.execute_request(self._alarm_request(alarm))
+
     def validate_request(self, request: p.Request, *, live: bool = True) -> None:
         op = request.operation
         if op == "alarm":
@@ -397,26 +348,26 @@ class ResourceBedController(RichmatClassicController):
             # Metadata/direct navigation is independent of the menu reply.
         elif op in ("rgb", "lamp_timeout"):
             if live and (self._session is None or not self._receive.light_capable):
-                raise ValueError("The current bed session has not reported LED support")
+                raise ValueError("The bed has not reported a light. Reconnect it and try again")
             if op == "rgb":
                 if (
                     request.color is None
                     or len(request.color) != 3
                     or any(type(v) is not int or not 0 <= v <= 255 for v in request.color)
                 ):
-                    raise ValueError("Choose three RGB bytes")
+                    raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
             elif request.seconds is None:
                 raise ValueError("Choose a light timeout in seconds")
             else:
                 p.lamp_timeout(request.seconds)
         elif op == "massage_timer":
             if self.layout != "D1RM" or request.progress is None:
-                raise ValueError("This layout has no massage timer slider")
+                raise ValueError("This bed model has no massage timer")
             massage_timer(self.layout, request.progress)
         elif op == "bed_command":
             if request.command not in p.BED_COMMANDS or not 1 <= request.duration_ms <= 60000:
                 raise ValueError(
-                    "Choose a verified app BED command and a duration of 1 to 60000 ms"
+                    "Choose a control this bed offers and a duration of up to 60 seconds"
                 )
         elif op not in ("query", "cancel_alarm"):
             raise ValueError("Unknown bed action")

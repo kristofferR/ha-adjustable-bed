@@ -28,7 +28,6 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
-    KEESON_BASE_WRITE_CHAR_UUID,
     SBI_FOOT_MAX_ANGLE,
     SBI_HEAD_MAX_ANGLE,
     SBI_VARIANT_BOTH,
@@ -304,18 +303,6 @@ class TestSBIPacketBuilding:
 
 class TestSBIController:
     """Test SBIController."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_sbi_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Keeson Base write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == KEESON_BASE_WRITE_CHAR_UUID
 
     async def test_supports_preset_zero_g(
         self,

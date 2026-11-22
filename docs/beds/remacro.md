@@ -5,8 +5,8 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 Remacro is the SynData protocol used by three store-branded Android apps from
-the same developer. The integration follows all three apps.
-No physical bed has confirmed these controls yet.
+the same developer. The integration supports all three apps.
+These controls are not yet tested on a real bed.
 
 ## Known Models
 
@@ -41,14 +41,14 @@ screen, and therefore which codes, apply.
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (screen-specific: Head, Feet, Lumbar, All motors; split side-selected axes on CS-B500Y) |
+| Motor Control | ✅ (by model: Head, Feet, Lumbar, All motors; per side on the split CS-B500Y) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (2 slots; 1 on the ASI models; per side on split beds) |
 | Factory Presets | ✅ (Flat on every screen; Anti-snore, TV, Zero-G on preset screens) |
 | Massage | ✅ (head and foot levels 1-3, wave 1/2, off) |
-| Lights | ✅ (on/off **Under Bed Lights** light; LED level and **Save light level** in Slumberland and The Brick) |
+| Lights | ✅ (on/off **Under-bed lights** light; LED level and **Save light level** in Slumberland and The Brick) |
 | Controlled side | ✅ (split models 51, 52) |
-| RGB color, heating, LED modes, tilt, memory 3/4 | ❌ (no reachable app route) |
+| RGB color, heating, LED modes, tilt, memory 3/4 | ❌ |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
 
 ## Protocol Details
@@ -128,7 +128,7 @@ Beds are detected by the advertised service `6e403587-b5a3-f393-e0a9-e50e24dcca9
 
 ### Home Assistant setup
 
-The bed-type list has one **Remacro: Slumberland, The Brick and Jerome's apps**
+The bed-type list has one **Slumberland, The Brick and Jerome's apps · Remacro**
 row, and a discovered Remacro bed opens the same question. Setup shows the
 model the bed advertises and asks which app you use, offering only the apps
 that list that model:
@@ -137,7 +137,7 @@ that list that model:
 |---|---|
 | Slumberland app | `auto` |
 | The Brick app | `the_brick` |
-| Jerome's app (company IDs 45 to 53 only) | `jeromes` |
+| Jerome's app | `jeromes` (company IDs 45 to 53 only) |
 
 When no model has been seen yet, or no app lists it, every app is offered and
 the bed starts on the [fallback controls](#unrecognized-models-fallback). The
@@ -251,7 +251,7 @@ stopping it sets them off.
 | LED light setting | `0x0501` | White mask plus slider level |
 | Save light level | `0x050F` | White mask plus current level |
 
-- The bed never reports its light, so the **Under Bed Lights** light starts
+- The bed never reports its light, so the **Under-bed lights** light starts
   unknown and shows the commanded state as assumed.
 - The LED light setting sends `0x0501` with parameter `0xFFFFFF00 | level` 150 ms
   after a change, and **Save light level** sends `0x050F` with the current level
@@ -261,20 +261,20 @@ stopping it sets them off.
   the slider starts there when the entry loads. A model without a saved level,
   including one the bed newly advertises, starts at 255, the app's default.
 
-### Unused artifact constants
+### Unused app constants
 
-The apps also define constants that no reachable control sends. Earlier versions of this integration and document used several of them.
+The apps also define constants that no control in the app sends. Earlier versions of this integration and document used several of them.
 The names and values below come from that earlier documentation; they are
 not sent.
 
 | Constant | Value | Notes |
 |----------|-------|-------|
-| `STOP` | `0x0000` | Reachable controls use `0x0001` |
+| `STOP` | `0x0000` | The app's controls use `0x0001` |
 | `M4_STOP` / `M4_UP` / `M4_DOWN` | `0x010C` / `0x010D` / `0x010E` | Former tilt/neck cover |
 | `MOV_ML3` / `MOV_ML4` | `0x0315` / `0x0317` | Memory 3/4 recall |
 | `SET_ML3` / `SET_ML4` | `0x0314` / `0x0316` | Memory 3/4 save |
-| `DEF_ML1`–`DEF_ML4` | `0x0301`–`0x0304` | Formerly documented as Flat, Zero-G, TV, Anti-Snore; the reachable screens send `0x0301`–`0x0303` as Anti-snore, TV and Zero-G |
-| `MMODE_STOP`, `MMODE1_RUN`–`MMODE5_RUN` | `0x0200`, `0x0201`–`0x0205` | The reachable massage buttons send these codes as wave off and head/foot levels |
+| `DEF_ML1`–`DEF_ML4` | `0x0301`–`0x0304` | Formerly documented as Flat, Zero-G, TV, Anti-Snore; the app's screens send `0x0301`–`0x0303` as Anti-snore, TV and Zero-G |
+| `MMODE_STOP`, `MMODE1_RUN`–`MMODE5_RUN` | `0x0200`, `0x0201`–`0x0205` | The app's massage buttons send these codes as wave off and head/foot levels |
 | `MM12_RUN` / `MM1_RUN` / `MM2_RUN` | `0x0120` / `0x0121` / `0x0122` | Both / head / foot zone run |
 | `LED_W`, `LED_R`, `LED_G`, `LED_B` | `0x0502`–`0x0505` | White and color LEDs |
 | `LED_M1`–`LED_M3` | `0x0509`–`0x050B` | LED modes |
@@ -299,7 +299,7 @@ no STOP for a cancelled touch or a closed screen; that behavior is not copied.
 > Earlier versions of this document claimed movement repeats while held, four
 > memory slots, an RGB color picker and heat control. Only OneActivity's All
 > motors arrows stream; the apps expose two memory slots at most; RGB color and
-> heating have no reachable app route.
+> heating have no control in the apps.
 
 ## State
 
@@ -323,7 +323,7 @@ no STOP for a cancelled touch or a closed screen; that behavior is not copied.
 These app paths have no in-app route, need a network, or are dead code:
 full-color RGB and light auto-off delay, rocking timer,
 sleep-module settings and telemetry, Wi-Fi provisioning, the HTTP sleep report,
-the Jerome's sleep-module MAC query, and constants that no reachable control
+the Jerome's sleep-module MAC query, and constants that no control in the app
 sends (including the heating and LED mode codes earlier versions of this
 integration used).
 

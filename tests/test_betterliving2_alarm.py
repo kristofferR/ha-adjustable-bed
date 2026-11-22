@@ -10,7 +10,7 @@ from custom_components.adjustable_bed.beds.keeson import betterliving2 as runtim
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
 from tests.hold_lease_wire import virtual_clock
-from tests.test_betterliving2_review import ready
+from tests.test_betterliving2_holds_and_sides import ready
 from tests.test_betterliving2_runtime import NOW, bed, writes
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/betterliving2/vectors.json").read_text())

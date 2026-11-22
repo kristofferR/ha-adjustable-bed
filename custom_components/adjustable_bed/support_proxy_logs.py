@@ -19,7 +19,13 @@ from homeassistant.const import CONF_PASSWORD, CONF_SOURCE
 from homeassistant.core import HomeAssistant
 from homeassistant.util.hass_dict import HassKey
 
-from .support_logs import MAX_LOG_ENTRIES, async_setup_support_logs, sanitize_log_message
+from .redaction import mentions_any, mentions_only
+from .support_logs import (
+    MAX_LOG_ENTRIES,
+    async_setup_support_logs,
+    known_bluetooth_addresses,
+    sanitize_log_message,
+)
 
 if TYPE_CHECKING:
     from aioesphomeapi.api_pb2 import SubscribeLogsResponse  # type: ignore[attr-defined]
@@ -27,6 +33,8 @@ if TYPE_CHECKING:
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 _BLUETOOTH_LOG = re.compile(r"(?i)bluetooth|\bble\b|ble_|\bbt_|\bgatt|\bgap|\bbond|\bsmp\b")
+# The proxy's scanner logs every advertisement it hears, names included.
+_SCAN_RESULT_TAG = "esp32_ble_tracker"
 DATA_PAIRING_PROXY_LOGS: HassKey[dict[str, list[dict[str, Any]]]] = HassKey("adjustable_bed_pairing_proxy_logs")
 
 
@@ -39,6 +47,7 @@ async def capture_proxy_logs(
     reports: list[dict[str, Any]] = []
     clients: list[APIClient] = []
     closing = False
+    known = known_bluetooth_addresses(hass, address)
 
     async def start(source: str, entry_id: str) -> None:
         row: dict[str, Any] = {
@@ -46,15 +55,25 @@ async def capture_proxy_logs(
             "status": "unavailable", "entries": [],
             "requested_level": "DEBUG",
             "started_at": datetime.now(UTC).isoformat(),
-            "note": "Only Bluetooth-related messages are retained. Firmware log levels may limit output.",
+            "note": (
+                "Only Bluetooth-related messages are retained, without other nearby"
+                " devices. Firmware log levels may limit output."
+            ),
         }
         reports.append(row)
         entries: deque[dict[str, str]] = deque(maxlen=MAX_LOG_ENTRIES)
         row["dropped_entries"] = 0
+        row["withheld_entries"] = 0
 
         def on_log(message: SubscribeLogsResponse) -> None:
             text = _ANSI.sub("", message.message.decode("utf-8", "backslashreplace"))
             if not _BLUETOOTH_LOG.search(text):
+                return
+            # Scan results and other devices' connections name nearby devices.
+            if not mentions_only(text, known) or (
+                _SCAN_RESULT_TAG in text and not mentions_any(text, known)
+            ):
+                row["withheld_entries"] += 1
                 return
             if len(entries) == MAX_LOG_ENTRIES:
                 row["dropped_entries"] += 1
@@ -94,7 +113,7 @@ async def capture_proxy_logs(
                 await client.connect(on_stop=on_stop, login=True, log_errors=False)
             row["status"] = "empty"
             client.subscribe_logs(on_log, LogLevel.LOG_LEVEL_DEBUG, dump_config=False)
-        except Exception as err:  # noqa: BLE001 - proxy logging must not prevent BLE diagnostics
+        except Exception as err:
             row["status"] = "unavailable"
             # Do not serialize exceptions that might contain API credentials.
             row["reason"] = type(err).__name__
@@ -117,7 +136,7 @@ async def capture_proxy_logs(
                 and entry.data.get(CONF_SOURCE_CONFIG_ENTRY_ID)
             }
             await asyncio.gather(*(start(source, entry_id) for source, entry_id in registrations.items()))
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             reports.append({"status": "unavailable", "reason": type(err).__name__, "entries": []})
         with async_setup_support_logs(hass).capture_pairing(address) if retain else nullcontext():
             yield reports

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 
+from ..richmat.labels import resource_label
 from .profiles import Control
 from .protocol import Wire, decode_resource
 
@@ -65,6 +66,21 @@ def effective_status(button: Control, layout: str, selection: Selection) -> int:
 
 def short_operand(button: Control, wire: Wire) -> str | None:
     return button.short_old if wire == "RAW" and button.short_old is not None else button.short
+
+
+def nordic_label(button: Control) -> str | None:
+    """Name what a short press sends over Nordic UART, when it is not the framed name.
+
+    The Nordic connection sends the layout's legacy operand. A few layouts give
+    that operand another function than the framed one: a control is named by
+    what the connection in use sends.
+    """
+    keys = button.resource_keys
+    new, old = keys.get("press_short"), keys.get("press_short_old")
+    if button.short is None or button.short_old is None or not new or not old:
+        return None
+    label = resource_label(old.removeprefix("@string/"))
+    return label if label != resource_label(new.removeprefix("@string/")) else None
 
 
 def selected_operand(

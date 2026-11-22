@@ -1,7 +1,7 @@
 """Legacy L&P 2.2.1 (com.richmat.lp) control surfaces, one control per line.
 
 Converted without changes from the catalog generated outside this repository from
-the accepted APK Protocol Audit report; no generator is checked in. Input:
+the accepted APK Protocol Audit report; not edited by hand. Input:
 catalog schema 2, analysis.json SHA-256
 e69613a435f4c0cc6ec2c28c24430938ed21f9e78452510c325315cb632162a4,
 REPORT.SHA256 SHA-256 7f8cba0f7121b205d3d9f8d2c00ae53a7f96c82d4d86d7353d6d90843915f8e0.

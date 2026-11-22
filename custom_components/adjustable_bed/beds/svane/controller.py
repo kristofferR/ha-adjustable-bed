@@ -593,7 +593,7 @@ class SvaneController(BedController):
         if control == "light_adjust":
             intensity = integer(self.session.intensity, 5, 100)
             if intensity % 5:
-                raise ValueError("Svane lamp intensity uses steps of five")
+                raise ValueError("Choose a lamp brightness in steps of 5")
         if control != "light_adjust":
             head, feet = MOTIONS[control]
             delayed_feet = feet is not None and not (self.profile == "jmc" and head is not None)
@@ -611,7 +611,7 @@ class SvaneController(BedController):
         for service, char in roles:
             role = self._role(service, char)
             if role is None or not set(role.properties) & {"write", "write-without-response"}:
-                raise ValueError("Svane held control role is unavailable")
+                raise ValueError("This bed model does not offer that control")
 
     def prepare_svane_hold_admission(self) -> SvaneHoldAdmission:
         return SvaneHoldAdmission(
@@ -976,9 +976,9 @@ class SvaneController(BedController):
         else:
             saved = self.session.multi_slots.get(memory_num)
             if saved is None:
-                raise ValueError("Read both raw axes and save this local slot before recall")
+                raise ValueError("Save this memory position before recalling it")
             if len(saved) != 2 or any(not isinstance(raw, bytes) or not raw for raw in saved):
-                raise ValueError("Saved Svane memory requires both nonempty raw axes")
+                raise ValueError("This memory position was not saved completely. Save it again")
 
     async def preset_memory(self, memory_num: int) -> None:
         integer(memory_num, 1, 2)
@@ -990,7 +990,7 @@ class SvaneController(BedController):
         else:
             saved = self.session.multi_slots.get(memory_num)
             if saved is None:
-                raise ValueError("Read both raw axes and save this local slot before recall")
+                raise ValueError("Save this memory position before recalling it")
             await self._write(HEAD, POSITION, saved[0])
             if await self._wait(1):
                 await self._write(FEET, POSITION, saved[1])
@@ -1001,14 +1001,14 @@ class SvaneController(BedController):
         await self._read_positions(fresh=fresh)
         if self.profile == "jmc":
             if "position" not in fresh:
-                raise ValueError("No fresh valid four-byte position was read for this target")
+                raise ValueError("The bed did not report its position. Reconnect it and try again")
             slots = list(self.session.jmc_slots)
             slots[memory_num - 1] = fresh["position"]
             self.session.jmc_slots = (slots[0], slots[1])
             self._remember()
         else:
             if "head" not in fresh or "feet" not in fresh:
-                raise ValueError("Both fresh valid raw axes must be read for this target")
+                raise ValueError("The bed did not report its position. Reconnect it and try again")
             self.session.multi_slots[memory_num] = (fresh["head"], fresh["feet"])
             self._remember()
 

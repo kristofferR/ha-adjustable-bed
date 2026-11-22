@@ -11,7 +11,6 @@ import pytest
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.richmat_classic import lp2
 from custom_components.adjustable_bed.beds.richmat_classic.protocol import Worker
-from custom_components.adjustable_bed.beds.richmat_classic.rise import Schedule
 from custom_components.adjustable_bed.beds.richmat_classic.transport import Transport
 from tests.test_lp2_vectors import vectors
 
@@ -152,23 +151,6 @@ async def test_alarm_uses_shared_capability_and_two_frozen_parts(clock):
     assert c._receive.alarm_enabled is None
 
 
-async def test_motor_program_fragmentation_matches_default_literal(clock):
-    c, co = controller("RMCS")
-    rows = tuple((n, 0, 0) for n in (1, 2, 3, 4, 7, 8, 9, 10, 5, 6, 11, 12))
-    schedule = Schedule(rows, 0, 0, "ble", "new", 1, (1, 2, 3, 4))
-    await c.program_schedule(schedule)
-    expected = next(
-        expected.lower()
-        for action, _, expected in vectors("direct")
-        if action == "default UI configuration"
-    )
-    assert "".join(packets(co)) == expected
-    assert all(len(bytes.fromhex(p)) <= 20 for p in packets(co))
-    assert clock == [10] * (len(packets(co)) - 1)
-    with pytest.raises(ValueError, match="65535"):
-        await c.program_schedule(replace(schedule, rest=65536))
-
-
 def test_no_screen_selectors_and_confirmation_never_offers_hold():
     c, _ = controller("E3RM")
     assert c.controller_select_specs == ()
@@ -241,39 +223,28 @@ async def test_registered_service_validates_all_targets_before_first_write(hass)
     async_register_lp2_services(hass)
     a, first = target(
         family=lp2.Lp2Controller,
-        layout="RMCS",
-        program_schedule=AsyncMock(),
-        schedule_frame=lambda _s: b"",
+        _model=SimpleNamespace(modes=(0, 1)),
+        validate_action=MagicMock(return_value=()),
+        execute_action=AsyncMock(),
     )
-    b, second = target(family=lp2.Lp2Controller, layout="APRM", program_schedule=AsyncMock())
+    b, second = target(
+        family=lp2.Lp2Controller, _model=SimpleNamespace(modes=(0,)), execute_action=AsyncMock()
+    )
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(a, "both"), (b, "both")], []),
         ),
-        pytest.raises(ServiceValidationError, match="motor program"),
+        pytest.raises(ServiceValidationError, match="mode offered"),
     ):
         await hass.services.async_call(
             DOMAIN,
             "lp2",
-            {
-                "device_id": ["a", "b"],
-                "operation": "motor_program",
-                "confirm": True,
-                "schedule": {
-                    "records": [[i, 0, 0] for i in range(1, 13)],
-                    "rest": 0,
-                    "count": 0,
-                    "radio": "ble",
-                    "code": "new",
-                    "identifier": 1,
-                    "motors": [1, 2, 3, 4],
-                },
-            },
+            {"device_id": ["a", "b"], "operation": "control", "control": 1, "mode": 1},
             blocking=True,
         )
-    first.program_schedule.assert_not_awaited()
-    second.program_schedule.assert_not_awaited()
+    first.execute_action.assert_not_awaited()
+    second.execute_action.assert_not_awaited()
 
 
 def test_package_transport_falls_through_only_when_its_tuple_is_incomplete():
@@ -297,17 +268,6 @@ def test_package_transport_falls_through_only_when_its_tuple_is_incomplete():
     del channels["w1"][TRANSPORTS["w1"].notify_uuid]
     with pytest.raises(ValueError, match="incomplete"):
         lp2.select_transport(client)
-
-
-async def test_movement_test_cancellation_releases_before_any_next_phase(clock):
-    c, co = controller("TEST")
-
-    async def stop(_char, _data, **_kwargs):
-        co.cancel_command.set()
-
-    co.client.write_gatt_char.side_effect = stop
-    await c.diagnostic_cycle()
-    assert packets(co) == ["6e01002493", "6e01006edd"]
 
 
 def test_service_number_values_are_normalized_before_packet_building():
@@ -370,7 +330,7 @@ async def test_raw_controls_name_the_effective_operand_and_reject_stale_buttons(
     assert framed.key not in c.held_control_options
     with pytest.raises(ValueError, match="changed"):
         await framed.press_fn(c)
-    with pytest.raises(ValueError, match="available held"):
+    with pytest.raises(ValueError, match="control this bed offers"):
         await c.hold_control(framed.key, 150)
     combined = next(s for s in c.controller_button_specs if s.key == "richmat_classic_15_raw")
     assert combined.name == "Motor 1+2 up"
@@ -673,3 +633,65 @@ async def test_settled_release_finishes_on_owned_link_before_cancel_returns():
         await release
     assert packets(co) == ["6e"]
     assert not co.cancel_command.is_set()
+
+
+def _format_controller(app, layout):
+    if app == "bedsmart":
+        from tests.test_bedsmart import controller as bedsmart_controller
+
+        c, _co = bedsmart_controller(layout)
+        c._scope = None
+    else:
+        c, _co = controller(layout)
+    c._session = c._wire = None
+    return c
+
+
+@pytest.mark.parametrize(
+    ("app", "layout"), [("lp2", "6BRM"), ("lp2", "A3RM"), ("bedsmart", "6BRM")]
+)
+def test_only_the_beds_own_format_lists_its_controls(app, layout):
+    c = _format_controller(app, layout)
+    assert c.has_dynamic_buttons
+    assert c.persisted_app_state.get("wire") is None
+    shared = {s.key for s in c.controller_button_specs}
+    assert not any(k.endswith(("_raw", "_framed")) for k in shared)
+    # The sweep keeps both formats' own rows until the format is known.
+    retained = {key for domain, key in c.retained_entity_keys if domain == "button"}
+    assert retained and all(k.endswith(("_raw", "_framed")) for k in retained)
+    switches = {s.key for s in c.controller_switch_specs}
+    listed = {}
+    for wire, other in (("RAW", "_framed"), ("FRAMED", "_raw")):
+        # A restart restores the format of the last connection.
+        restored = _format_controller(app, layout)
+        restored.restore_persisted_app_state({**c.persisted_app_state, "wire": wire})
+        assert restored.retained_entity_keys == frozenset()
+        assert restored.persisted_app_state["wire"] == wire
+        specs = restored.controller_button_specs
+        keys = {s.key for s in specs}
+        assert shared < keys
+        assert keys - shared <= retained
+        assert not any(k.endswith(other) for k in keys)
+        assert all(restored.controller_button_available(k) for k in keys)
+        names = [s.name for s in specs]
+        assert len(names) == len(set(names))
+        assert switches <= {s.key for s in restored.controller_switch_specs}
+        listed[wire] = {s.key: s.name for s in specs}
+    # Never merged: on A3RM the same node is a different control per format.
+    if layout == "A3RM":
+        assert listed["RAW"]["richmat_classic_15_raw"] != (
+            listed["FRAMED"]["richmat_classic_15_framed"]
+        )
+    with pytest.raises(ValueError, match="command format"):
+        _format_controller(app, layout).restore_persisted_app_state({"wire": "OTHER"})
+
+
+async def test_renewable_hold_of_a_tap_control_is_a_translated_refusal(clock, monkeypatch):
+    from tests.error_helpers import raises_key
+
+    c, co = controller("A0RM")
+    monkeypatch.setattr(lp2, "current_command_context", lambda: SimpleNamespace(lease=object()))
+    node = next(g.node for g in c._gestures("FRAMED") if g.status != 1 and not g.long)
+    with raises_key("control_hold_renewal_not_supported"):
+        await c.execute_action(node)
+    co.client.write_gatt_char.assert_not_awaited()

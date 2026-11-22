@@ -118,12 +118,21 @@ from custom_components.adjustable_bed.switch import (
 )
 from tests.entity_translation_reachability import (
     INTEGRATION,
-    SPEC_PLATFORMS,
     _motion_bed_controllers,
     factory_controllers,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures/card_placements.json"
+# Each spec class's platform and the position of its translation_key field.
+SPEC_PLATFORMS = {
+    "MotorControlSpec": ("cover", 1),
+    "ControllerButtonSpec": ("button", 4),
+    "ControllerSelectSpec": ("select", 1),
+    "ControllerNumberSpec": ("number", 1),
+    "ControllerSwitchSpec": ("switch", 1),
+    "ControllerStateSensorSpec": ("sensor", 1),
+    "ControllerStateBinarySensorSpec": ("binary_sensor", 1),
+}
 
 
 def _runtime() -> MagicMock:
@@ -201,6 +210,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     Some controls exist only for a reported model, layout or page, which no
     offline configuration reaches.
     """
+    from custom_components.adjustable_bed.beds.baseremote.controller import BaseRemoteController
+    from custom_components.adjustable_bed.beds.dreamsense.controller import DreamSenseController
     from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
     from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
@@ -214,6 +225,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         actions,
         inverse_pairs,
     )
+    from custom_components.adjustable_bed.beds.richmat_classic.lp2 import Lp2Controller
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
@@ -243,6 +255,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
     from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
+    from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
     from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES
 
@@ -254,6 +267,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
+        if isinstance(controller, DreamSenseController):
+            for profile in DREAMSENSE_PROFILES.values():
+                yield variant(controller, profile=profile, _known={"clock", "light", "music"})
         if isinstance(controller, EnsoController):
             for profile in ENSO_PROFILES.values():
                 yield variant(controller, profile=profile)
@@ -304,16 +320,36 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                     yield variant(reported, _normal_ready=True)
         elif isinstance(controller, RufRichmatController):
             yield variant(controller, _normal_ready=True)
+        elif isinstance(controller, ResourceBedController) and controller.app == "sleepfunction":
+            from custom_components.adjustable_bed.beds.richmat_classic.sleepfunction import (
+                SleepFunctionReceive,
+            )
+            layouts=("D1RM", "YGRM", *(key for key, model in load_catalog("sleepfunction").models.items() if len(model.modes)>1))
+            for layout in layouts:
+                model=load_catalog("sleepfunction").models[layout]
+                yield variant(controller,layout=layout,_model=model,_controls=model.controls,
+                              _receive=SleepFunctionReceive(light_capable=True))
         elif isinstance(controller, BedSmartController):
+            # Each command format lists its own controls once the bed connected.
             for layout in ("DHRM", "D1RM", "U3RM", "GVRM"):
                 model = load_catalog(controller.app).models[layout]
-                yield variant(controller, layout=layout, _model=model, _controls=model.controls,
-                              _receive=ReceiveState(light_capable=True, aroma_capable=True))
+                for wire in ("RAW", "FRAMED"):
+                    yield variant(controller, layout=layout, _model=model, _controls=model.controls,
+                                  _receive=ReceiveState(light_capable=True, aroma_capable=True),
+                                  _wire=wire)
+        elif isinstance(controller, Lp2Controller):
+            for wire in ("RAW", "FRAMED"):
+                yield variant(controller, _wire=wire)
         elif isinstance(controller, JeromeController):
             for layout in ("D1RM", "D9RM", "Y6RM", "R2RM", "DXRM", "B9TT"):
                 model = load_catalog("jerome2").models[layout]
                 yield variant(controller, layout=layout, _model=model, _controls=model.controls,
                               _actions=actions(layout), _pairs=inverse_pairs(layout),
+                              _receive=ReceiveState(light_capable=True, aroma_capable=True))
+        elif isinstance(controller, BaseRemoteController):
+            for layout in ("D1RM", "E3RM"):
+                model = load_catalog(controller.app).models[layout]
+                yield variant(controller, layout=layout, _model=model, _controls=model.controls,
                               _receive=ReceiveState(light_capable=True, aroma_capable=True))
         elif isinstance(controller, ResourceBedController):
             model = load_catalog(controller.app).models["D1RM"]

@@ -26,7 +26,6 @@ def register_services(hass: HomeAssistant) -> None:
         await _preflight_and_execute(
             targets,
             InstantComfortAir,
-            "Instant Comfort air units",
             lambda controller: controller.set_pressures(call.data["sleeper"], main, lumbar),
             validate=lambda controller: controller.validate_pressure_targets(main, lumbar),
             cancel_running=True,

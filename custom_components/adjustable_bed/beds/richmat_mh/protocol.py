@@ -298,12 +298,6 @@ def parse_waist_piece(frame: str) -> dict[str, Any]:
     return {}
 
 
-def alarm_countdown_minutes(target_minute_of_day: int, now_minute_of_day: int) -> int:
-    """``(target - now) mod 1440``; zero (and the -1 case) become 1440."""
-    minutes = (target_minute_of_day - now_minute_of_day) % 1440
-    return 1440 if minutes in (0, -1) else minutes
-
-
 def alarm_action(memory: int | None, massage: tuple[int, ...]) -> int | None:
     """``setAlarmData``/``combineCmd``: the opcode for one memory and 0-2 massages.
 

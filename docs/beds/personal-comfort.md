@@ -7,8 +7,8 @@
 ## Known Models
 
 Personal Comfort and Instant Comfort air units ANM V3, ANM V5 and RA, with a separately configured
-Malouf, Reverie or Reverie V2 base. The base model is an explicit setup choice.
-An air unit is not a second base in a combined pair.
+Malouf, Reverie or Reverie V2 base. Pick the base model in setup. The air unit
+and the base are separate entries; do not combine them as a pair.
 
 ## Apps
 
@@ -21,12 +21,12 @@ An air unit is not a second base in a combined pair.
 
 | Feature | Supported |
 |---------|-----------|
-| Firmness | Native left/right values and immediate targets, 5–50 |
+| Firmness | Left and right, 5–50 |
 | Motor Control | Base head/feet; pillow on selected models and routes |
-| Position Feedback | No base positions or angle seeking |
+| Position Feedback | ❌ |
 | Memory Presets | Two on Malouf and V2; none on Reverie V1 or air units |
-| Massage | Model-specific head/foot, pattern and stop operations |
-| Lights | Toggle on Malouf/V1; on/off with initial read on V2 |
+| Massage | Head/foot, pattern and stop, by model |
+| Lights | Toggle on Malouf/V1; on/off with its current state on V2 |
 | Alarm | No |
 
 ## Choosing a profile
@@ -249,7 +249,14 @@ side's measured value. Home Assistant bounds each foreground firmness action
 to two minutes if readiness, completion or pressure replies stop arriving.
 These are software wait limits, not firmware timing or automatic pump STOPs.
 
-##### Instant Comfort
+#### Notes
+
+No alarm, app-local firmness memories, local side/sync selectors, raw developer
+probes, unused lumbar/combined commands or network/account features are exposed.
+All physical effects, GATT properties, firmware variants and release behavior
+still need testing on actual hardware.
+
+### Instant Comfort
 
 **App:** [Instant Comfort](https://play.google.com/store/apps/details?id=com.americannationalmfg.instantcomfort2) 2.6.1, `com.americannationalmfg.instantcomfort2`
 
@@ -352,13 +359,7 @@ this profile. Hardware operation has not yet been tested.
 
 ## Notes
 
-No alarm, app-local firmness memories, local side/sync selectors, raw developer
-probes, unused lumbar/combined commands or network/account features are exposed.
-All physical effects, GATT properties, firmware variants and release behavior
-still need testing on actual hardware.
+### Evidence
 
-## Notes
-
-### Analysis provenance
-
-Based on Personal Comfort 2.6.1 (`com.personalcomfortbed2`).
+Based on Personal Comfort 2.6.1 (`com.personalcomfortbed2`) and Instant Comfort 2.6.1
+(`com.americannationalmfg.instantcomfort2`).

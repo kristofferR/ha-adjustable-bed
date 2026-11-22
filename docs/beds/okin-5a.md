@@ -1,13 +1,13 @@
-# Okin 5A
+# Nectar, Mattress Firm 900, Sealy Posturematic and DewertOkin ELEVATE (Okin)
 
 **Status:** Tested on the Sealy Posturematic CB35 profile; the other profiles need testing
 
 **Credit:** Reverse engineering by [MaximumWorf](https://github.com/MaximumWorf) ([homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)), [David Delahoz](https://github.com/daviddelahoz) ([BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)) and [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 One wire codec (`5A 01 03 10 page key A5` key frames over two GATT transports)
-serves four profiles: legacy seven-byte Nectar beds, Mattress Firm 900 / iFlex
-Nordic UART bases, Sealy Posturematic CB35 beds and the DewertOkin ELEVATE lift
-accessory. The codec also builds the other StarCode frames that standalone
+serves five profiles: legacy seven-byte Nectar beds, Mattress Firm 900 / iFlex
+Nordic UART bases, Sealy Posturematic CB35 beds, the Sealy Posturematic app and
+the DewertOkin ELEVATE lift accessory. The codec also builds the other StarCode frames that standalone
 StarCode controllers send (see [StarCode frames](#starcode-frames)). This guide
 covers the codec first, then one section per profile. See
 [Protocol codecs and app profiles](../design/protocol-codecs.md) for the
@@ -15,11 +15,11 @@ architecture.
 
 > [!NOTE]
 > Two newer apps that share these names use a different wire format. The
-> Nectar Motion app is the explicit **Nectar Move** profile of
+> Nectar Motion app is the **Nectar Move** profile of
 > [Okin CST](okin-nframe.md#okin-cst), and beds using the official MFirm 900-O app
 > (`com.okin.bedding.rizemf900`) and advertising as `OKIN-XXXXXX` are
-> [Okin CST](okin-nframe.md#okin-cst) too. Neither is selected by an `OKIN-*` name, a
-> shared OKIN UUID or a Device Information value.
+> [Okin CST](okin-nframe.md#okin-cst) too. Setup does not pick either from the
+> Bluetooth name or services; choose it yourself.
 >
 > The Nectar Premier / Resident Adjustable Base uses neither: choose the
 > [Resident Adjustable Base](okin-nframe.md#resident-adjustable-base) app profile,
@@ -58,7 +58,7 @@ of this one (see [Nectar](#nectar)).
 | Feature | Nectar | Mattress Firm 900 / iFlex | Sealy Posturematic (CB35) | DewertOkin ELEVATE |
 |---------|--------|---------------------------|---------------------------|--------------------|
 | Motor Control | ✅ Head, Feet, Lumbar | ✅ Head, Foot, Lumbar | ✅ Head, Foot, Lumbar, Neck, Hips (Hips is the Head End Tilt cover) | ✅ Actuator 1, actuator 2 and both together |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ (no semantic notification parser in the apps) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ |
 | Presets | ✅ Flat, Zero-G, Anti-Snore, Lounge; TV sends the Lounge key | ✅ Flat, Zero-G, Anti-Snore, Lounge, Incline; TV sends the Lounge key | ✅ Flat, Zero G, Anti-Snore, Lounge, Incline, TV | ✅ Flat (one-shot) |
 | Memory Presets | ⚠️ Recall of slots 1-2 only, no programming | ❌ (built-in presets instead) | ⚠️ Recall of Memory 1 and 2; no programming over BLE | ❌ |
 | Massage | ✅ Global on, wave and off; no intensity commands | ✅ On, toggle, wave, off, intensity up/down | ✅ Toggle, head/foot strength, mode step, stop | ❌ |
@@ -66,7 +66,7 @@ of this one (see [Nectar](#nectar)).
 | Group control with M5X5 / M1X12 mains | ❌ | ❌ | ❌ | ✅ (see [AdjustableM5X5 lifts](#adjustablem5x5-lifts)) |
 | Hold until release | ❌ (finite pulses) | ❌ (finite pulses) | ❌ (finite pulses) | ✅ (renewable `timed_move`, both routes) |
 | BLE Pairing / Authentication | ❌ Not required | ❌ Not required | ❌ Not required | ❌ Not required |
-| Hardware-confirmed | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
+| Tested on hardware | No | No | Motors, Flat, Memory 1, Zero G, Stop and the under-bed light | No |
 
 ## Choosing a profile
 
@@ -308,13 +308,11 @@ raw-parts clock formula, parser and captured-session execution.
 
 `tests/okin_5a_vectors.py` freezes the earlier profiles' frames, and
 `tests/test_okin_5a_vectors.py` checks each literal against the codec and each
-profile's frames against its vectors. `tests/test_codec_docs.py` checks every
-frame spelled in this guide against the vectors and each bed type against the
-factory. Each profile's vectors are
-the frames its pre-v5 controller sent. No app evidence covers the Nectar,
+profile's frames against its vectors. Each profile's vectors are
+the frames its pre-v5 controller sent. No app was analyzed for the Nectar,
 Mattress Firm and CB35 key frames; ELEVATE's frames match its apps (see
-its [Evidence](#dewertokin-elevate)). The same file freezes every StarCode frame
-in the standalone StarCode controllers' artifact vectors, by encoder, and the
+its [Evidence](#dewertokin-elevate)). The same file holds every StarCode frame
+in the standalone StarCode controllers' vectors, by encoder, and the
 same test rebuilds each one from its fields.
 
 ## Profiles
@@ -334,14 +332,14 @@ framing and actions. Do not interchange the command sets.
   the Nectar Move app profile.
 - Some Nectar bases advertise only as `OKIN-XXXXXX`. Those names are ambiguous
   with classic Okimat, seven-byte Nectar and newer CST controllers, so setup
-  prompts for the Okin-family protocol. Choose `Nectar` only for the seven-byte
-  protocol.
-- Select **Nectar Move** explicitly when setting up that app profile; shared
+  prompts for the Okin-family protocol. Choose **Nectar bed** under **Okin (other
+  receivers)** only for the seven-byte protocol.
+- Select **Nectar Move · Okin** explicitly when setting up that app profile; shared
   advertisements and Device Information are not sufficient to choose it.
 - The `62741523-...` OKIN service, `90311623-...` CSS service, and Nordic DFU
   service `00001530-...` are not sufficient by themselves to identify CST
   because RF ECO BT stair actuators share that GATT inventory. Choose the
-  **Okin CST** row, which names its apps, only when the known base or app
+  **Rize and Jordan's apps (and other Okin apps) · Okin** row only when the known base or app
   identity also corroborates CST. Device Information model `MEGAMAT MBZ`
   identifies RF ECO BT instead.
 - Or configure bed type `nectar` manually (a legacy alias of the `okin_7byte`
@@ -368,8 +366,8 @@ See the [timing table](#choosing-a-profile).
 
 #### Evidence
 
-No app evidence covers this profile. Nectar sends
-only its frozen frames, the ones the pre-v5 controller sent, from MaximumWorf's
+No app was analyzed for this profile. Nectar sends the frames the pre-v5
+controller sent, from MaximumWorf's
 [homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar).
 
 ### Mattress Firm 900 / iFlex
@@ -412,8 +410,8 @@ The MFirm 900 1.1.2 app
 (`com.okin.bedding.rizemf900`) reaches only the Okin CST frame. That app uses a
 14-byte CST format (`[0x0C, 0x02, motor_bytes(4), control_bytes(4), reserved(4)]`)
 and detects devices by the name prefix `okin` (case-insensitive); see
-[Okin CST](okin-nframe.md#okin-cst). This profile sends only its frozen frames, the ones the
-pre-v5 controller sent. The protocol was manually reverse-engineered by David
+[Okin CST](okin-nframe.md#okin-cst). This profile sends the frames the pre-v5
+controller sent. The protocol was manually reverse-engineered by David
 Delahoz in 2020 from the M900 app, with discovery from Zrau5454 in
 [#50](https://github.com/kristofferR/ha-adjustable-bed/issues/50).
 
@@ -428,6 +426,14 @@ Flutter app with the protocol defined in a JSON asset; it is also on iOS (App
 Store), developed by Star Seeds Co LTD (DewertOkin).
 
 #### Setup
+
+For a Sealy Posturematic bed with this receiver (a Bluetooth name starting
+with `Star35`), use this profile: it is the one tested on a real bed, a Sealy
+Element. A discovered `Star35` bed offers it as the detected receiver. To add the
+bed yourself, choose **My app isn't listed, or I don't know**, then **Okin
+(other receivers)** and **Sealy Posturematic or DewertOkin Star bed**. The
+[Sealy Posturematic app](#sealy-posturematic-app) row follows the newer app and
+has not been tested yet.
 
 - Detection: a `Star35*` name with Nordic UART; see [Name encoding](#name-encoding).
 - Initialization: only the wake frame, followed by 100 ms; no Mattress Firm
@@ -519,8 +525,7 @@ See [Responses](#responses).
 
 #### Evidence
 
-The profile sends only its frozen frames, the ones the pre-v5
-controller sent, from the `com.okin.sealy` v1.1.1 analysis in
+The profile sends the frames the pre-v5 controller sent, from the `com.okin.sealy` v1.1.1 analysis in
 [#310](https://github.com/kristofferR/ha-adjustable-bed/issues/310). Complete
 protocol definition at
 `disassembly/output/com.okin.sealy/extracted/assets/flutter_assets/assets/protocol/35_22_01.json`.
@@ -532,6 +537,11 @@ protocol definition at
 **Status:** Not yet tested
 
 #### Setup
+
+This row has not been tested on a real bed yet. If the bed's Bluetooth name
+starts with `Star35`, the [Sealy Posturematic (CB35)](#sealy-posturematic-cb35)
+profile has been tested on a Sealy Element, so choose that one unless you want
+to help test this one.
 
 Choose **Sealy Posturematic**, then the product printed on the bed: Element,
 Ascent or Apex. Reconfigure changes that choice. Each physical bed keeps its
@@ -623,7 +633,7 @@ commanded state is assumed, starts unknown and clears on disconnection.
 
 A finite movement or held preset always drains its two ordinary STOP cleanup
 writes to its captured session with a fresh cancellation event. Replaced
-clients never receive the old release. No source-proven automatic STOP exists
+clients never receive the old release. The app sends no automatic STOP
 for app backgrounding, link loss, one-shot movement, or an anti-pinch status.
 BLE write completion is transport delivery, not a hardware acknowledgement.
 An explicit Stop in a sequential pair reconnects the selected physical beds
@@ -652,14 +662,14 @@ Use the shared actions in [Actions and Automations](../SERVICES.md).
 | `hold_control` | `device_id`, `control`, `duration` (seconds), optional `side` | Hold a head, foot, combined or preset control; ordinary STOP release |
 | `goto_preset` | `device_id`, `preset`, optional `duration` (seconds) and `side` | Recall memory 1 or 2, with ordinary STOP release |
 | `save_preset` | `device_id`, `preset`, optional `side` | Save slot 1 or 2 with finite programming and release |
-| `stop` | `device_id`, optional `side` | Ordinary STOP twice; does not promise interruption of every firmware preset |
+| `stop_all` | `device_id`, optional `side` | Ordinary STOP twice, then the app's one-touch STOP twice; does not promise interruption of every firmware preset |
 
 #### Evidence
 
 Command literals and public execution are checked in `tests/test_sealy.py` and
 `tests/sealy_vectors.py`. The raw Dart-parts clock encoder retains the exact
 source formula. Automatic clock synchronization is unavailable until the
-meaning of parts index 6 is established; no Python weekday conversion is
+meaning of parts index 6 is known; no Python weekday conversion is
 assumed. Physical behavior remains unverified.
 
 ### DewertOkin ELEVATE
@@ -677,8 +687,8 @@ there is no manufacturer-selected dialect.
 - Detection: high-confidence automatic discovery requires the `ELEVATE*` name
   **plus** Nordic UART. Nordic UART by itself is intentionally not treated as a
   bed signature because many unrelated devices use it.
-- Adjustable Comfort M1X12 lift groups require the explicit **Adjustable Comfort
-  M1X12 ELEVATE** variant of `star_elevate`; see the
+- Adjustable Comfort M1X12 lift groups require lifts set up as **Adjustable Comfort
+  M1X12 app, Elevate lift**; see the
   [M1X12 guide](starcode-m1x12.md).
 - Session: the analyzed apps enable RX notifications and then send the one-time
   keep-connected (wake) frame.
@@ -722,7 +732,7 @@ the AdjustableM5X5 app. That app's ELEVATE class sends exactly the frames above
 (its P3 vectors are tested against this controller), so it is not a separate
 profile.
 
-Its app-proven group behavior is carried over:
+Its group behavior follows the app:
 
 - Select an ELEVATE entry as a lift on an [AdjustableM5X5](starcode-m5x5.md)
   main. An ELEVATE can also be the main and select up to three lifts in its own
@@ -735,7 +745,7 @@ Its app-proven group behavior is carried over:
 #### Evidence
 
 Based on `com.starcode.adjustablem1x12` 1.1.3 and
-`com.starcode.abm5_5` 1.2.3. ELEVATE sends only its frozen frames. Command
+`com.starcode.abm5_5` 1.2.3. Command
 direction and multi-device fan-out await real-hardware checks.
 
 ## Notes

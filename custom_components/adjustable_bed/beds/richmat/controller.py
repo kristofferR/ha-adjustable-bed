@@ -44,7 +44,6 @@ from ...const import (
     resolve_richmat_remote_code,
     richmat_remote_has_combined_head_feet,
 )
-from ...position_estimate import notify_release_failed
 from ...profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
@@ -160,22 +159,10 @@ class RichmatProfileController(ProfileExecution[RichmatProfile], BedController):
         if self.profile.stop is not None:
             await self.write_command(self._build_stop_command(), cancel_event=asyncio.Event())
 
-    async def _release(self) -> None:
-        """Cleanup STOP; quiet profiles keep the original error, if any."""
-        if not self.profile.quiet_release:
-            await self._send_stop()
-            return
-        try:
-            await self._send_stop()
-        except Exception:
-            _LOGGER.debug("Failed to send STOP during cleanup")
-            # The motor may still be moving: a running estimate cannot be trusted.
-            notify_release_failed(self._coordinator)
-
     async def _move_with_stop(self, command_byte: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Pulse a movement code at the entry's pulse settings, then always STOP."""
         delay_ms = self.profile.motor_repeat_ms or self._coordinator.motor_pulse_delay_ms
-        try:
+        async with self.releasing(self._send_stop):
             await self.write_command(
                 self._build_command(command_byte),
                 # A leased hold (#483) refreshes until its lease ends.
@@ -183,8 +170,6 @@ class RichmatProfileController(ProfileExecution[RichmatProfile], BedController):
                 or self._coordinator.motor_pulse_count,
                 repeat_delay_ms=delay_ms,
             )
-        finally:
-            await self._release()
 
     async def _move(self, button: Button) -> None:
         await self._move_with_stop(self._code(button))
@@ -201,12 +186,10 @@ class RichmatProfileController(ProfileExecution[RichmatProfile], BedController):
                 command, repeat_count=recall.repeats, repeat_delay_ms=recall.repeat_ms
             )
             return
-        try:
+        async with self.releasing(self._send_stop):
             await self.write_command(
                 command, repeat_count=recall.repeats, repeat_delay_ms=recall.repeat_ms
             )
-        finally:
-            await self._release()
 
     # Capabilities follow the profile's codes.
     @property

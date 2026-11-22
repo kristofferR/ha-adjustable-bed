@@ -778,7 +778,7 @@ async def test_switch_posture_invalidates_save_and_rebuilds_five_target_axes(coo
     await c.async_execute_motomotion_request(
         Request("fine_tune", posture="tv", targets=Position(1, 2, 3, 4, 5))
     )
-    with pytest.raises(ValueError, match="different user or posture"):
+    with pytest.raises(ValueError, match="another user or posture"):
         await c.async_execute_motomotion_request(Request("save_posture", posture="lay"))
     assert c._posture == "tv" and c._custom == {}
     await c.select("posture", "lay")

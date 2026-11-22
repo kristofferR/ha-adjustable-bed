@@ -27,14 +27,13 @@ def register_services(hass: HomeAssistant) -> None:
             if not controller.remote.massage:
                 raise _invalid(
                     "feature_not_supported",
-                    device_name="This bed",
+                    device_name=controller._coordinator.name,
                     feature="massage",
                 )
 
         await _preflight_and_execute(
             _call_targets(call),
             ComfortEnhancement3Controller,
-            "Comfort Enhancement 3",
             lambda controller: controller.start_massage(
                 call.data["duration"], call.data["intensity"], call.data["kind"]
             ),

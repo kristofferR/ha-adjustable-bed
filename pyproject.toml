@@ -1,11 +1,9 @@
 [project]
 name = "ha-adjustable-bed"
-version = "5.0.0b8"
+version = "5.0.0rc1"
 description = "Home Assistant integration for adjustable beds"
 requires-python = ">=3.14.2"
-dependencies = [
-    "jsonschema>=4.25.1",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
@@ -13,11 +11,10 @@ dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.23.5",
     "pytest-homeassistant[bluetooth]",
-    "pytest-cov>=4.1.0",
     "pytest-split>=0.10.0",
+    "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.5.0",
     "aioesphomeapi>=42.0.0",
-    "mypy>=1.19.1",
 ]
 
 [tool.uv.sources]
@@ -33,6 +30,8 @@ asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["."]
 # Let Home Assistant install its httpx alias before respx is imported.
 addopts = "-p no:respx -n auto --dist loadgroup"
+# Fail a hung test, with its stack, long before the CI job's own timeout.
+timeout = 300
 markers = [
     "integration: marks tests as integration tests (require full HA setup)",
     "real_connect_delays: keep the connection profile's retry and settle delays in tests",
@@ -70,22 +69,3 @@ reportOperatorIssue = "none"  # Tests use "in" on optional strings
 reportArgumentType = "none"  # Tests use mock objects for type parameters
 reportOptionalOperand = "none"  # Tests use optional remote values that are known set
 reportOptionalSubscript = "none"  # Tests index into flow results asserted non-None
-
-[tool.mypy]
-python_version = "3.14"
-platform = "linux"
-show_error_codes = true
-follow_imports = "silent"
-ignore_missing_imports = true
-warn_incomplete_stub = true
-warn_redundant_casts = true
-warn_unused_configs = true
-check_untyped_defs = true
-disallow_incomplete_defs = true
-disallow_subclassing_any = true
-disallow_untyped_calls = true
-disallow_untyped_decorators = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-warn_return_any = true
-warn_unused_ignores = true

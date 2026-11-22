@@ -21,6 +21,7 @@ from custom_components.adjustable_bed import (
 )
 from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
 from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.errors import BedNotConnectedError
 from tests.error_helpers import raises_key
 from tests.test_reverie_pairlink_production import (
     _adapter_objects,
@@ -338,7 +339,7 @@ async def test_retired_local_entry_never_uses_central_fallback(
     central = AsyncMock(side_effect=AssertionError("local role reached central connection"))
     monkeypatch.setattr(original, "_async_connect_attempts_locked", central)
     await original.async_release_for_pairing_transfer()
-    with pytest.raises(ConnectionError, match="ownership is being transferred"):
+    with raises_key("bed_combining", BedNotConnectedError):
         await original.async_execute_controller_command(lambda controller: controller.stop_all())
     original.finish_pairing_transfer()
     assert await original.async_connect() is False

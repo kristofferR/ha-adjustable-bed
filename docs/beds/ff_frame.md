@@ -1,4 +1,4 @@
-# FFFF frame (Solace, Woosa Sleep, BedSense, Motion Bed)
+# Solace, Woosa Sleep, BedSense and Motion Bed
 
 **Status:** Partly tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles need testing)
 
@@ -11,9 +11,9 @@ and the **Motion Bed** app (`motion_bed`). This guide covers the codec first, th
 one section per profile. See [Protocol codecs and app profiles](../design/protocol-codecs.md)
 for the architecture.
 
-The apps overlap but do not share one feature set. A shared name, UUID or frame
-never selects another app's profile: each bed type and variant is chosen
-explicitly or by its own name rules.
+The apps overlap, but each has its own features. Each bed type and variant is
+chosen in setup or by its own Bluetooth name rules; a name another app also uses
+never switches you to that app's controls.
 
 ## Known Models
 
@@ -27,8 +27,8 @@ explicitly or by its own name rules.
 - Motion Bed modular products: TL-B motor module, TL-A air massage, TL-W thermal
   control and the TL-Q hub
 
-Bluetooth names such as `QMS-MQ` and `QMS2` are shared across these apps and do
-not identify which app's layout a bed implements.
+Bluetooth names such as `QMS-MQ` and `QMS2` are used by several of these apps,
+so the name does not tell which app's controls your bed needs.
 
 ## Apps
 
@@ -43,28 +43,28 @@ not identify which app's layout a bed implements.
 
 - Bedsense Bases (`com.ore.bedsense`) is a different app and wire format; see its
   [profile](keeson.md#ore-comfort-bed-profiles).
-- Motion Bed and Woosa Sleep share a developer (`com.sn` prefix). The Motion Bed
-  report is used only by its own profile, never for Solace routing.
+- Motion Bed and Woosa Sleep share a developer (`com.sn` prefix) but are separate
+  profiles; Motion Bed never changes the Solace routes.
 
 ## Features
 
 | Feature | Solace name routes | Woosa Sleep | BedSense | Motion Bed |
 |---------|--------------------|-------------|----------|------------|
-| Motor Control | ✅ Back and legs; head plus hip (K1) or lumbar (K2); bed height and tilt on exact S4-Y | ✅ Back and legs | ✅ Per layout: back, waist/hip, head, legs, back and leg, lift, rise and fall | ✅ The selected layout's exact control pairs, including split and coupled sides |
-| Position Feedback | ❌ (preset-state replies are not positions) | ❌ | ❌ | ⚠️ Raw positions A–D only (unknown units) |
-| Presets | ✅ Flat, Zero-G, Anti-Snore, TV on every identified route; relaxing bedtime on MotionFlex | ✅ Flat, Favourite, Anti-Snore, TV, Zero-G | ✅ Flat, TV, Zero Gravity, Anti Snore where the app exposes them | ✅ Named app presets with state-dependent recall and programming |
-| Memory Presets | ✅ 2 numbered slots | ✅ 1 Favourite slot, saves for four stored presets | ✅ Five recalls and saves, explicit clear buttons | ✅ App-labelled |
+| Motor Control | ✅ Back and legs; head plus hip (K1) or lumbar (K2); bed height and tilt on the S4-Y | ✅ Back and legs | ✅ Per layout: back, waist/hip, head, legs, back and leg, lift, rise and fall | ✅ Your layout's controls, including split and linked sides |
+| Position Feedback | ❌ | ❌ | ❌ | ⚠️ Raw positions A–D (units unknown) |
+| Presets | ✅ Flat, Zero-G, Anti-Snore, TV on every identified route (none on beds whose route is unknown); relaxing bedtime on MotionFlex | ✅ Flat, Favourite, Anti-Snore, TV, Zero-G | ✅ Flat, TV, Zero Gravity, Anti Snore where your layout has them | ✅ The app's named presets, recall and save |
+| Memory Presets | ✅ 2 numbered slots | ✅ 1 Favourite slot, saves for four stored presets | ✅ Five recalls and saves, plus clear buttons | ✅ As named in the app |
 | Massage | ⚠️ Home profiles only (zones, wave, K1 circulation, timers) | ✅ Back and leg levels 0–3, four modes, timers, steps, Off | ✅ Circulation (types 1–5), head/foot, wave, timers | ✅ Bed massage; TL-A air programs and pressure |
 | Lights | ⚠️ MotionFlex levels 0–10 and timers; timers only on HomeKobo and Sweet Night routes | ✅ Levels 0–10, timed lighting, Off | ⚠️ Light-duration buttons only | ✅ |
 | Audio, clock and alarm | ⚠️ MotionFlex | ⚠️ Alarm only | ❌ | ✅ |
 | Sleep, thermal and hub controls | ❌ | ❌ | ❌ | ✅ Sleep angles, calibration, timers, reports; TL-W thermal; TL-Q modules |
-| Wi-Fi provisioning and cloud | ❌ | ❌ | ❌ | ❌ Excluded (outside the product boundary) |
-| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ Legacy S4-Y and unidentified entries | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ (no renewable route) |
+| Wi-Fi provisioning and cloud | ❌ | ❌ | ❌ | ❌ |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ on the older S4-Y route and on beds whose route is unknown | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ |
 
 ## Choosing a profile
 
 - **Solace** (bed type `solace`, variant `auto`) picks the narrowest route its
-  Bluetooth name proves (see [Solace name routes](#solace-name-routes)). For
+  Bluetooth name allows (see [Solace name routes](#solace-name-routes)). For
   beds that use the Woosa Sleep app, answer **Woosa Sleep app** (variant
   `woosa`) in the [Solace question](#home-assistant-setup).
 - **BedSense** (bed type `bedsense`) is an explicit choice; its layout comes from
@@ -74,7 +74,7 @@ not identify which app's layout a bed implements.
 
 ### Home Assistant setup
 
-QMS and similar names are shared by several apps, so choosing the **Solace** row,
+QMS and similar names are shared by several apps, so choosing the **HomeKobo, Sealy MotionFlex and Sweet Night apps · Solace** row,
 or a bed detected as Solace, asks which app you use:
 
 | Answer | Route |
@@ -83,13 +83,13 @@ or a bed detected as Solace, asks which app you use:
 | Woosa Sleep app | [Woosa Sleep](#woosa-sleep), after a note on its own Favourite, massage, light and alarm controls |
 | Motion Bed app | [Motion Bed](#motion-bed), a separate bed type |
 | BedSense app | [BedSense](#bedsense), a separate bed type, then its layout |
-| I don't know: keep the detected controls | The detected or chosen route |
+| Keep the detected or saved controls | The detected or chosen route |
 
 The **Woosa Sleep app** row in the bed-type list answers the question itself and
 shows the same note. For an existing bed, open the entry's three-dot menu and
 **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
-**Keep** leaves the entry as it is. A Solace entry from before v5 on the name
+**Keep the detected or saved controls** leaves the entry as it is. A Solace entry from before v5 on the name
 routes is asked once, through a repair, whether it uses Woosa Sleep. A Solace
 route change has nothing to check:
 the controller never refuses a link, and Configure never checked one either. A
@@ -159,10 +159,10 @@ Both app startup workers, serialized; equal offsets keep their order.
 | 8 | back, rise_and_fall | 41 |
 | 9 | back, hip, lift, legs | 49 |
 
-### Motion Bed callsites
+### Motion Bed actions
 
-714 app callsites over 190 distinct frames, each gated by layout, module and
-state.
+714 app actions over 190 distinct frames; which ones appear depends on the layout,
+module and state.
 <!-- /generated -->
 
 ## Wire codec
@@ -536,7 +536,7 @@ name. Detection is limited to names beginning with the values below, plus
 - Two numbered memories ([Memory](#memory)). Programming sends the "while
   selected" branch when the slot is reported selected. Sweet Night's own Memory 2
   short press duplicates Memory 1; the integration sends the distinct Memory 2
-  frame proven by HomeKobo and MotionFlex.
+  frame that HomeKobo and MotionFlex send.
 - Home routes: head, foot and wave massage steps, stop and timers; K1 also has the
   four cycle modes ([Massage](#massage)). K2 shares the hip cycle frame with
   lumbar, so the cycle buttons are withheld there.
@@ -569,8 +569,8 @@ See [Timing](#timing). Presets are single writes without STOP.
 
 #### Evidence
 
-MotionFlex, HomeKobo and Sweet Night send only their frozen frames; Legacy S4-Y
-and Unverified send exactly the pre-v5 controller's frames. Useful
+Based on MotionFlex, HomeKobo and Sweet Night; Legacy S4-Y and Unverified send
+the pre-v5 controller's frames. Useful
 captures after release: one movement start and STOP per route, the five startup
 status replies, Flat and one named preset per route, and Sweet Night's Memory 2
 short press.
@@ -651,7 +651,7 @@ prove the hardware executed it.
 
 #### Evidence
 
-Woosa Sleep sends only its frozen frames. Useful captures after release: leg down versus Flat, the
+Based on Woosa Sleep. Useful captures after release: leg down versus Flat, the
 four preset save and recall paths, brightness, clock and alarm, and runtime GATT
 properties.
 
@@ -663,8 +663,9 @@ properties.
 
 #### Setup
 
-Detection: none. Select **BedSense app (com.fenmenbielei.bedsense)** in manual
-setup, then choose a layout or **BedSense layout from the Bluetooth name**. Auto
+Detection: none. Select **BedSense app** (`com.fenmenbielei.bedsense`) in manual
+setup, then choose a layout or **Automatic (recommended)**, which takes it from
+the Bluetooth name. Auto
 uses the original, case-sensitive name; a custom HA display name does not
 select the layout. The first matching rule wins:
 
@@ -685,11 +686,11 @@ select the layout. The first matching rule wins:
   to the last one. It writes without response when that property exists,
   otherwise with response.
 - The type 3 waist label reads HIP while pressed in the app; HA keeps the idle
-  label. Visible axes do not establish a physical motor count.
+  label. The axes shown do not tell how many motors the bed has.
 
 ##### Home Assistant setup
 
-Select **BedSense app (com.fenmenbielei.bedsense)** and a layout, or select its
+Select **BedSense app** and a layout, or **Automatic (recommended)** for its
 case-sensitive Bluetooth-name layout rule. Layout owns the motion controls;
 generic motor count, massage and angle-sensing choices are hidden. The original
 Bluetooth name and layout belong to each side of a two-address pair. There is no
@@ -708,11 +709,11 @@ lists the layouts that expose it.
   Zero Gravity and Anti Snore by the indicator. Types 6 and 8 replace slot 5
   with the special Flat Bed and have no slot-5 clear.
 - Circulation buttons on types 1-5 (type 3 has its own whole-body frame).
-- Massage steps and wave on every layout. The **Massage: Timer** select sends
+- Massage steps and wave on every layout. The **Massage timer** select sends
   the layout's timers, and its Off sends the cancel frame; choosing the running
   timer again keeps it. Step counters clamp at 0-3 (wave 0-4) but every tap
   writes.
-- Light durations only, as the **Light Timer** select: there is no proven off,
+- Light durations only, as the **Light timer** select: there is no off,
   brightness or colour command.
 - Memory indicators are queried on every connection; there is no refresh button.
 
@@ -909,7 +910,7 @@ Select the explicit **Motion Bed app** route and the original case-sensitive Blu
 - Named presets, massage, lighting, sync, audio and sleep controls are buttons or
   validated actions; diagnostics list the available action keys. Light
   brightness is the **Light brightness** number, the massage and light timers
-  are the **Massage: Timer** and **Light Timer** selects, and the night light,
+  are the **Massage timer** and **Light timer** selects, and the night light,
   smart sleep and the module light, massage, climate timer and adaptive air
   settings are switches where the layout has them. Entity
   identities follow the control's function, so a layout change keeps a shared
@@ -1012,7 +1013,7 @@ before any write; persistent changes need `confirmed: true`.
 
 | Action | Main fields |
 |---|---|
-| `motion_bed_action` | `action` from diagnostics; `branch` app/save/clear; movement `duration` in seconds |
+| `motion_bed_action` | `action`, a [control name](#control-names-for-motion_bed_action); `branch` app/save/clear; movement `duration` in seconds |
 | [`set_alarm`](../SERVICES.md#set_alarm) | `enabled`, `time`, `weekdays`, `wake_action` (`zero_g`, `memory_1`, `none`), `massage`, `sound` (music only on targets with audio). No `confirmed` needed |
 | [`sync_clock`](../SERVICES.md#sync_clock) | Sets the motor or thermal module clock to Home Assistant's time; a hub sets the clock of the module in use, so select the motor or heating module first. No `confirmed` needed |
 | `motion_bed_sleep_angles` | page 2/3/4, four `flat` and four `side_positions` raw values |
@@ -1038,10 +1039,50 @@ before any write; persistent changes need `confirmed: true`.
 - Pressure live edits bind their channel explicitly; whole pressure save is one
   47-byte frame.
 
+##### Control names for `motion_bed_action`
+
+A name is the app screen and the control, joined by underscores. The preset and
+movement screens carry your layout from the [Setup](#setup-3) table, in lower
+case: on a K2M / W2 bed the Flat preset is `kuaijie_k2mfragment_flat` and
+moving the back up is `weitiao_w2fragment_back_up`. On another layout, change
+`k2m` or `w2`, for example `kuaijie_k1fragment_flat` or
+`weitiao_w4fragment_legs_up`. Not every layout has every control; a name your
+layout lacks is refused before anything is sent.
+
+| Name | What it does |
+|---|---|
+| `kuaijie_k2mfragment_flat`, `kuaijie_k2mfragment_zero_gravity`, `kuaijie_k2mfragment_tv`, `kuaijie_k2mfragment_snore`, `kuaijie_k2mfragment_relax` | Flat, Zero Gravity, Watch TV, Anti-snore and Relax presets |
+| `kuaijie_k2mfragment_memory1`, `kuaijie_k2mfragment_memory2` | Recall memory 1 or 2. Sends nothing until the bed reports that slot as saved |
+| `kuaijie_k2mfragment_memory1_program`, `kuaijie_k2mfragment_memory2_program`, `kuaijie_k2mfragment_zero_gravity_program`, `kuaijie_k2mfragment_tv_program`, `kuaijie_k2mfragment_snore_program` | Save the current position to that preset (`branch: save`) or clear it (`branch: clear`); needs `confirmed: true` |
+| `kuaijie_k2mfragment_music`, `kuaijie_k2mfragment_audio_off`, `kuaijie_k2mfragment_audio_stop` | Sleep and music, stop audio, stop an audio preview (beds with audio) |
+| `kuaijie_k2mfragment_stop`, `kuaijie_k2mfragment_sync`, `kuaijie_k2mfragment_status` | Stop, Sync and refresh the preset state |
+| `weitiao_w2fragment_back_up`, `weitiao_w2fragment_back_down`, `weitiao_w2fragment_head_up`, `weitiao_w2fragment_head_down`, `weitiao_w2fragment_lumbar_up`, `weitiao_w2fragment_lumbar_down`, `weitiao_w2fragment_legs_up`, `weitiao_w2fragment_legs_down` | Move one part for `duration` seconds |
+| `weitiao_w2fragment_air_fullgxunhuan`, `weitiao_w2fragment_upperxunhuan`, `weitiao_w2fragment_lumbarxunhuan`, `weitiao_w2fragment_legsxunhuan` | The app's Full, Head, Lumbar and Leg cycle buttons |
+| `weitiao_w2fragment_stop`, `weitiao_w2fragment_sync` | Stop and Sync on the movement screen |
+| `massage_fragment_massage_upper_increase`, `massage_fragment_massage_upper_decrease`, `massage_fragment_massage_lower_increase`, `massage_fragment_massage_lower_decrease`, `massage_fragment_massage_wave_increase`, `massage_fragment_massage_wave_decrease` | Back and leg massage strength and massage wave |
+| `massage_fragment_10time`, `massage_fragment_20time`, `massage_fragment_30time` | Start a 10, 20 or 30 minute massage timer; the name of the timer that is already running cancels it |
+| `light_fragment_brightness_0` to `light_fragment_brightness_10` | Light brightness, 0 (off) to 10 |
+| `light_fragment_tv_10fenzhong`, `light_fragment_tv_8xiaoshi`, `light_fragment_tv_10xiaoshi` | Light timer of 10 minutes, 8 hours or 10 hours |
+| `smart_sleep_fragment_sleepmian`, `smart_sleep_fragment_night_light` | Smart sleep and smart light on or off |
+| `sleep_adjust_activity_adjust_head_up`, `sleep_adjust_activity_adjust_back_up`, `sleep_adjust_activity_adjust_legs_up`, `sleep_adjust_activity_adjust_lumbar_up`, the matching `_down` names, `sleep_adjust_activity_stop` | Sleep-adjustment moves and stop |
+| `sleep_data_entry_activity_calibration_flat_position`, `sleep_data_entry_activity_calibration_next_position` | Move to the calibration positions |
+| `sleep_data_entry_activity_reset_calibration` | Reset calibration; needs `confirmed: true` |
+| `alarm_activity_audio_preview_1` to `alarm_activity_audio_preview_5`, `alarm_activity_audio_stop` | Preview an alarm sound, or stop the preview |
+
+Other layouts name a few controls after the app, such as
+`kuaijie_k1fragment_yujia` (yoga) or `weitiao_w12fragment_wholelift_up`. Split
+layouts (K4, K5, W7, W8) name their sides differently from layout to layout, for
+example `kuaijie_k4fragment_split_flat_left`,
+`kuaijie_k4fragment_coupled_zero_gravity`,
+`weitiao_w7fragment_split_back_left_up` and `weitiao_w8fragment_split_legs_up`.
+The modular TL-Q hub, TL-A air, TL-B motor and TL-W thermal products have their
+own names. For those, download the bed's diagnostics: it lists every name the
+bed accepts.
+
 #### Evidence
 
-Motion Bed sends only its frozen frames. Its Wi-Fi provisioning and cloud
-controls are out of scope.
+Based on Motion Bed. Its Wi-Fi provisioning and cloud controls are not
+supported.
 
 ### Sophie
 
@@ -1058,7 +1099,7 @@ controls are out of scope.
 Two motors and massage are fixed, and **Read bed position** is off. When you
 combine two beds, each side keeps its own name.
 
-Choose **Solace → Sophie app** explicitly. Shared names and FFE1 do not identify
+Choose **Sophie app · Solace** explicitly. Shared names and FFE1 do not identify
 this app. Keep the actual Bluetooth name in setup: it selects the saved-query
 route, alarm modes and alarm-massage gate independently. Name punctuation is
 normalized as the app does before these feature checks.
@@ -1084,7 +1125,7 @@ the matching **… position saved** binary sensors. Home Assistant exposes confi
 instead of delayed Android long-press callbacks that can survive cancellation.
 
 Massage has head and foot minus/plus, wave minus/plus and three timers. Selecting
-an already selected massage timer sends the reachable timer deselect/stop frame.
+an already selected massage timer sends the app's timer deselect/stop frame.
 The minus/plus labels describe app intent; physical stepping still needs testing.
 Brightness uses the shared literal levels after a brightness reply; the
 brightness query is part of every connection's startup. Light timers are receiver commands;
@@ -1092,7 +1133,7 @@ Home Assistant does not invent countdown tasks or periodic writes.
 
 The app's movement / massage header action (STOP's body with a different
 trailer) has no effect and is not exposed. Use the normal motor STOP for
-release. Bed synchronization is the **Controller Sync** switch. The shared movement, massage and lighting command tables above
+release. Bed synchronization is the **Controller sync** switch. The shared movement, massage and lighting command tables above
 apply to Sophie; the additional rows and exact startup offsets follow.
 
 <!-- generated:sophie -->
@@ -1173,7 +1214,7 @@ sides). QMS2 has no alarm massage. Every target is checked before any is
 written. The side-specific wake actions apply only to the alarm, and do not
 enable normal movement addressing.
 `adjustable_bed.sync_clock` sends the local Home Assistant clock. The
-**Controller Sync** switch (disabled by default) sends on/off only after the bed
+**Controller sync** switch (disabled by default) sends on/off only after the bed
 reports synchronization support. Its state resets to unknown on disconnect and
 updates after a report or a successful command.
 

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Final
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...card import (
     CARD_LIGHT_LEVEL,
@@ -29,7 +30,7 @@ from ...const import (
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
 )
-from ...controller_state import AnyStateKey, StateKey
+from ...controller_state import AnyStateKey, StateKey, StateUpdate
 from ...profiles.okin_nframe import (
     STARCODE_ABM5_4_FLAT_HOLD_MS,
     STARCODE_ABM5_4_PROFILES,
@@ -48,6 +49,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
+    massage_timer_sensor_spec,
 )
 from .abm5_4_profiles import (
     FIRMWARE_UUID,
@@ -105,7 +107,7 @@ def _controller(controller: BedController) -> StarcodeAbm5_4Controller:
     if not isinstance(target, StarcodeAbm5_4Controller):
         raise TypeError("Requires an AdjustableM5X4 profile")
     if controller.command_side is not None:
-        raise ValueError("This app has no one-address side selector")
+        raise ValueError("This bed has no sides. Leave out the side")
     return target
 
 
@@ -121,7 +123,7 @@ async def _brightness(controller: BedController, value: float) -> None:
 
 
 type _Value = str | int | bool | None
-MASSAGE_TIMER: Final = StateKey[str | None]("starcode_abm5_4_massage_timer")
+MASSAGE_TIMER: Final = StateKey[int | None]("starcode_abm5_4_massage_timer")
 LIGHT_LEVEL: Final = StateKey[int | None]("starcode_abm5_4_light_level")
 
 
@@ -325,6 +327,15 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         return self.ui_selector in ("BOX25", "BOX25_STAR") and self._transport.subscribe
 
     @property
+    def supports_discrete_light_control(self) -> bool:
+        """The app's dedicated on and off buttons, where it shows them."""
+        return self._native_light_power_buttons
+
+    @property
+    def light_state_is_assumed(self) -> bool:
+        return self._native_light_power_buttons
+
+    @property
     def supports_massage(self) -> bool:
         return True
 
@@ -420,8 +431,6 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             "save_zero_g",
             "reset",
         )
-        if self._native_light_power_buttons:
-            actions += ("light_on", "light_off")
         saves = {
             "save_tv": "Save TV position",
             "save_lounge": "Save lounge position",
@@ -433,12 +442,10 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 saves.get(action, action.replace("_", " ").title()),
                 _button(action),
                 translation_key="starcode_abm5_4_" + action,
-                cancel_movement=action not in ("light_plus", "light_minus", "light_on", "light_off"),
-                scheduler_resource="lighting"
-                if action in ("light_plus", "light_minus", "light_on", "light_off")
-                else None,
+                cancel_movement=action not in ("light_plus", "light_minus"),
+                scheduler_resource="lighting" if action in ("light_plus", "light_minus") else None,
                 card=CARD_LIGHTING
-                if action in ("light_plus", "light_minus", "light_on", "light_off")
+                if action in ("light_plus", "light_minus")
                 else CARD_PRESET_SAVE
                 if action.startswith("save_")
                 else CARD_UTILITY,
@@ -477,23 +484,30 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         # Raw fields and selectors stay in diagnostics; the timer select and
         # number show the timer and light level where the bed accepts them.
         positive = self.command_selector in _POSITIVE_SELECTORS
-        keys: tuple[tuple[str, bool], ...] = (
-            ("manufacturer", False),
-            ("firmware", False),
-            ("wave", True),
-            ("head_intensity", True),
+        keys: tuple[tuple[str, str], ...] = (
+            ("manufacturer", "mdi:factory"),
+            ("firmware", "mdi:chip"),
+            ("wave", "mdi:waveform"),
+            ("head_intensity", "mdi:vibrate"),
         )
         if not positive:
-            keys += (("massage_timer", True), ("light_level", True))
+            keys += (("massage_timer", ""), ("light_level", "mdi:brightness-6"))
         return tuple(
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
+                "starcode_abm5_4_massage_timer", "starcode_abm5_4_massage_timer", MASSAGE_TIMER
+            )
+            if key == "massage_timer"
+            else ControllerStateSensorSpec(
                 "starcode_abm5_4_" + key,
                 "starcode_abm5_4_" + key,
                 _state_key(key),
-                "mdi:information-outline",
-                entity_registry_enabled_default=enabled,
+                icon,
+                # Firmware and manufacturer are diagnostics; the rest is bed state.
+                entity_registry_enabled_default=dashboard,
+                entity_category=None if dashboard else EntityCategory.DIAGNOSTIC,
             )
-            for key, enabled in keys
+            for key, icon in keys
+            for dashboard in (key not in ("manufacturer", "firmware"),)
         )
 
     @property
@@ -540,7 +554,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         response: bool | None = None,
     ) -> None:
         if self.command_side is not None:
-            raise ValueError("This app has no one-address side selector")
+            raise ValueError("This bed has no sides. Leave out the side")
         target = client or self.client
         if (
             target is None
@@ -678,17 +692,17 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         if self.command_selector not in _POSITIVE_SELECTORS or not (
             self._light_on if light else self._massage_on
         ):
-            raise ValueError("The app requires observed own-address active state for this control")
+            raise ValueError("Turn on the light or massage first, on a bed model that has it, then try again")
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if self.command_side is not None:
-            raise ValueError("This app has no one-address side selector")
+            raise ValueError("This bed has no sides. Leave out the side")
         if (
             control not in self.held_control_options
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Unsupported app held control or duration")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
         if control in _MASSAGE:
             self._require_positive()
 
@@ -729,10 +743,6 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             await self.release_massage()
         elif action in ("union_up", "union_down"):
             await self.hold_control(action, self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
-        elif action == "light_on":
-            await self.lights_on()
-        elif action == "light_off":
-            await self.lights_off()
         elif action in ("light_plus", "light_minus"):
             await self._light_step(1 if action == "light_plus" else -1)
         elif action == "reset":
@@ -740,7 +750,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         elif action.startswith("save_") and action[5:] in _SAVES:
             await self._stream(_SAVES[action[5:]], STARCODE_ABM5_4_SAVE_HOLD_MS, release="preset")
         else:
-            raise ValueError("Unreachable app action")
+            raise ValueError("This bed does not offer that action")
 
     async def release_massage(self) -> None:
         """A disabled custom hit still schedules STOP100ms and query300ms."""
@@ -766,7 +776,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
     async def set_app_timer(self, option: str) -> None:
         self._require_positive()
         if option not in ("10", "20", "30"):
-            raise ValueError("App timer has only 10/20/30 minutes, no Off frame")
+            raise ValueError("Choose a timer of 10, 20 or 30 minutes. This bed cannot turn the timer off")
         await self._once("changeMassageTime", int(option) // 10, massage_release=True)
 
     async def set_app_brightness(self, value: float) -> None:
@@ -777,9 +787,9 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             or isinstance(value, float)
             and not value.is_integer()
         ):
-            raise ValueError("Brightness is an exact integer app level")
+            raise ValueError("Choose a whole-number brightness")
         if not 1 <= value <= 6:
-            raise ValueError("Brightness is outside 1..6")
+            raise ValueError("Choose a brightness from 1 to 6")
         if not self._accept_light_action():
             return
         self._level = int(value)
@@ -800,7 +810,8 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             return
         level = min(6, self._level + 1) if direction > 0 else self._level - 1
         if level <= 0:
-            await self._once("turnoffUnderbedLighting")
+            with self.sent_state(*self._assumed_light(False)):
+                await self._once("turnoffUnderbedLighting")
         else:
             if self.command_selector not in _POSITIVE_SELECTORS:
                 level = 2
@@ -810,13 +821,19 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         self._operation_generation += 1
         await self._send(build_frame(self.command_selector, "stop"), asyncio.Event())
 
+    def _assumed_light(self, on: bool) -> tuple[StateUpdate, ...]:
+        """What the assumed on/off light shows; a reporting bed shows only its reports."""
+        return (UNDER_BED_LIGHTS_ON(on),) if self._native_light_power_buttons else ()
+
     async def lights_on(self) -> None:
         if self._accept_light_action():
-            await self._once("turnonUnderbedLighting")
+            with self.sent_state(*self._assumed_light(True)):
+                await self._once("turnonUnderbedLighting")
 
     async def lights_off(self) -> None:
         if self._accept_light_action():
-            await self._once("turnoffUnderbedLighting")
+            with self.sent_state(*self._assumed_light(False)):
+                await self._once("turnoffUnderbedLighting")
 
     async def lights_toggle(self) -> None:
         if self._accept_light_action():
@@ -873,12 +890,12 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
 
     async def preset_memory(self, memory_num: int = 1) -> None:
         if memory_num != 1:
-            raise ValueError("Both app memory images recall only Memory A")
+            raise ValueError("This bed has only memory position A (1)")
         await self.hold_control("memory_1", self._coordinator.motor_pulse_count * STARCODE_ABM5_4_REFRESH_MS)
 
     async def program_memory(self, memory_num: int = 1) -> None:
         if memory_num != 1:
-            raise ValueError("Only Memory A save is reachable")
+            raise ValueError("This bed can save only memory position A (1)")
         await self._stream("saveM1", STARCODE_ABM5_4_SAVE_HOLD_MS, release="stop")
 
     async def stop_all(self) -> None:
@@ -962,7 +979,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         )
         self.forward_controller_state_updates(
             *(_field_key(k)(v) for k, v in values.items()),
-            MASSAGE_TIMER(str(self._timer_index * 10) if self._timer_index else None),
+            MASSAGE_TIMER(self._timer_index * 10 if self._ui_state_observed else None),
             MASSAGE_TIMER_MINUTES(self._timer_index * 10 if self._timer_index else None),
             LIGHT_LEVEL(self._level),
             *(

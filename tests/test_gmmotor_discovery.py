@@ -6,9 +6,9 @@ import pytest
 
 from custom_components.adjustable_bed.beds.gmmotor.discovery import (
     resolve_selection,
-    scan_name_matches,
     selector_from_name,
 )
+from custom_components.adjustable_bed.discovery_hints.gmmotor import SCAN
 
 
 def test_app_discovery_offers_explicit_choice_and_preserves_existing_receiver():
@@ -47,11 +47,11 @@ def test_confirmed_companion_app_is_not_replaced_by_a_shared_receiver_name(bed_t
 
 
 def test_scan_filter_remains_case_sensitive_substring() -> None:
-    assert scan_name_matches("prefix-MlRM-bed")
-    assert not scan_name_matches("prefix-mlrm-bed")
-    assert scan_name_matches("BED-unknown")
-    assert scan_name_matches("X6BRM123")
-    assert not scan_name_matches("unknown")
+    assert SCAN.matches_name("prefix-MlRM-bed")
+    assert not SCAN.matches_name("prefix-mlrm-bed")
+    assert SCAN.matches_name("BED-unknown")
+    assert SCAN.matches_name("X6BRM123")
+    assert not SCAN.matches_name("unknown")
 
 
 @pytest.mark.parametrize(

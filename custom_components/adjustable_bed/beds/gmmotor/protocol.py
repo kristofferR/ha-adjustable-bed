@@ -23,17 +23,22 @@ class Material:
     long_override: int | None = None
     single_override: int | None = None
 
+    def code(self, *, single: bool, long: bool = False) -> int:
+        """The command byte a press sends, with this product's overrides."""
+        if long:
+            return self.long_override if self.long_override is not None else self.long_opcode or 0
+        code = self.short_override if self.short_override is not None else self.opcode
+        if single and self.single_override is not None:
+            code = self.single_override
+        return code
+
     def packet(self, *, side: int, single: bool, long: bool = False) -> bytes:
         """Build a common command after caller/gesture admission."""
         if side not in (0, 1, 2):
             raise ValueError("GM Control side must be left, right or both")
-        if long:
-            code = self.long_override if self.long_override is not None else self.long_opcode or 0
-        else:
-            code = self.short_override if self.short_override is not None else self.opcode
-            if single and self.single_override is not None:
-                code = self.single_override
-        return codec.function(code, side, action=self.name, single=single)
+        return codec.function(
+            self.code(single=single, long=long), side, action=self.name, single=single
+        )
 
 
 def stop_packet(*, side: int, single: bool) -> bytes:
