@@ -397,6 +397,23 @@ _AXIS_ORDER: Final[dict[str, int]] = {
 }
 
 
+def advertises_pairing_window(advertisement: bytes | None) -> bool:
+    """Return whether a raw advertisement sets the LE limited discoverable flag.
+
+    A controller sets it for the first 3 minutes after power-on, while it
+    accepts and pairs any adapter. Afterwards it advertises flags ``0x04``.
+    """
+    index = 0
+    while advertisement and index + 2 < len(advertisement):
+        length = advertisement[index]
+        if length == 0:
+            break
+        if advertisement[index + 1] == 0x01 and length >= 2:
+            return bool(advertisement[index + 2] & 0x01)
+        index += length + 1
+    return False
+
+
 def build_simultaneous_command(
     first_axis: str,
     first_up: bool,
