@@ -2352,8 +2352,6 @@ async def _timed(awaitable: Awaitable[Any], recorder: Recorder, clock: FakeClock
         if recorder.events:
             return {"status": "not_implemented", "writes": _collapse(recorder.events)}
         return {"status": "unsupported"}
-    except asyncio.CancelledError:
-        return {"status": "cancelled", "writes": _collapse(recorder.events)}
     except TimeoutError:
         return {"status": "timeout", "writes": _collapse(recorder.events)}
     except Exception as err:  # noqa: BLE001 - recorded, not hidden

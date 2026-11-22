@@ -323,12 +323,12 @@ async def test_real_setup_uses_advertised_identity_without_default(hass):
     ],
 )
 def test_actual_discovery_admission(name, services, expected):
-    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.detection import detect_new_bed
 
     info = MagicMock()
     info.name, info.service_uuids, info.manufacturer_data = name, services, {89: b"\x01"}
     info.advertisement = SimpleNamespace(local_name=name)
-    result = detect_bed_type_detailed(info)
+    result = detect_new_bed(info)
     assert ("relax_motion" in (result.ambiguous_types or ())) is expected
 
 
@@ -940,12 +940,12 @@ async def test_cross_app_change_rejects_old_controller_and_keeps_cleanup(clock):
 
 
 def test_real_ble_name_fallback_does_not_admit_or_seed_a_model():
-    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.detection import detect_new_bed
     from custom_components.adjustable_bed.setup_questions import setup_profile
 
     info = real_advertisement(None)
     assert info.name and info.advertisement.local_name is None
-    result = detect_bed_type_detailed(info)
+    result = detect_new_bed(info)
     assert "relax_motion" not in (result.ambiguous_types or ())
     profile = setup_profile("relax_motion")
     assert profile.seed is not None
@@ -994,16 +994,21 @@ async def test_cross_app_selection_drops_previous_apps_model(hass, discovered, e
 
 
 def test_a_configured_remacro_bed_is_not_asked_about_relax_motion(hass):
-    """The shared service makes new setups ask; it raises nothing on a bed already set up."""
-    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    """The shared service makes new setups ask; a bed already set up is reviewed as before."""
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed, detect_new_bed
     from custom_components.adjustable_bed.profile_recommendations import recommend_profile
     from custom_components.adjustable_bed.profile_review import suggested_apps
 
     info = real_advertisement("Motion")
-    detected = detect_bed_type_detailed(info)
-    assert detected.bed_type == "remacro" and "relax_motion" in detected.ambiguous_types
+    offered = detect_new_bed(info)
+    assert offered.bed_type == "remacro" and offered.confidence == 0.5
+    assert "relax_motion" in offered.ambiguous_types
+    reviewed = detect_bed_type_detailed(info)
+    assert reviewed.bed_type == "remacro" and reviewed.confidence == 1.0
+    assert "relax_motion" not in (reviewed.ambiguous_types or ())
     data = {"bed_type": "remacro", "address": info.address}
-    assert recommend_profile(data, info, {}) is None
+    recommendation = recommend_profile(data, info, {})
+    assert recommendation is None or "relax_motion" not in recommendation.choices
     with patch(
         "custom_components.adjustable_bed.profile_review._last_service_info", return_value=info
     ):
