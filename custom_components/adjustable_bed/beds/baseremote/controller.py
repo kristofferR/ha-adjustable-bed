@@ -12,9 +12,17 @@ from typing import TYPE_CHECKING, Final
 
 from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CardRole, CardSection, motor_card
+from ...card import (
+    CARD_HIDDEN,
+    CARD_LIGHTING,
+    CARD_UTILITY,
+    CardRole,
+    CardSection,
+    motor_card,
+)
 from ...command_scheduler import current_command_context, note_frame_skipped
 from ...controller_state import StateKey
 from ...errors import failed, invalid
@@ -31,7 +39,7 @@ from ...profiles.baseremote import (
     TAP_RELEASE_MS,
     sender_interval,
 )
-from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..cancellation import settled
 from ..catalog_buttons import Kind, catalog_button, classify, on_off_switch, unique_buttons
@@ -92,7 +100,6 @@ async def _stop_subscription(client: BleakClient, characteristic: BleakGATTChara
 
 
 LAMP_TIMEOUT: Final = StateKey[int | None]("baseremote_lamp_timeout")
-MASSAGE_TIMER: Final = StateKey[str | None]("baseremote_massage_timer")
 AROMA_ON_TIME: Final = StateKey[int | None]("baseremote_aroma_on_time")
 AROMA_INTERVAL: Final = StateKey[int | None]("baseremote_aroma_interval")
 AROMA_PAUSE: Final = StateKey[int | None]("baseremote_aroma_pause")
@@ -209,28 +216,38 @@ class BaseRemoteController(SessionController):
         return tuple(keys)
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+    def _massage_timer_values(self) -> dict[int, int | str]:
+        """What each timer choice sends, by its minutes (0 is off)."""
         if self._group_only:
-            return ()
-        if self.layout not in ("D1RM", "D9RM") and not any(c.tag == "65" for c in self._controls):
-            return ()
+            return {}
+        if self.layout in ("D1RM", "D9RM"):
+            return {0: 0, 15: 2, 30: 3, 45: 5}
+        if any(c.tag == "65" for c in self._controls):
+            # The popup's on/off row is a toggle, never an idempotent off.
+            return {15: "15", 30: "30", 45: "45"}
+        return {}
 
-        async def selected(controller: BedController, value: str) -> None:
-            assert isinstance(controller, BaseRemoteController)
-            await controller.async_massage_timer(value)
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_values)
 
-        return (
-            ControllerSelectSpec(
-                "baseremote_massage_timer",
-                "baseremote_massage_timer",
-                MASSAGE_TIMER,
-                ("off", "15_minutes", "30_minutes", "45_minutes")
-                if self.layout in ("D1RM", "D9RM")
-                else ("15_minutes", "30_minutes", "45_minutes"),
-                selected,
-                card=CARD_MASSAGE,
-            ),
-        )
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows the layout's massage timer.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(minutes for minutes in self._massage_timer_values if minutes)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return 0 in self._massage_timer_values
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        # The massage timer is the shared timer select.
+        return ()
 
     def _publish(self) -> None:
         # The state event also discovers newly proven light/aroma entities.
@@ -241,7 +258,7 @@ class BaseRemoteController(SessionController):
         self._rejection = None
         self.forward_controller_state_updates(
             LAMP_TIMEOUT(None),
-            MASSAGE_TIMER(None),
+            MASSAGE_TIMER_MINUTES(None),
             AROMA_ON_TIME(None),
             AROMA_INTERVAL(None),
             AROMA_PAUSE(None),
@@ -927,21 +944,13 @@ class BaseRemoteController(SessionController):
             for mode in (0,) if session.wire == "RAW" else self._model.modes:
                 await self._release(HELD_RELEASE_MS, mode=mode)
 
-    async def async_massage_timer(self, value: str) -> None:
-        if self._group_only:
+    async def set_massage_timer(self, minutes: int) -> None:
+        value = self._massage_timer_values.get(minutes)
+        if value is None:
             raise invalid("baseremote_control")
-        progress = {"off": 0, "15_minutes": 2, "30_minutes": 3, "45_minutes": 5}
-        if value not in progress or value == "off" and self.layout not in ("D1RM", "D9RM"):
-            raise invalid("baseremote_control")
-        if self.layout in ("D1RM", "D9RM"):
-            packet = massage_timer(self.layout, progress[value])
-        elif any(c.tag == "65" for c in self._controls):
-            packet = massage_popup(
-                {"off": "toggle", "15_minutes": "15", "30_minutes": "30", "45_minutes": "45"}[value]
-            )
-        else:
-            raise invalid("baseremote_control")
-        with self._transaction(), self.sent_state(MASSAGE_TIMER(value)):
+        packet = massage_timer(self.layout, value) if isinstance(value, int) else massage_popup(value)
+        # The bed reports no timer.
+        with self._transaction(), self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
             await self.write_command(packet)
 
     @property
@@ -1013,6 +1022,10 @@ class BaseRemoteController(SessionController):
                         1,
                         aroma_time,
                         unit,
+                        card=CARD_UTILITY,
+                        # A setting, not a dashboard control.
+                        entity_registry_enabled_default=False,
+                        entity_category=EntityCategory.CONFIG,
                     )
                 )
         return tuple(specs)

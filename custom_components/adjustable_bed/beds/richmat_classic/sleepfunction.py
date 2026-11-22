@@ -35,7 +35,7 @@ from ...profiles.sleepfunction import (
     MASSAGE_CODES,
     PICKER_LAYOUTS,
 )
-from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..cancellation import cancellable, settled
 from ..catalog_buttons import catalog_button, unique_buttons
@@ -78,7 +78,6 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 LIGHT_ON: Final = UNDER_BED_LIGHTS_ON
-TIMER_CHOICE: Final = StateKey[str | None]("sleepfunction_timer_choice")
 SETTINGS_REPLY_TIMEOUT: Final = 2.0
 
 
@@ -327,7 +326,7 @@ class SleepFunctionController(ResourceBedController):
         if self._owns_state():
             self.forward_controller_state_updates(
                 *(_value_key(k)(None) for k in self._values),
-                TIMER_CHOICE(None),
+                MASSAGE_TIMER_MINUTES(None),
                 UNDER_BED_LIGHTS_RGB(None),
             )
         self._values.clear()
@@ -747,48 +746,48 @@ class SleepFunctionController(ResourceBedController):
         )
 
     @property
+    def _massage_timer_values(self) -> dict[int, int | str]:
+        """What each timer choice sends, by its minutes (0 is off)."""
+        if self.layout in ("D1RM", "D9RM"):
+            return {0: 0, 10: 2, 20: 3, 30: 5}
+        if any(c.tag == "65" for c in self._controls):
+            # The popup's on/off row is a toggle, never an idempotent off.
+            return {15: "15", 30: "30", 45: "45"}
+        return {}
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_values)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows the layout's massage timer.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(minutes for minutes in self._massage_timer_values if minutes)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return 0 in self._massage_timer_values
+
+    @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        if self.layout not in ("D1RM", "D9RM") and not any(c.tag == "65" for c in self._controls):
-            return ()
+        # The massage timer is the shared timer select.
+        return ()
 
-        async def timer(c: BedController, value: str) -> None:
-            if not isinstance(c, SleepFunctionController) or c.layout != self.layout:
-                raise invalid("sleepfunction_control")
-            if self.layout in ("D1RM", "D9RM"):
-                with c.sent_state(TIMER_CHOICE(value)):
-                    await c._setting(
-                        "massage_timer",
-                        {"off": 0, "ten_minutes": 2, "twenty_minutes": 3, "thirty_minutes": 5}[
-                            value
-                        ],
-                    )
-            else:
-                with c._transaction(), c.sent_state(TIMER_CHOICE(value)):
-                    await c.write_command(
-                        massage_popup(
-                            {
-                                "off": "toggle",
-                                "fifteen_minutes": "15",
-                                "thirty_minutes": "30",
-                                "forty_five_minutes": "45",
-                            }[value]
-                        )
-                    )
-
-        options = (
-            ("off", "ten_minutes", "twenty_minutes", "thirty_minutes")
-            if self.layout in ("D1RM", "D9RM")
-            else ("off", "fifteen_minutes", "thirty_minutes", "forty_five_minutes")
-        )
-        return (
-            ControllerSelectSpec(
-                "sleepfunction_massage_timer",
-                "sleepfunction_massage_timer",
-                TIMER_CHOICE,
-                options,
-                timer,
-            ),
-        )
+    async def set_massage_timer(self, minutes: int) -> None:
+        value = self._massage_timer_values.get(minutes)
+        if value is None:
+            raise invalid("sleepfunction_control")
+        # The bed reports no timer.
+        if isinstance(value, int):
+            with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+                await self._setting("massage_timer", value)
+        else:
+            with self._transaction(), self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+                await self.write_command(massage_popup(value))
 
     def controller_button_available(self, key: str) -> bool:
         return key == "richmat_classic_release" or any(

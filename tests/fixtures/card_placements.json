@@ -3535,9 +3535,6 @@
  "select:adjustamattress_strength_setting": {
   "card_section": "utility"
  },
- "select:baseremote_massage_timer": {
-  "card_section": "massage"
- },
  "select:bedsmart_side": {
   "card_section": "motors"
  },
@@ -3705,9 +3702,6 @@
   "card_section": "massage"
  },
  "select:ruf_richmat_sleep_mode": {
-  "card_section": "utility"
- },
- "select:sleepfunction_massage_timer": {
   "card_section": "utility"
  },
  "select:sleeptracker_left_curve": {

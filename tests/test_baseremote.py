@@ -456,12 +456,12 @@ async def test_configuration_only_receiver_rejects_a_previously_created_timer():
     from tests.error_helpers import raises_key
 
     ctrl, coordinator = controller("D1RM")
-    spec = ctrl.controller_select_specs[0]
+    assert ctrl.supports_massage_timer
     ctrl._group_only = True
-    assert ctrl.controller_select_specs == ()
+    assert not ctrl.supports_massage_timer
     assert not ctrl.supports_lights
     with raises_key("baseremote_control"):
-        await spec.select_fn(ctrl, "15_minutes")
+        await ctrl.set_massage_timer(15)
     assert packets(coordinator) == []
 
 
@@ -585,3 +585,33 @@ async def test_group_does_not_report_success_when_the_link_stays_open():
     with virtual_clock(), raises_key("baseremote_group_disconnect"):
         await ctrl.async_group("1234")
     assert packets(coordinator) == [b"AT+GROUP1234\r\n".hex()]
+
+
+@pytest.mark.parametrize("layout", ["D1RM", "D9RM"])
+async def test_massage_timer_is_the_shared_select_with_a_real_off(layout):
+    from custom_components.adjustable_bed.beds.richmat_classic.protocol import massage_timer
+    from tests.error_helpers import raises_key
+
+    ctrl, coordinator = controller(layout)
+    assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
+    assert ctrl.massage_timer_options == [15, 30, 45] and ctrl.massage_timer_can_turn_off
+    assert ctrl.controller_select_specs == ()
+    for minutes, progress in ((0, 0), (15, 2), (30, 3), (45, 5)):
+        coordinator.client.write_gatt_char.reset_mock()
+        await ctrl.set_massage_timer(minutes)
+        assert packets(coordinator) == [massage_timer(layout, progress).hex()]
+    with raises_key("baseremote_control"):
+        await ctrl.set_massage_timer(10)
+
+
+def test_aroma_times_are_settings_that_start_disabled():
+    from homeassistant.const import EntityCategory
+
+    ctrl, _ = controller("D1RM")
+    ctrl._receive.aroma_capable = True
+    aroma = [s for s in ctrl.controller_number_specs if "aroma" in s.key]
+    assert len(aroma) == 3
+    assert all(
+        not s.entity_registry_enabled_default and s.entity_category is EntityCategory.CONFIG
+        for s in aroma
+    )
