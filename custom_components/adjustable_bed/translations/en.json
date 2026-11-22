@@ -3569,6 +3569,75 @@
       "bedsmart_query": {
         "name": "Refresh bed features"
       },
+      "baseremote_m0_motor_1_and_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_and_2_once_up": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_and_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_up": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_1_up_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_2_up_1_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_3_and_4_tilt_down": {
+        "name": "{action}"
+      },
+      "baseremote_m0_motor_3_and_4_tilt_up": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_1_and_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_1_and_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_1_down": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_1_up": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m1_motor_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_1_and_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_1_and_2_up": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_1_down": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_1_up": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_2_down": {
+        "name": "{action}"
+      },
+      "baseremote_m2_motor_2_up": {
+        "name": "{action}"
+      },
       "sleepfunction_scoped_head_feet_down": {
         "name": "{action}"
       },
@@ -5391,6 +5460,9 @@
       "sealy_massage": {
         "name": "Massage"
       },
+      "baseremote_switch": {
+        "name": "{action}"
+      },
       "sleepfunction_switch": {
         "name": "{action}"
       },
@@ -6003,6 +6075,18 @@
       },
       "jerome_massage_intensity": {
         "name": "Massage intensity"
+      },
+      "baseremote_lamp_timeout": {
+        "name": "Light timeout"
+      },
+      "baseremote_aroma_on_time": {
+        "name": "Aromatherapy continuous time"
+      },
+      "baseremote_aroma_interval": {
+        "name": "Aromatherapy intermittent time"
+      },
+      "baseremote_aroma_pause": {
+        "name": "Aromatherapy pause"
       },
       "sleepfunction_lamp_timeout": {
         "name": "Light timeout"
@@ -6687,17 +6771,6 @@
           "mode_1": "Mode 1",
           "mode_2": "Mode 2",
           "mode_3": "Mode 3"
-        }
-      },
-      "sleepfunction_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "off": "Off",
-          "ten_minutes": "10 minutes",
-          "twenty_minutes": "20 minutes",
-          "thirty_minutes": "30 minutes",
-          "fifteen_minutes": "15 minutes",
-          "forty_five_minutes": "45 minutes"
         }
       },
       "bedsmart_side": {
@@ -10007,6 +10080,32 @@
         }
       }
     },
+    "baseremote_settings": {
+      "name": "Base Remote: color and receiver group",
+      "description": "Sets the light color of a Base Remote bed, or changes the Bluetooth group stored in its receiver. The receiver does not confirm a group change and disconnects afterwards.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "One or more beds to control."
+        },
+        "operation": {
+          "name": "Setting",
+          "description": "What to change."
+        },
+        "rgb_color": {
+          "name": "Light color",
+          "description": "Required for Set light color: the color."
+        },
+        "group": {
+          "name": "Group",
+          "description": "Required for Set Bluetooth group: exactly four printable characters."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed to use. Leave unset for the whole bed, or the side of the device you selected."
+        }
+      }
+    },
     "sleepfunction_settings": {
       "name": "SleepFunction: set fan and aroma",
       "description": "Sets the head fan, foot fan or aroma of a SleepFunction bed. The app sends no foot fan time, so the bed keeps its own.",
@@ -10631,6 +10730,24 @@
     },
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "baseremote_layout": {
+      "message": "Choose a bed layout. Desk, manufacturing and test layouts are excluded."
+    },
+    "baseremote_control": {
+      "message": "Choose a control available on this bed layout and Bluetooth connection."
+    },
+    "baseremote_alarm": {
+      "message": "Choose an alarm action and massage combination offered by this bed layout."
+    },
+    "baseremote_group": {
+      "message": "Choose a group of four printable characters on a receiver that supports local Bluetooth groups."
+    },
+    "baseremote_group_timeout": {
+      "message": "The Bluetooth group operation timed out."
+    },
+    "baseremote_group_disconnect": {
+      "message": "The receiver link did not close after changing its Bluetooth group. Stop and disconnect it before continuing."
     },
     "sleepfunction_control": {
       "message": "Choose a control available for the current bed layout and connection."
@@ -11407,7 +11524,8 @@
         "bedsmart": "BedSmart / X-Series app",
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",
-        "sleepfunction": "SleepFunction Bed Control",
+        "baseremote": "Base Remote app",
+        "sleepfunction": "SleepFunction Bed Control app",
         "super_colchones": "Super Colchones app"
       }
     },
@@ -12775,6 +12893,13 @@
         "memory_three": "Memory 3",
         "flat": "Flat",
         "voice_stop_request": "Stop"
+      }
+    },
+    "baseremote_operation": {
+      "options": {
+        "set_color": "Set light color",
+        "set_group": "Set Bluetooth group",
+        "remove_group": "Remove Bluetooth group"
       }
     },
     "sleepfunction_setting": {

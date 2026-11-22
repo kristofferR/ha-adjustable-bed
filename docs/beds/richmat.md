@@ -139,8 +139,8 @@ own: choose the app's row in the bed-type list, then its product.
 
 ### Home Assistant setup
 
-The bed-type list has one **RMControl, SleepFunction and SVEN & SON apps, and
-Richmat remotes · Richmat** row, and each other Richmat app has a row of its own,
+The bed-type list has one **RMControl and SVEN & SON apps, and Richmat remotes ·
+Richmat** row, and each other Richmat app has a row of its own,
 such as **Revive Control app · Richmat**. A detected Richmat bed opens the same
 question.
 Setup then asks which app you use; the bed's name and services never decide it.
@@ -235,6 +235,7 @@ sends STOP.
 | Classic L&P Adjustable Base | `richmat_classic_apps` | W0, W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic BedSmart / X-Series | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Jerome's power base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic Base Remote | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Lady Americana | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic ACAA | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic STA Homecare | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
@@ -322,12 +323,12 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, Classic L&P Adjustable Base |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
@@ -13642,7 +13643,7 @@ Based on SleepEvolution 3.5.5 (13) and W.Silver Products 3.3.7 (9).
 
 #### Setup
 
-Choose **SleepFunction Bed Control** from the Richmat app choices and search for
+Choose **SleepFunction Bed Control app** in the Richmat app picker and search for
 its four-character layout. Choose the child layout directly for the ZRS0–ZRS3
 picker screens. Reconfigure uses the same choices. The actual GATT
 table selects FEE9/FB, FEE9/BB, Nordic UART, then FFF0 in that order. A missing
@@ -13663,8 +13664,9 @@ Utility, and scoped memory actions are separate presets with confirmed saves.
 Raw Nordic writes ignore the mode, as in the app.
 
 RGB lighting and its 0–300 second timeout appear after a valid LED reply.
-D1RM and D9RM expose the named massage timer choices, rather than an unlabelled
-intensity scale. There is no measured bed position feedback.
+The **Massage timer** select offers off, 10, 20 or 30 minutes on D1RM and D9RM,
+and 15, 30 or 45 minutes on layouts with the timer popup, which has no
+idempotent off. There is no measured bed position feedback.
 
 <!-- generated:sleepfunction-commands -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -16066,3 +16068,351 @@ Based on RMControl, the Richmat MH apps, HJBed, Eshine, the classic apps,
 Good Vibe Sleep, MLILY Control, the L&P legacy app, Casper Base 1.0.8 and Hush
 Base 1.0.5, each named with its version in its section. The Richmat remotes,
 Legacy BedTech and L&P MlRM routes send the pre-v5 controllers' frames.
+
+### Base Remote
+
+**App:** [Base Remote](https://play.google.com/store/apps/details?id=com.richmat.baseremote) 1.0.1, `com.richmat.baseremote`
+
+**Status:** Not yet tested on physical hardware.
+
+#### Setup
+
+Choose **Base Remote app** in the Richmat app picker, then the four-character
+layout that matches the app. The layout picker is searchable and remains available through Reconfigure.
+A Bluetooth name or shared service identifies a candidate, never its feature set.
+Aliases retain the app's prefix precedence; manual selection is explicit.
+
+The first present service in W1, W2, Nordic UART, W4 order wins. An incomplete
+selected service does not fall through to another data route. The advanced
+third-service option selects the last writable and last readable or notifiable
+characteristics of the third enumerated service. Its UUIDs require the real
+receiver's GATT table. ATT writes use response when the characteristic offers it;
+the Android app does not explicitly select its write type.
+
+#### Controls
+
+Only controls belonging to the selected layout appear. Motor numbers retain the
+app's labels, without assigning an unverified physical actuator. Named presets,
+memory, massage, locks and synchronization follow their own resource operands.
+The permanently hidden lock controls are absent. Saves require confirmation and
+never accept renewable holds. E3RM has separate recall and save actions rather
+than an armed next-command switch.
+
+Mode labels and commands are scoped together. Left/Right labels come from the
+layout and do not establish a supported physical paired-bed topology. Nordic
+ignores the mode field. U3RM's selectable motors have independent movement
+buttons. GVRM's unloaded alternate getter does not become a foot command.
+Hold-mode recall actions have their own Move to buttons rather than an app UI
+mode selector.
+
+The **Massage timer** select offers off, 15, 30 or 45 minutes on D1RM and D9RM,
+and 15, 30 or 45 minutes on layouts with the timer popup, which has no
+idempotent off. Aroma times are configuration entities, disabled by default.
+
+<!-- generated:baseremote -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Layouts | Mode labels |
+|---|---|
+| 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ARRM, ASRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BSRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D5RM, D6RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DSRM, DTRM, DURM, DVRM, DXRM, DYRM, DZRM, E0RM, E1RM, E2RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, EDRM, EFRM, EGRM, EIRM, EJRM, EMRM, ENRM, EORM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F2RM, F3RM, F4RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G5RM, G6RM, G7RM, G8RM, G9RM, GMRM, GVRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OURM, OVRM, OWRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, QRRM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XDRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XNRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZRS0, ZRS1, ZRS2, ZRS3, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM | Default |
+| BTRM | Mode 1, Mode 2, Mode 3 |
+| BURM | Mode 1, Mode 2, Mode 3 |
+| BVRM | Mode 1, Mode 2, Mode 3 |
+| BWRM | Mode 1, Mode 2, Mode 3 |
+| DHRM | Left, Right |
+| DIRM | Left, Right |
+| DQRM | Left, Right |
+| DRRM | Mode 1, Mode 2, Mode 3 |
+| DWRM | Left, Right |
+| ECRM | Left, Right |
+| EKRM | Mode 1, Mode 2, Mode 3 |
+| EPRM | Left, Right |
+| F5RM | Left, Right |
+| FNRM | Left, Right |
+| G4RM | Left, Right |
+
+| Control | Nordic operand | Framed operand | Long operand | Gesture | Layouts |
+|---|---|---|---|---|---|
+| Motor 1 up | `34` | `24` | none | held | 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, A6RM, GMRM, ONRM, T4RM, THRM, TWRM, TZRM, V3RM |
+| Motor 1 down | `37` | `25` | none | held | 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, A6RM, GMRM, ONRM, T4RM, THRM, TWRM, TZRM, V3RM |
+| Motor 2 up | `36` | `26` | none | held | 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, A6RM, GMRM, ONRM, T4RM, THRM, TWRM, TZRM, V3RM |
+| Motor 2 down | `41` | `27` | none | held | 6BRM, 6CRM, 6DRM, 6ERM, 6FRM, A3RM, A6RM, BERM, GMRM, MMRM, ONRM, R2RM, T4RM, THRM, TWRM, TZRM, V3RM |
+| Motor 1+2 up | `38` | `29` | none | held | 6BRM, 6CRM, 6DRM, GMRM, T4RM, THRM, TWRM, V3RM |
+| Motor 1+2 down | `39` | `2A` | none | held | 6BRM, A3RM, GMRM, MMRM, R2RM, T4RM, THRM, TWRM, V3RM, VYRM, W0RM, W2RM, YJRM |
+| Flat | `31` | `31` | none | once | 6CRM, 6DRM, 6ERM, 6FRM, A0RM, A1RM, A3RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, ARRM, ATRM, AURM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B4RM, B5RM, B7RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BORM, BPRM, BRRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IKRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OWRM, OXRM, OYRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T2RM, T3RM, T5RM, T6RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XNRM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YTRM, YURM, YVRM, YXRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZCRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZWRM, ZXRM, ZYRM |
+| Anti-snore | `46` | `46` | `69` | state 3; 3000 ms threshold | 6DRM, 6ERM, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, BORM, BRRM, BVRM, C3RM, C4RM, C5RM, CBRM, CERM, CGRM, CIRM, CJRM, CLRM, CORM, CSRM, CTRM, CURM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D3RM, D4RM, D7RM, D9RM, DARM, DBRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DTRM, DURM, DVRM, DWRM, DZRM, E1RM, E5RM, E6RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EMRM, ENRM, EORM, EPRM, EQRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, F0RM, F1RM, F3RM, F5RM, F6RM, F7RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FHRM, FKRM, FMRM, FNRM, FPRM, FQRM, FSRM, FTRM, FURM, FXRM, FYRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O1RM, O4RM, O7RM, O8RM, OARM, OPRM, OQRM, OTRM, OYRM, OZRM, P2RM, P3RM, P4RM, P5RM, P6RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TBRM, TCRM, TDRM, TERM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UBRM, UCRM, UDRM, UGRM, UIRM, UJRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VSRM, VVRM, VWRM, WDRM, WERM, WIRM, WJRM, WKRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X4RM, X5RM, X7RM, X9RM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XLRM, XMRM, XPRM, XSRM, XTRM, XURM, XVRM, XYRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, YQRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z6RM, Z8RM, Z9RM, ZARM, ZDRM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZMRM, ZORM, ZR40, ZR50, ZR51, ZRA0, ZRA2, ZRI0, ZSRM, ZTRM, ZURM, ZWRM, ZYRM |
+| Zero Gravity | `45` | `45` | `66` | state 3; 3000 ms threshold | 6DRM, 6ERM, A0RM, A1RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, ATRM, AURM, AWRM, AXRM, AYRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BDRM, BFRM, BGRM, BHRM, BIRM, BKRM, BLRM, BNRM, BORM, BRRM, BURM, BVRM, BZRM, C1RM, C3RM, C4RM, C5RM, C7RM, C8RM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CKRM, CLRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D3RM, D4RM, D7RM, D9RM, DARM, DBRM, DCRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DZRM, E1RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EMRM, ENRM, EORM, EPRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F3RM, F5RM, F6RM, F7RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IGRM, IORM, IQRM, IRRM, M3RM, M5RM, M6RM, MLRM, MRRM, O0RM, O1RM, O3RM, O4RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OPRM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R5RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, ULRM, UMRM, UNRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WNRM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XYRM, XZRM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YWRM, YXRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z8RM, Z9RM, ZARM, ZBRM, ZDRM, ZERM, ZFRM, ZGRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZRA0, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZWRM, ZYRM |
+| Underbed light on/off | `3C` | `3C` | none | once | 6ERM, 6FRM, A1RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AHRM, AIRM, ALRM, AMRM, APRM, AQRM, ARRM, AWRM, AXRM, AYRM, B1RM, B4RM, BDRM, BHRM, BIRM, BJRM, BLRM, BMRM, BNRM, BORM, BRRM, BURM, BXRM, BZRM, C0RM, C2RM, C3RM, C4RM, C5RM, C7RM, C9RM, CBRM, CCRM, CGRM, CIRM, CJRM, CKRM, CLRM, CMRM, CPRM, CQRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DFRM, DHRM, DIRM, DJRM, DPRM, DQRM, DSRM, DWRM, DZRM, E1RM, E3RM, E5RM, E7RM, E9RM, EDRM, EFRM, EMRM, EORM, ESRM, EURM, EVRM, EWRM, EXRM, F0RM, F1RM, F5RM, F7RM, F9RM, FARM, FCRM, FHRM, FIRM, FJRM, FKRM, FPRM, FQRM, FRRM, FSRM, FTRM, FZRM, G2RM, G3RM, G7RM, G9RM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IMRM, M3RM, M5RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, ORRM, OSRM, OTRM, OYRM, OZRM, P0RM, P1RM, P2RM, R5RM, T1RM, T5RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TLRM, U1RM, U2RM, U3RM, U4RM, U5RM, U7RM, U8RM, U9RM, UARM, UBRM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UVRM, UWRM, UYRM, V0RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W5RM, W6RM, W7RM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WNRM, WORM, WSRM, WURM, WVRM, WXRM, WYRM, X0RM, X8RM, X9RM, XCRM, XERM, XFRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XSRM, XTRM, XYRM, XZRM, Y2RM, Y3RM, Y6RM, Y8RM, YARM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, YWRM, YZRM, Z3RM, Z4RM, Z5RM, Z6RM, ZARM, ZBRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZORM, ZR10, ZR11, ZR12, ZR50, ZR51, ZR60, ZRA0, ZRI0, ZSRM, ZTRM, ZURM, ZWRM, ZXRM, ZYRM |
+| Motor 1 up | `24` | `24` | none | held | A0RM, A1RM, A2RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ARRM, ASRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BSRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E2RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F2RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, TLRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XDRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM |
+| Motor 3 up | `3F` | `3F` | none | held | A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AGRM, AHRM, AIRM, ALRM, ANRM, AXRM, BDRM, BGRM, BIRM, BLRM, BMRM, C2RM, C4RM, C6RM, C7RM, CARM, CBRM, CDRM, CGRM, CJRM, CKRM, CLRM, CPRM, CQRM, CTRM, CURM, CWRM, CZRM, D4RM, D6RM, DARM, DCRM, DKRM, DPRM, E1RM, E6RM, E7RM, E8RM, EDRM, EFRM, EMRM, ENRM, EORM, EVRM, EXRM, F0RM, F4RM, F9RM, FGRM, FHRM, FKRM, FPRM, FQRM, FTRM, FZRM, I0RM, I4RM, I5RM, I6RM, I8RM, ICRM, IGRM, M3RM, M5RM, MRRM, O1RM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TERM, U2RM, U5RM, U9RM, UARM, UBRM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WSRM, WTRM, WWRM, WXRM, X0RM, X4RM, X9RM, XCRM, XLRM, XMRM, XORM, XPRM, XTRM, XVRM, XWRM, XXRM, XYRM, XZRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, YSRM, YTRM, YURM, YVRM, Z3RM, Z6RM, Z9RM, ZARM, ZFRM, ZGRM, ZIRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZR11, ZR50, ZR51, ZRA0, ZRI0, ZRRM, ZSRM, ZTRM, ZVRM |
+| Motor 2 up | `26` | `26` | none | held | A0RM, A1RM, A2RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, TLRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM |
+| Motor 1 down | `25` | `25` | none | held | A0RM, A1RM, A2RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ARRM, ASRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BSRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E2RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F2RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, TLRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XDRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM |
+| Motor 3 down | `40` | `40` | none | held | A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AGRM, AHRM, AIRM, ALRM, ANRM, AXRM, BDRM, BGRM, BIRM, BLRM, BMRM, C2RM, C4RM, C6RM, C7RM, CARM, CBRM, CDRM, CGRM, CJRM, CKRM, CLRM, CPRM, CQRM, CTRM, CURM, CWRM, CZRM, D4RM, D6RM, DARM, DCRM, DKRM, DPRM, E1RM, E6RM, E7RM, E8RM, EDRM, EFRM, EMRM, ENRM, EORM, EVRM, EXRM, F0RM, F4RM, F9RM, FGRM, FHRM, FKRM, FPRM, FQRM, FTRM, FZRM, I0RM, I4RM, I5RM, I6RM, I8RM, ICRM, IGRM, M3RM, M5RM, MRRM, O1RM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TERM, U2RM, U5RM, U9RM, UARM, UBRM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WSRM, WTRM, WWRM, WXRM, X0RM, X4RM, X9RM, XCRM, XLRM, XMRM, XORM, XPRM, XTRM, XVRM, XWRM, XXRM, XYRM, XZRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, YSRM, YTRM, YURM, YVRM, Z3RM, Z6RM, Z9RM, ZARM, ZFRM, ZGRM, ZIRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZR11, ZR50, ZR51, ZRA0, ZRI0, ZRRM, ZSRM, ZTRM, ZVRM |
+| Motor 2 down | `27` | `27` | none | held | A0RM, A1RM, A2RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, ALRM, AMRM, ANRM, AORM, APRM, AQRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B0RM, B1RM, B4RM, B5RM, B6RM, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BORM, BPRM, BQRM, BRRM, BTRM, BURM, BVRM, BWRM, BXRM, BYRM, BZRM, C0RM, C1RM, C2RM, C3RM, C4RM, C5RM, C6RM, C7RM, C8RM, C9RM, CARM, CBRM, CCRM, CDRM, CERM, CGRM, CHRM, CIRM, CJRM, CKRM, CLRM, CMRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CURM, CVRM, CWRM, CXRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D8RM, D9RM, DARM, DBRM, DCRM, DDRM, DERM, DFRM, DGRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DXRM, DZRM, E1RM, E3RM, E4RM, E5RM, E6RM, E7RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EKRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, EYRM, EZRM, F0RM, F1RM, F3RM, F4RM, F5RM, F6RM, F7RM, F8RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FGRM, FHRM, FIRM, FJRM, FKRM, FLRM, FMRM, FNRM, FPRM, FQRM, FRRM, FSRM, FTRM, FURM, FVRM, FXRM, FYRM, FZRM, G2RM, G3RM, G4RM, G5RM, G6RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, TLRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UBRM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X0RM, X1RM, X2RM, X4RM, X5RM, X6RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XORM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XWRM, XXRM, XYRM, XZRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YXRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z7RM, Z8RM, Z9RM, ZARM, ZBRM, ZCRM, ZDRM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZMRM, ZNRM, ZORM, ZPRM, ZQRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZRI0, ZRRM, ZSRM, ZTRM, ZURM, ZVRM, ZWRM, ZXRM, ZYRM, ZZRM |
+| TV | `58` | `58` | `64` | state 3; 3000 ms threshold | A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, ALRM, AMRM, ANRM, ATRM, AURM, AWRM, AXRM, AYRM, B4RM, B5RM, BDRM, BFRM, BGRM, BHRM, BIRM, BKRM, BLRM, BNRM, BRRM, BURM, BVRM, BZRM, C5RM, CBRM, CCRM, CDRM, CERM, CIRM, CKRM, CORM, CQRM, CSRM, CTRM, CURM, CXRM, CYRM, CZRM, D4RM, DARM, DBRM, DCRM, DERM, DFRM, DHRM, DIRM, DLRM, DNRM, DQRM, DURM, DVRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EFRM, EIRM, EMRM, ENRM, ESRM, ETRM, EWRM, F0RM, F3RM, F9RM, FCRM, FDRM, FFRM, FHRM, FSRM, FXRM, FYRM, FZRM, G3RM, G5RM, G6RM, G8RM, G9RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, M3RM, M5RM, MRRM, O1RM, O3RM, O4RM, O6RM, O7RM, O9RM, OARM, OMRM, OPRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, TCRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WIRM, WJRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X0RM, X5RM, X6RM, X7RM, X9RM, XERM, XFRM, XHRM, XIRM, XJRM, XKRM, XMRM, XSRM, XURM, XVRM, XYRM, XZRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YYRM, Z2RM, Z4RM, Z5RM, Z6RM, Z8RM, Z9RM, ZARM, ZBRM, ZDRM, ZERM, ZFRM, ZGRM, ZMRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0, ZSRM, ZTRM, ZURM, ZWRM |
+| Massage 1 intensity up | `4C` | `4C` | none | once | A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, C2RM, C4RM, C5RM, C7RM, C9RM, CARM, CBRM, CJRM, CLRM, CMRM, CORM, CPRM, CQRM, CSRM, CTRM, CURM, CVRM, CWRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D9RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DSRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EFRM, EMRM, EORM, ESRM, ETRM, EURM, EVRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G5RM, G7RM, G9RM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O1RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, U3RM, U4RM, U5RM, U9RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WNRM, WSRM, WURM, WXRM, X0RM, X2RM, X7RM, X9RM, XBRM, XCRM, XERM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XWRM, XYRM, XZRM, Y3RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z8RM, ZARM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZKRM, ZLRM, ZMRM, ZORM, ZR50, ZR51, ZRI0, ZSRM, ZTRM, ZURM, ZWRM |
+| M1 | `2E` | `2E` | `2B` | state 3; 3000 ms threshold | A0RM, A1RM, A2RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, ALRM, AMRM, ANRM, ARRM, ATRM, AURM, AVRM, AWRM, AXRM, AYRM, AZRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BRRM, BSRM, BTRM, BURM, BVRM, BWRM, BXRM, BZRM, C0RM, C1RM, C3RM, C5RM, C6RM, C7RM, C8RM, CARM, CCRM, CDRM, CERM, CGRM, CIRM, CNRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CVRM, CXRM, CYRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D9RM, DARM, DBRM, DCRM, DDRM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DMRM, DNRM, DPRM, DQRM, DRRM, DSRM, DTRM, DURM, DVRM, DWRM, DZRM, E1RM, E3RM, E5RM, E6RM, E8RM, E9RM, ECRM, EDRM, EFRM, EGRM, EIRM, EJRM, EMRM, ENRM, EORM, EPRM, EQRM, ERRM, ESRM, ETRM, EURM, EWRM, F0RM, F1RM, F3RM, F4RM, F5RM, F6RM, F7RM, F9RM, FARM, FBRM, FCRM, FDRM, FERM, FFRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FRRM, FSRM, FTRM, FURM, FVRM, FZRM, G3RM, G4RM, G7RM, G8RM, G9RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OORM, OPRM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UXRM, UYRM, UZRM, V1RM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VVRM, VWRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X0RM, X7RM, X8RM, X9RM, XARM, XBRM, XCRM, XDRM, XERM, XFRM, XGRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XNRM, XPRM, XQRM, XRRM, XSRM, XTRM, XURM, XVRM, XYRM, XZRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, YQRM, YRRM, YSRM, YTRM, YURM, YVRM, YWRM, YYRM, YZRM, Z2RM, Z4RM, Z5RM, Z6RM, Z8RM, Z9RM, ZARM, ZBRM, ZDRM, ZERM, ZFRM, ZGRM, ZJRM, ZKRM, ZMRM, ZNRM, ZPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0, ZRRM, ZSRM, ZURM, ZWRM, ZYRM |
+| Massage 2 intensity up | `4E` | `4E` | none | once | A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, B8TT, B9TT, BDRM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, C2RM, C4RM, C5RM, C7RM, C9RM, CARM, CBRM, CGRM, CIRM, CJRM, CLRM, CMRM, CORM, CPRM, CQRM, CSRM, CTRM, CURM, CVRM, CWRM, CYRM, CZRM, D0RM, D1RM, D2RM, D3RM, D4RM, D7RM, D9RM, DARM, DCRM, DERM, DFRM, DHRM, DJRM, DPRM, DSRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EFRM, EMRM, EORM, ESRM, ETRM, EURM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G5RM, G7RM, G9RM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O1RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, TARM, TBRM, TCRM, TDRM, TERM, U3RM, U4RM, U5RM, U9RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WNRM, WSRM, WURM, WXRM, X0RM, X7RM, X9RM, XBRM, XCRM, XERM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XWRM, XYRM, XZRM, Y3RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z8RM, ZARM, ZERM, ZFRM, ZGRM, ZHRM, ZIRM, ZKRM, ZLRM, ZMRM, ZORM, ZR50, ZR51, ZRI0, ZSRM, ZTRM, ZURM, ZWRM |
+| Massage mode | `48` | `48` | none | once | A0RM, A1RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, B8RM, BDRM, BGRM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CJRM, CLRM, CMRM, CORM, CPRM, CQRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D2RM, D4RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EFRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G5RM, G7RM, G9RM, I1RM, I2RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IRRM, M3RM, M6RM, M7RM, MARM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, TCRM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WSRM, WURM, WXRM, X0RM, X7RM, X9RM, XCRM, XERM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XWRM, XYRM, XZRM, Y6RM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YORM, YWRM, YYRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z6RM, Z8RM, ZARM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZSRM, ZTRM, ZURM, ZWRM |
+| M2 | `2F` | `2F` | `2C` | state 3; 3000 ms threshold | A0RM, A1RM, A2RM, A9RM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, ALRM, AMRM, ANRM, ARRM, AURM, AWRM, AXRM, AYRM, BJRM, BKRM, BLRM, BMRM, BPRM, BRRM, BSRM, BURM, BVRM, BXRM, BZRM, C0RM, C8RM, CERM, CGRM, CORM, CPRM, CQRM, CRRM, CSRM, CTRM, CXRM, CYRM, D0RM, D1RM, D2RM, D3RM, D4RM, D9RM, DARM, DBRM, DCRM, DERM, DHRM, DIRM, DJRM, DKRM, DLRM, DNRM, DPRM, DQRM, DTRM, DVRM, DWRM, DZRM, E3RM, E5RM, E6RM, E8RM, E9RM, ECRM, EFRM, EGRM, EIRM, EJRM, EMRM, ENRM, EORM, EQRM, ERRM, ESRM, ETRM, EWRM, F1RM, F5RM, F6RM, F7RM, FARM, FBRM, FDRM, FERM, FFRM, FIRM, FKRM, FPRM, FZRM, G3RM, G7RM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, M3RM, M5RM, M6RM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, TERM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UXRM, UZRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VWRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WNRM, WPRM, WURM, WXRM, X0RM, X7RM, X8RM, X9RM, XARM, XCRM, XDRM, XFRM, XHRM, XJRM, XKRM, XMRM, XPRM, XSRM, XTRM, XURM, XVRM, XYRM, XZRM, Y5RM, Y6RM, Y8RM, YBRM, YERM, YFRM, YGRM, YHRM, YMRM, YPRM, YSRM, YTRM, YURM, YVRM, YWRM, YYRM, Z2RM, Z4RM, Z5RM, Z6RM, Z8RM, ZBRM, ZDRM, ZERM, ZFRM, ZGRM, ZR12, ZR50, ZR51, ZR80, ZRA2, ZRRM, ZWRM, ZYRM |
+| Massage off 3 | `5E` | `5E` | none | once | A0RM, A1RM, AARM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, AWRM, AXRM, BGRM, BNRM, BORM, C4RM, C5RM, CARM, CGRM, CIRM, CJRM, CLRM, CMRM, CPRM, CQRM, CSRM, CTRM, CURM, CWRM, CZRM, D0RM, D1RM, D3RM, D9RM, DCRM, DERM, DFRM, DHRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, EDRM, EFRM, EMRM, EORM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FRRM, FTRM, FZRM, G3RM, G5RM, G7RM, G9RM, I1RM, IBRM, IERM, IGRM, M6RM, M7RM, MARM, O8RM, P1RM, P6RM, T7RM, TCRM, TDRM, TERM, U4RM, U5RM, URRM, UTRM, UYRM, VBRM, VKRM, VLRM, VPRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VZRM, W6RM, W7RM, W9RM, WHRM, WJRM, WKRM, WNRM, WURM, WXRM, X7RM, XCRM, XERM, XFRM, XHRM, XIRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XWRM, XYRM, XZRM, Y8RM, YARM, YIRM, YORM, YYRM, YZRM, Z2RM, Z4RM, Z5RM, Z6RM, ZARM, ZERM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZSRM, ZTRM, ZURM, ZWRM |
+| M3 | `30` | `30` | `2D` | state 3; 3000 ms threshold | A0RM, A2RM, ADRM, BMRM, BNRM, BSRM, BZRM, CIRM, CORM, CSRM, DERM, DFRM, DGRM, E3RM, EIRM, ENRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, UZRM, V7RM, VWRM, W5RM, W7RM, X0RM, YPRM, YSRM, YTRM, YURM, YVRM, YWRM, YYRM, ZRA2, ZWRM |
+| Motor 4 up | `41` | `41` | none | held | A1RM, AARM, AHRM, BDRM, BIRM, C2RM, C4RM, CARM, CJRM, CKRM, CLRM, CPRM, CURM, CZRM, D4RM, E1RM, E6RM, E7RM, EDRM, EXRM, F1RM, F7RM, FERM, FFRM, FQRM, FTRM, I5RM, O5RM, ORRM, P6RM, T1RM, TERM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, X9RM, XMRM, XPRM, XWRM, YARM, YIRM, YORM, YPRM, YSRM, YTRM, Z3RM, ZLRM, ZR50, ZRA0, ZTRM, ZVRM |
+| Motor 4 down | `42` | `42` | none | held | A1RM, AARM, AHRM, BDRM, BIRM, C2RM, C4RM, CARM, CJRM, CKRM, CLRM, CPRM, CURM, CZRM, D4RM, E1RM, E6RM, E7RM, EDRM, EXRM, F1RM, F7RM, FERM, FFRM, FQRM, FTRM, I5RM, O5RM, ORRM, P6RM, T1RM, TERM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, X9RM, XMRM, XPRM, XWRM, YARM, YIRM, YORM, YPRM, YSRM, YTRM, Z3RM, ZLRM, ZR50, ZRA0, ZTRM, ZVRM |
+| Motor 1+2 up | `29` | `29` | none | held | A2RM, ATRM, AURM, AVRM, AWRM, AYRM, B0RM, B6RM, B7RM, BFRM, BGRM, BHRM, BKRM, BNRM, BQRM, BURM, C5RM, CBRM, CERM, CKRM, CMRM, CORM, CSRM, CYRM, D2RM, D5RM, D7RM, DFRM, DHRM, DIRM, DMRM, DURM, DVRM, E0RM, E3RM, E5RM, EFRM, ENRM, EQRM, ESRM, ETRM, F3RM, F5RM, FARM, FBRM, FIRM, FRRM, FVRM, FYRM, G2RM, G3RM, G5RM, G8RM, G9RM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, M6RM, MARM, O2RM, O3RM, O9RM, OARM, OPRM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R5RM, R6RM, T8RM, TARM, TCRM, TDRM, TLRM, U0RM, U1RM, U4RM, U8RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V4RM, V5RM, V6RM, VARM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, X4RM, X5RM, X7RM, X8RM, XERM, XHRM, XIRM, XJRM, XKRM, XNRM, XORM, XWRM, Y3RM, YHRM, YJRM, YWRM, YYRM, YZRM, Z0RM, Z1RM, Z2RM, Z4RM, Z5RM, Z7RM, Z8RM, ZBRM, ZCRM, ZDRM, ZERM, ZJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZURM, ZZRM |
+| Motor 1+2 down | `2A` | `2A` | none | held | A2RM, ATRM, AURM, AVRM, AWRM, AYRM, B6RM, B7RM, BFRM, BGRM, BHRM, BNRM, BQRM, BURM, C5RM, CBRM, CERM, CKRM, CORM, CYRM, D2RM, D5RM, DFRM, DHRM, DIRM, DMRM, DURM, DVRM, E0RM, E3RM, E5RM, EFRM, ENRM, EQRM, ESRM, ETRM, F3RM, F5RM, FARM, FBRM, FIRM, FRRM, FVRM, FYRM, G2RM, G3RM, G5RM, G8RM, G9RM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, O2RM, O3RM, O9RM, OARM, OPRM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R5RM, R6RM, T8RM, TARM, TCRM, TDRM, TLRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V4RM, VXRM, W5RM, W6RM, W7RM, WERM, WKRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, X4RM, X5RM, X7RM, X8RM, XERM, XHRM, XIRM, XJRM, XKRM, XNRM, XORM, XWRM, Y3RM, YHRM, YWRM, YYRM, YZRM, Z1RM, Z2RM, Z4RM, Z5RM, Z7RM, Z8RM, ZBRM, ZDRM, ZERM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZRA0, ZRA1, ZRA2, ZURM, ZZRM |
+| Massage intensity up | `34` | `34` | none | once | A2RM, BZRM, FJRM, M6RM, O2RM, O6RM, OMRM, OORM, R6RM, U1RM, U2RM, UKRM, UZRM, W7RM, WDRM, WERM, YWRM |
+| Massage speed up | `36` | `36` | none | once | A2RM, O4RM, O6RM, OMRM, OORM, R6RM |
+| Massage intensity down | `35` | `35` | none | once | A2RM, BZRM, M6RM, O2RM, O6RM, OMRM, OORM, R6RM, U1RM, U2RM, UKRM, UZRM, W7RM, YWRM |
+| Massage speed down | `37` | `37` | none | once | A2RM, O4RM, O6RM, OMRM, OORM, R6RM |
+| Massage pulse | `38` | `38` | none | once | A2RM, O6RM, OMRM, OORM, R6RM |
+| Massage wave | `39` | `39` | none | once | A2RM, O6RM, OMRM, OORM, R6RM |
+| Massage constant | `3A` | `3A` | none | once | A2RM, O6RM, OMRM, OORM, R6RM |
+| Lounge | `32` | `59` | none | once | A3RM, BERM, MMRM, ONRM, R2RM, THRM |
+| TV | `33` | `58` | none | once | A3RM, BERM, MMRM, ONRM, R2RM, THRM |
+| Zero Gravity | `34` | `45` | none | once | A3RM, BERM, MMRM, R2RM |
+| Motor 1 up | `35` | `24` | none | held | A3RM, BERM, MMRM, R2RM |
+| Motor 1+2 up | `36` | `29` | none | held | A3RM, MMRM, R2RM |
+| Motor 2 up | `37` | `26` | none | held | A3RM, BERM, MMRM, R2RM |
+| Motor 1 down | `38` | `25` | none | held | A3RM, BERM, MMRM, R2RM |
+| M1 | `42` | `2E` | `2B` | state 3; 3000 ms threshold | A3RM |
+| M2 | `44` | `2F` | `2C` | state 3; 3000 ms threshold | A3RM |
+| Massage timer 10 minutes | `4C` | `5F` | none | once | A3RM |
+| Underbed light on/off | `46` | `3C` | none | once | A3RM, R2RM |
+| Massage intensity up | `48` | `34` | none | once | A3RM, MMRM |
+| Massage mode | `4A` | `48` | none | once | A3RM, BERM, MMRM |
+| Massage intensity down | `4B` | `35` | none | once | A3RM, MMRM, ONRM, THRM |
+| Massage timer 10 minutes | `5F` | `5F` | none | once | A3RM, A9RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D2RM, D3RM, D4RM, DARM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IARM, IBRM, IORM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y3RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Massage timer 20 minutes | `63` | `63` | none | once | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C2RM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IBRM, M3RM, MLRM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UBRM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Massage timer 30 minutes | `61` | `61` | none | once | A3RM, AERM, AFRM, AGRM, ALRM, AMRM, ANRM, AURM, AWRM, AXRM, AYRM, B4RM, BDRM, BERM, BHRM, BIRM, BLRM, BNRM, BORM, BURM, BZRM, C4RM, C5RM, CARM, CBRM, CGRM, CIRM, CLRM, CMRM, CSRM, CTRM, CURM, CWRM, CYRM, CZRM, D0RM, D3RM, DCRM, DERM, DFRM, DHRM, DIRM, DJRM, DKRM, DLRM, DPRM, DWRM, DZRM, E1RM, E5RM, E9RM, EDRM, EMRM, EORM, ESRM, ETRM, EVRM, EWRM, EXRM, F0RM, F1RM, F3RM, F4RM, F5RM, F7RM, F9RM, FARM, FCRM, FDRM, FERM, FGRM, FHRM, FIRM, FKRM, FMRM, FNRM, FPRM, FQRM, FRRM, FTRM, FZRM, G3RM, G7RM, G9RM, I1RM, IBRM, M3RM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OPRM, OQRM, ORRM, OSRM, OTRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, TDRM, TERM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WJRM, WKRM, WNRM, WSRM, WXRM, X0RM, X7RM, X9RM, XCRM, XFRM, XHRM, XIRM, XJRM, XKRM, XLRM, XMRM, XPRM, XQRM, XSRM, XTRM, XVRM, XYRM, XZRM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, YWRM, YZRM, Z2RM, Z3RM, Z4RM, Z5RM, Z8RM, ZERM, ZFRM, ZGRM, ZMRM, ZORM, ZR50, ZR51, ZWRM |
+| Flat | `38` | `31` | none | once | A6RM, ONRM |
+| Zero Gravity | `34` | `45` | `66` | state 3; 3000 ms threshold | A6RM |
+| Motor 3+4 up | `43` | `43` | none | held | AARM, B4RM, B9RM, BORM, BYRM, CJRM, CKRM, CNRM, E4RM, FLRM, ORRM, P2RM, P6RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 |
+| Motor 3+4 down | `44` | `44` | none | held | AARM, B4RM, B9RM, BORM, BYRM, CJRM, CKRM, CNRM, E4RM, FLRM, ORRM, P2RM, P6RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 |
+| Reset | `62` | `62` | none | once | ABRM, ACRM, ADRM, B9TT, C0RM, D7RM, DHRM, DIRM, I0RM, I4RM, I5RM, M9RM, MLRM, O0RM, OTRM, S9RM, U0RM, U7RM, U8RM, U9RM, UARM, UBRM, UJRM, UNRM, UZRM, V0RM, V6RM, V7RM, VARM, VKRM, XARM, YHRM, YZRM, ZHRM, ZIRM, ZJRM, ZKRM, ZLRM, ZR21, ZRI0 |
+| Lounge | `59` | `59` | `65` | state 3; 3000 ms threshold | ACRM, ADRM, AORM, ATRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BKRM, BLRM, BURM, BZRM, CDRM, CIRM, CKRM, CQRM, DCRM, DERM, DLRM, DVRM, DWRM, DZRM, ECRM, EGRM, EMRM, ENRM, ESRM, ETRM, EWRM, F3RM, F9RM, FDRM, FFRM, FHRM, FZRM, G5RM, G6RM, G8RM, G9RM, I3RM, IGRM, IQRM, IRRM, M3RM, M5RM, MRRM, O3RM, O6RM, O9RM, OMRM, OSRM, OXRM, OZRM, P1RM, R5RM, T7RM, TARM, TBRM, TCRM, TDRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WQRM, WSRM, WTRM, X0RM, X5RM, X7RM, X9RM, XERM, XHRM, XIRM, XJRM, XKRM, XSRM, XURM, XVRM, XZRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YPRM, YWRM, YXRM, YZRM, Z2RM, Z5RM, Z8RM, ZARM, ZERM, ZR11, ZR12, ZR50, ZR51, ZRA0, ZSRM, ZURM |
+| Massage 1 intensity down | `4D` | `4D` | none | once | ACRM, ADRM, APRM, C2RM, C9RM, D7RM, DIRM, EURM, F9RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, T9RM, U9RM, UARM, UBRM, UJRM, V7RM, VQRM, W5RM, Y3RM, YGRM, YZRM, ZHRM, ZIRM, ZKRM, ZLRM, ZRI0 |
+| Massage 2 intensity down | `4F` | `4F` | none | once | ACRM, ADRM, APRM, B8TT, B9TT, C2RM, C9RM, D7RM, EURM, F9RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, U9RM, UARM, UBRM, UJRM, V7RM, VQRM, W5RM, Y3RM, YGRM, YZRM, ZHRM, ZIRM, ZKRM, ZLRM, ZRI0 |
+| Motor 1+2 once up | `23` | `23` | none | once | AERM, AFRM, AGRM, ALRM, AMRM, ANRM, APRM, AQRM, BRRM, C2RM, C9RM, OORM, Y1RM, YFRM, YGRM, YQRM |
+| Lumbar | `91` | `91` | `92` | state 3; 3000 ms threshold | AERM, ALRM |
+| Massage on | `5D` | `5D` | none | once | AHRM, APRM, BVRM, C2RM, CORM, FCRM, I2RM, I7RM, I8RM, ICRM, IERM, IFRM, IHRM, IIRM, IRRM, O5RM, T3RM, V9RM, VIRM, VNRM, WIRM, X9RM, XVRM, YGRM |
+| Lock | none | none | `84` | state 3; 5000 ms threshold | AORM, E9RM, FGRM, FMRM, FNRM |
+| Motor 1 up 2 down | `21` | `21` | none | once | APRM, AQRM, BRRM, C2RM, C9RM, DYRM, OORM, OURM, OWRM, WYRM, YFRM, YGRM |
+| Motor 2 up 1 down | `22` | `22` | none | once | APRM, AQRM, BRRM, C2RM, C9RM, DYRM, OORM, OURM, OWRM, YFRM, YGRM |
+| Zero Gravity | `45` | `45` | none | held | APRM, C2RM, C9RM, T4RM |
+| Save Zero Gravity | `66` | `66` | none | once | APRM, BRRM, C2RM, C9RM, YGRM |
+| Anti-snore | `46` | `46` | none | held | APRM, C2RM, C9RM |
+| Save Anti-snore | `69` | `69` | none | once | APRM, BRRM, C2RM, C9RM, YGRM |
+| M1 | `2E` | `2E` | none | held | APRM, AQRM, C2RM, C9RM, VXRM |
+| TV | `58` | `58` | none | held | APRM, C2RM, C9RM |
+| M2 | `2F` | `2F` | none | held | APRM, AQRM, C2RM, C9RM, VXRM |
+| Save M1 | `2B` | `2B` | none | once | APRM, AQRM, BRRM, C2RM, C9RM, OMRM, VXRM, YFRM, YGRM |
+| Save TV | `64` | `64` | none | once | APRM, BRRM, C2RM, C9RM, YGRM |
+| Save M2 | `2C` | `2C` | none | once | APRM, AQRM, BRRM, C2RM, C9RM, VXRM, YFRM, YGRM |
+| Massage mode | `48` | `48` | `47` | state 3; 3000 ms threshold | APRM, C2RM, C9RM, YGRM |
+| Flat | `31` | `31` | none | held | AQRM, CCRM, CVRM, DSRM, ZVRM |
+| Motor keep 15 | `76` | `76` | none | once | AURM, E5RM |
+| Motor keep 30 | `90` | `90` | none | once | AURM, ILRM |
+| Massage 1 on/off | `32` | `32` | none | once | B1RM, I9RM, INRM, O6RM, OMRM, OORM, R6RM, VGRM, WDRM, WERM |
+| Massage off 2 | `5A` | `5A` | none | once | B1RM |
+| Massage 2 on/off | `33` | `33` | none | once | B1RM, O6RM, OMRM, OORM, R6RM |
+| Massage intensity 3 | `68` | `68` | none | once | B1RM |
+| Massage intensity 1 | `67` | `67` | none | once | B1RM |
+| Massage wave 3 | `4B` | `4B` | none | once | B8RM |
+| Massage on | `5D` | `5D` | `47` | state 3; 3000 ms threshold | B9TT |
+| Zero Gravity | `45` | `45` | none | once | BCRM, BJRM, D2RM, O2RM, O5RM, U0RM, UKRM, UZRM, WORM |
+| Motor 3 up | `42` | `3F` | none | held | BERM, TZRM |
+| M2 | `44` | `44` | none | held | BERM |
+| Motor 3 down | `43` | `40` | none | held | BERM, TZRM |
+| Motor 4 down | `45` | `42` | none | held | BERM |
+| Underbed light on/off | `36` | `3C` | none | once | BERM, MMRM |
+| Massage 1 intensity up | `46` | `4C` | none | once | BERM |
+| Massage timer 10 minutes | `47` | `5F` | none | once | BERM |
+| Massage 2 intensity up | `48` | `4E` | none | once | BERM, R2RM |
+| Massage 1 intensity down | `49` | `4D` | none | once | BERM |
+| Massage 2 intensity down | `4B` | `4F` | none | once | BERM, R2RM |
+| Massage head intensity 2 | `A4` | `A4` | none | once | BGRM |
+| Massage foot intensity 2 | `A5` | `A5` | none | once | BGRM |
+| Massage timer 10 minutes | `A1` | `A1` | none | once | BGRM |
+| Massage timer 20 minutes | `A2` | `A2` | none | once | BGRM |
+| Massage timer 30 minutes | `A3` | `A3` | none | once | BGRM |
+| Massage off | `47` | `47` | none | once | BHRM, BIRM, E9RM, O4RM, P5RM, V6RM, YERM |
+| TV | `58` | `58` | none | once | BJRM, D2RM, O2RM, O5RM, UZRM |
+| Lounge | `59` | `59` | none | once | BJRM, O2RM, O5RM, UZRM |
+| M2 | `2F` | `2F` | none | once | BNRM |
+| Motor 1 up 2 down | `21` | `21` | none | held | BORM |
+| Motor 2 up 1 down | `22` | `22` | none | held | BORM |
+| M4 | `B2` | `B2` | `B3` | state 3; 3000 ms threshold | BSRM, C6RM, C7RM, E3RM, YSRM, YTRM, YURM, YVRM, ZNRM |
+| Relax | `70` | `70` | none | once | BZRM |
+| Motor 5 up | `71` | `71` | none | held | C2RM, CARM, E6RM, M5RM |
+| Motor 5 down | `72` | `72` | none | held | C2RM, E6RM, M5RM |
+| Flat 2 | `6C` | `6C` | none | once | C6RM, C7RM, VRRM, ZNRM, ZRRM |
+| Zero Gravity 2 | `6B` | `6B` | `6A` | state 3; 3000 ms threshold | C7RM, DJRM, DKRM, DLRM, EVRM, EWRM, FDRM, FFRM, G7RM, M9RM, U3RM, ZNRM, ZRRM |
+| Massage mode | `48` | `48` | `5E` | state 3; 3000 ms threshold | C7RM, CVRM, DSRM, YMRM, YPRM |
+| TV | `58` | `58` | `64` | state 3; 5000 ms threshold | CMRM, DDRM, F8RM, WLRM |
+| Zero Gravity | `45` | `45` | `66` | state 3; 5000 ms threshold | CMRM, DDRM, F8RM, WLRM |
+| M1 | `2E` | `2E` | `2B` | state 3; 5000 ms threshold | CMRM |
+| M2 | `2F` | `2F` | `2C` | state 3; 5000 ms threshold | CMRM, DDRM, F8RM, WLRM |
+| M3 | `30` | `30` | `2D` | state 3; 5000 ms threshold | CMRM, DDRM, F8RM, WLRM |
+| Underbed light on/off | `3C` | `3C` | `75` | state 3; 3000 ms threshold | CZRM, FGRM, W3RM, W9RM, WARM, WDRM, WERM |
+| Massage wave | `39` | `39` | `47` | state 3; 3000 ms threshold | D7RM, EURM, I0RM, I4RM, I5RM, MLRM, O0RM, OTRM, OYRM, U9RM, UARM, UBRM, UJRM, V7RM, ZHRM, ZIRM, ZKRM, ZLRM, ZRI0 |
+| Lounge | `59` | `59` | `65` | state 3; 5000 ms threshold | DDRM, F8RM, WLRM |
+| Anti-snore | `46` | `46` | `69` | state 3; 5000 ms threshold | DDRM, F8RM, WLRM |
+| Motor 1 up once | `3D` | `3D` | none | once | DJRM, DKRM, DLRM, EVRM, EWRM, FDRM, FFRM, OWRM, XFRM, XGRM, XLRM, YIRM, YMRM, YNRM, YORM, YPRM |
+| Side sleeper | `BA` | `BA` | `BB` | state 3; 3000 ms threshold | DMRM, DPRM |
+| Yoga | `F0` | `F0` | `F1` | state 3; 3000 ms threshold | DNRM, G5RM, G6RM, Y4RM |
+| Lock | `84` | `84` | none | once | DSRM |
+| Sync on | none | none | `BC` | state 3; 3000 ms threshold | DXRM |
+| Sync off | none | none | `BD` | state 3; 3000 ms threshold | DXRM |
+| Motor 3+4 tilt up | `5B` | `5B` | none | held | E3RM, E4RM, FLRM, P2RM, ZR70, ZR80 |
+| Motor 3+4 tilt down | `5C` | `5C` | none | held | E3RM, E4RM, FLRM, P2RM, ZR70, ZR80 |
+| Sync on | `BC` | `BC` | none | once | E3RM |
+| Sync off | `BD` | `BD` | none | once | E3RM |
+| Motor 6 up | `73` | `73` | none | held | E6RM, M5RM |
+| Motor 6 down | `74` | `74` | none | held | E6RM, M5RM |
+| Motor 7 up | `D0` | `D0` | none | held | EURM |
+| Motor 7 down | `D1` | `D1` | none | held | EURM |
+| Read | `F2` | `F2` | `F3` | state 3; 3000 ms threshold | EZRM, Y4RM |
+| Flat sleep | `F6` | `F6` | `F7` | state 3; 3000 ms threshold | FERM, FFRM |
+| Save read | `F3` | `F3` | `F2` | state 3; 3000 ms threshold | FIRM, FRRM |
+| Save flat sleep | `F7` | `F7` | `F6` | state 3; 3000 ms threshold | FIRM, FRRM |
+| Underbed light on/off | `3C` | `3C` | `75` | state 3; 5000 ms threshold | FMRM, FNRM |
+| M5 | `F4` | `F4` | `F5` | state 3; 3000 ms threshold | G5RM, G6RM |
+| Motor 2 up | `37` | none | none | held | GVRM |
+| M1 | `42` | none | none | held | GVRM |
+| Flat | `31` | none | none | held | GVRM |
+| Set | `35` | none | none | held | GVRM |
+| Save M1 | `43` | none | none | held | GVRM |
+| M2 | `44` | none | none | held | GVRM |
+| Lounge | `32` | none | none | held | GVRM |
+| Motor 1+2 up | `38` | none | none | held | GVRM |
+| Save M2 | `45` | none | none | held | GVRM |
+| Massage pulse | `46` | none | none | held | GVRM |
+| Massage 1 off | `47` | none | none | held | GVRM |
+| Zero Gravity | `45` | `45` | `66` | once | IDRM, IERM, IHRM, UORM, UPRM |
+| M1 | `42` | `2E` | none | once | MMRM, R2RM |
+| Save M1 | `43` | `2B` | none | once | MMRM, R2RM |
+| M2 | `44` | `2F` | none | once | MMRM, R2RM |
+| Save M2 | `45` | `2C` | none | once | MMRM, R2RM |
+| Massage timer 10 minutes | `49` | `5F` | none | once | MMRM |
+| Zero Gravity | `35` | `45` | none | once | ONRM, THRM |
+| Massage timer 10 minutes | `39` | `5F` | none | once | ONRM |
+| Massage 1 intensity up | `42` | `4C` | none | once | ONRM, THRM |
+| Underbed light on/off | `43` | `3C` | none | once | ONRM, THRM |
+| Massage 2 intensity up | `44` | `4E` | none | once | ONRM, THRM |
+| Massage wave | `45` | `39` | none | once | ONRM, THRM |
+| Massage pulse | `46` | `38` | none | once | ONRM, THRM |
+| Massage constant | `47` | `3A` | none | once | ONRM, THRM |
+| Massage speed up | `48` | `36` | none | once | ONRM, THRM |
+| Massage speed down | `49` | `37` | none | once | ONRM, THRM |
+| Massage intensity up | `4A` | `34` | none | once | ONRM, THRM |
+| Massage 1 off | `47` | `47` | none | once | OURM, OWRM |
+| Motor 2 up once | `3E` | `3E` | none | once | OWRM |
+| Anti-snore | `46` | `46` | none | once | P1RM, UKRM |
+| Underbed light off | `75` | `75` | none | once | P2RM, ZRA0 |
+| Massage 1 intensity up | `49` | `4C` | none | once | R2RM |
+| Massage 1 intensity down | `4A` | `4D` | none | once | R2RM |
+| Massage timer 10 minutes | `50` | `5F` | none | once | R2RM |
+| Massage intensity 1 | `4C` | `67` | none | once | R2RM |
+| Massage intensity 2 | `4D` | `4D` | none | once | R2RM |
+| Massage intensity 3 | `4E` | `68` | none | once | R2RM |
+| Flat | `32` | `31` | none | once | TWRM, TZRM |
+| Massage aroma | `3B` | `3B` | none | once | UYRM, VYRM |
+| Save M3 | `2D` | `2D` | none | once | VXRM |
+| M3 | `30` | `30` | none | held | VXRM |
+| Massage on/off | `6F` | `6F` | none | once | Y2RM |
+| Lounge | `59` | `59` | none | state 3; 3000 ms threshold | YORM, YRRM |
+| TV | `58` | `58` | none | state 3; 3000 ms threshold | YRRM |
+| Unwind | `8C` | `8C` | `8D` | state 3; 3000 ms threshold | ZHRM, ZIRM |
+| Wakeup | `93` | `93` | `94` | state 3; 3000 ms threshold | ZHRM, ZIRM |
+| Sleep | `8E` | `8E` | `8F` | state 3; 3000 ms threshold | ZHRM, ZIRM |
+| Relax | `70` | `70` | `95` | state 3; 3000 ms threshold | ZHRM, ZIRM |
+| Motor 2+3 up | `96` | `96` | none | held | ZORM |
+| Motor 2+3 down | `97` | `97` | none | held | ZORM |
+| Massage off 3 | `5E` | `5E` | none | held | ZVRM |
+
+| Settings | Write | Gate |
+|---|---|---|
+| Startup | `6E 02 01 00 71` | Framed, 300 ms after notification setup |
+| Alarm query | `6E 08 01 01 78` | Layout has alarm actions |
+| Light query | `6E 0A 00 01 79` | Every bed layout |
+| Aromatherapy query | `6E 1A 00 00 88` | Every bed layout |
+| Default green | `6E 0C FF 98 11 6E 0D CB 00 46` | LED capability reply |
+| Countdown, 1440 minutes, memory 1 | `6E 05 A0 00 13` / `6E 06 05 2E A7` | Selected-layout alarm action |
+| Light timeout | 0–300 seconds; zero keeps on | LED capability reply |
+| Aromatherapy times | 1–60 minutes, 1–60 minutes, 1–12 hours | Aroma capability reply |
+| Group removal | `41 54 2B 52 45 42 49 4E 44 0D 0A` | FFE0/FFE2 local group service |
+
+| Alarm action | Operand | Massage combinations (both / head / feet) |
+|---|---|---|
+| zero_g | `45` | `79` / `7C` / `7F` |
+| zero_g_2 | `6B` | none |
+| anti_snore | `46` | `78` / `7B` / `7E` |
+| tv | `58` | `77` / `7A` / `7D` |
+| lounge | `59` | `AC` / `AD` / `AE` |
+| memory_1 | `2E` | `81` / `82` / `83` |
+| memory_2 | `2F` | `A6` / `A7` / `A8` |
+| memory_3 | `30` | `A9` / `AA` / `AB` |
+| sleep_aid | `F6` | none |
+| wake_mode_1 | `B0` | none |
+| wake_mode_2 | `B1` | none |
+| massage | `5D` | none |
+| head_massage | `4C` | none |
+| foot_massage | `4E` | none |
+<!-- /generated -->
+
+#### Settings
+
+Use the shared `adjustable_bed.set_alarm` action for the next occurrence of a
+wake time, with only the selected layout's wake and massage choices. Unsupported
+combinations are rejected before any target writes. The receiver stores a
+countdown; the integration does not create a phone alarm or synchronize a clock
+that this app cannot set.
+Massage is added only when explicitly requested; omitting the zone preserves
+the selected wake action without adding massage.
+
+A valid LED reply enables the light timeout number and color settings. Layouts
+with a light power control also expose the native light entity. The
+`adjustable_bed.baseremote_settings` action can set RGB directly when only color
+settings are available. A valid aroma reply enables three immediate time numbers.
+These controls show delivered requests, not an acknowledgement of physical effect.
+No phone-side draft selection becomes an entity.
+Entity registry identities survive idle disconnects. Controls still require
+fresh capability replies on the next connection.
+
+The same settings action sets or removes a local Bluetooth group on receivers
+with FFE0 service, FFE2 write and FFE1 notification characteristics. It writes one
+ASCII command, waits before closing that physical link, and visits multiple
+targets sequentially. No acknowledgement proves grouping or synchronization.
+The next receiver is not configured until the preceding link has closed.
+This is receiver-local setup, independent of Home Assistant's Combine feature.
+
+#### Notifications
+
+The shared classic parser retains fragmented data, checks additive checksums and
+recognizes alarm, LED and aroma capability replies. Malformed frames are recorded in diagnostics. No live motor angle, percentage or battery telemetry exists.
+Desk-only height and unit messages do not create bed state. Android's uppercase
+acknowledgement checks and malformed aroma integer conversion do not establish
+extra feedback or a correlation between replies and pending requests.
+
+#### Timing and release
+
+The worker refreshes held commands at the interval selected by the actual
+Bluetooth name. Once and short-release actions emit one operand, then END.
+Long actions count the node's threshold ticks before emitting, suppressing recall.
+A null-short long-only release has no END on Nordic and uses the held-release
+path on framed links. The original worker can retain counters and queued-write
+races across touch events; Home Assistant cancels stale gestures and drains an
+in-flight ATT write before cancellation-proof cleanup on the captured session.
+Cleanup cannot reach a replacement link, mode or owner.
+
+#### Limits
+
+Physical movement, firmware effects and local group behavior remain unverified.
+Phone flashlight, speech, audio, media, Wi-Fi, cloud, firmware updates, manufacturing
+and stress-test tools are outside the integration. Desk layouts are outside the
+bed product boundary.
+
+#### Provenance
+
+Based on Base Remote 1.0.1 (`com.richmat.baseremote`).

@@ -2305,7 +2305,8 @@ class CoordinatorConnectionMixin:
             return
         try:
             async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
-                await self.async_start_notify()
+                if controller.restore_notifications_after_cancel:
+                    await self.async_start_notify()
                 await controller.async_resume_session()
                 self._reset_disconnect_timer()
         except TimeoutError:
@@ -2473,7 +2474,12 @@ class CoordinatorConnectionMixin:
                 if client.is_connected:
                     self._client = client
                     _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
-                    if not self._shutting_down and controller is not None and self._controller is controller:
+                    if (
+                        not self._shutting_down
+                        and controller is not None
+                        and self._controller is controller
+                        and controller.restore_notifications_after_cancel
+                    ):
                         try:
                             async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
                                 await self.async_start_notify()

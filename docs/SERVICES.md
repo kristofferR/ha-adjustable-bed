@@ -28,6 +28,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Runs a full body massage, or moves one base of a pair to a preset while the other base lowers its feet for 30 seconds. |
 | [`sleepfunction_settings`](#sleepfunction_settings) | SleepFunction: set fan and aroma | Sets the head fan, foot fan or aroma of a SleepFunction bed. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
+| [`baseremote_settings`](#baseremote_settings) | Base Remote: color and receiver group | Sets the light color of a Base Remote bed, or changes the Bluetooth group stored in its receiver. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Sets the clock of each selected bed to Home Assistant's local time. Every bed is checked before any clock changes. |
 | [`rename`](#rename) | Rename Bluetooth name | Gives each selected bed a new Bluetooth name, on beds that support it. Every bed checks the name against its own rules before any name changes. This does not rename the device in Home Assistant. |
 | [`lower_to_flat`](#estimated-positions) | Lower to flat | Lowers the selected motors for their full travel time plus a margin. It does not mark the bed as flat: use Mark estimated position flat afterwards. |
@@ -330,6 +331,7 @@ entities, including the light colors, are separate.
 |-----|----------|-------|
 | [Super Colchones](beds/richmat.md#super-colchones) | `head_up`, `head_down`, `foot_up`, `foot_down`; AFEG350 also `lumbar_up`, `lumbar_down` | |
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The `richmat_classic_<node>` controls of the selected remote layout that can be held | Saves cannot be held |
+| [Base Remote](beds/richmat.md#base-remote) | The held controls of the selected layout and mode | Saves cannot be held |
 | [Dream Sense Bed](beds/richmat.md#dream-sense-bed) | The selected product's held controls, such as `HeadUp` | Save buttons are separate |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Motor directions and app buttons that can be held | 100 to 60000 ms. Motion sensor actions end after five seconds. BOX25 voice positions run once |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Axes, presets, memories, light and massage controls by model, listed in the guide | At most 30 seconds. Memory recalls take under 5 seconds; save with `save_preset` |
@@ -536,6 +538,32 @@ selected bed before changing any.
 | `value` | Value | Light brightness 0 to 100, massage duration 1 to 60 minutes, or motion light duration 1 to 30 minutes. |
 
 See [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) for the bed's controls.
+
+## Base Remote
+
+<a id="baseremote_settings"></a>
+**`baseremote_settings`**: Sets the light color of a Base Remote bed, or changes the Bluetooth group stored in its receiver. The receiver does not confirm a group change and disconnects afterwards.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `operation` | Setting | What to change. One of `set_color` (Set light color), `set_group` (Set Bluetooth group) or `remove_group` (Remove Bluetooth group). |
+| `rgb_color` | Light color | Required for Set light color: the color. |
+| `group` | Group | Required for Set Bluetooth group: exactly four printable characters. |
+
+The light color needs the bed to report its light on the current connection.
+A group change needs a receiver with the group setting. It goes to the selected
+receivers one after another, within twelve seconds in total, and each receiver
+disconnects afterwards. Use [`set_alarm`](#set_alarm) for alarms; the light
+timeout and aroma times are entities. See the
+[Base Remote guide](beds/richmat.md#base-remote).
+
+```yaml
+action: adjustable_bed.baseremote_settings
+data:
+  device_id: YOUR_DEVICE_ID
+  operation: set_group
+  group: "1234"
+```
 
 ## BedSmart / X-Series
 
@@ -2366,3 +2394,4 @@ both sides the same alarm time. Combined beds that connect to one side at a time
 offer renewable holds on Left or Right, while timed Both moves still work. The
 motor covers support renewable holds through `timed_move` and `hold_control`;
 presets run once.
+

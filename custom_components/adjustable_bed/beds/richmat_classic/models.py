@@ -4,6 +4,7 @@ Data extracted outside this repository from the apps' catalogs in
 ``beds/richmat_classic/data``; not edited by hand.
 """
 
+from ...profiles import baseremote
 from ...profiles.bedsmart import ALIASES as BEDSMART_ALIASES
 from ...profiles.bedsmart import LAYOUTS as BEDSMART_LAYOUTS
 from ...profiles.bedsmart import NAVIGATION_LAYOUTS as BEDSMART_NAVIGATION
@@ -398,6 +399,9 @@ MODEL_CHOICES['powercool'] = (
 MANUAL_ALIASES['powercool'] = {'B6RU': 'B6RM', 'ZR90': 'S9RM', '200I': 'A8RM', '400I': 'A0RM', '800I': 'A1RM', 'COOL': 'QRRM'}
 
 # The four resource apps share one identical layout/alias domain.
+MODEL_CHOICES["baseremote"] = baseremote.LAYOUTS
+MANUAL_ALIASES["baseremote"] = {key: value for key, value in baseremote.ALIASES.items() if len(key) == 4}
+
 for _app in APPS:
     MODEL_CHOICES[_app] = LAYOUTS
     MANUAL_ALIASES[_app] = {key: value for key, value in ALIASES.items() if len(key) == 4}

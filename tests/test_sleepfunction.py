@@ -1125,15 +1125,49 @@ async def test_sent_state_honors_the_shared_current_owner_predicate(clock):
     ctrl.forward_controller_state_updates.assert_not_called()
 
 
-def test_app_timer_unknown_is_distinct_from_its_explicit_off_choice():
-    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+async def test_massage_timer_is_the_shared_select_and_the_popup_has_no_off():
+    from custom_components.adjustable_bed.beds.richmat_classic.protocol import (
+        massage_popup,
+        massage_timer,
+    )
 
-    ctrl, target = controller("D1RM")
-    target.controller_state = {}
-    spec = ctrl.controller_select_specs[0]
-    entity = AdjustableBedControllerSelect(target, spec)
-    assert entity.current_option is None
-    target.controller_state[spec.state_key] = None
-    assert entity.current_option is None
-    target.controller_state[spec.state_key] = "off"
-    assert entity.current_option == "off"
+    ctrl, coordinator = controller("D1RM")
+    assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
+    assert ctrl.massage_timer_options == [10, 20, 30] and ctrl.massage_timer_can_turn_off
+    assert ctrl.controller_select_specs == ()
+    for minutes, progress in ((0, 0), (10, 2), (20, 3), (30, 5)):
+        coordinator.client.write_gatt_char.reset_mock()
+        await ctrl.set_massage_timer(minutes)
+        assert packets(coordinator) == [massage_timer("D1RM", progress).hex()]
+
+    popup = next(
+        layout
+        for layout, model in load_catalog("sleepfunction").models.items()
+        if layout not in EXCLUDED_LAYOUTS | PICKER_LAYOUTS | {"D1RM", "D9RM"}
+        and any(c.tag == "65" for c in model.controls)
+    )
+    ctrl, coordinator = controller(popup)
+    assert ctrl.massage_timer_options == [15, 30, 45] and not ctrl.massage_timer_can_turn_off
+    await ctrl.set_massage_timer(30)
+    assert packets(coordinator) == [massage_popup("30").hex()]
+    with raises_key("sleepfunction_control"):
+        await ctrl.set_massage_timer(0)
+
+
+async def test_a_nordic_connection_names_each_control_by_what_it_sends():
+    framed, _ = controller("BERM", "FRAMED")
+    node = next(c.node for c in framed._controls if c.label.endswith("ubl on off"))
+    listed_for_framed = next(
+        s for s in framed.controller_button_specs if s.key.startswith(f"sleepfunction_{node}_")
+    )
+    assert "light" in listed_for_framed.name.lower()
+
+    ctrl, coordinator = controller("BERM", "RAW")
+    # Over Nordic UART this layout's light control sends the legacy "motor 1+2 up" operand.
+    spec = next(s for s in ctrl.controller_button_specs if s.key.startswith(f"sleepfunction_{node}_"))
+    assert spec.key.endswith("_raw") and spec.name == "Head and foot up"
+    assert not any("light" in s.name.lower() for s in ctrl.controller_button_specs)
+    assert not ctrl.supports_light_toggle_control
+    with raises_key("sleepfunction_control"):
+        await listed_for_framed.press_fn(ctrl)
+    assert packets(coordinator) == []

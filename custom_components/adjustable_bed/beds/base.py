@@ -2765,6 +2765,16 @@ class BedController(GattWriter):
     async def async_refresh_auth(self) -> None:
         """Re-authenticate a reused link before a command."""
 
+    @property
+    def restore_notifications_after_cancel(self) -> bool:
+        """Whether the coordinator may restart notifications within a bounded restore.
+
+        Applies to pairing rollback and to a link a failed disconnect retained.
+        A controller whose initialization must drain uncancellable work can
+        return False and restore its session in ``async_refresh_auth`` instead.
+        """
+        return True
+
     async def async_resume_session(self) -> None:
         """Re-arm authentication and keepalive on a link that stayed connected."""
 

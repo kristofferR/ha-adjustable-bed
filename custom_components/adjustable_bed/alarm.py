@@ -103,6 +103,8 @@ class AlarmCapability:
     massage_intensities: int = 0
     massage_durations: tuple[int, ...] = ()
     massage_zones: tuple[str, ...] = ()
+    # Some beds combine massage with a wake action only when explicitly requested.
+    default_massage_zone: bool = True
     # A vibrating mattress topper with its own alarm, per half.
     mattress_sides: tuple[str, ...] = ()
     sounds: tuple[str, ...] = ()

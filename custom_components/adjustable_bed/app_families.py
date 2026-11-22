@@ -1432,7 +1432,7 @@ RICHMAT_FAMILY: Final = AppFamily(
     row=BED_TYPE_RICHMAT,
     name="Richmat",
     # Each other app is its own row too (lists_members).
-    apps="RMControl, SleepFunction and SVEN & SON apps, and Richmat remotes",
+    apps="RMControl and SVEN & SON apps, and Richmat remotes",
     answers={
         "richmat_420": Answer("richmat_app"),
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),

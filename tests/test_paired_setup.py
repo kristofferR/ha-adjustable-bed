@@ -3187,6 +3187,7 @@ class TestPairBedsConversion:
             start_notify=AsyncMock(),
             stop_keepalive=AsyncMock(),
             async_resume_session=AsyncMock(),
+            restore_notifications_after_cancel=True,
         )
         coord._client = client
         coord._controller = controller
@@ -3248,6 +3249,7 @@ class TestPairBedsConversion:
             start_notify=AsyncMock(side_effect=stalled_start_notify),
             stop_keepalive=AsyncMock(),
             async_resume_session=AsyncMock(),
+            restore_notifications_after_cancel=True,
         )
         coord._client = client
         coord._controller = controller
