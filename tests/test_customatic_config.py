@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.config_flow import (
     _default_motor_count,
@@ -16,7 +15,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
-    BED_TYPE_ZSERIES,
     get_motor_pulse_defaults,
     requires_pairing,
 )
@@ -52,17 +50,6 @@ def test_layout_counts_and_no_invented_feedback_or_pairing(bed_type, profile, mo
     assert not requires_pairing(bed_type)
     assert not bed_type_has_position_feedback(bed_type, "auto")
     assert get_motor_pulse_defaults(bed_type)[1] == 120
-
-
-def test_customatic_group_lists_each_explicit_package_profile():
-    routes = ACTUATOR_GROUPS["customatic"]
-    assert {bed_type for bed_type, _variant in routes} == {item[0] for item in PROFILES} | {
-        BED_TYPE_ZSERIES
-    }
-    assert [variant for bed_type, variant in routes if bed_type == BED_TYPE_ZSERIES] == [
-        "z230",
-        "z280",
-    ]
 
 
 @pytest.mark.parametrize("name", ["OKIN-Receiver", "OKIN", "iFlex_Bed", "iFlex_Bed-1234"])

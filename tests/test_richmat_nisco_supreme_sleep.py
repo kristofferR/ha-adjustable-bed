@@ -101,7 +101,7 @@ async def test_settings_keep_bed_schema_and_local_ack_beside_excluded_metadata(a
         await controller.direct_user_mode("double")
         controller.write_command.assert_awaited_once_with(sleep_frame(0x14, b"\x01\x03\x02"))
     else:
-        with pytest.raises(ValueError, match="only for Nisco"):
+        with pytest.raises(ValueError, match="Only the Nisco model"):
             await controller.direct_user_mode("double")
         controller.write_command.assert_not_awaited()
 

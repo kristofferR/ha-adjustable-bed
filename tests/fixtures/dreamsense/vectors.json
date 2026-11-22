@@ -1,0 +1,581 @@
+[
+  {
+    "id": "raw-head-up",
+    "protocol": "P1",
+    "action": "raw-head-up",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        36
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "24",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "raw-stop",
+    "protocol": "P1",
+    "action": "raw-stop",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        110
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "raw-yellow-pillow-up",
+    "protocol": "P1",
+    "action": "raw-yellow-pillow-up",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        63
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "3f",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "raw-blue-pillow-up",
+    "protocol": "P1",
+    "action": "raw-blue-pillow-up",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        65
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "41",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "left-head-up",
+    "protocol": "P2",
+    "action": "left-head-up",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        36
+      ],
+      "kwargs": {
+        "nordic": true,
+        "side": 0
+      }
+    },
+    "expected_bytes": "6e 01 00 24 93",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "right-head-up",
+    "protocol": "P2",
+    "action": "right-head-up",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        36
+      ],
+      "kwargs": {
+        "nordic": true,
+        "side": 1
+      }
+    },
+    "expected_bytes": "6e 01 01 24 94",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "left-stop",
+    "protocol": "P2",
+    "action": "left-stop",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        110
+      ],
+      "kwargs": {
+        "nordic": true,
+        "side": 0
+      }
+    },
+    "expected_bytes": "6e 01 00 6e dd",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "yellow-pillow",
+    "protocol": "P2",
+    "action": "yellow-pillow",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        63
+      ],
+      "kwargs": {
+        "nordic": true,
+        "side": 0
+      }
+    },
+    "expected_bytes": "6e 01 00 3f ae",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "blue-pillow",
+    "protocol": "P2",
+    "action": "blue-pillow",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        65
+      ],
+      "kwargs": {
+        "nordic": true,
+        "side": 0
+      }
+    },
+    "expected_bytes": "6e 01 00 41 b0",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "save-memory1",
+    "protocol": "P2",
+    "action": "save-memory1",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        43
+      ],
+      "kwargs": {
+        "nordic": true,
+        "side": 0
+      }
+    },
+    "expected_bytes": "6e 01 00 2b 9a",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "exit-limit",
+    "protocol": "P2",
+    "action": "exit-limit",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        0
+      ],
+      "kwargs": {
+        "nordic": true,
+        "prefix": [
+          110,
+          2,
+          1
+        ]
+      }
+    },
+    "expected_bytes": "6e 02 01 00 71",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "clock-query",
+    "protocol": "P2",
+    "action": "clock-query",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        1
+      ],
+      "kwargs": {
+        "nordic": true,
+        "prefix": [
+          110,
+          8,
+          1
+        ]
+      }
+    },
+    "expected_bytes": "6e 08 01 01 78",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "light-query",
+    "protocol": "P2",
+    "action": "light-query",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        1
+      ],
+      "kwargs": {
+        "nordic": true,
+        "prefix": [
+          110,
+          10,
+          0
+        ]
+      }
+    },
+    "expected_bytes": "6e 0a 00 01 79",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "music-query",
+    "protocol": "P2",
+    "action": "music-query",
+    "inputs": {
+      "builder": "generic",
+      "args": [
+        1
+      ],
+      "kwargs": {
+        "nordic": true,
+        "prefix": [
+          110,
+          21,
+          1
+        ]
+      }
+    },
+    "expected_bytes": "6e 15 01 01 85",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "head-split",
+    "protocol": "P3",
+    "action": "head-split",
+    "inputs": {
+      "builder": "split_mode",
+      "args": [
+        0
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 09 0b 02 01 00 00 a5",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "standard-split",
+    "protocol": "P3",
+    "action": "standard-split",
+    "inputs": {
+      "builder": "split_mode",
+      "args": [
+        2
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 09 0b 02 01 00 02 a7",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "query-split",
+    "protocol": "P3",
+    "action": "query-split",
+    "inputs": {
+      "builder": "split_query",
+      "args": [],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 08 0b 02 00 00 a3",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "single-alarm-zero",
+    "protocol": "P3",
+    "action": "single-alarm-zero",
+    "inputs": {
+      "builder": "single_clock",
+      "args": [
+        0,
+        0
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 05 00 00 73 | 6e 06 00 00 74",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "single-alarm-300-zg",
+    "protocol": "P3",
+    "action": "single-alarm-300-zg",
+    "inputs": {
+      "builder": "single_clock",
+      "args": [
+        300,
+        69
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 05 2c 00 9f | 6e 06 01 45 ba",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "light-forever",
+    "protocol": "P3",
+    "action": "light-forever",
+    "inputs": {
+      "builder": "light_seconds",
+      "args": [
+        0
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 0b ff ff 77",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "light-300-seconds",
+    "protocol": "P3",
+    "action": "light-300-seconds",
+    "inputs": {
+      "builder": "light_seconds",
+      "args": [
+        300
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 0b 01 2c a6",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "rgb-red",
+    "protocol": "P3",
+    "action": "rgb-red",
+    "inputs": {
+      "builder": "rgb",
+      "args": [
+        255,
+        0,
+        0
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 0c ff ff 78 6e 0d 00 00 7b",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "rgb-123",
+    "protocol": "P3",
+    "action": "rgb-123",
+    "inputs": {
+      "builder": "rgb",
+      "args": [
+        1,
+        2,
+        3
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 0c ff 01 7a 6e 0d 02 03 80",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "alarm-list",
+    "protocol": "P3",
+    "action": "alarm-list",
+    "inputs": {
+      "builder": "alarm_list",
+      "args": [],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 08 05 01 00 00 9c",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "alarm-add-once",
+    "protocol": "P3",
+    "action": "alarm-add-once",
+    "inputs": {
+      "builder": "alarm_add",
+      "args": [
+        1,
+        1,
+        69,
+        7,
+        30,
+        0
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 0d 05 01 01 01 01 45 07 1e 00 0e",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "alarm-add-mon-fri",
+    "protocol": "P3",
+    "action": "alarm-add-mon-fri",
+    "inputs": {
+      "builder": "alarm_add",
+      "args": [
+        2,
+        249,
+        46,
+        22,
+        45,
+        0
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 0d 05 01 01 02 f9 2e 16 2d 00 0e",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "alarm-delete1",
+    "protocol": "P3",
+    "action": "alarm-delete1",
+    "inputs": {
+      "builder": "alarm_delete",
+      "args": [
+        1
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 08 05 02 01 01 9f",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "alarm-delete2",
+    "protocol": "P3",
+    "action": "alarm-delete2",
+    "inputs": {
+      "builder": "alarm_delete",
+      "args": [
+        2
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 08 05 02 01 02 a0",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "excluded-ota-crc-0",
+    "protocol": "EXCLUDED-OTA",
+    "action": "excluded-ota-crc-0",
+    "inputs": {
+      "builder": "crc16_xmodem",
+      "args": [
+        [
+          110,
+          64,
+          0,
+          8,
+          1,
+          0
+        ]
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "5443",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "excluded-ota-crc-1",
+    "protocol": "EXCLUDED-OTA",
+    "action": "excluded-ota-crc-1",
+    "inputs": {
+      "builder": "crc16_xmodem",
+      "args": [
+        [
+          110,
+          64,
+          0,
+          8,
+          2,
+          1
+        ]
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "1131",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "time-epoch-zero",
+    "protocol": "P3",
+    "action": "time-epoch-zero",
+    "inputs": {
+      "builder": "time_sync",
+      "args": [
+        0,
+        0,
+        1970,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 0c 08 02 01 00 00 00 00 00 a5 | 6e 20 0d 08 03 01 00 01 01 00 00 00 a9",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "time-negative-zone",
+    "protocol": "P3",
+    "action": "time-negative-zone",
+    "inputs": {
+      "builder": "time_sync",
+      "args": [
+        1,
+        -5,
+        2026,
+        11,
+        20,
+        12,
+        34,
+        56
+      ],
+      "kwargs": {}
+    },
+    "expected_bytes": "6e 20 0c 08 02 01 00 00 00 01 fb a1 | 6e 20 0d 08 03 01 38 0b 14 0c 22 38 64",
+    "origin": "Static builder instantiation with explicit synthetic parameters; not a hardware capture"
+  },
+  {
+    "id": "normalized-red",
+    "protocol": "P3",
+    "action": "normalized-red",
+    "inputs": {
+      "builder": "rgb_normalized",
+      "args": [
+        1,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e 0c ff ff 78 6e 0d 00 00 7b",
+    "origin": "Concrete normalized Color/edge rounding instantiation from artifact; not hardware capture"
+  },
+  {
+    "id": "normalized-half",
+    "protocol": "P3",
+    "action": "normalized-half",
+    "inputs": {
+      "builder": "rgb_normalized",
+      "args": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "expected_bytes": "6e 0c ff 80 f9 6e 0d 80 80 7b",
+    "origin": "Concrete normalized Color/edge rounding instantiation from artifact; not hardware capture"
+  },
+  {
+    "id": "palette-cyan",
+    "protocol": "P3",
+    "action": "palette-cyan",
+    "inputs": {
+      "builder": "rgb_normalized",
+      "args": [
+        0,
+        0.4980392156862745,
+        1
+      ]
+    },
+    "expected_bytes": "6e 0c ff 00 79 6e 0d 7f ff f9",
+    "origin": "Concrete normalized Color/edge rounding instantiation from artifact; not hardware capture"
+  }
+]

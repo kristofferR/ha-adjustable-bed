@@ -1,6 +1,7 @@
 """Exact package-local selectable layouts; no hardware compatibility claim.
 
-Generated outside this repository with ``beds/richmat_classic/data``; no generator is checked in, so edits are by hand.
+Data extracted outside this repository from the apps' catalogs in
+``beds/richmat_classic/data``; not edited by hand.
 """
 
 from ...profiles.bedsmart import ALIASES as BEDSMART_ALIASES

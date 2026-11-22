@@ -43,7 +43,6 @@ async def handle_request(call: ServiceCall) -> None:
     preflighted = await _preflight_capability(
         targets,
         RichmatLegacyController,
-        "SleepEvolution / W.Silver 3.x",
         None,
         validate,
     )
@@ -58,7 +57,6 @@ async def handle_request(call: ServiceCall) -> None:
         preflighted,
         _family_command(
             RichmatLegacyController,
-            "Fixed ASCII app",
             execute,
         ),
         cancel_running=True,

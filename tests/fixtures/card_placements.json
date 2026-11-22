@@ -1,7 +1,4 @@
 {
- "binary_sensor:adjustable_lite_light": {
-  "card_section": "lighting"
- },
  "binary_sensor:adjustamattress_busy": {
   "card_section": "utility"
  },
@@ -50,10 +47,6 @@
  "binary_sensor:cheerssleep_right_asleep": {
   "card_section": "hidden"
  },
- "binary_sensor:enso_light": {
-  "card_section": "lighting",
-  "card_role": "state"
- },
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
@@ -65,9 +58,6 @@
  },
  "binary_sensor:furnimove_sync": {
   "card_section": "hidden"
- },
- "binary_sensor:innova_light": {
-  "card_section": "lighting"
  },
  "binary_sensor:leggett_alarm_indicator": {
   "card_section": "hidden"
@@ -110,10 +100,6 @@
  },
  "binary_sensor:motion_bed_thermal_timer_enabled": {
   "card_section": "hidden"
- },
- "binary_sensor:nerum_light": {
-  "card_section": "lighting",
-  "card_role": "state"
  },
  "binary_sensor:nerum_massage": {
   "card_section": "hidden"
@@ -190,6 +176,9 @@
  "binary_sensor:starcode_sonic_active": {
   "card_section": "hidden"
  },
+ "binary_sensor:superior_sleep_alarm_enabled": {
+  "card_section": "hidden"
+ },
  "binary_sensor:symphony_alarm_enabled": {
   "card_section": "utility"
  },
@@ -201,9 +190,6 @@
  },
  "binary_sensor:symphony_privacy": {
   "card_section": "hidden"
- },
- "binary_sensor:under_bed_light_state": {
-  "card_section": "lighting"
  },
  "button:adjustable_bed_speech": {
   "card_section": "utility"
@@ -1833,16 +1819,6 @@
   "card_role": "up",
   "card_motor": "ruf_richmat_mattress_right_pillow"
  },
- "button:selected_motor_down": {
-  "card_section": "motors",
-  "card_role": "down",
-  "card_motor": "selected_motor"
- },
- "button:selected_motor_up": {
-  "card_section": "motors",
-  "card_role": "up",
-  "card_motor": "selected_motor"
- },
  "button:set_back_reference": {
   "card_section": "motors",
   "card_role": "reference",
@@ -2233,12 +2209,6 @@
   "card_motor": "stair"
  },
  "button:starcode_abm5_4_light_minus": {
-  "card_section": "lighting"
- },
- "button:starcode_abm5_4_light_off": {
-  "card_section": "lighting"
- },
- "button:starcode_abm5_4_light_on": {
   "card_section": "lighting"
  },
  "button:starcode_abm5_4_light_plus": {
@@ -3195,6 +3165,9 @@
  "number:comfortfurniture_wave_level": {
   "card_section": "massage"
  },
+ "number:dreamsense_light_seconds": {
+  "card_section": "lighting"
+ },
  "number:fan_level": {
   "card_section": "climate"
  },
@@ -3540,16 +3513,13 @@
  "select:adjustamattress_strength_setting": {
   "card_section": "utility"
  },
- "select:bedsmart_axis": {
-  "card_section": "utility"
- },
- "select:bedsmart_head_foot": {
-  "card_section": "utility"
- },
- "select:bedsmart_mode": {
-  "card_section": "utility"
+ "select:bedsmart_side": {
+  "card_section": "motors"
  },
  "select:comfy_timer_selection": {
+  "card_section": "utility"
+ },
+ "select:dreamsense_selected_side": {
   "card_section": "utility"
  },
  "select:footwarming_timer": {
@@ -3569,6 +3539,9 @@
  },
  "select:goodvibe_side": {
   "card_section": "motors"
+ },
+ "select:heat_level": {
+  "card_section": "climate"
  },
  "select:hjbed_layout": {
   "card_section": "utility"
@@ -3789,9 +3762,6 @@
  "select:vmatbasic_mood_palette": {
   "card_section": "lighting",
   "card_role": "mood"
- },
- "sensor:adjustable_lite_massage_timer": {
-  "card_section": "hidden"
  },
  "sensor:adjustamattress_foot_intensity": {
   "card_section": "massage"
@@ -4028,6 +3998,9 @@
  },
  "sensor:doublesleep_use_side": {
   "card_section": "utility"
+ },
+ "sensor:dreamsense_alarm_ack": {
+  "card_section": "hidden"
  },
  "sensor:enso_massage_timer": {
   "card_section": "massage",
@@ -4655,6 +4628,27 @@
  "sensor:starcode_sonic_mode": {
   "card_section": "hidden"
  },
+ "sensor:super_colchones": {
+  "card_section": "hidden"
+ },
+ "sensor:superior_sleep_alarm_hour": {
+  "card_section": "hidden"
+ },
+ "sensor:superior_sleep_foot_level": {
+  "card_section": "massage"
+ },
+ "sensor:superior_sleep_head_level": {
+  "card_section": "massage"
+ },
+ "sensor:superior_sleep_mode": {
+  "card_section": "massage"
+ },
+ "sensor:superior_sleep_timer_minutes": {
+  "card_section": "massage"
+ },
+ "sensor:superior_sleep_timer_seconds": {
+  "card_section": "hidden"
+ },
  "sensor:svane_firmware": {
   "card_section": "hidden"
  },
@@ -4801,6 +4795,9 @@
  "switch:doublesleep_sonic": {
   "card_section": "massage"
  },
+ "switch:dreamsense_split": {
+  "card_section": "utility"
+ },
  "switch:jerome_massage": {
   "card_section": "massage"
  },
@@ -4922,6 +4919,12 @@
   "card_section": "massage"
  },
  "switch:smart_sleep_privacy": {
+  "card_section": "utility"
+ },
+ "switch:superior_sleep_massage": {
+  "card_section": "massage"
+ },
+ "switch:superior_sleep_motion": {
   "card_section": "utility"
  },
  "switch:suta_heating": {

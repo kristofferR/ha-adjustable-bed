@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.components import bluetooth
+from homeassistant.components.sensor import SensorDeviceClass
 
 from ...codec import paramount as codec
 from ...controller_state import StateKey
@@ -224,13 +225,13 @@ class ParamountController(ProfileExecution, BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or duration_ms <= 0:
-            raise ValueError("Unavailable Paramount control or duration")
+            raise ValueError("Choose a control this bed offers and a duration longer than zero")
         if control.startswith("gearing_") and any(
             self._range_enabled.get(axis, True) and self._bounds(axis) != (0, maximum)
             for axis, maximum in (("head", self.profile.head_max), ("legs", self.profile.legs_max))
         ):
             raise ValueError(
-                "Linked movement is unavailable while enabled head or leg ranges are narrowed"
+                "Head and legs cannot move together while the head or leg movement range is limited. Reset that range or turn it off first"
             )
 
     @property
@@ -440,6 +441,7 @@ class ParamountController(ProfileExecution, BedController):
                 "mdi:arrow-expand-vertical",
                 "cm",
                 entity_registry_enabled_default=True,
+                device_class=SensorDeviceClass.DISTANCE,
             ),
             ControllerStateSensorSpec(
                 "paramount_tilt",
@@ -455,6 +457,7 @@ class ParamountController(ProfileExecution, BedController):
                 "mdi:signal",
                 "dBm",
                 entity_registry_enabled_default=False,
+                device_class=SensorDeviceClass.SIGNAL_STRENGTH,
             ),
             ControllerStateSensorSpec(
                 "paramount_serial",
@@ -727,7 +730,7 @@ class ParamountController(ProfileExecution, BedController):
         await self._exchange(codec.frame(0x83))
         await self._exchange(codec.control(0))
         if self._settings is None or self._posture is None:
-            raise ValueError("Paramount needs fresh settings and positions to save memory")
+            raise ValueError("Wait until the bed reports its settings and position, then save the memory position again")
         await self._save_settings(self._settings.save(memory_num, self._posture))
 
     async def _change_setting(self, name: str, enabled: bool) -> None:

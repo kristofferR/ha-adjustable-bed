@@ -6,10 +6,9 @@
 
 ## Known Models
 
-Reclining sofas and seats selected by the system-reply codes below. Logical
-addresses describe transport targets, not physical left/right. A stored motor
-count does not hide controls: both apps bind head, reclining and lumbar in every
-recognized layout. Actual installed actuators remain hardware dependent.
+Reclining sofas and seats, identified by the codes they report (below). Seat
+addresses do not mean left and right. Every layout shows head, reclining and
+lumbar controls, as both apps do, even where a seat lacks that motor.
 
 ## Apps
 
@@ -22,12 +21,12 @@ recognized layout. Actual installed actuators remain hardware dependent.
 
 | Feature | SYNARGY | SYNERGY |
 |---|---|---|
-| Motor control | Head, reclining, lumbar, held Home | Same wire controls |
-| Position feedback | Raw counters only, no degree or percentage sliders | Same |
-| Memory | Two recall/save slots, with prepare | Same |
+| Motor control | Head, reclining, lumbar, hold-to-move Home | Same |
+| Position feedback | ❌ (raw counters only; no sliders) | Same |
+| Memory | Two slots, recall and save | Same |
 | Accessories | Per-seat cup power, base RGB/brightness/power, reading light power/brightness | Same |
-| BLE rename | 1..16 ASCII bytes | Same portable subset |
-| Massage / alarm / coupled control | No proved command | No proved command |
+| Bluetooth rename | 1–16 ASCII characters (no accented letters) | Same |
+| Massage / alarm / coupled control | ❌ | ❌ |
 
 ## Choosing a profile
 
@@ -48,7 +47,7 @@ not receive, and use no name rule or advertised service UUID.
 ### Aliases
 
 None. Each app keeps its own profile and setup identity. Matching command bytes
-do not establish identical application behavior or firmware.
+do not mean identical application behavior or firmware.
 
 ## Wire codec
 
@@ -92,7 +91,7 @@ The Android apps inherit the runtime characteristic's write type; they do not
 select ATT response mode. HA selects response writes when the connected
 characteristic advertises `write`, otherwise requires `write-without-response`.
 No application PIN, key exchange, characteristic read, MTU or connection-priority
-request is established. SYNARGY's recovered notify guard uses OR, not a notify-bit
+request is used. SYNARGY's notify guard uses OR, not a notify-bit
 AND test; platform subscription success still decides whether HA can proceed.
 SYNERGY has no such check.
 
@@ -202,7 +201,7 @@ layout without a controllable middle never exposes address 1. Seat order and
 rotation never become left/right pairing. The selected seat survives BLE reconnects and entry reloads in a process-local
 HA session scoped to this address and app profile. Each system reply validates
 it against the current model. A cold session starts with address 0 if allowed,
-otherwise the first selectable address. This is one peripheral, with no inferred paired-bed topology.
+otherwise the first selectable address. This is one peripheral, not a paired bed.
 
 #### Controls
 
@@ -257,10 +256,9 @@ Detection: none. Choose Smart Comfort (`com.synergy.okin`) explicitly.
 
 #### Timing
 
-The post-discovery notify delay is unproven, so this profile adds no delay there.
+The post-discovery notify delay is unknown, so this profile adds no delay there.
 This is an HA policy, not a claim that the SYNERGY app has zero delay. App-specific
-listener, background-navigation and motor-runnable guard evidence stays distinct;
-HA uses its own serialized lifecycle and cancellation policy.
+listener, background-navigation and motor-runnable guards are not copied; HA uses its own serialized lifecycle and cancellation policy.
 
 #### Evidence
 

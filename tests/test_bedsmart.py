@@ -16,6 +16,8 @@ from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
 )
 from custom_components.adjustable_bed.beds.richmat_classic.protocol import Worker
 from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
+from custom_components.adjustable_bed.beds.richmat_classic.removed_layouts import REMOVED_LAYOUTS
+from custom_components.adjustable_bed.card import CardRole
 from custom_components.adjustable_bed.profiles.bedsmart import (
     EXCLUDED_LAYOUTS,
     MODE_LABELS,
@@ -102,20 +104,38 @@ async def test_finite_motion_and_fresh_release(clock, wire, first, stop):
 
 
 @pytest.mark.parametrize("layout", MODE_LABELS)
-@pytest.mark.parametrize("wire", ["RAW", "FRAMED"])
-async def test_variant_local_mode_labels_and_bytes(clock, layout, wire):
-    c, co = controller(layout, wire)
-    selector = c.controller_select_specs[0]
-    assert selector.options == MODE_LABELS[layout]
-    assert "Both" not in selector.options
+async def test_mode_select_only_where_framed_commands_carry_it(clock, layout):
+    c, co = controller(layout, "FRAMED")
+    (selector,) = c.controller_select_specs
+    side = MODE_LABELS[layout] == ("Left", "Right")
+    assert selector.key == "bedsmart_mode"
+    assert selector.translation_key == ("bedsmart_side" if side else "bedsmart_mode")
+    assert selector.options == (
+        ("left", "right") if side else tuple(f"mode_{i}" for i in (1, 2, 3))
+    )
     assert selector.local_select_fn is not None
     selector.local_select_fn(selector.options[1])
-    gesture = next(g for g in c._gestures(wire) if g.status == 1 and not g.saves)
+    assert not packets(co)
+    assert c.persisted_app_state["mode"] == 1
+    gesture = next(g for g in c._gestures("FRAMED") if g.status == 1 and not g.saves)
     await c.execute_action(gesture.node, hold_ms=150)
-    if wire == "FRAMED":
-        assert all(bytes.fromhex(p)[2] == 1 for p in packets(co))
-    else:
-        assert all(len(bytes.fromhex(p)) == 1 for p in packets(co))
+    assert all(bytes.fromhex(p)[2] == 1 for p in packets(co))
+
+    restored, _ = controller(layout, "FRAMED")
+    restored.restore_persisted_app_state(c.persisted_app_state)
+    restored._publish()
+    assert restored._coordinator.handle_controller_state_updates.call_args_list[-1].args[
+        -1
+    ] == bedsmart.MODE(selector.options[1])
+
+    raw, raw_co = controller(layout, "RAW")
+    assert raw.controller_select_specs == ()
+    raw._ui_mode = 1
+    await raw.execute_action(gesture.node, hold_ms=150)
+    assert all(len(bytes.fromhex(p)) == 1 for p in packets(raw_co))
+    unknown, _ = controller(layout)
+    unknown._session = unknown._scope = unknown._wire = None
+    assert unknown.controller_select_specs == ()
 
 
 async def test_cancelled_refresh_sends_original_release(clock):
@@ -205,25 +225,84 @@ async def test_app_local_preset_recall_and_save_use_their_own_layout(clock, long
     assert packets(co) == ["6e010064d3" if long else "6e010058c7", "6e01006edd"]
 
 
-async def test_gvrm_null_getter_never_invents_foot_command(clock):
-    c, co = controller("GVRM", "RAW")
-    selector = next(s for s in c.controller_select_specs if s.key == "bedsmart_head_foot")
-    assert selector.local_select_fn is not None
-    selector.local_select_fn("Foot")
-    b = next(b for b in c._controls if b.tag == "63")
-    with pytest.raises(ValueError):
-        await c.execute_action(b.node)
-    assert not packets(co)
+# Captured from the head or foot select's default (Head) on v5 c623aa8d9.
+_GVRM_HEAD = {
+    "RAW": {
+        2: (["37", "6e"], [150, 50]),
+        4: (["31", "6e"], [150, 50]),
+        5: (["35", "6e"], [50]),
+        8: (["32", "6e"], [150, 50]),
+        9: (["38", "6e"], [150, 50]),
+    },
+    "FRAMED": {
+        2: (["6e010037a6", "6e01006edd"], [150, 50]),
+        4: (["6e010031a0", "6e01006edd"], [150, 50]),
+        5: (["6e010035a4", "6e01006edd"], [50]),
+        8: (["6e010032a1", "6e01006edd"], [150, 50]),
+        9: (["6e010038a7", "6e01006edd"], [150, 50]),
+    },
+}
 
 
-async def test_u3_local_selector_changes_exact_axis_operand(clock):
-    c, co = controller("U3RM")
-    selector = next(s for s in c.controller_select_specs if s.key == "bedsmart_axis")
-    assert selector.local_select_fn is not None
-    selector.local_select_fn("Motor 5")
-    node = next(b.node for b in c._controls if b.tag == "51")
-    await c.execute_action(node, hold_ms=150)
-    assert packets(co)[0] == "6e010071e0"
+@pytest.mark.parametrize("wire", ["RAW", "FRAMED"])
+async def test_gvrm_head_or_foot_buttons_send_their_head_command(clock, wire):
+    c, co = controller("GVRM", wire)
+    assert c.controller_select_specs == ()
+    sent = {}
+    for b in c._controls:
+        if b.tag == "63":
+            co.client.write_gatt_char.reset_mock()
+            clock.clear()
+            spec = next(
+                s for s in c.controller_button_specs if s.key == f"richmat_classic_{b.node}"
+            )
+            await spec.press_fn(c)
+            sent[b.node] = (packets(co), list(clock))
+    assert sent == _GVRM_HEAD[wire]
+    # The app's foot choice has no command for these buttons.
+    node = next(b.node for b in c._controls if b.tag == "63")
+    with pytest.raises(ValueError, match="no command"):
+        c._gesture(node, wire, head=False)
+
+
+# Captured from the selected-motor select plus button on v5 c623aa8d9.
+_U3RM_MOTORS = {
+    ("RAW", 3): (["3f", "6e"], ["40", "6e"]),
+    ("RAW", 4): (["41", "6e"], ["42", "6e"]),
+    ("RAW", 5): (["71", "6e"], ["72", "6e"]),
+    ("FRAMED", 3): (
+        ["6e01003fae", "6e01006edd"],
+        ["6e010040af", "6e01006edd"],
+    ),
+    ("FRAMED", 4): (
+        ["6e010041b0", "6e01006edd"],
+        ["6e010042b1", "6e01006edd"],
+    ),
+    ("FRAMED", 5): (
+        ["6e010071e0", "6e01006edd"],
+        ["6e010072e1", "6e01006edd"],
+    ),
+}
+
+
+@pytest.mark.parametrize(("wire", "motor"), list(_U3RM_MOTORS))
+async def test_u3_motor_buttons_send_what_the_motor_selector_sent(clock, wire, motor):
+    c, co = controller("U3RM", wire)
+    assert c.controller_select_specs == ()
+    specs = {s.key: s for s in c.controller_button_specs}
+    sent = []
+    for tag, direction in (("51", "up"), ("52", "down")):
+        node = next(b.node for b in c._controls if b.tag == tag)
+        key = f"richmat_classic_{node}" + ("" if motor == 3 else f"_motor{motor}")
+        assert specs[key].name == f"Motor {motor} {direction}"
+        assert specs[key].hold is not None
+        co.client.write_gatt_char.reset_mock()
+        clock.clear()
+        await specs[key].press_fn(c)
+        assert clock == [150, 50]
+        sent.append(packets(co))
+    assert tuple(sent) == _U3RM_MOTORS[(wire, motor)]
+    assert not any(s.name.startswith("Selected motor") for s in specs.values())
 
 
 async def test_session_start_query_and_capabilities_are_separate(clock):
@@ -273,7 +352,7 @@ def test_parser_fragmentation_and_app_buffer_rules(chunks, alarm, light):
 def test_all_layouts_expose_only_supported_source_gestures():
     catalog = load_catalog("bedsmart")
     assert len(catalog.models) == 558
-    for layout in catalog.models.keys() - EXCLUDED_LAYOUTS:
+    for layout in catalog.models.keys() - EXCLUDED_LAYOUTS - REMOVED_LAYOUTS:
         c, _ = controller(layout)
         assert c.alarm_capability is not None or not c._alarm_actions()
         assert all(not (s.requires_confirmation and s.hold) for s in c.controller_button_specs)
@@ -282,8 +361,11 @@ def test_all_layouts_expose_only_supported_source_gestures():
             "reset" in s.name.lower() or "music" in s.name.lower()
             for s in c.controller_button_specs
         )
-    for layout in EXCLUDED_LAYOUTS:
+    for layout in EXCLUDED_LAYOUTS - REMOVED_LAYOUTS:
         with pytest.raises(HomeAssistantError):
+            controller(layout)
+    for layout in REMOVED_LAYOUTS:
+        with pytest.raises(ValueError, match="factory test"):
             controller(layout)
 
 
@@ -311,35 +393,21 @@ async def test_shared_alarm_combination_uses_only_layout_owned_options(clock):
     assert clock[-2:] == [300, 300]
 
 
-async def test_existing_selected_motor_button_follows_local_choice_and_restores_without_writes(
-    clock,
-):
-    c, co = controller("U3RM")
+async def test_earlier_selector_state_restores_without_changing_any_command(clock):
+    c, co = controller("U3RM", "RAW")
+    # Stored by earlier betas; each motor now has its own button.
+    c.restore_persisted_app_state({"mode": 0, "axis": "55", "head": False, "wire": "RAW"})
+    assert c.persisted_app_state == {
+        "mode": 0,
+        "known_light": False,
+        "known_aroma": False,
+        "wire": "RAW",
+    }
     node = next(b.node for b in c._controls if b.tag == "51")
-    spec = next(s for s in c.controller_button_specs if s.key == f"richmat_classic_{node}")
-    selector = next(s for s in c.controller_select_specs if s.key == "bedsmart_axis")
-    assert selector.local_select_fn is not None
-    selector.local_select_fn("Motor 5")
-    assert not packets(co)
-    await spec.press_fn(c)
-    assert packets(co)[0] == "6e010071e0"
-    restored, restored_co = controller("U3RM")
-    restored.restore_persisted_app_state(c.persisted_app_state)
-    assert restored.persisted_app_state == c.persisted_app_state
-    assert not packets(restored_co)
-
-
-async def test_movement_test_is_one_finite_source_sequence(clock):
-    from itertools import groupby
-
-    from custom_components.adjustable_bed.profiles.bedsmart import DIAGNOSTIC_CYCLE
-
-    c, co = controller("TEST")
-    await c.diagnostic_cycle()
-    codes = [bytes.fromhex(p)[3] for p in packets(co)]
-    groups = [code for code, _ in groupby(codes)]
-    assert groups == [code for command, _ in DIAGNOSTIC_CYCLE for code in (command, 0x6E)]
-    assert codes.count(0x6E) == 14
+    await next(s for s in c.controller_button_specs if s.key == f"richmat_classic_{node}").press_fn(
+        c
+    )
+    assert packets(co) == ["3f", "6e"]
 
 
 @pytest.mark.parametrize("zone,code", [("both", 0xA9), ("head", 0xAA), ("feet", 0xAB)])
@@ -461,3 +529,13 @@ async def test_explicit_stop_never_crosses_a_retired_physical_route(clock, chang
     with pytest.raises(HomeAssistantError):
         await c.stop_all()
     assert not packets(co)
+
+
+def test_the_set_key_is_named_for_what_it_does_not_as_a_save():
+    """GVRM's Set key arms programming: it saves nothing by itself."""
+    c, _co = controller("GVRM", "RAW")
+    spec = next(s for s in c.controller_button_specs if s.key == "richmat_classic_5")
+    assert spec.translation_placeholders == {"action": "Program"}
+    assert spec.card.role is not CardRole.SAVE and spec.hold is None
+    # Sent once and confirmed, as before (test_gvrm_head_or_foot_buttons_send_their_head_command).
+    assert spec.requires_confirmation and not spec.entity_registry_enabled_default

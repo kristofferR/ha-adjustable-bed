@@ -513,6 +513,15 @@ async def test_report_service_completes_metadata_continuation_and_typed_payload(
     assert obj._sleep.last is None
     assert obj._report_context is None
 
+    # Each report can be a megabyte, so only the newest few stay in memory.
+    for day in range(4, 4 + bed.MAX_CACHED_REPORTS):
+        commands.clear()
+        await obj.async_execute_goodvibe_request(
+            Request("report", part=1, date=date(2026, 11, day), report_type=report_type)
+        )
+    assert len(cache) == bed.MAX_CACHED_REPORTS
+    assert f"1:{report_type}:2026:11:3" not in cache
+
 
 @pytest.mark.parametrize("profile,parts", (("sleep_rm", (1, 2)), ("sleep_hj", (11, 12, 13))))
 async def test_part_setting_uses_admitted_caller_operands(coordinator, profile, parts):
@@ -720,3 +729,18 @@ async def test_sync_on_and_off_are_one_switch_sending_the_same_frames(coordinato
                 await run(fresh)
                 sent.append(writes(coordinator))
             assert sent[0] == sent[1] != []
+
+
+async def test_diagnostics_leave_out_sleep_readings_and_reports(coordinator):
+    """Live readings and nightly reports stay out of support files (PRIV-2)."""
+    obj = controller(coordinator, "sleep_rm")
+    obj.choices.events.update(
+        {
+            "q_realtime": {"L": "1-0-62-15-0-0-0-0"},
+            "report": {"heart_beat_avg": 61},
+            "report_cache": {"1:1:2026:11:3": {"heart_beat_avg": 61}},
+            "deviceAntiSnoreConfigCountEvent": 2,
+        }
+    )
+
+    assert obj.protocol_diagnostics["events"] == {"deviceAntiSnoreConfigCountEvent": 2}

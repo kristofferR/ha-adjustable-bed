@@ -10,6 +10,15 @@ import pytest
 from homeassistant.components.bluetooth.match import IntegrationMatcher
 
 
+def _admitted(manifest: dict, name: str) -> bool:
+    """Whether a name-only advertisement passes a manifest name matcher."""
+    return any(
+        fnmatchcase(name, entry["local_name"])
+        for entry in manifest["bluetooth"]
+        if "local_name" in entry
+    )
+
+
 def test_manifest_discovers_motosleep_names_in_both_cases() -> None:
     """Name-only MotoSleep advertisements must reach normalized routing."""
     manifest_path = (
@@ -17,10 +26,8 @@ def test_manifest_discovers_motosleep_names_in_both_cases() -> None:
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
-    local_names = {
-        entry["local_name"] for entry in manifest["bluetooth"] if "local_name" in entry
-    }
-    assert {"HHC*", "hhc*", "MOTOB*", "motob*", "MOTOS*", "motos*"} <= local_names
+    for name in ("HHC1234", "hhc1234", "MOTOB12", "motob12", "MOTOS12", "motos12"):
+        assert _admitted(manifest, name), name
 
 
 def test_manifest_bluetooth_matchers_are_accepted_by_home_assistant() -> None:
@@ -54,16 +61,9 @@ def test_manifest_discovers_okin_receiver_name_only_advertisements() -> None:
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
-    assert {
-        "OKIN*Receiver*",
-        "OKIN*receiver*",
-        "Okin*Receiver*",
-        "Okin*receiver*",
-        "okin*Receiver*",
-        "okin*receiver*",
-    }.issubset(
-        {entry["local_name"] for entry in manifest["bluetooth"] if "local_name" in entry}
-    )
+    for okin in ("OKIN", "Okin", "okin"):
+        for receiver in ("Receiver", "receiver"):
+            assert _admitted(manifest, f"{okin} 5 {receiver}"), (okin, receiver)
 
 
 def test_manifest_discovers_leggett_gen2_manufacturer_advertisements() -> None:

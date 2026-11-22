@@ -83,9 +83,7 @@ async def handle_sleepfunction_settings(call: ServiceCall) -> None:
                 elif child.operation_identity not in held:
                     connections.enter_context(child.hold_command_connection())
                     held.add(child.operation_identity)
-        preflighted = await _preflight_capability(
-            targets, SleepFunctionController, "SleepFunction settings", None
-        )
+        preflighted = await _preflight_capability(targets, SleepFunctionController)
         try:
             for parent, _side, children in physical:
                 for child in children:
@@ -154,7 +152,7 @@ async def handle_sleepfunction_settings(call: ServiceCall) -> None:
         await _execute_preflighted(
             targets,
             preflighted,
-            _family_command(SleepFunctionController, "SleepFunction settings", apply),
+            _family_command(SleepFunctionController, apply),
             cancel_running=False,
             resource="configuration",
             admissions=admissions,

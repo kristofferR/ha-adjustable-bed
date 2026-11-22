@@ -256,7 +256,7 @@ async def test_changed_record_after_sequential_handoff_rejects_that_receiver(
     assert set(failure.value.side_errors) == {side}
     assert isinstance(failure.value.side_errors[side], ServiceValidationError)
     assert (
-        str(failure.value.side_errors[side]) == "The Okimiki alarm record changed after validation"
+        str(failure.value.side_errors[side]) == "The alarm changed on the bed while the action was starting. Read the alarm list and try again"
     )
     assert not edits(state, address)
     assert len(edits(state, LEFT_ADDR)) == (1 if side == "right" else 0)
@@ -303,7 +303,7 @@ async def test_unrelated_concurrent_reconnect_does_not_get_sequential_exemption(
     assert failure.value.side_errors
     assert all(
         isinstance(error, ServiceValidationError)
-        and str(error) == "The physical Okimiki controller changed after validation"
+        and str(error) == "The bed's connection changed while the action was starting. Try again"
         for error in failure.value.side_errors.values()
     )
     assert not edits(state, LEFT_ADDR) and not edits(state, RIGHT_ADDR)
@@ -324,6 +324,6 @@ async def test_old_subscription_cannot_supply_record_after_sequential_handoff(
     assert isinstance(failure.value.side_errors["left"], ServiceValidationError)
     assert (
         str(failure.value.side_errors["left"])
-        == "The bed did not report current Okimiki support or alarm data"
+        == "The bed did not report its settings in time. Try again"
     )
     assert not edits(state, LEFT_ADDR) and not edits(state, RIGHT_ADDR)

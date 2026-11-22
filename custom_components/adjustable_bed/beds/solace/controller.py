@@ -164,7 +164,6 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
                 translation_key="solace_alarm_enabled",
                 state_key=ALARM_ENABLED,
                 icon="mdi:alarm",
-                entity_registry_enabled_default=True,
                 attribute_keys=(
                     ALARM_TIME,
                     ALARM_WEEKDAYS,
@@ -173,6 +172,8 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
                     ALARM_SOUND,
                     AUDIO_AVAILABLE,
                 ),
+                entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 
@@ -432,7 +433,7 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Send a press command and guarantee its protocol STOP cleanup."""
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             # Send move command once (latched — controller holds motor state)
             await self.write_command(command, cancel_event=asyncio.Event())
             # Wait for movement duration, interruptible by coordinator's cancel event
@@ -444,11 +445,6 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
                 )
             except TimeoutError:
                 pass  # Normal: completed full movement duration
-        finally:
-            try:
-                await self._send_stop()
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

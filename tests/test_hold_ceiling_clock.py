@@ -24,6 +24,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
+# ``hold_control`` loads this module in the import executor on its first call.
+# That runs on real time, which the virtual clock cannot see, so the clock
+# would jump to the renewal before the hold starts. Load it here instead.
+import custom_components.adjustable_bed.beds.vmatbasic.services  # noqa: F401
 from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,

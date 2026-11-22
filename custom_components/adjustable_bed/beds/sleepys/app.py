@@ -844,7 +844,7 @@ class SleepysEliteAppController(BedController):
         if control not in self.held_control_options:
             raise ValueError(f"Unsupported Sleepy's held control: {control!r}")
         if not _APP_HOLD_MIN_MS <= duration_ms <= _APP_HOLD_MAX_MS:
-            raise ValueError("Sleepy's held control duration must be 100-60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     def _value_route(self, control: str, value: float) -> SleepysAppRoute:
         if not math.isfinite(value) or not value.is_integer():
@@ -1180,7 +1180,7 @@ class SleepysEliteAppController(BedController):
 
     async def set_position_target(self, axis: int, target: int) -> None:
         if self.selector not in _POSITION_UI_SELECTORS:
-            raise ValueError("Sleepy's position targets are unavailable for this selector")
+            raise ValueError("This bed model cannot move to a set position")
         if axis not in range(3):
             raise ValueError("Unsupported Sleepy's position target")
         if not 0 <= target <= 100:
@@ -1383,7 +1383,7 @@ class SleepysEliteAppController(BedController):
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("Sleepy's Elite app routes do not save memory slots")
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         if ("queryPosition", self.selector) in ROUTES:
             await self.send("queryPosition")
 
@@ -1419,11 +1419,11 @@ def require_selector_route(client: object, selector: str) -> None:
     change checks exactly what the runtime will require.
     """
     route = ROUTES[("keepConnect", selector)]
-    SleepysEliteAppController._characteristic(  # noqa: SLF001 - the controller's own lookup
+    SleepysEliteAppController._characteristic(
         client, route.write_service, route.write_characteristic
     )
     service_uuid, characteristic_uuid = route.notify_target.split("/", 1)
-    SleepysEliteAppController._characteristic(  # noqa: SLF001
+    SleepysEliteAppController._characteristic(
         client, service_uuid, characteristic_uuid
     )
 

@@ -8,7 +8,7 @@ import zlib
 
 from ...codec import sleep_envelope
 from ..casper_base.protocol import Request, SensorKind
-from ..casper_sleep.protocol import Json, Receive, command, envelope, mapping
+from ..casper_sleep.protocol import MAX_REPORT_BYTES, Json, Receive, command, envelope, mapping
 from .schema import SCHEMAS
 
 
@@ -124,9 +124,9 @@ class HushReceive(Receive):
         self.pending.clear()
         decoder = zlib.decompressobj(47)
         try:
-            decoded = decoder.decompress(payload, 4 * 1024 * 1024 + 1)
+            decoded = decoder.decompress(payload, MAX_REPORT_BYTES + 1)
         except zlib.error as err:
             raise ValueError("Invalid compressed report") from err
-        if len(decoded) > 4 * 1024 * 1024 or not decoder.eof:
+        if len(decoded) > MAX_REPORT_BYTES or not decoder.eof:
             raise ValueError("Invalid or oversized report")
         return json.loads(decoded.decode("latin1"))

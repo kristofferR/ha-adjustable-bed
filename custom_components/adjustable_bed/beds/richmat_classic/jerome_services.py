@@ -181,7 +181,7 @@ async def handle_jerome(call: ServiceCall) -> None:
         await _execute_preflighted(
             targets,
             preflighted,
-            _family_command(JeromeController, "Layout bed actions", execute),
+            _family_command(JeromeController, execute),
             cancel_running=not utility,
             resource=resource,
             admissions=admissions,

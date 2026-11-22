@@ -453,3 +453,22 @@ def test_nisco_query_addendum_round_trips_through_codec(source_id: str) -> None:
     else:
         assert row["literal_hex"] == row["expected_hex"]
     assert _decode(expected) == expected
+
+
+def test_super_colchones_complete_frozen_wire_corpus():
+    """Both app formats, including all three non-command prefixes."""
+    from tests.super_colchones_vectors import WIRE
+
+    assert len(WIRE) == 58
+    prefixes = {
+        (110, 2, 1): "deviceFunctionItemExitLimit",
+        (110, 8, 1): "deviceFunctionItemCheckClock",
+        (110, 10, 0): "deviceFunctionItemCheckLight",
+    }
+    for row in WIRE:
+        args = row["inputs"]
+        actual = codec.function(
+            args["opcode"], action=prefixes.get(tuple(args["prefix"]), ""),
+            single=args["mode"] == "raw",
+        )
+        assert actual == bytes.fromhex(row["expected_bytes"]), row["id"]

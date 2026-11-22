@@ -17,7 +17,7 @@ from ...execution import HOLD_CEILING_MS
 from ...profiles.richmat_mh_apps import APPS
 from ..base import BedController
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, relabel, unique_buttons
+from ..catalog_buttons import unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -26,7 +26,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..richmat.labels import command_label
+from ..richmat.labels import preset_name
 from ..ruf_richmat.controller import RufRichmatController, waist_init
 from . import protocol
 from .app_catalog import catalog, details
@@ -355,7 +355,7 @@ class RichmatMHAppController(RufRichmatController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 1 <= duration_ms <= HOLD_CEILING_MS:
-            raise ValueError("Choose a declared held control and a duration from 1 to 30000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -434,7 +434,7 @@ class RichmatMHAppController(RufRichmatController):
 
     def set_group_type(self, option: str) -> None:
         if option not in self._mode_groups:
-            raise ValueError("Choose an app group declared by this model")
+            raise ValueError("Choose a group this bed model offers")
         self._group_type = option
         self._persist_snapshot()
 
@@ -448,22 +448,28 @@ class RichmatMHAppController(RufRichmatController):
         """Return the code of the one control on this app/model page named ``name``.
 
         The name its button shows is accepted, and so is the app's own wording.
+        Colons are ignored, so 4.x's "Massage: Mode" still names "Massage mode".
         """
-        wanted = " ".join(name.split()).casefold()
+
+        def plain(text: str) -> str:
+            return " ".join(text.replace(":", " ").split()).casefold()
+
+        wanted = plain(name)
         names: dict[int, set[str]] = {}
         for control in self._controls():
             # A motor's two directions share its label: "Back up", "Back down".
-            label = (
-                f"{control.label} {control.kind}"
-                if control.kind in ("up", "down")
-                else command_label(control.label, save=control.kind == "save")
-            )
-            names.setdefault(control.code, set()).add(label)
+            label = " ".join(control.label.split())
+            wording = {label, preset_name(label)} if control.area == "memory" else {label}
+            if control.kind == "save":
+                wording = {f"Save {w}" for w in wording}
+            elif control.kind in ("up", "down"):
+                wording = {f"{label} {control.kind}"}
+            names.setdefault(control.code, set()).update(wording)
         for spec in self.controller_button_specs:
             code = next((c for c in names if spec.key.endswith(f"_{c:02x}")), None)
             if code is not None:
                 names[code].add(_shown_name(spec))
-        codes = {code for code, labels in names.items() if wanted in {n.casefold() for n in labels}}
+        codes = {code for code, labels in names.items() if wanted in {plain(n) for n in labels}}
         if len(codes) != 1:
             raise ValueError("Choose a control by the name of its button")
         return codes.pop()
@@ -471,12 +477,12 @@ class RichmatMHAppController(RufRichmatController):
     def validate_control(self, code: int, *, remote_long: bool = False) -> Control:
         control = next((control for control in self._controls() if control.code == code), None)
         if control is None:
-            raise ValueError("Choose a control declared by the selected app/model page")
+            raise ValueError("Choose a control this bed model offers")
         if remote_long and (
             self.route != "L" or control.kind != "save" or not self.model
             or code not in self._remote_long_codes
         ):
-            raise ValueError("This model has no attached fixed-remote long-save caller")
+            raise ValueError("This bed model cannot save positions this way")
         return control
 
     def validate_voice(self, source: int) -> Control:
@@ -485,7 +491,7 @@ class RichmatMHAppController(RufRichmatController):
             return Control("L", "press", "motor_btn", "END", "Stop", codec.STOP, 0)
         control = next((item for item in self.model.controls if item.code == target), None) if self.model else None
         if control is None:
-            raise ValueError("Choose a BED output declared by this model's speech map")
+            raise ValueError("Choose a voice command this bed model offers")
         return control
 
     async def voice_queue(self, source: int) -> None:
@@ -523,19 +529,8 @@ class RichmatMHAppController(RufRichmatController):
         specs = []
         for spec in super().controller_button_specs:
             control = next((c for c in self._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
-            if control:
-                # These catalogs label controls with command names ("Massage Head
-                # Intensity Inc", "Zg2 Set"); show them in the MH buttons' wording.
-                name = command_label(control.label, save=control.kind == "save")
-                relabelled = relabel(spec, name, kind=Kind.SAVE if control.kind == "save" else None)
-                if relabelled is None:
-                    continue
-                spec = relabelled
             if control and control.keep_ms:
                 spec = replace(spec, hold=ControllerHoldSpec(f"mh_{control.code:02x}"))
-            # A preset save already asks; a memory save is offered only in Set mode.
-            if control and control.code == 0x62:
-                spec = replace(spec, requires_confirmation=True)
             specs.append(spec)
         if self._smart_light_lock():
             specs.append(ControllerButtonSpec(

@@ -25,6 +25,7 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 
 if TYPE_CHECKING:
@@ -153,7 +154,7 @@ class JalonBedController(ProfileExecution[KeesonProfile], BedController):
 
     async def move_axis(self, axis: str, up: bool) -> None:
         if axis not in app.LAYOUTS[self.layout_key].axes:
-            raise ValueError("This Jalon layout has no such motor")
+            raise ValueError("This bed has no such motor")
         if self._coordinator.cancel_command.is_set():
             return
         session = self._session
@@ -275,7 +276,7 @@ class JalonBedController(ProfileExecution[KeesonProfile], BedController):
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in app.HELD or not 1 <= duration_ms <= 30000:
             raise ValueError(
-                "Jalon preset gestures must be between 1 and 30000 ms (limited to 8 seconds)"
+                "Choose a duration of up to 30 seconds. Preset buttons are held for at most 8 seconds"
             )
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
@@ -417,13 +418,8 @@ class JalonBedController(ProfileExecution[KeesonProfile], BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
-                "jalon_massage_timer_bucket",
-                "jalon_massage_timer_bucket",
-                TIMER_BUCKET,
-                "mdi:timer-outline",
-                native_unit_of_measurement="min",
-                entity_registry_enabled_default=True,
+            massage_timer_sensor_spec(
+                "jalon_massage_timer_bucket", "jalon_massage_timer_bucket", TIMER_BUCKET
             ),
         )
 

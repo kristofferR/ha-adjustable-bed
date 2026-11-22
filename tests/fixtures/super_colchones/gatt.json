@@ -1,0 +1,62 @@
+[
+  {
+    "id": "Obj!BleServiceUUID@915881",
+    "name": "bleServiceUUIDNordic",
+    "advertisement_short_label": "0001",
+    "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+    "write": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "notify_candidate": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+    "wire_mode": "P1",
+    "reachability": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "id": "Obj!BleServiceUUID@9158b1",
+    "name": "bleServiceUUIDW1",
+    "advertisement_short_label": "FEE9",
+    "service": "0000FEE9-0000-1000-8000-00805F9B34FB",
+    "write": "D44BC439-ABFD-45A2-B575-925416129600",
+    "notify_candidate": "D44BC439-ABFD-45A2-B575-925416129601",
+    "wire_mode": "P2",
+    "reachability": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "id": "Obj!BleServiceUUID@9158e1",
+    "name": "bleServiceUUIDW5",
+    "advertisement_short_label": "e0ff",
+    "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",
+    "write": "00000002-3c17-d293-8e48-14fe2e4da212",
+    "notify_candidate": "00000003-3c17-d293-8e48-14fe2e4da212",
+    "wire_mode": "P2",
+    "reachability": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "id": "Obj!BleServiceUUID@915911",
+    "name": "bleServiceUUIDW4",
+    "advertisement_short_label": "FFF0",
+    "service": "0000FFF0-0000-1000-8000-00805F9B34FB",
+    "write": "0000FFF2-0000-1000-8000-00805F9B34FB",
+    "notify_candidate": "0000FFF1-0000-1000-8000-00805F9B34FB",
+    "wire_mode": "P2",
+    "reachability": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "id": "Obj!BleServiceUUID@915941",
+    "name": "bleServiceUUIDW3",
+    "advertisement_short_label": "FFE0",
+    "service": "0000FFE0-0000-1000-8000-00805F9B34FB",
+    "write": "0000FFE2-0000-1000-8000-00805F9B34FB",
+    "notify_candidate": "0000FFE1-0000-1000-8000-00805F9B34FB",
+    "wire_mode": "P2",
+    "reachability": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "id": "Obj!BleServiceUUID@915971",
+    "name": "bleServiceUUIDW2",
+    "advertisement_short_label": "FEE9",
+    "service": "0000FEE9-0000-1000-8000-00805F9B34BB",
+    "write": "D44BC439-ABFD-45A2-B575-925416129622",
+    "notify_candidate": "D44BC439-ABFD-45A2-B575-925416129611",
+    "wire_mode": "P2",
+    "reachability": "CONDITIONALLY REACHABLE"
+  }
+]

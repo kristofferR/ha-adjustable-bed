@@ -293,7 +293,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
         ):
             raise ConnectionError("The physical bed session changed")
         if self.command_side is not None:
-            raise ValueError("This app has no single-address bed-side field")
+            raise ValueError("This bed has no sides. Leave out the side")
         return current
 
     @property
@@ -436,14 +436,14 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
     def validate_request(self, control: str, duration_ms: int, program: bool = False) -> Action:
         action = self.profile.action(control)
         if type(duration_ms) is not int or not 1 <= duration_ms <= 60000:
-            raise ValueError("Choose a duration of 1 to 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
         if program and not action.programmable:
-            raise ValueError("This control has no proven save event")
+            raise ValueError("This control cannot be saved")
         if self.command_side is not None:
-            raise ValueError("This app has no single-address bed-side field")
+            raise ValueError("This bed has no sides. Leave out the side")
         context = current_command_context()
         if context is not None and context.lease is not None and (program or not action.motion):
-            raise ValueError("Only proven motion controls support renewable holds")
+            raise ValueError("Only movement controls can be held until released")
         return action
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:

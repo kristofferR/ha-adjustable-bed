@@ -33,8 +33,7 @@ Examples: `linak`, `keeson:sino`, `reverie:Skye 500`, `jiecang_app@dreamask`,
 `leggett_platt:okin@prodigy`.
 
 The id space is every codec family profile route plus every standalone
-controller: each bed type, each listed variant and each app key choice, with
-families and standalone bed types as registered in `tests/codec_families/`.
+controller: each bed type, each listed variant and each app key choice.
 A route can still auto-detect inside its family at connect (for example
 `keeson` resolves its variant from the advertisement); the id names the
 configured route, not the result of that detection.

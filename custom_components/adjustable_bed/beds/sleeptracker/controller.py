@@ -641,7 +641,7 @@ class SleeptrackerController(BedController):
 
     async def _move(self, axis: p.Axis, action: str) -> None:
         if axis == "lumbar" and not self._model.lumbar:
-            raise ValueError("Generic Sleeptracker layout has no lumbar control")
+            raise ValueError("This bed model has no lumbar control")
         if not self._ready:
             raise ConnectionError("Sleeptracker session is not ready")
         count, planning_delay = self.motor_pulse_settings()
@@ -854,9 +854,9 @@ class SleeptrackerController(BedController):
     def validate_sleeptracker_request(self, request: p.Request) -> None:
         p.validate_request(request, self._model)
         if request.kind == "identify" and request.mode == 2 and not self._restricted:
-            raise ValueError("App local identification requires the restricted session")
+            raise ValueError("This bed cannot be identified from Home Assistant")
         if request.save and not self.supports_memory_programming:
-            raise ValueError("Processor types 5, 6 and 7 have no app preset-save route")
+            raise ValueError("This bed model cannot save presets")
 
     async def async_execute_sleeptracker_request(self, request: p.Request) -> None:
         self.validate_sleeptracker_request(request)

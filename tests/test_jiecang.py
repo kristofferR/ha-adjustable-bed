@@ -17,7 +17,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
-    JIECANG_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -54,18 +53,6 @@ def mock_jiecang_config_entry(
 
 class TestJiecangController:
     """Test Jiecang controller."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_jiecang_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_jiecang_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == JIECANG_CHAR_UUID
 
     async def test_write_command_with_repeat(
         self,

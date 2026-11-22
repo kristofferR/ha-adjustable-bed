@@ -371,7 +371,7 @@ async def test_preset_presence_selects_dashboard_branch(
 
 
 async def test_favourite_requires_reported_memory_and_flat_is_direct(controller) -> None:
-    with pytest.raises(ValueError, match="reported"):
+    with pytest.raises(ValueError, match="saved Favourite"):
         await controller.preset_memory(1)
     controller._parse_notification(bytes.fromhex("FFFFFFFF0306000A"))
     with patch("custom_components.adjustable_bed.beds.woosa.asyncio.sleep", new_callable=AsyncMock):
@@ -672,8 +672,8 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
     preset_labels = {
-        "woosa_love": "Anti-Snore",
-        "woosa_program_love": "Save Anti-snore position",
+        "woosa_love": "Anti-snore",
+        "woosa_program_love": "Save anti-snore position",
     }
     existing_preset_ids = {
         key: registry.async_get_or_create(

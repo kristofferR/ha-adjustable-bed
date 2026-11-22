@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import replace
+from datetime import time
 from functools import partial
 from math import ceil
 from time import monotonic
@@ -15,6 +16,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_UTILITY
 from ...command_scheduler import current_command_context, note_frame_written
 from ...const import CONF_MOTOR_PULSE_COUNT, CONF_RICHMAT_CLASSIC_THIRD_SERVICE
@@ -34,6 +36,8 @@ from .protocol import (
     QUERY_SPACING_MS,
     SETTINGS_SPACING_MS,
     alarm,
+    alarm_capability,
+    alarm_choices,
     alarm_delay,
     control,
     massage_timer,
@@ -167,9 +171,15 @@ class ResourceBedController(RichmatClassicController):
         self._record_command_trace(
             session.write.uuid, packet, response=session.response, characteristic=session.write
         )
-        task = asyncio.create_task(
-            session.client.write_gatt_char(session.write, packet, response=session.response)
-        )
+
+        async def write() -> None:
+            async with self._ble_lock:
+                await session.client.write_gatt_char(
+                    session.write, packet, response=session.response
+                )
+            note_frame_written(cancel)
+
+        task = asyncio.create_task(write())
         cancelled = False
         while not task.done():
             try:
@@ -177,7 +187,6 @@ class ResourceBedController(RichmatClassicController):
             except asyncio.CancelledError:
                 cancelled = True
         task.result()
-        note_frame_written(cancel)
         if cancelled:
             raise asyncio.CancelledError
 
@@ -388,6 +397,22 @@ class ResourceBedController(RichmatClassicController):
             actions[key] = code
         return actions
 
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        return alarm_capability(self._alarm_actions())
+
+    def _alarm_request(self, alarm: AlarmRequest) -> p.Request:
+        if not alarm.enabled:
+            return p.Request("cancel_alarm")
+        actions = alarm_choices(self._alarm_actions(), alarm)
+        return p.Request("alarm", actions=actions, when=time(alarm.hour, alarm.minute))
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_request(self._alarm_request(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.execute_request(self._alarm_request(alarm))
+
     def validate_request(self, request: p.Request, *, live: bool = True) -> None:
         op = request.operation
         if op == "alarm":
@@ -397,26 +422,26 @@ class ResourceBedController(RichmatClassicController):
             # Metadata/direct navigation is independent of the menu reply.
         elif op in ("rgb", "lamp_timeout"):
             if live and (self._session is None or not self._receive.light_capable):
-                raise ValueError("The current bed session has not reported LED support")
+                raise ValueError("The bed has not reported a light. Reconnect it and try again")
             if op == "rgb":
                 if (
                     request.color is None
                     or len(request.color) != 3
                     or any(type(v) is not int or not 0 <= v <= 255 for v in request.color)
                 ):
-                    raise ValueError("Choose three RGB bytes")
+                    raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
             elif request.seconds is None:
                 raise ValueError("Choose a light timeout in seconds")
             else:
                 p.lamp_timeout(request.seconds)
         elif op == "massage_timer":
             if self.layout != "D1RM" or request.progress is None:
-                raise ValueError("This layout has no massage timer slider")
+                raise ValueError("This bed model has no massage timer")
             massage_timer(self.layout, request.progress)
         elif op == "bed_command":
             if request.command not in p.BED_COMMANDS or not 1 <= request.duration_ms <= 60000:
                 raise ValueError(
-                    "Choose a verified app BED command and a duration of 1 to 60000 ms"
+                    "Choose a control this bed offers and a duration of up to 60 seconds"
                 )
         elif op not in ("query", "cancel_alarm"):
             raise ValueError("Unknown bed action")

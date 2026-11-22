@@ -3,17 +3,23 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from bleak.exc import BleakError
+from bleak_retry_connector import BleakAbortedError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bluetooth_freshness import (
+    AdvertisementEvidence,
+    FreshnessStatus,
+)
 from custom_components.adjustable_bed.command_scheduler import (
     CommandKind,
     CommandOutcome,
@@ -68,6 +74,11 @@ from custom_components.adjustable_bed.const import (
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.errors import (
+    BedCommandFailedError,
+    BedCommandTimedOutError,
+    BedNotConnectedError,
+)
 from custom_components.adjustable_bed.state_keys import (
     LIGHT_LEVEL,
     LIGHT_TIMER_MINUTES,
@@ -949,30 +960,155 @@ class TestCoordinatorWriteCommand:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
-        command = bytes([0x01, 0x00])
-        await coordinator.async_write_command(command)
+        await coordinator.async_execute_controller_command(
+            lambda controller: controller.write_command(bytes([0x01, 0x00]))
+        )
 
         # The controller should have written the command
         mock_bleak_client.write_gatt_char.assert_called()
 
+    @pytest.mark.parametrize(
+        "bed_type,error,expected",
+        [
+            # A Linak keeps advertising but aborts an adapter it has not paired with.
+            (BED_TYPE_LINAK, BleakAbortedError("aborted"), "bed_pairing_window_closed"),
+            (BED_TYPE_LINAK, BleakError("Connection failed"), "bed_not_connected"),
+            (BED_TYPE_KEESON, BleakAbortedError("aborted"), "bed_not_connected"),
+        ],
+    )
     async def test_write_command_not_connected(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
         mock_bluetooth_api,
+        bed_type,
+        error,
+        expected,
     ):
-        """Test writing commands fails when not connected."""
-        # Make connection fail
-        with patch(
-            "custom_components.adjustable_bed.coordinator_connection.establish_connection",
-            new_callable=AsyncMock,
-            side_effect=BleakError("Connection failed"),
+        """A command for an advertising bed that refuses the connection says why."""
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.establish_connection",
+                new_callable=AsyncMock,
+                side_effect=error,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.async_check_advertisement",
+                return_value=AdvertisementEvidence(FreshnessStatus.FRESH),
+            ),
         ):
             coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            coordinator._bed_type = bed_type
 
-            with pytest.raises(ConnectionError):
-                await coordinator.async_write_command(bytes([0x01, 0x00]))
+            with pytest.raises(BedNotConnectedError) as raised:
+                await coordinator.async_execute_controller_command(
+                    lambda controller: controller.write_command(bytes([0x01, 0x00]))
+                )
+        assert raised.value.translation_key == expected
+
+    async def test_unreachable_bed_warns_once_across_setup_retries(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_establish_connection: AsyncMock,
+        mock_bleak_client: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """Each setup retry builds a new coordinator; the outage still warns once."""
+        del mock_coordinator_connected
+        succeed = mock_establish_connection.side_effect
+
+        def warnings() -> int:
+            return sum(
+                record.levelno == logging.WARNING
+                and record.getMessage().startswith("Could not connect to")
+                for record in caplog.records
+            )
+
+        mock_establish_connection.side_effect = BleakError("Connection failed")
+        for _ in range(3):
+            assert not await AdjustableBedCoordinator(hass, mock_config_entry).async_connect()
+        assert warnings() == 1
+
+        # Once the bed answers, the next outage is reported again.
+        mock_establish_connection.side_effect = succeed
+        connected = AdjustableBedCoordinator(hass, mock_config_entry)
+        assert await connected.async_connect()
+        await connected.async_disconnect()
+        mock_bleak_client.is_connected = False
+        mock_establish_connection.side_effect = BleakError("Connection failed")
+        assert not await AdjustableBedCoordinator(hass, mock_config_entry).async_connect()
+        assert warnings() == 2
+
+    async def test_requested_recovery_backs_off_while_the_bed_stays_away(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """A bed that asks for recovery is retried less often, and soon after a command."""
+        del mock_coordinator_connected
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+
+        async def next_delay() -> int:
+            await coordinator._async_auto_reconnect()
+            timer = coordinator._reconnect_timer
+            assert timer is not None
+            timer.cancel()
+            coordinator._reconnect_timer = None
+            return round(timer.when() - hass.loop.time())
+
+        with (
+            patch.object(
+                AdjustableBedCoordinator,
+                "capability_controller",
+                new_callable=PropertyMock,
+                return_value=MagicMock(requests_connection_recovery=True),
+            ),
+            patch.object(coordinator, "async_connect", AsyncMock(return_value=False)),
+        ):
+            assert [await next_delay() for _ in range(8)] == [5, 10, 20, 40, 80, 160, 300, 300]
+            coordinator._note_command_demand()
+            assert await next_delay() == 5
+
+    async def test_bluetooth_error_in_a_command_is_translated(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A Bluetooth error that ends a command keeps its type and text, translated."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.side_effect = BleakError("ATT error 0x0e")
+
+        with pytest.raises(BleakError, match="ATT error 0x0e") as raised:
+            await coordinator.async_execute_controller_command(
+                lambda controller: controller.write_command(bytes([0x01, 0x00]))
+            )
+        assert isinstance(raised.value, BedCommandFailedError)
+        assert raised.value.translation_key == "bluetooth_command_failed"
+
+    async def test_command_timeout_is_translated(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A command that times out reaches the user as one translated message."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.side_effect = TimeoutError
+
+        with pytest.raises(BedCommandTimedOutError) as raised:
+            await coordinator.async_execute_controller_command(
+                lambda controller: controller.write_command(bytes([0x01, 0x00]))
+            )
+        assert raised.value.translation_key == "bed_command_timed_out"
 
     async def test_execute_controller_command_auth_failure_clears_bond_marker(
         self,
@@ -3187,6 +3323,54 @@ class TestStopAfterCancel:
 
         mock_disconnect.assert_awaited_once_with()
 
+    async def test_stop_during_capability_reload_is_answered(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """A STOP queued behind a pending capability reload is sent, and the reload ends.
+
+        The reload's unload waits for every admitted STOP, so the reload must
+        not hold the command lock the STOP needs.
+        """
+        del mock_bleak_client
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator._controller
+        controller.stop_all = AsyncMock()
+        hass.data.setdefault(DOMAIN, {})[mock_config_entry.entry_id] = coordinator
+
+        async def reload(_entry_id: str) -> bool:
+            await coordinator.async_shutdown()
+            return True
+
+        await coordinator._command_lock.acquire()
+        coordinator._client = None
+        coordinator._pending_capability_reload = True
+        with (
+            patch.object(coordinator, "async_ensure_connected", AsyncMock(return_value=True)),
+            patch.object(hass.config_entries, "async_reload", side_effect=reload) as reloaded,
+        ):
+            coordinator._schedule_pending_capability_reload()
+            await asyncio.sleep(0)
+            stop = asyncio.create_task(coordinator.async_stop_command())
+            await asyncio.sleep(0)
+            coordinator._command_lock.release()
+            # A shielded STOP cannot be cancelled, so wait without wait_for.
+            done, _ = await asyncio.wait({stop}, timeout=2)
+            assert stop in done, "STOP deadlocked behind the capability reload"
+            await stop
+            for _ in range(20):
+                if not coordinator._capability_reload_scheduled:
+                    break
+                await asyncio.sleep(0.01)
+
+        controller.stop_all.assert_awaited_once_with()
+        reloaded.assert_awaited_once_with(mock_config_entry.entry_id)
+        assert not coordinator._capability_reload_scheduled
+
     async def test_stop_command_when_not_connected(
         self,
         hass: HomeAssistant,
@@ -3208,7 +3392,7 @@ class TestStopAfterCancel:
                 "async_ensure_connected",
                 new=AsyncMock(return_value=False),
             ),
-            pytest.raises(ConnectionError, match="Not connected to bed"),
+            pytest.raises(BedNotConnectedError),
         ):
             await coordinator.async_stop_command()
 

@@ -242,7 +242,7 @@ async def test_settings_queries_and_menu_gates(instant):
     ctrl, coord = controller(layout="A0RN")
     await ctrl.async_execute_richmat_classic_request(Request("query"))
     assert packets(coord) == ["6e08010178", "6e0a000179", "6e1a000088"]
-    with pytest.raises(ValueError, match="capability"):
+    with pytest.raises(ValueError, match="reported that it offers"):
         ctrl.validate_richmat_classic_request(Request("aroma", aroma_values=(1, 1, 2)))
     ctrl._receive.feed(bytes.fromhex("6e1a000189"), app=ctrl.app, layout=ctrl.layout)
     ctrl.validate_richmat_classic_request(Request("aroma", aroma_values=(1, 1, 2)))
@@ -267,13 +267,13 @@ async def test_proven_settings_rows_survive_a_reconnect_and_a_new_controller(ins
     replacement.validate_richmat_classic_request(Request("aroma", aroma_values=(1, 1, 2)))
     await replacement.async_execute_richmat_classic_request(Request("rgb", color=(255, 0, 0)))
     assert packets(coord)[-1] == rgb(255, 0, 0).hex()
-    with pytest.raises(ValueError, match="capability"):
+    with pytest.raises(ValueError, match="reported that it offers"):
         replacement.validate_richmat_classic_request(Request("cancel_alarm"))
 
 
 def test_capability_and_layout_alarm_gate():
     ctrl, _ = controller(layout="A0RN")
-    with pytest.raises(ValueError, match="capability"):
+    with pytest.raises(ValueError, match="reported that it offers"):
         ctrl.validate_richmat_classic_request(Request("rgb", color=(255, 0, 0)))
     ctrl._receive.feed(bytes.fromhex("6e0e00037f"), app=ctrl.app, layout=ctrl.layout)
     ctrl.validate_richmat_classic_request(Request("rgb", color=(255, 0, 0)))
@@ -297,7 +297,7 @@ async def test_hold_state_reveals_separate_save_and_gates_long_press(instant):
     save = next(c for c in ctrl._controls if c.view_id == "btnM1Long")
     recall = next(c for c in ctrl._controls if c.view_id == "btnM1")
     assert not ctrl.controller_button_available(f"richmat_classic_{save.node}")
-    with pytest.raises(ValueError, match="hidden"):
+    with pytest.raises(ValueError, match="not available right now"):
         await ctrl.execute_action(save.node)
     ctrl._select("hold", "hold")
     assert ctrl.controller_button_available(f"richmat_classic_{save.node}")
@@ -343,7 +343,7 @@ async def test_desk_source_lifecycle_vectors_end_on_cancel_or_link_loss(instant,
 def test_old_desk_response_hides_all_modern_controls(operation):
     ctrl, _ = controller(layout="FWRM")
     ctrl._receive.feed(bytes.fromhex("6e080064da"), app=ctrl.app, layout=ctrl.layout)
-    with pytest.raises(ValueError, match="old-desk"):
+    with pytest.raises(ValueError, match="does not offer that control"):
         ctrl.validate_richmat_classic_request(operation)
 
 
@@ -563,6 +563,16 @@ async def test_native_release_entity_keeps_the_admitted_mode_through_cleanup(has
     assert not CONTROLLER_GESTURE_RELEASE.get()
     coord._client.is_connected = False
     await coord.async_shutdown()
+
+
+async def test_write_waits_for_another_gatt_operation_to_finish():
+    ctrl, coord = controller()
+    async with ctrl.ble_lock:
+        send = asyncio.create_task(ctrl._send(b"\x01"))
+        await asyncio.sleep(0)
+        assert not coord.client.write_gatt_char.await_count
+    await send
+    assert packets(coord) == ["01"]
 
 
 async def test_changed_control_rejects_renewable_hold_with_translated_key(monkeypatch):

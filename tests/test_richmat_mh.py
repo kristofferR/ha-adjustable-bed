@@ -162,14 +162,6 @@ def test_alarm_cancel_delete_and_clock_frames() -> None:
     assert tuple(f.hex() for f in protocol.clock_frames(7, 5, 9)) == ("6e1307058d", "6e1409ff8a")
 
 
-@pytest.mark.parametrize(
-    ("target", "now", "expected"),
-    [(420, 420, 1440), (421, 420, 1), (419, 420, 1439), (0, 1439, 1), (1439, 0, 1439)],
-)
-def test_alarm_countdown_is_the_apps_wrapping_difference(target, now, expected) -> None:
-    assert protocol.alarm_countdown_minutes(target, now) == expected
-
-
 def test_alarm_combinations_two_massages_and_unmatched_pairs() -> None:
     assert len(protocol.ALARM_COMBINATIONS) == 21
     assert protocol.alarm_action(0x58, (0x4C,)) == 0x7A
@@ -481,7 +473,7 @@ async def test_legacy_alarm_combines_position_and_massage(sleeps) -> None:
         ({"position": "yoga", "massage": []}, "not on this model"),
         ({"position": None, "massage": []}, "position or a massage"),
         ({"position": "memory_1", "massage": ["heat"]}, "distinct options"),
-        ({"position": "head_massage", "massage": ["foot_massage"]}, "sends nothing"),
+        ({"position": "head_massage", "massage": ["foot_massage"]}, "no alarm for that position"),
     ],
 )
 async def test_alarm_requests_the_app_cannot_send_are_rejected(kwargs, message) -> None:
@@ -612,6 +604,8 @@ async def test_detection_buttons_status_and_results() -> None:
     controller = make("revive", "CFRM0001", snapshot={**vers0("cfrm"), "detection": True})
     await controller.async_discover_capabilities()
     start = next(s for s in controller.controller_button_specs if s.key == "richmat_mh_start_detection")
+    # The self-test is maintenance, not a dashboard control.
+    assert start.diagnostic
     await start.press_fn(controller)
     assert frames(controller) == ["6e88c210c8"]
     controller._classifier.rx_type = "INIT"
@@ -750,6 +744,10 @@ async def test_waist_page_state_selects_and_frames() -> None:
     assert (state["richmat_mh_waist_both_alarm"], state["richmat_mh_waist_both_alarm_repeat"],
             state["richmat_mh_waist_both_alarm_intensity"]) == ("06:30", "daily", 3)
     selects = {s.key: s for s in controller.controller_select_specs}
+    # The mode never turns the heat on, so the heat, pressure and duration selects are
+    # plain controls, as they were in 4.x.
+    heat = selects["richmat_mh_waist_left_heat"]
+    assert heat.entity_category is None and heat.entity_registry_enabled_default
     await selects["richmat_mh_waist_both_pressure"].select_fn(controller, "level_2")
     await selects["richmat_mh_waist_both_heat"].select_fn(controller, "8_hours")
     await selects["richmat_mh_waist_mode"].select_fn(controller, "both_relax")

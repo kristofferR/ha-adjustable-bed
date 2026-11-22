@@ -143,3 +143,16 @@ def test_button_identity_survives_layout_changes_and_keeps_module_meaning() -> N
     # The motor module's brightness routes the hub to that module before sending.
     motor = button_actions_for(controller("TL-B")._active_owners())
     assert motor["motion_bed_brightness_1"].owner == "DianDongSetActivity"
+
+
+def test_diagnostics_leave_out_sleep_reports() -> None:
+    """Nightly and monthly sleep reports stay out of support files (PRIV-2)."""
+    bed = controller()
+    bed._state = replace(
+        bed._state, fall_timer=12, day_total=7.5, month_average_sleep=6.0, thermal_mode=1
+    )
+
+    diagnostics = bed.protocol_diagnostics
+
+    assert diagnostics["thermal_mode"] == 1
+    assert not {"fall_timer", "day_total", "month_average_sleep"} & diagnostics.keys()

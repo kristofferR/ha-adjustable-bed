@@ -10,6 +10,7 @@ from time import monotonic
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -266,7 +267,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
             or direction not in ("up", "down")
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose an app actuator, direction and duration up to 30 seconds")
+            raise ValueError("Choose a motor this bed offers, a direction and a duration of up to 30 seconds")
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -336,7 +337,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
     async def save(self, name: str) -> None:
         self._admit()
         if not self.supports_memory_programming or name not in codec.PRESETS or name == "flat":
-            raise ValueError("Only P2's six non-flat presets have a proven SAVE")
+            raise ValueError("This bed model cannot save that preset")
         await self.write_command(codec.preset(self.profile.key, name, save=True), admit=True)
 
     async def program_memory(self, memory_num: int) -> None:
@@ -397,7 +398,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a supported held control and duration up to 30 seconds")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
         self._admit()
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
@@ -575,6 +576,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 "on",
                 "mdi:lock",
                 local_set_fn=lambda on: self.select_child("on" if on else "off"),
+                entity_category=EntityCategory.CONFIG,
             ),
             ControllerSwitchSpec(
                 "smart_sleep_privacy",
@@ -585,6 +587,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 keys.PRIVACY,
                 "on",
                 "mdi:shield-lock-outline",
+                entity_category=EntityCategory.CONFIG,
             ),
             ControllerSwitchSpec(
                 "smart_sleep_massage",
@@ -1047,8 +1050,9 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 str(key),
                 str(key),
                 key,
-                "mdi:information-outline",
+                "mdi:alarm" if alarm else "mdi:information-outline",
                 entity_registry_enabled_default=enabled,
+                entity_category=None if alarm else EntityCategory.DIAGNOSTIC,
             )
             for key, enabled in (
                 (keys.MODEL, False),
@@ -1058,6 +1062,7 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 *(((keys.BRIGHTNESS, True),) if self.profile.key == "p2" else ()),
                 *(((keys.AI_STATUS, False), (keys.AI_SCORE, False)) if self.model == 8 else ()),
             )
+            for alarm in (str(key).startswith("smart_sleep_alarm"),)
         )
 
     @property
@@ -1067,8 +1072,9 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 str(key),
                 str(key),
                 key,
-                "mdi:information-outline",
+                "mdi:alarm" if key is keys.ALARM_ON else "mdi:information-outline",
                 entity_registry_enabled_default=True,
+                entity_category=None if key is keys.ALARM_ON else EntityCategory.DIAGNOSTIC,
             )
             for key in (
                 keys.ALARM_ON,

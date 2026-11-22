@@ -27,6 +27,7 @@ from ..entity_specs import (
     ControllerMotorHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..lifecycle import ControllerSession
 
@@ -468,7 +469,7 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a Linx movement and a duration of 1–30000 ms")
+            raise ValueError("Choose a movement this bed offers and a duration of up to 30 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -590,7 +591,7 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
             else link.write
         )
         if not {"write", "write-without-response"}.intersection(char.properties):
-            raise ValueError("The selected Linx intervention destination is not writable")
+            raise ValueError("This bed model cannot change that snore setting")
 
     async def snore_intervention(
         self,
@@ -725,12 +726,10 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
         if self.profile.massage and self.transport == "a00a":
             specs.extend(
                 (
-                    ControllerStateSensorSpec(
+                    massage_timer_sensor_spec(
                         "linx_massage_minutes",
                         "linx_massage_minutes",
                         TIMER,
-                        "mdi:timer-outline",
-                        native_unit_of_measurement="min",
                         card=CARD_MASSAGE_TIMER,
                     ),
                     ControllerStateSensorSpec(

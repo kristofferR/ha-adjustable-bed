@@ -177,6 +177,8 @@ async def test_typed_times_without_measuring(
     bench = Bench(hass, monkeypatch)
     options = hass.config_entries.options
     result = await open_estimates(hass, entry)
+    # Every motor is offered, so the screen names none as left out.
+    assert result["description_placeholders"]["not_offered"] == ""
     result = await options.async_configure(
         result["flow_id"], {"back": False, "legs": True, "measure": False, "acknowledge": True}
     )

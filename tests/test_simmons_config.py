@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.bed_traits import bed_traits, bed_type_has_position_feedback
 from custom_components.adjustable_bed.config_flow import _motor_count_options
 from custom_components.adjustable_bed.const import (
@@ -62,7 +61,6 @@ def test_profile_constants_and_setup_options():
     assert get_variants_for_bed_type(BED_TYPE_SIMMONS) == SIMMONS_VARIANTS
     assert is_valid_variant_for_bed_type(BED_TYPE_SIMMONS, "simmons_inclined_okin")
     assert not is_valid_variant_for_bed_type(BED_TYPE_SIMMONS, "woosa")
-    assert actuator_group_for(BED_TYPE_SIMMONS) == "okin"
     assert any(
         option["value"] == BED_TYPE_SIMMONS and option["label"] == "SIMMONS app"
         for option in get_bed_type_options()

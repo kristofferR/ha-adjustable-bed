@@ -4,13 +4,17 @@
 """Fetch DewertOkin handset object+button maps by remote ID, cache to disk."""
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 
 import httpx
 
 BASE = "https://2df12gl0m0.execute-api.eu-central-1.amazonaws.com/prod"
-TOK = "9FIqFcwHRgdlyPa2MgVizuwuLH0mxhkN"
+# The value comes from the vendor's own FurniMove app (its authorizationToken resource).
+TOK = os.environ.get("FURNIMOVE_AUTHORIZATION_TOKEN")
+if not TOK:
+    sys.exit("Set FURNIMOVE_AUTHORIZATION_TOKEN to the authorizationToken from the FurniMove app.")
 HEADERS = {"authorizationToken": TOK}
 CACHE = Path(sys.argv[1] if len(sys.argv) > 1 else "cache")
 CACHE.mkdir(exist_ok=True)

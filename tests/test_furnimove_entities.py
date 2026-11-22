@@ -25,13 +25,9 @@ async def test_initial_off_feedback_changes_reported_sensors_from_unknown_to_off
         sensor
         for sensor in _binary_sensor_entities_for(hass, runtime)
         if sensor.unique_id
-        in {
-            "bed_furnimove_ubl_left",
-            "bed_furnimove_sync_left",
-            "bed_furnimove_child_lock_left",
-        }
+        in {"bed_furnimove_sync_left", "bed_furnimove_child_lock_left"}
     ]
-    assert len(sensors) == 3
+    assert len(sensors) == 2
     assert all(sensor.is_on is None for sensor in sensors)
     controller._parse_feedback(generic(0))
     assert all(sensor.is_on is False for sensor in sensors)

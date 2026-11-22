@@ -220,7 +220,7 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
         await _execute_preflighted(
             targets,
             preflighted,
-            _family_command(MajesticHomeController, "Majestic Home", execute),
+            _family_command(MajesticHomeController, execute),
             admissions=admissions,
             resource=None,  # Match the all-resource scope captured before preflight.
         )

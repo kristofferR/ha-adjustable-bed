@@ -45,7 +45,6 @@ import {
   heldButtonMotor,
   holdTargetForEntity,
   pairedPeerStopEntityIds,
-  movementHold,
   movementLease,
   MotorHold,
   movementPulse,
@@ -170,7 +169,6 @@ export class AdjustableBedCard extends LitElement {
   // wiring and the service calls it drives.
   private readonly _hold = new MotorHold({
     pulse: (m, dir) => movementPulse(this.hass, m, dir),
-    holdControl: (m, dir) => movementHold(this.hass, m, dir),
     lease: (m, dir, lease) => movementLease(this.hass, m, dir, lease),
     stopCover: (cover, stopEntityId) =>
       this._stopCompactTarget(cover, stopEntityId ?? cover),
@@ -322,6 +320,11 @@ export class AdjustableBedCard extends LitElement {
   protected override render() {
     if (!this.hass || !this._config) return nothing;
     if (!this._config.device_id) return this._notice("card.no_device");
+    // A re-added bed gets a new device, so a card can outlive the one it names.
+    const devices = this.hass.devices ?? {};
+    if (Object.keys(devices).length > 0 && !devices[this._config.device_id]) {
+      return this._notice("card.device_missing");
+    }
     const states = this.hass.states;
     this._awaitingState = Object.values(this.hass.entities)
       .filter((entry) => entry.platform === PLATFORM && !states[entry.entity_id])
@@ -1347,7 +1350,6 @@ export class AdjustableBedCard extends LitElement {
         ${positionEntity
           ? html`<button
               class="row-label position-label"
-              aria-label=${entityLabel(this.hass, positionEntity)}
               @click=${() => this._moreInfo(positionEntity)}
             >${label}</button>`
           : html`<div class="row-label">${label}</div>`}
@@ -1377,7 +1379,8 @@ export class AdjustableBedCard extends LitElement {
   ): TemplateResult {
     const entityId = m.cover ?? m[direction];
     const canStop = !!m.cover || !!stopId;
-    const disabled = !entityId ||
+    // Without a cover, Stop or release control, letting go would send nothing.
+    const disabled = !entityId || (!canStop && !m.releaseButton) ||
       (this._config?.layout === "compact" && (!canStop || !this._available(entityId)));
     if (!m.cover && entityId &&
         this.hass?.states[entityId]?.attributes.requires_confirmation === true) {
@@ -1462,7 +1465,7 @@ export class AdjustableBedCard extends LitElement {
     motor: MotorEntity,
     stopId?: string,
   ): TemplateResult {
-    return html`<button class="tile"
+    return html`<button class="tile held"
       aria-label=${entityLabel(this.hass, entityId)}
       @pointerdown=${(e: PointerEvent) => this._startHold(e, motor, "up", stopId)}
       @pointerup=${(e: PointerEvent) => this._endPointerHold(e, motor, stopId)}
@@ -1734,7 +1737,6 @@ export class AdjustableBedCard extends LitElement {
         class="entity-row"
         role="button"
         tabindex="0"
-        aria-label=${name}
         @click=${() => this._moreInfo(entityId)}
         @keydown=${(e: KeyboardEvent) =>
           this._onRowKey(e, () => this._moreInfo(entityId))}
@@ -1999,8 +2001,10 @@ export class AdjustableBedCard extends LitElement {
 
   private _confirmDialog(entityId: string): TemplateResult {
     const action = entityLabel(this.hass, entityId);
+    // Only a save replaces something; a reset or clear says what it sends.
+    const save = this.hass?.states[entityId]?.attributes.card_role === "save";
     return html`
-      <p>${this._t("action.confirm", { action })}</p>
+      <p>${this._t(save ? "action.confirm" : "action.confirm_send", { action })}</p>
       <div class="dialog-actions">
         <button class="dialog-btn" @click=${this._closeEstimateDialog}>${this._t("memory.cancel")}</button>
         <button class="dialog-btn primary" @click=${() => {
@@ -3345,6 +3349,11 @@ export class AdjustableBedCard extends LitElement {
       -webkit-user-select: none;
       user-select: none;
       touch-action: manipulation;
+    }
+    /* A held tile is press-and-hold like the motor arrows: a small drag must
+       not scroll the page and cancel the hold. */
+    .tile.held {
+      touch-action: none;
     }
     .tile:hover {
       background: var(--secondary-background-color);

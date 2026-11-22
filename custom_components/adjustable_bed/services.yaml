@@ -234,7 +234,7 @@ set_alarm:
       selector:
         number:
           min: 0
-          max: 99
+          max: 255
           mode: box
     massage:
       selector:
@@ -547,7 +547,7 @@ bedgear:
       required: true
       selector:
         select:
-          options: [rgb, light_timer, alarm, sync_mode, toggle_sync, save_snore, save_memory]
+          options: [rgb, light_timer, sync_mode, toggle_sync, save_snore, save_memory]
           translation_key: bedgear_operation
     rgb:
       selector:
@@ -569,17 +569,6 @@ bedgear:
           step: 1
           unit_of_measurement: min
           mode: box
-    time:
-      example: 07:30
-      selector:
-        text:
-    strength:
-      selector:
-        number:
-          min: 0
-          max: 2
-          step: 1
-          mode: slider
     wired:
       default: false
       selector:
@@ -1717,8 +1706,7 @@ luuna:
       required: true
       selector:
         select:
-          options: [alarm, alarm_cancel, light_rgb, light_seconds, light_off, light_warm, light_cold,
-            sleep_name, time_sync]
+          options: [light_rgb, light_seconds, light_off, light_warm, light_cold, sleep_name]
           translation_key: luuna_operation
     value:
       selector:
@@ -1729,23 +1717,6 @@ luuna:
     rgb_color:
       selector:
         color_rgb:
-    hour:
-      selector:
-        number:
-          min: 0
-          max: 23
-          mode: box
-    minute:
-      selector:
-        number:
-          min: 0
-          max: 59
-          mode: box
-    mode:
-      selector:
-        select:
-          options: [tv, zero_g, anti_snore, memory_1, memory_2]
-          translation_key: luuna_mode
     side:
       selector:
         select:
@@ -2438,7 +2409,7 @@ richmat_app:
       required: true
       selector:
         select:
-          options: [sync, detection, toggle_alarm, sleep_sync, query, single_alarm, cancel_alarm, repeat_alarm,
+          options: [detection, toggle_alarm, query, single_alarm, cancel_alarm, repeat_alarm,
             delete_alarm, light_timer, light_rgb, strip_rgb, strip_timer, strip_groove, strip_color_mode,
             strip_breathe, strip_power, therapy_light, therapy_sound, therapy_timer, music_source, white_noise,
             snore, get_off_bed, snore_intervention, blanket_power, blanket_mode, blanket_temperature,
@@ -2672,19 +2643,13 @@ richmat_resource_bed:
       required: true
       selector:
         select:
-          options: [query, alarm, cancel_alarm, rgb, lamp_timeout, massage_timer, bed_command]
+          options: [query, rgb, lamp_timeout, massage_timer, bed_command]
           translation_key: richmat_resource_bed_operation
     side:
       selector:
         select:
           options: [both, left, right]
           translation_key: side
-    actions:
-      selector:
-        object:
-    time:
-      selector:
-        time:
     rgb_color:
       selector:
         color_rgb:
@@ -2731,15 +2696,8 @@ richmat_rise:
       required: true
       selector:
         select:
-          options: [query, alarm, cancel_alarm, rgb, lamp_timer, massage_timer, massage_popup, diagnostic_cycle,
-            program_schedule]
+          options: [query, rgb, lamp_timer, massage_timer, massage_popup]
           translation_key: richmat_rise_operation
-    actions:
-      selector:
-        object:
-    time:
-      selector:
-        time:
     rgb_color:
       selector:
         color_rgb:
@@ -2763,9 +2721,6 @@ richmat_rise:
         select:
           options: ['15', '30', '45', toggle]
           translation_key: richmat_rise_popup
-    schedule:
-      selector:
-        object:
     side:
       selector:
         select:
@@ -2844,7 +2799,7 @@ sleep_number_command:
       required: true
       selector:
         select:
-          options: [bind_foundation, cancel_current_diagnostic_run, cancel_target_preset, create_temperature_program, delete_temperature_program, firmness_favorite, firmness_favorites, foot_warming, foot_warming_status, foundation_status, get_active_temperature_programs, get_actuator_movement_status, get_actuator_position, get_bed_configuration, get_central_devices_metadata, get_current_preset, get_favorite_sleep_number, get_footwarming_presence, get_footwarming_settings, get_fuzion_remote_mac_addresses, get_manifest_name, get_responsive_air_enabled_status, get_simple_diagnostic_run_results, get_sleep_number_controls, get_sleepiq_privacy_state, get_system_configuration, get_system_settings_applied_status, get_target_preset_with_timer, get_temperature_program_info, get_temperature_program_settings, get_temperature_programs, get_underbed_light_auto_mode_status, get_underbed_light_settings, gets_actuator_homing_state, halt_all_actuators, head_tilt, interrupt_sleep_number_adjustment, kid_outlet, kid_outlet_status, light_intensity, massage, massage_status, mcr_status, migrate_routines_to_temperature_programs, outlet, outlet_status, pinch_status, position, preset_reset, preset_save, preset_timer, reset_articulation_presets, responsive_air, responsive_air_status, routine_migration_status, run_diagnostics, sense_and_do, sense_and_do_status, set_actuator_target_position, set_actuator_target_position_with_timer, set_articulation_preset_settings, set_bed_presence, set_favorite_sleep_number, set_footwarming_settings, set_responsive_air_enabled_status, set_sleepiq_privacy_state, set_target_preset_with_timer, set_target_preset_without_timer, set_temperature_program, set_underbed_light_auto_mode, set_underbed_light_settings, software_versions, start_sleep_number_adjustment, stop, underbed_auto, underbed_auto_status, underbed_intensity]
+          options: [bind_foundation, cancel_current_diagnostic_run, cancel_target_preset, create_temperature_program, delete_temperature_program, firmness_favorite, firmness_favorites, foot_warming, foot_warming_status, foundation_status, get_active_temperature_programs, get_actuator_movement_status, get_actuator_position, get_bed_configuration, get_central_devices_metadata, get_current_preset, get_favorite_sleep_number, get_footwarming_presence, get_footwarming_settings, get_fuzion_remote_mac_addresses, get_manifest_name, get_responsive_air_enabled_status, get_simple_diagnostic_run_results, get_sleep_number_controls, get_sleepiq_privacy_state, get_system_configuration, get_system_settings_applied_status, get_target_preset_with_timer, get_temperature_program_info, get_temperature_program_settings, get_temperature_programs, get_underbed_light_auto_mode_status, get_underbed_light_settings, gets_actuator_homing_state, halt_all_actuators, head_tilt, interrupt_sleep_number_adjustment, kid_outlet, kid_outlet_status, light_intensity, massage, massage_status, mcr_status, migrate_routines_to_temperature_programs, outlet, outlet_status, pinch_status, position, preset_save, preset_timer, responsive_air, responsive_air_status, routine_migration_status, run_diagnostics, sense_and_do, sense_and_do_status, set_actuator_target_position, set_actuator_target_position_with_timer, set_articulation_preset_settings, set_bed_presence, set_favorite_sleep_number, set_footwarming_settings, set_responsive_air_enabled_status, set_sleepiq_privacy_state, set_target_preset_with_timer, set_target_preset_without_timer, set_temperature_program, set_underbed_light_auto_mode, set_underbed_light_settings, software_versions, start_sleep_number_adjustment, stop, underbed_auto, underbed_auto_status, underbed_intensity]
           translation_key: sleep_number_command_command
     parameters:
       selector:
@@ -3089,6 +3044,34 @@ somos_action:
           options: [flat, zero_g, anti_snore, memory_1, memory_2, memory_3, head_massage, foot_massage, massage_timer_cycle, light, status_query]
           translation_key: somos_action_action
 
+superior_sleep_speech:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+    action:
+      required: true
+      selector:
+        select:
+          options: [head_up, head_down, foot_up, foot_down, back_up, back_down, lumbar_up, lumbar_down, speech_stop, lounge, zero_g, anti_snore, flat, memory_1, memory_2, massage_on, massage_off, light, motion_on, motion_off]
+          translation_key: superior_sleep_speech_action
+    duration_ms:
+      default: 1000
+      selector:
+        number:
+          min: 1
+          max: 60000
+          mode: box
+          unit_of_measurement: ms
+
 suta:
   fields:
     device_id:
@@ -3222,31 +3205,6 @@ symphony_anti_snore:
           options: ['1', '2', '3', '6']
           translation_key: symphony_anti_snore_strength
     demo:
-      default: false
-      selector:
-        boolean:
-
-symphony_preset:
-  fields:
-    device_id:
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
-          multiple: true
-    side:
-      default: both
-      selector:
-        select:
-          options: [both, left, right]
-          translation_key: side
-    preset:
-      required: true
-      selector:
-        select:
-          options: [zero_g, flat, memory_1, memory_2, reading, tv, anti_snore]
-          translation_key: symphony_preset_preset
-    save:
       default: false
       selector:
         boolean:
@@ -3905,7 +3863,7 @@ lp2:
       required: true
       selector:
         select:
-          options: [color, light_duration, aromatherapy, fan, motor_program, movement_test, control]
+          options: [color, light_duration, aromatherapy, fan, control]
           translation_key: lp2_operation
     rgb_color:
       selector:
@@ -3938,9 +3896,6 @@ lp2:
           min: 0
           max: 6
           mode: box
-    schedule:
-      selector:
-        object:
     confirm:
       selector:
         boolean:
@@ -3998,7 +3953,6 @@ bedsmart:
           - color
           - light_duration
           - aromatherapy
-          - movement_test
           - bed_command
           translation_key: bedsmart_operation
     rgb_color:
@@ -4014,9 +3968,6 @@ bedsmart:
     aroma_times:
       selector:
         object: null
-    confirm:
-      selector:
-        boolean: null
     duration_ms:
       selector:
         number:
@@ -4102,4 +4053,39 @@ jerome_bed:
           max: 60000
           step: 1
           unit_of_measurement: ms
+          mode: box
+
+dreamsense_light:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    rgb_color:
+      selector:
+        color_rgb:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
+          mode: box
+
+
+dreamsense_delete_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    alarm_number:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255
           mode: box

@@ -207,7 +207,7 @@ async def test_alarm_plan_revalidated_at_actual_ble_write_boundary(clock, monkey
     if wait == "lock":
         ctrl._ble_lock.release()
     resume.set()
-    with pytest.raises(ValueError, match="changed during admission"):
+    with pytest.raises(ValueError, match="alarm list changed"):
         await task
     assert frames(c) == []
 

@@ -458,3 +458,155 @@ async def test_expiry_lets_a_delayed_release_finish(runtime, clock) -> None:
     await asyncio.wait_for(hold, 2)
     assert controller.frames == ["up", "release"]
     assert coordinator._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
+
+
+class LatchedController(StreamController):
+    """A bed with no declared hold: one start frame, then a release.
+
+    Like Reverie Nightstand it waits out the whole window without watching the
+    cancel event, and releases only when cancelled or when the window ends.
+    """
+
+    async def hold_control(self, control: str, duration_ms: int) -> None:
+        self.frames.append("start")
+        try:
+            await asyncio.sleep(duration_ms / 1000)
+        finally:
+            self.frames.append("release")
+
+    async def stop_all(self) -> None:
+        self.frames.append("STOP")
+
+
+async def _held(hass: HomeAssistant, generation: int, duration: float = 0.75) -> None:
+    await hass.services.async_call(
+        DOMAIN,
+        "hold_control",
+        {
+            "device_id": ["bed"],
+            "control": "back_up",
+            "duration": duration,
+            "hold_owner": "card",
+            "hold_generation": generation,
+        },
+        blocking=True,
+    )
+
+
+async def test_an_undeclared_hold_stops_when_its_renewals_stop(runtime, clock) -> None:
+    """Renewals keep the hold the bed always got; losing them ends it with its release."""
+    hass, coordinator = runtime
+    controller = LatchedController(coordinator, NO_EXECUTION_CAPABILITIES)
+    coordinator._controller = controller
+    began = clock.time()
+    start = asyncio.create_task(_held(hass, 1))
+    for _ in range(8):
+        await asyncio.sleep(0.25)
+        await asyncio.wait_for(_held(hass, 1), 0.05)
+        assert not start.done()
+    # Two seconds of renewals wrote the one start frame and nothing else.
+    assert controller.frames == ["start"]
+    await asyncio.wait_for(start, 2)
+    # The last renewal at 2 s leased 750 ms more; then the hold's own release.
+    assert clock.time() - began == pytest.approx(2.75, abs=0.05)
+    assert controller.frames == ["start", "release"]
+    # A renewal in flight at the end moves nothing; an older press is refused.
+    await _held(hass, 1)
+    with raises_key("hold_ended", ServiceValidationError):
+        await _held(hass, 0)
+    assert controller.frames == ["start", "release"]
+
+
+async def test_a_newer_press_is_not_stopped_by_the_older_ones_deadline(runtime, clock) -> None:
+    hass, coordinator = runtime
+    controller = LatchedController(coordinator, NO_EXECUTION_CAPABILITIES)
+    coordinator._controller = controller
+    first = asyncio.create_task(_held(hass, 1))
+    await asyncio.sleep(0.25)
+    second = asyncio.create_task(_held(hass, 2))
+    for _ in range(4):
+        await asyncio.sleep(0.25)
+        await asyncio.wait_for(_held(hass, 2), 0.05)
+    # The first press's deadline passed long ago; only the second one holds.
+    assert controller.frames == ["start", "release", "start"]
+    await asyncio.wait_for(asyncio.gather(first, second), 2)
+    assert controller.frames == ["start", "release", "start", "release"]
+    with raises_key("hold_ended", ServiceValidationError):
+        await _held(hass, 1)
+
+
+async def test_a_press_that_expires_in_preflight_never_replaces_a_newer_move(runtime, clock) -> None:
+    from custom_components.adjustable_bed import services
+
+    hass, coordinator = runtime
+    controller = LatchedController(coordinator, NO_EXECUTION_CAPABILITIES)
+    coordinator._controller = controller
+    preflight = services._preflight_each
+
+    async def slow_preflight(*args: Any, **kwargs: Any) -> Any:
+        await asyncio.sleep(1)
+        return await preflight(*args, **kwargs)
+
+    with patch.object(services, "_preflight_each", slow_preflight):
+        press = asyncio.create_task(_held(hass, 1))
+        # The press's 750 ms deadline passes while it is still in preflight.
+        await asyncio.sleep(0.9)
+        newer = asyncio.create_task(
+            coordinator.async_execute_controller_command(
+                lambda ctrl: ctrl.write_command(b"up", repeat_count=100, repeat_delay_ms=20),
+                resource="motor:back",
+            )
+        )
+        await asyncio.wait_for(asyncio.gather(press, newer), 5)
+    assert controller.frames == ["up"] * 100 + ["stop"]
+
+
+@pytest.mark.parametrize(
+    ("old_execution", "old_generation", "new_execution"),
+    [
+        # A declared hold's route must not refuse the new bed's windowed press.
+        pytest.param(STREAM, 1, NO_EXECUTION_CAPABILITIES, id="declared-route"),
+        # An ended press must neither end the new bed's lease ...
+        pytest.param(NO_EXECUTION_CAPABILITIES, 2, STREAM, id="ended-newer"),
+        # ... nor swallow its press as a late renewal.
+        pytest.param(NO_EXECUTION_CAPABILITIES, 1, NO_EXECUTION_CAPABILITIES, id="ended-same"),
+    ],
+)
+async def test_a_reloaded_bed_starts_with_no_presses_from_the_old_one(
+    runtime, clock, old_execution: ExecutionCapabilities, old_generation: int,
+    new_execution: ExecutionCapabilities,
+) -> None:
+    """The same owner restarting at generation 1 after a reload holds the new bed."""
+    from custom_components.adjustable_bed import services
+
+    def bed(coordinator: AdjustableBedCoordinator, execution: ExecutionCapabilities):
+        held = StreamController if execution.hold else LatchedController
+        coordinator._controller = held(coordinator, execution)
+        return coordinator._controller
+
+    hass, old = runtime
+    bed(old, old_execution)
+    await asyncio.wait_for(_held(hass, old_generation), 2)
+    await old.async_shutdown()
+
+    # A reload builds a new runtime; CPython may give it the old one's id().
+    new = AdjustableBedCoordinator(hass, old.entry)
+    new._client = old._client
+    controller = bed(new, new_execution)
+    real_id = id
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(new, "async_ensure_connected", AsyncMock(return_value=True)))
+        stack.enter_context(patch.object(new, "_async_refresh_controller_auth", AsyncMock()))
+        stack.enter_context(
+            patch.object(services, "_resolve_sided_targets", return_value=([(new, "both")], []))
+        )
+        stack.enter_context(
+            patch.object(
+                services, "id", lambda obj: real_id(old if obj is new else obj), create=True
+            )
+        )
+        await asyncio.wait_for(_held(hass, 1), 2)
+    await new.async_shutdown()
+    # The new bed held the control and then released it.
+    assert controller.frames[0] in ("start", "up")
+    assert controller.frames[-1] in ("release", "stop")

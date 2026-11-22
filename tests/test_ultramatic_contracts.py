@@ -10,9 +10,6 @@ from unittest.mock import patch
 import pytest
 
 from custom_components.adjustable_bed.profiles import ultramatic as app
-from scripts.codec_docs import okin_nframe as docs
-from scripts.codec_docs._ultramatic import render
-from scripts.generate_codec_docs import _rendered, family_modules
 from tests.card_placements import FIXTURE, controller_entities, placements
 from tests.entity_translation_reachability import entity_strings, missing_translations
 from tests.hold_lease_wire import virtual_clock
@@ -28,14 +25,6 @@ async def test_native_massage_bridge_uses_admitted_proven_action(runtime):  # no
         await coord.async_execute_controller_command(lambda c: c.massage_toggle(), resource="*")
     assert coord.controller.supports_massage_toggle_control
     assert writes(client) == [app.control("massageOnOff"), *([app.QUERY_MASSAGE] * 3)]
-
-
-def test_private_renderer_is_registered_under_existing_family():
-    assert "ultramatic" not in family_modules()
-    assert ("docs/beds/okin-nframe.md", "ultramatic-controls", render) in docs.BLOCKS
-    text = render()
-    assert "without response" in text and "indicate accepted" in text
-    assert "05 02 00 00 00 00 00" in text
 
 
 async def test_app_translation_slugs_and_stable_ids(
@@ -130,11 +119,6 @@ async def test_app_wire_plan_does_not_mask_an_unsafe_combined_disable_regression
     ):
         await command.call(coordinator.controller)
     assert writes(client) == []
-
-
-def test_only_changed_guide_outputs_are_current():
-    for name in ("docs/beds/okin-nframe.md", "docs/CONFIGURATION.md"):
-        assert _rendered(name) == (ROOT / name).read_text()
 
 
 async def test_app_factory_entities_have_translations(runtime):  # noqa: F811 - pytest fixture

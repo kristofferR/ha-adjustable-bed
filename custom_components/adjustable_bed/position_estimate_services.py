@@ -97,7 +97,7 @@ def _selection(
 def _selected_position(call: ServiceCall) -> tuple[PositionEstimates, SavedPosition]:
     """A saved position must stay within the selected bed or side."""
     manager, beds = _selection(call, estimated=False)
-    position = manager.position(call.data[ATTR_POSITION])
+    position = manager.position(call.data[ATTR_POSITION], {bed.key for bed in beds})
     if not set(position.targets) <= {bed.key for bed in beds}:
         raise invalid("saved_position_other_side", position=position.name)
     return manager, position

@@ -6,7 +6,6 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.app_families import _jensen_suggestion
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -51,7 +50,6 @@ def test_one_row_names_both_apps_and_their_beds():
     assert const.BED_TYPE_JENSEN not in rows
     for variant in (const.SVANE_VARIANT_JMC, const.SVANE_VARIANT_JENSEN_LINON):
         assert bed_type_choice(const.BED_TYPE_SVANE, variant) not in rows
-    assert ACTUATOR_GROUPS["jensen"] == ((const.BED_TYPE_SVANE, None),)
     # LinON Entry is JMC400 hardware, so the JMC400 route no longer names it.
     from custom_components.adjustable_bed.detection import bed_type_label
 

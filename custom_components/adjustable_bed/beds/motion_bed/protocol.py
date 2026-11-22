@@ -180,7 +180,7 @@ def build_alarm(
     mode = _enum(AlarmMode, mode)
     sound = _enum(AlarmSound, sound)
     if audio and sound == AlarmSound.BUZZER or not audio and sound.value >= 0x11:
-        raise ValueError("alarm sound is unavailable for this audio capability")
+        raise ValueError("This bed cannot play that alarm sound. Choose another sound")
     code = (
         _enum(AlarmSwitch, switch)
         if switch is not None
@@ -205,7 +205,7 @@ def build_alarm(
 def build_sleep_angles(page: SleepPage, flat: Sequence[int], side: Sequence[int]) -> bytes:
     page = _enum(SleepPage, page)
     if len(flat) != 4 or len(side) != 4:
-        raise ValueError("flat and side require four raw position values")
+        raise ValueError("Enter four flat positions and four side positions")
     values = [_integer(value, 0, 255, "raw position") for value in (*flat, *side)]
     if page == SleepPage.TWO_AXIS:
         for index in (0, 3, 4, 7):
@@ -246,7 +246,7 @@ def build_sleep_report(kind: SleepReport, *, offset: int = 0) -> bytes:
 def build_module_bind(module: ModuleType, address: str) -> bytes:
     module = _enum(ModuleType, module)
     if re.fullmatch(r"(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}", address) is None:
-        raise ValueError("module address must contain six colon-separated octets")
+        raise ValueError("Enter the module's Bluetooth address, like AA:BB:CC:DD:EE:FF")
     return with_sum(
         bytes.fromhex("FFFFFFFF01002814")
         + bytes((module,))
@@ -280,7 +280,7 @@ def build_pressure_live(channel: int, value: int) -> bytes:
 
 def build_pressure_save(values: Sequence[int]) -> bytes:
     if len(values) != 12:
-        raise ValueError("pressure save requires twelve channels")
+        raise ValueError("Enter twelve pressure values to save")
     body = bytearray.fromhex("FFFFFFFFFF2F030500")
     for value in values:
         body.extend((1, _integer(value, 0, 9, "pressure") * 10, 0))
@@ -323,12 +323,6 @@ def build_thermal_gear(index: int) -> bytes:
     command = 5 if index < 4 else 6 if index == 4 else 4
     gear = 4 - index if index < 4 else 0 if index == 4 else index - 4
     return with_crc(bytes.fromhex("FFFFFFFFFE1000") + bytes((command, 0, 0, gear, 0, 0, 0xAA)))
-
-
-def build_thermal_timer_enabled(enabled: bool) -> bytes:
-    if not isinstance(enabled, bool):
-        raise ValueError("enabled must be Boolean")
-    return with_crc(bytes.fromhex("FFFFFFFFFE1000030000") + bytes((enabled, 0, 0, 0xAA)))
 
 
 def build_audio_track(track: int, *, preview: bool = False) -> bytes:

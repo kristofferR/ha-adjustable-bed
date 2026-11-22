@@ -41,6 +41,7 @@ from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import bobpowerbase as bob_profiles
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
+from custom_components.adjustable_bed.profiles import dreamsense, saatva
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
@@ -48,7 +49,6 @@ from custom_components.adjustable_bed.profiles import majestichome as majestic
 from custom_components.adjustable_bed.profiles import mlily_remote as remote162
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
-from custom_components.adjustable_bed.profiles import saatva
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
@@ -62,7 +62,9 @@ from scripts.codec_docs import (
 )
 from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._dreamsense import BLOCKS as DREAMSENSE_BLOCKS
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
+from scripts.codec_docs._super_colchones import BLOCKS as SUPER_COLCHONES_BLOCKS
 
 GUIDE = "docs/beds/richmat.md"
 # The Casper Base and Hush Base apps: their profile class and controller module.
@@ -181,10 +183,13 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
 
 
 def bed_types() -> dict[str, tuple[str, ...]]:
-    """Bed types per profile; ``tests/test_codec_docs.py`` checks them against the factory."""
+    """Bed types per profile."""
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
+        **{p.key: ("dreamsense",) for p in dreamsense.PROFILES.values()},
         "one": (_const.BED_TYPE_SONICSLEEP,),
+        "afeg302": ("super_colchones",),
+        "afeg350": ("super_colchones",),
         **{p.key: ("saatva",) for p in saatva.PROFILES.values()},
         "luniosmart": (_const.BED_TYPE_LUNIOSMART,),
         **{key: (profile.app,) for key, profile in legacy_profiles().items()},
@@ -550,7 +555,7 @@ def render_richmat_mh_setup() -> str:
                 *(row(names[frame], frame) for frame in steps),
             ],
         ),
-        f"The app's mattress literal ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
+        f"The app's stored mattress frame ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
         "its checksum, so the bed receives the frame above.",
     )
 
@@ -1427,9 +1432,6 @@ def render_rise_commands() -> str:
             (", ".join(sorted(set(layouts))), *key) for key, layouts in sorted(groups.items())
         ]))
         lines.append("\n</details>\n")
-    lines.append(_table(("Power Cool TEST opcode", "Refresh seconds", "Rest seconds"), [
-        (_code_hex(code), str(seconds), "5") for code, seconds in rise_frames.DIAGNOSTIC_CYCLE
-    ]))
     return _block(*lines)
 
 
@@ -1471,6 +1473,7 @@ BLOCKS: list[Block] = [
     (GUIDE, "hush-base-commands", render_hush_base_commands),
 ]
 
+BLOCKS += SUPER_COLCHONES_BLOCKS
 BLOCKS += _galaxy.BLOCKS
 BLOCKS += _okimiki.BLOCKS
 BLOCKS += _richmat_mh_apps.BLOCKS
@@ -1871,3 +1874,6 @@ def render_jerome_controls() -> str:
 
 
 BLOCKS.append((GUIDE, "jerome-controls", render_jerome_controls))
+
+
+BLOCKS += DREAMSENSE_BLOCKS

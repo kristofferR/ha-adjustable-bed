@@ -135,7 +135,8 @@ async def test_p2_middle_exposes_only_its_reachable_controls(
         "program_memory_1",
         "program_memory_2",
     }
-    assert "toggle_light" in buttons
+    # The bed reports its light, so the light replaces the toggle button.
+    assert "toggle_light" not in buttons
     entries = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
     assert not any(
         "massage" in entity.unique_id or "alarm" in entity.unique_id for entity in entries
@@ -218,8 +219,8 @@ async def test_p1_normal_entities_follow_explicit_light_and_massage_options(
     entry = _entry(hass, has_light=enabled, has_massage=enabled)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert ("toggle_light" in _keys(hass, entry, "button")) is enabled
-    assert ("under_bed_lights" in _keys(hass, entry, "binary_sensor")) is enabled
+    assert "toggle_light" not in _keys(hass, entry, "button")
+    assert ("under_bed_lights" in _keys(hass, entry, "light")) is enabled
     massage_keys = {key for key in _keys(hass, entry, "number") if key.startswith("massage_")}
     assert massage_keys == (
         {"massage_head_intensity", "massage_foot_intensity"} if enabled else set()
@@ -267,7 +268,6 @@ async def test_new_dynamic_entities_have_localized_names(
     registry = er.async_get(hass)
     for domain, key, name in (
         ("cover", "both", "Back and legs"),
-        ("binary_sensor", "under_bed_lights", "Under-bed light state"),
         ("sensor", "logicdata_app_family_match", "Command family matches"),
         ("sensor", "logicdata_app_alarm", "Alarm"),
     ):
@@ -333,7 +333,7 @@ async def test_switching_protocol_removes_obsolete_entities(
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     back_id = _entity_id(hass, "cover", "back")
-    light_id = _entity_id(hass, "binary_sensor", "under_bed_lights")
+    light_id = _entity_id(hass, "light", "under_bed_lights")
     assert er.async_get(hass).async_get(light_id) is not None
     state_keys = {"logicdata_app_alarm", "logicdata_app_family_match"}
     assert state_keys <= _keys(hass, entry, "sensor")
@@ -421,14 +421,10 @@ async def test_light_notification_state_is_visible_without_optimistic_toggle(
     entry = _entry(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    light_id = _entity_id(hass, "binary_sensor", "under_bed_lights")
+    light_id = _entity_id(hass, "light", "under_bed_lights")
     assert hass.states.get(light_id).state == "on"
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    await hass.services.async_call(
-        "button", "press",
-        {"entity_id": _entity_id(hass, "button", "toggle_light")},
-        blocking=True,
-    )
+    await hass.services.async_call("light", "toggle", {"entity_id": light_id}, blocking=True)
     assert hass.states.get(light_id).state == "on"
     coordinator.controller._notification_handler(
         SimpleNamespace(uuid=NOTIFY_UUID), bytearray.fromhex("aaaa06000200000000")

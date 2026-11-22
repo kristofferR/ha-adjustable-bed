@@ -51,7 +51,7 @@ for Responsive Air). Readback enum strings retain their wire values.
 
 | Operation | Key | Parameters | Result | Surface |
 |---|---|---|---|---|
-| reset_articulation_presets | ACFR | `side`: Side, `preset`: ResetType | None | Action |
+| reset_articulation_presets | ACFR | `side`: Side, `preset`: ResetType | None | Native control / diagnostics |
 | run_diagnostics | DSRS | `diagnostics`: DiagnosticRun | `start_status`: String | Action |
 | cancel_current_diagnostic_run | DSRC | None | None | Action |
 | cancel_target_preset | ACCP | `side`: Side | None | Action |
@@ -165,7 +165,7 @@ must be integers and booleans must be actual booleans.
 | position | `axis`, `position`, `side` | None | Action |
 | stop | `side` | None | Action |
 | preset_save | `preset`, `side` | None | Action |
-| preset_reset | `preset`, `side` | None | Action |
+| preset_reset | `preset`, `side` | None | Not offered |
 | preset_timer | `preset`, `side`, `timer` | None | Action |
 | firmness_favorite | `firmness`, `side` | None | Action |
 | firmness_favorites | None | None | Action |
@@ -220,8 +220,7 @@ data:
     position: 35
 ```
 
-The additional SleepIQ 5.4.11 controls need physical testing on each bed model.
-Successful static tests do not establish hardware compatibility.
+The controls added from SleepIQ 5.4.11 are not yet tested on hardware.
 
 ### MCR position services
 
@@ -232,9 +231,10 @@ are rejected so a request cannot silently move the wrong side.
 
 ## Local diagnostics and maintenance
 
-`reset_articulation_presets` accepts `side` and `preset` (`flat`, `favorite`,
-`snore`, `zero_g`, `watch_tv`, `read`, or `all`). It resets saved positions; it
-never holds a movement command. The card asks before its native button runs.
+On Fuzion beds, reset saved positions with the **Reset saved positions**
+button; the card asks before it runs. `sleep_number_command` offers neither
+`reset_articulation_presets` nor the MCR `preset_reset`, because an action runs
+without asking.
 
 `run_diagnostics` accepts `diagnostics` with `group` (`Mattress`, `Base`,
 `Temperature`, or `Foot warming`) and a nonempty `tests` list. For example:
@@ -244,7 +244,7 @@ command: run_diagnostics
 parameters:
   diagnostics:
     group: Base
-    tests: [actuator-test]
+    tests: [power-health-test]
 ```
 
 Only the app's local hardware test IDs are accepted. Network tests, uploads,

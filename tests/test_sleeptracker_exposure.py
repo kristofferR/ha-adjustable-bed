@@ -28,8 +28,8 @@ from custom_components.adjustable_bed.detection import (
 )
 from custom_components.adjustable_bed.redaction import (
     SLEEPTRACKER_SECRET_CHARACTERISTICS,
+    redact_bundle,
     redact_data,
-    redact_pins_only,
     redact_sleeptracker_sessions,
 )
 from custom_components.adjustable_bed.services import async_register_services
@@ -416,11 +416,11 @@ def test_secrets_redacted_in_captures_and_structured_diagnostics():
     assert secret not in json.dumps(
         redact_data({"authCode": secret, "authToken": secret, "token": secret, "password": secret})
     )
-    bundle = redact_pins_only(
+    bundle = redact_bundle(
         {"name": "Processor", "address": "AA:BB:CC:01:02:03", "authToken": secret}
     )
     assert secret not in json.dumps(bundle)
-    assert bundle["name"] == "Processor" and bundle["address"] == "AA:BB:CC:01:02:03"
+    assert bundle["name"] == "Processor" and bundle["address"] == "AA:BB:CC:**:**:**"
 
 
 def test_every_generated_entity_has_english_translation():

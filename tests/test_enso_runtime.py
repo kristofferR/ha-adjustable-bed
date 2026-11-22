@@ -5,13 +5,13 @@ from unittest.mock import patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.keeson.enso import LIGHT
 from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.command_scheduler import (
     _CURRENT_COMMAND_CONTEXT,
     CommandContext,
     CommandKind,
 )
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_enso import bed, frames
@@ -68,12 +68,12 @@ async def test_retained_physical_link_restores_subscription_and_fences_old_callb
     data = bytearray(16)
     data[13] = 0x40
     old_receive(sender, data)
-    assert state.get(LIGHT) is None
+    assert state.get(UNDER_BED_LIGHTS_ON) is None
     current_receive(sender, data)
-    assert state.get(LIGHT) is True
+    assert state.get(UNDER_BED_LIGHTS_ON) is True
     c.on_disconnect()
     current_receive(sender, data)
-    assert state.get(LIGHT) is None
+    assert state.get(UNDER_BED_LIGHTS_ON) is None
 
 
 def context(cancel, *, kind=CommandKind.COMMAND, token=None, preempted=()):

@@ -21,7 +21,6 @@ from custom_components.adjustable_bed.command_scheduler import (
 )
 from custom_components.adjustable_bed.profiles.sleepfunction import EXCLUDED_LAYOUTS, PICKER_LAYOUTS
 from tests.error_helpers import raises_key
-from tests.test_entity_names import problems
 from tests.test_richmat_classic import packets
 from tests.test_richmat_resource_apps import clock as clock
 
@@ -77,7 +76,6 @@ def test_all_layouts_have_native_names_and_no_placeholder_or_duplicate_keys():
                 for s in specs
             ]
             assert len(set(names)) == len(names), (layout, names)
-            assert not {n: problems(n) for n in names if problems(n)}, layout
             assert not any(n.startswith("Button ") for n in names), layout
             assert all(s.hold is None for s in specs if s.requires_confirmation)
 

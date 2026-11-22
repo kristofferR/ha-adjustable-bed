@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.richmat_mh import protocol
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
@@ -48,7 +47,6 @@ def test_profile_registration(bed_type: str) -> None:
     assert get_motor_pulse_defaults(bed_type) == (10, 100)
     assert not requires_pairing(bed_type)  # the app has no pairing, PIN or encryption
     assert _motor_count_options(bed_type) == [2]
-    assert actuator_group_for(bed_type) == "richmat_apps"
     # The app is an answer of the Richmat question and has its own searchable row.
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     assert rows[bed_type] == BED_TYPE_DISPLAY_NAMES[bed_type]
@@ -263,3 +261,38 @@ async def test_offline_side_mints_from_the_stored_snapshot(hass, snapshot, minte
     assert controller is not None and controller.supports_richmat_mh_alarm
     keys = {spec.key for spec in controller.controller_number_specs}
     assert {"richmat_mh_back_angle", "richmat_mh_light_timer"} <= keys
+
+
+async def test_configure_shows_a_model_error_it_has_no_field_for(
+    hass, enable_custom_integrations
+) -> None:
+    """Configure has no model field, so the error is the form's own, not a silent redraw."""
+    from homeassistant.const import CONF_ADDRESS, CONF_NAME
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_BLE_DEVICE_NAME,
+        CONF_PROTOCOL_VARIANT,
+        DOMAIN,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
+            CONF_NAME: "Revive bed",
+            CONF_BED_TYPE: "richmat_revive",
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+            CONF_BLE_DEVICE_NAME: "QRRM0001",
+        },
+        unique_id="AA:BB:CC:DD:EE:01",
+    )
+    entry.add_to_hass(hass)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "settings"}
+    )
+    assert CONF_PROTOCOL_VARIANT not in {str(marker) for marker in form["data_schema"].schema}
+    result = await hass.config_entries.options.async_configure(form["flow_id"], {})
+    assert result["errors"] == {"base": "richmat_mh_choose_model"}

@@ -20,8 +20,9 @@ from ...card import CARD_HIDDEN, CARD_MASSAGE, CARD_UTILITY
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context, note_frame_skipped
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...execution import ExecutionCapabilities
-from ...profiles.lp2 import ALARM_COMBINATIONS, DIAGNOSTIC_CYCLE
+from ...profiles.lp2 import ALARM_COMBINATIONS
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..cancellation import settled
@@ -44,7 +45,6 @@ from .protocol import (
     LAMP_QUERY,
     Wire,
     aroma,
-    control,
     release,
     rgb,
     worker_interval,
@@ -54,7 +54,6 @@ from .protocol import (
 )
 from .receive import ReceiveState
 from .requests import Request
-from .rise import Schedule
 from .transport import Transport, select
 
 if TYPE_CHECKING:
@@ -85,6 +84,10 @@ _ALARMS: Final = {
 _PACKAGE_SERVICE: Final = codec.TRANSPORTS["w0"].service_uuid
 
 
+# The remote's Set key, which the app sends once, as it sends a save.
+_SET_KEYS: Final = frozenset({"k_set_old", "com_set_old"})
+
+
 @dataclass(frozen=True, slots=True)
 class Gesture:
     node: int
@@ -92,6 +95,8 @@ class Gesture:
     status: int
     long: bool = False
     held: bool = False
+    # The motor a selected-motor button moves; other controls keep the default.
+    flag: str = "53"
 
     @property
     def label(self) -> str:
@@ -103,9 +108,16 @@ class Gesture:
         return shape is not None and shape.kind is Kind.SAVE
 
     @property
+    def once(self) -> bool:
+        """Sent once per press, never held: a save, or the Set key that arms one."""
+        return self.saves or self.resource.removeprefix("@string/") in _SET_KEYS
+
+    @property
     def key(self) -> str:
-        return f"richmat_classic_{self.node}" + (
-            "_long" if self.long else "_hold" if self.held else ""
+        return (
+            f"richmat_classic_{self.node}"
+            + ("" if self.flag == "53" else f"_motor{int(self.flag) - 50}")
+            + ("_long" if self.long else "_hold" if self.held else "")
         )
 
 
@@ -138,15 +150,54 @@ class Lp2Controller(RichmatClassicController):
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:
-        return {}
+        # Only the bed's command format is kept: it decides which controls exist
+        # before the first connection. App UI caches neither prove receiver
+        # state nor replay settings.
+        return {"wire": self._wire} if self._wire else {}
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
-        # App UI caches neither prove receiver state nor replay settings.
-        return
+        self._restore_wire(state)
+
+    def _restore_wire(self, state: Mapping[str, object]) -> None:
+        wire = state.get("wire")
+        if wire not in (None, "RAW", "FRAMED"):
+            raise ValueError("Invalid stored command format")
+        if wire is not None:
+            self._wire = wire
+
+    @property
+    def _resolved_wire(self) -> Wire | None:
+        """The command format of this session, else of the last one."""
+        return self._session.wire if self._session else self._wire
 
     @property
     def has_dynamic_controller_entities(self) -> bool:
         return True
+
+    @property
+    def has_dynamic_buttons(self) -> bool:
+        # The first connection adds the format's own buttons.
+        return True
+
+    @property
+    def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
+        """Before the format is known, keep both formats' own rows."""
+        if self._resolved_wire is not None:
+            return super().retained_entity_keys
+        return frozenset(self._format_entity_keys())
+
+    def _format_entity_keys(self) -> set[tuple[str, str]]:
+        """(platform, key) of entities that only one command format lists."""
+        by_wire = self._button_gestures()
+        shared = by_wire["RAW"] & by_wire["FRAMED"]
+        keys = {
+            ("button", g.key + "_" + wire.lower())
+            for wire, gestures in by_wire.items()
+            for g in gestures - shared
+        }
+        raw, framed = self._pairs("RAW").keys(), self._pairs("FRAMED").keys()
+        keys.update(("switch", f"controller_switch_lp2_{name}") for name in raw ^ framed)
+        return keys
 
     def _button(self, node: int) -> Control:
         if self._active_button is not None and self._active_button.node == node:
@@ -282,7 +333,7 @@ class Lp2Controller(RichmatClassicController):
         held: bool = False,
     ) -> None:
         gestures = self.validate_action(node, long=long, held=held, head=head, flag=flag)
-        single_save = any(g.saves and g.status == 1 for g in gestures)
+        single_save = any(g.once and g.status == 1 for g in gestures)
         if mode not in self._model.modes or flag not in ("53", "54", "55"):
             raise ValueError("This control selection is unavailable")
         with self._transaction():
@@ -385,7 +436,14 @@ class Lp2Controller(RichmatClassicController):
         else:
             resource = button.resource_keys.get(field, "")
         # A missing resource keeps the catalog's own label, never another opcode's name.
-        return Gesture(node, resource or button.label, status, long, held)
+        return Gesture(
+            node,
+            resource or button.label,
+            status,
+            long,
+            held,
+            flag if button.tag in ("51", "52") else "53",
+        )
 
     def validate_action(
         self,
@@ -396,18 +454,22 @@ class Lp2Controller(RichmatClassicController):
         head: bool = True,
         flag: str = "53",
     ) -> tuple[Gesture, ...]:
-        wire = self._session.wire if self._session else self._wire
+        wire = self._resolved_wire
         wires: tuple[Wire, ...] = (wire,) if wire else ("RAW", "FRAMED")
         gestures = tuple(
             self._gesture(node, selected, long=long, held=held, head=head, flag=flag)
             for selected in wires
         )
-        if held and any(g.saves or g.status != 1 for g in gestures):
+        if held and any(g.once or g.status != 1 for g in gestures):
             raise ValueError("This control does not support held execution")
         context = current_command_context()
-        if context and context.lease and any(g.saves or g.status != 1 for g in gestures):
-            raise ValueError("This control does not support renewable holds")
+        if context and context.lease and any(g.once or g.status != 1 for g in gestures):
+            raise invalid("control_hold_renewal_not_supported")
         return gestures
+
+    def _flags(self, button: Control) -> tuple[str, ...]:
+        """The motors a selected-motor button is listed for."""
+        return ("53",)
 
     def _gestures(self, wire: Wire) -> tuple[Gesture, ...]:
         result = []
@@ -415,10 +477,13 @@ class Lp2Controller(RichmatClassicController):
             for long, held in ((False, False), (True, False), (False, True)):
                 if not button.rich_button or held and not button.hold_affected:
                     continue
-                try:
-                    result.append(self._gesture(button.node, wire, long=long, held=held))
-                except ValueError:
-                    continue
+                for flag in self._flags(button):
+                    try:
+                        result.append(
+                            self._gesture(button.node, wire, long=long, held=held, flag=flag)
+                        )
+                    except ValueError:
+                        continue
         return tuple(result)
 
     @staticmethod
@@ -453,7 +518,7 @@ class Lp2Controller(RichmatClassicController):
 
     @property
     def _timer_controls(self) -> dict[int, int]:
-        wire = self._session.wire if self._session else self._wire
+        wire = self._resolved_wire
         if wire:
             return self._timers(wire)
         raw, framed = self._timers("RAW"), self._timers("FRAMED")
@@ -490,7 +555,13 @@ class Lp2Controller(RichmatClassicController):
 
     @property
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
-        names = self._pairs("RAW").keys() | self._pairs("FRAMED").keys()
+        wire = self._resolved_wire
+        # Before the format is known, only on/off pairs both formats offer.
+        names = (
+            self._pairs(wire).keys()
+            if wire
+            else self._pairs("RAW").keys() & self._pairs("FRAMED").keys()
+        )
         specs = []
         for name in sorted(names):
 
@@ -523,10 +594,11 @@ class Lp2Controller(RichmatClassicController):
         return tuple(specs)
 
     def controller_switch_available(self, key: str) -> bool:
-        wire = self._session.wire if self._session else self._wire
+        wire = self._resolved_wire
         return bool(wire and key.removeprefix("lp2_") in self._pairs(wire))
 
-    def _button_actions(self) -> dict[str, tuple[Gesture, Wire | None]]:
+    def _button_gestures(self) -> dict[Wire, set[Gesture]]:
+        """Each format's gestures that are buttons, not switches or timers."""
         by_wire: dict[Wire, set[Gesture]] = {}
         for wire in ("RAW", "FRAMED"):
             pairs = {g for pair in self._pairs(wire).values() for g in pair}
@@ -536,10 +608,20 @@ class Lp2Controller(RichmatClassicController):
                 for g in self._gestures(wire)
                 if g not in pairs and not (not g.long and not g.held and g.node in timers)
             }
+        return by_wire
+
+    def _button_actions(self) -> dict[str, tuple[Gesture, Wire | None]]:
+        """Gestures both formats send alike, plus those of the bed's own format.
+
+        A gesture that differs between formats keeps its format in its key, so
+        each format's entities have stable unique IDs. The other format's are
+        never listed: on some layouts the same node does something else there.
+        """
+        by_wire = self._button_gestures()
         shared = by_wire["RAW"] & by_wire["FRAMED"]
         result: dict[str, tuple[Gesture, Wire | None]] = {g.key: (g, None) for g in shared}
-        for wire, gestures in by_wire.items():
-            result.update({g.key + "_" + wire.lower(): (g, wire) for g in gestures - shared})
+        if wire := self._resolved_wire:
+            result.update({g.key + "_" + wire.lower(): (g, wire) for g in by_wire[wire] - shared})
         return dict(sorted(result.items()))
 
     @property
@@ -555,9 +637,9 @@ class Lp2Controller(RichmatClassicController):
                     label,
                     partial(_press, key=key, expected=gesture),
                     hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release")
-                    if gesture.status == 1 and not gesture.saves
+                    if gesture.status == 1 and not gesture.once
                     else None,
-                    requires_confirmation=gesture.saves or gesture.long,
+                    requires_confirmation=gesture.once or gesture.long,
                 )
             )
         result.append(
@@ -576,8 +658,7 @@ class Lp2Controller(RichmatClassicController):
         if key == "richmat_classic_release":
             return True
         selected = self._button_actions().get(key)
-        wire = self._session.wire if self._session else self._wire
-        return selected is not None and (selected[1] is None or selected[1] == wire)
+        return selected is not None and (selected[1] is None or selected[1] == self._resolved_wire)
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -593,7 +674,7 @@ class Lp2Controller(RichmatClassicController):
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
         gesture, _ = self._button_actions()[control]
-        await self.execute_action(gesture.node, hold_ms=duration_ms, held=True)
+        await self.execute_action(gesture.node, hold_ms=duration_ms, held=True, flag=gesture.flag)
 
     def validate_richmat_classic_request(self, request: Request) -> None:
         if request.operation not in (
@@ -611,65 +692,6 @@ class Lp2Controller(RichmatClassicController):
     async def async_execute_richmat_classic_request(self, request: Request) -> None:
         with self._transaction():
             await super().async_execute_richmat_classic_request(request)
-
-    @staticmethod
-    def schedule_frame(schedule: Schedule) -> bytes:
-        if len(schedule.records) != 12 or len(schedule.motors) != 4:
-            raise ValueError("Provide twelve movement records and four motor mappings")
-        if any(not 1 <= row[0] <= 12 for row in schedule.records) or any(
-            not 1 <= n <= 4 for n in schedule.motors
-        ):
-            raise ValueError("Choose movement orders 1 through 12 and motors 1 through 4")
-        values = (schedule.rest, schedule.count, *(v for row in schedule.records for v in row[1:]))
-        if any(type(value) is not int or not 0 <= value <= 65535 for value in values):
-            raise ValueError("Program times and count must be between 0 and 65535")
-        if (
-            schedule.radio not in ("rf", "ble")
-            or schedule.code not in ("new", "old")
-            or not 1 <= schedule.identifier <= 9
-        ):
-            raise ValueError("Choose the program radio, code and identifier")
-        return codec.motor_test_schedule(
-            schedule.records,
-            schedule.rest,
-            schedule.count,
-            1 if schedule.radio == "rf" else 3,
-            1 if schedule.code == "new" else 2,
-            schedule.identifier,
-            schedule.motors,
-        )
-
-    async def diagnostic_cycle(self) -> None:
-        if self.layout != "TEST":
-            raise ValueError("Choose the movement-test layout first")
-        with self._transaction() as session:
-            cancel = self._coordinator.cancel_command
-            for code, seconds in DIAGNOSTIC_CYCLE:
-                if cancel.is_set():
-                    return
-                deadline = monotonic() + seconds
-                try:
-                    while not cancel.is_set() and monotonic() < deadline:
-                        await self.write_command(control(bytes((code,)), session.wire))
-                        if not await self._wait(
-                            min(
-                                self._worker.tick_ms, max(0, ceil((deadline - monotonic()) * 1000))
-                            ),
-                            cancel,
-                        ):
-                            break
-                finally:
-                    await self._release()
-                await asyncio.sleep(0.00005)
-                if not await self._wait(5000, cancel):
-                    return
-
-    async def program_schedule(self, schedule: Schedule) -> None:
-        if self.layout != "RMCS":
-            raise ValueError("Choose the motor program layout before programming")
-        data = self.schedule_frame(schedule)
-        with self._transaction():
-            await self._frames(tuple(data[i : i + 20] for i in range(0, len(data), 20)), 10)
 
     def _alarm_zones(self) -> dict[str, int]:
         owned = set(self._alarm_actions().values())
@@ -726,7 +748,7 @@ class Lp2Controller(RichmatClassicController):
 
     async def check_alarm(self, alarm: AlarmRequest) -> None:
         if self.alarm_capability is None:
-            raise ValueError("Choose a layout with alarm controls")
+            raise ValueError("This bed model has no alarm")
         self.validate_alarm(alarm)
         if self._session is None:
             raise ConnectionError("The bed is disconnected")
@@ -816,10 +838,9 @@ async def _press(controller: BedController, *, key: str, expected: Gesture) -> N
     if not isinstance(controller, Lp2Controller):
         raise TypeError("The selected bed controller changed")
     selected = controller._button_actions().get(key)
-    if (
-        not controller.controller_button_available(key)
-        or selected is None
-        or selected[0] != expected
-    ):
+    # Listed means the bed's own format or shared by both.
+    if selected is None or selected[0] != expected:
         raise ValueError("The selected control changed on this connection")
-    await controller.execute_action(expected.node, long=expected.long, held=expected.held)
+    await controller.execute_action(
+        expected.node, long=expected.long, held=expected.held, flag=expected.flag
+    )

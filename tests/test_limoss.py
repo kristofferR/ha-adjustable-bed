@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import math
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.codec import limoss as codec
@@ -140,6 +141,54 @@ class TestLimossController:
 
         assert controller._reported_motor_count == 2
         assert controller.memory_slot_count == 5
+
+    async def test_saved_memory_survives_reconnect_and_empty_recall_raises(
+        self,
+        hass: HomeAssistant,
+        mock_limoss_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """A software memory outlives the controller rebuilt on every connect (BEDS-2)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_limoss_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        controller._handle_notification(
+            MagicMock(), bytearray(codec.frame(bytes((0x02, 8, 0x12, 1, 0x02)), 0))
+        )
+        controller._handle_notification(
+            MagicMock(), bytearray(codec.frame(b"\x10" + (8000).to_bytes(4, "big"), 0))
+        )
+        await controller.program_memory(1)
+
+        await coordinator.async_disconnect()
+        await coordinator.async_connect()
+        rebuilt = coordinator.controller
+        assert rebuilt is not controller
+        rebuilt._handle_notification(
+            MagicMock(), bytearray(codec.frame(bytes((0x02, 8, 0x12, 1, 0x02)), 0))
+        )
+        rebuilt.write_command = AsyncMock()
+
+        with patch("custom_components.adjustable_bed.beds.limoss.controller.asyncio.sleep"):
+            await rebuilt.preset_memory(1)
+        rebuilt.write_command.assert_awaited_once_with(
+            codec.set_position(1, 8000, signed=False)
+        )
+        with pytest.raises(ServiceValidationError) as err:
+            await rebuilt.preset_memory(2)
+        assert err.value.translation_key == "memory_slot_empty"
+
+        # A slot saved on a later link passes the checks made while disconnected.
+        rebuilt._handle_notification(
+            MagicMock(), bytearray(codec.frame(b"\x20" + (4000).to_bytes(4, "big"), 0))
+        )
+        await rebuilt.program_memory(2)
+        await coordinator.async_disconnect()
+        coordinator.capability_controller.validate_memory_recall(2)
+        # A link whose capability reply never arrives still knows the slots.
+        await coordinator.async_connect()
+        await coordinator.async_disconnect()
+        coordinator.capability_controller.validate_memory_recall(2)
 
     async def test_read_positions_queries_each_motor(
         self,

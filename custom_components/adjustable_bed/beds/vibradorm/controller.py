@@ -186,29 +186,16 @@ class VibradormController(BedController):
     @property
     def _uses_app_strict_command_path(self) -> bool:
         """Return True for variants where the OEM app only drives movement via 0x1526."""
-        model = getattr(self._coordinator, "_ble_model", None)
+        model = self._coordinator.ble_model
         if not model:
             return False
-        return str(model).strip().lower() == _VMAT_BASIC_RF_CBI_MODEL
+        return model.strip().lower() == _VMAT_BASIC_RF_CBI_MODEL
 
     def _command_uuid_candidates(self) -> tuple[str, ...]:
         """Return command UUIDs to probe for the connected VMAT variant."""
         if self._uses_app_strict_command_path:
             return (VIBRADORM_COMMAND_CHAR_UUID,)
         return VIBRADORM_COMMAND_UUID_CANDIDATES
-
-    @property
-    def _detected_model(self) -> str | None:
-        """Return the discovered BLE model when available."""
-        model = getattr(self._coordinator, "_ble_model", None)
-        if model:
-            return str(model)
-        get_model = getattr(self._coordinator, "_get_model", None)
-        if callable(get_model):
-            resolved_model = get_model()
-            if resolved_model:
-                return str(resolved_model)
-        return None
 
     def _refresh_characteristics(self, *, force: bool = False) -> None:
         """Resolve runtime UUIDs for VMAT variants from discovered services."""
@@ -270,7 +257,7 @@ class VibradormController(BedController):
                 "uses 0x1526 only",
                 VIBRADORM_COMMAND_CHAR_UUID,
                 self._coordinator.address,
-                self._detected_model,
+                self._coordinator.ble_model,
             )
         elif selected_command_char is None:
             excluded_uuids = self._uuid_alias_set(
@@ -617,7 +604,7 @@ class VibradormController(BedController):
                 "Skipping VMAT CmdGetStatusMotMon for %s (model %s does not use app-backed "
                 "position feedback)",
                 self._coordinator.address,
-                self._detected_model,
+                self._coordinator.ble_model,
             )
             return
 
@@ -815,17 +802,12 @@ class VibradormController(BedController):
 
     async def _motor_move_with_stop(self, command: int) -> None:
         """Execute a single-byte movement command and always send STOP at the end."""
-        try:
+        async with self.releasing(
+            lambda: self._write_motor_command(
+                codec.STOP, repeat_count=1, cancel_event=asyncio.Event()
+            )
+        ):
             await self._write_motor_command(command)
-        finally:
-            try:
-                await self._write_motor_command(
-                    codec.STOP,
-                    repeat_count=1,
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -959,21 +941,16 @@ class VibradormController(BedController):
         The profile repeats it 200 times at 100 ms (20 s), enough headroom for
         the slowest motors (~14s full travel). The cancel event allows early stop.
         """
-        try:
+        async with self.releasing(
+            lambda: self._write_motor_command(
+                codec.STOP, repeat_count=1, cancel_event=asyncio.Event()
+            )
+        ):
             await self._write_motor_command(
                 cmd,
                 repeat_count=self.profile.preset_repeats,
                 repeat_delay_ms=self.profile.preset_delay_ms,
             )
-        finally:
-            try:
-                await self._write_motor_command(
-                    codec.STOP,
-                    repeat_count=1,
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during preset cleanup")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory via CBI characteristic.
@@ -1063,6 +1040,6 @@ class VibradormController(BedController):
         if self.client is None or not self.client.is_connected:
             raise ConnectionError("Not connected to bed")
 
-        self._massage_on = not getattr(self, "_massage_on", False)
+        self._massage_on = not self._massage_on
         on_off = b"\x01" if self._massage_on else b"\x00"
         await self._write_cbi_command(self.profile.vibration, extra_bytes=on_off)

@@ -218,7 +218,7 @@ def rename(raw_name: bytes) -> bytes:
     Each app limits the name itself; the frame holds at most 15 bytes.
     """
     if len(raw_name) > 15:
-        raise ValueError("Rename payload must be at most 15 bytes")
+        raise ValueError("This name is too long. Use a shorter name")
     return checked(b"\xef\x02" + raw_name.ljust(15, b"\x00"))
 
 

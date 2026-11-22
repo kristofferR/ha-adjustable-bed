@@ -31,7 +31,7 @@ from tests.test_coordinator_sleepys_elite import (
     _FakeGattService,
     _ready_command_lane,
     _VirtualClock,
-    sleepys_runtime,  # noqa: F401,F811 - imported pytest fixture
+    sleepys_runtime,  # noqa: F401 - imported pytest fixture
 )
 
 

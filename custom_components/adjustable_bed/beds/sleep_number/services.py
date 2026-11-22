@@ -41,6 +41,9 @@ INTERNAL_COMMANDS = frozenset(
         "set_system_time",
         "starts_actuator_homing",
         "reboot_system",
+        "reset_articulation_presets",
+        # MCR has no confirmed button for this reset, so it is not offered at all.
+        "preset_reset",
     }
 )
 
