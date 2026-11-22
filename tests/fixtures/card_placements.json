@@ -134,9 +134,6 @@
  "binary_sensor:smart_sleep_flexible_wake": {
   "card_section": "hidden"
  },
- "binary_sensor:smartbed_alarm_on": {
-  "card_section": "hidden"
- },
  "binary_sensor:snoring_left": {
   "card_section": "utility"
  },
@@ -2121,9 +2118,6 @@
  "button:smart_sleep_refresh": {
   "card_section": "utility"
  },
- "button:smartbed_alarm_refresh": {
-  "card_section": "utility"
- },
  "button:solace_music_off": {
   "card_section": "utility"
  },
@@ -2794,10 +2788,6 @@
   "card_section": "motors",
   "card_motor": "head_feet"
  },
- "cover:head_tilt": {
-  "card_section": "motors",
-  "card_motor": "head_tilt"
- },
  "cover:hip": {
   "card_section": "motors",
   "card_motor": "hip"
@@ -2997,14 +2987,6 @@
  "cover:smart_sleep_lumbar": {
   "card_section": "motors",
   "card_motor": "smart_sleep_lumbar"
- },
- "cover:smartbed_left": {
-  "card_section": "motors",
-  "card_motor": "smartbed_left"
- },
- "cover:smartbed_right": {
-  "card_section": "motors",
-  "card_motor": "smartbed_right"
  },
  "cover:somos_axis_1": {
   "card_section": "motors",
@@ -3491,24 +3473,6 @@
  "number:smart_comfort_read_brightness": {
   "card_section": "lighting"
  },
- "number:smartbed_left_massage": {
-  "card_section": "massage"
- },
- "number:smartbed_right_massage": {
-  "card_section": "massage"
- },
- "number:smartbed_sonic_foot": {
-  "card_section": "massage"
- },
- "number:smartbed_sonic_head": {
-  "card_section": "massage"
- },
- "number:smartbed_sonic_wave": {
-  "card_section": "massage"
- },
- "number:smartbed_wave": {
-  "card_section": "massage"
- },
  "number:starcode_abm5_4_light_level": {
   "card_section": "lighting",
   "card_role": "level"
@@ -3570,9 +3534,6 @@
  },
  "select:adjustamattress_strength_setting": {
   "card_section": "utility"
- },
- "select:baseremote_massage_timer": {
-  "card_section": "massage"
  },
  "select:bedsmart_side": {
   "card_section": "motors"
@@ -3743,9 +3704,6 @@
  "select:ruf_richmat_sleep_mode": {
   "card_section": "utility"
  },
- "select:sleepfunction_massage_timer": {
-  "card_section": "utility"
- },
  "select:sleeptracker_left_curve": {
   "card_section": "climate"
  },
@@ -3791,13 +3749,6 @@
  },
  "select:smart_sleep_wave": {
   "card_section": "massage"
- },
- "select:smartbed_sonic_mode": {
-  "card_section": "massage"
- },
- "select:smartbed_sonic_timer": {
-  "card_section": "massage",
-  "card_role": "timer"
  },
  "select:starcode_color": {
   "card_section": "lighting",
@@ -4566,9 +4517,6 @@
  "sensor:smart_sleep_model": {
   "card_section": "hidden"
  },
- "sensor:smartbed_alarm_time": {
-  "card_section": "hidden"
- },
  "sensor:solace_audio_volume": {
   "card_section": "hidden"
  },
@@ -4994,12 +4942,6 @@
  },
  "switch:smart_sleep_privacy": {
   "card_section": "utility"
- },
- "switch:smartbed_massage": {
-  "card_section": "massage"
- },
- "switch:smartbed_sonic": {
-  "card_section": "massage"
  },
  "switch:superior_sleep_massage": {
   "card_section": "massage"

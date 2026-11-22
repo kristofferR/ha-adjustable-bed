@@ -6844,26 +6844,6 @@
           "30": "30 minutes"
         }
       },
-      "baseremote_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "off": "Off",
-          "15_minutes": "15 minutes",
-          "30_minutes": "30 minutes",
-          "45_minutes": "45 minutes"
-        }
-      },
-      "sleepfunction_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "off": "Off",
-          "ten_minutes": "10 minutes",
-          "twenty_minutes": "20 minutes",
-          "thirty_minutes": "30 minutes",
-          "fifteen_minutes": "15 minutes",
-          "forty_five_minutes": "45 minutes"
-        }
-      },
       "bedsmart_side": {
         "name": "Controlled side",
         "state": {
@@ -11622,7 +11602,7 @@
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",
         "baseremote": "Base Remote app",
-        "sleepfunction": "SleepFunction Bed Control",
+        "sleepfunction": "SleepFunction Bed Control app",
         "super_colchones": "Super Colchones app"
       }
     },
