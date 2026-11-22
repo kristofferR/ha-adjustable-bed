@@ -10,6 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
+from homeassistant.components.sensor import SensorDeviceClass
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESETS
@@ -42,7 +43,7 @@ NOTIFY_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 SERVICE_CHANGED: Final = "00002a05-0000-1000-8000-00805f9b34fb"
 MODEL_UUID: Final = "00002a24-0000-1000-8000-00805f9b34fb"
 FIRMWARE_UUID: Final = "00002a26-0000-1000-8000-00805f9b34fb"
-MASSAGE_END: Final = StateKey[str | None]("apex_local_massage_end")
+MASSAGE_END: Final = StateKey[datetime | None]("apex_local_massage_end")
 FIRMWARE: Final = StateKey[str | None]("apex_firmware")
 
 
@@ -85,23 +86,6 @@ _WAKE_PRESETS: Final = {
 }
 # Wake-up programs are identified by a two-digit number; the app has no fixed count.
 WAKE_SLOTS: Final = 99
-
-
-def selected_time(now: datetime, hour: int, minute: int, next_day: bool) -> datetime:
-    """The app selects the current or next calendar day; no past-time rollover."""
-    if (
-        type(hour) is not int
-        or type(minute) is not int
-        or not 0 <= hour < 24
-        or not 0 <= minute < 60
-    ):
-        raise ValueError("Choose a valid hour and minute")
-    # DateTime in the app normalizes out-of-range fields. HA exposes only valid
-    # time inputs and still normalizes the selected day across month/year ends.
-    selected = now.replace(hour=0, minute=0, second=0, microsecond=0, fold=0) + timedelta(
-        days=int(next_day), hours=hour, minutes=minute
-    )
-    return datetime.fromtimestamp(selected.timestamp(), selected.tzinfo)
 
 
 def wake_frames(
@@ -159,7 +143,7 @@ def validate_massage(duration: int, intensity: int, kind: str) -> None:
         or intensity not in (1, 2, 3)
         or kind not in ("head", "feet", "both", "wave")
     ):
-        raise ValueError("Choose 10/20/30 minutes, intensity 1/2/3 and head/feet/both/wave")
+        raise ValueError("Choose 10, 20 or 30 minutes, intensity 1, 2 or 3, and head, feet, both or wave")
 
 
 def massage_axes(kind: str) -> tuple[str, ...]:
@@ -372,6 +356,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
                     "mdi:timer",
                     card=CARD_MASSAGE,
                     entity_registry_enabled_default=True,
+                    device_class=SensorDeviceClass.TIMESTAMP,
                 ),
             )
             if self.remote.massage
@@ -640,7 +625,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
             or type(duration_ms) is not int
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Unsupported movement or hold duration")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -825,7 +810,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
         from homeassistant.util import dt as dt_util
 
         if target.tzinfo is None:
-            raise ValueError("Wake-up time requires a timezone")
+            raise ValueError("Enter the wake-up time with its time zone")
         ticks = delay_ticks(target, dt_util.now())
         if ticks < 0:
             raise ValueError("The selected wake-up time has passed")
@@ -926,7 +911,10 @@ class ComfortEnhancement3Controller(OkinHandleController):
         self._timers[key] = handle
 
     def _publish(self) -> None:
-        self.forward_controller_state_updates(MASSAGE_END(self._massage_end))
+        end = self._massage_end
+        self.forward_controller_state_updates(
+            MASSAGE_END(datetime.fromisoformat(end) if end else None)
+        )
 
 
 def _apex(controller: BedController) -> ComfortEnhancement3Controller:

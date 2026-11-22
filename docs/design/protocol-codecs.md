@@ -47,12 +47,11 @@ docstring names its routes and their evidence.
 | JMC400: Jensen Adjustable Sleep and Svane Remote | `codec/jmc.py` | `profiles/jmc.py` | [JMC400](../beds/jmc.md) | `tests/jmc_vectors.py` |
 | Vibradorm VMAT: generic route, Caresse, Werkmeister, VMAT and V-MAT Basic | `codec/vibradorm.py` | `profiles/vibradorm.py`, `profiles/vmatbasic.py` | [Vibradorm](../beds/vibradorm.md) | `tests/vibradorm_vectors.py` |
 
-Which bed types each family backs is in its registration module (see
-[Registering a family](#registering-a-family)).
+Each family's guide lists the bed types it backs.
 
 `codec/okin_ore.py` builds the Okin ORE `A5 5A` frame for the `okin_ore`
 controller and the BOX1220 routes of Sleepy's Elite and AdjustableM5X4. No app
-profile drives it, so it has no family registration; its vectors are in
+profile drives it; its vectors are in
 `tests/test_okin_ore_vectors.py`. Standalone controllers that send frames from
 several codecs (StarCode M1X12 and M5X5, Sleepy's Elite) build every frame a
 codec covers through that codec.
@@ -60,8 +59,8 @@ codec covers through that codec.
 `codec/sleep_envelope.py` builds the 14-byte sleep-sensor JSON envelope that the
 Casper Base, Hush Base and GM Control sleep sensors and Good Vibe Sleep's sleep
 routes send, and sizes the responses their receivers reassemble. Each app keeps
-its own JSON, request numbering and limits. No app profile drives it, so it has
-no family registration; its vectors are in `tests/test_sleep_envelope_vectors.py`.
+its own JSON, request numbering and limits. No app profile drives it; its
+vectors are in `tests/test_sleep_envelope_vectors.py`.
 
 The standalone `svane` bed type builds its JMC400 route and both of its routes'
 lamp frames through `codec/jmc.py`, from the Svane Remote profile; its default
@@ -113,39 +112,21 @@ through production encoders. See the [M Line guide](../beds/mline.md).
 
 ## Registering a family
 
-A family registers itself in files it owns, so parallel family PRs do not touch
-a shared registry.
+A family keeps its files to itself, so parallel family PRs do not touch a
+shared registry.
 
-- **Contract:** `tests/codec_families/<family>.py` declares
-  `FAMILY = CodecFamily(...)`:
-  - `profiles`: each profile class and its frozen vectors by profile key;
-  - `bed_types`: the bed types whose controller is a profile over this codec;
-  - `app_routes`: for bed types whose profile is an app choice, the config key
-    and its choices;
-  - `guide`: the guide path, how to find the frames it spells, the frozen frames
-    they must belong to, and the protocol variant that reaches each profile.
-
-  `tests/codec_families/_standalone.py` lists the bed types that stay
-  standalone, with their reasons. `tests/test_codec_contract.py` discovers the
-  modules and requires every supported bed type exactly once across
-  `bed_types` and the standalone list. A `bed_types` entry must build a
-  controller whose `profile` is one of the family's classes with vectors for
-  its key; a standalone one must not.
 - **Docs:** `scripts/codec_docs/<family>.py` exports `BLOCKS`, a list of
   `(guide, block name, renderer)`, and optionally `bed_types()`, the bed types
   per profile key that its profile summary lists. Shared helpers are in
   `scripts/codec_docs/_common.py`. `scripts/generate_codec_docs.py` discovers the
-  modules. `tests/test_codec_docs.py` runs the generic checks for every family:
-  stale blocks, one marked region per block, spelled frames are frozen vectors,
-  and `bed_types()` matches the factory. Checks only one family needs go in
-  `tests/test_codec_docs_<family>.py`.
+  modules.
 - **Discovery:** `custom_components/adjustable_bed/discovery_hints/<family>.py`
   declares `HINTS`, from which the manifest's Bluetooth matchers are generated
   (see [discovery hints](discovery-hints.md)).
 
 Profile keys are scoped to their profile class. Two families may use the same
-key (Jiecang and Limoss both call their pre-v5 route `legacy`); every lookup,
-including the contract's, goes through the class first.
+key (Jiecang and Limoss both call their pre-v5 route `legacy`); every lookup
+goes through the class first.
 
 ## Jiecang codec
 
@@ -231,17 +212,13 @@ Docs follow the same split. A codec guide ([Jiecang](../beds/jiecang.md)) holds
 the transports, framing, command tables, responses and release behavior once, then
 one section per profile. Tables the profile data already knows sit between
 `<!-- generated:<name> -->` markers and are rewritten by
-`scripts/generate_codec_docs.py` from each family's `scripts/codec_docs/` module;
-`tests/test_codec_docs.py` fails when one is stale. The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
+`scripts/generate_codec_docs.py` from each family's `scripts/codec_docs/` module.
+The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
 
 Byte-identical bed types kept for existing entries are listed under each codec
-guide's **Aliases**; `tests/test_codec_docs.py` fails when two codec-backed bed
-types build the same controller, profile and default timing without being
-listed there. The default pulse timing table in
+guide's **Aliases**. The default pulse timing table in
 [Configuration](../CONFIGURATION.md#default-values-by-bed-type) is generated the
-same way, from `scripts/codec_docs/_configuration.py`. `scripts/check_doc_links.py`
-and `tests/test_doc_links.py` check every relative link and anchor in the README
-and `docs/`.
+same way, from `scripts/codec_docs/_configuration.py`.
 
 ## Controller glue
 

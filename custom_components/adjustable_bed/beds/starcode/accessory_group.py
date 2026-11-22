@@ -36,7 +36,7 @@ from ...const import (
     STARCODE_GROUP_BED_TYPES,
 )
 from ...coordinator import AdjustableBedCoordinator
-from ...errors import invalid
+from ...errors import failed, invalid
 from ...pairing import is_paired
 from ...runtime_data import loaded_runtime
 from ..base import BedController, controller_as
@@ -112,7 +112,7 @@ def validate_lift_entries(
             raise ValueError("The main and each lift must be distinct")
         entry = hass.config_entries.async_get_entry(entry_id)
         if entry is None or entry.domain != DOMAIN:
-            raise ValueError("Each lift must use an AdjustableM5X5 bedding profile or ELEVATE")
+            raise ValueError("Each lift must be set up as an Adjustable M5X5 bed or an ELEVATE lift")
         if is_m1x12_main:
             if entry.data.get(CONF_BED_TYPE) != BED_TYPE_STAR_ELEVATE:
                 raise ValueError("M1X12 groups can include only ELEVATE accessories")
@@ -121,7 +121,7 @@ def validate_lift_entries(
                     "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE first"
                 )
         elif not _is_m5x5_group_member(entry.data):
-            raise ValueError("Each lift must use an AdjustableM5X5 bedding profile or ELEVATE")
+            raise ValueError("Each lift must be set up as an Adjustable M5X5 bed or an ELEVATE lift")
         address = str(entry.data.get(CONF_ADDRESS, "")).upper()
         if not address or address in addresses:
             raise ValueError("Each group member must have a distinct Bluetooth address")
@@ -210,7 +210,17 @@ async def _preflight(
         _controller(target.controller)
 
 
-async def _stop(targets: Sequence[AdjustableBedCoordinator], *, cleanup: bool = False) -> None:
+def _not_stopped(failures: Sequence[tuple[str, BaseException]]) -> Exception:
+    """One error naming each bed of the group that did not stop, and why."""
+    return failed(
+        "lifts_not_stopped",
+        reasons="; ".join(f"{name}: {str(error) or type(error).__name__}" for name, error in failures),
+    )
+
+
+async def _stop_failures(
+    targets: Sequence[AdjustableBedCoordinator], *, cleanup: bool = False
+) -> list[tuple[str, BaseException]]:
     # Safety STOP tasks inherit this invocation's context, unlike retained command workers.
     scope = _CleanupStopScope() if cleanup else None
     token = _GROUP_CLEANUP.set(scope)
@@ -222,9 +232,18 @@ async def _stop(targets: Sequence[AdjustableBedCoordinator], *, cleanup: bool = 
         if scope is not None:
             scope.active = False
         _GROUP_CLEANUP.reset(token)
-    failures = [result for result in results if isinstance(result, Exception)]
-    if failures:
-        raise ExceptionGroup("Some AdjustableM5X5 targets could not stop", failures)
+    # A member's STOP that was cancelled (its session was replaced) did not stop it either;
+    # cancelling this task still raises out of gather().
+    return [
+        (target.name, result)
+        for target, result in zip(targets, results, strict=True)
+        if isinstance(result, BaseException)
+    ]
+
+
+async def _stop(targets: Sequence[AdjustableBedCoordinator], *, cleanup: bool = False) -> None:
+    if failures := await _stop_failures(targets, cleanup=cleanup):
+        raise _not_stopped(failures)
 
 
 def _conflicting_entry_ids(source: AdjustableBedCoordinator) -> tuple[str, ...]:
@@ -303,7 +322,12 @@ async def _stop_configured_group(
     hass: HomeAssistant, main_entry_id: str, lift_entries: object
 ) -> None:
     """Cancel first, then attempt every reachable target before reporting failures."""
-    failures: list[Exception] = []
+    failures: list[tuple[str, BaseException]] = []
+
+    def title(entry_id: str) -> str:
+        entry = hass.config_entries.async_get_entry(entry_id)
+        return entry.title if entry is not None else entry_id
+
     ids = [main_entry_id]
     if isinstance(lift_entries, (tuple, list)):
         for entry_id in lift_entries:
@@ -311,9 +335,9 @@ async def _stop_configured_group(
                 if entry_id not in ids:
                     ids.append(entry_id)
             else:
-                failures.append(invalid("lifts_not_configured"))
+                failures.append((title(main_entry_id), invalid("lifts_not_configured")))
     else:
-        failures.append(invalid("lifts_not_configured"))
+        failures.append((title(main_entry_id), invalid("lifts_not_configured")))
     epochs = _stop_epochs(hass)
     for entry_id in ids:
         epochs[entry_id] = epochs.get(entry_id, 0) + 1
@@ -323,13 +347,10 @@ async def _stop_configured_group(
         try:
             reachable.append(_resolve(hass, entry_id))
         except ServiceValidationError as error:
-            failures.append(error)
-    try:
-        await _stop(reachable)
-    except Exception as error:
-        failures.append(error)
+            failures.append((title(entry_id), error))
+    failures.extend(await _stop_failures(reachable))
     if failures:
-        raise ExceptionGroup("Some AdjustableM5X5 targets could not stop", failures)
+        raise _not_stopped(failures)
 
 
 async def _settle_previous_groups(hass: HomeAssistant, ids: Sequence[str]) -> None:
@@ -353,6 +374,18 @@ async def _settle_previous_groups(hass: HomeAssistant, ids: Sequence[str]) -> No
             raise ExceptionGroup("Previous AdjustableM5X5 group cleanup failed", failures)
 
 
+def _configured_lifts(hass: HomeAssistant, main: AdjustableBedCoordinator) -> tuple[str, ...]:
+    try:
+        return validate_lift_entries(
+            hass,
+            main.entry.data,
+            main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
+            main_entry_id=main.entry.entry_id,
+        )
+    except ValueError as error:  # A lift was deleted or set up as another bed.
+        raise invalid("lifts_not_configured") from error
+
+
 async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
     """Preflight all four possible addresses before admitting any group writes."""
     if action not in ("up", "down", "flat", "stop"):
@@ -363,15 +396,7 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             hass, main.entry.entry_id, main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, [])
         )
         return
-    try:
-        ids = validate_lift_entries(
-            hass,
-            main.entry.data,
-            main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-            main_entry_id=main.entry.entry_id,
-        )
-    except ValueError as error:  # A lift was deleted or set up as another bed.
-        raise invalid("lifts_not_configured") from error
+    ids = _configured_lifts(hass, main)
     if not ids:
         raise invalid("lifts_not_configured")
     lifts = tuple(_resolve(hass, entry_id) for entry_id in ids)
@@ -382,12 +407,7 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
     def require_admission() -> None:
         if epochs != tuple(_stop_epochs(hass).get(entry_id, 0) for entry_id in target_ids):
             raise asyncio.CancelledError("An AdjustableM5X5 STOP cancelled admission")
-        if ids != validate_lift_entries(
-            hass,
-            main.entry.data,
-            main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-            main_entry_id=main.entry.entry_id,
-        ) or any(loaded_runtime(hass, t.entry.entry_id) is not t for t in targets):
+        if ids != _configured_lifts(hass, main) or any(loaded_runtime(hass, t.entry.entry_id) is not t for t in targets):
             raise asyncio.CancelledError("The AdjustableM5X5 selection changed before admission")
 
     def owned(command: Callable[[BedController], Awaitable[None]]):
@@ -433,17 +453,6 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             )
             await asyncio.sleep(1.6)
             require_admission()
-            current = validate_lift_entries(
-                hass,
-                main.entry.data,
-                main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-                main_entry_id=main.entry.entry_id,
-            )
-            if current != ids or any(
-                loaded_runtime(hass, target.entry.entry_id) is not target
-                for target in targets
-            ):
-                raise asyncio.CancelledError("The AdjustableM5X5 selection changed")
             if any(
                 target.controller is not controller
                 or target.client is not client
@@ -455,13 +464,23 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             command = _flat
         else:
             command = _up if action == "up" else _down
-        async with asyncio.TaskGroup() as running:
-            for target in lifts:
-                running.create_task(
-                    target.async_execute_controller_command(
-                        owned(command), read_positions_after_operation=False
+        try:
+            async with asyncio.TaskGroup() as running:
+                for target in lifts:
+                    running.create_task(
+                        target.async_execute_controller_command(
+                            owned(command), read_positions_after_operation=False
+                        )
                     )
-                )
+        except ExceptionGroup as group:
+            # A lift set up as another bed meanwhile is the user's to fix: say so plainly.
+            configured, other = group.split(ServiceValidationError)
+            if configured is not None and other is None:
+                first: BaseException = configured
+                while isinstance(first, BaseExceptionGroup):
+                    first = first.exceptions[0]
+                raise first from group
+            raise
         completed = True
     finally:
         for target in targets:

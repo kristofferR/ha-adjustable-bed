@@ -33,12 +33,13 @@ test("visual editor exposes utility controls", () => {
 });
 
 test("visual editor offers lighting for a discovered state-only bed", () => {
-  const entityId = "binary_sensor.bed_under_bed_lights";
+  // Sleeptracker's safety light reading, with its toggle button disabled.
+  const entityId = "binary_sensor.bed_safety_light";
   const hass: HomeAssistant = placed({
     entities: {
       [entityId]: {
         entity_id: entityId,
-        translation_key: "under_bed_light_state",
+        translation_key: "sleeptracker_light_on",
         device_id: "bed",
         platform: "adjustable_bed",
       },

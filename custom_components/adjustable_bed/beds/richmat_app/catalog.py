@@ -95,11 +95,6 @@ def scan_matches(name: str | None) -> bool:
     return name is not None and any(keyword in name for keyword in SCAN_KEYWORDS)
 
 
-def normalize_product(value: str) -> str:
-    """The app's QR/manual normalization, deliberately not general whitespace trim."""
-    return value.upper().replace("\n", "").replace(" ", "")
-
-
 def descriptors(product: Product, selector: str) -> tuple[str, ...]:
     """Flatten actual nested groups without inventing controls from enum names."""
     result: list[str] = []

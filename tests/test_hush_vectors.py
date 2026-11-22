@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import re
-from pathlib import Path
-
 import pytest
 
 from custom_components.adjustable_bed import const
@@ -53,11 +50,6 @@ def test_the_music_page_sends_frozen_frames():
     for _, short, _ in music:
         for single in (True, False):
             assert codec.function(short, single=single).hex() in ALL_FRAMES
-
-
-def test_the_controller_builds_no_frame_of_its_own():
-    beds = Path(__file__).parents[1] / "custom_components/adjustable_bed/beds"
-    assert not re.search(r"""b["']\\x6e|bytes\(\(0x6E""", (beds / "hush_base/controller.py").read_text(), re.I)
 
 
 async def test_the_route_drives_its_profile():

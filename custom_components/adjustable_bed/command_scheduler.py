@@ -37,6 +37,8 @@ from enum import StrEnum
 from typing import Any, Final, Literal, Protocol
 from uuid import uuid4
 
+from .errors import BedNotConnectedError
+
 _LOGGER = logging.getLogger(__name__)
 
 ALL_COMMAND_RESOURCES: Final = frozenset({"*"})
@@ -121,6 +123,50 @@ class HoldLease:
             raise ValueError("A hold lease generation must be a non-negative integer")
         if not self.duration_s > 0:
             raise ValueError("A hold lease must last a positive duration")
+
+
+@dataclass(slots=True)
+class HoldWindow:
+    """One press's hold of a control, and the route its renewals follow."""
+
+    control: str
+    generation: int
+    deadline: float
+    windowed: bool = True
+    ended: bool = False
+    expired: bool = False
+    # The commands this press started, one per physical side.
+    commands: list[CommandContext] = field(default_factory=list)
+
+    @property
+    def lapsed(self) -> bool:
+        """Whether renewals stopped, even before the deadline keeper notices."""
+        return self.expired or asyncio.get_running_loop().time() >= self.deadline
+
+
+class HoldWindows:
+    """One bed's presses by (side, owner), kept by the runtime they describe.
+
+    Ended presses are remembered, bounded, so a late renewal of an ended press
+    never starts motion again. A reloaded bed gets a new runtime and starts empty.
+    """
+
+    __slots__ = ("_presses",)
+    ENDED_KEPT: Final = 64
+
+    def __init__(self) -> None:
+        self._presses: OrderedDict[tuple[str, str], HoldWindow] = OrderedDict()
+
+    def get(self, side: str, owner: str) -> HoldWindow | None:
+        return self._presses.get((side, owner))
+
+    def remember(self, side: str, owner: str, press: HoldWindow) -> None:
+        key = (side, owner)
+        self._presses[key] = press
+        self._presses.move_to_end(key)
+        ended = [k for k, w in self._presses.items() if w.ended]
+        for stale in ended[: max(0, len(ended) - self.ENDED_KEPT)]:
+            del self._presses[stale]
 
 
 @dataclass(slots=True, eq=False)
@@ -1070,7 +1116,7 @@ class DeviceCommandScheduler:
 
         async with self._lock:
             if self._closed:
-                raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+                raise BedNotConnectedError
             if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
                 self._finish_locked(
                     handle,
@@ -1141,7 +1187,7 @@ class DeviceCommandScheduler:
             raise ValueError(f"{member.resource} is not a concurrent resource")
         async with self._lock:
             if self._closed:
-                raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+                raise BedNotConnectedError
             if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
                 return CommandOutcome.STOPPED
             if member.lease is not None:
@@ -1270,7 +1316,7 @@ class DeviceCommandScheduler:
         writer and ends only that member.
         """
         if self._closed:
-            raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+            raise BedNotConnectedError
         normalized_resources = command_resources(*resources)
         active = self._active
         overlaps = active is not None and _resources_overlap(

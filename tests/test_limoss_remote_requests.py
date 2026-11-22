@@ -11,6 +11,7 @@ from custom_components.adjustable_bed.beds.limoss.remote_state import get_limoss
 from custom_components.adjustable_bed.button import AdjustableBedButton, _button_entities_for
 from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+from custom_components.adjustable_bed.errors import BedNotConnectedError
 from custom_components.adjustable_bed.pairing import get_child
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_entity_reloads import (
@@ -236,7 +237,7 @@ async def test_offline_disable_still_requires_receiver_and_keeps_selection_on_fa
     before = deepcopy(dict(coordinator.entry.data))
     with (
         patch.object(coordinator, "async_ensure_connected", new=AsyncMock(return_value=False)) as connect,
-        pytest.raises(ConnectionError, match="Not connected to bed"),
+        pytest.raises(BedNotConnectedError),
     ):
         await public_call(hass, coordinator, "limoss_remote_features", {"underbed_light": False, "massage": False})
     connect.assert_awaited()

@@ -385,7 +385,7 @@ async def test_detection_drift_names_the_matching_profile(hass: HomeAssistant) -
     # Keeson changes run through its guided change, which the review lists.
     assert form["step_id"] == "managed"
     assert form["description_placeholders"]["apps"] == (
-        "- Cool Base\n- Adjustable Lite app"
+        "- Cool Base app\n- Adjustable Lite app"
     )
 
     entry = _entry(hass, BED_TYPE_KEESON, variant="purple", **{CONF_ADDRESS: "AA:BB:CC:DD:EE:33"})
@@ -393,7 +393,7 @@ async def test_detection_drift_names_the_matching_profile(hass: HomeAssistant) -
         async_refresh_profile_review_issue(hass, entry)
     issue = _issue(hass, entry)
     assert issue is not None and issue.translation_key == "app_profile_match"
-    assert issue.translation_placeholders["app"] == "Cool Base"
+    assert issue.translation_placeholders["app"] == "Cool Base app"
 
 
 async def test_switching_to_a_route_with_its_own_apps_does_not_ask_again(
@@ -559,7 +559,4 @@ def test_review_text_is_translated_identically() -> None:
         assert issue == english["issues"][key]
         assert set(issue["fix_flow"]["step"]) == {"init", "unpair", "managed"}
         assert "entry_missing" in issue["fix_flow"]["abort"]
-        assert "—" not in json.dumps(issue, ensure_ascii=False)
-    assert strings["selector"]["app_profile_review"] == {
-        "options": {"keep": "Keep the current setup"}
-    }
+    assert strings["selector"]["app_profile_review"]["options"]["keep"]

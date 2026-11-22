@@ -365,14 +365,11 @@ class LeggettGen2Controller(BedController):
         self, command: bytes, stop_command: bytes = LeggettGen2Commands.MOTOR_STOP_ALL
     ) -> None:
         """Execute a movement command and always send a stop at the end."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(stop_command, cancel_event=asyncio.Event())
+        ):
             count = self.leased_hold_refreshes(200) or 25
             await self.write_command(command, repeat_count=count, repeat_delay_ms=200)
-        finally:
-            try:
-                await self.write_command(stop_command, cancel_event=asyncio.Event())
-            except Exception:
-                _LOGGER.debug("Failed to send stop during motor cleanup")
 
     async def _stop(self, stop_command: bytes) -> None:
         """Send a stop command (per-actuator or stop-all)."""
@@ -473,20 +470,14 @@ class LeggettGen2Controller(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(LeggettGen2Commands.STOP, cancel_event=asyncio.Event())
+        ):
             await self.write_command(
                 LeggettGen2Commands.PRESET_FLAT,
                 repeat_count=100,
                 repeat_delay_ms=300,
             )
-        finally:
-            try:
-                await self.write_command(
-                    LeggettGen2Commands.STOP,
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup")
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -496,17 +487,12 @@ class LeggettGen2Controller(BedController):
             3: LeggettGen2Commands.PRESET_WAKE_UP,
             4: LeggettGen2Commands.PRESET_RELAX,
         }
-        if command := commands.get(memory_num):
-            try:
-                await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
-            finally:
-                try:
-                    await self.write_command(
-                        LeggettGen2Commands.STOP,
-                        cancel_event=asyncio.Event(),
-                    )
-                except Exception:
-                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup")
+        if not (command := commands.get(memory_num)):
+            raise self.not_supported(f"memory preset {memory_num}")
+        async with self.releasing(
+            lambda: self.write_command(LeggettGen2Commands.STOP, cancel_event=asyncio.Event())
+        ):
+            await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
@@ -516,29 +502,24 @@ class LeggettGen2Controller(BedController):
             3: LeggettGen2Commands.PROGRAM_WAKE_UP,
             4: LeggettGen2Commands.PROGRAM_RELAX,
         }
-        if command := commands.get(memory_num):
-            await self.write_command(command)
+        if not (command := commands.get(memory_num)):
+            raise self.not_supported(f"saving memory preset {memory_num}")
+        await self.write_command(command)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position (not supported on Gen2)."""
-        _LOGGER.warning("Zero-G preset not available on Gen2 beds")
+        raise self.not_supported("the Zero G preset")
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(LeggettGen2Commands.STOP, cancel_event=asyncio.Event())
+        ):
             await self.write_command(
                 LeggettGen2Commands.PRESET_ANTI_SNORE,
                 repeat_count=100,
                 repeat_delay_ms=300,
             )
-        finally:
-            try:
-                await self.write_command(
-                    LeggettGen2Commands.STOP,
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_anti_snore cleanup")
 
     # Light methods. The only on/off primitive is "UBL TOGGLE", so on/off are
     # toggles guarded by the cached state (updated optimistically here and

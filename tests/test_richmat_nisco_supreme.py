@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -364,21 +363,20 @@ def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
 
 
 @pytest.mark.parametrize("app", ("nisco", "mlily_supreme"))
-def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
-    from tests.test_entity_names import problems
+def test_button_names_are_unique_per_bed(app: str) -> None:
+    from custom_components.adjustable_bed.beds.richmat_mh.app_controller import _shown_name
 
-    raw = re.compile(r"\b(Inc\d?|Dec|\d*Min|Zg2|Ubl|Flat2)\b")
     for model in models(app):
         for advanced in (False, True):
             controller = make(app, model)
             if advanced:
                 controller._version, controller._call_page = "0001", True
-            names = [spec.name for spec in controller.controller_button_specs]
+            names = [_shown_name(spec) for spec in controller.controller_button_specs]
             assert len(names) == len(set(names)), (model, names)
-            for name in names:
-                assert not raw.search(name) and not problems(name), (model, name)
             if model == "bhrm" and not advanced:
-                assert {"Massage: Head Up", "Massage: Timer 10 Minutes"} <= set(names)
+                assert "Massage head up" in names
+                # Its 10, 20 and 30 minute timers are the massage timer select.
+                assert controller.massage_timer_options == [10, 20, 30]
 
 
 def test_undecoded_mlily_alarm_reply_never_sets_the_alarm_sensor() -> None:
@@ -417,6 +415,11 @@ def test_controls_are_named_as_their_buttons_show_them() -> None:
     for name in ("Back", "Nonexistent"):
         with pytest.raises(ValueError, match="name of its button"):
             controller.control_named(name)
+
+
+def test_a_control_keeps_its_colon_name() -> None:
+    controller = make("nisco", "bhrm")
+    assert controller.control_named("Massage: Head Up") == controller.control_named("Massage head up")
 
 
 @pytest.mark.parametrize(("app", "model"), [("nisco", "bhrm"), ("nisco", "garm"), ("mlily_supreme", "aerm")])

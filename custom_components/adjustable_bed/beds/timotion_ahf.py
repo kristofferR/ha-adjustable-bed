@@ -48,25 +48,6 @@ LOCK_MASK: Final = StateKey[int | None]("timotion_ahf_lock_mask")
 LAMP_DISPLAY_CODE: Final = StateKey[int | None]("timotion_ahf_lamp_display_code")
 
 
-class TiMOTIONAhfCommands:
-    """AHF app-action bitmasks, grouped by packet byte."""
-
-    CONTROL_1_UP = 0x01
-    CONTROL_1_DOWN = 0x02
-    CONTROL_2_UP = 0x04
-    CONTROL_2_DOWN = 0x08
-    CONTROL_3_UP = 0x10
-    CONTROL_3_DOWN = 0x20
-
-    CONTROL_4_UP = 0x01
-    CONTROL_4_DOWN = 0x02
-    CONTROL_5_UP = 0x04
-    CONTROL_5_DOWN = 0x08
-    NIGHT = 0x10
-    LIGHT = 0x20
-    CHAIR = 0x40
-
-
 @dataclass(frozen=True, slots=True)
 class _ControlAction:
     """One action label and its app-observed packet bit."""
@@ -264,7 +245,7 @@ class TiMOTIONAhfController(BedController):
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         """Preflight AHF status and lock state before a bounded held action."""
         if duration_ms <= 0:
-            raise ValueError("TiMOTION AHF hold duration must be greater than zero")
+            raise ValueError("Choose a duration longer than zero")
         action = _CONTROL_ACTION_BY_KEY.get(control)
         if action is None:
             raise ValueError(f"Unsupported TiMOTION AHF held control: {control}")
@@ -419,8 +400,7 @@ class TiMOTIONAhfController(BedController):
         if action.lock_bit is not None and self._feature_mask is not None:
             if self._feature_mask & (1 << action.lock_bit):
                 raise ValueError(
-                    f"TiMOTION AHF {action.label} is disabled by status lock bit "
-                    f"{action.lock_bit} (mask 0x{self._feature_mask:02X})"
+                    f"{action.label} is locked on the bed. Unlock it, then try again"
                 )
 
     def _action_enabled(self, action: _ControlAction) -> bool:
@@ -516,7 +496,7 @@ class TiMOTIONAhfController(BedController):
                 except TimeoutError:
                     self._notify_error = "Status notification subscription timed out"
                     raise
-                except Exception as err:  # noqa: BLE001 - read can still establish status
+                except Exception as err:
                     self._notify_error = f"Status notification subscription failed: {err}"
                     _LOGGER.warning("Failed to start TiMOTION AHF status notifications: %s", err)
 
@@ -534,7 +514,7 @@ class TiMOTIONAhfController(BedController):
             async def read_initial_status() -> None:
                 try:
                     initial_status = await client.read_gatt_char(TIMOTION_AHF_NOTIFY_CHAR_UUID)
-                except Exception as err:  # noqa: BLE001 - a later valid notification may succeed
+                except Exception as err:
                     self._read_error = f"Initial status read failed: {err}"
                     _LOGGER.debug("Failed to read initial TiMOTION AHF status: %s", err)
                 else:

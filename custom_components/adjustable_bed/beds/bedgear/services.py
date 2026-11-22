@@ -22,13 +22,11 @@ from ...services import (
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(
-        ("rgb", "light_timer", "alarm", "sync_mode", "toggle_sync", "save_snore", "save_memory")
+        ("rgb", "light_timer", "sync_mode", "toggle_sync", "save_snore", "save_memory")
     ),
     vol.Optional("rgb"): vol.All(vol.ExactSequence((cv.byte, cv.byte, cv.byte)), vol.Coerce(tuple)),
     vol.Optional("brightness", default=1): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
     vol.Optional("minutes", default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=1439)),
-    vol.Optional("time"): vol.All(cv.string, vol.Match(r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")),
-    vol.Optional("strength"): vol.All(vol.Coerce(int), vol.Range(min=0, max=2)),
     vol.Optional("wired", default=False): cv.boolean,
     vol.Optional("confirm", default=False): cv.boolean,
     vol.Optional("slot", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=2)),
@@ -132,7 +130,6 @@ async def _handle(call: ServiceCall, app: str) -> None:
     await _preflight_and_execute(
         targets,
         BedgearController,
-        "L2 Motion" if app == "l2motion" else "Bedgear",
         execute,
         validate=snapshot,
         cancel_running=not color,

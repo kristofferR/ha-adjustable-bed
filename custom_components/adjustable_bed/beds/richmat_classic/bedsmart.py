@@ -16,7 +16,7 @@ from homeassistant.const import CONF_ADDRESS, EntityCategory
 from homeassistant.exceptions import HomeAssistantError
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CardRole, CardSection
+from ...card import CARD_CONTROLLED_SIDE, CARD_UTILITY, CardRole, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped
 from ...const import (
@@ -28,14 +28,14 @@ from ...const import (
 )
 from ...controller_state import StateKey
 from ...errors import failed, invalid
-from ...profiles.bedsmart import ALARM_COMBINATIONS, DIAGNOSTIC_CYCLE, EXCLUDED_LAYOUTS, MODE_LABELS
+from ...profiles.bedsmart import ALARM_COMBINATIONS, EXCLUDED_LAYOUTS, MODE_LABELS
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
 from ..cancellation import cancellable, settled
-from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec, ControllerSelectSpec
 from .caller import Selection
 from .controller import RichmatClassicController
 from .lp2 import Gesture, Lp2Controller
+from .profiles import Control
 from .protocol import (
     ALARM_QUERY,
     AROMA_QUERY,
@@ -51,7 +51,6 @@ from .protocol import (
 from .receive import MalformedFrame, ReceiveState
 from .requests import Request
 from .resource_protocol import BED_COMMANDS
-from .rise import Schedule
 from .transport import Transport, select
 
 if TYPE_CHECKING:
@@ -60,8 +59,6 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 MODE: Final = StateKey[str | None]("bedsmart_mode")
-AXIS: Final = StateKey[str | None]("bedsmart_axis")
-HEAD: Final = StateKey[str | None]("bedsmart_head_foot")
 LAMP_SECONDS: Final = StateKey[int | None]("bedsmart_lamp_seconds")
 MASSAGE_INDEX: Final = StateKey[int | None]("bedsmart_massage_index")
 AROMA_KEYS: Final = tuple(StateKey[int | None](f"bedsmart_aroma_{i}") for i in range(3))
@@ -114,8 +111,6 @@ class BedSmartController(Lp2Controller):
         self._active_button = None
         self._preferences = {}
         self._ui_mode = 0
-        self._ui_head = True
-        self._ui_flag = "53"
         self._scope: Scope | None = None
         self._config_data = dict(coordinator.entry.data)
         self._config_options = dict(coordinator.entry.options)
@@ -126,27 +121,24 @@ class BedSmartController(Lp2Controller):
     def persisted_app_state(self) -> Mapping[str, object]:
         return {
             "mode": self._ui_mode,
-            "axis": self._ui_flag,
-            "head": self._ui_head,
             "known_light": self._known_light,
             "known_aroma": self._known_aroma,
+            **super().persisted_app_state,
         }
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
-        mode, axis, head = state.get("mode", 0), state.get("axis", "53"), state.get("head", True)
-        if (
-            type(mode) is not int
-            or mode not in self._model.modes
-            or axis not in ("53", "54", "55")
-            or type(head) is not bool
-        ):
+        # Earlier betas also stored a selected motor and head or foot; each
+        # selected-motor button now names its motor, and only head sends.
+        mode = state.get("mode", 0)
+        if type(mode) is not int or mode not in self._model.modes:
             raise ValueError("Invalid stored BedSmart selection")
-        self._ui_mode, self._ui_flag, self._ui_head = mode, str(axis), head
+        self._ui_mode = mode
         for name in ("known_light", "known_aroma"):
             if type(state.get(name, False)) is not bool:
                 raise ValueError("Invalid stored BedSmart capability")
         self._known_light = state.get("known_light", False) is True
         self._known_aroma = state.get("known_aroma", False) is True
+        self._restore_wire(state)
 
     @contextmanager
     def _transaction(self, *, stop: bool = False) -> Iterator[Transport]:
@@ -334,8 +326,8 @@ class BedSmartController(Lp2Controller):
         long: bool = False,
         hold_ms: int | None = None,
         mode: int | None = None,
-        head: bool | None = None,
-        flag: str | None = None,
+        head: bool = True,
+        flag: str = "53",
         held: bool = False,
     ) -> None:
         with self._transaction():
@@ -358,8 +350,8 @@ class BedSmartController(Lp2Controller):
                 long=long,
                 hold_ms=hold_ms,
                 mode=self._ui_mode if mode is None else mode,
-                head=self._ui_head if head is None else head,
-                flag=self._ui_flag if flag is None else flag,
+                head=head,
+                flag=flag,
                 held=held,
             )
 
@@ -370,44 +362,22 @@ class BedSmartController(Lp2Controller):
         *,
         long: bool = False,
         held: bool = False,
-        head: bool | None = None,
-        flag: str | None = None,
+        head: bool = True,
+        flag: str = "53",
     ) -> Gesture:
-        gesture = super()._gesture(
-            node,
-            wire,
-            long=long,
-            held=held,
-            head=self._ui_head if head is None else head,
-            flag=self._ui_flag if flag is None else flag,
-        )
+        gesture = super()._gesture(node, wire, long=long, held=held, head=head, flag=flag)
         button = RichmatClassicController._button(self, node)
-        if self.layout == "U3RM" and button.tag in ("51", "52"):
-            return replace(
-                gesture, resource="Selected motor " + ("up" if button.tag == "51" else "down")
-            )
         return (
             replace(gesture, status=1)
             if self.layout == "E3RM" and button.extra == "100" and not long
             else gesture
         )
 
-    def validate_action(
-        self,
-        node: int,
-        *,
-        long: bool = False,
-        held: bool = False,
-        head: bool | None = None,
-        flag: str | None = None,
-    ) -> tuple[Gesture, ...]:
-        return super().validate_action(
-            node,
-            long=long,
-            held=held,
-            head=self._ui_head if head is None else head,
-            flag=self._ui_flag if flag is None else flag,
-        )
+    def _flags(self, button: Control) -> tuple[str, ...]:
+        # The app's motor selector: one button per motor instead.
+        if self.layout == "U3RM" and button.tag in ("51", "52"):
+            return ("53", "54", "55")
+        return super()._flags(button)
 
     async def stop_all(self) -> None:
         self._worker.cancel()
@@ -419,51 +389,48 @@ class BedSmartController(Lp2Controller):
     move_legs_stop = stop_all
     move_feet_stop = stop_all
 
+    @property
+    def _mode_options(self) -> tuple[str, ...]:
+        """The app's bed modes in order: a side on Left/Right layouts."""
+        labels = MODE_LABELS.get(self.layout, ())
+        if labels == ("Left", "Right"):
+            return ("left", "right")
+        return tuple(f"mode_{index}" for index, _label in enumerate(labels, 1))
+
     def _publish(self) -> None:
         super()._publish()
-        labels = MODE_LABELS.get(self.layout)
-        self.forward_controller_state_updates(
-            MODE(labels[self._ui_mode] if labels else None),
-            AXIS({"53": "Motor 3", "54": "Motor 4", "55": "Motor 5"}[self._ui_flag]),
-            HEAD("Head" if self._ui_head else "Foot"),
-        )
+        options = self._mode_options
+        self.forward_controller_state_updates(MODE(options[self._ui_mode] if options else None))
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        specs = []
-        for kind, key, options in (
-            ("mode", MODE, MODE_LABELS.get(self.layout, ())),
-            ("axis", AXIS, ("Motor 3", "Motor 4", "Motor 5") if self.layout == "U3RM" else ()),
-            ("head_foot", HEAD, ("Head", "Foot") if self.layout == "GVRM" else ()),
-        ):
-            if not options:
-                continue
+        # The mode is the side byte of every later FRAMED command; RAW frames
+        # carry none, so a RAW or not yet connected bed lists no select.
+        options = self._mode_options
+        if not options or self._resolved_wire != "FRAMED":
+            return ()
 
-            def choose(value: str, *, name=kind, choices=options) -> None:
-                if value not in choices:
-                    raise invalid("bedsmart_control")
-                if name == "mode":
-                    self._ui_mode = choices.index(value)
-                elif name == "axis":
-                    self._ui_flag = str(53 + choices.index(value))
-                else:
-                    self._ui_head = value == "Head"
-                self._publish()
+        def choose(value: str) -> None:
+            if value not in options:
+                raise invalid("bedsmart_control")
+            self._ui_mode = options.index(value)
+            self._publish()
 
-            async def selected(_controller: BedController, value: str, *, apply=choose) -> None:
-                apply(value)
+        async def selected(_controller: BedController, value: str) -> None:
+            choose(value)
 
-            specs.append(
-                ControllerSelectSpec(
-                    "bedsmart_" + kind,
-                    "bedsmart_" + kind,
-                    key,
-                    options,
-                    selected,
-                    local_select_fn=choose,
-                )
-            )
-        return tuple(specs)
+        side = options == ("left", "right")
+        return (
+            ControllerSelectSpec(
+                "bedsmart_mode",
+                "bedsmart_side" if side else "bedsmart_mode",
+                MODE,
+                options,
+                selected,
+                local_select_fn=choose,
+                card=CARD_CONTROLLED_SIDE if side else CARD_UTILITY,
+            ),
+        )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         client = self.client
@@ -635,9 +602,7 @@ class BedSmartController(Lp2Controller):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        lights = {
-            g.key for wire in ("RAW", "FRAMED") if (g := self._light_gesture(wire)) is not None
-        }
+        lights = self._light_keys()
         specs = [
             s
             for s in super().controller_button_specs
@@ -649,13 +614,6 @@ class BedSmartController(Lp2Controller):
             else s
             for s in specs
         ]
-        for index, spec in enumerate(specs):
-            if spec.name.startswith("Selected motor "):
-                shaped = catalog_button(
-                    spec.key, spec.name, spec.press_fn, kind=Kind.MOTOR, hold=spec.hold
-                )
-                assert shaped is not None
-                specs[index] = shaped
         specs.append(
             ControllerButtonSpec(
                 "bedsmart_query",
@@ -668,16 +626,6 @@ class BedSmartController(Lp2Controller):
                 scheduler_resource="configuration",
             )
         )
-        if self.layout == "TEST":
-            spec = catalog_button(
-                "bedsmart_test",
-                "Movement test",
-                lambda c: require_controller(c, BedSmartController).diagnostic_cycle(),
-                enabled=False,
-                requires_confirmation=True,
-            )
-            if spec is not None:
-                specs.append(spec)
         return tuple(specs)
 
     def _light_gesture(self, wire: Wire) -> Gesture | None:
@@ -690,9 +638,28 @@ class BedSmartController(Lp2Controller):
             None,
         )
 
+    def _format_entity_keys(self) -> set[tuple[str, str]]:
+        keys = super()._format_entity_keys()
+        if self._mode_options:
+            keys.add(("select", "controller_select_bedsmart_mode"))
+        return keys
+
+    def _light_keys(self) -> set[str]:
+        """The light gesture of the bed's format, or of either before it is known.
+
+        The shared light entities stay until the format is known, as on a
+        paired bed's parent; only a session in the light's format can toggle it.
+        """
+        wire = self._resolved_wire
+        return {
+            g.key
+            for w in ((wire,) if wire else ("RAW", "FRAMED"))
+            if (g := self._light_gesture(w)) is not None
+        }
+
     @property
     def supports_lights(self) -> bool:
-        return any(self._light_gesture(wire) is not None for wire in ("RAW", "FRAMED"))
+        return bool(self._light_keys())
 
     @property
     def supports_light_toggle_control(self) -> bool:
@@ -708,42 +675,7 @@ class BedSmartController(Lp2Controller):
     def controller_button_available(self, key: str) -> bool:
         if key == "bedsmart_query":
             return True
-        if key == "bedsmart_test":
-            return self.layout == "TEST"
         return super().controller_button_available(key)
-
-    async def diagnostic_cycle(self) -> None:
-        # One finite traversal of the source sequence, never its endless loop.
-        with self._transaction() as session:
-            cancel = self._coordinator.cancel_command
-            for index, (code, seconds) in enumerate(DIAGNOSTIC_CYCLE):
-                if cancel.is_set():
-                    note_frame_skipped()
-                    return
-                deadline = monotonic() + seconds
-                try:
-                    try:
-                        while not cancel.is_set() and monotonic() < deadline:
-                            await self.write_command(control(bytes((code,)), session.wire))
-                            if not await self._wait_pending(
-                                min(
-                                    self._worker.tick_ms,
-                                    max(0, ceil((deadline - monotonic()) * 1000)),
-                                ),
-                                cancel,
-                                pending=monotonic() < deadline or index + 1 < len(DIAGNOSTIC_CYCLE),
-                            ):
-                                return
-                    finally:
-                        await self._release()
-                except asyncio.CancelledError:
-                    if monotonic() < deadline or index + 1 < len(DIAGNOSTIC_CYCLE):
-                        note_frame_skipped()
-                    raise
-                if not await self._wait_pending(
-                    5000, cancel, pending=index + 1 < len(DIAGNOSTIC_CYCLE)
-                ):
-                    return
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -925,6 +857,3 @@ class BedSmartController(Lp2Controller):
         if combined is None or combined[(0x5D, 0x4C, 0x4E).index(massage)] is None:
             raise invalid("bedsmart_control")
         return combined[(0x5D, 0x4C, 0x4E).index(massage)]
-
-    async def program_schedule(self, schedule: Schedule) -> None:
-        raise invalid("bedsmart_control")

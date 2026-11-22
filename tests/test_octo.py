@@ -47,6 +47,7 @@ from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
     AdjustableBedButton,
     PairedBedCombinedButton,
+    PairedBedCombinedMotorButton,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
@@ -1311,11 +1312,17 @@ class TestOctoPinAuth:
 
         combined = PairedBedCombinedButton(coordinator, description)
         stop = PairedBedCombinedButton(coordinator, stop_description)
+        from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
+
+        back = MotorControlSpec("back", "back", AsyncMock(), AsyncMock(), AsyncMock())
+        both_back_up = PairedBedCombinedMotorButton(coordinator, back, "up")
 
         assert combined.available is False
+        assert both_back_up.available is False
         assert stop.available is True
         octo._pin_locked = False
         assert combined.available is True
+        assert both_back_up.available is True
 
     async def test_send_pin_redacts_command_diagnostics(
         self,
@@ -1504,7 +1511,7 @@ class TestOctoCommands:
         controller = OctoController(coordinator)
 
         controller.validate_hold_control("back_up", 60_000)
-        with pytest.raises(ValueError, match="100..60000"):
+        with pytest.raises(ValueError, match="0.1 to 60 seconds"):
             controller.validate_hold_control("back_up", 60_001)
 
     @pytest.mark.parametrize(

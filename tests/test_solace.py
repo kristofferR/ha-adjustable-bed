@@ -73,18 +73,6 @@ def mock_solace_config_entry(
 class TestSolaceController:
     """Test Solace controller."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_solace_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == SOLACE_CHAR_UUID
-
     async def test_write_command_not_connected(
         self,
         hass: HomeAssistant,

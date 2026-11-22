@@ -335,7 +335,7 @@ async def test_rename_uses_coherent_selected_transport(make_controller, transpor
         call.args[0] == astuple(TRANSPORTS[transport])[3]
         for call in client.write_gatt_char.await_args_list
     )
-    with pytest.raises(ValueError, match="ASCII"):
+    with pytest.raises(ValueError, match="unaccented"):
         await controller.rename_device("Bed 1")
 
 

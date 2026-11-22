@@ -45,7 +45,6 @@ from custom_components.adjustable_bed.pairing import (
     iter_children,
     make_pair_id,
     octo_snapshot_from_descriptor,
-    pair_layout_from_descriptor,
     pair_member_addresses,
     single_data_from_child,
     single_options_from_child,
@@ -196,7 +195,6 @@ class TestBuildPairEntryData:
         child = get_child(data, SIDE_LEFT)
         assert single_data_from_child(child) == original_data
         assert single_options_from_child(child) == original_options
-        assert pair_layout_from_descriptor(child) == layout
 
     def test_a_split_keeps_the_bond_state_the_side_actually_has(self):
         """A bond belongs to an address, so the frozen snapshot cannot own it.

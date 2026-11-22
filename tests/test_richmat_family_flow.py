@@ -26,6 +26,7 @@ APPS = [
     "sleep_evolution",
     "wsilver_legacy",
     "sonicsleep",
+    "super_colchones",
     "mlily",
     "majestichome",
     "okimiki",
@@ -50,6 +51,7 @@ APPS = [
     "superior",
     "luunarise2",
     "powercool",
+    "sleepfunction",
     "lp2",
     "bedsmart",
     "jerome2",
@@ -57,6 +59,7 @@ APPS = [
     "acaa",
     "sta2",
     "zerogravity",
+    "baseremote",
     "remote",
 ]
 

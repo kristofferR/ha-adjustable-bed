@@ -107,4 +107,4 @@ def alarm_query(route: str) -> bytes:
 
 def validate_alarm(*, weekdays: Sequence[int], head_level: int, foot_level: int) -> None:
     if weekdays or head_level or foot_level:
-        raise ValueError("Symphony Sleep has one daily alarm and no alarm massage levels")
+        raise ValueError("This bed has one daily alarm without massage. Remove the weekdays and massage levels")

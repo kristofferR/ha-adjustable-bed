@@ -40,27 +40,30 @@
 
 ## Home Assistant setup
 
-The bed-type list has one **Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L,
-U Series, LP Control and L&P Adjustable Base apps** row; the Gen2 and MlRM rows
+The bed-type list has one **Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP
+Control and L&P Adjustable Base apps · Leggett & Platt** row; the Gen2 and MlRM rows
 are behind it. Setup then asks which app or remote you use. Each answer comes
 from that app; the bed's name never decides it.
 
 | Answer | Route |
 |---|---|
-| Prodigy CE (Prodigy 4), Prodigy 2, Prodigy 2L or U Series app | [Leggett Okin](okin-nframe.md#leggett-okin-family) with that app's layout; requires pairing |
+| Prodigy CE (Prodigy 4) app: back, feet, pillow and lumbar | [Leggett Okin](okin-nframe.md#leggett-okin-family) with that app's layout; requires pairing |
+| Prodigy 2 app: back, feet and pillow | Leggett Okin with that app's layout; requires pairing |
+| Prodigy 2L app: back, feet and lumbar | Leggett Okin with that app's layout; requires pairing |
+| U Series app: back, feet and pillow | Leggett Okin with that app's layout; requires pairing |
 | LP Control app with an LP BED receiver | Leggett Okin with its default (Prodigy CE) layout; requires pairing |
 | LP Control app with an LP Comfort Connect base | [Gen2](#gen2-variant); requires pairing |
-| L&P Adjustable Base app with an MlRM base | [MlRM](#mlrm-variant) |
-| L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2) | [Richmat](richmat.md) with the **L&P QRRM** remote |
-| L&P Adjustable Base legacy app (2.2.1) | [L&P legacy app](richmat.md#lp-legacy-app), which keeps its own row and settings |
-| I don't know: keep the current controls | The detected or chosen route |
+| L&P Adjustable Base app, MlRM remote | [MlRM](#mlrm-variant) |
+| L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2) | [Richmat](richmat.md) with the **L&P QRRM (Head, Feet, Flat, Zero G, Custom 1/2)** remote |
+| L&P Adjustable Base app (older version) | [L&P legacy app](richmat.md#lp-legacy-app) (version 2.2.1), which keeps its own row and settings |
+| Keep the detected or saved controls | The detected or chosen route |
 
-LP Control lists its own Okin products, but none is proven to change the Leggett
-Okin layout, so LP Control on an LP BED receiver keeps the default one.
+LP Control lists its own Okin products, but choosing one does not change the
+controls: LP Control on an LP BED receiver uses the default layout.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
-**Keep** leaves the entry as it is. An entry on the legacy app or on the L&P
+**Keep the detected or saved controls** leaves the entry as it is. An entry on the legacy app or on the L&P
 app's QRRM remote gets the same question. A change to the Okin or Gen2 route pairs the
 bed before the review, as setup does; the MlRM, Richmat and legacy routes switch
 unchecked, as Configure did. A saved `leggett_platt` entry keeps that ID. A
@@ -78,7 +81,8 @@ Some L&P bases advertise as `QRRM` and are configured as the **Richmat** bed
 type, rather than one of the three Leggett-specific variants below. QRRM does
 not identify the physical remote layout. If the remote has Flat, Zero G,
 Custom 1, and Custom 2 buttons, answer the [L&P question](#home-assistant-setup)
-with **L&P Adjustable Base app with a QRRM remote**, or select **L&P QRRM** as
+with **L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom
+2)**, or select **L&P QRRM (Head, Feet, Flat, Zero G, Custom 1/2)** as
 the Richmat remote in an existing Richmat entry's options. The current L&P and Richmat apps likewise require a typed,
 scanned, or previously saved physical remote profile because the BLE peripheral
 does not expose one. Flat is confirmed on the issue #504 hardware; the other

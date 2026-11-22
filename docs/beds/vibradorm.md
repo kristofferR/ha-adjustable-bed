@@ -5,9 +5,9 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 > [!NOTE]
-> Existing generic entries keep their controller unless you explicitly select an
-> app profile. Shared Bluetooth identifiers, device names and model strings do not
-> identify an app or its remote layout.
+> Existing generic entries keep their controls until you pick an app profile.
+> Setup cannot tell from the bed's name or model which app or remote you use, so
+> pick it yourself.
 
 ## Known Models
 
@@ -19,14 +19,13 @@
   and `cdl_cf_17_21_382_vi` (control type 7):
   [Caresse and Werkmeister](#caresse-and-werkmeister)
 - Vibradorm receivers controlled with the VMAT app (`de.vibradorm.vmat`), with the
-  fourteen shipped VMAT remote selections in the
-  [remote table](#vmat-remote-selection). Resource names identify shipped images,
-  not proven physical products: [VMAT](#vmat)
+  fourteen VMAT remotes in the [remote table](#vmat-remote-selection). The names
+  are the app's remote pictures, not product names: [VMAT](#vmat)
 - V-MAT-BASIC-RF (`basic` profile), V-MAT-BASIC-RF-CBI (`cbi` profile) and
   V-MAT-BASIC-RF-CBI with XT-Box (`xtbox` profile), controlled with the
   `com.vibradorm.vmatbasic` app: [V-MAT Basic](#v-mat-basic)
-- Advertisement, DIS strings, service/characteristic presence and remote artwork
-  cannot choose a profile or actuator layout.
+- Setup cannot tell the profile or motor layout from what the bed advertises;
+  pick it yourself.
 
 ## Apps
 
@@ -40,36 +39,32 @@
 
 - The generic controller's protocol comes from the VIBRADORM Remote and
   VIBRADORM Remote for Beds apps.
-- [v4.1.0](https://github.com/kristofferR/ha-adjustable-bed/releases/tag/v4.1.0)
-  includes separate, explicitly selected app profiles. Follow the section for the
-  app and remote you use; capabilities and packet behavior are profile-specific.
-- Each app profile was verified independently. VMAT has its own remote table,
-  setup stages, GATT rules and accessory conversion values, and does not inherit
-  the Caresse and Werkmeister protocol defaults merely because transport
-  identifiers match. Caresse / Werkmeister and V-MAT Basic have their own
-  feature gates and vectors.
-- The [issue #403 reconciliation](#issue-403-reconciliation) explains which
-  parts of the original parity request shipped and which the apps rule out.
-  The apps have no live position or EEPROM support for the Caresse,
-  Werkmeister or VMAT profiles.
+- Since [v4.1.0](https://github.com/kristofferR/ha-adjustable-bed/releases/tag/v4.1.0)
+  each app has its own profile, picked in setup. Follow the section for the app
+  and remote you use.
+- VMAT, Caresse / Werkmeister and V-MAT Basic each have their own controls,
+  remotes and setup; one never borrows another's behavior.
+- [Issue #403](#issue-403-reconciliation) lists which requested features
+  shipped and which these beds cannot do. The Caresse, Werkmeister and VMAT
+  profiles cannot read the bed's position or its stored settings.
 
 ## Features
 
 | Feature | Generic controller | Caresse / Werkmeister | VMAT | V-MAT Basic |
 |---------|--------------------|-----------------------|------|-------------|
-| Motor Control | ✅ (2, 3 or 4 configured motor groups) | ✅ (held app movement groups per profile; see [explicit profiles](#explicit-profiles-and-retained-state)) | ✅ (logical groups per remote; All Up/All Down) | ✅ (two named movement groups: back, legs; all up/down) |
-| Position Feedback | ⚠️ (legacy notification handling on compatible variants; angle estimates) | ❌ (no live position, EEPROM or motor-status parser) | ❌ (no live position parser proven) | ❌ (no position slider; ED is not a position parser) |
-| Memory Presets | ✅ (6 slots) | ⚠️ (6 programmable on CBI layouts; 3 recalls on the basic seat state; none on fresh Caresse) | ✅ (six slots on remotes 07–11 and 13) | ❌ |
-| Flat Preset | ✅ | ❌ (All-down is held movement toward flat, not a self-completing preset) | ❌ (All Down is movement, not a timed flat preset) | ❌ (All-down is a direction, not a measured flat position) |
-| Light Control / Floor light | ✅ | ✅ (Werkmeister; Caresse restored flag) | ✅ (level 0–8 and timer on remotes 01, 04–10) | ✅ CBI and XT-Box (see the product table below) |
-| Mood light | ❌ | ✅ (Caresse restored RGB only: 18-color palette, three effects, speed) | ✅ (remotes 12/13: 18 palette choices, three effects, speed 0–8) | ✅ XT-Box only (palette choices; no arbitrary RGB) |
-| Massage | ✅ (vibration toggle via CBI characteristic) | ✅ (Caresse restored massage only) | ✅ (remotes 12/13: automatic/individual modes, zones, waves, speed) | ✅ XT-Box only (six literal actions; no intensity or measured massage state) |
-| Sync | ❌ | ✅ (Werkmeister type 7 only) | ✅ (remotes 07–11, reply-gated held action) | ❌ |
-| Device information / diagnostics | ❌ | ✅ (DIS strings; article requests on types 5/6/7) | ✅ (DIS strings; onboarding stages) | ✅ (model, controller temperature, floor status, firmware, ED, signal) |
-| Native bond | ❌ | ✅ (information-before-bond onboarding) | ✅ (positive native bond evidence required) | ❌ (bonded status is advisory) |
+| Motor Control | ✅ (2, 3 or 4 configured motor groups) | ✅ (the app's hold-to-move groups; see [profiles](#explicit-profiles-and-retained-state)) | ✅ (movement groups per remote; All Up/All Down) | ✅ (two named movement groups: back, legs; all up/down) |
+| Position Feedback | ⚠️ (estimated angles on some variants) | ❌ | ❌ | ❌ |
+| Memory Presets | ✅ (6 slots) | ⚠️ (6 with save on CBI layouts; 3 recalls on the seat layout; none on a new Caresse setup) | ✅ (six slots on remotes 07–11 and 13) | ❌ |
+| Flat Preset | ✅ | ❌ (hold All down instead) | ❌ (hold All Down instead) | ❌ (hold all down instead) |
+| Light Control / Floor light | ✅ | ✅ (Werkmeister; Caresse with restored settings) | ✅ (level 0–8 and timer on remotes 01, 04–10) | ✅ CBI and XT-Box (see the product table below) |
+| Mood light | ❌ | ✅ (Caresse with restored settings only: 18-color palette, three effects, speed) | ✅ (remotes 12/13: 18 palette choices, three effects, speed 0–8) | ✅ XT-Box only (palette choices; no arbitrary RGB) |
+| Massage | ✅ (vibration toggle on CBI beds) | ✅ (Caresse with restored settings only) | ✅ (remotes 12/13: automatic/individual modes, zones, waves, speed) | ✅ XT-Box only (six massage buttons; no intensity; state not shown) |
+| Sync | ❌ | ✅ (Werkmeister type 7 only) | ✅ (remotes 07–11, hold to use, once the bed answers) | ❌ |
+| Device information / diagnostics | ❌ | ✅ (device details; article number on types 5/6/7) | ✅ (device details; setup progress) | ✅ (model, controller temperature, floor status, firmware, ED, signal) |
+| Pairing | ❌ | ✅ (setup pairs after reading the device details) | ✅ (required) | ❌ (not required) |
 | Rename | ❌ | ❌ | ❌ | ✅ |
 | Linked pair | ❌ | ❌ | ❌ | ⚠️ CBI and CBI with XT-Box at two addresses only |
-| Battery, firmware update, calibration | ❌ | ❌ | ❌ (not proven) | ❌ |
+| Battery, firmware update, calibration | ❌ | ❌ | ❌ | ❌ |
 | Hold until release | ❌ | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`, through the Vibradorm app profile) | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`, then STOP) |
 
 **Generic motor configurations:** the generic controller offers 2, 3, or 4
@@ -81,21 +76,21 @@ controls.
 | Profile | Movement | Floor lighting | XT accessories |
 |---|---|---|---|
 | Basic (`basic`) | Back, legs, all up/down | None | None |
-| CBI (`cbi`) | Same single-byte movement | Fresh-read toggle, level 0–255, timer 0–1439 minutes | None |
-| CBI with XT-Box (`xtbox`) | Same single-byte movement | Held floor action, level 1–6, timer 0–255 minutes | Twenty-color mood palette, brightness 0–100%, three effects, speed 0–255, toggle/nightlight, six massage actions |
+| CBI (`cbi`) | Same single-byte movement | Toggle (reads the state first), level 0–255, timer 0–1439 minutes | None |
+| CBI with XT-Box (`xtbox`) | Same single-byte movement | Hold-to-use floor light, level 1–6, timer 0–255 minutes | Twenty-color mood palette, brightness 0–100%, three effects, speed 0–255, toggle/nightlight, six massage actions |
 
-- V-MAT Basic exposes two named movement groups, not proof of physical motor
-  topology. No head/feet/extra-axis, position slider, automatic flat preset,
-  memory, arbitrary RGB, massage intensity or measured massage state is exposed.
-- Generic motor count, angle sensing and pulse settings do not override an app
-  profile.
+- V-MAT Basic has two movement groups, back and legs, whatever motors the bed
+  has. It has no head, feet or extra motor controls, position sliders, flat
+  preset, memory, free RGB color, massage intensity or massage state.
+- The generic motor count, position reading and pulse settings do not apply to an
+  app profile.
 
 ## Choosing a profile
 
 Detection suggests the generic `vibradorm` bed type (see
 [Generic controller](#generic-controller)). The app profiles are explicit
-choices: the bed-type picker has one **Vibradorm: VMAT, Caresse Diamant,
-Werkmeister, V-MAT Basic** entry. Choose the app you use on your phone, then its
+choices: the bed-type picker has one **VMAT, Caresse Diamant,
+Werkmeister, V-MAT Basic · Vibradorm** entry. Choose the app you use on your phone, then its
 remote or product, or **Legacy setup** for the generic controller. Each profile
 keeps its own command table and timing; none reuses a sibling's.
 
@@ -125,7 +120,7 @@ existing controller, features and Bluetooth pairing requirements.
 For an existing bed, open **Settings → Devices & services → Adjustable Bed**,
 then the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
-The app review in Repairs opens the same wizard. Choose **Keep the current setup**
+The app review in Repairs opens the same wizard. Choose **Keep the detected or saved controls**
 to keep your working controls and answer the review, or choose your app and
 remote/product.
 Keeping the same app seeds the form with your saved settings.
@@ -242,7 +237,7 @@ VMAT and V-MAT Basic keep whitespace and NULs.
 ### Vectors
 
 `tests/vibradorm_vectors.py` freezes every fixed frame each profile sends, by
-characteristic, and the value frames from the artifact fixtures
+characteristic, and the value frames from the app fixtures
 (`tests/fixtures/vibradorm_vmat_vectors.json`,
 `tests/fixtures/vmatbasic-vectors.json`). `tests/test_vibradorm_vectors.py`
 checks that every literal round-trips through the codec and that each profile
@@ -269,8 +264,8 @@ Detection:
 These are generic discovery hints, not proof of an app, remote layout or every
 optional feature.
 
-Choose **Legacy setup** inside the **Vibradorm: VMAT, Caresse Diamant,
-Werkmeister, V-MAT Basic** entry for this controller, which then asks the motor
+Choose **Legacy setup** inside the **VMAT, Caresse Diamant,
+Werkmeister, V-MAT Basic · Vibradorm** entry for this controller, which then asks the motor
 count, whether massage motors are fitted and whether to read positions before
 pairing. Existing entries keep their saved controller until you explicitly
 reconfigure them. See the [guided setup and migration](#guided-setup-and-migration).
@@ -402,7 +397,7 @@ by big-endian 16-bit counts, or the short `3f flags` form:
 This describes the current implementation in
 [`VibradormController`](../../custom_components/adjustable_bed/beds/vibradorm/controller.py),
 covered by `TestVibradormPositionFeedback` in
-[`test_vibradorm.py`](../../tests/test_vibradorm.py). It does not establish a
+[`test_vibradorm.py`](../../tests/test_vibradorm.py). It does not give a
 calibrated physical angle, initialization-state handling or equivalent position
 support in another app profile.
 
@@ -459,8 +454,8 @@ actuator layout.
   reads. Do not constrain restored states solely to non-normal control values.
 - Fresh selection is type 2/all false.
 - Werkmeister accepted own-selector scope is 5/7; its dead selectors/features are
-  excluded and are not promoted into supported Werkmeister options by Caresse
-  evidence.
+  left out and are not turned into Werkmeister options because Caresse has
+  them.
 - All counts above describe app movement groups. They do not prove physical motor
   topology.
 - Hide conflicting generic motor-count/has-massage/angle/repeat-delay options for
@@ -480,20 +475,20 @@ These app paths use the COMMAND (motor `1526`), LIGHT (`1529`), CBI (`1550`) and
 CBI response (`1551`) roles of the [transport table](#transports).
 
 - These app paths select exact characteristics across services. No fixed parent
-  service, guessed writable fallback or base-UUID alias is proven.
+  service, guessed writable fallback or base-UUID alias is used.
 - COMMAND/LIGHT/CBI/CBI_RESPONSE are exact characteristic identities; service
   membership is not an app requirement.
 - Select the first requested exact characteristic in native service order, and
   retain that selected object for the actual read/write/notification operation.
-- No arbitrary writable/notifiable or `1528`/`1534`/proxy-base alias fallback is
-  proven for these app profiles.
+- These app profiles use no arbitrary writable/notifiable or
+  `1528`/`1534`/proxy-base alias fallback.
 - Validate actual operation properties and use the selected host backend's write
   semantics.
 - The application inherits runtime native write properties/type: the APK leaves
   Android native write type/property metadata at runtime, so it does not prove a
   universal response=False/True mode.
 - Home Assistant's declared property-based transport policy is host behavior, not
-  evidence of a fixed Android response mode.
+  a fixed Android response mode.
 
 ##### Advertisement diagnostics and target selection
 
@@ -525,10 +520,10 @@ CBI response (`1551`) roles of the [transport table](#transports).
 
 ##### Home Assistant setup
 
-Select **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+Select **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm** in the
 bed-type picker, then choose Caresse Diamant or Werkmeister. Existing generic
 entries keep their legacy setup until explicitly reconfigured. Bluetooth identifiers do not select an app
-or remote layout. Werkmeister offers its two proven remote
+or remote layout. Werkmeister offers its two remote
 layouts. Fresh Caresse uses its basic two-axis layout; enable retained settings
 only when you know the app's saved remote type and independent floor-light,
 mood-light, massage and light-extension settings. The `other` retained type has
@@ -544,13 +539,12 @@ pending timer while retaining the remembered brightness.
 Setup hides generic motor-count and pulse settings. Controls use the selected
 profile's fixed refresh and release behavior. First onboarding shares one
 10-second connection, information and native pairing deadline. Local stored
-bonds require exact-adapter BlueZ evidence; a successful proxy pairing request
+bonds must be confirmed by BlueZ on that adapter; a successful proxy pairing request
 remains unverified. App metadata is diagnostic information, not bond proof.
 
 ##### Information, notification and bonding lifecycle
 
-Reachable onboarding order is in scope, not excluded merely because Android
-initiated it. For a new explicit-profile bond:
+Setup follows the app's onboarding order. For a new explicit-profile bond:
 
 1. Issue ordinary unbonded connect/service discovery and start one source
    10,000 ms whole onboarding deadline, including connection/discovery; no
@@ -567,7 +561,7 @@ initiated it. For a new explicit-profile bond:
 5. After information completion call native bond using existing typed host/proxy
    pairing, proof, cancellation and cleanup policy. Record a real native bond
    result. DIS/article bytes are metadata and never new bond proof, credentials,
-   profile inference or connection-gated-by-bond evidence.
+   a profile choice or a sign that the bed requires a bond.
 6. Complete/store the selected configuration and disconnect/transition. Later
    configured startup targets exact MAC and checks existing bond/recovery; avoid
    an unnecessary new first-bond transaction.
@@ -584,21 +578,21 @@ Reconnects and deadlines:
   The shared onboarding budget also applies to a new transport without saved
   context.
 - A profile-aware pre-pair hook carries the selected client, cancellation state
-  and shared deadline. The static pairing policy alone does not establish the
+  and shared deadline. The static pairing policy alone does not give the
   required information-before-bond order.
 - Existing generic Vibradorm route is preserved. The setup lifecycle owns the
   hook/order and host/proxy proof; the app controller owns its exact
   read/parser/transaction helper.
 - Android activity dialogs, synchronous callback-before-post race and
   host-specific retry/unbond implementation details are separate
-  process/safety/platform exclusions, without waiving this reachable workflow or
-  the source deadline.
+  process/safety/platform exclusions; the app's workflow and deadline still
+  apply.
 
-Native bond evidence and legacy boundary:
+Native bond check and older entries:
 
 - The app checks exact-MAC native bonded inventory and native completion.
   Metadata reads and successful pair RPCs are not cryptographic authentication
-  proof. Use typed native OS state evidence distinct from an authenticated
+  proof. Use the operating system's bond state, separate from an authenticated
   protocol probe.
 - Unsupported proxy confirmation remains unverified with an accurate
   pairing-attempted status.
@@ -619,7 +613,7 @@ Native bond evidence and legacy boundary:
 
 #### Controls
 
-The profile matrix determines each reachable command and its preconditions. Eight normal
+The profile matrix determines each command and its preconditions. Eight normal
 motor-direction opcodes, all-up/all-down, exact six memory opcode choices, fixed
 save tails, dedicated light paths, mood group bit, massage group bit and article
 literal requests require profile-specific vectors.
@@ -771,13 +765,13 @@ Group `0000` for basic, `1000` for nonbasic.
   catalog and an explicit bounded duration (100 ms to 60 s), with paired side
   routing. Its catalog is validated for every selected physical target before
   writes, and release uses the controller STOP cleanup path.
-- All-down means movement toward flat while held, not a proven self-completing
-  preset.
+- All-down means movement toward flat while held, not a preset that finishes
+  on its own.
 - Release always ends refresh and attempts the exact profile STOP with a fresh
   cancellation signal, including cancellation/error/side-routed service cleanup.
 - Do not copy source stranded-STOP, unhandled ACTION_CANCEL, queue
   clear/disconnect without STOP or indefinitely blocked write behavior. These are
-  explicit safety exclusions with source evidence.
+  deliberate safety exclusions based on the app's code.
 - Do not append STOP after a one-shot feature or information packet unless it is
   a separate requested navigation/motor release.
 - Host serialization can safely replace shared unsent-command races, without
@@ -807,7 +801,7 @@ Group `0000` for basic, `1000` for nonbasic.
 - Preserve three requests and parser results, and test unrelated/late/malformed
   callbacks, missing notify, failed read/write, cancellation, bounded deadline and
   no writes after completion.
-- No parser-reachable measured angle/motor position exists in these apps.
+- These apps read no measured angle or motor position.
 
 ##### Sync replies
 
@@ -850,8 +844,7 @@ Group `0000` for basic, `1000` for nonbasic.
   controls therefore begin from 6 in that same app process. A later configured
   process begins from current level 0 while preserving remembered level 6.
 - Missing remembered preferences have a separate fallback: 6 with extension,
-  otherwise 8. A getter fallback does not establish normal first-onboarding
-  state.
+  otherwise 8. A getter fallback is not the normal first-onboarding state.
 - The Android reset/preferences screen is excluded as local application UI
   (`R031-0671`). Its downstream floor level/default effects are in scope because
   they change subsequent packets.
@@ -868,7 +861,7 @@ Group `0000` for basic, `1000` for nonbasic.
   until the pending value is positive. Choosing 1–60 minutes then exposes the
   effective pending duration. These fields never prove that the peripheral is on
   or off.
-- Home Assistant exposes floor lighting through the **Under Bed Lights** light
+- Home Assistant exposes floor lighting through the **Under-bed lights** light
   and a positive brightness number, separate from the bounded mood controls. The
   light starts unknown with assumed state.
 - OFF remembers a positive level before sending zero; ON restores the current
@@ -940,7 +933,7 @@ the last column.
   and speed 1–5 with the exact listener/updateIndicators predicates.
 - Do not collapse saved flags and saved intensities or automatically invent a
   fresh individual 3/3 fallback.
-- Zone controls use the proven toggle/increment/decrement callbacks; no arbitrary
+- Zone controls use the app's toggle/increment/decrement callbacks; no arbitrary
   direct intensity setter is implied.
 - Preserve 72 accepted state vectors, complete Cartesian guard proof and exact
   nested off-then-restore sequences.
@@ -962,15 +955,14 @@ the last column.
 - Separate-address pairs retain side-specific app/profile/retained-feature
   fields; differing sides prohibit global option propagation.
 - Single-address pairing/addressing is not supported by these app profiles. This
-  is a HA integration boundary, not an app-proven partner feature.
+  is a Home Assistant limit, not a partner feature of the app.
 
 #### Evidence
 
-- Caresse and Werkmeister send only their frozen frames
-  (`caresse` and `werkmeister` in `tests/vibradorm_vectors.py`).
-- Hardware operation, on-air packet delivery, peripheral security and physical
-  effects remain unverified. Real-user checks are deferred
-  external validation, not missing static implementation evidence.
+- Based on Caresse Remote 0.3 and Werkmeister Unterfederung 0.2 (`caresse` and
+  `werkmeister` in `tests/vibradorm_vectors.py`).
+- Not yet tested on hardware: delivery, pairing security and how the bed moves
+  still need confirming by owners.
 
 ### VMAT
 
@@ -999,7 +991,7 @@ move through CBI. Detection: none; the profile is an explicit choice.
 
 ##### VMAT remote selection
 
-- Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+- Choose **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm** in the
   bed-type picker, then **VMAT** and the same zero-based remote ordinal used by
   the app.
 - **Legacy setup** inside the family chooser retains the older generic
@@ -1041,10 +1033,10 @@ move through CBI. Detection: none; the profile is an explicit choice.
 
 ##### Bonding
 
-- Setup requires positive native bond evidence for the exact address and actual
-  host route. An unverified pairing RPC cannot finish setup or authorize control.
-- Metadata does not identify a wire layout or prove a bond. No app PIN/key
-  exchange is proven.
+- Setup requires the operating system to report a bond for the exact address and
+  actual host route. An unverified pairing RPC cannot finish setup or authorize control.
+- Metadata does not identify a wire layout or prove a bond. The app uses no
+  PIN or key exchange.
 - Unsupported proxy pairing should use a supported host adapter; existing bonds
   are never silently removed.
 
@@ -1130,12 +1122,12 @@ After native pairing, setup closes with `01 A7`.
 
 ##### Home Assistant setup
 
-Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic** in the
+Choose **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm** in the
 bed-type picker, then **VMAT** and the same remote ordinal as the app. Its fourteen
 shipped selections derive the logical axes, memory, sync, floor, mood and
 massage controls. Independent feature overrides
-and inferred product identification are unavailable. Setup requires positive
-native bond evidence for the exact address and actual host adapter; an
+and inferred product identification are unavailable. Setup requires the
+operating system to report a bond for the exact address and host adapter; an
 unverified proxy pairing request cannot finish setup. Ordinary sessions do not
 send onboarding queries or position polls. Accessory state is assumed local
 intent, preserved during the current HA process and rolled back on failed
@@ -1159,8 +1151,8 @@ construction toggle (0 or `8000`) ORed into the 16-bit CBI header.
 ##### Motor control
 
 VMAT sends the opcodes of the
-[motor and memory opcode index](#motor-and-memory-opcode-index), verified
-independently from its own artifact: the basic motor frame on basic remotes, the
+[motor and memory opcode index](#motor-and-memory-opcode-index), checked
+against this app: the basic motor frame on basic remotes, the
 CBI frame on the others, and STOP (release) `FF` basic or `00 FF` CBI.
 
 - Enabled motor directions, All Up/All Down and recall are held actions. All Down
@@ -1189,7 +1181,7 @@ held action:
 | Reply | `20 3f flags` or `3f flags extra` (minimum length 3) |
 | Held action | Opcode 25 when reply bit `40` is set, otherwise 24 |
 
-Late replies cannot restart released movement. No partner selector is proven.
+Late replies cannot restart released movement. There is no partner selector.
 
 ##### Floor light
 
@@ -1233,7 +1225,7 @@ Late replies cannot restart released movement. No partner selector is proven.
   1/zones 3/3.
 - ON is the full 10-byte `0030/1030` state; OFF is `0034/1034` plus `00`. Mode
   switching preserves off/restore order.
-- Unreachable OFF `01` and the unexposed massage timer are disabled.
+- OFF `01`, which no app control sends, and the hidden massage timer are disabled.
 
 #### Timing
 
@@ -1250,18 +1242,16 @@ Late replies cannot restart released movement. No partner selector is proven.
 - Failed/cancelled VMAT accessory writes roll back the requested state.
   Successful delivery remains assumed intent, not readback.
 - Restart clears current intent while retaining the configured floor default.
-- No live position parser, angle target, battery query, firmware update,
-  calibration or named presets are proven.
+- There is no live position, angle target, battery query, firmware update,
+  calibration or named preset.
 - Diagnostics retain raw notifications; unsolicited EEPROM/log recognition does
   not enable dead collectors or queries.
 
 #### Evidence
 
-This explicit profile implements the accepted `de.vibradorm.vmat` 1.11 (49)
-application contract and sends only its frozen frames (`vmat` in
-`tests/vibradorm_vectors.py`, with the artifact vectors in
-`tests/fixtures/vibradorm_vmat_vectors.json`). App behavior is artifact verified;
-physical operation remains unverified.
+Based on `de.vibradorm.vmat` 1.11 (49) (`vmat` in `tests/vibradorm_vectors.py`,
+with the app's vectors in `tests/fixtures/vibradorm_vmat_vectors.json`). Not yet
+tested on hardware.
 
 #### Issue #403 reconciliation
 
@@ -1286,7 +1276,7 @@ profile shipped in
 | Automatic generic layout from control-version metadata | Not supported: the metadata does not identify the app's remote. All fourteen VMAT remotes are selectable. |
 
 The requested MC4-MD08 retest remains deferred physical validation for its
-owner after release. The accepted app implementation does not prove that
+owner after release. Following the app does not by itself mean that
 [issue #162](https://github.com/kristofferR/ha-adjustable-bed/issues/162) is fixed
 or that a particular controller reports positions. 
 
@@ -1302,7 +1292,7 @@ The bed type is `vmatbasic` with profile `basic`, `cbi` or `xtbox` (see the
 
 #### Setup
 
-- Select **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic**, then
+- Select **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm**, then
   **V-MAT Basic** and the product explicitly: V-MAT-BASIC-RF,
   V-MAT-BASIC-RF-CBI, or V-MAT-BASIC-RF-CBI with XT-Box. Detection: none.
 - Existing entries keep their controllers until a
@@ -1312,7 +1302,7 @@ The bed type is `vmatbasic` with profile `basic`, `cbi` or `xtbox` (see the
   of these profiles.
 - The dedicated app bed type keeps these accepted profiles separate from the
   existing generic and Caresse/Werkmeister routes; it is a Home Assistant
-  configuration boundary, not an inferred protocol identity.
+  configuration boundary, not a different protocol.
 
 ##### GATT roles
 
@@ -1347,7 +1337,7 @@ three-byte CBI floor; `0011` / `0077` prefixed XT frames.
 - HA's manufacturer map loses AD order, duplicates and declared lengths, even
   with one company: diagnostics report conditional per-record matches and keep
   the exact source scan verdict unknown.
-- A conditional candidate hint cannot infer a profile. Existing cached-address
+- A conditional candidate hint cannot choose a profile. Existing cached-address
   selection remains explicit; rename and optional model strings are not identity
   proof.
 
@@ -1358,7 +1348,7 @@ bonding, a PIN, authentication exchange or authenticated-GATT proof.
 
 ##### Home Assistant setup
 
-Choose **Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic**, then
+Choose **VMAT, Caresse Diamant, Werkmeister, V-MAT Basic · Vibradorm**, then
 **V-MAT Basic** and the exact Basic, CBI or CBI with XT-Box product. Bluetooth
 identifiers and diagnostic model strings do not choose this profile. CBI exposes
 saved floor level 0–255 and timer 0–1439 minutes; XT exposes level 1–6 and timer
@@ -1455,7 +1445,7 @@ are unknown; successful writes publish requested intent only.
   failure, with bounded cleanup. All-down is a direction, not a measured flat
   position.
 - XT floor hold repeats `00 11` and stops by ending the stream; no separate
-  release frame is proven.
+  release frame exists.
 
 #### Notifications
 
@@ -1542,11 +1532,9 @@ Rename:
 
 #### Evidence
 
-The protocol comes from the accepted `com.vibradorm.vmatbasic` 2.4.3 APK,
-version code 14. Each product sends only its frozen frames (`basic`, `cbi` and
-`xtbox` in `tests/vibradorm_vectors.py`, which are its artifact vectors in
-`tests/fixtures/vmatbasic-vectors.json`). Current code and focused executed tests
-cover the accepted behavior. Hardware status: needs testing.
+Based on `com.vibradorm.vmatbasic` 2.4.3 (14) (`basic`, `cbi` and `xtbox` in
+`tests/vibradorm_vectors.py`, with the app's vectors in
+`tests/fixtures/vmatbasic-vectors.json`). Not yet tested on hardware.
 
 ## Notes
 
@@ -1564,14 +1552,12 @@ cover the accepted behavior. Hardware status: needs testing.
 
 - Caresse and Werkmeister: hardware operation, on-air packet delivery, peripheral
   security and physical effects remain unverified.
-- VMAT: hardware absence does not defer implementation. Focused tests exercise
-  real controller/setup delivery, frozen vectors, native-proof gates, timing and
-  failure cleanup. Physical validation remains.
+- VMAT: tests cover controller and setup delivery, the vectors, the bond checks,
+  timing and failure cleanup. It is not yet tested on hardware.
 - V-MAT Basic: physical packet delivery, movement effects, floor timing/scales,
   mood and massage effects, rename persistence, temperature interpretation,
-  optional read support, dual connection behavior and security remain deferred
-  user validation. App evidence does not claim those
-  hardware outcomes.
+  optional read support, dual connection behavior and security still need
+  testing by owners.
 
 ### References
 

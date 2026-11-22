@@ -671,3 +671,152 @@ async def test_set_alarm_calendar_needs_an_explicit_wake_action(hass):
     with pytest.raises(ServiceValidationError, match="Choose a wake action"):
         await call_set_alarm(hass, c, {"enabled": True, "time": "07:00:00", "slot": 1})
     c.ruf_richmat_alarm.assert_not_awaited()
+
+
+def _timer_layout(kind: str, app: str, model: str):
+    """A Richmat MH-family controller of one controller kind on a model's first page."""
+    if kind == "bedtech":
+        from tests.test_bedtech_classic import make as make_bedtech
+
+        return make_bedtech(model)
+    if kind == "app":
+        from tests.test_richmat_nisco_supreme import make as make_app
+
+        return make_app(app, model)
+    if kind == "ruf":
+        return make(app, model)
+    from tests.test_richmat_mh import W1
+    from tests.test_richmat_mh import make as make_mh
+
+    c = make_mh(app, None, variant=f"model_{model}")
+    c._write_char = SimpleNamespace(uuid=W1[1], properties=["write"], handle=1)
+    return c
+
+
+TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"], ["6e010061d0", "6e01006edd"]
+
+
+# Running every timer button and the select on all 4,139 Richmat MH-family
+# layout pages gives 11 groups by the frames and delays they send; one layout of
+# each group is pinned here. The frames are what the buttons sent. Hour timers
+# send the minute timers' codes: the label states the duration.
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "sent", "stop_after"),
+    [
+        ("mh", "revive", "farm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "wsilver2", "6hrm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "bailey2", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.1),
+        ("app", "nisco", "6hrm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("app", "nisco", "aerm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.15),
+        ("app", "nisco", "mlrm", {10: TEN, 30: THIRTY}, 0.12),
+        ("app", "nisco", "ygrm", {10: TEN, 20: TWENTY}, 0.12),
+        ("bedtech", "bedtech_classic", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "americanstar", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.12),
+        ("ruf", "bailey2", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.1),
+        ("bedtech", "bedtech_classic", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.12),
+    ],
+)
+async def test_massage_timer_select_sends_what_its_buttons_sent(delays, kind, app, model, sent, stop_after):
+    c = _timer_layout(kind, app, model)
+    assert c.massage_timer_options == sorted(sent) and not c.massage_timer_can_turn_off
+    keys = {spec.key for spec in c.controller_button_specs}
+    assert not {f"richmat_mh_{code:02x}" for code in c._massage_timer_codes.values()} & keys
+    for minutes, expected in sent.items():
+        fresh = _timer_layout(kind, app, model)
+        delays.clear()
+        await fresh.set_massage_timer(minutes)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
+
+
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "button"),
+    [
+        ("app", "nisco", "a9rm", "richmat_mh_5f"),  # 10 minutes only
+        ("app", "nisco", "ilrm", "richmat_mh_61"),  # 30 minutes only
+        ("ruf", "americanstar", "cwrn", "richmat_mh_60"),  # 15 minutes only
+    ],
+)
+def test_a_layout_without_a_minute_timer_choice_keeps_its_buttons(kind, app, model, button):
+    c = _timer_layout(kind, app, model)
+    assert not c.supports_massage_timer
+    assert button in {spec.key for spec in c.controller_button_specs}
+
+
+def test_a_factory_reset_asks_first_whatever_its_label_case() -> None:
+    """The TX app writes "Factory reset"; the name check missed it, so it never asked."""
+    c = make("tx", "3i")
+    assert next(x.label for x in c._controls() if x.code == 0x62) == "Factory reset"
+    spec = next(s for s in c.controller_button_specs if s.key == "richmat_mh_62")
+    assert spec.requires_confirmation and not spec.entity_registry_enabled_default
+
+
+ONE, TWO, THREE = ["6e010067d6", "6e01006edd"], ["6e0100af1e", "6e01006edd"], ["6e010068d7", "6e01006edd"]
+
+
+# The 32 Richmat MH-family layout pages with all three massage intensity
+# buttons form 5 groups by what they send; one of each is pinned here. Each
+# level of the number sends what its button sent.
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "stop_after"),
+    [
+        ("mh", "idealbed", "b1rm", 0.12),
+        ("ruf", "wsilver2", "b1rm", 0.12),
+        ("ruf", "bailey2", "b1rm", 0.1),
+        ("app", "nisco", "r2rm", 0.12),
+        ("bedtech", "bedtech_classic", "b1rm", 0.12),
+    ],
+)
+async def test_massage_intensity_levels_are_one_number(delays, kind, app, model, stop_after):
+    c = _timer_layout(kind, app, model)
+    assert c.massage_intensity_zones == ["all"] and c.auto_enable_massage
+    assert (c.massage_intensity_min("all"), c.massage_intensity_max) == (1, 3)
+    assert not {"richmat_mh_67", "richmat_mh_af", "richmat_mh_68"} & {s.key for s in c.controller_button_specs}
+    for level, expected in ((1, ONE), (2, TWO), (3, THREE)):
+        fresh = _timer_layout(kind, app, model)
+        delays.clear()
+        await fresh.set_massage_intensity("all", level)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
+
+
+# The 7 RUF layout pages with heat off, low, medium and high form 2 groups by
+# what they send; each level of the select sends what its button sent.
+@pytest.mark.parametrize(("app", "stop_after"), [("wsilver2", 0.12), ("bailey2", 0.1)])
+async def test_heat_levels_are_one_select(delays, app, stop_after):
+    c = make(app, "hsrm")
+    (spec,) = [s for s in c.controller_select_specs if s.key == "heat_level"]
+    assert spec.options == ("off", "low", "medium", "high")
+    assert not {"richmat_mh_9c", "richmat_mh_9f"} & {s.key for s in c.controller_button_specs}
+    for level, code in zip(spec.options, ("9c0b", "9d0c", "9e0d", "9f0e"), strict=True):
+        fresh = make(app, "hsrm")
+        delays.clear()
+        await spec.select_fn(fresh, level)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (
+            [f"6e0100{code}", "6e01006edd"],
+            [stop_after],
+        )
+
+
+def test_a_level_number_without_zero_shows_unknown_until_a_level_is_sent() -> None:
+    from dataclasses import replace
+
+    from custom_components.adjustable_bed.number import (
+        MASSAGE_NUMBER_DESCRIPTIONS,
+        AdjustableBedMassageNumber,
+    )
+    from custom_components.adjustable_bed.state_keys import massage_intensity
+
+    coordinator = MagicMock()
+    coordinator.controller_state, coordinator.entity_side, coordinator.device_info = {}, None, {}
+    description = replace(MASSAGE_NUMBER_DESCRIPTIONS[0], native_min_value=1, native_max_value=3)
+    number = AdjustableBedMassageNumber(coordinator, description)
+    # 0 is no level of these beds: nothing sent yet is unknown, not off.
+    assert number.native_value is None
+    coordinator.controller_state[massage_intensity("all")] = 2
+    assert number.native_value == 2
+
+
+@pytest.mark.parametrize(("app", "shape"), [("wsilver2", "massage_all_toggle"), ("americanstar", "massage_all_off")])
+def test_a_massage_stop_keeps_its_button_where_other_layouts_use_its_code_as_a_timer(app, shape):
+    """VERM's only massage stop is code 61 ("Start Stop", "All Off"), a 30-minute timer elsewhere."""
+    spec = next(s for s in make(app, "verm").controller_button_specs if s.key == "richmat_mh_61")
+    assert spec.translation_key == shape and spec.entity_registry_enabled_default

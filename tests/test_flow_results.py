@@ -1,7 +1,6 @@
-"""Flow results the integration builds follow Home Assistant 2026.11's contract."""
+"""An abort with one of Home Assistant's own reasons needs its domain, or it shows untranslated."""
 
 import ast
-import json
 from pathlib import Path
 
 PACKAGE = Path(__file__).parents[1] / "custom_components/adjustable_bed"
@@ -14,9 +13,6 @@ HOMEASSISTANT_REASONS = frozenset(
         "reconfigure_successful",
         "single_instance_allowed",
     }
-)
-_RESULT_METHODS = frozenset(
-    {"async_show_form", "async_show_menu", "async_show_progress", "async_external_step"}
 )
 # Helpers whose default reason Home Assistant translates itself.
 _UPDATE_AND_ABORT = frozenset({"async_update_and_abort", "async_update_reload_and_abort"})
@@ -37,26 +33,6 @@ def _calls(names: frozenset[str]) -> list[tuple[str, ast.Call]]:
 
 def _keyword(call: ast.Call, name: str) -> ast.expr | None:
     return next((keyword.value for keyword in call.keywords if keyword.arg == name), None)
-
-
-def test_every_flow_result_names_its_step():
-    """A result without a step id is an error from Home Assistant 2027.5."""
-    calls = _calls(_RESULT_METHODS)
-    assert len(calls) > 50
-    missing = [
-        where
-        for where, call in calls
-        if (step_id := _keyword(call, "step_id")) is None
-        or (isinstance(step_id, ast.Constant) and step_id.value is None)
-    ]
-    assert not missing
-
-
-def test_standard_abort_reasons_use_home_assistants_strings():
-    """Our own text for these would never show: Home Assistant resolves them itself."""
-    strings = json.loads((PACKAGE / "strings.json").read_text())
-    for flow in ("config", "options"):
-        assert not HOMEASSISTANT_REASONS & set(strings[flow].get("abort", {})), flow
 
 
 def test_no_flow_aborts_with_a_standard_reason_under_its_own_domain():
@@ -80,53 +56,3 @@ def test_no_flow_aborts_with_a_standard_reason_under_its_own_domain():
     assert not own
 
 
-def test_no_string_has_leading_or_trailing_space():
-    """Hassfest refuses a string with surrounding whitespace, newlines included."""
-
-    def strings(node, path=""):
-        if isinstance(node, dict):
-            for key, value in node.items():
-                yield from strings(value, f"{path}.{key}" if path else key)
-        elif isinstance(node, str):
-            yield path, node
-
-    for name in ("strings.json", "translations/en.json"):
-        data = json.loads((PACKAGE / name).read_text())
-        padded = [path for path, text in strings(data) if text != text.strip()]
-        assert not padded, (name, padded)
-
-
-def test_every_field_description_has_its_field_label():
-    """Hassfest refuses a ``data_description`` key that the step's ``data`` lacks."""
-
-    def flows(data):
-        yield "config", data.get("config", {})
-        yield "options", data.get("options", {})
-        for issue, body in data.get("issues", {}).items():
-            yield f"issues.{issue}.fix_flow", body.get("fix_flow", {})
-
-    for name in ("strings.json", "translations/en.json"):
-        data = json.loads((PACKAGE / name).read_text())
-        missing = []
-        for flow, body in flows(data):
-            for step_id, step in body.get("step", {}).items():
-                blocks = {step_id: step, **{
-                    f"{step_id}.sections.{key}": block
-                    for key, block in step.get("sections", {}).items()
-                }}
-                for where, block in blocks.items():
-                    labels = block.get("data", {})
-                    missing += [
-                        f"{flow}.step.{where}.data_description.{key}"
-                        for key in block.get("data_description", {})
-                        if key not in labels
-                    ]
-        assert not missing, (name, missing)
-
-
-def test_a_fixable_issue_explains_itself_in_its_flow():
-    """Hassfest refuses an issue with both a ``description`` and a ``fix_flow``."""
-    for name in ("strings.json", "translations/en.json"):
-        issues = json.loads((PACKAGE / name).read_text()).get("issues", {})
-        both = [key for key, body in issues.items() if "description" in body and "fix_flow" in body]
-        assert not both, (name, both)

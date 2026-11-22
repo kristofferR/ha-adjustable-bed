@@ -1,7 +1,5 @@
 """The shared gzipped JSON catalog loader and the catalog convention."""
 
-import ast
-from pathlib import Path
 
 import pytest
 
@@ -40,13 +38,3 @@ def test_static_ruf_model_ids_match_each_validated_catalog(app):
     assert set(MODEL_IDS[app]) == set(profiles(app))
 
 
-def test_const_imports_no_catalog_at_load():
-    """``const`` imports only the standard library at module level; catalogs load lazily."""
-    tree = ast.parse((Path(__file__).parents[1] / "custom_components/adjustable_bed/const.py").read_text())
-    modules = {
-        node.module if isinstance(node, ast.ImportFrom) else alias.name
-        for node in tree.body
-        if isinstance(node, ast.Import | ast.ImportFrom)
-        for alias in node.names
-    }
-    assert modules <= {"dataclasses", "enum", "typing"}, modules

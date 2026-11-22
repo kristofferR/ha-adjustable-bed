@@ -119,7 +119,8 @@ async def test_old_both_event_cannot_cancel_new_work_after_side_lane_wait(hass, 
             cancelled.set()
             raise
 
-    def resolve(_hass, ids, side=None):
+    def resolve(_hass, ids, side=None, *, problems=None):
+        # Both targets resolve, so a STOP has no problem to record.
         if ids == ["physical"]:
             return [(left, SIDE_BOTH)], []
         return [(parent, side or SIDE_BOTH)], []

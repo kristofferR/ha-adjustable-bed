@@ -10,7 +10,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.coolbase import (
@@ -35,6 +35,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.error_helpers import raises_key
 from tests.state_helpers import published
 
 # -----------------------------------------------------------------------------
@@ -178,18 +179,6 @@ class TestCoolBasePacketBuilding:
 class TestCoolBaseController:
     """Test CoolBaseController."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_coolbase_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Keeson Base write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_coolbase_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == KEESON_BASE_WRITE_CHAR_UUID
-
     async def test_supports_preset_zero_g(
         self,
         hass: HomeAssistant,
@@ -290,7 +279,8 @@ class TestCoolBaseController:
         controller = CoolBaseController(MagicMock())
         controller.write_command = AsyncMock()
 
-        await controller.preset_memory(2)
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await controller.preset_memory(2)
 
         controller.write_command.assert_not_awaited()
 

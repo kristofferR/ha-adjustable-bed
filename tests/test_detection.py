@@ -114,6 +114,7 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type,
     detect_bed_type_detailed,
     detect_bed_type_from_gatt_services,
+    detect_new_bed,
     detect_richmat_remote_from_name,
     refine_dewertokin_star_protocol_from_name,
     refine_malouf_protocol_from_gatt,
@@ -202,7 +203,7 @@ class TestDetectBedTypeByServiceUUID:
         """Older Sleep Number BAM/MCR beds should appear with a readable label."""
         assert (
             BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEP_NUMBER_MCR]
-            == "Sleep Number BAM/MCR (older i8, 360 FlexFit 2)"
+            == "Sleep Number older base (i8, 360 FlexFit 2)"
         )
 
     def test_kaidi_manufacturer_data_alone_is_not_sufficient(self):
@@ -2549,35 +2550,14 @@ class TestExcludedDevicePatterns:
         assert result.confidence == 1.0
         assert "excluded:" not in str(result.signals)
 
-    def test_exclusion_skipped_for_unique_uuid_jensen(self):
-        """Test that exclusion is skipped when device has unique Jensen UUID.
-
-        A hypothetical "Jensen Watch" bed should be detected as Jensen,
-        not excluded by the "watch" pattern.
-        """
-        service_info = _make_service_info(
-            name="Jensen Watch",
-            service_uuids=[JENSEN_SERVICE_UUID],  # Unique Jensen UUID
+    @pytest.mark.parametrize("uuid", [JENSEN_SERVICE_UUID, SVANE_HEAD_SERVICE_UUID])
+    def test_short_shared_uuid_does_not_shield_an_excluded_name(self, uuid: str):
+        """Any module can advertise a short UUID, so the non-bed names still apply."""
+        result = detect_bed_type_detailed(
+            _make_service_info(name="Fitness Watch", service_uuids=[uuid])
         )
-        result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_JENSEN
-        assert result.confidence == 1.0
-        assert "excluded:" not in str(result.signals)
-
-    def test_exclusion_skipped_for_unique_uuid_svane(self):
-        """Test that exclusion is skipped when device has unique Svane UUID.
-
-        A hypothetical "Svane Band" bed should be detected as Svane,
-        not excluded by the "band" pattern.
-        """
-        service_info = _make_service_info(
-            name="Svane Band",
-            service_uuids=[SVANE_HEAD_SERVICE_UUID],  # Unique Svane UUID
-        )
-        result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_SVANE
-        assert result.confidence == 1.0
-        assert "excluded:" not in str(result.signals)
+        assert result.bed_type is None
+        assert "excluded:watch" in result.signals
 
     def test_exclusion_applied_with_no_uuids(self):
         """Test that exclusion is applied when device has no UUIDs."""
@@ -2589,6 +2569,109 @@ class TestExcludedDevicePatterns:
         assert result.bed_type is None
         # Either "wyze" or "scale" pattern can match first
         assert any("excluded:" in s for s in result.signals)
+
+
+def _short(uuid: str) -> str:
+    return f"0000{uuid}-0000-1000-8000-00805f9b34fb"
+
+
+_SHARED_SERVICES = [
+    _short("ffe0"),
+    NORDIC_UART_SERVICE_UUID,
+    _short("ffe5"),
+    _short("fee9"),
+    _short("fe60"),
+    _short("ff12"),
+    _short("1234"),
+    _short("a00a"),
+    OCTO_STAR2_SERVICE_UUID,
+    _short("abcb"),
+    "01000001-0000-1000-8000-00805f9b34fb",
+    OKIMAT_SERVICE_UUID,
+]
+
+
+class TestSharedServiceOnly:
+    """A shared service alone never identifies a new bed (audit DET-2, DET-3)."""
+
+    @pytest.mark.parametrize("uuid", _SHARED_SERVICES)
+    @pytest.mark.parametrize("name", ["", "AA:BB:CC:DD:EE:FF"])
+    def test_without_a_name_it_is_not_offered(self, uuid: str, name: str):
+        """Home Assistant names an unnamed device by its address."""
+        info = _make_service_info(name=name, service_uuids=[uuid, _short("180f")])
+        assert detect_new_bed(info).bed_type is None
+
+    @pytest.mark.parametrize("uuid", _SHARED_SERVICES)
+    def test_with_an_unknown_name_it_is_only_a_candidate(self, uuid: str):
+        """The chooser then says the device may not be a bed."""
+        result = detect_new_bed(_make_service_info(name="HMSoft", service_uuids=[uuid]))
+        assert result.bed_type is not None
+        assert result.confidence < 0.7
+
+    @pytest.mark.parametrize(
+        ("name", "service_uuids"),
+        [
+            ("Body Scale", [SOLACE_SERVICE_UUID, _short("180f")]),
+            ("Body Scale", [SOLACE_SERVICE_UUID, _short("180a")]),
+            ("Smart Watch", [NORDIC_UART_SERVICE_UUID, _short("180d")]),
+            ("Mouse", [NORDIC_UART_SERVICE_UUID, _short("1812")]),
+            ("Fitness Tracker", [NORDIC_UART_SERVICE_UUID, _short("180a")]),
+        ],
+    )
+    def test_standard_services_do_not_lift_the_non_bed_names(self, name, service_uuids):
+        """Battery, Device Information, Heart Rate and HID are what these devices add."""
+        result = detect_new_bed(_make_service_info(name=name, service_uuids=service_uuids))
+        assert result.bed_type is None
+        assert any(signal.startswith("excluded:") for signal in result.signals)
+
+    @pytest.mark.parametrize(
+        ("name", "service_uuids", "manufacturer_data", "expected", "confident"),
+        [
+            # 4.4.2 offered these beds; they still are, as before.
+            ("OKIN-346311", [_short("180a"), OKIMAT_SERVICE_UUID], {}, BED_TYPE_OKIMAT, False),  # 160
+            ("DHN-FC9E27", [RICHMAT_WILINKE_W4_SERVICE_UUID], {}, BED_TYPE_RICHMAT, True),  # 163
+            (
+                "Smartbed428000193",
+                [NORDIC_UART_SERVICE_UUID],
+                {89: bytes.fromhex("4142010204")},
+                BED_TYPE_MALOUF_NEW_OKIN,
+                True,
+            ),  # 393
+            ("JMC400", [_short("1234")], {}, BED_TYPE_JENSEN, True),
+            ("Jensen Bed", [SVANE_HEAD_SERVICE_UUID], {}, BED_TYPE_SVANE, True),
+            # Another bed's receiver advertised AA5C: still offered, as a candidate (#510).
+            ("DA1458X", [OCTO_STAR2_SERVICE_UUID], {}, BED_TYPE_OCTO, False),
+        ],
+    )
+    def test_reported_beds_are_still_offered(
+        self, name, service_uuids, manufacturer_data, expected, confident
+    ):
+        result = detect_new_bed(
+            _make_service_info(
+                name=name, service_uuids=service_uuids, manufacturer_data=manufacturer_data
+            )
+        )
+        assert result.bed_type == expected
+        assert (result.confidence >= 0.7) is confident
+
+
+class TestCasperSensorNames:
+    """RM- and HJ- names never outrank a bed's service or the exclusions (DET-4)."""
+
+    def test_a_bed_service_wins(self):
+        info = _make_service_info(name="RM-Bed", service_uuids=[LINAK_CONTROL_SERVICE_UUID])
+        assert detect_bed_type_detailed(info).bed_type == BED_TYPE_LINAK
+        info = _make_service_info(name="HJ-Bed", service_uuids=[DEWERTOKIN_SERVICE_UUID])
+        assert detect_bed_type_detailed(info).bed_type == BED_TYPE_DEWERTOKIN
+
+    def test_the_non_bed_names_still_apply(self):
+        assert detect_bed_type_detailed(_make_service_info(name="RM-1 speaker")).bed_type is None
+
+    def test_a_shared_name_lets_the_user_choose(self):
+        result = detect_bed_type_detailed(_make_service_info(name="RM-1000"))
+        assert result.bed_type == "casper_sleep_mm"
+        assert result.confidence < 0.7
+        assert "richmat_app_sleep" in (result.ambiguous_types or ())
 
 
 class TestUnknownDevices:

@@ -1,7 +1,6 @@
 # Documentation
 
-These guides describe v5, on the `v5` branch while it is in beta. The
-integration requires **Home Assistant 2026.11.0+**. The release version lives in
+These guides describe version 5 of the integration. It requires **Home Assistant 2026.11.0+**. The release version lives in
 [`manifest.json`](../custom_components/adjustable_bed/manifest.json) and
 [`pyproject.toml`](../pyproject.toml).
 
@@ -37,7 +36,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | The BedJet PowerLayer adjustable frame | |
 | [Casper Base](beds/casper-base.md) | The Casper Base app, sleep sensors and remote finder | |
 | [CheersSleep](beds/cheerssleep.md) | The CheersSleep app | |
-| [FFFF frame](beds/ff_frame.md) | Solace remotes and apps, Sophie, Woosa Sleep, BedSense and Motion Bed | Shared |
+| [Solace and related apps](beds/ff_frame.md) | Solace remotes and apps, Sophie, Woosa Sleep, BedSense and Motion Bed | Shared |
 | [FurniMove / OKIN Smart Remote](beds/furnimove.md) | The FurniMove app and OKIN handset codes | |
 | [GM Control](beds/gmmotor.md) | The GM Control app and sleep modules | |
 | [Hush Base](beds/hush-base.md) | The Hush Base app, sleep sensors and remote finder | |
@@ -53,13 +52,12 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [LOGICDATA SimplicityFrame](beds/logicdata.md) | SILVERmotion / SimplicityFrame | |
 | [LOGICDATA Sleep Smart](beds/logicdata-sleep-smart.md) | The Sleep Smart air mattress pump | |
 | [M Line](beds/mline.md) | The M Line app | |
-| [Majestic Home](beds/richmat.md#majestic-home) | Majestic Home product layouts | |
 | [Malouf / Lucid](beds/malouf.md) | The Malouf Base and Lucid Base apps and receivers | Shared |
 | [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear and L2 Motion | Shared |
 | [Nerum](beds/nerum.md) | The Nerum app | |
 | [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift and Octo Remote Star2 | |
-| [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900, Okin CB35 and DewertOkin ELEVATE | Shared |
-| [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, CST and DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, StarCode AdjustableM5X4, Okin 64-Bit, eShine and other Okin apps | Shared |
+| [Nectar, Mattress Firm 900 and Sealy (Okin)](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Sealy Posturematic (the CB35 receiver and the Sealy Posturematic app) and DewertOkin ELEVATE | Shared |
+| [Okin and DewertOkin](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, CST and DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, StarCode AdjustableM5X4, Okin 64-Bit, eShine E2000 to E5000, Superior sleep and other Okin apps | Shared |
 | [Okin SoundWave and Symphony](beds/okin-soundwave.md) | Symphony Sleep Sense and the SoundWave pages | Shared |
 | [SmartBed by Okin](beds/smartbed.md) | SmartBed receiver profiles and headboards | |
 | [OKIN Smart Sleep](beds/smart-sleep.md) | The OKIN Smart Sleep app | |
@@ -68,7 +66,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Remacro](beds/remacro.md) | The Slumberland, The Brick and Jerome's apps | |
 | [Reverie](beds/reverie.md) | The Reverie Nightstand app and Reverie receivers | |
 | [Reverie Pairlink](beds/reverie-pairlink-sdk.md) | Reverie Pairlink (R510L / Harmoniq) | |
-| [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech, L&P MlRM, the L&P legacy app, the Richmat MH apps, HJBed, Eshine, Good Vibe Sleep, Luuna, MLILY, SleepEvolution and other Richmat-based apps | Shared |
+| [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Super Colchones, SleepEvolution and other Richmat-based apps | Shared |
 | [RUF and related apps](beds/ruf-richmat-apps.md) | RUF Betten, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX | |
 | [Sleep Number](beds/sleep_number.md) | Sleep Number Fuzion and BAM/MCR bases ([commands](beds/sleep-number-services.md)) | |
 | [SleepSpa S9000AI](beds/sleepstar.md) | The SleepSpa S9000AI | |
@@ -97,7 +95,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 
 ## Development and Validation
 
-Work from `v5` while v5 is in beta. Development uses Python **3.14.2+** with `uv`, and Bun for
+Development uses Python **3.14.2+** with `uv`, and Bun for
 the Lit/TypeScript card. Follow the environment and test commands in the
 [repository instructions](../AGENTS.md#running-tests), including the Bluetooth
 dependencies from Home Assistant's own manifests.

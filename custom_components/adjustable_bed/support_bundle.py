@@ -5,10 +5,12 @@ from __future__ import annotations
 import inspect
 import json
 import logging
-from contextlib import nullcontext
+from collections.abc import Iterator
+from contextlib import nullcontext, suppress
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
+from secrets import token_hex
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import bluetooth
@@ -43,10 +45,18 @@ from .const import (
 )
 from .detection import detect_bed_type_detailed
 from .diagnostic_payloads import format_mapping_payloads
+from .download import is_bundle_filename
 from .pairing import iter_children
 from .profile_decisions import async_profile_decision_history
-from .redaction import redact_pins_only, redact_sleep_number_sessions, redact_sleeptracker_sessions
-from .support_logs import async_setup_support_logs
+from .redaction import (
+    mentions_only,
+    names_pattern,
+    redact_bundle,
+    redact_pairlink_frames,
+    redact_sleep_number_sessions,
+    redact_sleeptracker_sessions,
+)
+from .support_logs import async_setup_support_logs, known_bluetooth_addresses
 from .support_proxy_logs import DATA_PAIRING_PROXY_LOGS, capture_proxy_logs
 from .support_report import (
     _get_bluetooth_info,
@@ -54,7 +64,6 @@ from .support_report import (
     _get_controller_info,
     _get_integration_info,
     _get_pairing_info,
-    _get_recent_logs,
     _get_system_info,
 )
 
@@ -65,6 +74,13 @@ _LOGGER = logging.getLogger(__name__)
 
 _REPORT_VERSION = "2.6"
 _MAX_NEARBY_BLUETOOTH_DEVICES = 30
+MAX_SAVED_BUNDLES = 5
+_PRIVACY_NOTE = (
+    "Bluetooth addresses keep only their manufacturer prefix. Credentials, typed names,"
+    " health and presence readings, other nearby devices and log lines about them are"
+    " left out. Captured notifications are raw bytes from the bed and can include"
+    " sensor readings."
+)
 _BLUETOOTH_DOMAIN = "bluetooth"
 _ESPHOME_DOMAIN = "esphome"
 _ESPHOME_PAIRING_FEATURE_FLAG = 1 << 3
@@ -146,12 +162,17 @@ async def generate_support_bundle(
         controller = {"initialized": False, "class": None, "characteristic_uuid": None}
         position_data = {}
 
-    recent_logs = await _get_recent_logs(hass) if include_logs else []
+    recent_logs = log_buffer.snapshot() if log_buffer is not None else []
     # Preserve the original failure if verbose capture traffic fills the ring.
     recent_logs = list({
         (log.get("timestamp"), log.get("name"), log.get("message")): log
         for log in [*pairing_logs, *pre_capture_logs, *recent_logs]
     }.values())
+    # Lines about other people's devices stay out of a file posted publicly.
+    known = known_bluetooth_addresses(hass, address)
+    logged = len(recent_logs)
+    recent_logs = [log for log in recent_logs if mentions_only(log.get("message", ""), known)]
+    pairing_logs = [log for log in pairing_logs if mentions_only(log.get("message", ""), known)]
     diagnostic_dict = diagnostics_report.to_dict()
     pairing = _build_pairing_assessment(
         diagnostic_dict,
@@ -179,6 +200,8 @@ async def generate_support_bundle(
             "capture_duration_seconds": capture_duration,
             "integration_domain": DOMAIN,
             "log_source": "memory" if include_logs else "not_requested",
+            "withheld_log_entries": logged - len(recent_logs),
+            "privacy": _PRIVACY_NOTE,
         },
         "target": {
             "mode": "configured_device" if entry is not None else "target_address",
@@ -217,7 +240,33 @@ async def generate_support_bundle(
 
     redact_sleep_number_sessions(report)
     redact_sleeptracker_sessions(report)
-    return redact_pins_only(report)  # type: ignore[no-any-return]
+    redact_pairlink_frames(report)
+    # Log lines repeat the names users typed. A name a device advertises stays:
+    # detection matches it, and the address policy already covers its suffix.
+    typed = {other.title for other in hass.config_entries.async_entries(DOMAIN)}
+    if coordinator is not None:
+        typed.add(coordinator.name)
+    if (names := names_pattern(typed - set(_advertised_names(report)))) is not None:
+        # Copies: the records still belong to the shared log buffer.
+        for section in ("recent_logs", "pairing_logs"):
+            report[section] = [
+                {**log, "message": names.sub(lambda match: "*" * len(match.group(0)), log["message"])}
+                for log in report[section]
+            ]
+    return redact_bundle(report)  # type: ignore[no-any-return]
+
+
+def _advertised_names(data: Any) -> Iterator[str]:
+    """Yield every device and scanner name the report records."""
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key in ("name", "device_name") and isinstance(value, str):
+                yield value
+            else:
+                yield from _advertised_names(value)
+    elif isinstance(data, list):
+        for item in data:
+            yield from _advertised_names(item)
 
 
 async def _build_bluetooth_section(
@@ -248,7 +297,7 @@ async def _build_bluetooth_section(
 
     try:
         info["nearby_devices"] = _build_nearby_device_inventory(hass, address)
-    except Exception as err:  # noqa: BLE001 - diagnostics must degrade gracefully
+    except Exception as err:
         info["nearby_devices_error"] = str(err)
 
     try:
@@ -257,7 +306,7 @@ async def _build_bluetooth_section(
             diagnostics_report.get("advertisements_by_source", []),
             address=address,
         )
-    except Exception as err:  # noqa: BLE001 - diagnostics must degrade gracefully
+    except Exception as err:
         info["scanners_error"] = str(err)
 
     return info
@@ -307,7 +356,14 @@ def _build_nearby_device_inventory(
         devices.append(best)
 
     devices.sort(key=_nearby_device_sort_key)
-    included = devices[: max(0, limit)]
+    # Only the target and other possible beds are listed; the rest are people's
+    # phones, watches and neighbours' devices, so they are only counted.
+    beds: list[dict[str, Any]] = []
+    others: list[dict[str, Any]] = []
+    for device in devices:
+        is_bed = device["is_target"] or device["detection"]["supported_match"]
+        (beds if is_bed else others).append(device)
+    included = beds[: max(0, limit)]
     for rank, device in enumerate(included, start=1):
         device["rank"] = rank
 
@@ -315,17 +371,15 @@ def _build_nearby_device_inventory(
         "limit": limit,
         "total_visible": len(devices),
         "included": len(included),
-        "truncated": len(devices) > len(included),
+        "truncated": len(beds) > len(included),
+        "other_devices": len(others),
+        "other_connectable_devices": sum(device["connectable"] for device in others),
         "ranking": [
             "supported_bed_match",
             "detection_confidence",
             "connectable",
             "rssi",
         ],
-        "privacy_note": (
-            "Contains Bluetooth names and addresses visible to Home Assistant "
-            "when the bundle was generated."
-        ),
         "devices": included,
     }
 
@@ -345,7 +399,7 @@ def _nearby_device_snapshot(
             "ambiguous_types": list(detection.ambiguous_types or []),
             "supported_match": bed_type in SUPPORTED_BED_TYPES if bed_type else False,
         }
-    except Exception as err:  # noqa: BLE001 - one malformed advertisement must not abort a bundle
+    except Exception as err:
         detection_info = {
             "bed_type": None,
             "confidence": 0.0,
@@ -479,7 +533,7 @@ async def _build_scanner_status(
                     row["diagnostics"] = _compact_scanner_diagnostics(
                         scanner_diagnostics
                     )
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 row["diagnostics_error"] = str(err)
 
         if registration is not None:
@@ -566,7 +620,7 @@ def _build_esphome_proxy_status(
                 feature_flags = feature_flags_compat(
                     getattr(runtime, "api_version", None)
                 )
-            except Exception:  # noqa: BLE001 - raw flags still provide useful evidence
+            except Exception:
                 pass
         status["device"] = {
             "name": getattr(device_info, "name", None),
@@ -986,8 +1040,10 @@ def _empty_integration_info(address: str) -> dict[str, Any]:
 def save_support_bundle(hass: HomeAssistant, report: dict[str, Any], address: str) -> Path:
     """Save the support bundle to a JSON file in the config directory."""
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    address_safe = address.replace(":", "").lower()
-    filename = f"adjustable_bed_support_bundle_{address_safe}_{timestamp}.json"
+    # The file name is published with the file: only the manufacturer prefix.
+    address_safe = address.replace(":", "").lower()[:6]
+    # The random part keeps two captures in the same second apart.
+    filename = f"adjustable_bed_support_bundle_{address_safe}_{timestamp}_{token_hex(3)}.json"
 
     config_dir = Path(hass.config.config_dir)
     filepath = config_dir / filename
@@ -996,4 +1052,18 @@ def save_support_bundle(hass: HomeAssistant, report: dict[str, Any], address: st
         json.dump(report, f, indent=2, default=str)
 
     _LOGGER.info("Support bundle saved to %s", filepath)
+    _prune_saved_bundles(config_dir)
     return filepath
+
+
+def _prune_saved_bundles(config_dir: Path) -> None:
+    """Keep only the newest bundles; older ones would sit in every backup."""
+    saved: list[tuple[float, Path]] = []
+    for path in config_dir.iterdir():
+        if is_bundle_filename(path.name):
+            # A concurrent save may have pruned it already.
+            with suppress(FileNotFoundError):
+                saved.append((path.stat().st_mtime, path))
+    saved.sort(reverse=True)
+    for _mtime, path in saved[MAX_SAVED_BUNDLES:]:
+        path.unlink(missing_ok=True)

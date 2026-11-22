@@ -198,7 +198,7 @@ async def test_real_scheduler_keeps_two_countdown_frames_atomic(hass):
 
 async def test_button_and_sensor_use_production_runtime(hass):
     c, ctrl = physical(hass)
-    spec = next(x for x in ctrl.controller_button_specs if x.name == "Head Up")
+    spec = next(x for x in ctrl.controller_button_specs if x.name == "Head up")
     button = ControllerActionButton(c, spec)
     sensor = AdjustableBedControllerStateSensor(c, ctrl.controller_state_sensor_specs[0])
     assert button.extra_state_attributes["hold_start_delay_ms"] == 100

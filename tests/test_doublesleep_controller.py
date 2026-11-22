@@ -149,7 +149,7 @@ async def test_p3_report_continuation_runs_inside_owned_operation():
     await bed.connect()
     task = asyncio.create_task(bed.bed.request(Request("report", (1, 0, 2026, 11, 3))))
     await asyncio.sleep(0)
-    with pytest.raises(ValueError, match="already active"):
+    with pytest.raises(ValueError, match="already being downloaded"):
         bed.bed.validate_request(Request("report", (0, 0, 2026, 11, 3)))
     bed.bed._receive(json_notification("q_report", {"fsize": 20}))
     for _ in range(5):
@@ -281,7 +281,7 @@ async def test_alarm_and_anti_snore_workflows_are_distinct_and_capability_gated(
     assert bed.packets()[1] == bytes.fromhex("aa000003020801820901061e0001")
     assert bed.packets()[2] == bytes.fromhex("2a000003810101")
     bed.client.write_gatt_char.reset_mock()
-    with pytest.raises(ValueError, match="capability"):
+    with pytest.raises(ValueError, match="slow anti-snore"):
         bed.bed.validate_request(Request("anti_snore", (1, 2, 30, 10)))
     bed.bed.ui.slow = True
     bed.bed.ui.pwm = 30
@@ -423,7 +423,7 @@ async def test_sensitivity_change_retains_unselected_reported_values(driver, mod
         assert bed.packets()[0] == p.binary_command("p2", 67, (2, 1, 9), p.Cache(), NOW)
     else:
         assert b'"L":[1],"R":[9]' in bed.packets()[0]
-        with pytest.raises(ValueError, match="no reachable side-setting"):
+        with pytest.raises(ValueError, match="cannot change its sensor sides"):
             bed.bed.validate_request(Request("sensitivities", (1, 1, 1)))
 
 
@@ -488,7 +488,7 @@ async def test_overlapping_legacy_download_waits_for_completion_and_confirmation
     first = bed.bed._legacy_timer
     assert first is not None
     callback, args = first._callback, first._args
-    with pytest.raises(ValueError, match="already active"):
+    with pytest.raises(ValueError, match="already running"):
         await bed.bed.execute(66)
     assert bed.bed._legacy_timer is first and bed.bed._legacy_active
     assert bed.packets() == [bytes.fromhex("01b102")]
@@ -499,7 +499,7 @@ async def test_overlapping_legacy_download_waits_for_completion_and_confirmation
     bed.coordinator.async_execute_controller_command = execute
     first.cancel()
     bed.bed._finish_legacy()
-    with pytest.raises(ValueError, match="already active"):
+    with pytest.raises(ValueError, match="already running"):
         await bed.bed.execute(66)
     await asyncio.gather(*bed.bed._followups)
     assert bed.packets()[-1] == bytes.fromhex("01b301")
@@ -538,3 +538,21 @@ def test_disable_anti_snore_is_an_extra_and_sonic_sources_sit_together(driver):
         assert not any(s.entity_registry_enabled_default for s in sources if s is not None)
     else:
         assert sources == [None, None]
+
+
+def test_diagnostics_leave_out_vital_signs_and_reports():
+    """Heart rate, breathing, presence and reports stay out of support files (PRIV-2)."""
+    bed = Bed()
+    bed.bed.parser._live("left", [62, 15, 3, 0, 1])
+    bed.bed.parser.state["left_sensitivity"] = 4
+    bed.bed.parser.state["last_json"] = {"cmd": "q_realtime", "val": {"L": [0, 3, 62, 15]}}
+    bed.bed.parser.state["right_report"] = {"standardHR": 61}
+
+    state = bed.bed.protocol_diagnostics["state"]
+
+    assert isinstance(state, dict)
+    assert state["left_sensitivity"] == 4
+    for key in ("left_heart_rate", "left_breath_rate", "left_status", "left_raw", "left_history"):
+        assert key not in state
+    assert "last_json" not in state
+    assert "right_report" not in state

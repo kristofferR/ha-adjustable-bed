@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.config_flow import (
     _default_motor_count,
@@ -38,7 +37,6 @@ async def test_explicit_profile_builds_fixed_controls_without_live_advertisement
     assert {spec.key for spec in controller.motor_control_specs} == {"head", "feet"}
     assert controller.memory_slot_count == 2
     assert controller.requires_notification_channel
-    assert actuator_group_for(BED_TYPE_SERENITY) == "okin"
     assert (
         next(option for option in get_bed_type_options() if option["value"] == BED_TYPE_SERENITY)[
             "label"

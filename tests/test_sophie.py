@@ -207,7 +207,7 @@ async def test_presets_save_clear_recall_and_no_optimistic_cache(controller):
     for index, key in enumerate(app.PRESET_KEYS):
         code = app.PRESET_CODES[index]
         if key.startswith("memory"):
-            with pytest.raises(ValueError, match="reported saved"):
+            with pytest.raises(ValueError, match="Save this memory position"):
                 await controller.preset_memory(index + 1)
         else:
             await getattr(controller, f"preset_{key}")()

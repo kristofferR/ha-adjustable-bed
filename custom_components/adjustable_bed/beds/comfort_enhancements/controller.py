@@ -201,7 +201,7 @@ class ComfortEnhancementsController(ProfileExecution[keeson_profiles.KeesonProfi
 
     async def _move(self, axis: str, up: bool) -> None:
         if axis not in self._axes:
-            raise ValueError(f"The {self.layout} layout has no {axis} control")
+            raise ValueError(f"This bed model has no {axis} control")
         try:
             count, delay = self.motor_pulse_settings()
             # A leased hold (#483) refreshes until its lease ends.
@@ -327,7 +327,7 @@ class ComfortEnhancementsController(ProfileExecution[keeson_profiles.KeesonProfi
 
     def _memory_id(self, slot: int) -> int:
         if not 1 <= slot <= self.memory_slot_count:
-            raise ValueError("This memory slot is unavailable on the selected layout")
+            raise ValueError("This bed model has no such memory position")
         return slot + 7 if self.memory_slot_count == 2 else 3
 
     async def preset_memory(self, memory_num: int) -> None:

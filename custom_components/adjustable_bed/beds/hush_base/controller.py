@@ -149,15 +149,15 @@ class HushBaseController(CasperBaseController):
         op = request.operation
         if op in ("light_rgb", "light_seconds", "light_off") or op.startswith("rgb_"):
             if "light_available" not in self.events:
-                raise ValueError("Light page has not been reported")
+                raise ValueError("The bed has not reported its light settings yet. Reconnect it and try again")
             if op.startswith("rgb_") != self.product[6]:
-                raise ValueError("Operation does not match the Hush light page")
+                raise ValueError("This bed's light does not offer that operation")
             if op == "rgb_timer" and request.value not in RGB_TIMERS:
-                raise ValueError("Unsupported RGB timer duration")
+                raise ValueError("Choose a light timer this bed offers")
             if op == "rgb_mode" and request.value not in (2, 3, 5):
-                raise ValueError("Unsupported colour mode")
+                raise ValueError("Choose a color mode this bed offers")
             if op == "rgb_groove" and request.value not in (1, 2, 3, 4):
-                raise ValueError("Unsupported groove mode")
+                raise ValueError("Choose a light effect this bed offers")
             return
         super().validate_casper_base_request(request)
 

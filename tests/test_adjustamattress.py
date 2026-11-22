@@ -35,7 +35,6 @@ from custom_components.adjustable_bed.beds.adjustamattress.protocol import (
     has_snore,
     model_from_name,
     parse,
-    scan_admits,
 )
 from custom_components.adjustable_bed.const import (
     ADJUSTAMATTRESS_VARIANTS,
@@ -173,19 +172,18 @@ async def test_all_28_profile_gates_roles_and_native_entities(model, layout):
 
 
 @pytest.mark.parametrize(
-    "name,scan,model,reconnect_model",
+    "name,model,reconnect_model",
     [
-        ("Smartbed-1", True, "P3", "P3"),
-        ("smartbed-1", True, "P1", "P1"),
-        ("OKIN-1", True, "P1", "P1"),
-        ("SLEEP_V1", True, "P4", "P4"),
-        ("sleep_v1", False, "P1", "P1"),
-        ("SleepBT-1", False, "P1", "P4"),
-        ("", False, "P1", "P1"),
+        ("Smartbed-1", "P3", "P3"),
+        ("smartbed-1", "P1", "P1"),
+        ("OKIN-1", "P1", "P1"),
+        ("SLEEP_V1", "P4", "P4"),
+        ("sleep_v1", "P1", "P1"),
+        ("SleepBT-1", "P1", "P4"),
+        ("", "P1", "P1"),
     ],
 )
-def test_name_constructor_is_separate_from_admission(name, scan, model, reconnect_model):
-    assert scan_admits(name) is scan
+def test_model_from_name(name, model, reconnect_model):
     assert model_from_name(name, reconnect=False) == model
     assert model_from_name(name) == reconnect_model
 

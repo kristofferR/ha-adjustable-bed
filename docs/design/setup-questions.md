@@ -67,10 +67,13 @@ returns.
   rows of the bed-type list, and a row picked there stages its route: an app's
   own row answers the family question, so it is not asked again, and a family
   row, which names its apps, leads to the question. The
-  brand list shows each brand group's family rows, brand first, or the group's
-  own rows when it has no family question. The protocol-named routes
+  brand list gives every row of the bed-type list its brand's row, brand
+  first: an app its family's question offers is reached through the family
+  row, and any other row is its own. The protocol-named routes
   (`PROTOCOL_ROUTES`) are not rows of the app question, so the brand list
-  lists them, and Configure keeps them by name.
+  reaches them through one "Okin (other receivers)" row, and Configure keeps
+  them by name. Its "Not sure" offers a detected device's controls before
+  diagnostics.
 - A family row reads `<apps> · <family>`, and each row of that family's
   journey `<app> · <family>`. The family is the one the row's journey asks:
   each family's declaration (`app_families.py`) names its row, the routes
@@ -198,9 +201,7 @@ does not ask them.
 ## Dedicated steps
 
 A dedicated step remains only for what data cannot express, with its reason
-recorded here as each family converts. `tests/test_setup_questions.py` checks
-this section and [Shared steps](#shared-steps) against the setup and Configure
-flows, so a new step cannot appear unrecorded and a removed one cannot linger.
+recorded here as each family converts.
 
 | Step | Why it is not data |
 |---|---|
@@ -215,13 +216,14 @@ These steps serve every bed type or route, so no profile owns them.
 
 | Step | Purpose |
 |---|---|
-| `user`, `scan`, `scan_result`, `manual`, `select_app`, `select_family`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its app or bed type: `select_app` lists the bed-type list's rows, and its last answer opens the brand list (`select_family`), whose rows are the family rows and the brands without one |
-| `okin_receiver` | The brand list's "Okin (other receivers)" row: the Okin routes named after their protocol, each by the beds and remotes it came with |
+| `user`, `scan`, `scan_result`, `manual`, `select_app`, `select_family`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its app or bed type: `select_app` lists the bed-type list's rows, and its last answer opens the brand list (`select_family`), whose rows are every row of the bed-type list named brand first, an app its family's question offers through the family row |
+| `okin_receiver` | The brand list's "Okin (other receivers)" row: the Okin routes named after their protocol, each by the beds and remotes it came with, and **None of these** |
+| `not_sure_detected` | The brand list's "Not sure" on a device picked first and detected: set it up with the detected controls instead of diagnostics |
 | `bluetooth_confirm` | A discovered bed's app question, from its bed type's own rows, when no family question asks it |
 | `manual_entry` | The address of a bed that is not in range |
 | `finish_settings` | The [final settings](#the-new-bed-journey) |
 | `profile_questions` | The declared questions |
-| `bluetooth_pairing`, `manual_pairing`, `pairing_replace_confirm`, `pairing_progress`, `pairing_result` | Bonding |
+| `bluetooth_pairing`, `manual_pairing`, `pairing_replace_confirm`, `pairing_replace_bond`, `pairing_keep_bond`, `pairing_progress`, `pairing_result` | Bonding; replacing a bond is confirmed on its own menu, whose other answer keeps the bond |
 | `setup_progress`, `verify_connection` | Connection check and capability checklist |
 | `keep_detected`, `keep_back`, `keep_continue` | Keep on a new bed: what the detected controls are, their pairing, and the way to an app later |
 | `pair_beds` | Combine two beds |

@@ -51,6 +51,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..okin_cst import OkinCstController, _product
 
@@ -455,24 +456,29 @@ class OkinBeddingAppController(OkinCstController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         # Raw status, timer and save codes stay in published state for diagnostics.
-        keys = ("manufacturer", "massage_timer_minutes", "alarm_type")
-        return tuple(
+        timer = "massage_timer_minutes"
+        return (
             ControllerStateSensorSpec(
-                key=self._key(key),
+                key=self._key("manufacturer"),
                 # The apps share one parser, so their sensors share names.
-                translation_key=f"okin_bedding_app_{key}",
-                state_key=self._state_key(key),
+                translation_key="okin_bedding_app_manufacturer",
+                state_key=self._state_key("manufacturer"),
                 icon="mdi:information-outline",
-                native_unit_of_measurement="min" if key == "massage_timer_minutes" else None,
-                entity_registry_enabled_default=key == "massage_timer_minutes",
+            ),
+            massage_timer_sensor_spec(
+                self._key(timer), f"okin_bedding_app_{timer}", self._state_key(timer)
+            ),
+            ControllerStateSensorSpec(
+                key=self._key("alarm_type"),
+                translation_key="okin_bedding_app_alarm_type",
+                state_key=self._state_key("alarm_type"),
+                icon="mdi:alarm",
                 attribute_keys=tuple(
                     self._state_key(name)
                     for name in ("alarm_repeat", "alarm_hour", "alarm_minute", "alarm_on")
-                )
-                if key == "alarm_type"
-                else (),
-            )
-            for key in keys
+                ),
+                entity_category=None,
+            ),
         )
 
     @property
@@ -736,7 +742,7 @@ class ZSeriesController(OkinBeddingAppController):
                 "Could not read the manufacturer string that enables Z-Series alarms; try again"
             )
         if not state:
-            raise ValueError("This controller's manufacturer string does not enable app alarms")
+            raise ValueError("This bed's controller has no alarm")
 
     async def _query_alarm(self) -> None:
         # Query runs 200 ms after the tap; it writes 300 and 600 ms after that.
@@ -769,7 +775,7 @@ class ZSeriesController(OkinBeddingAppController):
         """
         await self._require_alarm()
         if weekdays or head_level or foot_level:
-            raise ValueError("Z-Series alarms have no weekday or massage-level fields")
+            raise ValueError("This bed's alarm has no weekdays or massage levels. Remove them and try again")
         now = dt_util.now()
         frame = alarm_frame(
             enabled=enabled,

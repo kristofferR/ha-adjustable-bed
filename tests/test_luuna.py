@@ -191,7 +191,7 @@ async def test_capability_gates_alarm_order_light_and_forbidden_operations():
     await ctrl.start_notify()
     alarm = Request("alarm", mode="ZeroGravity", hour=10, minute=30)
     for request in (alarm, Request("light_rgb")):
-        with pytest.raises(ValueError, match="page unavailable"):
+        with pytest.raises(ValueError, match="has no|not available on this bed"):
             ctrl.validate_casper_base_request(request)
     for raw in ("6e09010078", "6e0e00037f"):
         ctrl._on_notification(MagicMock(), bytearray.fromhex(raw))
@@ -207,6 +207,34 @@ async def test_capability_gates_alarm_order_light_and_forbidden_operations():
     other, _ = make("risepro")
     other._consume(decode(bytes.fromhex("6e0e00037f")))
     assert "light_available" not in other.events
+
+
+async def test_alarm_and_clock_through_the_shared_actions(hass, monkeypatch):
+    from homeassistant.util import dt as dt_util
+
+    from tests.alarm_helpers import call_set_alarm
+
+    now = dt_util.now().replace(hour=10, minute=0, second=0, microsecond=0)
+    monkeypatch.setattr(dt_util, "now", lambda: now)
+    ctrl, c = make("riseprolight")
+    await ctrl.start_notify()
+    ctrl._on_notification(MagicMock(), bytearray.fromhex("6e09010078"))
+    c.client.write_gatt_char.reset_mock()
+    await ctrl.async_execute_casper_base_request(
+        Request("alarm", mode="ZeroGravity", hour=10, minute=30)
+    )
+    app = frames(c)
+    c.client.write_gatt_char.reset_mock()
+    await call_set_alarm(
+        hass, ctrl, {"enabled": True, "time": "10:30:00", "wake_action": "zero_g"}
+    )
+    assert frames(c) == app
+    c.client.write_gatt_char.reset_mock()
+    await call_set_alarm(hass, ctrl, {"enabled": False})
+    assert frames(c) == ["6e05000073", "6e06000074"]
+    c.client.write_gatt_char.reset_mock()
+    await ctrl.sync_clock()
+    assert frames(c) == [codec.calendar(now, build=codec.record_20_len).hex()]
 
 
 async def test_disconnect_cancels_pending_write_and_stale_notification():
@@ -298,7 +326,6 @@ def live_runtime(hass, product="riseprolight", address="AA:BB:CC:DD:EE:FF"):
     ("operation", "expected"),
     [
         ("light_warm", "6e0cff80f96e0d460acb"),
-        ("alarm_cancel", "6e06000074"),
     ],
 )
 async def test_service_reconnects_idle_controller_and_requires_fresh_reply(
@@ -423,7 +450,7 @@ async def test_luuna_service_preflight_blocks_all_targets_and_has_finite_operati
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(a, "both"), (b, "both")], []),
         ),
-        pytest.raises(ServiceValidationError, match="light page unavailable"),
+        pytest.raises(ServiceValidationError, match="light operation is not available"),
     ):
         await hass.services.async_call(
             "adjustable_bed",

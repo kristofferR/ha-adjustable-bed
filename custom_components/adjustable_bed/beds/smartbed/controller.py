@@ -24,6 +24,7 @@ from ...const import (
 from ...controller_state import AnyStateKey, StateKey, StateUpdate, sided
 from ...errors import failed, invalid
 from ...execution import ExecutionCapabilities
+from ...position_estimate import notify_release_failed
 from ...profiles import smartbed as app
 from ...profiles.smartbed import Function as F
 from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, massage_intensity
@@ -326,7 +327,12 @@ class OkinCB24Controller(BedController):
         finally:
             if armed:
                 released_at = min(loop.time(), deadline) if deadline is not None else loop.time()
-                await self._release(link, stop, released_at=released_at)
+                try:
+                    await self._release(link, stop, released_at=released_at)
+                except Exception:
+                    # A failed STOP is reported, and the position estimate stops trusting the move.
+                    notify_release_failed(self._coordinator)
+                    raise
         return released_at
 
     async def _massage_readback(self, link: Link, released_at: float | None) -> None:

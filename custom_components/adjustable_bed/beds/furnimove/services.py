@@ -55,7 +55,6 @@ async def _execute_furnimove(
     await _preflight_and_execute(
         _call_targets(call),
         FurniMoveController,
-        "FurniMove app controls",
         operation,
         supported=lambda controller: bool(controller.furnimove_action_specs),
         validate=validate,
@@ -78,7 +77,7 @@ async def handle_furnimove_action(call: ServiceCall) -> None:
         )
         if selected_action is not None and action != selected_action:
             raise ValueError(
-                "The selected row represents different actions; target one device or side"
+                "This button does different things on the targeted beds. Target one bed or side"
             )
         selected_action = action
 
@@ -119,7 +118,7 @@ async def _rename_furnimove(
     def validate(controller: FurniMoveController) -> None:
         controller.validate_furnimove_rename(name)
         if not controller.supports_device_rename:
-            raise ValueError("This receiver has no writable rename characteristic")
+            raise ValueError("This receiver cannot be renamed")
 
     async def execute(controller: FurniMoveController) -> None:
         await controller.rename_device(name)

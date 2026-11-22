@@ -1,0 +1,4995 @@
+[
+  {
+    "key": "HC800",
+    "remote": "LTRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberUp",
+        "code": 63,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberDown",
+        "code": 64,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LightBoard",
+        "code": 80,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "AntiSnoring": 70,
+      "ZeroGravity": 69,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": true,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "SN300",
+    "remote": "B3RN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LightBoard",
+        "code": 80,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "TVPosition": 88,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "SN500",
+    "remote": "LTRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberUp",
+        "code": 63,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberDown",
+        "code": 64,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowUp",
+        "code": 65,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowDown",
+        "code": 66,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LightBoard",
+        "code": 80,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "AntiSnoring": 70,
+      "ZeroGravity": 69
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "blue",
+    "remote": "LTRM",
+    "normal": true,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberUp",
+        "code": 63,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberDown",
+        "code": 64,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowUp",
+        "code": 65,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowDown",
+        "code": 66,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "TVPosition": 88,
+      "ZeroGravity": 69,
+      "LoungePosition": 89,
+      "AntiSnoring": 70,
+      "MemoryPosition1": 46,
+      "MemoryPosition2": 47
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": true,
+    "side": false,
+    "split": true
+  },
+  {
+    "key": "green",
+    "remote": "HARM",
+    "normal": true,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageInstensityStrengthen",
+        "code": 52,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageSwitch",
+        "code": 111,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "TVPosition": 88,
+      "MemoryPosition1": 46,
+      "AntiSnoring": 70
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": true
+  },
+  {
+    "key": "orange",
+    "remote": "JMRM",
+    "normal": true,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageInstensityStrengthen",
+        "code": 52,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageSwitch",
+        "code": 111,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "TVPosition": 88,
+      "MemoryPosition1": 46,
+      "AntiSnoring": 70
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": true,
+    "split": true
+  },
+  {
+    "key": "yellow",
+    "remote": "HBRM",
+    "normal": true,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowUp",
+        "code": 63,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowDown",
+        "code": 64,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageSwitch",
+        "code": 111,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "TVPosition": 88,
+      "MemoryPosition1": 46,
+      "MemoryPosition2": 47,
+      "AntiSnoring": 70
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "AFEG300",
+    "remote": "L5RN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "CoaxingSleepMode",
+        "code": 134,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "LoungePosition": 89,
+      "ZeroGravity": 69,
+      "TVPosition": 88,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": true,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "AFEG300-SH",
+    "remote": "LPRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "SyncOn",
+        "code": 188,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "CoaxingSleepMode",
+        "code": 134,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": true,
+    "split": false
+  },
+  {
+    "key": "PB250",
+    "remote": "VJRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "PB300",
+    "remote": "FARM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "PB325",
+    "remote": "FARM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "TVPosition": 88,
+      "AntiSnoring": 70,
+      "ZeroGravity": 69,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "PB450",
+    "remote": "MPRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberUp",
+        "code": 65,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberDown",
+        "code": 66,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LightBoard",
+        "code": 80,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": true,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "PB450-SH",
+    "remote": "LVRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberUp",
+        "code": 63,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberDown",
+        "code": 64,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LightBoard",
+        "code": 80,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": true,
+    "vibration": true,
+    "side": true,
+    "split": false
+  },
+  {
+    "key": "BJRN",
+    "remote": "BJRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberUp",
+        "code": 63,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberDown",
+        "code": 64,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowUp",
+        "code": 65,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowDown",
+        "code": 66,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 3000
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 3000
+      },
+      {
+        "action": "MemoryPosition3",
+        "code": 48,
+        "save": 45,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 3000
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "BYRN",
+    "remote": "BYRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "FootBoxUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootBoxDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "E3RM",
+    "remote": "E3RM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TileUp",
+        "code": 91,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TileDown",
+        "code": 92,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "SyncOn",
+        "code": 188,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "SyncOff",
+        "code": 189,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition3",
+        "code": 48,
+        "save": 45,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition4",
+        "code": 178,
+        "save": 179,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "FARM",
+    "remote": "FARM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "HZRM",
+    "remote": "HZRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition3",
+        "code": 48,
+        "save": 45,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "JGRM",
+    "remote": "JGRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "JHRM",
+    "remote": "JHRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "JJRM",
+    "remote": "JJRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "KZRM",
+    "remote": "KZRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition3",
+        "code": 48,
+        "save": 45,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "L2RM",
+    "remote": "L2RM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": null,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "VJRM",
+    "remote": "VJRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "ABM10",
+    "remote": "UTRM",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "Series 1",
+    "remote": "GURN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "Series 2",
+    "remote": "GVRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "Series 3",
+    "remote": "GWRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberUp",
+        "code": 63,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LumberDown",
+        "code": 64,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowUp",
+        "code": 65,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowDown",
+        "code": 66,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": true,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "ABF03",
+    "remote": "BNRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "TVPosition": 88,
+      "LoungePosition": 89,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "ABF07",
+    "remote": "DNRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "TVPosition": 88,
+      "LoungePosition": 89,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "NUPG400",
+    "remote": "BVRN",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowUp",
+        "code": 63,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "PillowDown",
+        "code": 64,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "AntiSnoring",
+        "code": 70,
+        "save": 105,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "VIP 3.0",
+    "remote": "",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "TVPosition": 88,
+      "LoungePosition": 89,
+      "ZeroGravity": 69,
+      "MemoryPosition1": 46,
+      "MemoryPosition2": 47
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false
+  },
+  {
+    "key": "VIP 3.0-SH",
+    "remote": "",
+    "normal": false,
+    "controls": [
+      {
+        "action": "HeadUp",
+        "code": 36,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadDown",
+        "code": 37,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootUp",
+        "code": 38,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "FootDown",
+        "code": 39,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootUp",
+        "code": 41,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "HeadAndFootDown",
+        "code": 42,
+        "save": null,
+        "held": true,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "BedLight",
+        "code": 60,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MotorReset",
+        "code": 49,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageHeadInstensityStrengthen",
+        "code": 76,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageFootInstensityStrengthen",
+        "code": 78,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeChange",
+        "code": 72,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MassageModeAllOff",
+        "code": 94,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage10MinuteTimer",
+        "code": 95,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage20MinuteTimer",
+        "code": 99,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "Massage30MinuteTimer",
+        "code": 97,
+        "save": null,
+        "held": false,
+        "release": true,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "TVPosition",
+        "code": 88,
+        "save": 100,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "LoungePosition",
+        "code": 89,
+        "save": 101,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "ZeroGravity",
+        "code": 69,
+        "save": 102,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition1",
+        "code": 46,
+        "save": 43,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      },
+      {
+        "action": "MemoryPosition2",
+        "code": 47,
+        "save": 44,
+        "held": false,
+        "release": false,
+        "save_delay_ms": 0
+      }
+    ],
+    "alarm": {
+      "TVPosition": 88,
+      "LoungePosition": 89,
+      "ZeroGravity": 69,
+      "MemoryPosition1": 46,
+      "MemoryPosition2": 47
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": true,
+    "split": false
+  }
+]

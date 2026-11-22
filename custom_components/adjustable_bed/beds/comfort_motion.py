@@ -225,7 +225,7 @@ class ComfortMotionController(JiecangProfileController):
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in _MASSAGE_ZONES or level not in range(len(self.profile.massage_levels)):
-            raise ValueError("Comfort Motion massage accepts head/foot levels 0..3")
+            raise ValueError("Choose head or foot and a massage level from 0 to 3")
         await self.write_command(
             codec.massage(_MASSAGE_ZONES[zone], self.profile.massage_levels[level])
         )
@@ -300,7 +300,7 @@ class ComfortMotionController(JiecangProfileController):
     async def rename_device(self, name: str) -> None:
         payload = self._name_rule.encode(name)
         if self.client is None or not self.client.is_connected or self._name_uuid is None:
-            raise ValueError("Comfort Motion rename requires a discovered writable G1 name role")
+            raise ValueError("This bed cannot be renamed")
         self._record_command_trace(self._name_uuid, payload, response=self._name_response)
         async with self._ble_lock:
             await self.client.write_gatt_char(
@@ -329,7 +329,7 @@ class ComfortMotionController(JiecangProfileController):
         if preset not in _WAKE_PRESETS or any(
             level not in range(4) for level in (head_level, foot_level)
         ):
-            raise ValueError("Comfort Motion wake requires a supported preset and levels 0..3")
+            raise ValueError("Choose a wake action this bed offers and massage levels from 0 to 3")
         if (head_level or foot_level) and not self._coordinator.has_massage:
             raise ValueError("Enable massage before starting a massage wake routine")
         cancel = self._coordinator.cancel_command

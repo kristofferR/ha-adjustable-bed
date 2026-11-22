@@ -124,7 +124,7 @@ async def test_repeat_allocation_full_later_target_prevents_every_write(hass):
         patch.object(b, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(a, "_async_refresh_controller_auth", AsyncMock()),
         patch.object(b, "_async_refresh_controller_auth", AsyncMock()),
-        pytest.raises(ServiceValidationError, match="occupied"),
+        pytest.raises(ServiceValidationError, match="in use"),
     ):
         await hass.services.async_call(
             DOMAIN,

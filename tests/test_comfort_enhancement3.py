@@ -183,13 +183,11 @@ def test_formatter_rejects_unsafe_domain_not_firmware_capacity(field, value):
         codec.schedule_step(**inputs)
 
 
-def test_delay_truncation_date_normalization_and_full_schedule():
+def test_delay_truncation_and_full_schedule():
     now = datetime(2026, 12, 31, 23, 59, 59, 750000, tzinfo=UTC)
     assert apex.delay_ticks(now - timedelta(microseconds=999999), now) == 0
     assert apex.delay_ticks(now - timedelta(seconds=1), now) == -10
     assert apex.delay_ticks(now + timedelta(seconds=60, microseconds=999999), now) == 600
-    assert apex.selected_time(now, 0, 0, True) == datetime(2027, 1, 1, tzinfo=UTC)
-    assert apex.selected_time(now, 0, 0, False) == datetime(2026, 12, 31, tzinfo=UTC)
     frames = apex.wake_frames(3, 1, 600, massage=True, light=True, preset="M1")
     assert [f.hex() for f in frames] == [
         "0b0d0100000002580000000005",
@@ -587,6 +585,14 @@ async def test_due_callback_has_real_bed_effect_and_stale_fences(
         )
         if invalidate == "none":
             assert c._massage_end == (now + timedelta(minutes=10)).isoformat()
+            # The reading is a timestamp, so Home Assistant shows it in local time.
+            published = [
+                update.value
+                for call in coordinator.handle_controller_state_updates.call_args_list
+                for update in call.args
+                if update.key == apex.MASSAGE_END
+            ]
+            assert published[-1] == now + timedelta(minutes=10)
         c.on_disconnect()
 
 
@@ -621,8 +627,7 @@ def test_elapsed_delay_uses_instants_across_clock_change():
 
     zone = ZoneInfo("Europe/Oslo")
     now = datetime(2027, 3, 28, 1, 30, tzinfo=zone)
-    selected = apex.selected_time(now, 2, 30, False)
-    assert selected.hour == 3
+    selected = datetime(2027, 3, 28, 3, 30, tzinfo=zone)
     assert apex.delay_ticks(selected, now) == 36000
 
 
@@ -676,7 +681,9 @@ async def test_two_address_card_release_stays_on_original_side(hass):
         patches.enter_context(
             patch(
                 "custom_components.adjustable_bed.services._resolve_sided_targets",
-                side_effect=lambda _hass, _ids, side=None: ([(paired, side or "both")], []),
+                side_effect=lambda _hass, _ids, side=None, *, problems=None: (
+                    [(paired, side or "both")], []
+                ),
             )
         )
         await async_register_services(hass)
@@ -842,3 +849,21 @@ async def test_set_alarm_reaches_every_wake_up_program_number(hass, bed):
     for slot in (0, 99):
         await call_set_alarm(hass, c, {"enabled": False, "slot": slot})
     assert [call.args[0] for call in c.delete_wakeup.await_args_list] == [0, 99]
+
+
+async def test_massage_end_reaches_the_sensor_platform_as_a_timestamp(bed):
+    from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+
+    c, _, _ = bed
+    await c.async_discover_capabilities()
+    spec = next(s for s in c.controller_state_sensor_specs if s.state_key == apex.MASSAGE_END)
+    end = datetime(2026, 11, 12, 12, 10, tzinfo=UTC)
+    runtime = SimpleNamespace(
+        controller_state={apex.MASSAGE_END: end},
+        entity_unique_id=lambda key: key,
+        device_info={},
+        entity_side=None,
+    )
+    sensor = AdjustableBedControllerStateSensor(runtime, spec)
+    assert sensor.device_class == "timestamp"
+    assert sensor.native_value == end

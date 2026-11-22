@@ -4,9 +4,9 @@
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-The **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** selection
-implements the direct BLE path in Tempur Sleeptracker-AI
-`com.fullpower.applications.horizon` **3.6.2 (262)**.
+The **Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)** selection
+controls the bed directly over Bluetooth, as Tempur Sleeptracker-AI
+`com.fullpower.applications.horizon` **3.6.2 (262)** does.
 
 ## Known Models
 
@@ -29,14 +29,14 @@ implements the direct BLE path in Tempur Sleeptracker-AI
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ Back, legs, lumbar (layout-dependent; generic layout back and legs) |
-| Position Feedback | ❌ (no position, angle, percentage or height feedback is established) |
+| Position Feedback | ❌ |
 | Presets | ✅ Flat, Zero G, Anti-Snore, TV, favorite 1 / favorite 2 (layout-dependent) |
 | Preset save | ✅ Zero G, Anti-Snore, TV and favorites; Flat cannot be saved; processor types 5, 6 and 7 disable saving |
 | Massage | ✅ Pattern on all layouts; head/foot steps on supported layouts; premium 28/40 Hz, wave, wind-down, strength and pattern selects |
-| Safety light | ✅ App-specific toggle button and reported-state sensor |
+| Safety light | ✅ Toggle button and a sensor showing its state |
 | ActiveBreeze climate | ✅ Left/right Off / Cool / Heat, levels 0–3, Constant / Curve |
 | Automation actions | ✅ Five [typed actions](../SERVICES.md#sleeptracker-smart-bed) |
-| One-address left/right pairing | ❌ (two-address pairs only) |
+| Pairing two sides | ⚠️ Only two beds with their own Bluetooth addresses; one address cannot be split into sides |
 
 ## Protocol Details
 
@@ -78,13 +78,13 @@ implements the direct BLE path in Tempur Sleeptracker-AI
 
 ## Select the processor
 
-Choose **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for
+Choose **Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)** for
 TEMPUR-Ergo ProSmart Air / ActiveBreeze beds operated with that app. It provides
 the app's TV and Anti-Snore presets, ActiveBreeze climate and premium massage
 controls. Adjustable Lite was a compatibility selection for the reported bed;
 its Tempur-specific massage and preset workarounds are removed.
 
-- Select the **Sleeptracker processor's actual Bluetooth endpoint**. The app
+- Select the Sleeptracker processor's own Bluetooth address. The app
   uses framed JSON there, while the reported KSSF05C / MC232SC entries expose
   UART. Add the verified processor as a separate entry. Do not change those
   UART addresses to this profile solely because they belong to the same bed.
@@ -112,7 +112,7 @@ its Tempur-specific massage and preset workarounds are removed.
 
 - These are app controls, not a measurement of physical motor count. Wire
   `head` is exposed as HA **Back**, and wire `foot` as **Legs**.
-- No position, angle, percentage or height feedback is established. Raw
+- The bed reports no position, angle, percentage or height. Raw
   motor/massager bitfields remain diagnostic metadata and never create
   additional axes.
 - Select the persisted app layout explicitly. Hello names `SLIM_GOOD`,
@@ -132,7 +132,7 @@ Setup also records these settings, independently for each physical processor:
 
 - Two separate addresses can use HA's ordinary Left/Right children and service
   targeting.
-- One-address pairing is unavailable because the artifact does not prove how
+- One-address pairing is unavailable because the app does not show how
   unit numbers map to physical halves.
 - ActiveBreeze `fan_side` selects left/right fan fields inside a processor; it
   is independent of HA's paired device `side` target.
@@ -251,7 +251,7 @@ written to the authentication characteristic. See
   other patterns. It works without a reported starting pattern; displayed state
   still comes from the reply.
 - Head/foot strength Off continues stepping only that zone, since no separate
-  zone-stop command is proven.
+  zone-stop command exists in the app.
 - Premium layouts add **28 Hz**, **40 Hz**, wave frequency/duration selectors,
   wind-down 1/2 and local motor/massage animation.
 - Wave choices are 28, 40, 52, 68 and 88 Hz, with 5–105 minutes in steps of
@@ -259,9 +259,9 @@ written to the authentication characteristic. See
   unverified.
 - Wind-down uses modes 1 and 2; the app shows 16- and 10-minute countdowns,
   without sending those countdown lengths as parameters.
-- Use massage off to stop wave or wind-down, and Stop All to stop the local
+- Use massage off to stop wave or wind-down, and Stop all to stop the local
   motor/massage animation.
-- The local animation retains the artifact's six motor/massage statements, order
+- The local animation keeps the app's six motor/massage statements, order
   and individual delays, omitting six speaker statements. It makes no claim to
   reproduce media playback timing.
 
@@ -288,7 +288,7 @@ status snapshot, independent of the configured snapshot side.
 
 - ActiveBreeze adds left/right **Off / Cool / Heat**, levels **0–3** and
   **Constant / Curve** controls.
-- The proven builder accepts levels 0–3; the stock app's heat UI chooses off or
+- The app's builder accepts levels 0–3; the stock app's heat UI chooses off or
   level 3.
 - Every heat command carries a **3600-second timer** and every cooling command
   **36000 seconds**, including level 0. Timers are fixed wire values, not

@@ -85,7 +85,7 @@ def wrap_environment(payload: bytes) -> bytes:
 def build_cb37_config_query(page: int) -> bytes:
     """Build the CB37 control-box configuration page query."""
     if not 1 <= page <= 8:
-        raise ValueError("CB37 config page must be in range 1..8")
+        raise ValueError("Choose a settings page from 1 to 8")
     return bytes([0x2A, 0, 0, 5, 0x81, 9, page, 0xFF, 0xFF, 0, 0, 0x22, 0x25, 0x12, 0x4B])
 
 
@@ -776,7 +776,7 @@ class SleepStarController(BedController):
             POSITIONS({key: int(value) for key, value in values.items()}),
         )
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Request the current multi-part motor position report."""
         await self.write_command(SleepStarCommands.QUERY_MOTORS)
 
@@ -799,7 +799,7 @@ class SleepStarController(BedController):
             wrap_control_box(star.position_target(zone, max(0, min(100, int(position)))))
         )
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Clamp an integration percentage to the native 0-100 range."""
         return int(max(0, min(100, angle)))
 
@@ -1011,7 +1011,7 @@ class SleepStarController(BedController):
     async def set_light_color_index(self, index: int) -> None:
         """Set one of the app's eight palette indices (0..7)."""
         if not 0 <= index <= 7:
-            raise ValueError("SLEEPSTAR color index must be in range 0..7")
+            raise ValueError("Choose a color from 0 to 7")
         await self._send_twice_then_stop(wrap_control_box(star.extended(0x01, index)))
 
     async def massage_off(self) -> None:
@@ -1148,7 +1148,7 @@ class SleepStarController(BedController):
         """Select one of the six EQ presets in app order."""
         keys = (51396659, 51396666, 51396658, 51396660, 51396667, 51396668)
         if not 0 <= preset < len(keys):
-            raise ValueError("SLEEPSTAR sound preset must be in range 0..5")
+            raise ValueError("Choose a sound preset from 0 to 5")
         await self.write_command(wrap_control_box(star.normal(keys[preset])))
 
     async def set_sound_cutoff(self, value: int) -> None:
@@ -1158,7 +1158,7 @@ class SleepStarController(BedController):
     async def set_eq_profile_value(self, value: int) -> None:
         """Set one of the app's eight EQ brands or two band selectors."""
         if not 1 <= value <= 10:
-            raise ValueError("SLEEPSTAR EQ profile value must be in range 1..10")
+            raise ValueError("Choose an equalizer value from 1 to 10")
         await self.write_command(wrap_control_box(star.extended(13, value)))
 
 

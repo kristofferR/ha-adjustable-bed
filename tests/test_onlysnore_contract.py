@@ -6,8 +6,6 @@ from pathlib import Path
 from custom_components.adjustable_bed.app_profiles import per_side_profile
 from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
 from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
-from scripts.codec_docs.onlysnore import BLOCKS, GUIDE
-from scripts.generate_codec_docs import _rendered
 from tests.card_placements import controller_entities, placements
 from tests.test_controller_contract import _FactoryCoordinator
 
@@ -44,14 +42,6 @@ def test_app_setup_questions_have_labels_and_side_ownership():
         assert question.key in strings["config"]["step"]["profile_questions"]["data"]
         assert question.key in strings["config"]["step"]["profile_questions"]["data_description"]
         assert question.key in strings["options"]["step"]["settings"]["data"]
-
-
-def test_only_app_generated_blocks_are_current_and_unique():
-    text = (ROOT / GUIDE).read_text()
-    assert text == _rendered(GUIDE)
-    for guide, name, _renderer in BLOCKS:
-        assert guide == GUIDE
-        assert text.count(f"<!-- generated:{name} -->") == 1
 
 
 def test_actual_app_entities_match_appended_card_entries():

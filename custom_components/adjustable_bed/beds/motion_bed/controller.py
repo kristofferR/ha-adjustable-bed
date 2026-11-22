@@ -12,6 +12,8 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
@@ -51,12 +53,14 @@ from ..entity_specs import (
     ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..family_actions import MotionBedModuleActions
 from .actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from .models import MotionBedSelection
 from .protocol import (
     SOURCE_COMMANDS,
+    AirTimer,
     AlarmMode,
     AlarmSound,
     AlarmSwitch,
@@ -320,6 +324,12 @@ class _HeldSession:
 
 
 ACTIVE_MODULE: Final = StateKey[str | None]("motion_bed_active_module")
+AIR_TIMER_MINUTES: Final = StateKey[int | None]("motion_bed_air_timer_minutes")
+_AIR_TIMER_MINUTES: Final[Mapping[int, int]] = {
+    AirTimer.TEN_MINUTES: 10,
+    AirTimer.TWENTY_MINUTES: 20,
+    AirTimer.THIRTY_MINUTES: 30,
+}
 
 
 def _field_key(name: str) -> StateKey[ScalarState]:
@@ -346,10 +356,10 @@ _AUDIO_SOUNDS: Final = {
 # Preset-selected flags, raw readbacks, calibration samples and module inventory
 # details stay in diagnostics.
 _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
-    # Massage levels only mirror the step buttons; the bed takes no direct level.
-    ("upper_massage", False, ()),
-    ("lower_massage", False, ()),
-    ("massage_wave", False, ()),
+    # Massage levels the bed reports; it takes no direct level.
+    ("upper_massage", True, ()),
+    ("lower_massage", True, ()),
+    ("massage_wave", True, ()),
     # The massage and light timer selects and the brightness number show those,
     # so the bed's raw light timer stays in diagnostics.
     ("audio_volume", False, ()),
@@ -373,6 +383,18 @@ _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
         ),
     ),
 )
+# Readings only the home, motor and hub screens report.
+_MOTOR_REPORTS: Final = frozenset({"upper_massage", "lower_massage", "massage_wave", "alarm_enabled"})
+# Massage state for the dashboard rather than diagnostics.
+_MASSAGE_LEVELS: Final = frozenset(
+    {"upper_massage", "lower_massage", "massage_wave", "air_upper_gear", "air_lower_gear"}
+)
+_BINARY_ICONS: Final = {
+    "sync_enabled": "mdi:link-variant",
+    "thermal_low_water": None,
+    "thermal_timer_enabled": "mdi:timer-outline",
+    "alarm_enabled": "mdi:alarm",
+}
 # The switches show the night light, smart sleep, module light and massage and
 # adaptive air settings; the climate timer keeps its schedule as attributes.
 _BINARY_SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
@@ -385,7 +407,7 @@ _BINARY_SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
     ),
     (
         "alarm_enabled",
-        False,
+        True,
         (
             "alarm_hour", "alarm_minute", "alarm_weekdays", "alarm_repeat", "alarm_mode",
             "alarm_massage", "alarm_sound", "alarm_music",
@@ -526,7 +548,12 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             "remembered_module_capabilities": dict(self._module_capabilities),
             "actions": [{"key": action.key, "name": action.name, "kind": action.kind}
                         for action in self.actions],
-            **self._state.to_updates(),
+            # Nightly sleep reports stay out of files users post publicly.
+            **{
+                key: value
+                for key, value in self._state.to_updates().items()
+                if key != "fall_timer" and not key.startswith(("day_", "app_day_", "month_"))
+            },
         }
 
     @property
@@ -784,13 +811,25 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             self._remembered_module = module
 
     @property
+    def _reports_motor_state(self) -> bool:
+        """Air-only and climate-only apps never report motor massage or the alarm."""
+        return self.selection.surface not in ("air", "thermal")
+
+    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
+                "motion_bed_air_timer", "motion_bed_air_timer", AIR_TIMER_MINUTES
+            )
+            if name == "air_timer"
+            else ControllerStateSensorSpec(
                 key="motion_bed_" + name, translation_key="motion_bed_" + name,
-                state_key=_field_key(name), icon="mdi:bed-outline",
+                state_key=_field_key(name),
+                icon="mdi:vibrate" if name in _MASSAGE_LEVELS else "mdi:bed-outline",
                 attribute_keys=tuple(_field_key(item) for item in attributes),
-                entity_registry_enabled_default=enabled,
+                entity_registry_enabled_default=enabled
+                and (name not in _MOTOR_REPORTS or self._reports_motor_state),
+                entity_category=None if name in _MASSAGE_LEVELS else EntityCategory.DIAGNOSTIC,
             )
             for name, enabled, attributes in _SENSORS
         )
@@ -800,9 +839,16 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         return tuple(
             ControllerStateBinarySensorSpec(
                 key="motion_bed_" + name, translation_key="motion_bed_" + name,
-                state_key=_field_key(name), icon="mdi:bed-outline",
+                state_key=_field_key(name),
+                icon=_BINARY_ICONS.get(name, "mdi:bed-outline"),
                 attribute_keys=tuple(_field_key(item) for item in attributes),
-                entity_registry_enabled_default=enabled,
+                entity_registry_enabled_default=enabled
+                and (name not in _MOTOR_REPORTS or self._reports_motor_state),
+                entity_category=None if name == "alarm_enabled" else EntityCategory.DIAGNOSTIC,
+                # Low water: the climate module needs refilling.
+                device_class=(
+                    BinarySensorDeviceClass.PROBLEM if name == "thermal_low_water" else None
+                ),
             )
             for name, enabled, attributes in _BINARY_SENSORS
         )
@@ -811,9 +857,11 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         if self._state.massage_timer != self._reported_massage_timer:
             self._reported_massage_timer = self._shown_massage_timer = self._state.massage_timer
         timer = self._shown_massage_timer
+        air_timer = self._state.air_timer
         self.forward_controller_state_updates(
             *(_field_key(name)(value) for name, value in self._state.to_updates().items()),
             ACTIVE_MODULE(self._active_module),
+            AIR_TIMER_MINUTES(None if air_timer is None else _AIR_TIMER_MINUTES.get(air_timer)),
             MASSAGE_TIMER_MINUTES(timer if timer in _MASSAGE_TIMERS else None),
         )
 
@@ -1190,18 +1238,18 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                                   duration: float = 1, confirmed: bool = False) -> None:
         action = ACTION_BY_KEY.get(key)
         if action is None or action.owner not in self._active_owners():
-            raise ValueError("Action is unavailable in the selected Motion Bed profile")
+            raise ValueError("This bed model does not offer that action")
         if not 0 < duration <= 10:
-            raise ValueError("Motion Bed bounded movement duration must be 0–10 seconds")
+            raise ValueError("Choose a duration of up to 10 seconds")
         if action.kind in ("program", "persistent") and not confirmed:
-            raise ValueError("Confirm this persistent Motion Bed configuration change")
+            raise ValueError("This changes a setting stored on the bed. Turn on Confirm to go ahead")
         selected = action.select(self._state, self.selection.alternate_identity, branch=branch)
         if not self._has_audio and any(
             SOURCE_COMMANDS[source_id].startswith(bytes.fromhex("FFFFFFFF0100130B"))
             or SOURCE_COMMANDS[source_id].startswith(bytes.fromhex("FFFFFFFF0100140B"))
             for source_id in selected
         ):
-            raise ValueError("This physical target has not reported audio support")
+            raise ValueError("The bed has not reported a speaker. Reconnect it and try again")
 
     async def async_execute_motion_bed_action(self, key: str, *, branch: str = "app",
                                              duration: float = 1, confirmed: bool = False) -> None:
@@ -1364,25 +1412,25 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         if surface == "hub":
             available.add("module")
         if request.name not in available:
-            raise ValueError("Configuration is unavailable in this Motion Bed profile/module")
+            raise ValueError("This bed model does not offer that setting")
         if request.name == "clock":
             thermal = request.context == "thermal"
             if thermal:
                 if not (surface == "thermal" or (surface == "hub" and self._module_present("thermal"))):
-                    raise ValueError("Thermal clock requires the thermal module/profile")
+                    raise ValueError("Only the heating module has this clock")
             elif not (surface in ("home", "motor") or (surface == "hub" and self._module_present("motor"))):
-                raise ValueError("P1 clock requires a motor/home profile")
+                raise ValueError("Only the bed's motor module has this clock")
         if request.name == "alarm":
             if request.alarm_audio != self._has_audio:
-                raise ValueError("Alarm audio must match this physical target's reported audio capability")
+                raise ValueError("This bed cannot play that alarm sound. Choose another sound")
             if surface == "home" and request.alarm_switch is not None:
-                raise ValueError("Home alarms use the enabled flag, not the modular first-alarm switch")
+                raise ValueError("Turn this alarm on or off with its Enabled setting")
             if request.alarm_switch == 0 and self._state.alarm_flag is not None:
-                raise ValueError("Uninitialized alarm switch is unavailable after alarm state arrives")
+                raise ValueError("Turn this alarm on or off with its Enabled setting")
         if request.name == "audio" and not self._has_audio:
-            raise ValueError("This physical target has not reported audio support")
+            raise ValueError("The bed has not reported a speaker. Reconnect it and try again")
         if request.persistent and not request.confirmed:
-            raise ValueError("Confirm this persistent Motion Bed configuration change")
+            raise ValueError("This changes a setting stored on the bed. Turn on Confirm to go ahead")
 
     async def async_execute_motion_bed_write(self, request: MotionBedWrite) -> None:
         self.validate_motion_bed_write(request)
