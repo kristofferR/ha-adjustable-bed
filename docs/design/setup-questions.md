@@ -180,7 +180,7 @@ per-bed Bluetooth connection default.
 reports positions, and starts off (positions are read): every such route's own
 default. Turning it on is therefore always the user's change. A route without
 position reports saves its own default. The controllers of some of those routes
-can read positions, such as Octo, SBI and the Reverie models without position
+can read positions, such as Octo and the Reverie models without position
 reports, but the integration does not read them there, so an untouched setup
 leaves them unread.
 

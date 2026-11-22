@@ -21,7 +21,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SBI,
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_WRITE_UUID,
@@ -35,7 +34,6 @@ from custom_components.adjustable_bed.const import (
     OCTO_VARIANT_STANDARD,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
-    SBI_VARIANT_BOTH,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.controller_factory import (
@@ -165,8 +163,6 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return RICHMAT_VARIANT_NORDIC
     if bed_type == BED_TYPE_LEGGETT_PLATT:
         return LEGGETT_VARIANT_OKIN
-    if bed_type == BED_TYPE_SBI:
-        return SBI_VARIANT_BOTH
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
     if bed_type == "dreamsense":

@@ -82,7 +82,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
     assert entry.data[CONF_PROFILE_ID] == "keeson:sino"
 
@@ -139,7 +139,7 @@ async def test_other_entries_keep_their_settings(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == BED_TYPE_LINAK
     assert migrated.pop(CONF_PROFILE_MIGRATION)["fields"] == {
@@ -280,7 +280,7 @@ async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssista
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert "pair_schema_version" not in entry.data
     assert dict(entry.options) == {"later_key": 3}
     migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
@@ -318,7 +318,7 @@ async def test_a_5_1_entry_without_obsolete_keys_only_moves_to_the_current_schem
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert dict(entry.data) == data
     assert dict(entry.options) == {"later_key": 2}
 
@@ -382,7 +382,7 @@ async def test_schema_5_3_turns_massage_off_without_a_massage_page(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert entry.data[CONF_HAS_MASSAGE] is False
     assert entry.data[CONF_PROFILE_MIGRATION] == {
         "from_version": 5,
@@ -406,7 +406,7 @@ async def test_schema_5_3_leaves_a_layout_with_massage_alone(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert dict(entry.data) == data
 
 
@@ -515,7 +515,7 @@ async def test_a_4x_entry_turns_massage_off_on_its_way_to_5_3(hass: HomeAssistan
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert entry.data[CONF_HAS_MASSAGE] is False
     record = entry.data[CONF_PROFILE_MIGRATION]
     assert (record["from_version"], record["from_minor_version"]) == (4, 1)
@@ -623,7 +623,7 @@ async def test_schema_5_5_stores_an_octo_layout_as_its_override(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == expected
     assert entry.data[CONF_PROFILE_MIGRATION]["octo_motor_count_override"] == ["data"]
 
@@ -869,7 +869,7 @@ async def test_a_5_5_entry_moves_to_5_6(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert entry.data[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
     assert "connection_profile" not in entry.data
     assert entry.data[CONF_PROFILE_MIGRATION]["settings_5_6"]["data"] == [
@@ -1232,7 +1232,7 @@ async def test_a_5_6_okin_cb24_bed_loads_as_smartbed_with_its_entity_ids(
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.LOADED
-    assert (entry.version, entry.minor_version) == (5, 8)
+    assert (entry.version, entry.minor_version) == (5, 9)
     assert entry.data[CONF_BED_TYPE] == "smartbed"
     runtime = loaded_runtime(hass, entry.entry_id)
     assert runtime is not None and type(runtime.controller) is SmartBedController
@@ -1325,3 +1325,308 @@ async def test_a_4x_okimat_entry_keeps_its_review_and_takes_its_routes_id(hass: 
     assert entry.data[CONF_BED_TYPE] == "okin_uuid"
     assert entry.data[CONF_PROFILE_ID] == "okin_uuid"
     assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "okin_uuid:auto"
+
+
+_SBI = "sbi"
+
+
+@pytest.mark.parametrize(
+    ("stored", "expected"),
+    [
+        pytest.param({}, {CONF_PROTOCOL_VARIANT: "both"}, id="no selection was both"),
+        pytest.param(
+            {CONF_PROTOCOL_VARIANT: "auto"}, {CONF_PROTOCOL_VARIANT: "both"}, id="automatic was both"
+        ),
+        pytest.param(
+            {CONF_PROTOCOL_VARIANT: "side_a"}, {CONF_PROTOCOL_VARIANT: "side_a"}, id="side a"
+        ),
+        pytest.param(
+            {CONF_PROTOCOL_VARIANT: "side_b"}, {CONF_PROTOCOL_VARIANT: "side_b"}, id="side b"
+        ),
+        pytest.param(
+            {CONF_MOTOR_COUNT: 4, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: False},
+            {
+                CONF_PROTOCOL_VARIANT: "both",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+            id="settings the app layout decides",
+        ),
+    ],
+)
+def test_schema_5_9_saves_an_sbi_bed_as_the_qplus_app(stored: dict, expected: dict) -> None:
+    from custom_components.adjustable_bed import migrate_v5_9_entry
+
+    base = {CONF_ADDRESS: "AA:BB:CC:DD:EE:70", CONF_NAME: "Bed"}
+    data, options = migrate_v5_9_entry(
+        {**base, CONF_BED_TYPE: _SBI, **stored}, {}, from_version=5, from_minor_version=8
+    )
+
+    assert data.pop(CONF_PROFILE_MIGRATION)["qplus_app"] == ["data"]
+    # The H layout has the keys the sbi route sent.
+    assert data == {**base, CONF_BED_TYPE: "qplus_app", "product_type": "H", **expected}
+    assert options == {}
+
+
+def test_schema_5_9_takes_the_selection_from_the_data_a_bed_reads() -> None:
+    from custom_components.adjustable_bed import migrate_v5_9_entry
+
+    # A standalone bed never read its options, so they do not pick its selection.
+    data, options = migrate_v5_9_entry(
+        {CONF_BED_TYPE: _SBI, CONF_PROTOCOL_VARIANT: "side_a"},
+        {CONF_BED_TYPE: _SBI, CONF_PROTOCOL_VARIANT: "side_b", CONF_MOTOR_COUNT: 4},
+        from_version=5,
+        from_minor_version=8,
+    )
+    assert (data[CONF_PROTOCOL_VARIANT], data["product_type"]) == ("side_a", "H")
+    # Only the old name leaves the options.
+    assert options == {
+        CONF_BED_TYPE: "qplus_app",
+        CONF_PROTOCOL_VARIANT: "side_b",
+        CONF_MOTOR_COUNT: 4,
+    }
+
+    other = {CONF_BED_TYPE: "rondure", CONF_PROTOCOL_VARIANT: "side_a"}
+    assert migrate_v5_9_entry(other, {}, from_version=5, from_minor_version=8) == (other, {})
+
+
+def test_schema_5_9_writes_a_one_address_pair_and_what_it_restores() -> None:
+    from custom_components.adjustable_bed import migrate_v5_9_entry
+    from custom_components.adjustable_bed.const import (
+        CONF_PAIR_MODE,
+        CONF_PROFILE_REVIEW_PENDING,
+        PAIR_MODE_SINGLE_ADDRESS,
+    )
+
+    address = "AA:BB:CC:DD:EE:71"
+    original = {
+        CONF_ADDRESS: address,
+        CONF_BED_TYPE: _SBI,
+        CONF_PROFILE_REVIEW_PENDING: "sbi:auto",
+    }
+    data, _options = migrate_v5_9_entry(
+        {
+            CONF_ADDRESS: address,
+            CONF_BED_TYPE: _SBI,
+            CONF_PROTOCOL_VARIANT: "both",
+            CONF_PAIR_ID: "pair_one",
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            CONF_PROFILE_REVIEW_PENDING: "sbi:side_a|sbi:side_b",
+            CONF_PAIR_CHILDREN: [
+                {
+                    CONF_SIDE: side,
+                    CONF_ADDRESS: address,
+                    CONF_BED_TYPE: _SBI,
+                    CONF_PROTOCOL_VARIANT: selection,
+                    KEY_ORIGIN_DATA: dict(original),
+                    KEY_ORIGIN_OPTIONS: {CONF_MOTOR_COUNT: 4},
+                }
+                for side, selection in (("left", "side_a"), ("right", "side_b"))
+            ],
+        },
+        # A one-address side keeps its A or B whatever the pair's options say.
+        {CONF_PROTOCOL_VARIANT: "both"},
+        from_version=5,
+        from_minor_version=8,
+    )
+
+    assert (data[CONF_BED_TYPE], data[CONF_PROTOCOL_VARIANT], data["product_type"]) == (
+        "qplus_app",
+        "both",
+        "H",
+    )
+    left, right = data[CONF_PAIR_CHILDREN]
+    assert [(side[CONF_BED_TYPE], side[CONF_PROTOCOL_VARIANT]) for side in (left, right)] == [
+        ("qplus_app", "side_a"),
+        ("qplus_app", "side_b"),
+    ]
+    assert left[KEY_ORIGIN_DATA] == {
+        **original,
+        CONF_BED_TYPE: "qplus_app",
+        CONF_PROTOCOL_VARIANT: "both",
+        "product_type": "H",
+        CONF_PROFILE_REVIEW_PENDING: "qplus_app:both",
+    }
+    assert left[KEY_ORIGIN_OPTIONS] == {CONF_MOTOR_COUNT: 4}
+    # The open app review follows the renamed route, on the pair and its originals.
+    assert data[CONF_PROFILE_REVIEW_PENDING] == "qplus_app:side_a|qplus_app:side_b"
+    assert data[CONF_PROFILE_MIGRATION]["qplus_app"] == [
+        "data",
+        "data.left",
+        f"data.left.{KEY_ORIGIN_DATA}",
+        "data.right",
+        f"data.right.{KEY_ORIGIN_DATA}",
+    ]
+
+
+def test_schema_5_9_stores_on_each_side_what_it_ran_with() -> None:
+    """A two-address side read the pair's options; the app's settings are its own."""
+    from custom_components.adjustable_bed import migrate_v5_9_entry
+
+    shared = {CONF_PROTOCOL_VARIANT: "side_b", CONF_MOTOR_COUNT: 4}
+    data, options = migrate_v5_9_entry(
+        {
+            CONF_BED_TYPE: _SBI,
+            CONF_HAS_MASSAGE: True,
+            CONF_PAIR_ID: "pair_two",
+            CONF_PAIR_CHILDREN: [
+                {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:01"},
+                {CONF_SIDE: "right", CONF_ADDRESS: "AA:BB:CC:DD:EE:02", CONF_BED_TYPE: "rondure"},
+            ],
+        },
+        shared,
+        from_version=5,
+        from_minor_version=8,
+    )
+
+    left = effective_child_data(data, "left", options)
+    assert (left[CONF_BED_TYPE], left[CONF_PROTOCOL_VARIANT], left["product_type"]) == (
+        "qplus_app",
+        "side_b",
+        "H",
+    )
+    # The other side is another bed type: it and what it reads from the pair stay.
+    right = effective_child_data(data, "right", options)
+    assert (right[CONF_BED_TYPE], right[CONF_PROTOCOL_VARIANT]) == ("rondure", "side_b")
+    assert (right[CONF_MOTOR_COUNT], right[CONF_HAS_MASSAGE]) == (4, True)
+    assert options == shared
+
+
+async def test_schema_5_9_keeps_the_buttons_the_app_has_under_another_key(
+    hass: HomeAssistant,
+) -> None:
+    """Zero gravity, TV, the light and the massage keys keep their entity IDs."""
+    from homeassistant.helpers import entity_registry as er
+
+    sbi, other = "AA:BB:CC:DD:EE:72", "AA:BB:CC:DD:EE:73"
+    entry = _entry(
+        hass,
+        {
+            CONF_BED_TYPE: "rondure",
+            CONF_PAIR_ID: "pair_mixed",
+            CONF_PAIR_CHILDREN: [
+                {CONF_SIDE: "left", CONF_ADDRESS: sbi, CONF_BED_TYPE: _SBI},
+                {CONF_SIDE: "right", CONF_ADDRESS: other},
+            ],
+        },
+        version=5,
+        minor_version=8,
+    )
+    registry = er.async_get(hass)
+
+    def row(domain: str, address: str, key: str):
+        return registry.async_get_or_create(domain, DOMAIN, f"{address}_{key}", config_entry=entry)
+
+    renamed = {
+        new: row("button", sbi, old)
+        for old, new in (
+            ("preset_zero_g", "zero_g"),
+            ("preset_tv", "tv"),
+            ("toggle_light", "light"),
+            ("massage_head_up", "massage_head"),
+            ("massage_foot_up", "massage_foot"),
+        )
+    }
+    # The same command under a wrong name, or no app command at all.
+    kept = [row("button", sbi, key) for key in ("preset_memory_1", "preset_memory_2")]
+    kept += [row("cover", sbi, "tilt"), row("button", other, "preset_zero_g")]
+    stale = row("button", sbi, "zero_g")
+
+    await async_migrate_entry(hass, entry)
+
+    for key, old in renamed.items():
+        assert registry.async_get(old.entity_id).unique_id == f"{sbi}_{key}"
+    for old in kept:
+        assert registry.async_get(old.entity_id).unique_id == old.unique_id
+    # The entity that was in use keeps its ID over a leftover row.
+    assert registry.async_get(stale.entity_id) is None
+
+
+async def test_a_5_8_sbi_one_address_pair_loads_as_the_qplus_app_and_keeps_its_sides(
+    hass: HomeAssistant,
+    mock_bleak_client,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+) -> None:
+    """Left still sends A, right B and the pair Both, and renamed buttons keep their IDs."""
+    from homeassistant.config_entries import ConfigEntryState
+    from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.beds.keeson.layout_app import FFE4, FFE9
+    from custom_components.adjustable_bed.beds.qplus_app import QPlusAppController
+    from custom_components.adjustable_bed.const import (
+        CONF_PAIR_MEMBER_ADDRESSES,
+        CONF_PAIR_MODE,
+        PAIR_MODE_SINGLE_ADDRESS,
+    )
+    from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
+    from custom_components.adjustable_bed.runtime_data import loaded_runtime
+
+    class Gatt:
+        def __init__(self, **fields) -> None:
+            self.__dict__.update(fields)
+
+    write = Gatt(uuid=FFE9, properties=("write",), handle=1, descriptors=[])
+    notify = Gatt(uuid=FFE4, properties=("notify",), handle=2, descriptors=[])
+    mock_bleak_client.services = [Gatt(uuid="ffe5", characteristics=[write, notify])]
+
+    address = "AA:BB:CC:DD:EE:FF"
+    single = {CONF_ADDRESS: address, CONF_NAME: "Bed", CONF_BED_TYPE: _SBI, CONF_MOTOR_COUNT: 4}
+    entry = _entry(
+        hass,
+        {
+            **single,
+            CONF_PAIR_ID: "pair_one",
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            CONF_PAIR_MEMBER_ADDRESSES: [address],
+            CONF_PAIR_CHILDREN: [
+                {**single, CONF_SIDE: side, CONF_PROTOCOL_VARIANT: selection}
+                for side, selection in (("left", "side_a"), ("right", "side_b"))
+            ],
+        },
+        version=5,
+        minor_version=8,
+    )
+    hass.config_entries.async_update_entry(entry, unique_id=address)
+    registry = er.async_get(hass)
+    kept = {
+        new: registry.async_get_or_create("button", DOMAIN, f"{address}_{old}", config_entry=entry)
+        for old, new in (
+            ("preset_zero_g_left", "zero_g_left"),
+            ("preset_tv_right", "tv_right"),
+            ("toggle_light_left", "light_left"),
+            ("preset_flat_both", "preset_flat_both"),
+        )
+    }
+    gone = [
+        registry.async_get_or_create(domain, DOMAIN, f"{address}_{key}", config_entry=entry)
+        for domain, key in (
+            ("cover", "tilt_left"),
+            ("cover", "head_right"),
+            ("button", "preset_memory_1_left"),
+            ("button", "preset_zero_g_both"),
+        )
+    ]
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert (entry.version, entry.minor_version) == (5, 9)
+    assert entry.data[CONF_PROFILE_ID] == "qplus_app:both"
+    runtime = loaded_runtime(hass, entry.entry_id)
+    assert isinstance(runtime, SingleAddressPairedCoordinator)
+    assert type(runtime.children["left"].controller) is QPlusAppController
+    for key, row in kept.items():
+        assert registry.async_get(row.entity_id).unique_id == f"{address}_{key}"
+        assert hass.states.get(row.entity_id) is not None
+    # Controls without an app key of the same meaning go once the bed has loaded.
+    assert [registry.async_get(row.entity_id) for row in gone] == [None] * len(gone)
+
+    sent = []
+    for side in ("left", "right", "both"):
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await runtime.async_stop_command(side=side)
+        sent.append(mock_bleak_client.write_gatt_char.await_args.args[1].hex())
+    assert sent == ["e6fe16000000000104", "e6fe16000000000203", "e5fe160000000006"]

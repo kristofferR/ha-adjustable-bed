@@ -75,7 +75,7 @@ def test_routes_are_the_familys_own_and_exclude_its_apps():
     assert _setup_routes(const.BED_TYPE_SVANE) == {}
     assert _setup_routes(const.BED_TYPE_DOUBLESLEEP) == {}
     # A bed type that accepts its automatic route lists it first.
-    assert list(_setup_routes(const.BED_TYPE_SBI))[0] == const.VARIANT_AUTO
+    assert list(_setup_routes(const.BED_TYPE_RONDURE))[0] == const.VARIANT_AUTO
     assert const.OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(_setup_routes(const.BED_TYPE_OKIN_DOT))
 
 

@@ -127,6 +127,22 @@ def test_qplus_p1_side_vectors(side, expected):
 
 
 @pytest.mark.parametrize(
+    "bound,expected",
+    [
+        ("left", "e6fe16010000000103"),
+        ("right", "e6fe16010000000202"),
+        ("both", "e5fe160100000005"),
+    ],
+)
+def test_qplus_one_address_pair_side_picks_the_selector(bound, expected):
+    """A pair's left side sends A and its right side B, whatever the bed's own selection."""
+    ctrl = AppController(coordinator(), app_profile("qplus_app", "H"), side="side_b")
+    with ctrl.side_scope(bound):
+        assert ctrl._frame(1).hex() == expected
+    assert ctrl._frame(1).hex() == "e6fe16010000000202"
+
+
+@pytest.mark.parametrize(
     "mask,expected",
     [
         (0x8000, "040200008000"),

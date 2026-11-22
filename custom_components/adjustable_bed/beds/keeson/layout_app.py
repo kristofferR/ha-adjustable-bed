@@ -52,6 +52,8 @@ NUS_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 _CARD_RELEASE_DELAY_MS = 0
 # Q-Plus P1's A/B/Both selector: Both is the eight-byte E5 frame.
 _SIDE_BYTES = {"side_a": 1, "side_b": 2}
+# The selector each side of a one-address Q-Plus pair sends.
+_PAIR_SELECTORS = {"left": "side_a", "right": "side_b", "both": "both"}
 
 
 def name_frame(name: str, *, max_units: int = 15) -> bytes:
@@ -170,7 +172,8 @@ class AppController(ProfileExecution[AppProfile], BedController):
 
     @property
     def supports_single_address_pairing(self) -> bool:
-        return False
+        # Only Q-Plus P1 frames carry a selector for the two halves of one receiver.
+        return self._qplus and not self._mx
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -448,10 +451,13 @@ class AppController(ProfileExecution[AppProfile], BedController):
             # The sparse source builder is private; it grants no arbitrary-mask API.
             return codec.p2(mask if mask in self.profile.p2_keys else codec.RELEASE)
         mask &= 0xFFFFFFFF  # The K1 builders cast their long key to its low 32 bits.
-        # Only Q-Plus P1 has an accepted A/B/Both wire selector. It is not a
-        # guessed physical left/right identity and never follows command_side.
-        if self._qplus and self._side != "both":
-            return codec.frame(mask, header=0xE6, side=_SIDE_BYTES.get(self._side, 0))
+        # Only Q-Plus P1 has an accepted A/B/Both wire selector. The app gives A
+        # and B no physical side; a one-address pair sends A for its left side
+        # and B for its right.
+        if self._qplus:
+            side = _PAIR_SELECTORS.get(self.command_side or "", self._side)
+            if side != "both":
+                return codec.frame(mask, header=0xE6, side=_SIDE_BYTES.get(side, 0))
         return codec.frame(mask)
 
     async def _release(self) -> None:

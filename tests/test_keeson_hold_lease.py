@@ -43,9 +43,7 @@ CASES: dict[str, tuple[int, tuple[str, ...]]] = {
     "keeson:adjustable_lite": (300, ()),
     # Direct P2 remotes end by refresh cessation, then poll status three times.
     "keeson:ksbt": (100, ("00b0",) * 3),
-    # SBI and Cool Base refresh at the entry's pulse delay, as they always have.
-    "sbi": (100, (ZERO,)),
-    "sbi:side_a": (100, ("e6fe16000000000104",)),
+    # Cool Base refreshes at the entry's pulse delay, as it always has.
     "coolbase": (100, (ZERO,)),
     "bf": (200, (ZERO,)),
     "cherish": (200, (ZERO,)),
@@ -55,6 +53,7 @@ CASES: dict[str, tuple[int, tuple[str, ...]]] = {
     "adjustamattress:P1_L2": (200, (E6_ZERO,)),
     "tempur_curve": (100, (ZERO,)),
     "qplus_app": (100, (ZERO,)),
+    "qplus_app:side_a": (100, ("e6fe16000000000104",)),
     "serta_mp_remote": (100, (ZERO,)),
     "omazz_adjusto_iii": (100, (ZERO,)),
     "ergomotion_app": (100, (ZERO,)),

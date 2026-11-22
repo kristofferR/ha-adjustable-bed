@@ -1364,7 +1364,6 @@ def default_scenario(bed_type: str) -> Scenario:
             entry_data={const.CONF_PROTOCOL_VARIANT: "A1"}, layout_id="sonicsleep:Nordic")
     variant: str | None = {
         const.BED_TYPE_LEGGETT_PLATT: const.LEGGETT_VARIANT_OKIN,
-        const.BED_TYPE_SBI: const.SBI_VARIANT_BOTH,
         const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
         const.BED_TYPE_CASPER_BASE: "casperpro",
         const.BED_TYPE_HUSH_BASE: "hushl400",
@@ -1557,7 +1556,7 @@ VARIANT_ROUTES: dict[str, str] = {
     "okin_64bit": "OKIN_64BIT_VARIANTS",
     "okin_dot": "OKIN_DOT_VARIANTS",
     "simmons": "SIMMONS_VARIANTS",
-    "sbi": "SBI_VARIANTS",
+    "qplus_app": "QPLUS_VARIANTS",
     "rondure": "RONDURE_VARIANTS",
     "remacro": "REMACRO_VARIANTS",
     "sleepys_box25": "SLEEPYS_BOX25_VARIANTS",
@@ -1781,6 +1780,9 @@ def route_scenarios() -> list[Scenario]:
                 layout_id=const.BED_TYPE_JALON_BED,
             )
         )
+    # The Q-Plus layout with every key the sbi route sent; schema 5.9 moves those beds to it.
+    scenarios.append(Scenario(id="qplus_app:H", bed_type="qplus_app", layout_id="qplus_app",
+        entry_data={const.CONF_PRODUCT_TYPE: "H"}))
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))
     scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))

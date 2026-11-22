@@ -281,7 +281,7 @@ feedback or change which commands a bed supports.
 A form shows only the settings the bed uses. **Massage controls** is left
 out for beds with no massage commands or that turn massage on themselves; the
 maximum angles are left out where the frame's travel is fixed (for example
-Paramount, Serta MP Remote, SBI and BedJet); a motor count with only one
+Paramount, Serta MP Remote and BedJet); a motor count with only one
 choice is left out; **Movement per tap** is left out for beds that never
 repeat a tap; and **Bluetooth connection** is left out for beds that
 must stay connected (DoubleSleep, GM Sleep, Okin RF Eco BT, Richmat sleep
@@ -463,7 +463,7 @@ and Reconfigure's bed-type list keeps them by name.
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
 | [Okin CST](beds/okin-nframe.md#okin-cst) | The Rize and Support products, asked by app name in the Okin question |
 | [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Automatic, StarCode or Legacy CB25, under **Advanced** after the Sleepy's question |
-| [SBI](beds/keeson.md#protocol-variants) / [Rondure](beds/keeson.md#side-selection-split-king) | Both, Side A, Side B |
+| [Rondure](beds/keeson.md#side-selection-split-king) | Both, Side A, Side B |
 | [Okin DOT](beds/okin-nframe.md#okin-dot) / [Okin 64-bit](beds/okin-nframe.md#okin-64-bit) | The handset or connection type |
 
 ### Keeson Models
@@ -792,7 +792,7 @@ Increase **Movement per tap**. Start with +10 and test.
 ## Single-Address Left / Right Controls
 
 Some split beds reach both sides through one Bluetooth address, for example
-SBI, Rondure, SmartBed CB24AB receivers, Sleep Number Fuzion and some Keeson,
+Q-Plus, Rondure, SmartBed CB24AB receivers, Sleep Number Fuzion and some Keeson,
 Ergomotion 4.0, Kaidi, CheersSleep, Symphony and Ultramatic beds. If the bed's
 **Configure** menu offers **Add Left, Right and Both controls**, choose it to
 get the same Left, Right and Both controls as two combined beds.

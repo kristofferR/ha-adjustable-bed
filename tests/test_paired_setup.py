@@ -45,8 +45,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SBI,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
@@ -74,6 +74,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
     CONF_PREFERRED_ADAPTER,
+    CONF_PRODUCT_TYPE,
     CONF_PROFILE_ID,
     CONF_PROFILE_MIGRATION,
     CONF_PROTOCOL_VARIANT,
@@ -99,7 +100,7 @@ from custom_components.adjustable_bed.const import (
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
-    SBI_VARIANT_BOTH,
+    QPLUS_VARIANT_BOTH,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
@@ -426,21 +427,30 @@ class TestPairedSetup:
         enable_custom_integrations,
     ):
         """Phase 3 keeps the entry/MAC and reversibly adds logical side entities."""
+        from custom_components.adjustable_bed.beds.keeson.layout_app import FFE4, FFE9
+
+        class Gatt:
+            def __init__(self, **fields) -> None:
+                self.__dict__.update(fields)
+
+        write = Gatt(uuid=FFE9, properties=("write",), handle=1, descriptors=[])
+        notify = Gatt(uuid=FFE4, properties=("notify",), handle=2, descriptors=[])
+        mock_bleak_client.services = [Gatt(uuid="ffe5", characteristics=[write, notify])]
         original_data = {
             CONF_ADDRESS: LEFT_ADDR,
-            CONF_NAME: "SBI One Address",
-            CONF_BED_TYPE: BED_TYPE_SBI,
-            CONF_PROTOCOL_VARIANT: SBI_VARIANT_BOTH,
-            CONF_MOTOR_COUNT: 4,
-            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_NAME: "Q-Plus One Address",
+            CONF_BED_TYPE: BED_TYPE_QPLUS_APP,
+            CONF_PRODUCT_TYPE: "H",
+            CONF_PROTOCOL_VARIANT: QPLUS_VARIANT_BOTH,
+            CONF_MOTOR_COUNT: 2,
             CONF_PREFERRED_ADAPTER: "auto",
         }
         entry = MockConfigEntry(
             domain=DOMAIN,
-            title="SBI One Address",
+            title="Q-Plus One Address",
             data=original_data,
             unique_id=LEFT_ADDR,
-            entry_id="single_address_sbi",
+            entry_id="single_address_qplus",
             version=4,
         )
         entry.add_to_hass(hass)
@@ -459,7 +469,7 @@ class TestPairedSetup:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         await hass.async_block_till_done()
 
-        assert entry.entry_id == "single_address_sbi"
+        assert entry.entry_id == "single_address_qplus"
         assert entry.unique_id == LEFT_ADDR
         assert entry.data[CONF_PAIR_MODE] == PAIR_MODE_SINGLE_ADDRESS
         paired = hass.data[DOMAIN][entry.entry_id]
@@ -471,8 +481,8 @@ class TestPairedSetup:
 
         diagnostics = await async_get_config_entry_diagnostics(hass, entry)
         assert {side: data["profile_id"] for side, data in diagnostics["sides"].items()} == {
-            "left": "sbi:side_a",
-            "right": "sbi:side_b",
+            "left": "qplus_app:side_a",
+            "right": "qplus_app:side_b",
         }
         observers = list(_watches(hass).values())
         assert len(observers) == 1

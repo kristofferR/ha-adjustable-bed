@@ -44,6 +44,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OCTO,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_ELITE_APP,
@@ -67,6 +68,7 @@ from .const import (
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
+    CONF_PRODUCT_TYPE,
     CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
@@ -82,6 +84,9 @@ from .const import (
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
+    QPLUS_VARIANT_BOTH,
+    QPLUS_VARIANT_SIDE_A,
+    QPLUS_VARIANT_SIDE_B,
     RETIRED_BED_TYPES,
     RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
@@ -1006,6 +1011,169 @@ def migrate_v5_8_entry(
     return new_data, new_options
 
 
+# The bed type Q-Plus app beds were saved under before schema 5.9.
+_SBI: Final = "sbi"
+# The app layout whose keys that route sent: all four motors, the light, the
+# massage modes and TV on the key the route called TV.
+_SBI_LAYOUT: Final = "H"
+
+
+def _qplus_selection(view: Mapping[str, Any]) -> str:
+    """Return the bed selection an sbi route sent: anything but a side was Both."""
+    variant = view.get(CONF_PROTOCOL_VARIANT)
+    return variant if variant in (QPLUS_VARIANT_SIDE_A, QPLUS_VARIANT_SIDE_B) else QPLUS_VARIANT_BOTH
+
+
+def _as_qplus(own: Mapping[str, Any], selection: str) -> dict[str, Any]:
+    """Return a bed's own sbi settings as the Q-Plus app route stores them."""
+    new = {
+        **own,
+        CONF_BED_TYPE: BED_TYPE_QPLUS_APP,
+        CONF_PROTOCOL_VARIANT: selection,
+        CONF_PRODUCT_TYPE: _SBI_LAYOUT,
+    }
+    # The app's layout decides the controls, and the app shows no position.
+    for key, value in (
+        (CONF_MOTOR_COUNT, 2),
+        (CONF_HAS_MASSAGE, False),
+        (CONF_DISABLE_ANGLE_SENSING, True),
+        (CONF_MOTOR_PULSE_USER_SET, False),
+    ):
+        if key in new:
+            new[key] = value
+    return new
+
+
+def _sbi_renamed(shared: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a shared layer with only its sbi bed type renamed.
+
+    A pair's options, a two-address pair's own data and an original's options
+    hold values a bed of another type may still read, so they stay as they are.
+    """
+    if shared.get(CONF_BED_TYPE) != _SBI:
+        return dict(shared)
+    return {**shared, CONF_BED_TYPE: BED_TYPE_QPLUS_APP}
+
+
+def migrate_v5_9_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with every sbi route saved as the Q-Plus app.
+
+    A bed keeps the bed selection it sent (Both, A or B) and takes the app's H
+    layout, the one with the keys the sbi route sent. A bed reads its own data,
+    so that decides its selection. A side of a one-address pair keeps the A or B
+    pairing gave it. A two-address side also read the pair's data and options;
+    it now stores the selection it ran with, since the app's settings belong to
+    each side. The original entries a pair restores on unpair are written too,
+    and an open or kept app review follows the renamed route. The migration
+    record lists each place under ``qplus_app``. Any other entry is returned
+    unchanged.
+    """
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    moved: list[str] = []
+    single = data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
+    children = data.get(CONF_PAIR_CHILDREN)
+
+    def bed(own: Mapping[str, Any], location: str) -> dict[str, Any]:
+        """Return a bed's own data: a standalone entry, a one-address pair or an original."""
+        if own.get(CONF_BED_TYPE) != _SBI:
+            return dict(own)
+        moved.append(location)
+        return _as_qplus(own, _qplus_selection(own))
+
+    if isinstance(children, list) and not single:
+        new_data = _sbi_renamed(data)
+        if new_data != dict(data):
+            moved.append("data")
+    else:
+        new_data = bed(data, "data")
+    if isinstance(children, list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            view = effective_child_data(data, side, options)
+            if view.get(CONF_BED_TYPE) == _SBI:
+                child = _as_qplus(child, _qplus_selection(child if single else view))
+                moved.append(f"data.{side}")
+            origin = child.get(KEY_ORIGIN_DATA)
+            if isinstance(origin, Mapping) and origin.get(CONF_BED_TYPE) == _SBI:
+                restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+                if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                    child[KEY_ORIGIN_OPTIONS] = _sbi_renamed(origin_options)
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if not moved:
+        return new_data, dict(options)
+    carry_profile_review_to_renamed_route(data, new_data)
+    _with_migration_record(
+        new_data,
+        from_version=from_version,
+        from_minor_version=from_minor_version,
+        qplus_app=moved,
+    )
+    return new_data, _sbi_renamed(options)
+
+
+# The sbi route's buttons the Q-Plus app's H layout has under another key, with
+# the same command and the same meaning. Unique ids are
+# ``<address>_<key>[_<side>]``.
+_V5_9_BUTTON_KEYS: Final = {
+    "preset_zero_g": "zero_g",
+    "preset_tv": "tv",
+    "toggle_light": "light",
+    "massage_head_up": "massage_head",
+    "massage_foot_up": "massage_foot",
+}
+
+
+@callback
+def _async_migrate_v5_9_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Keep the entity IDs of the sbi buttons the Q-Plus app names differently.
+
+    Only the beds this step moves are touched: another bed type on the other
+    side of a pair keeps its rows. Every other sbi control has no app control
+    with the same command and meaning, and goes when the bed next loads.
+    """
+    data = entry.data
+    beds = [data] if data.get(CONF_BED_TYPE) == _SBI else []
+    beds += [
+        view
+        for side in PAIR_SIDES
+        if get_child(data, side) is not None
+        and (view := effective_child_data(data, side, entry.options)).get(CONF_BED_TYPE) == _SBI
+    ]
+    addresses = {
+        address.upper() for bed in beds if isinstance(address := bed.get(CONF_ADDRESS), str)
+    }
+    keys = {
+        f"{old}{suffix}": f"{new}{suffix}"
+        for old, new in _V5_9_BUTTON_KEYS.items()
+        for suffix in ("", *(f"_{side}" for side in PAIR_SIDES))
+    }
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        address, _, key = entity.unique_id.partition("_")
+        if entity.domain != "button" or address not in addresses or key not in keys:
+            continue
+        unique_id = f"{address}_{keys[key]}"
+        duplicate = registry.async_get_entity_id("button", DOMAIN, unique_id)
+        if duplicate is not None:
+            registry.async_remove(duplicate)
+        registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -1263,6 +1431,24 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         renamed = data != dict(entry.data)
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=8
+        )
+        if renamed:
+            _async_sync_profile_ids(hass, entry)
+
+    if entry.version == 5 and entry.minor_version < 9:
+        # v5.8 -> v5.9: a bed on the sbi route becomes a Q-Plus app bed, the one
+        # bed type for that app, with the bed selection it sent before. Buttons
+        # the app has under another key keep their entity IDs.
+        data, options = migrate_v5_9_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        if renamed := data != dict(entry.data):
+            _async_migrate_v5_9_entities(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=9
         )
         if renamed:
             _async_sync_profile_ids(hass, entry)

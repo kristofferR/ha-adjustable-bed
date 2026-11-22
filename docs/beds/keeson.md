@@ -232,7 +232,6 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | Scott Living | bed type `scott_living` | K1 `E6`, little-endian, side `01` | app controller | app controller | app controller | no |
 | AdjustaMattress P1 | bed type `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
 | AdjustaMattress P2 | bed type `adjustamattress`, model P2 | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
-| SBI | bed type `sbi` | K1 `E5`, little-endian | app controller | app controller | app controller | renewable lease |
 | Rondure | bed type `rondure` | K1 `E5`, little-endian | app controller | app controller | app controller | no |
 | Cool Base | bed type `coolbase` | K1 `E5`, little-endian | app controller | app controller | app controller | renewable lease |
 | BF | bed type `bf` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
@@ -302,8 +301,8 @@ Comfort Enhancements, ComfortBaseForBluetooth, ComfortFurniture, Cool Base,
 Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA, OkinComfortBed II P1,
 OkinComfortBed II P2, OkinComfortBed II P3, OkinComfortBed Ⅱ (Jalon), Malouf
 legacy OKIN, MaxCoil Una, OKIN Comfort Bed, OKIN-Seating, ORE Ultramatic, Rondure,
-SBI, Scott Living, Simon Li, Sleepy's BOX15, アシステック P1, アシステック P2 keep their key
-tables with their app controllers; see their sections.
+Scott Living, Simon Li, Sleepy's BOX15, アシステック P1, アシステック P2 keep their key tables
+with their app controllers; see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -428,7 +427,7 @@ family's codec exists.
 |---|---|---|---|
 | K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | OkinComfortBed II P1, OkinComfortBed II P2, Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1, ComfortBaseForBluetooth, OkinComfortBed Ⅱ (Jalon), アシステック P1, BetterLiving2 P2, 2 motors, BetterLiving2 P2, 3 motors |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3, アシステック P2 |
-| K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, SBI, Rondure, Cool Base |
+| K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
 | K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, ComfortFurniture, ORE Ultramatic, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements, BetterLiving2 P1, 2 motors, BetterLiving2 P1, 3 motors |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
@@ -569,8 +568,8 @@ cancellable refresh: their apps have no release frame, and inventing one would b
 unsafe.
 
 A renewable hold refreshes the app's held key at the app's interval until the
-lease ends or a STOP arrives, up to 30 s, then runs the same release. SBI and Cool
-Base keep refreshing at the entry's repeat interval, as their finite holds do.
+lease ends or a STOP arrives, up to 30 s, then runs the same release. Cool Base
+keeps refreshing at the entry's repeat interval, as its finite holds do.
 Adjustable Lite, Ergomotion Sync (KSBT03C) and the direct KSBT remotes end a hold
 only by ending the refresh, as their apps do; whether the hardware stops on its
 own is unverified. A lease never holds a Simon Li memory key, which saves the slot
@@ -1648,8 +1647,8 @@ equivalence between apps.
   as `product_type`). A layout is a UI choice, not proof of motor count or model.
 - Each side of a two-address pair keeps its own app settings. Target the native
   child device, or the paired action's `side`; conflicting child and side
-  requests are rejected. There is no one-address pairing or left/right
-  mapping.
+  requests are rejected. Only Q-Plus offers one address as left and right
+  sides, on its H, M1, M2 and M3 layouts.
 
 ##### Home Assistant setup
 
@@ -1668,8 +1667,9 @@ physical motor count. The pulse count bounds a normal held-action button press;
 it does not change the source 100 ms refresh interval. Serta's local angle-edit
 controls instead change one degree every 200 ms and send only on release.
 
-Q-Plus's **Both/Side A/Side B** setting controls its P1 packet selector. It is
-independent of a Home Assistant paired Left/Right target. MX Memory1 is an
+Q-Plus's **Both/Side A/Side B** setting controls its P1 packet selector. When
+one address is shown as left and right sides, the left side sends A, the right
+side B and the pair Both, whatever that setting says. MX Memory1 is an
 opaque app-labelled action, with no invented physical save/recall meaning.
 Serta MP's four configurable local head/foot memory targets are likewise
 separate from the remote M4 key and from physical memory programming.
@@ -1680,7 +1680,8 @@ each declared app layout, Q-Plus A/B/Both wire selector and Serta local targets
 through reload; unrelated settings from a previous protocol are removed.
 Shared options do not overwrite side-owned settings. Native child-device
 targeting and side conflicts follow the existing
-paired rules. No guessed single-address physical side mapping is added.
+paired rules. Only Q-Plus has a one-address left and right mapping; the app
+itself gives A and B no physical side.
 
 All eight profiles require both current-session write and notification roles.
 The seven profiles without position feedback keep angle sensing disabled and
@@ -1844,14 +1845,21 @@ Bed type `tempur_curve`, one layout. Shared behavior is in the
 
 **Status:** Not yet tested
 
-Bed type `qplus_app`. The generic `sbi` bed type is a separate route over the
-same frame.
+Bed type `qplus_app`, for Q-Plus and SBI (South Bay International) bases sold
+through Costco. Not detected automatically: these beds share their service
+UUIDs with other Keeson beds, so choose the app during setup.
 
 #### Setup
 
 **Q-Plus bed selection** (Both, Side A or Side B, stored as `protocol_variant`
-`both`, `side_a` or `side_b`) is the app's wire selector, not a paired Left/Right
-target. P1 layouts (H, M1, M2, M3) send it; MX ignores it.
+`both`, `side_a` or `side_b`) is the app's wire selector. P1 layouts (H, M1, M2,
+M3) send it; MX ignores it.
+
+A split bed on one address can get left and right sides on the P1 layouts:
+choose **Add Left, Right and Both controls** in **Configure**. The left side
+sends Side A, the right side Side B, and the pair's own Flat, Stop and movement
+buttons send Both. The app gives A and B no physical side, so check which half
+each one moves. Every other button is on each side only.
 
 <!-- generated:keeson-qplus-sides -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -1867,6 +1875,42 @@ MX keys the sparse builder accepts (any other key is sent as zero): `0x1`, `0x2`
 `0x8000`, `0x10000`, `0x20000`, `0x800000`, `0x1000000`, `0x2000000`, `0x4000000`,
 `0x8000000`, `0x40000000`.
 <!-- /generated -->
+
+#### Beds set up as SBI/Q-Plus
+
+Earlier versions saved these beds as the SBI/Q-Plus bed type. Upgrading moves
+each one to this bed type:
+
+- **Bed selection** stays: Both, Side A or Side B. A bed shown as left and
+  right on one address keeps its sides, with left on A and right on B.
+- **Layout** becomes H, the app layout with the keys that bed type sent: four
+  motors, the light, the massage modes and TV. If the app shows another remote
+  for your bed, pick it in **Configure**.
+- **Back**, **Legs**, **Flat** and **Stop** are unchanged.
+- **Zero gravity**, **TV**, **Toggle light** (now **Light**) and the head and
+  foot massage up buttons send the same key and keep their entity IDs. TV is a
+  key the app holds: a press now repeats it for the pulse count, then releases.
+- **Tilt** and **Lumbar** were covers and are now up and down buttons, with the
+  same keys.
+- **Memory 2** is gone. Its key is the app's **Music** button on this layout,
+  and TV on the M2 layout. **Massage toggle** is gone too: its key is the app's
+  **Massage level** button.
+- **Memory 1** is gone: the app has that key only on the MX layout, in another
+  frame.
+- The **Head** and **Feet** covers of a three or four motor setup repeated Back
+  and Legs, the head and foot massage down buttons repeated the up buttons, and
+  the under-bed light entity repeated Toggle light. They are gone.
+- **Position feedback** is gone, with its two position sliders: the app reads
+  the bed's pulse counts but shows no position. `set_position` no longer
+  accepts these beds.
+- On a one-address pair, only Flat, Stop and the movement buttons remain on the
+  pair itself. Each side keeps its own presets, light and massage buttons.
+- New from the app: **Reading**, **Reset**, **Massage level**, the massage
+  modes, **Lumbar massage**, **Dismiss wake vibration**, the massage timer
+  sensor, rename and the alarm.
+
+The bed now writes one zero key frame when it connects, as the app does, and
+needs both its write and its notify characteristic.
 
 #### Controls
 
@@ -2281,7 +2325,6 @@ frames of other families and keep it.
 | Scott Living | `scott_living` | K1 `E6`, little-endian, side `01` | `E6 FE 16 01 00 00 00 01 03` | `E6 FE 16 00 00 00 00 01 04` | no | [Scott Living](#scott-living) |
 | AdjustaMattress P1 | `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [AdjustaMattress](#adjustamattress) |
 | AdjustaMattress P2 | `adjustamattress`, model P2 | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [AdjustaMattress](#adjustamattress) |
-| SBI | `sbi` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [SBI / Q-Plus](#sbi--q-plus-costco) |
 | Rondure | `rondure` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | no | [Rondure](#rondure) |
 | Cool Base | `coolbase` | K1 `E5`, little-endian | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [Cool Base](#cool-base) |
 | BF | `bf` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BF and Cherish](#bf-and-cherish) |
@@ -2503,184 +2546,6 @@ through `codec.frame`; that bed type is a profile of the Okin N-frame family.
 FurniMove builds its gateway
 (`E5 FE 16`), plain (`04 02`) and dot (`05 02`) frames through this codec too and
 keeps its [own guide](furnimove.md), because its handset catalog is its profile.
-
-### SBI / Q-Plus (Costco)
-
-**Status:** Not yet tested
-
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
-
-#### Known Models
-
-- Q-Plus adjustable bed bases (sold through Costco)
-- SBI (South Bay International) branded beds
-
-#### Apps
-
-| Analyzed | App | Package ID |
-|----------|-----|------------|
-| ✅ | Q-Plus | `com.sbi.costco` |
-
-#### Features
-
-| Feature | Supported |
-|---------|-----------|
-| Motor Control | ✅ (4 motors: head, foot, tilt, lumbar) |
-| Position Feedback | ✅ (head 0–60°, foot 0–32° via pulse lookup) |
-| Memory Presets | ✅ (2 slots) |
-| Factory Presets | ✅ (Flat, Zero-G, TV) |
-| Massage | ✅ (3 modes, head/foot/lumbar zones) |
-| Light Control | ✅ (toggle) |
-| Dual Bed Control | ✅ (A/B/Both modes for split-king) |
-
-#### Protocol Details
-
-**Service UUID:** Uses discovery (typically FFE5)
-**Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb`
-**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
-**Alternate (Nordic UART):** `6e400001-b5a3-f393-e0a9-e50e24dcca9e`
-**Format:** 8 or 9-byte packets with inverted sum checksum
-
-#### Detection
-
-Not detected automatically: choose it during setup.
-
-Note: SBI shares service UUIDs with Keeson and other beds. Without a unique identifier, it cannot be automatically distinguished.
-
-#### Protocol Variants
-
-SBI supports split-king (dual bed) configurations with three modes:
-
-| Variant | Format | Header | Side Byte | Description |
-|---------|--------|--------|-----------|-------------|
-| Both | 8 bytes | 0xE5 | N/A | Controls both sides simultaneously |
-| Side A | 9 bytes | 0xE6 | 0x01 | Controls left/A side only |
-| Side B | 9 bytes | 0xE6 | 0x02 | Controls right/B side only |
-
-#### Packet Format
-
-##### 8-byte format (Both mode)
-
-```text
-[0xE5, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, checksum]
-```
-
-##### 9-byte format (A/B mode)
-
-```text
-[0xE6, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, side, checksum]
-```
-
-Where:
-- Bytes 0-2 = Header
-- Bytes 3-6 = Command bytes (32-bit little-endian value)
-- Byte 7 (9-byte only) = Side selector (1=A, 2=B)
-- Last byte = Checksum: `(~sum(bytes 0 to n-1)) & 0xFF`
-
-#### Commands
-
-##### Motor Control (cmd0 byte)
-
-| Action | Value | Notes |
-|--------|-------|-------|
-| Head Up | 0x01 | Hold to move |
-| Head Down | 0x02 | Hold to move |
-| Foot Up | 0x04 | Hold to move |
-| Foot Down | 0x08 | Hold to move |
-| Tilt Up | 0x10 | Hold to move |
-| Tilt Down | 0x20 | Hold to move |
-| Lumbar Up | 0x40 | Hold to move |
-| Lumbar Down | 0x80 | Hold to move |
-| Stop | 0x00 | All zeros |
-
-##### Preset Commands
-
-| Action | Full Value | cmd bytes |
-|--------|------------|-----------|
-| Flat | 0x08000000 | cmd3=0x08 |
-| Zero-G | 0x00001000 | cmd1=0x10 |
-| Reset | 0x08001000 | cmd1=0x10, cmd3=0x08 |
-| Memory 1 | 0x00002000 | cmd1=0x20 |
-| Memory 2 | 0x00004000 | cmd1=0x40 |
-| TV | 0x00008000 | cmd1=0x80 |
-
-##### Light Command
-
-| Action | Full Value | cmd bytes |
-|--------|------------|-----------|
-| Light Toggle | 0x00020000 | cmd2=0x02 |
-
-##### Massage Commands
-
-| Action | Full Value | cmd bytes |
-|--------|------------|-----------|
-| Massage Level | 0x00000100 | cmd1=0x01 |
-| Foot Massage | 0x00000400 | cmd1=0x04 |
-| Head Massage | 0x00000800 | cmd1=0x08 |
-| Mode 1 | 0x00100000 | cmd2=0x10 |
-| Mode 2 | 0x00200000 | cmd2=0x20 |
-| Mode 3 | 0x00080000 | cmd2=0x08 |
-| Lumbar Massage | 0x00400000 | cmd2=0x40 |
-
-#### Position Feedback
-
-**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
-
-Notifications are 16+ byte packets. Position data is extracted from:
-- **Bytes 3-4:** Head pulse count (little-endian 16-bit)
-- **Bytes 5-6:** Foot pulse count (little-endian 16-bit)
-
-Pulse values are converted to angles via calibrated lookup tables from the APK.
-
-##### Head Angle (0-60 degrees)
-
-Pulse values map to angles using a 61-entry lookup table:
-
-```
-[0, 327, 577, 855, 1148, 1676, 2083, 2401, 2711, 3020, 3402, 3679, 4019, 4529,
- 4864, 5262, 5633, 6024, 6453, 6826, 7239, 7611, 8015, 8423, 8862, 9240, 9632,
- 10029, 10404, 10840, 11245, 11640, 11976, 12351, 12752, 13106, 13511, 13819,
- 14169, 14518, 14901, 15217, 15556, 15856, 16177, 16530, 16788, 17118, 17389,
- 17700, 18000, 18268, 18481, 18767, 19035, 19260, 19487, 19757, 19970, 20164, 20413]
-```
-
-##### Foot Angle (0-32 degrees)
-
-Pulse values map to angles using a 33-entry lookup table:
-
-```
-[0, 570, 784, 968, 1150, 1372, 1653, 1837, 2062, 2283, 2494, 2755, 3015, 3290,
- 3578, 3819, 4039, 4261, 4544, 4895, 5170, 5461, 5723, 6020, 6334, 6631, 6922,
- 7243, 7546, 7810, 8174, 8546, 8718]
-```
-
-##### Pulse Inversion
-
-Pulse values >= 32768 are inverted: `pulse = 65535 - pulse`
-
-#### Command Timing
-
-| Operation | Repeat Count | Delay | Notes |
-|-----------|-------------|-------|-------|
-| Motor movement | 10 | 100ms | Continuous while held |
-| Presets | 1 | - | Single command |
-| Massage toggle | 1 | - | Single command |
-| Light toggle | 1 | - | Single command |
-| Stop | 1 | - | Always sent after movement |
-
-#### Notes
-
-1. SBI beds are sold through Costco under the Q-Plus brand name.
-
-2. The app supports both BLE and Classic Bluetooth connections. This integration uses BLE only.
-
-3. Split-king beds use the A/B/Both variant modes. Configure the appropriate variant during setup.
-
-4. Position feedback needs **Read bed position** turned on in Configure.
-
-5. The app includes additional features (weather, alarms, sleep tracking) that are not relevant to bed control.
-
-6. Multiple remote layouts are supported in the app (H, M, M2, M3, MX) with varying button counts.
 
 ### Rondure
 

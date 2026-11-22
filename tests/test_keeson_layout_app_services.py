@@ -173,7 +173,8 @@ async def test_factory_builds_exact_app_profile_lazily(hass, app, layout):
     assert ctrl.profile.app == APP_NAMES[app]
     assert ctrl.profile.layout == layout
     assert ctrl.requires_notification_channel
-    assert not ctrl.supports_single_address_pairing
+    # Only Q-Plus P1 frames carry a selector for the two halves of one receiver.
+    assert ctrl.supports_single_address_pairing is (app == "qplus_app" and layout != "MX")
     assert ctrl.supports_memory_presets is (app == "serta_mp_remote")
 
 

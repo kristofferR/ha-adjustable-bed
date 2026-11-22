@@ -72,7 +72,6 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
-    BED_TYPE_SBI,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_ELITE_APP,
@@ -1010,8 +1009,7 @@ def _position_config(
         bool(specs)
         and all(spec.native_unit_of_measurement == POSITION_UNIT_PERCENT for spec in specs)
     )
-    # SBI reports back/legs only, within its pulse tables.
-    if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_SBI) or (
+    if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE) or (
         supports_direct_position_control and percentage_targets
     ):
         motor_configs = {

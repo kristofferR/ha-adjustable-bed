@@ -51,11 +51,11 @@ from .const import (
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIMIKI,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_RICHMAT_APP,
     BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RIZE,
     BED_TYPE_RONDURE,
-    BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOMOS,
     BED_TYPE_SYMPHONY,
@@ -95,11 +95,11 @@ from .const import (
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
+    QPLUS_VARIANT_SIDE_A,
+    QPLUS_VARIANT_SIDE_B,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
     RUNTIME_BOND_KEYS,
-    SBI_VARIANT_SIDE_A,
-    SBI_VARIANT_SIDE_B,
     SIDE_LEFT,
     SIDE_RIGHT,
     SLEEP_NUMBER_VARIANT_LEFT,
@@ -218,7 +218,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_KEESON,
-        BED_TYPE_SBI,
+        BED_TYPE_QPLUS_APP,
         BED_TYPE_RONDURE,
         "smartbed",
         BED_TYPE_SLEEP_NUMBER,
@@ -276,6 +276,9 @@ def supports_single_address_pairing(
     if bed_type == BED_TYPE_KEESON:
         # Auto can resolve to incompatible P2/JSON/OEM frames at connection.
         return protocol_variant in {"base", "ergomotion"}
+    if bed_type == BED_TYPE_QPLUS_APP:
+        # MX's P2 frames carry no A/B selector.
+        return product_type != "MX"
     if bed_type == BED_TYPE_ERGOMOTION_4:
         from .beds.ergomotion4.profiles import PRODUCTS
 
@@ -843,9 +846,9 @@ def build_single_address_pair_entry_data(
         origin_options=origin_options,
     )
 
-    if bed_type == BED_TYPE_SBI:
-        left[CONF_PROTOCOL_VARIANT] = SBI_VARIANT_SIDE_A
-        right[CONF_PROTOCOL_VARIANT] = SBI_VARIANT_SIDE_B
+    if bed_type == BED_TYPE_QPLUS_APP:
+        left[CONF_PROTOCOL_VARIANT] = QPLUS_VARIANT_SIDE_A
+        right[CONF_PROTOCOL_VARIANT] = QPLUS_VARIANT_SIDE_B
     elif bed_type == BED_TYPE_RONDURE:
         left[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_A
         right[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_B

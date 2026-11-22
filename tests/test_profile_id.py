@@ -28,7 +28,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
-    BED_TYPE_SBI,
+    BED_TYPE_RONDURE,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CONNECTION_MODE,
@@ -217,7 +217,7 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         record = migrated.pop(CONF_PROFILE_MIGRATION)
         # Only a route that gained an app in v5 is asked about it once more.
         assert migrated.pop(CONF_PROFILE_REVIEW_PENDING, None) == v5_profile_review_mark(stored)
-        assert (entry.version, entry.minor_version) == (5, 8)
+        assert (entry.version, entry.minor_version) == (5, 9)
         # Schema 5.5 stores an Octo setup's motor layout as its override.
         octo = data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
         assert migrated.pop(CONF_OCTO_MOTOR_COUNT_OVERRIDE, None) == ("auto" if octo else None)
@@ -375,14 +375,14 @@ async def test_paired_migration_gives_each_side_its_own_id(hass: HomeAssistant) 
 
 
 async def test_single_address_pair_sides_follow_their_wire_side(hass: HomeAssistant) -> None:
-    single = {CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_SBI, CONF_PROTOCOL_VARIANT: "both"}
+    single = {CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_RONDURE, CONF_PROTOCOL_VARIANT: "both"}
     data = {
         **single,
         CONF_PAIR_ID: "pair_2",
         CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
         CONF_PAIR_CHILDREN: [
-            _side("left", ADDRESS, **{CONF_BED_TYPE: BED_TYPE_SBI, CONF_PROTOCOL_VARIANT: "side_a"}),
-            _side("right", ADDRESS, **{CONF_BED_TYPE: BED_TYPE_SBI, CONF_PROTOCOL_VARIANT: "side_b"}),
+            _side("left", ADDRESS, **{CONF_BED_TYPE: BED_TYPE_RONDURE, CONF_PROTOCOL_VARIANT: "side_a"}),
+            _side("right", ADDRESS, **{CONF_BED_TYPE: BED_TYPE_RONDURE, CONF_PROTOCOL_VARIANT: "side_b"}),
         ],
     }
     entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
@@ -390,10 +390,10 @@ async def test_single_address_pair_sides_follow_their_wire_side(hass: HomeAssist
 
     await async_migrate_entry(hass, entry)
 
-    assert entry.data[CONF_PROFILE_ID] == "sbi:both"
+    assert entry.data[CONF_PROFILE_ID] == "rondure:both"
     assert [child[CONF_PROFILE_ID] for child in entry.data[CONF_PAIR_CHILDREN]] == [
-        "sbi:side_a",
-        "sbi:side_b",
+        "rondure:side_a",
+        "rondure:side_b",
     ]
 
 

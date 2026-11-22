@@ -164,6 +164,35 @@ it always ran: Okimat and Lucid remotes, DewertOkin and A H Beard beds, Nectar
 beds, and Mattress Firm 900 and iFlex beds. Entities, entity IDs, commands and
 settings stay the same. The device's manufacturer reads **Okin**.
 
+### SBI/Q-Plus beds
+
+A bed set up as **SBI/Q-Plus (Costco)** becomes a **Q-Plus Adjustable Remote
+app** bed, so one bed type covers these beds. Neither was tested on a real bed,
+so the app's own key names are used.
+
+- **Bed selection** stays: Both, Side A or Side B. A bed with Left and Right
+  controls on one address keeps them, with left on A and right on B.
+- **Layout** becomes H, the app layout with the keys that bed type sent. Pick
+  another in **Configure** if the app shows a different remote for your bed.
+- **Back**, **Legs**, **Flat** and **Stop** are unchanged. **Zero gravity**,
+  **TV**, **Toggle light** (now **Light**) and the head and foot massage up
+  buttons send the same key and keep their entity IDs. TV is now held for the
+  movement per tap, as the app holds it.
+- **Tilt** and **Lumbar** are up and down buttons instead of covers.
+- **Memory 1**, **Memory 2** and **Massage toggle** are removed. Memory 2's key
+  is the app's **Music** button and Massage toggle's is **Massage level**; the
+  app has no Memory 1 key on this layout. Check automations that press them.
+- The **Head** and **Feet** covers, the massage down buttons and the under-bed
+  light entity are removed; they repeated other controls.
+- **Position feedback** and its two position sliders are removed. The app
+  shows no position, and `set_position` no longer accepts these beds.
+- On a bed with Left and Right controls, the pair itself keeps Flat, Stop and
+  the movement buttons; presets, light and massage are on each side.
+- New controls from the app: **Reading**, **Reset**, **Massage level**, the
+  massage modes, **Lumbar massage**, the massage timer, rename and the alarm.
+
+See the [Q-Plus guide](beds/keeson.md#beds-set-up-as-sbiq-plus).
+
 Every other saved setting, bed type and ID loads unchanged.
 
 ### Setup, Configure and Reconfigure
@@ -807,7 +836,7 @@ one section per app. Links to the old file names no longer work.
 | `beds/rmcontrol.md` | [Richmat: RMControl](beds/richmat.md#rmcontrol) |
 | `beds/rondure.md` | [Keeson: Rondure](beds/keeson.md#rondure) |
 | `beds/row-control.md` | [Keeson: ROW Control](beds/keeson.md#row-control) |
-| `beds/sbi.md` | [Keeson: SBI / Q-Plus (Costco)](beds/keeson.md#sbi--q-plus-costco) |
+| `beds/sbi.md` | [Keeson: Q-Plus Adjustable Remote](beds/keeson.md#beds-set-up-as-sbiq-plus) |
 | `beds/scott-living.md` | [Keeson: Scott Living](beds/keeson.md#scott-living) |
 | `beds/serenity.md` | [Okin and DewertOkin: Jordan's Serenity](beds/okin-nframe.md#jordans-serenity) |
 | `beds/serta.md` | [Keeson: Serta](beds/keeson.md#serta) |
