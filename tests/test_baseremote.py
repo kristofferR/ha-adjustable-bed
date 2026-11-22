@@ -615,3 +615,32 @@ def test_aroma_times_are_settings_that_start_disabled():
         not s.entity_registry_enabled_default and s.entity_category is EntityCategory.CONFIG
         for s in aroma
     )
+
+
+async def test_a_nordic_connection_names_each_control_by_what_it_sends():
+    from tests.error_helpers import raises_key
+
+    framed, _ = controller("BERM", "FRAMED")
+    light = framed._light_toggle()
+    assert framed.supports_lights and framed._button(light).short == "3C"
+    listed_for_framed = next(g for g in framed._contexts() if g.node == light and not g.long)
+
+    ctrl, coordinator = controller("BERM", "RAW")
+    # Over Nordic UART this layout's light control sends the legacy "motor 1+2 up" operand.
+    assert not ctrl.supports_lights
+    gesture = next(g for g in ctrl._contexts() if g.node == light and not g.long)
+    assert gesture.label == "Motor 1+2 up" and gesture.key.endswith("_raw")
+    assert not any("light" in s.name.lower() for s in ctrl.controller_button_specs)
+    with raises_key("baseremote_control"):
+        await ctrl.async_gesture(listed_for_framed)
+    with raises_key("baseremote_control"):
+        await ctrl.lights_toggle()
+    assert packets(coordinator) == []
+
+
+def test_a_long_press_light_off_stays_a_button_beside_the_light():
+    ctrl, _ = controller("CZRM")
+    assert ctrl.supports_light_toggle_control
+    names = [s.name for s in ctrl.controller_button_specs]
+    assert sum("light off" in n.lower() for n in names) == 1
+    assert not any(n.lower().endswith("light on/off") for n in names)

@@ -1152,3 +1152,22 @@ async def test_massage_timer_is_the_shared_select_and_the_popup_has_no_off():
     assert packets(coordinator) == [massage_popup("30").hex()]
     with raises_key("sleepfunction_control"):
         await ctrl.set_massage_timer(0)
+
+
+async def test_a_nordic_connection_names_each_control_by_what_it_sends():
+    framed, _ = controller("BERM", "FRAMED")
+    node = next(c.node for c in framed._controls if c.label.endswith("ubl on off"))
+    listed_for_framed = next(
+        s for s in framed.controller_button_specs if s.key.startswith(f"sleepfunction_{node}_")
+    )
+    assert "light" in listed_for_framed.name.lower()
+
+    ctrl, coordinator = controller("BERM", "RAW")
+    # Over Nordic UART this layout's light control sends the legacy "motor 1+2 up" operand.
+    spec = next(s for s in ctrl.controller_button_specs if s.key.startswith(f"sleepfunction_{node}_"))
+    assert spec.key.endswith("_raw") and spec.name == "Head and foot up"
+    assert not any("light" in s.name.lower() for s in ctrl.controller_button_specs)
+    assert not ctrl.supports_light_toggle_control
+    with raises_key("sleepfunction_control"):
+        await listed_for_framed.press_fn(ctrl)
+    assert packets(coordinator) == []

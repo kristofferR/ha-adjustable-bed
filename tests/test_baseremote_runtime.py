@@ -840,3 +840,40 @@ async def test_group_failure_removes_primary_bluez_callback_on_retained_link(
     client.start_notify.side_effect = original_subscribe
     client.stop_notify.side_effect = original_stop
     client.disconnect.side_effect = original_disconnect
+
+
+async def test_a_connected_receiver_without_the_group_setting_refuses_before_any_change(
+    hass, radios
+):
+    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+    from tests.error_helpers import raises_key
+    from tests.test_richmat_classic_transport import Services
+
+    make, _ = radios
+    left, left_client = await make()
+    right, right_client = await make()
+    right_client.services = Services([right_client.services[0]])
+    with virtual_clock():
+        assert await left.async_ensure_connected()
+        assert await right.async_ensure_connected()
+    entry = MockConfigEntry(domain=const.DOMAIN, version=5, data={"pair_id": "group-lane"})
+    entry.add_to_hass(hass)
+    pair = PairedBedCoordinator(
+        hass, entry, {"left": left, "right": right}, connection_mode="concurrent"
+    )
+    left_client.write_gatt_char.reset_mock()
+    with (
+        patch.object(services, "_resolve_sided_targets", return_value=([(pair, "both")], [])),
+        virtual_clock(),
+        raises_key("baseremote_group"),
+    ):
+        await hass.services.async_call(
+            const.DOMAIN,
+            "baseremote_settings",
+            {"device_id": "bed", "operation": "set_group", "group": "1234"},
+            blocking=True,
+        )
+    assert not any(
+        call.args[1].startswith(b"AT+") for call in left_client.write_gatt_char.await_args_list
+    )

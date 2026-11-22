@@ -60,6 +60,9 @@ async def handle_settings(call: ServiceCall) -> None:
                 local_group(group if operation == "set_group" else None)
             except ValueError as error:
                 raise invalid("baseremote_group") from error
+            if controller.client is not None and controller.client.is_connected:
+                # Every connected receiver must offer the group setting before any changes.
+                controller._group_transport()
 
     def admitted() -> bool:
         selection.require_unchanged(call)
