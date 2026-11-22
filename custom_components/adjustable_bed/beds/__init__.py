@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .goodvibe.controller import GoodVibeController as GoodVibeController
     from .hjbed.controller import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
+    from .instant_comfort.controller import InstantComfortBase as InstantComfortBase
     from .isleep import IsleepController as IsleepController
     from .jalon_bed.controller import JalonBedController as JalonBedController
     from .jensen.controller import JensenController as JensenController
@@ -162,6 +163,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "InstantComfortBase": "instant_comfort.controller",
     "SuperiorSleepController": "superior_sleep.controller",
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
@@ -310,6 +312,7 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    "InstantComfortBase",
     "DoubleSleepController",
     'TempurCurveController',
     'QPlusAppController',

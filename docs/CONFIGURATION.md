@@ -610,6 +610,7 @@ beds, Reconfigure that bed, then combine them again.
 | Galaxy Bed Control | The product code and remote; V9RM and RNRN also ask base, standard or split head. Each bed of a combined pair keeps its own. See [Galaxy](beds/richmat.md#galaxy-bed-control). |
 | GM Control | [The product, configuration and app side](beds/gmmotor.md#detection--setup). Sleep modules (MM or SXB) are added as their own beds. |
 | Good Vibe Sleep | [The exact product, configuration or remote alias](beds/richmat.md#good-vibe-sleep); sleep sensors (RM- or HJ-) are added as their own beds. Split beds use Left and Right controls on one address; light duration and snore settings are entities on the device. |
+| Instant Comfort | [Choose the air-unit or base route and pressure layout or base model](beds/personal-comfort.md#instant-comfort). |
 | HJBed | [The exact app product](beds/richmat.md#hjbed). |
 | Jensen / Svane | Answer the [Jensen / Svane question](beds/jensen.md#home-assistant-setup) with your app and bed: the Jensen Adjustable Sleep app with a [JMC400](beds/jensen.md) bed (then its PIN) or a [LinOn](beds/jensen.md#linon) bed, or the [Svane Remote](beds/svane.md) app with a Svane Bed or a JMC400 bed. Change an existing bed's app or bed with **Reconfigure**. |
 | Jiecang | [App profiles](beds/jiecang.md#choosing-a-profile): choose the app ([ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask), [Dream Motion](beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](beds/jiecang.md#dream-motion-hd) or [Comfort Motion](beds/jiecang.md#comfort-motion-app)), then layout and local light/massage presence, with the transport under **Advanced**. Comfort Motion supports three layouts. The [profile tables](beds/jiecang.md#choosing-a-profile) list each app's layouts and connections. |
@@ -666,6 +667,17 @@ Choose **Super Colchones app (AFEG302, AFEG350) · Richmat**, then **AFEG302** o
 Choose the product printed on your bed; Bluetooth discovery cannot identify it.
 The product determines the available movement and massage controls.
 See [Super Colchones](beds/richmat.md#super-colchones) for controls and save behavior.
+
+### Instant Comfort
+
+Select **Instant Comfort app** and the controller's route. Air units and bases
+are separate devices. Base setup asks for its model; ANM V5 asks for its two-
+or four-channel pressure layout. Setup saves the route and layout with that
+physical device. A pressure reply must match the selected layout before a
+target can be sent. Use Configure to change it.
+
+Combine only two Instant Comfort base entries, each with its own model and
+route. The air unit stays separate. See the [profile guide](beds/personal-comfort.md#instant-comfort).
 
 ### Octo PIN
 

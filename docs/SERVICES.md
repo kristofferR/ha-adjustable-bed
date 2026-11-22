@@ -25,7 +25,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`timed_move`](#movement-and-memory) | Move motor for a time | Move a motor for a specified duration. |
 | [`hold_control`](#hold_control) | Hold control | Holds one of the bed's controls for a set time, then releases it as the remote does. Every bed is checked before any moves; a control the bed does not have is refused with the list of controls it has. |
 | [`l2motion`](#l2motion) | L2 Motion: settings | Sets the light color of an L2 Motion bed, or switches its two bases between wired and wireless sync. |
-| [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Runs a full body massage, or moves one base of a pair to a preset while the other base lowers its feet for 30 seconds. |
+| [`instant_comfort_firmness`](#instant_comfort_firmness) | Instant Comfort: set firmness | Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. |
+| [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort / Instant Comfort: run sequence | Runs a full body massage, or moves one base of a pair to a preset while the other base lowers its feet for 30 seconds. |
 | [`sleepfunction_settings`](#sleepfunction_settings) | SleepFunction: set fan and aroma | Sets the head fan, foot fan or aroma of a SleepFunction bed. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
 | [`baseremote_settings`](#baseremote_settings) | Base Remote: color and receiver group | Sets the light color of a Base Remote bed, or changes the Bluetooth group stored in its receiver. |
@@ -1079,6 +1080,27 @@ alarm actions are listed under
 The [Hush Base guide](beds/hush-base.md#configuration-actions) explains each
 operation and how to add the separate sleep sensor and remote.
 
+## Instant Comfort
+
+<a id="instant_comfort_firmness"></a>
+**`instant_comfort_firmness`**: Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. When both change, the lumbar firmness is sent after the main adjustment has finished.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `sleeper` | Sleeper | The left or the right sleeper of the air unit. One of `left` or `right`. |
+| `firmness` | Main firmness | Main firmness, a whole number from 5 to 50. |
+| `lumbar_firmness` | Lumbar firmness | Lumbar firmness, a whole number from 5 to 50. Only for an ANM V5 air unit set up with four channels. |
+
+Give at least one of the two. An ANM V5 air unit must be idle and report the
+layout it was set up with before a firmness is sent: wait for a running
+adjustment to finish, or use `stop_all` first. If the main adjustment does not
+finish, the lumbar firmness is not sent, and Stop cancels it. ANM V3 and RA air
+units take only `firmness` and cannot stop the pump. See the
+[Instant Comfort guide](beds/personal-comfort.md#instant-comfort).
+
+Bases set up with the Instant Comfort app also run
+[`personal_comfort_sequence`](#personal_comfort_sequence).
+
 ## Jerome's power base
 
 <a id="jerome_bed"></a>
@@ -1820,6 +1842,10 @@ later. The two preset sequences need a combined pair that connects to both bases
 once, and a `left` or `right` side: the selected base moves to the preset and the other base lowers its feet
 for 30 seconds. Every base is checked before anything starts, and Stop ends the
 sequence. See the [Personal Comfort guide](beds/personal-comfort.md).
+
+The same action runs on Instant Comfort bases. Instant Comfort Malouf and Reverie
+V2 bases take `goto_preset` and `save_preset` for memories 1 and 2; Reverie V1
+bases and air units have no bed memory.
 
 ## Power Bob Base
 

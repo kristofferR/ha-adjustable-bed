@@ -6076,6 +6076,12 @@
       "suta_2_setpoint": {
         "name": "Right target temperature"
       },
+      "instant_comfort_left_lumbar_firmness": {
+        "name": "Left lumbar firmness"
+      },
+      "instant_comfort_right_lumbar_firmness": {
+        "name": "Right lumbar firmness"
+      },
       "personal_comfort_left_firmness": {
         "name": "Left firmness"
       },
@@ -9878,13 +9884,35 @@
         }
       }
     },
+    "instant_comfort_firmness": {
+      "name": "Instant Comfort: set firmness",
+      "description": "Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. When both change, the lumbar firmness is sent after the main adjustment has finished.",
+      "fields": {
+        "device_id": {
+          "name": "Air unit",
+          "description": "One or more Instant Comfort air units."
+        },
+        "sleeper": {
+          "name": "Sleeper",
+          "description": "The left or the right sleeper of the air unit."
+        },
+        "firmness": {
+          "name": "Main firmness",
+          "description": "Main firmness, a whole number from 5 to 50."
+        },
+        "lumbar_firmness": {
+          "name": "Lumbar firmness",
+          "description": "Lumbar firmness, a whole number from 5 to 50. Only for an ANM V5 air unit set up with four channels."
+        }
+      }
+    },
     "personal_comfort_sequence": {
-      "name": "Personal Comfort: run sequence",
+      "name": "Personal Comfort / Instant Comfort: run sequence",
       "description": "Runs a full body massage, or moves one base of a pair to a preset while the other base lowers its feet for 30 seconds.",
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "A Personal Comfort base, or a combined pair of bases."
+          "description": "A Personal Comfort or Instant Comfort base, or a combined pair of bases."
         },
         "operation": {
           "name": "Sequence",
@@ -10573,7 +10601,7 @@
       "message": "This bed's alarms can only be turned off from Home Assistant. Set them in the bed's app."
     },
     "personal_comfort_sequence": {
-      "message": "This sequence needs supported Personal Comfort bases and current connections. For a peer-foot sequence, choose one side of a combined pair with both bases connected."
+      "message": "This sequence needs supported Personal Comfort or Instant Comfort bases and current connections. For a peer-foot sequence, choose one side of a combined pair with both bases connected."
     },
     "l2motion_control_unavailable": {
       "message": "This control is unavailable. Check the bed model, reported synchronization support and confirmation."

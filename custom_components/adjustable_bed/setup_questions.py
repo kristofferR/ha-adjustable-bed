@@ -312,6 +312,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_remote": GENERIC_FIELDS,
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "instant_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
     "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
@@ -1664,6 +1665,12 @@ def _mline_protocols(_data: Mapping[str, Any]) -> Mapping[str, str]:
     return {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS}
 
 
+def _instant_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.instant_comfort import MODELS
+
+    return MODELS
+
+
 def _personal_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
     from .profiles.personal_comfort import MODELS
 
@@ -2976,6 +2983,26 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question("mline_child_mode", default=False)),
         derive=_mline_settings, imports=("profiles.mline",),
     ),
+    "instant_comfort": _asking(
+        "instant_comfort",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("instant_comfort")),),
+        derive=_personal_comfort_settings, imports=("profiles.instant_comfort",),
+    ),
+    "instant_comfort:anm5": _asking(
+        "instant_comfort",
+        questions=(Question(CONF_PRODUCT_TYPE, {
+            "two": "Two pressure channels", "four": "Four pressure channels (main and lumbar)"
+        }),),
+        derive=_personal_comfort_settings,
+    ),
+    **{f"instant_comfort:{route}": _asking(
+        "instant_comfort", questions=(), derive=_personal_comfort_settings,
+    ) for route in ("anm3", "ra")},
+    **{f"instant_comfort:{route}": _asking(
+        "instant_comfort",
+        questions=(Question(CONF_PRODUCT_TYPE, _instant_comfort_models),),
+        derive=_personal_comfort_settings, imports=("profiles.instant_comfort",),
+    ) for route in ("malouf", "reverie_v1", "reverie_v2")},
     "personal_comfort": _asking(
         "personal_comfort",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("personal_comfort")),
