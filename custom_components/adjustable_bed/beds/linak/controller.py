@@ -2212,12 +2212,23 @@ class LinakController(BedController):
             return
         _, pulse_delay_ms = self.motor_pulse_settings()
         repeat_count = max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)
+        await self._await_control_ready()
+        # Counting repeats alone adds every write acknowledgement to the
+        # movement: 2 seconds ran for about 6 through a proxy. The writer is
+        # used directly so that no further setup runs inside the duration.
+        hold_timeout = asyncio.timeout(duration_ms / 1000)
         try:
-            await self.write_command(
-                command,
-                repeat_count=repeat_count,
-                repeat_delay_ms=pulse_delay_ms,
-            )
+            try:
+                async with hold_timeout:
+                    await self._write_gatt_with_retry(
+                        self.control_characteristic_uuid,
+                        command,
+                        repeat_count=repeat_count,
+                        repeat_delay_ms=pulse_delay_ms,
+                    )
+            except TimeoutError:
+                if not hold_timeout.expired():
+                    raise
         finally:
             await self._send_stop()
 
