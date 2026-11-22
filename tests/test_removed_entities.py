@@ -138,7 +138,7 @@ async def test_a_device_action_by_registry_id_is_found_and_a_deleted_bed_forgott
     hass: HomeAssistant,
 ) -> None:
     await async_setup_removed_entities(hass)
-    entry = _entry(hass, **{CONF_BED_TYPE: "okimat", CONF_HAS_MASSAGE: False})
+    entry = _entry(hass, **{CONF_BED_TYPE: "okin_uuid", CONF_HAS_MASSAGE: False})
     row = er.async_get(hass).async_get_or_create(
         "number", DOMAIN, f"{ADDRESS}_massage_head_intensity", config_entry=entry
     )
@@ -171,7 +171,7 @@ async def test_a_device_action_by_registry_id_is_found_and_a_deleted_bed_forgott
 
 async def test_entities_the_user_disabled_or_deleted_are_not_named(hass: HomeAssistant) -> None:
     await async_setup_removed_entities(hass)
-    entry = _entry(hass, **{CONF_BED_TYPE: "okimat", CONF_HAS_MASSAGE: False})
+    entry = _entry(hass, **{CONF_BED_TYPE: "okin_uuid", CONF_HAS_MASSAGE: False})
     registry = er.async_get(hass)
     disabled = registry.async_get_or_create(
         "number",
@@ -206,7 +206,7 @@ async def test_entities_the_user_disabled_or_deleted_are_not_named(hass: HomeAss
 
 async def test_a_retyped_entity_is_named_only_by_its_own_repair(hass: HomeAssistant) -> None:
     await async_setup_removed_entities(hass)
-    entry = _entry(hass, **{CONF_BED_TYPE: "okimat", CONF_HAS_MASSAGE: False})
+    entry = _entry(hass, **{CONF_BED_TYPE: "okin_uuid", CONF_HAS_MASSAGE: False})
     er.async_get(hass).async_get_or_create(
         "switch",
         DOMAIN,

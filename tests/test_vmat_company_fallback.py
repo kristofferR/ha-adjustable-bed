@@ -6,8 +6,8 @@ import pytest
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_OKIN_HANDLE,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VMATBASIC,
     VIBRADORM_SERVICE_UUID,
@@ -48,7 +48,7 @@ def test_exact_sole_payload_precedes_company_without_selecting_product(
 
 
 @pytest.mark.parametrize(
-    ("company", "family"), [(0x066B, BED_TYPE_DEWERTOKIN), (0x0547, BED_TYPE_LOGICDATA)]
+    ("company", "family"), [(0x066B, BED_TYPE_OKIN_HANDLE), (0x0547, BED_TYPE_LOGICDATA)]
 )
 @pytest.mark.parametrize(
     "payload",
@@ -68,7 +68,7 @@ def test_nonmatching_payload_preserves_known_company_family(
 
 
 @pytest.mark.parametrize(
-    ("company", "family"), [(0x066B, BED_TYPE_DEWERTOKIN), (0x0547, BED_TYPE_LOGICDATA)]
+    ("company", "family"), [(0x066B, BED_TYPE_OKIN_HANDLE), (0x0547, BED_TYPE_LOGICDATA)]
 )
 @pytest.mark.parametrize("match_first", [False, True])
 def test_multiple_records_preserve_company_fallback_without_guessing_raw_order(

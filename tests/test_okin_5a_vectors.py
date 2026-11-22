@@ -38,9 +38,7 @@ def test_profiles_cover_the_vectors():
 
 ROUTES = [
     (const.BED_TYPE_OKIN_7BYTE, VARIANT_AUTO, "okin_7byte"),
-    (const.BED_TYPE_NECTAR, VARIANT_AUTO, "okin_7byte"),
     (const.BED_TYPE_OKIN_NORDIC, VARIANT_AUTO, "okin_nordic"),
-    (const.BED_TYPE_MATTRESSFIRM, VARIANT_AUTO, "okin_nordic"),
     (const.BED_TYPE_OKIN_CB35, VARIANT_AUTO, "okin_cb35"),
     (const.BED_TYPE_STAR_ELEVATE, VARIANT_AUTO, "star_elevate"),
     (const.BED_TYPE_STAR_ELEVATE, const.STAR_ELEVATE_VARIANT_M1X12, "star_elevate"),

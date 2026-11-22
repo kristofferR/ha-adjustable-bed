@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OkinUuidController,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -51,7 +51,7 @@ def mock_okin_uuid_config_entry_data() -> dict:
     return {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
         CONF_NAME: "Okin UUID Test Bed",
-        CONF_BED_TYPE: BED_TYPE_OKIMAT,
+        CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
         CONF_PROTOCOL_VARIANT: OKIMAT_VARIANT_82417,
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: True,
@@ -82,7 +82,7 @@ def mock_okin_uuid_93329_config_entry_data() -> dict:
     return {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
         CONF_NAME: "Okin UUID 93329 Test Bed",
-        CONF_BED_TYPE: BED_TYPE_OKIMAT,
+        CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
         CONF_PROTOCOL_VARIANT: OKIMAT_VARIANT_93329,
         CONF_MOTOR_COUNT: 3,
         CONF_HAS_MASSAGE: True,
@@ -113,7 +113,7 @@ def mock_okin_uuid_94238_config_entry_data() -> dict:
     return {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
         CONF_NAME: "Okin UUID 94238 Test Bed",
-        CONF_BED_TYPE: BED_TYPE_OKIMAT,
+        CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
         CONF_PROTOCOL_VARIANT: OKIMAT_VARIANT_94238,
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: True,
@@ -147,7 +147,7 @@ def mock_okin_uuid_massage_config_entry(hass: HomeAssistant) -> MockConfigEntry:
         data={
             CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
             CONF_NAME: "Okin UUID Massage Test Bed",
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PROTOCOL_VARIANT: OKIMAT_VARIANT_MASSAGE,
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: True,
@@ -169,7 +169,7 @@ def _variant_coordinator(hass, variant, motor_count=2):
         data={
             CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
             CONF_NAME: f"Okin UUID {variant}",
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PROTOCOL_VARIANT: variant,
             CONF_MOTOR_COUNT: motor_count,
             CONF_DISABLE_ANGLE_SENSING: True,
@@ -213,7 +213,7 @@ class TestOkinUuidController:
         entry_data = {
             CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
             CONF_NAME: "Okin UUID Test",
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,

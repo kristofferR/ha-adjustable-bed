@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.beds.okin_nordic import (
 )
 from custom_components.adjustable_bed.codec.okin_5a import command as _cmd
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_MATTRESSFIRM,
+    BED_TYPE_OKIN_NORDIC,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -36,7 +36,7 @@ def mock_okin_nordic_config_entry_data() -> dict:
     return {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
         CONF_NAME: "Okin Nordic Test Bed",
-        CONF_BED_TYPE: BED_TYPE_MATTRESSFIRM,
+        CONF_BED_TYPE: BED_TYPE_OKIN_NORDIC,
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: True,

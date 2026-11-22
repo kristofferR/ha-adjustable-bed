@@ -30,7 +30,6 @@ from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisemen
 from .codec.keeson import parse_json_indication
 from .const import (
     ADAPTER_AUTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -1159,7 +1158,6 @@ class BLEDiagnosticRunner:
             # An OKIMAT model confirms the Okimat route even when the
             # configured profile alone would have kept it.
             model_confirms_okimat = bed_type in {
-                BED_TYPE_OKIMAT,
                 BED_TYPE_OKIN_UUID,
             } and is_okimat_bed_model(model_number)
             if bed_type != gatt_detection.bed_type:

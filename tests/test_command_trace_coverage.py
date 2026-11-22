@@ -22,7 +22,7 @@ SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "wire_snapshot.py"
 # Controllers whose own write loops bypass ``_write_gatt_with_retry``.
 TRACED_SCENARIOS = [
     "fsm_relax",
-    "okimat",
+    "okin_uuid",
     "okin_nordic",
     "okin_dot",
     "reverie",

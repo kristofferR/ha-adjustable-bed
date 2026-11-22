@@ -45,7 +45,6 @@ from .const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ERGOMOTION,
@@ -85,16 +84,13 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
-    BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_N32_MOTION_BED,
-    BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
@@ -184,7 +180,7 @@ _LOGGER = logging.getLogger(__name__)
 # also drives a DOT box, and FurniMove selects whichever of the two it finds.
 _OKIN_ROUTE_ENDPOINTS: Final[dict[str, frozenset[str]]] = {
     **dict.fromkeys(
-        (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_FURNIMOVE),
+        (BED_TYPE_OKIN_UUID, BED_TYPE_FURNIMOVE),
         frozenset({OKIMAT_WRITE_CHAR_UUID.lower(), NORDIC_UART_WRITE_CHAR_UUID.lower()}),
     ),
     BED_TYPE_OKIN_RF_ECO_BT: frozenset({OKIMAT_WRITE_CHAR_UUID.lower()}),
@@ -351,8 +347,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_LOGICDATA_AIR_PUMP: _ControllerSpec(
         "logicdata.air_pump", "LogicdataAirPumpController"
     ),
-    BED_TYPE_MATTRESSFIRM: _ControllerSpec("okin_nordic", "OkinNordicController"),
-    BED_TYPE_NECTAR: _ControllerSpec("okin_7byte", "Okin7ByteController"),
     BED_TYPE_DIAGNOSTIC: _ControllerSpec("diagnostic", "DiagnosticBedController"),
     BED_TYPE_SLEEPYS_BOX15: _ControllerSpec("sleepys.controller", "SleepysBox15Controller"),
     BED_TYPE_SLEEPYS_BOX24: _ControllerSpec("sleepys.controller", "SleepysBox24Controller"),
@@ -399,7 +393,6 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_BETTERLIVING2: _BuilderSpec("keeson.betterliving2"),
     BED_TYPE_COMFORT_ENHANCEMENTS: _BuilderSpec("comfort_enhancements.controller"),
     BED_TYPE_COOLBASE: _BuilderSpec("coolbase"),
-    BED_TYPE_DEWERTOKIN: _BuilderSpec("okin_handle"),
     BED_TYPE_DOUBLESLEEP: _BuilderSpec("doublesleep.controller"),
     BED_TYPE_SYMPHONY: _BuilderSpec("symphony.controller"),
     BED_TYPE_ORMATEK: _BuilderSpec("keeson.ormatek"),
@@ -445,7 +438,6 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "l2motion": _BuilderSpec("bedgear.controller"),
     BED_TYPE_MOTOSLEEP: _BuilderSpec("motosleep"),
     BED_TYPE_OCTO: _BuilderSpec("octo.controller"),
-    BED_TYPE_OKIMAT: _BuilderSpec("okin_uuid.controller"),
     BED_TYPE_OKIN_64BIT: _BuilderSpec("okin_64bit"),
     "smartbed": _BuilderSpec("smartbed.controller"),
     BED_TYPE_OKIN_CST: _BuilderSpec("okin_cst"),

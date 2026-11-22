@@ -72,9 +72,9 @@ of this one (see [Nectar](#nectar)).
 
 Each profile is its own bed type; there is no app choice inside a bed type.
 Detection suggests the profile from the name and service (see each profile's
-Setup). `nectar` and `mattressfirm` are kept bed types that build the same
-controller over the same profile as `okin_7byte` and `okin_nordic`; their
-entries, entities and unique IDs are unchanged.
+Setup). Entries 4.x saved as `nectar` or `mattressfirm` are saved as
+`okin_7byte` and `okin_nordic`, the profiles they always ran; their entities and
+unique IDs are unchanged.
 
 The tables below come from the profile data.
 
@@ -85,8 +85,8 @@ The tables below come from the profile data.
 
 | Profile | Bed types | Transport | Writes | Wake, once per session |
 |---|---|---|---|---|
-| Nectar | `okin_7byte`, `nectar` | Okin | without response | none |
-| Mattress Firm 900 / iFlex | `okin_nordic`, `mattressfirm` | Nordic UART | with response | `09 05 0A 23 05 00 00`, `5A 0B 00 A5` (with response) |
+| Nectar | `okin_7byte` | Okin | without response | none |
+| Mattress Firm 900 / iFlex | `okin_nordic` | Nordic UART | with response | `09 05 0A 23 05 00 00`, `5A 0B 00 A5` (with response) |
 | Sealy Posturematic (CB35) | `okin_cb35` | Nordic UART | without response | `5A 0B 00 A5` |
 | DewertOkin ELEVATE | `star_elevate` | Nordic UART | without response | `5A 0B 00 A5` |
 
@@ -103,24 +103,6 @@ STOP. Massage and light commands are single writes unless listed here.
 | DewertOkin ELEVATE | once | once | n/a |
 <!-- /generated -->
 
-### Aliases
-
-Bed types that build the same controller over the same profile with the same
-default timing, so they send identical bytes. They stay separate bed types so
-existing entries keep their identities; the
-wire snapshot (`tests/test_wire_snapshot.py`) proves the equality by capture.
-
-| Bed type | Same as | Profile |
-|----------|---------|---------|
-| `nectar` | `okin_7byte` | [Nectar](#nectar) |
-| `mattressfirm` | `okin_nordic` | [Mattress Firm 900 / iFlex](#mattress-firm-900--iflex) |
-
-`nectar` and `mattressfirm` are kept for existing entries and are not offered in
-the bed-type list.
-
-Each also keeps its own [profile id](../design/profile-id.md#aliases): besides
-the bed-type list, the device manufacturer differs ("Nectar" and "MattressFirm"
-against "Okin").
 
 ## Wire codec
 
@@ -342,8 +324,6 @@ framing and actions. Do not interchange the command sets.
   **Rize and Jordan's apps (and other Okin apps) · Okin** row only when the known base or app
   identity also corroborates CST. Device Information model `MEGAMAT MBZ`
   identifies RF ECO BT instead.
-- Or configure bed type `nectar` manually (a legacy alias of the `okin_7byte`
-  profile).
 - No Bluetooth pairing is required.
 
 #### Controls
@@ -379,8 +359,8 @@ controller sent, from MaximumWorf's
 - Use this profile for iFlex / Nordic UART bases only. It uses the Nordic UART
   service rather than the OKIN service, so it is not confused with other Okin
   beds during detection.
-- Detection: a device name starting with `iflex` (case-insensitive), or
-  configure bed type `mattressfirm` manually.
+- Detection: a device name starting with `iflex` (case-insensitive), or choose
+  **Okin (other receivers)**, then **Mattress Firm 900 or iFlex bed**.
 - Initialization: the two connection frames in the
   [connection table](#framing-and-checksum), in that order, each followed by
   100 ms; the [profile summary](#choosing-a-profile) gives the write mode.

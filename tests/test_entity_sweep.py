@@ -33,7 +33,7 @@ from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notificatio
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_MOTION_BED,
-    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -110,7 +110,7 @@ def _entry(hass: HomeAssistant, **data: Any) -> MockConfigEntry:
         data={
             CONF_ADDRESS: ADDRESS,
             CONF_NAME: "Sweep Bed",
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,

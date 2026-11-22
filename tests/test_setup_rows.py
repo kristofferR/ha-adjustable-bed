@@ -179,10 +179,6 @@ async def test_an_app_whose_route_is_its_product_is_reachable_from_the_app_list(
 # Saved compatibility IDs from older releases: detection and Configure keep
 # them for existing entries, and each runs as a route the lists do offer.
 _DETECTION_ONLY = {
-    const.BED_TYPE_DEWERTOKIN: "older entries; runs as the DewertOkin Okin receiver",
-    const.BED_TYPE_OKIMAT: "older entries; runs as the Okimat Okin receiver",
-    const.BED_TYPE_NECTAR: "older entries; runs as the Nectar Okin receiver",
-    const.BED_TYPE_MATTRESSFIRM: "older entries; runs as the Mattress Firm Okin receiver",
     const.BED_TYPE_LEGGETT_PLATT: "older entries; runs as a Leggett & Platt route",
 }
 

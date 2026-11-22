@@ -82,7 +82,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
     assert entry.data[CONF_PROFILE_ID] == "keeson:sino"
 
@@ -139,7 +139,7 @@ async def test_other_entries_keep_their_settings(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == BED_TYPE_LINAK
     assert migrated.pop(CONF_PROFILE_MIGRATION)["fields"] == {
@@ -280,7 +280,7 @@ async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssista
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert "pair_schema_version" not in entry.data
     assert dict(entry.options) == {"later_key": 3}
     migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
@@ -318,7 +318,7 @@ async def test_a_5_1_entry_without_obsolete_keys_only_moves_to_the_current_schem
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert dict(entry.data) == data
     assert dict(entry.options) == {"later_key": 2}
 
@@ -382,7 +382,7 @@ async def test_schema_5_3_turns_massage_off_without_a_massage_page(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert entry.data[CONF_HAS_MASSAGE] is False
     assert entry.data[CONF_PROFILE_MIGRATION] == {
         "from_version": 5,
@@ -406,7 +406,7 @@ async def test_schema_5_3_leaves_a_layout_with_massage_alone(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert dict(entry.data) == data
 
 
@@ -515,7 +515,7 @@ async def test_a_4x_entry_turns_massage_off_on_its_way_to_5_3(hass: HomeAssistan
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert entry.data[CONF_HAS_MASSAGE] is False
     record = entry.data[CONF_PROFILE_MIGRATION]
     assert (record["from_version"], record["from_minor_version"]) == (4, 1)
@@ -623,7 +623,7 @@ async def test_schema_5_5_stores_an_octo_layout_as_its_override(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == expected
     assert entry.data[CONF_PROFILE_MIGRATION]["octo_motor_count_override"] == ["data"]
 
@@ -869,7 +869,7 @@ async def test_a_5_5_entry_moves_to_5_6(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert entry.data[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
     assert "connection_profile" not in entry.data
     assert entry.data[CONF_PROFILE_MIGRATION]["settings_5_6"]["data"] == [
@@ -1232,10 +1232,96 @@ async def test_a_5_6_okin_cb24_bed_loads_as_smartbed_with_its_entity_ids(
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.LOADED
-    assert (entry.version, entry.minor_version) == (5, 7)
+    assert (entry.version, entry.minor_version) == (5, 8)
     assert entry.data[CONF_BED_TYPE] == "smartbed"
     runtime = loaded_runtime(hass, entry.entry_id)
     assert runtime is not None and type(runtime.controller) is SmartBedController
     for key, row in kept.items():
         assert registry.async_get(row.entity_id).unique_id == f"{address}_{key}"
         assert hass.states.get(row.entity_id) is not None
+
+
+@pytest.mark.parametrize(
+    ("retired", "route"),
+    [
+        ("okimat", "okin_uuid"),
+        ("dewertokin", "okin_handle"),
+        ("nectar", "okin_7byte"),
+        ("mattressfirm", "okin_nordic"),
+    ],
+)
+def test_schema_5_8_saves_a_brand_bed_type_as_its_route(retired: str, route: str) -> None:
+    from custom_components.adjustable_bed import migrate_v5_8_entry
+    from custom_components.adjustable_bed.const import (
+        CONF_PROFILE_REVIEW_KEPT,
+        CONF_PROFILE_REVIEW_PENDING,
+    )
+
+    settings = {CONF_ADDRESS: "AA:BB:CC:DD:EE:60", CONF_MOTOR_COUNT: 3, CONF_PROTOCOL_VARIANT: "auto"}
+    kept = {"route": f"{retired}:auto", "apps": ["resident"]}
+    data, options = migrate_v5_8_entry(
+        {
+            **settings,
+            CONF_BED_TYPE: retired,
+            CONF_PAIR_ID: "pair_brand",
+            CONF_PROFILE_REVIEW_PENDING: f"{retired}:auto|{retired}:auto",
+            CONF_PAIR_CHILDREN: [
+                {
+                    CONF_SIDE: side,
+                    CONF_ADDRESS: address,
+                    **own,
+                    KEY_ORIGIN_DATA: {
+                        CONF_ADDRESS: address,
+                        CONF_BED_TYPE: retired,
+                        CONF_PROFILE_REVIEW_KEPT: dict(kept),
+                    },
+                }
+                for side, address, own in (
+                    ("left", "AA:BB:CC:DD:EE:61", {}),
+                    ("right", "AA:BB:CC:DD:EE:62", {CONF_BED_TYPE: retired}),
+                )
+            ],
+        },
+        {CONF_MOTOR_COUNT: 2, CONF_BED_TYPE: retired},
+        from_version=5,
+        from_minor_version=7,
+    )
+
+    # Only the name of the route changes; every setting stays.
+    assert {key: data[key] for key in settings} == settings
+    assert options == {CONF_MOTOR_COUNT: 2, CONF_BED_TYPE: route}
+    assert data[CONF_BED_TYPE] == route
+    left, right = data[CONF_PAIR_CHILDREN]
+    assert CONF_BED_TYPE not in left and right[CONF_BED_TYPE] == route
+    for child in (left, right):
+        assert child[KEY_ORIGIN_DATA][CONF_BED_TYPE] == route
+        # The Keep a bed answered before it was combined follows it too.
+        assert child[KEY_ORIGIN_DATA][CONF_PROFILE_REVIEW_KEPT] == {**kept, "route": f"{route}:auto"}
+    assert data[CONF_PROFILE_REVIEW_PENDING] == f"{route}:auto|{route}:auto"
+    assert data[CONF_PROFILE_MIGRATION]["renamed_bed_types"] == {
+        "data": retired,
+        "options": retired,
+        f"data.left.{KEY_ORIGIN_DATA}": retired,
+        "data.right": retired,
+        f"data.right.{KEY_ORIGIN_DATA}": retired,
+    }
+
+
+def test_schema_5_8_leaves_every_other_entry_as_it_is() -> None:
+    from custom_components.adjustable_bed import migrate_v5_8_entry
+
+    data = {CONF_BED_TYPE: BED_TYPE_LINAK, CONF_PROTOCOL_VARIANT: "auto"}
+    assert migrate_v5_8_entry(data, {}, from_version=5, from_minor_version=7) == (data, {})
+
+
+async def test_a_4x_okimat_entry_keeps_its_review_and_takes_its_routes_id(hass: HomeAssistant) -> None:
+    """The steps before 5.8 still read a brand id: its app review is not lost."""
+    from custom_components.adjustable_bed.const import CONF_PROFILE_REVIEW_PENDING
+
+    entry = _entry(hass, {CONF_ADDRESS: "AA:BB:CC:DD:EE:63", CONF_NAME: "Bed", CONF_BED_TYPE: "okimat"})
+
+    await async_migrate_entry(hass, entry)
+
+    assert entry.data[CONF_BED_TYPE] == "okin_uuid"
+    assert entry.data[CONF_PROFILE_ID] == "okin_uuid"
+    assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "okin_uuid:auto"

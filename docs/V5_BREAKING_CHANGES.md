@@ -157,6 +157,13 @@ beds and new ones.
 Presets, the light and massage keys are sent as before on these beds. See the
 [SmartBed guide](beds/smartbed.md#beds-set-up-as-okin-cb24).
 
+### Okimat, DewertOkin, Nectar and Mattress Firm 900 beds
+
+4.x saved these beds under their brand. Each is now saved as the Okin receiver
+it always ran: Okimat and Lucid remotes, DewertOkin and A H Beard beds, Nectar
+beds, and Mattress Firm 900 and iFlex beds. Entities, entity IDs, commands and
+settings stay the same. The device's manufacturer reads **Okin**.
+
 Every other saved setting, bed type and ID loads unchanged.
 
 ### Setup, Configure and Reconfigure

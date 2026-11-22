@@ -33,13 +33,13 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
-    BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -1122,7 +1122,7 @@ class TestCoordinatorWriteCommand:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -1191,7 +1191,7 @@ class TestCoordinatorWriteCommand:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -1287,7 +1287,7 @@ class TestCoordinatorWriteCommand:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -1393,7 +1393,7 @@ class TestCoordinatorWriteCommand:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -1465,7 +1465,7 @@ class TestCoordinatorWriteCommand:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -1535,7 +1535,7 @@ class TestCoordinatorWriteCommand:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -1577,7 +1577,7 @@ class TestCoordinatorWriteCommand:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -2102,7 +2102,7 @@ class TestRuntimeBedTypeCorrection:
             hass,
             mock_config_entry_data,
             {},
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
         )
 
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
@@ -2120,7 +2120,7 @@ class TestRuntimeBedTypeCorrection:
             hass,
             mock_config_entry_data,
             {CONF_DISABLE_ANGLE_SENSING: False},
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
         )
 
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
@@ -2141,7 +2141,7 @@ class TestRuntimeBedTypeCorrection:
             hass,
             legacy_data,
             {},
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
         )
 
         assert coordinator.disable_angle_sensing is False
@@ -2162,7 +2162,7 @@ class TestRuntimeBedTypeCorrection:
             hass,
             mock_config_entry_data,
             {CONF_DISABLE_ANGLE_SENSING: True},
-            bed_type=BED_TYPE_NECTAR,
+            bed_type=BED_TYPE_OKIN_7BYTE,
         )
 
         assert coordinator.disable_angle_sensing is True
@@ -2205,7 +2205,7 @@ class TestRuntimeBedTypeCorrection:
             hass,
             mock_config_entry_data,
             {CONF_DISABLE_ANGLE_SENSING: True},
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
         )
 
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
@@ -2224,7 +2224,7 @@ class TestRuntimeBedTypeCorrection:
             hass,
             mock_config_entry_data,
             {CONF_DISABLE_ANGLE_SENSING: False},
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
         )
 
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_RF_ECO_BT)
@@ -2392,7 +2392,7 @@ class TestRuntimeBedTypeCorrection:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_NECTAR,
+                CONF_BED_TYPE: BED_TYPE_OKIN_7BYTE,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -2693,7 +2693,7 @@ class TestDeviceInfoCache:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -2859,7 +2859,7 @@ class TestDeviceInfoCache:
     @pytest.mark.parametrize(
         "bed_type",
         [
-            BED_TYPE_OKIMAT,
+            BED_TYPE_OKIN_UUID,
             BED_TYPE_OKIN_CST,
             BED_TYPE_OKIN_RF_ECO_BT,
         ],
@@ -2939,7 +2939,7 @@ class TestDeviceInfoCache:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -2978,7 +2978,7 @@ class TestDeviceInfoCache:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,

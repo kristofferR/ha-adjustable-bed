@@ -53,7 +53,6 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -882,7 +881,7 @@ OKIN_FAMILY: Final = AppFamily(
     routes=frozenset({BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_DOT, BED_TYPE_OKIN_RF_ECO_BT}),
     # A new Okin CST bed answers with its apps first; CST is not a guided
     # route, so an existing entry keeps Configure.
-    also=frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_CST}),
+    also=frozenset({BED_TYPE_OKIN_CST}),
     form=Form.LABELLED,
     keep_label=KEEP_LABEL,
     # A FurniMove row or gateway chose no handset, so there is nothing to keep.
@@ -891,7 +890,6 @@ OKIN_FAMILY: Final = AppFamily(
     settled=_okin_settled,
     placeholders=_current,
     clears=(CONF_FURNIMOVE_REMOTE, CONF_PROTOCOL_VARIANT, CONF_STAIRCASE_LAYOUT_CONFIRMED),
-    aliases={BED_TYPE_OKIMAT: {BED_TYPE_OKIN_UUID: (BED_TYPE_OKIMAT, None)}},
     guided=True,
     unguided=frozenset({BED_TYPE_OKIN_CST}),
     route_keys=(CONF_FURNIMOVE_REMOTE, CONF_PROTOCOL_VARIANT),

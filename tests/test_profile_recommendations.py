@@ -792,7 +792,7 @@ def test_bare_dewertokin_services_do_not_offer_ambiguous_profiles(gateway):
 
     service = DEWERTOKIN_RF_GATEWAY_SERVICE_UUID if gateway else DEWERTOKIN_SERVICE_UUID
     assert (
-        recommend_profile({CONF_BED_TYPE: "dewertokin"}, advertisement("", [service]), {}) is None
+        recommend_profile({CONF_BED_TYPE: "okin_handle"}, advertisement("", [service]), {}) is None
     )
 
 
@@ -1743,3 +1743,26 @@ async def test_a_review_outside_the_guided_family_opens_the_full_list(
     # Linak is preselected.
     assert shown["data_schema"]({})[CONF_BED_TYPE] == "linak"
     hass.config_entries.flow.async_abort(flow_id)
+
+
+@pytest.mark.parametrize(
+    ("saved_as", "route"), [("okimat", "okin_uuid"), ("okin_cb24", "smartbed")]
+)
+def test_a_decision_saved_under_a_routes_earlier_name_still_answers_it(saved_as, route):
+    """A schema step renamed the route; the recommendation it dismissed must not reopen."""
+    from hashlib import sha256
+
+    from custom_components.adjustable_bed.profile_recommendations import _EARLIER_NAMES
+
+    assert saved_as in _EARLIER_NAMES[route]
+    recommendation = recommend_profile(
+        {CONF_BED_TYPE: route}, advertisement("RC2", ["0000ffe0-0000-1000-8000-00805f9b34fb"]), {}
+    )
+    assert recommendation is not None
+    # The id the same recommendation had while the entry was saved under the earlier name.
+    identity = repr(
+        (recommendation.translation_key, saved_as, "auto", tuple(sorted(recommendation.choices)))
+    ).encode()
+    earlier = f"{recommendation.translation_key}_{sha256(identity).hexdigest()[:20]}"
+    assert earlier != recommendation.rule
+    assert earlier in recommendation.earlier_rules

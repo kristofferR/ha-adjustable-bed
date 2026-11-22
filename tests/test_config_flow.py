@@ -72,7 +72,6 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
@@ -87,9 +86,9 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -139,7 +138,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KEESON_VARIANT_ERGOMOTION,
-    LEGACY_BED_TYPE_MAPPING,
     LEGGETT_VARIANT_GEN2,
     MALOUF_LAYOUT_HILO,
     NORDIC_UART_SERVICE_UUID,
@@ -150,6 +148,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_CST_VARIANT_MF900,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     PAIR_MODE_SEPARATE_ADDRESS,
+    RETIRED_BED_TYPES,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     RONDURE_VARIANT_SIDE_A,
@@ -508,7 +507,7 @@ class TestPairingPersistence:
         flow._manual_data = {
             CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
             CONF_NAME: "Paired Okimat",
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,
@@ -535,7 +534,7 @@ class TestPairingPersistence:
         describe.assert_awaited_once_with(
             "AA:BB:CC:DD:EE:01",
             "bedroom_proxy",
-            BED_TYPE_OKIMAT,
+            BED_TYPE_OKIN_UUID,
             None,
         )
 
@@ -1223,7 +1222,7 @@ class TestDetectBedType:
     def test_detect_okimat_bed(self, mock_bluetooth_service_info_okimat):
         """Test detection of Okimat bed."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_okimat)
-        assert bed_type == BED_TYPE_OKIMAT
+        assert bed_type == BED_TYPE_OKIN_UUID
 
     def test_detect_unknown_device(
         self, mock_bluetooth_service_info_unknown: BluetoothServiceInfoBleak
@@ -1339,7 +1338,7 @@ class TestDetectBedType:
         service_info.manufacturer_data = {}
 
         bed_type = detect_bed_type(service_info)
-        assert bed_type == BED_TYPE_OKIMAT
+        assert bed_type == BED_TYPE_OKIN_UUID
 
     def test_detect_jiecang_bed(self, mock_bluetooth_service_info_jiecang):
         """Test detection of Jiecang bed by name (JC- prefix)."""
@@ -1371,7 +1370,7 @@ class TestDetectBedType:
     def test_detect_dewertokin_bed(self, mock_bluetooth_service_info_dewertokin):
         """Test detection of DewertOkin bed by name (A H Beard)."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_dewertokin)
-        assert bed_type == BED_TYPE_DEWERTOKIN
+        assert bed_type == BED_TYPE_OKIN_HANDLE
 
     def test_detect_dewertokin_dewert_name(self):
         """Test DewertOkin detection with 'dewert' in name."""
@@ -1382,7 +1381,7 @@ class TestDetectBedType:
         service_info.manufacturer_data = {}
 
         bed_type = detect_bed_type(service_info)
-        assert bed_type == BED_TYPE_DEWERTOKIN
+        assert bed_type == BED_TYPE_OKIN_HANDLE
 
     def test_detect_dewertokin_hankook_name(self):
         """Test DewertOkin detection with 'hankook' in name."""
@@ -1393,7 +1392,7 @@ class TestDetectBedType:
         service_info.manufacturer_data = {}
 
         bed_type = detect_bed_type(service_info)
-        assert bed_type == BED_TYPE_DEWERTOKIN
+        assert bed_type == BED_TYPE_OKIN_HANDLE
 
     def test_detect_serta_bed(self, mock_bluetooth_service_info_serta):
         """Test detection of Serta bed by name - now returns BED_TYPE_SERTA."""
@@ -1837,7 +1836,7 @@ class TestBluetoothDiscoveryFlow:
         assert (default_connection_mode(BED_TYPE_OCTO, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_SMARTBED, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_OKIN_CST, None) == "release") is False
-        assert (default_connection_mode(BED_TYPE_OKIMAT, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_OKIN_UUID, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_OKIN_ORE, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_OKIN_UUID, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_REVERIE, None) == "release") is False
@@ -2060,7 +2059,7 @@ class TestBluetoothDiscoveryFlow:
         assert result["step_id"] == "bluetooth_disambiguate"
         offered = set(select_options(result, "bed_type_choice"))
         assert BED_TYPE_OKIN_UUID in offered
-        assert not offered & set(LEGACY_BED_TYPE_MAPPING)
+        assert not offered & set(RETIRED_BED_TYPES)
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
@@ -4422,7 +4421,7 @@ async def test_combined_bond_removal_targets_the_selected_child(
         title="Combined bed",
         data={
             CONF_NAME: "Combined bed",
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PAIR_ID: "pair_bond_removal",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
             CONF_PAIR_MEMBER_ADDRESSES: [stored_left_address, right_address],
@@ -4431,7 +4430,7 @@ async def test_combined_bond_removal_targets_the_selected_child(
                     CONF_SIDE: SIDE_LEFT,
                     CONF_ADDRESS: stored_left_address,
                     CONF_NAME: "Left side",
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                     CONF_BLE_BOND_ESTABLISHED: True,
                     CONF_BLE_BOND_CONTEXT: {
                         "version": 1,
@@ -4444,7 +4443,7 @@ async def test_combined_bond_removal_targets_the_selected_child(
                     CONF_SIDE: SIDE_RIGHT,
                     CONF_ADDRESS: right_address,
                     CONF_NAME: "Right side",
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                     CONF_BLE_BOND_ESTABLISHED: True,
                     CONF_BLE_BOND_CONTEXT: {
                         "version": 1,
@@ -4539,7 +4538,7 @@ async def test_combined_bond_removal_does_not_fall_back_to_parent_coordinator(
         title="Combined bed",
         data={
             CONF_NAME: "Combined bed",
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PAIR_ID: "pair_missing_child_coordinator",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
             CONF_PAIR_MEMBER_ADDRESSES: [
@@ -4550,12 +4549,12 @@ async def test_combined_bond_removal_does_not_fall_back_to_parent_coordinator(
                 {
                     CONF_SIDE: SIDE_LEFT,
                     CONF_ADDRESS: _BONDED_ADDRESS,
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 },
                 {
                     CONF_SIDE: SIDE_RIGHT,
                     CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 },
             ],
         },
@@ -4841,7 +4840,7 @@ def _pairing_flow(hass: HomeAssistant) -> AdjustableBedConfigFlow:
     flow._manual_data = {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
         CONF_NAME: "Paired Okimat",
-        CONF_BED_TYPE: BED_TYPE_OKIMAT,
+        CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: False,
         CONF_DISABLE_ANGLE_SENSING: True,
@@ -6557,7 +6556,7 @@ async def test_the_probe_hands_its_client_to_the_operation_cleanup(
         await flow._probe_capabilities(
             "AA:BB:CC:DD:EE:01",
             "auto",
-            BED_TYPE_OKIMAT,
+            BED_TYPE_OKIN_UUID,
             client_tracker=tracked.append,
         )
 
@@ -6591,7 +6590,7 @@ async def test_an_interrupted_disconnect_leaves_the_probe_client_tracked(
         await flow._probe_capabilities(
             "AA:BB:CC:DD:EE:01",
             "auto",
-            BED_TYPE_OKIMAT,
+            BED_TYPE_OKIN_UUID,
             client_tracker=tracked.append,
         )
 

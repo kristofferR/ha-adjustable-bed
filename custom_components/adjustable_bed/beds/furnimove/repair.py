@@ -31,10 +31,10 @@ from homeassistant.helpers.issue_registry import (
 
 from ...const import (
     BED_TYPE_FURNIMOVE,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FURNIMOVE_REMOTE,
@@ -230,7 +230,7 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
         if choice == "okimat":
             # Same route a new setup selects for this drive; the CST product
             # variant is dropped so the Okimat remote starts on auto.
-            return await self._save({CONF_BED_TYPE: BED_TYPE_OKIMAT})
+            return await self._save({CONF_BED_TYPE: BED_TYPE_OKIN_UUID})
         if choice == "furnimove":
             return await self.async_step_handset()
         if choice == "keep":
@@ -273,7 +273,7 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
         if user_input is not None:
             handset_id = user_input.get(CONF_FURNIMOVE_REMOTE)
             if okimat and handset_id == "okimat":
-                return await self._save({CONF_BED_TYPE: BED_TYPE_OKIMAT})
+                return await self._save({CONF_BED_TYPE: BED_TYPE_OKIN_UUID})
             if isinstance(handset_id, str) and handset_id in choices:
                 return await self._save(_furnimove_patch(handset_id))
             errors[CONF_FURNIMOVE_REMOTE] = "handset_required"

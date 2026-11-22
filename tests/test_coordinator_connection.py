@@ -33,8 +33,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     CONF_BED_TYPE,
@@ -528,7 +528,7 @@ class TestCoordinatorConnection:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
@@ -580,7 +580,7 @@ class TestCoordinatorConnection:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,

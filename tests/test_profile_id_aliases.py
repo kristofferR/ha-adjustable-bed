@@ -53,11 +53,6 @@ def _coordinator(hass: HomeAssistant, route: str) -> AdjustableBedCoordinator:
     "group",
     [
         ("comfort_motion", "jiecang"),
-        # Okin UUID is one answer behind the Okin family row.
-        ("okimat", "furnimove"),
-        ("dewertokin", "okin_handle"),
-        ("nectar", "okin_7byte"),
-        ("mattressfirm", "okin_nordic"),
         ("ergomotion", "keeson:ergomotion"),
         ("serta", "keeson:serta"),
         ("leggett_okin", "leggett_platt", "leggett_platt:okin"),
@@ -80,10 +75,6 @@ def test_byte_identical_groups_keep_one_id_per_route(group: tuple[str, ...]) -> 
     ("alias", "canonical", "alias_maker", "canonical_maker"),
     [
         ("comfort_motion", "jiecang", "Comfort Motion", "Jiecang"),
-        ("okimat", "okin_uuid", "Okimat", "Okin"),
-        ("dewertokin", "okin_handle", "DewertOkin", "Okin"),
-        ("nectar", "okin_7byte", "Nectar", "Okin"),
-        ("mattressfirm", "okin_nordic", "MattressFirm", "Okin"),
         ("ergomotion", "keeson:ergomotion", "Ergomotion", "Keeson"),
         ("serta", "keeson:serta", "Serta", "Keeson"),
     ],
@@ -99,11 +90,6 @@ async def test_device_manufacturer_differs(
 @pytest.mark.parametrize(
     ("legacy", "offered"),
     [
-        # Okin UUID is one answer behind the Okin family row.
-        ("okimat", "furnimove"),
-        ("dewertokin", "okin_handle"),
-        ("nectar", "okin_7byte"),
-        ("mattressfirm", "okin_nordic"),
         ("leggett_platt", "leggett_okin"),
     ],
 )
@@ -121,7 +107,7 @@ def test_legacy_bed_types_are_not_offered_in_setup(legacy: str, offered: str) ->
 
 @pytest.mark.parametrize(
     ("route", "other"),
-    [("comfort_motion", "jiecang"), ("dewertokin", "okin_handle")],
+    [("comfort_motion", "jiecang")],
 )
 def test_profile_review_repairs_differ(route: str, other: str) -> None:
     """The one-time app profile review (a Repairs issue) lists apps for one route only."""

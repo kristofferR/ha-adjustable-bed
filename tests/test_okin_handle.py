@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_DEWERTOKIN,
+    BED_TYPE_OKIN_HANDLE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -50,7 +50,7 @@ def mock_okin_handle_config_entry_data() -> dict:
     return {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
         CONF_NAME: "Okin Handle Test Bed",
-        CONF_BED_TYPE: BED_TYPE_DEWERTOKIN,
+        CONF_BED_TYPE: BED_TYPE_OKIN_HANDLE,
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: True,

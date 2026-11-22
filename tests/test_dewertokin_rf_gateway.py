@@ -16,7 +16,6 @@ from custom_components.adjustable_bed.beds.dewertokin_rf_gateway import (
 from custom_components.adjustable_bed.beds.okin_handle import OkinHandleController
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
@@ -71,7 +70,7 @@ def _rf_gateway_services() -> list[_FakeService]:
     ]
 
 
-def _make_entry(hass: HomeAssistant, bed_type: str = BED_TYPE_DEWERTOKIN) -> MockConfigEntry:
+def _make_entry(hass: HomeAssistant, bed_type: str = BED_TYPE_OKIN_HANDLE) -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="DewertOkin RF Gateway Test",
@@ -101,7 +100,7 @@ async def test_dewertokin_rf_gateway_selected_from_ble_model(
 
     controller = await create_controller(
         coordinator,
-        BED_TYPE_DEWERTOKIN,
+        BED_TYPE_OKIN_HANDLE,
         None,
         mock_bleak_client,
         ble_model=DEWERTOKIN_RF_GATEWAY_MODEL,
@@ -204,7 +203,7 @@ async def test_dewertokin_without_rf_gateway_signals_keeps_okin_handle(
 
     controller = await create_controller(
         coordinator,
-        BED_TYPE_DEWERTOKIN,
+        BED_TYPE_OKIN_HANDLE,
         None,
         mock_bleak_client,
     )
@@ -223,7 +222,7 @@ async def test_rf_gateway_back_up_uses_8_byte_rf_packet(
 
     controller = await create_controller(
         coordinator,
-        BED_TYPE_DEWERTOKIN,
+        BED_TYPE_OKIN_HANDLE,
         None,
         mock_bleak_client,
         ble_model=DEWERTOKIN_RF_GATEWAY_MODEL,
@@ -255,7 +254,7 @@ async def test_rf_gateway_keeps_standard_dewertokin_motor_keys(
 
     controller = await create_controller(
         coordinator,
-        BED_TYPE_DEWERTOKIN,
+        BED_TYPE_OKIN_HANDLE,
         None,
         mock_bleak_client,
         ble_model=DEWERTOKIN_RF_GATEWAY_MODEL,

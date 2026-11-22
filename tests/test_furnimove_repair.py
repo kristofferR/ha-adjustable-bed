@@ -16,7 +16,6 @@ from custom_components.adjustable_bed.beds.furnimove.repair import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -286,7 +285,7 @@ async def test_okimat_drive_on_cst_switches_to_okimat_keeping_identity_and_bond(
     result = await flow.async_step_init({"route": "okimat"})
     assert result["type"] == "create_entry"
     assert entry.entry_id == entry_id
-    assert dict(entry.data) == {CONF_ADDRESS: "D0:D1:62:A4:62:F1", CONF_BED_TYPE: BED_TYPE_OKIMAT,
+    assert dict(entry.data) == {CONF_ADDRESS: "D0:D1:62:A4:62:F1", CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                                 CONF_MOTOR_COUNT: 2, CONF_BLE_BOND_ESTABLISHED: True}
     assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
 
@@ -317,7 +316,7 @@ async def test_an_unlisted_handset_can_still_switch_to_okimat(hass):
     assert config["options"][-1]["value"] == "okimat"
     assert config["translation_key"] == "okimat_cst_route"
     await flow.async_step_handset({CONF_FURNIMOVE_REMOTE: "okimat"})
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIMAT
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_UUID
 
 
 async def test_okimat_drive_on_cst_can_keep_cst_and_other_cst_entries_get_no_prompt(hass):

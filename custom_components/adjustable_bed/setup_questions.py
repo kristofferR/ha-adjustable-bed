@@ -82,7 +82,6 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -2622,7 +2621,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 *_angle_sensing(bed_type),
             ),
         )
-        for bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT)
+        for bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_DOT)
     },
     f"{BED_TYPE_KEESON}:{KEESON_VARIANT_COMFORTFURNITURE}": _asking(
         f"{BED_TYPE_KEESON}:{KEESON_VARIANT_COMFORTFURNITURE}",

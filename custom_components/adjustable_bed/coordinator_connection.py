@@ -58,7 +58,6 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LIMOSS_REMOTE,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE_PAIRLINK,
@@ -1403,7 +1402,7 @@ class CoordinatorConnectionMixin:
                     expected_service = OKIMAT_SERVICE_UUID.lower()
                     if (
                         self._bed_type
-                        in (BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN)
+                        in (BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN)
                         and expected_service not in discovered_uuids
                     ):
                         _LOGGER.warning(

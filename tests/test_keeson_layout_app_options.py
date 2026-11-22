@@ -409,10 +409,10 @@ async def test_serta_native_endpoints_ignore_generic_overrides(hass, monkeypatch
 
 
 async def validation_target(hass, monkeypatch, **fields):
-    config = entry(hass, "okimat", disable_angle_sensing=False, **fields)
+    config = entry(hass, "okin_uuid", disable_angle_sensing=False, **fields)
     coord = coordinator(hass, config)
     coord._offline_controller = await create_controller(
-        coord, "okimat", protocol_variant="auto", client=None
+        coord, "okin_uuid", protocol_variant="auto", client=None
     )
     hass.data.setdefault(DOMAIN, {})[config.entry_id] = coord
     device = dr.async_get(hass).async_get_or_create(

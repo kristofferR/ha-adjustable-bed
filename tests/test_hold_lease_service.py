@@ -22,7 +22,7 @@ from custom_components.adjustable_bed.beds.entity_specs import (
 )
 from custom_components.adjustable_bed.command_scheduler import CommandKind, CommandOutcome
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_DEWERTOKIN,
+    BED_TYPE_OKIN_HANDLE,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -103,7 +103,7 @@ async def runtime(
         data={
             CONF_ADDRESS: ADDRESS,
             CONF_NAME: "Lease bed",
-            CONF_BED_TYPE: BED_TYPE_DEWERTOKIN,
+            CONF_BED_TYPE: BED_TYPE_OKIN_HANDLE,
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_CONNECTION_MODE: "idle",
             CONF_MOTOR_PULSE_COUNT: 3,
