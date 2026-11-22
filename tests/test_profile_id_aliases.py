@@ -54,7 +54,6 @@ def _coordinator(hass: HomeAssistant, route: str) -> AdjustableBedCoordinator:
     [
         ("comfort_motion", "jiecang"),
         ("ergomotion", "keeson:ergomotion"),
-        ("serta", "keeson:serta"),
         ("leggett_okin", "leggett_platt", "leggett_platt:okin"),
         ("leggett_gen2", "leggett_platt:gen2"),
         (
@@ -76,7 +75,6 @@ def test_byte_identical_groups_keep_one_id_per_route(group: tuple[str, ...]) -> 
     [
         ("comfort_motion", "jiecang", "Comfort Motion", "Jiecang"),
         ("ergomotion", "keeson:ergomotion", "Ergomotion", "Keeson"),
-        ("serta", "keeson:serta", "Serta", "Keeson"),
     ],
 )
 async def test_device_manufacturer_differs(
@@ -115,7 +113,7 @@ def test_profile_review_repairs_differ(route: str, other: str) -> None:
     assert related_app_choices(other, None) == []
 
 
-@pytest.mark.parametrize(("alias", "canonical"), [("ergomotion", "keeson:ergomotion"), ("serta", "keeson:serta")])
+@pytest.mark.parametrize(("alias", "canonical"), [("ergomotion", "keeson:ergomotion")])
 async def test_offline_entities_differ(hass: HomeAssistant, alias: str, canonical: str) -> None:
     """Only the bed type mints its controller, and so its entities, before connecting."""
     minted = _coordinator(hass, alias)

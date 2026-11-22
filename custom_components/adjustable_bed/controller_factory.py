@@ -120,7 +120,6 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
-    BED_TYPE_SERTA,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -155,7 +154,6 @@ from .const import (
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
-    KEESON_VARIANT_SERTA,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_MLRM,
     LOGICDATA_CHAR_UUID,
@@ -330,15 +328,11 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
         "bedjet_powerlayer", "BedJetPowerLayerController"
     ),
     BED_TYPE_COMFORT_MOTION: _ControllerSpec("jiecang.controller", "JiecangController"),
-    # Ergomotion is the Keeson protocol with position feedback; Serta Motion
-    # Perfect is the same protocol with its own variant.
+    # Ergomotion is the Keeson protocol with position feedback.
     BED_TYPE_ERGOMOTION: _ControllerSpec(
         "keeson.controller", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_ERGOMOTION})
     ),
     BED_TYPE_ERGOMOTION_4: _ControllerSpec("ergomotion4.controller", "Ergomotion4Controller"),
-    BED_TYPE_SERTA: _ControllerSpec(
-        "keeson.controller", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_SERTA})
-    ),
     BED_TYPE_JIECANG: _ControllerSpec("jiecang.controller", "JiecangController"),
     BED_TYPE_LIMOSS: _ControllerSpec("limoss.controller", "LimossController"),
     BED_TYPE_SILVERMOTION: _ControllerSpec("silvermotion.controller", "SilvermotionController"),

@@ -481,7 +481,6 @@ lists the remotes.
 | **KSBT03CR receiver**, **KSBT04C receiver** | Those receivers |
 | **Ergomotion base (reports positions)** | Ergomotion-branded beds |
 | **OKIN 13 or 15 series control box** | OKIN 13 and 15 series |
-| **Serta base (Serta MP Remote)** | Serta Motion Perfect |
 | **BetterLiving base (Sino)** | Dynasty, BetterLiving |
 | **Purple Smart Base (Premium / Premium Plus)** | Purple Smart Base |
 | An app, such as **Sleep Harmony app**, **INNOVA app** or **Restonic BT app, remote A** | Beds you control with that app. Apps that offer 2M, 3M and 4M screens take the screen from the motor count |

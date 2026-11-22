@@ -35,7 +35,6 @@ _KEESON_NAMES: dict[str, str] = {
        for wire in ("p1", "p2", "p3") for layout in ("2", "3")},
     "base": "Base (BaseI4/I5)",
     "ergomotion": "Ergomotion",
-    "serta": "Serta",
     "okin": "OKIN FFE",
     "cb1322": "BetterLiving CB1322",
     "sino": "Sino",

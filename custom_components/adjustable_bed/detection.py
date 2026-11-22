@@ -138,7 +138,7 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
-    BED_TYPE_SERTA,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -264,7 +264,6 @@ from .const import (
     RICHMAT_WILINKE_SERVICE_UUIDS,
     RICHMAT_WILINKE_W4_SERVICE_UUID,
     RICHMAT_WILINKE_W5_SERVICE_UUID,
-    SERTA_NAME_PATTERNS,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
     SLEEPSTAR_DUAL_SUBTYPE,
@@ -622,7 +621,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "gmmotor_sleep_sxb": "GM Control sleep module (name starts with HJ-)",
     'tempur_curve': 'Tempur Curve app',
     'qplus_app': 'Q-Plus Adjustable Remote app (SBI and Costco beds)',
-    'serta_mp_remote': 'Serta MP Remote app',
+    'serta_mp_remote': 'Serta MP Remote app (Serta Motion Perfect)',
     'omazz_adjusto_iii': 'Omazz Adjusto III app',
     'ergomotion_app': 'Ergomotion app',
     'row_control': 'ROW Control app',
@@ -771,7 +770,6 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LOGICDATA_AIR_PUMP: "Logicdata Sleep Smart air mattress pump",
     BED_TYPE_MALOUF_APP: "Malouf Base / Lucid Base apps",
     BED_TYPE_SCOTT_LIVING: "Scott Living",
-    BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Fuzion (Climate 360, FlexFit)",
     BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number older base (i8, 360 FlexFit 2)",
     BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
@@ -3170,29 +3168,22 @@ def _detect_bed_type_detailed(
         )
         return DetectionResult(bed_type=BED_TYPE_OKIN_HANDLE, confidence=0.3, signals=signals)
 
-    # Check for Serta Motion Perfect - name-based detection (uses Keeson protocol)
+    # Check for Serta Motion Perfect - name-based detection (Serta MP Remote app)
     if any(x in device_name for x in ["serta", "motion perfect"]):
         signals.append("name:serta")
         _LOGGER.info(
-            "Detected Serta bed at %s (name: %s) - uses Keeson protocol with serta variant",
+            "Detected Serta bed at %s (name: %s) - Serta MP Remote app",
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_SERTA, confidence=0.9, signals=signals)
+        return DetectionResult(
+            bed_type=BED_TYPE_SERTA_MP_REMOTE, confidence=0.9, signals=signals
+        )
 
     # Check for beds using FFE5 service UUID (Keeson, OKIN FFE, Malouf LEGACY, Serta)
-    # Priority: Serta/Keeson name patterns > OKIN FFE > Keeson (default)
+    # Priority: OKIN FFE name patterns > Keeson (default); a Serta name matched above
     if KEESON_BASE_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:ffe5")
-        # Check for Serta name patterns (uses Keeson protocol with serta variant)
-        if any(pattern in device_name for pattern in SERTA_NAME_PATTERNS):
-            signals.append("name:serta")
-            _LOGGER.info(
-                "Detected Serta bed at %s (name: %s) - uses Keeson protocol with serta variant",
-                service_info.address,
-                service_info.name,
-            )
-            return DetectionResult(bed_type=BED_TYPE_SERTA, confidence=0.9, signals=signals)
         # Check for OKIN FFE name patterns (0xE6 prefix variant)
         if any(pattern in device_name for pattern in OKIN_FFE_NAME_PATTERNS):
             signals.append("name:okin_ffe")
@@ -3203,7 +3194,7 @@ def _detect_bed_type_detailed(
             )
             return DetectionResult(bed_type=BED_TYPE_OKIN_FFE, confidence=0.9, signals=signals)
         # Default to Keeson Base for other FFE5 devices
-        # This UUID is shared by Keeson, Malouf LEGACY, OKIN FFE, Serta
+        # This UUID is shared by Keeson, Malouf LEGACY, OKIN FFE and Serta MP Remote
         _LOGGER.info(
             "Detected Keeson Base bed at %s (name: %s) - FFE5 UUID is ambiguous",
             service_info.address,
@@ -3213,7 +3204,11 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_KEESON,
             confidence=0.5,
             signals=signals,
-            ambiguous_types=[BED_TYPE_MALOUF_LEGACY_OKIN, BED_TYPE_OKIN_FFE, BED_TYPE_SERTA],
+            ambiguous_types=[
+                BED_TYPE_MALOUF_LEGACY_OKIN,
+                BED_TYPE_OKIN_FFE,
+                BED_TYPE_SERTA_MP_REMOTE,
+            ],
         )
 
     # Check for Mattress Firm 900 (iFlex) - name-based detection

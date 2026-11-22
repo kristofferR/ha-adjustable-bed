@@ -3,8 +3,8 @@
 Each ``keeson`` protocol variant is a profile here, and so are the routes a
 device name or service resolves inside a variant (KSBT03C, Purple Premium Plus,
 Sleep Harmony base-i5, the Adjustable Lite KSBT03C remote, and the BetterLiving
-and CB1322 auto-detected tables). The ``ergomotion``, ``serta`` and ``okin_ffe``
-bed types are aliases of the variant profiles of the same name. The keeson_layout_app
+and CB1322 auto-detected tables). The ``ergomotion`` and ``okin_ffe`` bed types
+are aliases of the variant profiles of the same name. The keeson_layout_app
 app bed types (Tempur Curve, Q-Plus, Serta MP Remote and the other
 ``APP_LAYOUTS`` apps) are ``AppProfile`` layouts, driven by ``beds/keeson/layout_app.py``;
 Ergomotion 4.0 is one too, with its product catalog in ``beds/ergomotion4/profiles.py``.
@@ -206,15 +206,6 @@ ERGOMOTION: Final = KeesonProfile(
     memory=_GENERIC_MEMORY,
     memory_slots=4,
     position_feedback=True,
-)
-SERTA: Final = KeesonProfile(
-    key="serta",
-    execution=STREAM_HOLD,
-    hold=(10, 100),
-    presets=_TV_UNLISTED,
-    unlisted_presets=frozenset({"tv"}),
-    memory=_GENERIC_MEMORY,
-    memory_slots=4,
 )
 OKIN: Final = KeesonProfile(
     key="okin",
@@ -600,7 +591,6 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         JALON_24,
         BASE,
         ERGOMOTION,
-        SERTA,
         OKIN,
         CB1322,
         SINO,

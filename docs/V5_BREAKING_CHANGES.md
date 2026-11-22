@@ -198,6 +198,39 @@ off until then.
 
 See the [Q-Plus guide](beds/keeson.md#beds-set-up-as-sbiq-plus).
 
+### Serta Motion Perfect beds
+
+A bed set up as **Serta Motion Perfect**, or as a Keeson bed with the Serta
+remote, becomes a **Serta MP Remote app** bed, so one bed type covers these
+beds. Neither was tested on a real bed, so the app's own keys are used.
+
+- **Back** and **Legs** replace the Head and Feet covers, with the same keys
+  and entity IDs. **Flat** and **Stop all** are unchanged. **Zero gravity**,
+  **Massage toggle** (now **Massage level**), **Massage timer** and the head
+  and foot massage up and down buttons send the same key and keep their entity
+  IDs.
+- **Memory 1** to **Memory 4** keep their entity IDs but do something else:
+  each now recalls the app's own memory, a head and a foot angle (15° and 35°,
+  or 15° and 0° for Memory 4, unless you set others in **Configure**). Before,
+  Memory 1, 2 and 3 sent the keys of the app's **Lounge**, **TV** and **M4**
+  buttons, which are new buttons. Check automations that press a memory.
+- **Tilt** and **Lumbar** are up and down buttons instead of covers.
+- **Toggle light**, the under-bed light entity, the head and foot massage
+  toggle buttons and **Massage intensity up** and **down** are removed. The app
+  has no light key; the others repeated or combined other buttons.
+- **Position feedback** is new: the back and legs angles, position sliders and
+  `set_position`.
+- The app needs the bed's notification characteristic. A bed without it no
+  longer connects, and is not a Serta MP Remote bed: pick its remote under
+  **Keeson** in **Reconfigure**.
+- New controls from the app: **Lounge**, **TV**, **M4**, **Step head** and
+  **Step foot**, **Reset**, the massage timer sensor and rename.
+
+A bed whose name contains `serta` or `motion perfect` is now suggested as a
+Serta MP Remote app bed.
+
+See the [Serta MP Remote guide](beds/keeson.md#beds-set-up-as-serta-motion-perfect).
+
 Every other saved setting, bed type and ID loads unchanged.
 
 ### Setup, Configure and Reconfigure
@@ -369,7 +402,7 @@ The same control now looks the same on every bed:
 - **Clocks are set by an action.** The per-bed **Sync clock** buttons are gone;
   the **Set bed clock** action ([`adjustable_bed.sync_clock`](SERVICES.md#sync_clock))
   sends the same commands.
-- **New controls.** Keeson, Serta, Ergomotion and OKIN FFE beds have a **Stop
+- **New controls.** Keeson, Ergomotion and OKIN FFE beds have a **Stop
   All** button, sending the release key the remote sends when a button is let
   go (Adjustable Lite and the KSBT remotes have no such key and still have
   none). Logicdata beds show their two memory slots, recall and save. Sleep
@@ -762,7 +795,7 @@ runs the bed. Rows that left the top-level list keep their bed type and ID.
 | Customatic, Jordan's | Customatic: Clarity, Jerome's C, Remedy, or Z-Series with its Z-230 or Z-280 model. Jordan's: Serenity or Tranquil |
 | Jensen / Svane | The Jensen Adjustable Sleep app with a JMC400 or LinOn bed, or the Svane Remote app with a Svane Bed or a JMC400 bed |
 | Jiecang | ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD, Comfort Motion, or a remote without an app |
-| Keeson | The Keeson, Ergomotion, Serta Motion Perfect, Okin FFE and Cool Base rows share one question. Restonic remote A and B are one Restonic BT row that asks the remote style. The ORE apps and INNOVA ask for the app's 2M, 3M or 4M screen |
+| Keeson | The Keeson, Ergomotion, Okin FFE and Cool Base rows share one question. Restonic remote A and B are one Restonic BT row that asks the remote style. The ORE apps and INNOVA ask for the app's 2M, 3M or 4M screen |
 | Leggett & Platt | Prodigy CE, Prodigy 2, Prodigy 2L or U Series; LP Control with an LP BED receiver or an LP Comfort Connect base; the L&P Adjustable Base app with an MlRM base or a QRRM remote; or the L&P legacy app |
 | Limoss | Limoss Remote, FSM Relax, Stawett and the older Limoss controls |
 | LOGICDATA | SILVERmotion / SimplicityFrame, the MOTIONrelax apps or the Sleep Smart Air Mattress app. The Sleep Smart pump is its own device |
@@ -844,7 +877,7 @@ one section per app. Links to the old file names no longer work.
 | `beds/sbi.md` | [Keeson: Q-Plus Adjustable Remote](beds/keeson.md#beds-set-up-as-sbiq-plus) |
 | `beds/scott-living.md` | [Keeson: Scott Living](beds/keeson.md#scott-living) |
 | `beds/serenity.md` | [Okin and DewertOkin: Jordan's Serenity](beds/okin-nframe.md#jordans-serenity) |
-| `beds/serta.md` | [Keeson: Serta](beds/keeson.md#serta) |
+| `beds/serta.md` | [Keeson: Serta MP Remote](beds/keeson.md#serta-mp-remote) |
 | `beds/serta-mp-remote.md` | [Keeson: Serta MP Remote](beds/keeson.md#serta-mp-remote) |
 | `beds/simmons.md` | [Okin and DewertOkin: SIMMONS](beds/okin-nframe.md#simmons) |
 | `beds/solace.md` | [Solace and related apps: Solace name routes](beds/ff_frame.md#solace-name-routes) |

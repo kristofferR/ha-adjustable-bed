@@ -2,8 +2,8 @@
 
 Reverse engineering by alanbixby and Richard Hopton (smartbed-mqtt).
 
-Every ``keeson`` protocol variant, and the ``ergomotion``, ``serta`` and
-``okin_ffe`` bed types, is a profile in ``profiles/keeson.py``; the frames come
+Every ``keeson`` protocol variant, and the ``ergomotion`` and ``okin_ffe`` bed
+types, is a profile in ``profiles/keeson.py``; the frames come
 from ``codec/keeson.py``. This module keeps what the data cannot express: motor
 key combination, the release and touch-up sequences, Sino's emulated light
 toggle and absolute massage levels, Ergomotion position notifications, the
@@ -44,7 +44,6 @@ from ...const import (
     KEESON_VARIANT_PURPLE,
     KEESON_VARIANT_RESTONIC_A,
     KEESON_VARIANT_RESTONIC_B,
-    KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SIMON_LI,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
@@ -1243,9 +1242,7 @@ _NAMED_VARIANTS = frozenset(
     }
 )
 # Variants whose controller takes no BLE name.
-_UNNAMED_VARIANTS = frozenset(
-    {KEESON_VARIANT_JSON, KEESON_VARIANT_ERGOMOTION, KEESON_VARIANT_SERTA}
-)
+_UNNAMED_VARIANTS = frozenset({KEESON_VARIANT_JSON, KEESON_VARIANT_ERGOMOTION})
 
 
 async def build_controller(ctx: BuildContext) -> BedController:

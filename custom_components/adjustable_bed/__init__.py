@@ -43,9 +43,11 @@ from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_KEESON,
     BED_TYPE_OCTO,
     BED_TYPE_QPLUS_APP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SMARTBED,
@@ -1195,6 +1197,232 @@ def _async_migrate_v5_9_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
             registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
 
 
+# The bed type, and the Keeson remote, Serta MP Remote app beds were saved under
+# before schema 5.10.
+_SERTA: Final = "serta"
+# The app has one layout.
+_SERTA_LAYOUT: Final = "standard"
+
+
+def _is_serta(view: Mapping[str, Any]) -> bool:
+    """Return whether these settings run the serta route."""
+    bed_type = view.get(CONF_BED_TYPE)
+    return bed_type == _SERTA or (
+        bed_type == BED_TYPE_KEESON and view.get(CONF_PROTOCOL_VARIANT) == _SERTA
+    )
+
+
+def _as_serta_mp(own: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a bed's own serta settings as the Serta MP Remote app route stores them.
+
+    The app reads the bed's position for its own memories, so the choice is
+    stored: a value a pair shares must not turn it off for this bed.
+    """
+    new = {
+        **own,
+        CONF_BED_TYPE: BED_TYPE_SERTA_MP_REMOTE,
+        CONF_PRODUCT_TYPE: _SERTA_LAYOUT,
+        CONF_DISABLE_ANGLE_SENSING: False,
+    }
+    # The app's layout decides the controls, and it has no remote to choose.
+    for key, value in (
+        (CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+        (CONF_MOTOR_COUNT, 2),
+        (CONF_HAS_MASSAGE, False),
+        (CONF_MOTOR_PULSE_USER_SET, False),
+    ):
+        if key in new:
+            new[key] = value
+    return new
+
+
+def _serta_renamed(shared: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a shared layer that no longer names the serta route.
+
+    A pair's options, a two-address pair's own data and an original's options
+    hold values a bed of another type may still read, so they stay as they are.
+    """
+    new = dict(shared)
+    if _is_serta(new):
+        new[CONF_BED_TYPE] = BED_TYPE_SERTA_MP_REMOTE
+    if new.get(CONF_PROTOCOL_VARIANT) == _SERTA:
+        new[CONF_PROTOCOL_VARIANT] = VARIANT_AUTO
+    return new
+
+
+# What decides a side's route and whether it reads positions. A pair's options
+# override these on every side.
+_SERTA_ROUTE_KEYS: Final = (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT, CONF_DISABLE_ANGLE_SENSING)
+
+
+def _serta_sides(data: Mapping[str, Any], options: Mapping[str, Any]) -> set[str]:
+    """Return the sides of a pair that ran the serta route.
+
+    The sides of a one-address pair are one bed, which reads its own data.
+    """
+    sides = [side for side in PAIR_SIDES if get_child(data, side) is not None]
+    if data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+        return set(sides) if _is_serta(data) else set()
+    return {side for side in sides if _is_serta(effective_child_data(data, side, options))}
+
+
+def migrate_v5_10_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with every serta route saved as the Serta MP Remote app.
+
+    The serta bed type and the Keeson remote of the same name sent that app's
+    keys. A bed takes the app's one layout and reads its position, as the app
+    does for its memories. A paired side stores its own route: the pair's
+    options no longer decide it, and a side on another route stores what it ran
+    with where a shared value changes. The original entries a pair restores on
+    unpair are written too, and an open or kept app review follows the renamed
+    route. The migration record lists each place under ``serta_mp_remote``. Any
+    other entry is returned unchanged.
+    """
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    moved: list[str] = []
+    children = data.get(CONF_PAIR_CHILDREN)
+
+    def bed(own: Mapping[str, Any], location: str) -> dict[str, Any]:
+        """Return a bed's own data: a standalone entry, a one-address pair or an original."""
+        if not _is_serta(own):
+            return dict(own)
+        moved.append(location)
+        return _as_serta_mp(own)
+
+    # A two-address pair's own data is a layer its sides share, not a bed.
+    if isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS:
+        new_data = _serta_renamed(data)
+        if new_data != dict(data):
+            moved.append("data")
+    else:
+        new_data = bed(data, "data")
+    new_options = dict(options)
+    if isinstance(children, list):
+        moves = _serta_sides(data, options)
+        if moves:
+            # The options would decide a moved side's route again.
+            for key in _SERTA_ROUTE_KEYS:
+                new_options.pop(key, None)
+        changed = {
+            key
+            for key in _SERTA_ROUTE_KEYS
+            if new_options.get(key) != options.get(key) or new_data.get(key) != data.get(key)
+        }
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if side in moves:
+                child = _as_serta_mp({**child, CONF_PROTOCOL_VARIANT: VARIANT_AUTO})
+                moved.append(f"data.{side}")
+            else:
+                view = effective_child_data(data, side, options)
+                # Only the pair's options kept this side off the serta route.
+                masked = _is_serta(effective_child_data(data, side))
+                for key in _SERTA_ROUTE_KEYS:
+                    # The side stores what it ran with where a shared value changes.
+                    if key in view and (
+                        key in changed or (masked and key != CONF_DISABLE_ANGLE_SENSING)
+                    ):
+                        child[key] = view[key]
+                if masked and child.get(CONF_PROTOCOL_VARIANT) == _SERTA:
+                    # The removed remote's name means nothing on the bed type it ran.
+                    child[CONF_PROTOCOL_VARIANT] = VARIANT_AUTO
+            if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
+                restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+                if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                    child[KEY_ORIGIN_OPTIONS] = _serta_renamed(origin_options)
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if not moved:
+        return new_data, dict(options)
+    carry_profile_review_to_renamed_route(data, new_data)
+    _with_migration_record(
+        new_data,
+        from_version=from_version,
+        from_minor_version=from_minor_version,
+        serta_mp_remote=moved,
+    )
+    return new_data, _serta_renamed(new_options)
+
+
+# The serta route's controls the Serta MP Remote app has under another key, with
+# the same command. Unique ids are ``<address>_<key>``; a pair's own movement
+# buttons are ``<pair id>_<key>_both``.
+_V5_10_ENTITY_KEYS: Final = {
+    "cover": {"head": "back", "feet": "legs"},
+    "button": {
+        "preset_zero_g": "zg",
+        "massage_all_toggle": "level",
+        "massage_mode_step": "timer",
+        "massage_head_up": "masheadadd",
+        "massage_head_down": "masheadmin",
+        "massage_foot_up": "masfootadd",
+        "massage_foot_down": "masfootmin",
+    },
+}
+_V5_10_PAIR_BUTTON_KEYS: Final = {
+    "head_up": "back_up",
+    "head_down": "back_down",
+    "feet_up": "legs_up",
+    "feet_down": "legs_down",
+}
+
+
+@callback
+def _async_migrate_v5_10_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Keep the entity IDs of the serta controls the app names differently.
+
+    Only the beds this step moves are touched: another bed type on the other
+    side of a pair keeps its rows, and the pair's own buttons move only when
+    both sides do. Memory 1 to 4 keep their rows and recall the app's own
+    memories from now on. Every other serta control has no app control with the
+    same command, and goes when the bed next loads.
+    """
+    data = entry.data
+    moves = _serta_sides(data, entry.options)
+    beds: list[Mapping[str, Any]] = [
+        child for side in moves if (child := get_child(data, side)) is not None
+    ]
+    if not isinstance(data.get(CONF_PAIR_CHILDREN), list) and _is_serta(data):
+        beds.append(data)
+    addresses = {
+        address.upper() for bed in beds if isinstance(address := bed.get(CONF_ADDRESS), str)
+    }
+    pair_id = data.get(CONF_PAIR_ID)
+    both = (
+        {
+            f"{pair_id}_{old}_both": f"{pair_id}_{new}_both"
+            for old, new in _V5_10_PAIR_BUTTON_KEYS.items()
+        }
+        if len(moves) == len(PAIR_SIDES)
+        else {}
+    )
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        address, _, key = entity.unique_id.partition("_")
+        if address in addresses and key in (keys := _V5_10_ENTITY_KEYS.get(entity.domain, {})):
+            unique_id = f"{address}_{keys[key]}"
+        elif entity.domain == "button" and entity.unique_id in both:
+            unique_id = both[entity.unique_id]
+        else:
+            continue
+        if _free_unique_id(registry, entry, entity.domain, unique_id):
+            registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -1470,6 +1698,24 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _async_migrate_v5_9_entities(hass, entry)
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=9
+        )
+        if renamed:
+            _async_sync_profile_ids(hass, entry)
+
+    if entry.version == 5 and entry.minor_version < 10:
+        # v5.9 -> v5.10: a bed on the serta route becomes a Serta MP Remote app
+        # bed, the one bed type for that app. Controls the app has under
+        # another key keep their entity IDs.
+        data, options = migrate_v5_10_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        if renamed := data != dict(entry.data):
+            _async_migrate_v5_10_entities(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=10
         )
         if renamed:
             _async_sync_profile_ids(hass, entry)

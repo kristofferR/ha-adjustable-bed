@@ -379,6 +379,7 @@ def recommend_profile(
 _EARLIER_NAMES: Final[dict[str, tuple[str, ...]]] = {
     "smartbed": ("okin_cb24",),
     "qplus_app": ("sbi",),
+    "serta_mp_remote": ("serta",),
     **{route: (retired,) for retired, route in RETIRED_BED_TYPES.items()},
 }
 

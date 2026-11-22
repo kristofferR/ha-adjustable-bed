@@ -42,7 +42,7 @@ async def test_reconfigure_changes_a_bed_without_a_guided_family(
     result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
     assert result["step_id"] == "reconfigure_bed_type"
     result = await manager.async_configure(
-        result["flow_id"], {const.CONF_BED_TYPE: const.BED_TYPE_SERTA}
+        result["flow_id"], {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_FFE}
     )
     assert result["step_id"] == "migration_confirm"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LINAK
@@ -50,7 +50,7 @@ async def test_reconfigure_changes_a_bed_without_a_guided_family(
         result = await manager.async_configure(result["flow_id"], {"action": "apply"})
 
     assert result["reason"] == "migration_applied"
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_SERTA
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_FFE
 
 
 async def test_reconfigure_to_the_same_bed_changes_nothing(
@@ -78,10 +78,10 @@ async def test_reconfigure_preselects_a_suggested_app(
     entry = _entry(hass, const.BED_TYPE_LINAK)
 
     result = await hass.config_entries.flow.async_init(
-        const.DOMAIN, context=reconfigure_context(entry, const.BED_TYPE_SERTA)
+        const.DOMAIN, context=reconfigure_context(entry, const.BED_TYPE_OKIN_FFE)
     )
 
-    assert _schema(result)({})[const.CONF_BED_TYPE] == const.BED_TYPE_SERTA
+    assert _schema(result)({})[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_FFE
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
@@ -142,7 +142,7 @@ async def test_reconfigure_to_a_checked_route_checks_its_link_first(
     manager.async_abort(result["flow_id"])
 
 
-@pytest.mark.parametrize("options", [{}, {const.CONF_BED_TYPE: const.BED_TYPE_SERTA}])
+@pytest.mark.parametrize("options", [{}, {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_FFE}])
 async def test_reconfigure_drops_the_previous_apps_own_settings(
     hass: HomeAssistant, enable_custom_integrations, options: dict[str, str]
 ) -> None:
@@ -168,13 +168,13 @@ async def test_reconfigure_drops_the_previous_apps_own_settings(
     manager = hass.config_entries.flow
     result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
     result = await manager.async_configure(
-        result["flow_id"], {const.CONF_BED_TYPE: const.BED_TYPE_SERTA}
+        result["flow_id"], {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_FFE}
     )
     assert result["step_id"] == "migration_confirm"
     with patch.object(hass.config_entries, "async_schedule_reload"):
         await manager.async_configure(result["flow_id"], {"action": "apply"})
 
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_SERTA
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_FFE
     assert const.CONF_VIBRADORM_APP_PROFILE not in entry.data
 
 

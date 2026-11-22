@@ -96,7 +96,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
-    BED_TYPE_SERTA,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
     BED_TYPE_SUTA,
@@ -1393,12 +1393,12 @@ class TestDetectBedType:
         assert bed_type == BED_TYPE_OKIN_HANDLE
 
     def test_detect_serta_bed(self, mock_bluetooth_service_info_serta):
-        """Test detection of Serta bed by name - now returns BED_TYPE_SERTA."""
+        """A Serta name is the Serta MP Remote app's bed."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_serta)
-        assert bed_type == BED_TYPE_SERTA
+        assert bed_type == BED_TYPE_SERTA_MP_REMOTE
 
     def test_detect_serta_motion_perfect_name(self):
-        """Test Serta detection with 'motion perfect' in name - returns BED_TYPE_SERTA."""
+        """A Motion Perfect name is the Serta MP Remote app's bed."""
         service_info = MagicMock()
         service_info.name = "Motion Perfect III"
         service_info.address = "AA:BB:CC:DD:EE:FF"
@@ -1406,7 +1406,7 @@ class TestDetectBedType:
         service_info.manufacturer_data = {}
 
         bed_type = detect_bed_type(service_info)
-        assert bed_type == BED_TYPE_SERTA
+        assert bed_type == BED_TYPE_SERTA_MP_REMOTE
 
     def test_detect_octo_bed(self, mock_bluetooth_service_info_octo):
         """Test detection of Octo bed by name containing 'octo'."""
@@ -6903,3 +6903,16 @@ async def test_octo_probe_authenticates_on_owned_connection_and_disconnects(
     verify.assert_awaited_once_with(client, "1234", OCTO_VARIANT_STANDARD)
     client.disconnect.assert_awaited_once()
     assert tracked == [client, None]
+
+
+async def test_a_discovered_serta_bed_asks_the_serta_mp_remote_questions(
+    hass: HomeAssistant, mock_bluetooth_service_info_serta, enable_custom_integrations
+) -> None:
+    """A Serta name stages the app's bed type, so setup asks the app's own questions."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info_serta
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "profile_questions"
+    assert result["description_placeholders"] == {"profile": "Serta MP Remote"}

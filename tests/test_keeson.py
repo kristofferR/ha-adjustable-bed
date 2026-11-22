@@ -723,7 +723,6 @@ class TestKeesonMassage:
             ("sleep_harmony", False),
             ("ergomotion", False),
             ("okin", False),
-            ("serta", False),
             ("sino", False),
             ("purple", False),
         ],
@@ -1734,7 +1733,6 @@ class TestKsbt03cMotorLayout:
             ("ergomotion", 2, (10, 100)),
             ("okin", 2, (10, 100)),
             ("okin", 3, (5, 200)),
-            ("serta", 2, (10, 100)),
             ("sino", 2, (10, 100)),
             ("sino", 3, (5, 200)),
             ("purple", 2, (10, 100)),
@@ -2138,7 +2136,7 @@ def test_ergomotion_status_feeds_the_massage_sensors(
 
 @pytest.mark.parametrize(
     ("variant", "has_stop"),
-    [("base", True), ("serta", True), ("ergomotion", True), ("ksbt04c", True), ("ksbt", False)],
+    [("base", True), ("ergomotion", True), ("ksbt04c", True), ("ksbt", False)],
 )
 async def test_stop_follows_the_profile_release(
     hass: HomeAssistant,

@@ -229,7 +229,7 @@ class TestDiagnosticsOutput:
 
         result = await async_get_config_entry_diagnostics(hass, mock_diagnostics_config_entry)
 
-        assert result["entry"]["minor_version"] == 9
+        assert result["entry"]["minor_version"] == 10
         assert result["profile"]["id"] == BED_TYPE_LINAK
         assert result["profile"]["migration"] == {
             "from_version": 1,

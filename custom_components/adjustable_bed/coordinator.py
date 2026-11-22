@@ -100,7 +100,6 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
@@ -1680,7 +1679,6 @@ class AdjustableBedCoordinator(
             BED_TYPE_MALOUF_NEW_OKIN: "Malouf",
             BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf",
             BED_TYPE_COMFORT_MOTION: "Comfort Motion",
-            BED_TYPE_SERTA: "Serta",
             BED_TYPE_DIAGNOSTIC: "Unknown",
         }
         return manufacturers.get(self._bed_type, "Unknown")

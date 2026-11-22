@@ -40,7 +40,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERTA,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -875,12 +875,12 @@ class TestDetectBedTypeByNamePattern:
     def test_detect_serta_by_name(self):
         """Test Serta detection by name pattern."""
         service_info = _make_service_info(name="Serta Motion Perfect")
-        assert detect_bed_type(service_info) == BED_TYPE_SERTA
+        assert detect_bed_type(service_info) == BED_TYPE_SERTA_MP_REMOTE
 
     def test_detect_serta_by_motion_perfect(self):
         """Test Serta detection by 'motion perfect' in name."""
         service_info = _make_service_info(name="Motion Perfect III")
-        assert detect_bed_type(service_info) == BED_TYPE_SERTA
+        assert detect_bed_type(service_info) == BED_TYPE_SERTA_MP_REMOTE
 
     def test_detect_linak_by_name_pattern(self):
         """Test Linak detection by 'Bed XXXX' name pattern."""
@@ -1986,7 +1986,7 @@ class TestFFE5UUIDDisambiguation:
             name="Serta Motion",
             service_uuids=[KEESON_BASE_SERVICE_UUID],
         )
-        assert detect_bed_type(service_info) == BED_TYPE_SERTA
+        assert detect_bed_type(service_info) == BED_TYPE_SERTA_MP_REMOTE
 
     def test_ffe5_with_malouf_name(self):
         """Test Malouf LEGACY_OKIN detection with FFE5 UUID + 'malouf' in name."""
