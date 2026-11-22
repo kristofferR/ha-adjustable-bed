@@ -3141,7 +3141,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # 100 ms delay between repeats. Held AHF controls use a separate cadence.
     BED_TYPE_TIMOTION_AHF: (10, 100),
     # Logicdata: 30ms delay → 10 repeats = 0.3s total
-    # Source: at.silvermotion APK analysis (SF_GetPipelineTx sendCount=10, delay=30ms)
+    # Source: SILVERmotion APK analysis (SF_GetPipelineTx sendCount=10, delay=30ms)
     BED_TYPE_LOGICDATA: (10, 30),
     # BedJet PowerLayer: one write moves for ~1.3s and then self-stops, so writes
     # every 100ms hold the motor through the repo-standard 1.0s press while the

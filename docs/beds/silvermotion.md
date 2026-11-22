@@ -14,7 +14,7 @@ select a split side, a second receiver or a different motor layout.
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
-| ✅ | [SILVERmotion](https://play.google.com/store/apps/details?id=net.logicdata.mobile.sfapp) 1.0.0 | `net.logicdata.mobile.sfapp` | [Android](#android) |
+| ✅ | [SILVERmotion](https://apkpure.com/silvermotion/net.logicdata.mobile.sfapp) 1.0.0 | `net.logicdata.mobile.sfapp` | [Android](#android) |
 
 The [other SILVERmotion answer](logicdata.md), marked pairing required, is a separate choice.
 
