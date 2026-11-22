@@ -50,11 +50,11 @@ TRACKERS: dict[int, Tracker] = {
             ("Operational audit method", 34000),
             ("Mandatory implementation convergence", 4500),
             ("Early analyses and tracker updates", 2000),
-            ("Accepted evidence records", 75000),
+            ("Accepted evidence records", 78000),
             ("Accepted batch ledger", 30000),
             ("History", 800),
         ),
-        max_bytes=145000,
+        max_bytes=148000,
     ),
     447: Tracker(
         sections=(
