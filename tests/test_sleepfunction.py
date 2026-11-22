@@ -51,6 +51,23 @@ def controller(layout="6BRM", wire="FRAMED"):
     return ctrl, coordinator
 
 
+async def test_a_frame_waiting_for_another_gatt_operation_obeys_a_later_stop_or_owner():
+    ctrl, coordinator = controller()
+    cancel = asyncio.Event()
+    async with ctrl.ble_lock:
+        stopped = asyncio.create_task(ctrl._send(b"\x01", cancel))
+        await asyncio.sleep(0)
+        cancel.set()
+    await stopped
+    async with ctrl.ble_lock:
+        replaced = asyncio.create_task(ctrl._send(b"\x02"))
+        await asyncio.sleep(0)
+        coordinator.controller = object()
+    with raises_key("sleepfunction_session"):
+        await replaced
+    assert packets(coordinator) == []
+
+
 def test_all_layouts_have_native_names_and_no_placeholder_or_duplicate_keys():
     assert len(load_catalog("sleepfunction").models) == 558
     for layout in load_catalog("sleepfunction").models:
