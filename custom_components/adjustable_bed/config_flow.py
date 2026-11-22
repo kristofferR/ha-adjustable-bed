@@ -1353,6 +1353,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_RICHMAT_CLASSIC_APPS,
         *KEESON_LAYOUT_APP_BED_TYPES,
         "ergomotion_4",
+        "relax_motion",
         # One row each asks the app's exact product.
         *PRODUCT_QUESTION_BED_TYPES,
         # The layout is BedSense's own question.
@@ -1419,6 +1420,8 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
+    if bed_type == "relax_motion":
+        return [1, 2, 3]
     if bed_type == BED_TYPE_BETTERLIVING2:
         return [2, 3]
     if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
@@ -2962,6 +2965,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         data = self._manual_data
         self._migration_verified = False
         self._migration_preview = {}
+        if bed_type == "relax_motion" and data[CONF_BED_TYPE] != bed_type:
+            data.pop(CONF_PRODUCT_TYPE, None)
         if self._migration is not None:
             # Options win over data, as for the running entry.
             saved = {**self._migration.data, **self._migration.options}
@@ -2973,6 +2978,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # defaults replaced come back, such as Movement per tap. App
                 # settings stay as the family's answer left them.
                 data[CONF_BED_TYPE] = bed_type
+                if bed_type == "relax_motion" and CONF_PRODUCT_TYPE in saved:
+                    data[CONF_PRODUCT_TYPE] = saved[CONF_PRODUCT_TYPE]
                 for key in _ROUTE_DEFAULT_KEYS:
                     if key in saved:
                         data[key] = copy.deepcopy(saved[key])
@@ -3265,8 +3272,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert profile is not None and profile.questions
         await async_import_profile(self.hass, profile)
         if profile.seed is not None:
-            self._manual_data = data = profile.seed(self.hass, data, self._discovery_info)
+            # Relax Motion's older page reads a different advertisement byte.
+            # Apply the submitted page before suggesting its numeric identity.
+            seed_data = data
+            if data.get(CONF_BED_TYPE) == "relax_motion" and user_input is not None:
+                from .setup_questions import relax_motion_seed_input
+                seed_data = relax_motion_seed_input(data, user_input, self._discovery_info)
+            self._manual_data = data = profile.seed(self.hass, seed_data, self._discovery_info)
         context = FlowContext(self.hass, verifiable=self._verification_possible())
+        if data.get(CONF_BED_TYPE) == "relax_motion" and user_input is not None:
+            user_input = {**user_input, CONF_PRODUCT_TYPE: data.get(CONF_PRODUCT_TYPE)}
         answers = _profile_answers(profile, user_input or {}, data, context)
         candidate = profile.staged(data, answers)
         errors = profile.errors(candidate, context) if user_input is not None else {}

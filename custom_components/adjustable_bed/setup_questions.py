@@ -2298,6 +2298,59 @@ def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {} if profile is not None and profile.key != "MattressControllerDrawerFragment" else {CONF_BLE_DEVICE_NAME: "suta_name"}
 
 
+def relax_motion_seed_input(data: Mapping[str, Any], answers: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    """Discard only an unchanged detected suggestion when its app page changes."""
+    from .profiles.relax_motion import advertisement, discovery_matches, model_number, route_name
+    result = {**data, **answers}
+    if answers.get(CONF_PRODUCT_TYPE) == "":
+        result.pop(CONF_PRODUCT_TYPE, None)
+    if discovered and discovery_matches(discovered.advertisement.local_name, discovered.service_uuids or (), route=route_name(data.get(CONF_PROTOCOL_VARIANT))) and result.get(CONF_PROTOCOL_VARIANT) != data.get(CONF_PROTOCOL_VARIANT):
+        previous = model_number(data.get(CONF_PRODUCT_TYPE))
+        detected = advertisement(discovered.manufacturer_data or {}, legacy=data.get(CONF_PROTOCOL_VARIANT) == "legacy")
+        if previous is not None and previous == detected and model_number(answers.get(CONF_PRODUCT_TYPE)) == previous:
+            result.pop(CONF_PRODUCT_TYPE, None)
+    return result
+
+
+def _relax_motion_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.relax_motion import advertisement, discovery_matches, route_name
+    result = dict(data)
+    if discovered and CONF_PRODUCT_TYPE not in result and discovery_matches(discovered.advertisement.local_name, discovered.service_uuids or (), route=route_name(result.get(CONF_PROTOCOL_VARIANT))):
+        number = advertisement(discovered.manufacturer_data or {}, legacy=result.get(CONF_PROTOCOL_VARIANT) == "legacy")
+        if number is not None:
+            result[CONF_PRODUCT_TYPE] = str(number)
+    return result
+
+
+def _relax_motion_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.relax_motion import model_number
+    result = {**previous, **answers}
+    number = model_number(result.get(CONF_PRODUCT_TYPE))
+    if number is not None:
+        result[CONF_PRODUCT_TYPE] = str(number)
+    return result
+
+
+def _relax_motion_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.relax_motion import ROUTES, model_number
+    errors = {} if model_number(data.get(CONF_PRODUCT_TYPE)) is not None else {CONF_PRODUCT_TYPE: "relax_motion_model"}
+    if data.get(CONF_PROTOCOL_VARIANT, "relax") not in ROUTES:
+        errors[CONF_PROTOCOL_VARIANT] = "invalid_selection"
+    return errors
+
+
+def _relax_motion_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.relax_motion import axes, model, model_number
+    number = model_number(data.get(CONF_PRODUCT_TYPE))
+    selected = model(number, str(data.get(CONF_PROTOCOL_VARIANT, "relax"))) if number is not None else None
+    return {CONF_MOTOR_COUNT: len(axes(selected)) if selected else 2, CONF_HAS_MASSAGE: False}
+
+
+def _relax_motion_routes(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.relax_motion import ROUTES
+    return ROUTES
+
+
 def _cheerssleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
     from .beds.cheerssleep.catalog import MODELS
 
@@ -2389,6 +2442,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_nerum_seed,
         derive=lambda data: {CONF_MOTOR_COUNT: {"nerum": 2, "2": 2, "3": 3, "4": 4}.get(data.get(CONF_PRODUCT_TYPE, "nerum"), 2)},
         imports=("profiles.nerum",),
+    ),
+    "relax_motion": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, default="", text=True), Question(CONF_PROTOCOL_VARIANT, _relax_motion_routes, "relax")),
+        seed=_relax_motion_seed, normalize=_relax_motion_normalize, validate=_relax_motion_errors, derive=_relax_motion_settings, imports=("profiles.relax_motion",),
+        title=lambda _data: "Relax Motion",
     ),
     "cheerssleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},

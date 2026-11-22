@@ -113,6 +113,7 @@ from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
+from .profiles.relax_motion import ROUTES as RELAX_MOTION_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
@@ -214,6 +215,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
+    "relax_motion": RELAX_MOTION_ROUTES,
     BED_TYPE_YAMADA: {"p1": "P1 control box", "p2": "P2 control box"},
     BED_TYPE_BETTERLIVING2: {"p1": "P1 control box", "p2": "P2 control box", "p3": "P3 control box"},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},

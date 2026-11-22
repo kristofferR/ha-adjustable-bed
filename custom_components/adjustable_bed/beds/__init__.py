@@ -110,6 +110,7 @@ if TYPE_CHECKING:
     from .paramount.controller import ParamountController as ParamountController
     from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir
     from .personal_comfort.controller import PersonalComfortBase as PersonalComfortBase
+    from .relax_motion.controller import RelaxMotionController as RelaxMotionController
     from .remacro.controller import RemacroController as RemacroController
     from .resident.controller import ResidentController as ResidentController
     from .reverie.controller import ReverieController as ReverieController
@@ -174,6 +175,7 @@ _EXPORT_MODULES = {
     "MlilyRemoteController": "mlily_remote.controller",
     "ResidentController": "resident.controller",
     "NerumController": "nerum.controller",
+    "RelaxMotionController": "relax_motion.controller",
     "CheersSleepController": "cheerssleep.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",

@@ -110,6 +110,15 @@ auxiliary and receive formats, so `codec/mline.py` owns those, with typed
 selectors/layouts in `profiles/mline.py`. All 96 accepted packet cases run
 through production encoders. See the [M Line guide](../beds/mline.md).
 
+## Relax Motion
+
+`codec/relax_motion.py` reuses CheersSleep's byte-identical serial/PID encoder
+for P1. Its P2 normal and extra fields are unaddressed and its release is five
+zero bytes, so it owns those thin encoders instead of adopting CheersSleep's
+side and release semantics. `profiles/relax_motion.py` holds the model, app-page
+and locale gates. Both carriers are checked by literal vectors and real native
+controller/entity/service paths. See [Relax Motion](../beds/relax-motion.md).
+
 ## Registering a family
 
 A family keeps its files to itself, so parallel family PRs do not touch a

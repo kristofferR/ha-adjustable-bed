@@ -357,6 +357,7 @@ entities, including the light colors, are separate.
 | [Superior sleep](beds/okin-nframe.md#superior-sleep-ss350--ss650) | The SS350/SS650 button controls that can be held | Saves, reset and the five-second motion activation are separate buttons |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss.md#limoss-remote) | The controls of the remote's layout | |
+| [Relax Motion](beds/relax-motion.md) | The motors your model has: `back_up/down`, `legs_up/down`, `lumbar_up/down` or `all_motors_up/down` | |
 | [FSM Relax](beds/limoss.md#fsm-relax) | `command_` plus an opcode from your configuration's row in the [FSM Relax key tables](beds/limoss.md#fsm-relax-key-tables), such as `command_12` | The bed does not confirm that it moved |
 | [TiMOTION AHF](beds/timotion-ahf.md) | `control_1_up`/`control_1_down` through `control_5_up`/`control_5_down`, `night`, `light`, `chair` | |
 
