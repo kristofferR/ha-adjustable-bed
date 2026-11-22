@@ -189,7 +189,6 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
@@ -289,7 +288,6 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_LAYOUT_APP_BED_TYPES,
-    LEGACY_BED_TYPE_MAPPING,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
@@ -1534,8 +1532,7 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
             candidate not in _EXPLICIT_APP_HINTS for candidate in (result.ambiguous_types or ())
         )
     ):
-        # A new bed gets the current route; compatibility IDs stay with old entries.
-        return LEGACY_BED_TYPE_MAPPING.get(result.bed_type, result.bed_type)
+        return result.bed_type
     return None
 
 
@@ -2395,7 +2392,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # whose profile has no massage; minor version 5 stores each Octo setup's
     # motor layout as its override.
     VERSION = 5
-    MINOR_VERSION = 7
+    MINOR_VERSION = 8
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -3457,7 +3454,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         candidates: list[str] = []
         for candidate in (bed_type, *(detection_result.ambiguous_types or ())):
-            candidate = LEGACY_BED_TYPE_MAPPING.get(candidate, candidate)
             if candidate in VIBRADORM_FAMILY.asks:
                 candidate = BED_TYPE_VIBRADORM
             if candidate not in candidates:
@@ -3521,10 +3517,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "3. While the light is pulsing, promptly choose **Pair now** and select **Submit**.",
             )
         if bed_type in {
-            BED_TYPE_OKIMAT,
+            BED_TYPE_OKIN_UUID,
             BED_TYPE_OKIN_CST,
             BED_TYPE_OKIN_RF_ECO_BT,
-            BED_TYPE_OKIN_UUID,
             BED_TYPE_LEGGETT_OKIN,
             BED_TYPE_LEGGETT_PLATT,
             # Their guides send the user to the same OKIN pairing mode.
@@ -4045,10 +4040,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._new_bed_origin = "discovered"
         staged = self._unasked_route
         detection = detect_new_bed(self._discovery_info)
-        # A new bed gets the current route; compatibility IDs stay with old entries.
-        detected = self._disambiguated_bed_type or (
-            detection.bed_type and LEGACY_BED_TYPE_MAPPING.get(detection.bed_type, detection.bed_type)
-        )
+        detected = self._disambiguated_bed_type or detection.bed_type
         if user_input is None and staged is None:
             if self._disambiguated_bed_type is None and self._prepare_disambiguation(detection):
                 return await self.async_step_bluetooth_disambiguate()

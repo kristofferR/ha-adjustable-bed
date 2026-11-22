@@ -82,6 +82,7 @@ from .const import (
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
+    RETIRED_BED_TYPES,
     RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
     connection_gated_by_bond,
@@ -948,6 +949,63 @@ def _async_migrate_v5_7_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
                 registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
 
 
+def migrate_v5_8_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with each retired bed type saved as its route.
+
+    4.x saved Okimat, DewertOkin, Nectar and Mattress Firm beds under the brand;
+    each ran the Okin receiver route it is now saved as, so nothing else
+    changes. Paired sides and the original entries they restore on unpair are
+    written too, and an open or kept app review follows the renamed route. The
+    migration record lists each place under ``renamed_bed_types``.
+    """
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    renamed: dict[str, str] = {}
+
+    def current(settings: Mapping[str, Any], location: str) -> dict[str, Any]:
+        new = dict(settings)
+        if (retired := new.get(CONF_BED_TYPE)) in RETIRED_BED_TYPES:
+            new[CONF_BED_TYPE] = RETIRED_BED_TYPES[retired]
+            renamed[location] = retired
+        return new
+
+    new_data = current(data, "data")
+    new_options = current(options, "options")
+    if isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = current(child, f"data.{side}")
+            if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
+                restored = current(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+            if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                child[KEY_ORIGIN_OPTIONS] = current(
+                    origin_options, f"data.{side}.{KEY_ORIGIN_OPTIONS}"
+                )
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if renamed:
+        carry_profile_review_to_renamed_route(data, new_data)
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            renamed_bed_types=renamed,
+        )
+    return new_data, new_options
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -1184,11 +1242,30 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             from_version=original_version[0],
             from_minor_version=original_version[1],
         )
-        if data != dict(entry.data):
+        if renamed := data != dict(entry.data):
             _async_migrate_v5_7_entities(hass, entry)
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=7
         )
+        if renamed:
+            # The id each route runs under is derived from the renamed fields.
+            _async_sync_profile_ids(hass, entry)
+
+    if entry.version == 5 and entry.minor_version < 8:
+        # v5.7 -> v5.8: an Okimat, DewertOkin, Nectar or Mattress Firm bed that
+        # 4.x saved under its brand is saved as the Okin receiver route it runs.
+        data, options = migrate_v5_8_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        renamed = data != dict(entry.data)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=8
+        )
+        if renamed:
+            _async_sync_profile_ids(hass, entry)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",

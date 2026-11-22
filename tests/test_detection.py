@@ -11,7 +11,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
@@ -25,16 +24,14 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
-    BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
-    BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -893,7 +890,7 @@ class TestDetectBedTypeByNamePattern:
     def test_detect_mattressfirm_by_iflex_name(self):
         """Test Mattress Firm detection by iFlex name."""
         service_info = _make_service_info(name="iFlex Base")
-        assert detect_bed_type(service_info) == BED_TYPE_MATTRESSFIRM
+        assert detect_bed_type(service_info) == BED_TYPE_OKIN_NORDIC
 
     def test_detect_richmat_by_name_qrrm(self):
         """Test Richmat detection by QRRM name pattern."""
@@ -933,7 +930,7 @@ class TestDetectBedTypeByManufacturerData:
             manufacturer_data={MANUFACTURER_ID_DEWERTOKIN: b"\x01\x02\x03"},
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_DEWERTOKIN
+        assert result.bed_type == BED_TYPE_OKIN_HANDLE
         assert result.confidence == 0.95
         assert BED_TYPE_FURNIMOVE in result.ambiguous_types
         assert result.manufacturer_id == MANUFACTURER_ID_DEWERTOKIN
@@ -1103,7 +1100,7 @@ class TestOkinUUIDDisambiguation:
             name="Nectar Bed",
             service_uuids=[OKIMAT_SERVICE_UUID],
         )
-        assert detect_bed_type(service_info) == BED_TYPE_NECTAR
+        assert detect_bed_type(service_info) == BED_TYPE_OKIN_7BYTE
 
     def test_okin_uuid_with_sleepys_name(self):
         """Test Sleepy's BOX24 detection with OKIN UUID + sleepy in name."""
@@ -1147,7 +1144,7 @@ class TestOkinUUIDDisambiguation:
             name="Okimat Bed",
             service_uuids=[OKIMAT_SERVICE_UUID],
         )
-        assert detect_bed_type(service_info) == BED_TYPE_OKIMAT
+        assert detect_bed_type(service_info) == BED_TYPE_OKIN_UUID
 
     def test_okin_uuid_with_okin_rf_name(self):
         """Test Okimat detection with OKIN UUID + 'OKIN RF' in name."""
@@ -1155,7 +1152,7 @@ class TestOkinUUIDDisambiguation:
             name="OKIN RF TOPLINE",
             service_uuids=[OKIMAT_SERVICE_UUID],
         )
-        assert detect_bed_type(service_info) == BED_TYPE_OKIMAT
+        assert detect_bed_type(service_info) == BED_TYPE_OKIN_UUID
 
     def test_okin_uuid_with_smartbed_name(self):
         """Test Okimat detection with OKIN UUID + 'Smartbed' in name."""
@@ -1163,7 +1160,7 @@ class TestOkinUUIDDisambiguation:
             name="Smartbed 2.0",
             service_uuids=[OKIMAT_SERVICE_UUID],
         )
-        assert detect_bed_type(service_info) == BED_TYPE_OKIMAT
+        assert detect_bed_type(service_info) == BED_TYPE_OKIN_UUID
 
     @pytest.mark.parametrize("name", ["OKIN-Receiver", "OKIN - Receiver"])
     def test_okin_uuid_with_receiver_name_is_ambiguous(self, name: str):
@@ -1188,11 +1185,11 @@ class TestOkinUUIDDisambiguation:
             service_uuids=[OKIMAT_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_OKIMAT
+        assert result.bed_type == BED_TYPE_OKIN_UUID
         assert result.confidence == 0.6
         assert result.requires_characteristic_check is True
         assert "name:okin_generic" in result.signals
-        assert BED_TYPE_NECTAR in result.ambiguous_types
+        assert BED_TYPE_OKIN_7BYTE in result.ambiguous_types
         assert BED_TYPE_OKIN_RF_ECO_BT in result.ambiguous_types
 
     def test_okin_generic_name_without_advertised_uuid_offers_resident(self):
@@ -1214,7 +1211,7 @@ class TestOkinUUIDDisambiguation:
         )
         result = detect_bed_type_detailed(service_info)
 
-        assert result.bed_type == BED_TYPE_DEWERTOKIN
+        assert result.bed_type == BED_TYPE_OKIN_HANDLE
         assert result.confidence == 0.9
         assert BED_TYPE_FURNIMOVE in result.ambiguous_types
         assert "uuid:dewertokin_rf_gateway" in result.signals
@@ -1232,7 +1229,7 @@ class TestOkinUUIDDisambiguation:
 
         result = detect_bed_type_from_gatt_services(gatt_services)
 
-        assert result.bed_type == BED_TYPE_DEWERTOKIN
+        assert result.bed_type == BED_TYPE_OKIN_HANDLE
         assert result.confidence == 0.9
         assert "gatt_char:dewertokin_rf_gateway_name" in result.signals
 
@@ -1446,7 +1443,7 @@ class TestOkinUUIDDisambiguation:
         )
 
     @pytest.mark.parametrize("ble_model", ["OKIMAT 4 IPS", None])
-    @pytest.mark.parametrize("bed_type", [BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID])
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_OKIN_UUID])
     def test_issue_555_okimat_gatt_never_selects_cst(self, bed_type: str, ble_model: str | None):
         """CSS plus DFU kept moving a FurniMove OKIMAT bed to CST, even unread (#555)."""
         assert detect_bed_type_from_gatt_services(ISSUE_555_OKIMAT_GATT, "Milou").bed_type == (
@@ -1512,7 +1509,7 @@ class TestOkinUUIDDisambiguation:
         ]
 
         assert (
-            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_OKIMAT, gatt_services)
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_OKIN_UUID, gatt_services)
             == BED_TYPE_OKIN_RF_ECO_BT
         )
 
@@ -1540,11 +1537,11 @@ class TestOkinUUIDDisambiguation:
 
         assert (
             refine_okin_shared_uuid_protocol_from_gatt(
-                BED_TYPE_OKIMAT,
+                BED_TYPE_OKIN_UUID,
                 gatt_services,
                 ble_model="OKIMAT 4 IPS/M",
             )
-            == BED_TYPE_OKIMAT
+            == BED_TYPE_OKIN_UUID
         )
         assert (
             refine_okin_shared_uuid_protocol_from_gatt(
@@ -1618,7 +1615,7 @@ class TestOkinUUIDDisambiguation:
             ),
         ]
 
-        for stale_type in (BED_TYPE_NECTAR, BED_TYPE_OKIN_7BYTE):
+        for stale_type in (BED_TYPE_OKIN_7BYTE,):
             assert (
                 refine_okin_shared_uuid_protocol_from_gatt(
                     stale_type,
@@ -1731,7 +1728,6 @@ class TestOkinUUIDDisambiguation:
         ("bed_type", "protocol_variant", "ble_model", "expected_bed_type"),
         [
             (BED_TYPE_OKIN_UUID, "82620", "RF eco BT", BED_TYPE_OKIN_UUID),
-            (BED_TYPE_OKIMAT, "82620", "RF eco BT", BED_TYPE_OKIMAT),
             (BED_TYPE_OKIN_UUID, "auto", "RF eco BT", BED_TYPE_OKIN_UUID),
             (BED_TYPE_OKIN_UUID, "82620", "MEGAMAT MBZ", BED_TYPE_OKIN_RF_ECO_BT),
         ],
@@ -1792,7 +1788,7 @@ class TestOkinUUIDDisambiguation:
 
         assert (
             refine_okin_shared_uuid_protocol_from_gatt(
-                BED_TYPE_OKIMAT,
+                BED_TYPE_OKIN_UUID,
                 gatt_services,
                 ble_model="MEGAMAT MBZ",
             )
@@ -1863,7 +1859,7 @@ class TestOkinUUIDDisambiguation:
         """The model number alone is enough when Device Info reports NORACON."""
         assert (
             refine_nordic_uart_protocol_from_device_info(
-                BED_TYPE_MATTRESSFIRM,
+                BED_TYPE_OKIN_NORDIC,
                 "Unknown Nordic",
                 None,
                 "NORACON",
@@ -1974,10 +1970,10 @@ class TestOkinUUIDDisambiguation:
             service_uuids=[OKIMAT_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_OKIMAT
+        assert result.bed_type == BED_TYPE_OKIN_UUID
         assert result.confidence == 0.5
         assert result.requires_characteristic_check is True
-        assert BED_TYPE_NECTAR in result.ambiguous_types
+        assert BED_TYPE_OKIN_7BYTE in result.ambiguous_types
         assert BED_TYPE_OKIN_RF_ECO_BT in result.ambiguous_types
 
 
@@ -2630,7 +2626,7 @@ class TestSharedServiceOnly:
         ("name", "service_uuids", "manufacturer_data", "expected", "confident"),
         [
             # 4.4.2 offered these beds; they still are, as before.
-            ("OKIN-346311", [_short("180a"), OKIMAT_SERVICE_UUID], {}, BED_TYPE_OKIMAT, False),  # 160
+            ("OKIN-346311", [_short("180a"), OKIMAT_SERVICE_UUID], {}, BED_TYPE_OKIN_UUID, False),  # 160
             ("DHN-FC9E27", [RICHMAT_WILINKE_W4_SERVICE_UUID], {}, BED_TYPE_RICHMAT, True),  # 163
             (
                 "Smartbed428000193",
@@ -2664,7 +2660,7 @@ class TestCasperSensorNames:
         info = _make_service_info(name="RM-Bed", service_uuids=[LINAK_CONTROL_SERVICE_UUID])
         assert detect_bed_type_detailed(info).bed_type == BED_TYPE_LINAK
         info = _make_service_info(name="HJ-Bed", service_uuids=[DEWERTOKIN_SERVICE_UUID])
-        assert detect_bed_type_detailed(info).bed_type == BED_TYPE_DEWERTOKIN
+        assert detect_bed_type_detailed(info).bed_type == BED_TYPE_OKIN_HANDLE
 
     def test_the_non_bed_names_still_apply(self):
         assert detect_bed_type_detailed(_make_service_info(name="RM-1 speaker")).bed_type is None

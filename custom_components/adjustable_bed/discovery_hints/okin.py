@@ -2,8 +2,7 @@
 
 from ..const import (
     BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_NECTAR,
-    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RESIDENT,
     BED_TYPE_RIZE_REMEDY_II,
@@ -16,7 +15,7 @@ HINTS: tuple[Hint, ...] = (
     names("OKIN", case=Case.FOLD, bed_types={BED_TYPE_RIZE_REMEDY_II}),
     *services(
         OKIMAT_SERVICE_UUID,
-        bed_types={BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN, BED_TYPE_NECTAR, BED_TYPE_RESIDENT},
+        bed_types={BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_7BYTE, BED_TYPE_RESIDENT},
     ),
     # Pairing-only receivers advertise just a name until bonded.
     names(

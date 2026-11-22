@@ -57,7 +57,6 @@ from .const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ERGOMOTION,
@@ -96,7 +95,6 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
-    BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MLINE,
@@ -104,9 +102,7 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_N32_MOTION_BED,
-    BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
@@ -373,23 +369,20 @@ NAME_GUARDED_WILINKE_UUIDS: dict[str, str] = {
 OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
     {
         BED_TYPE_LEGGETT_OKIN,
-        BED_TYPE_NECTAR,
-        BED_TYPE_OKIMAT,
         BED_TYPE_OKIN_7BYTE,
+        BED_TYPE_OKIN_UUID,
         BED_TYPE_OKIN_64BIT,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
-        BED_TYPE_OKIN_UUID,
     }
 )
 
 # Shared-UUID profiles a connected OKIMAT Device Info model must not rewrite.
-# BED_TYPE_OKIMAT and
+# BED_TYPE_OKIN_UUID and
 # BED_TYPE_OKIN_UUID resolve to the same controller. BED_TYPE_OKIN_CST is never
 # rewritten here; the okimat_cst_route repair lets the user move it (#555).
 OKIMAT_COMPATIBLE_PROFILES: frozenset[str] = frozenset(
     {
-        BED_TYPE_OKIMAT,
         BED_TYPE_OKIN_UUID,
         BED_TYPE_OKIN_CST,
     }
@@ -468,7 +461,7 @@ def _check_manufacturer_data(
     # DewertOkin: Company ID 1643 (0x066B)
     # Source: com.dewertokin.okinsmartcomfort app disassembly
     if MANUFACTURER_ID_DEWERTOKIN in manufacturer_data:
-        return BED_TYPE_DEWERTOKIN, 0.95, MANUFACTURER_ID_DEWERTOKIN
+        return BED_TYPE_OKIN_HANDLE, 0.95, MANUFACTURER_ID_DEWERTOKIN
 
     # Vibradorm: Company ID 944 (0x03B0)
     # Source: de.vibradorm.vra app disassembly
@@ -916,10 +909,6 @@ def bed_type_label(bed_type: str | None) -> str:
 # Each compatibility ID, saved by an older version, gets its own label naming
 # the product, so a label always maps back to exactly one saved ID.
 _COMPATIBILITY_LABELS: Final[dict[str, str]] = {
-    "okimat": "Okimat bed (older setup)",
-    "dewertokin": "DewertOkin bed (older setup)",
-    "nectar": "Nectar bed (older setup)",
-    "mattressfirm": "Mattress Firm 900 bed (older setup)",
     BED_TYPE_LEGGETT_PLATT: "Leggett & Platt bed (older setup)",
 }
 
@@ -1080,7 +1069,7 @@ def detect_bed_type_from_gatt_services(
 
     if has_dewertokin_rf_gateway:
         return DetectionResult(
-            bed_type=BED_TYPE_DEWERTOKIN,
+            bed_type=BED_TYPE_OKIN_HANDLE,
             confidence=0.9,
             signals=[
                 "gatt_service:dewertokin_rf_gateway",
@@ -1115,7 +1104,7 @@ def detect_bed_type_from_gatt_services(
                 bed_type=BED_TYPE_OKIN_CST,
                 confidence=0.8,
                 signals=[*signals, "gatt_service:nordic_dfu"],
-                ambiguous_types=[BED_TYPE_NECTAR, BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_FURNIMOVE],
+                ambiguous_types=[BED_TYPE_OKIN_7BYTE, BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_FURNIMOVE],
             )
 
         return DetectionResult(
@@ -1213,7 +1202,7 @@ def refine_okin_shared_uuid_protocol_from_gatt(
                 BED_TYPE_OKIN_CST,
                 BED_TYPE_OKIN_RF_ECO_BT,
             }
-            and bed_type in {BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID}
+            and bed_type in {BED_TYPE_OKIN_UUID}
             and protocol_variant in OKIMAT_VARIANTS
             and protocol_variant != VARIANT_AUTO
         ):
@@ -1239,7 +1228,7 @@ def refine_okin_shared_uuid_protocol_from_gatt(
             # profiles, so the Device Info model is the stronger signal (#406).
             if bed_type in OKIMAT_COMPATIBLE_PROFILES:
                 # Already on an OKIMAT-compatible controller; keep the saved label
-                # (BED_TYPE_OKIMAT/OKIN_UUID resolve to the same controller, and
+                # (BED_TYPE_OKIN_UUID/OKIN_UUID resolve to the same controller, and
                 # OKIN CST is its own deliberately preserved full-bed profile).
                 if _log_correction:
                     _LOGGER.debug(
@@ -1294,7 +1283,7 @@ def refine_okin_dot_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str
     pairing requirement, which DOT boxes don't have (FurniMove flags DOT the
     same way, by the presence of its CB24_WRITE_CHARACTERISTIC).
     """
-    if bed_type not in (BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID) or not gatt_services:
+    if bed_type not in (BED_TYPE_OKIN_UUID,) or not gatt_services:
         return bed_type
 
     service_uuids: set[str] = set()
@@ -1358,7 +1347,6 @@ def refine_nordic_uart_protocol_from_device_info(
     """Correct Nordic UART profiles when Device Info identifies a NORA controller."""
     if bed_type not in {
         BED_TYPE_RICHMAT,
-        BED_TYPE_MATTRESSFIRM,
         BED_TYPE_OKIN_NORDIC,
         BED_TYPE_OKIN_64BIT,
     }:
@@ -1810,7 +1798,7 @@ def _detect_bed_type_with_app_candidates(
                     bed_type=BED_TYPE_FURNIMOVE,
                     confidence=0.6,
                     signals=["uuid:furnimove_gateway"],
-                    ambiguous_types=[BED_TYPE_DEWERTOKIN],
+                    ambiguous_types=[BED_TYPE_OKIN_HANDLE],
                 )
         elif result.bed_type != BED_TYPE_FURNIMOVE:
             if BED_TYPE_FURNIMOVE not in (result.ambiguous_types or ()):
@@ -2041,7 +2029,7 @@ def _detect_bed_type_detailed(
             confidence=mfr_confidence,
             signals=signals,
             manufacturer_id=mfr_id,
-            ambiguous_types=[BED_TYPE_FURNIMOVE] if mfr_bed_type == BED_TYPE_DEWERTOKIN else [],
+            ambiguous_types=[BED_TYPE_FURNIMOVE] if mfr_bed_type == BED_TYPE_OKIN_HANDLE else [],
         )
 
     # Priority 2: Kaidi detection - manufacturer data is the primary signal.
@@ -2108,7 +2096,7 @@ def _detect_bed_type_detailed(
             service_info.name,
         )
         return DetectionResult(
-            bed_type=BED_TYPE_DEWERTOKIN,
+            bed_type=BED_TYPE_OKIN_HANDLE,
             confidence=0.9,
             signals=signals,
             ambiguous_types=[BED_TYPE_FURNIMOVE],
@@ -2122,7 +2110,7 @@ def _detect_bed_type_detailed(
             service_info.name,
         )
         return DetectionResult(
-            bed_type=BED_TYPE_DEWERTOKIN,
+            bed_type=BED_TYPE_OKIN_HANDLE,
             confidence=0.9,
             signals=signals,
             ambiguous_types=[BED_TYPE_FURNIMOVE],
@@ -2709,7 +2697,7 @@ def _detect_bed_type_detailed(
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_NECTAR, confidence=0.9, signals=signals)
+        return DetectionResult(bed_type=BED_TYPE_OKIN_7BYTE, confidence=0.9, signals=signals)
 
     # Check for beds using OKIN service UUID (Okimat, Leggett Okin, Nectar, OKIN 64-bit)
     # Nectar is already handled above by name check
@@ -2759,7 +2747,7 @@ def _detect_bed_type_detailed(
                 service_info.address,
                 service_info.name,
             )
-            return DetectionResult(bed_type=BED_TYPE_OKIMAT, confidence=0.9, signals=signals)
+            return DetectionResult(bed_type=BED_TYPE_OKIN_UUID, confidence=0.9, signals=signals)
 
         # Generic OKIN-XXXXXX names are not enough to pick a protocol. They can
         # be classic Okimat 6-byte devices or Nectar-style 7-byte bases.
@@ -2772,11 +2760,11 @@ def _detect_bed_type_detailed(
                 service_info.address,
             )
             return DetectionResult(
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 confidence=0.6,
                 signals=signals,
                 ambiguous_types=[
-                    BED_TYPE_NECTAR,
+                    BED_TYPE_OKIN_7BYTE,
                     BED_TYPE_LEGGETT_OKIN,
                     BED_TYPE_OKIN_64BIT,
                     BED_TYPE_OKIN_CST,
@@ -2795,11 +2783,11 @@ def _detect_bed_type_detailed(
             service_info.address,
         )
         return DetectionResult(
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
             confidence=0.5,
             signals=signals,
             ambiguous_types=[
-                BED_TYPE_NECTAR,
+                BED_TYPE_OKIN_7BYTE,
                 BED_TYPE_LEGGETT_OKIN,
                 BED_TYPE_OKIN_64BIT,
                 BED_TYPE_OKIN_CST,
@@ -3182,7 +3170,7 @@ def _detect_bed_type_detailed(
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_DEWERTOKIN, confidence=0.3, signals=signals)
+        return DetectionResult(bed_type=BED_TYPE_OKIN_HANDLE, confidence=0.3, signals=signals)
 
     # Check for Serta Motion Perfect - name-based detection (uses Keeson protocol)
     if any(x in device_name for x in ["serta", "motion perfect"]):
@@ -3239,7 +3227,7 @@ def _detect_bed_type_detailed(
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_MATTRESSFIRM, confidence=0.9, signals=signals)
+        return DetectionResult(bed_type=BED_TYPE_OKIN_NORDIC, confidence=0.9, signals=signals)
 
     # NORA_CON / NORACON Mattress Firm controllers use OKIN's 64-bit Nordic UART
     # profile. Without this name-specific check, the shared Nordic UART service
@@ -3259,7 +3247,7 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_OKIN_64BIT,
             confidence=0.85,
             signals=signals,
-            ambiguous_types=[BED_TYPE_MATTRESSFIRM, BED_TYPE_RICHMAT],
+            ambiguous_types=[BED_TYPE_OKIN_NORDIC, BED_TYPE_RICHMAT],
         )
 
     # Check for Extended Nordic UART (Ergomotion/SFD beds) - maps to Keeson
@@ -3306,7 +3294,7 @@ def _detect_bed_type_detailed(
                 ambiguous_types=[
                     BED_TYPE_RICHMAT,
                     BED_TYPE_KEESON,
-                    BED_TYPE_MATTRESSFIRM,
+                    BED_TYPE_OKIN_NORDIC,
                     BED_TYPE_OKIN_64BIT,
                 ],
                 manufacturer_id=MANUFACTURER_ID_OKIN,
@@ -3322,7 +3310,7 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_RICHMAT,
             confidence=0.5,
             signals=signals,
-            ambiguous_types=[BED_TYPE_KEESON, BED_TYPE_MATTRESSFIRM, BED_TYPE_OKIN_64BIT],
+            ambiguous_types=[BED_TYPE_KEESON, BED_TYPE_OKIN_NORDIC, BED_TYPE_OKIN_64BIT],
             requires_characteristic_check=True,
         )
 

@@ -125,7 +125,7 @@ async def test_detected_receiver_offers_routes_review_apps_and_keep(hass):
     ("bed_type", "variant"),
     [
         (const.BED_TYPE_OKIN_UUID, "auto"),
-        (const.BED_TYPE_OKIMAT, "62612"),
+        (const.BED_TYPE_OKIN_UUID, "62612"),
         (const.BED_TYPE_OKIN_DOT, "97450"),
     ],
 )
@@ -199,7 +199,7 @@ async def test_choosing_the_staircase_confirms_it(hass):
 
 
 async def test_review_app_answer_switches_to_that_app(hass):
-    flow = setup_flow(hass, const.BED_TYPE_OKIMAT)
+    flow = setup_flow(hass, const.BED_TYPE_OKIN_UUID)
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_okin_family({"choice": "customatic_zseries:z230"})
     saved = finish.call_args.args[0]
@@ -286,7 +286,7 @@ async def test_change_is_refused_when_the_link_lacks_the_routes_endpoint(
 async def test_okimat_code_change_keeps_the_saved_id_and_needs_the_bond(
     hass, enable_custom_integrations
 ):
-    entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_OKIMAT, const.CONF_MOTOR_COUNT: 2})
+    entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_UUID, const.CONF_MOTOR_COUNT: 2})
     manager = hass.config_entries.flow
     with ExitStack() as stack:
         bluetooth_patches(stack, okin_client(OKIN))
@@ -301,7 +301,7 @@ async def test_okimat_code_change_keeps_the_saved_id_and_needs_the_bond(
         assert result["step_id"] == "migration_confirm"
         result = await manager.async_configure(result["flow_id"], {"action": "apply"})
     assert result["reason"] == "migration_applied"
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIMAT
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_UUID
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == "62612"
     assert entry.data[const.CONF_MOTOR_COUNT] == 4
 

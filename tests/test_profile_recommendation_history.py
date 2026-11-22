@@ -140,7 +140,7 @@ def test_issue116_does_not_offer_identical_alias_as_a_remote_profile_improvement
         {},
     )
     assert result is not None and result.suggested is None
-    assert "okimat" not in result.choices
+    assert "okin_uuid" not in result.choices
 
 
 @pytest.mark.parametrize("remote", ["auto", "qrrm", "LP-QRRM", "lp-qrrm", "BT6500", "GGRM"])
@@ -183,7 +183,7 @@ def test_qrrm_bedtech_signature_does_not_question_the_richmat_remote_layout():
 @pytest.mark.parametrize(
     ("selected", "advertisement"),
     [
-        pytest.param("okimat", observed("OKIN-338977"), id="issue501_missing_passive_identity"),
+        pytest.param("okin_uuid", observed("OKIN-338977"), id="issue501_missing_passive_identity"),
         pytest.param("richmat", observed("Galaxy"), id="issue130_no_identity"),
         pytest.param(
             "motosleep",
@@ -197,7 +197,7 @@ def test_qrrm_bedtech_signature_does_not_question_the_richmat_remote_layout():
         ),
         pytest.param("bedtech", observed("DA14531"), id="issue296_not_a_bed"),
         pytest.param(
-            "dewertokin",
+            "okin_handle",
             observed(
                 "TT214H BlueFrog",
                 ["00001523-0000-1000-8000-00805f9b34fb", "00001623-0000-1000-8000-00805f9b34fb"],

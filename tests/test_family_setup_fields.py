@@ -298,7 +298,7 @@ def _route(data: dict[str, Any]) -> str:
     """The route and app an entry runs; the saved ID a family question keeps counts as it."""
     saved, variant = data[const.CONF_BED_TYPE], data.get(const.CONF_PROTOCOL_VARIANT)
     bed_type = resolve_explicit_bed_type(saved, variant) or saved
-    if bed_type == const.BED_TYPE_OKIMAT:
+    if bed_type == const.BED_TYPE_OKIN_UUID:
         # Okimat is the Okin UUID route under its older saved ID.
         bed_type = const.BED_TYPE_OKIN_UUID
     route = bed_type_choice(bed_type, variant)

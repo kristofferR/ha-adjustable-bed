@@ -204,13 +204,13 @@ class TestBuildPairEntryData:
         original_data = {
             "address": LEFT_ADDR,
             "name": "Left",
-            "bed_type": "okimat",
+            "bed_type": "okin_uuid",
             "ble_bond_established": True,
             "ble_bond_context": {"version": 1, "transport": "local", "source": "hci0"},
         }
         data = build_pair_entry_data(
             dict(original_data),
-            {"address": RIGHT_ADDR, "bed_type": "okimat"},
+            {"address": RIGHT_ADDR, "bed_type": "okin_uuid"},
             name="Master",
             left_origin_data=original_data,
         )

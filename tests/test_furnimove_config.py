@@ -26,7 +26,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
-    LEGACY_BED_TYPE_MAPPING,
     requires_pairing,
 )
 from custom_components.adjustable_bed.detection import (
@@ -217,11 +216,11 @@ def test_app_gateway_is_a_candidate_with_no_inferred_handset():
     ("service_uuids", "manufacturer_data", "expected", "confident"),
     [
         # The app checks its manufacturer and 1523 predicates before the gateway.
-        (["00001420-0000-1000-8000-00805f9b34fb"], {1643: b"\x01"}, "dewertokin", True),
+        (["00001420-0000-1000-8000-00805f9b34fb"], {1643: b"\x01"}, "okin_handle", True),
         (
             ["00001420-0000-1000-8000-00805f9b34fb", "00001523-0000-1000-8000-00805f9b34fb"],
             {},
-            "dewertokin",
+            "okin_handle",
             True,
         ),
         # Another bed's unique service UUID keeps its own route.
@@ -246,6 +245,4 @@ def test_gateway_service_never_outranks_another_match(
     result = detect_bed_type_detailed(info)
     assert result.bed_type == expected
     assert BED_TYPE_FURNIMOVE in result.ambiguous_types
-    # A new bed gets the current route of a compatibility ID.
-    route = LEGACY_BED_TYPE_MAPPING.get(expected, expected)
-    assert (_confident_auto_detect(result) == route) is confident
+    assert (_confident_auto_detect(result) == expected) is confident

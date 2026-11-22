@@ -92,7 +92,7 @@ async def test_a_failed_pairing_check_changes_nothing_and_keep_keeps_the_setup(
     hass, enable_custom_integrations
 ):
     entry = okin_entry_for(
-        hass, {const.CONF_BED_TYPE: const.BED_TYPE_OKIMAT, const.CONF_MOTOR_COUNT: 2}
+        hass, {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_UUID, const.CONF_MOTOR_COUNT: 2}
     )
     before = dict(entry.data)
     manager = hass.config_entries.flow

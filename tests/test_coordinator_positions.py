@@ -16,7 +16,7 @@ from custom_components.adjustable_bed.command_scheduler import (
     CommandOutcome,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -449,7 +449,7 @@ class TestCoordinatorPositionSeek:
             data={
                 CONF_ADDRESS: TEST_ADDRESS,
                 CONF_NAME: TEST_NAME,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,

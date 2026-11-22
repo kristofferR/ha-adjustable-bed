@@ -26,7 +26,7 @@ from custom_components.adjustable_bed.codec.okin_nframe import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -741,7 +741,7 @@ class TestLeggettGen2Connection:
             # access, so a connect timeout there is not a pairing symptom.
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
             (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
-            (BED_TYPE_OKIMAT, None, False),
+            (BED_TYPE_OKIN_UUID, None, False),
         ],
     )
     async def test_connection_gated_by_bond(
@@ -757,7 +757,7 @@ class TestLeggettGen2Connection:
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
             (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
-            (BED_TYPE_OKIMAT, None, False),
+            (BED_TYPE_OKIN_UUID, None, False),
         ],
     )
     async def test_pairing_order(

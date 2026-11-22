@@ -42,7 +42,6 @@ from .ble_auth import is_ble_authentication_error
 from .bluetooth_bond import BondSelectionStatus, async_read_local_bonds, select_local_bond
 from .bluetooth_transport import ConnectionPath, TransportClass, async_clear_proxy_gatt_cache
 from .const import (
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BLE_BOND_CONTEXT,
@@ -254,7 +253,7 @@ def has_evidence_backed_verifier(bed_type: str | None, protocol_variant: str | N
     # Sleep Number's Auth read is encryption-gated in #574. Its response must
     # also be a usable session UUID; a successful read of two zero bytes (#565)
     # does not authenticate a session.
-    return bed_type in (BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_SLEEP_NUMBER)
+    return bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_SLEEP_NUMBER)
 
 
 async def async_verify_authenticated_access(

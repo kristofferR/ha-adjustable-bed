@@ -478,15 +478,11 @@ BED_TYPE_MOTOSLEEP: Final = "motosleep"
 
 BED_TYPE_REVERIE: Final = "reverie"
 BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # -> leggett_gen2 or leggett_okin
-BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid
 BED_TYPE_KEESON: Final = "keeson"
 BED_TYPE_ERGOMOTION: Final = "ergomotion"
 BED_TYPE_JIECANG: Final = "jiecang"
 BED_TYPE_JIECANG_APP: Final = "jiecang_app"
-BED_TYPE_DEWERTOKIN: Final = "dewertokin"  # -> okin_handle
 BED_TYPE_OCTO: Final = "octo"
-BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
-BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_MALOUF_APP: Final = "malouf_app"
@@ -840,12 +836,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_OCTO,
-    # Legacy aliases (for backwards compatibility with existing configs)
+    # Saved by 4.x; its variant or the connected bed picks the Leggett route.
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_OKIMAT,
-    BED_TYPE_DEWERTOKIN,
-    BED_TYPE_MATTRESSFIRM,
-    BED_TYPE_NECTAR,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
@@ -998,7 +990,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_BEDSENSE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_OKIN_HANDLE,
-        BED_TYPE_DEWERTOKIN,
         BED_TYPE_OKIN_ORE,
         BED_TYPE_LEGGETT_GEN2,
         BED_TYPE_LEGGETT_LP_LEGACY,
@@ -1058,15 +1049,14 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
 )
 
 
-# Mapping from legacy bed types to their protocol-based equivalents
-# Used by controller_factory to resolve the correct controller
-LEGACY_BED_TYPE_MAPPING: Final = {
-    BED_TYPE_DEWERTOKIN: BED_TYPE_OKIN_HANDLE,
-    BED_TYPE_OKIMAT: BED_TYPE_OKIN_UUID,
-    BED_TYPE_NECTAR: BED_TYPE_OKIN_7BYTE,
-    BED_TYPE_MATTRESSFIRM: BED_TYPE_OKIN_NORDIC,
-    # Note: leggett_platt not mapped here - requires variant detection in
-    # controller_factory.py to determine gen2 (default), okin, or wilinke (mlrm)
+# Bed types 4.x saved under a brand name, and the route each one ran. Schema
+# 5.8 renames them in saved entries; the migration steps before it still meet
+# them.
+RETIRED_BED_TYPES: Final = {
+    "dewertokin": BED_TYPE_OKIN_HANDLE,
+    "okimat": BED_TYPE_OKIN_UUID,
+    "nectar": BED_TYPE_OKIN_7BYTE,
+    "mattressfirm": BED_TYPE_OKIN_NORDIC,
 }
 
 # Some controllers (e.g. certain OKIN CST boards) accept a GATT read on a
@@ -2090,6 +2080,8 @@ def resolve_explicit_bed_type(bed_type: str | None, protocol_variant: str | None
     from a live connection, so the umbrella type is returned unchanged (and stays
     offline-unsafe, which is correct — it can't be minted without connecting).
     """
+    if bed_type in RETIRED_BED_TYPES:
+        return RETIRED_BED_TYPES[bed_type]
     if bed_type == BED_TYPE_LEGGETT_PLATT:
         if protocol_variant == LEGGETT_VARIANT_MLRM:
             return BED_TYPE_LEGGETT_WILINKE
@@ -2806,7 +2798,6 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
     BED_TYPE_VIBRADORM_APP,

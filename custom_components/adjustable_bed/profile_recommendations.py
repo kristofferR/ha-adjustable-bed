@@ -12,6 +12,7 @@ import re
 from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass
 from hashlib import sha256
+from itertools import product
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import voluptuous as vol
@@ -61,10 +62,10 @@ from .const import (
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_SINO,
-    LEGACY_BED_TYPE_MAPPING,
     NORDIC_UART_SERVICE_UUID,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
+    RETIRED_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTE_BT6500,
     RICHMAT_REMOTE_GGRM,
@@ -126,6 +127,8 @@ class Recommendation:
     suggested: str | None
     choices: tuple[str, ...] = ()
     translation_key: str = "lumbar_star254202_box25"
+    # The ids this had while one of its routes was saved under an earlier name.
+    earlier_rules: tuple[str, ...] = ()
 
 
 def _recommendation_label(choice: str) -> str:
@@ -324,12 +327,6 @@ def recommend_profile(
     # App-name hints offer an opt-in choice, not a competing receiver signature.
     # Keep an already selected app above; assess other profiles by receiver evidence.
     matches = {detected.bed_type, *receiver_ambiguities}
-    if variant in (None, VARIANT_AUTO) and (
-        LEGACY_BED_TYPE_MAPPING.get(bed_type, bed_type)
-        == LEGACY_BED_TYPE_MAPPING.get(detected.bed_type, detected.bed_type)
-        and bed_type != detected.bed_type
-    ):
-        return None  # Existing aliases already use the same protocol route.
     remote_choices: set[str] = set()
     if (
         bed_type == detected.bed_type == BED_TYPE_RICHMAT
@@ -349,8 +346,7 @@ def recommend_profile(
             choice
             for choice in {*matches, *apps, *remote_choices}
             if choice != current
-            and LEGACY_BED_TYPE_MAPPING.get(choice, choice)
-            != LEGACY_BED_TYPE_MAPPING.get(bed_type, bed_type)
+            and choice != bed_type
             and (
                 choice in SUPPORTED_BED_TYPES
                 or choice in remote_choices
@@ -370,11 +366,26 @@ def recommend_profile(
         else None
     )
     kind = "profile_mismatch" if suggested else "profile_ambiguous"
-    # Dismissals change only with the selected route/variant or available choices.
-    identity = repr((kind, bed_type, variant or VARIANT_AUTO, choices)).encode()
-    return Recommendation(
-        f"{kind}_{sha256(identity).hexdigest()[:20]}", current, suggested, choices, kind
-    )
+    names = (bed_type, *choices)
+    rules = [
+        _route_rule(kind, earlier[0], variant, earlier[1:])
+        for earlier in product(*((name, *_EARLIER_NAMES.get(name, ())) for name in names))
+    ]
+    return Recommendation(rules[0], current, suggested, choices, kind, tuple(rules[1:]))
+
+
+# What a route was saved as before a schema step renamed it. A decision saved
+# under the earlier name still answers the same recommendation.
+_EARLIER_NAMES: Final[dict[str, tuple[str, ...]]] = {
+    "smartbed": ("okin_cb24",),
+    **{route: (retired,) for retired, route in RETIRED_BED_TYPES.items()},
+}
+
+
+def _route_rule(kind: str, bed_type: str, variant: object, choices: Iterable[str]) -> str:
+    """Return a rule id: it changes only with the route, its variant or the choices."""
+    identity = repr((kind, bed_type, variant or VARIANT_AUTO, tuple(sorted(choices)))).encode()
+    return f"{kind}_{sha256(identity).hexdigest()[:20]}"
 
 
 @callback
@@ -390,28 +401,30 @@ def has_profile_assessment(hass: HomeAssistant, entry_id: str) -> bool:
     return bool(relevant) and all(
         (
             watch.recommendation is not None
-            and not watch.dismissed.get(watch.recommendation.rule)
+            and not watch.answered(watch.recommendation)
             and watch._covers_upgrade_review
         )
-        or watch.dismissed.get(watch.upgrade_review_key or "")
+        or any(watch.dismissed.get(key) for key in _upgrade_review_keys(watch.profile_data))
         for watch in relevant
     )
 
 
 def _upgrade_review_key(data: Mapping[str, object]) -> str | None:
     """Identify the upgrade review an explicit decision also confirms."""
-    profile = {
-        CONF_BED_TYPE: data.get(CONF_BED_TYPE),
-        CONF_PROTOCOL_VARIANT: data.get(CONF_PROTOCOL_VARIANT),
-    }
-    mark = profile_review_mark(profile)
-    if mark is None:
-        return None
-    choices = tuple(
-        sorted(related_app_choices(data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)))
+    return next(iter(_upgrade_review_keys(data)), None)
+
+
+def _upgrade_review_keys(data: Mapping[str, object]) -> tuple[str, ...]:
+    """Return the upgrade review's key, then the keys it had under earlier route names."""
+    bed_type, variant = data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)
+    if profile_review_mark({CONF_BED_TYPE: bed_type, CONF_PROTOCOL_VARIANT: variant}) is None:
+        return ()
+    choices = tuple(sorted(related_app_choices(bed_type, variant)))
+    return tuple(
+        f"upgrade_review_{sha256(repr((mark, choices)).encode()).hexdigest()[:20]}"
+        for name in (bed_type, *_EARLIER_NAMES.get(str(bed_type), ()))
+        if (mark := profile_review_mark({CONF_BED_TYPE: name, CONF_PROTOCOL_VARIANT: variant}))
     )
-    identity = repr((mark, choices)).encode()
-    return f"upgrade_review_{sha256(identity).hexdigest()[:20]}"
 
 
 def _watches(hass: HomeAssistant) -> dict[str, ProfileRecommendationWatch]:
@@ -457,6 +470,13 @@ class ProfileRecommendationWatch:
     @property
     def upgrade_review_key(self) -> str | None:
         return _upgrade_review_key(self.profile_data)
+
+    def answered(self, recommendation: Recommendation) -> bool:
+        """Whether a decision was saved for this recommendation, under any name it had."""
+        return any(
+            self.dismissed.get(rule)
+            for rule in (recommendation.rule, *recommendation.earlier_rules)
+        )
 
     @callback
     def refresh(self, info: bluetooth.BluetoothServiceInfoBleak | None = None) -> None:
@@ -524,7 +544,7 @@ class ProfileRecommendationWatch:
             async_refresh_profile_review_issue(self.hass, self.entry)
         if (
             recommendation is None
-            or self.dismissed.get(recommendation.rule)
+            or self.answered(recommendation)
             # Keep on the app review already answered every choice offered here.
             or (
                 bool(recommendation.choices)
@@ -795,7 +815,7 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
         if (
             recommendation is None
             or recommendation.rule != self._rule
-            or watch.dismissed.get(recommendation.rule)
+            or watch.answered(recommendation)
         ):
             return self.async_abort(reason="recommendation_changed")
         action = (user_input or {}).get("action")
@@ -847,7 +867,7 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                         or watch.entry.data != original_data
                         or watch.entry.options != original_options
                         or watch.recommendation != recommendation
-                        or watch.dismissed.get(recommendation.rule)
+                        or watch.answered(recommendation)
                     ):
                         manager.async_abort(flow_id)
                         return self.async_abort(reason="recommendation_changed")

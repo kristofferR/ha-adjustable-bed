@@ -206,8 +206,7 @@ The same question appears, with **Keep the detected or saved controls**
 leaving the entry as it is. Before the
 review, each Okin route is checked for the command endpoint its controller
 writes, and the Okimat and staircase routes also check the bond; a bed without
-them keeps its setup. A saved `okimat` entry keeps that ID when its code
-changes. **Configure** keeps routine settings; the handset ID, remote code and
+them keeps its setup. **Configure** keeps routine settings; the handset ID, remote code and
 route change only through **Reconfigure**. The [FurniMove repairs](furnimove.md#repairing-existing-configurations)
 are unchanged.
 
@@ -233,8 +232,8 @@ are unchanged.
 | Comfort Enhancement 3 remote 12 | `apex_12` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
 | Comfort Enhancement 3 remote 13 | `apex_13` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
 | Comfort Enhancement 3 remote 14 | `apex_14` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
-| Okimat handset table | `okimat` | `okimat`, `okin_uuid` | 32-bit | plain; RF-Gateway envelope when detected | with response | handset table | handset table |
-| DewertOkin | `dewertokin` | `dewertokin`, `okin_handle` | 32-bit | plain; RF-Gateway envelope when detected | with response | head, feet | 2 |
+| Okimat handset table | `okimat` | `okin_uuid` | 32-bit | plain; RF-Gateway envelope when detected | with response | handset table | handset table |
+| DewertOkin | `dewertokin` | `okin_handle` | 32-bit | plain; RF-Gateway envelope when detected | with response | head, feet | 2 |
 | OKIN Smart Remote RF ECO BT stair lift | `okin_rf_eco_bt` | `okin_rf_eco_bt` | 32-bit | plain frame | with response | stair | 0 |
 | Customatic Clarity | `clarity` | `customatic_clarity` | 32-bit | plain frame | from the characteristic's properties | back, legs | 0 |
 | Customatic Jerome's | `jeromes` | `customatic_jeromes` | 32-bit | plain frame | from the characteristic's properties | back, legs | 0 |
@@ -427,26 +426,17 @@ save chord has no threshold; see their profiles.
 
 ### Aliases
 
-Bed types that build the same controller over the same profile with the same
-default timing, so they send identical bytes. They stay separate bed types so
-existing entries keep their identities; the
-wire snapshot (`tests/test_wire_snapshot.py`) proves the equality by capture.
+`leggett_platt` with variant `okin` builds the same controller over the same
+profile as `leggett_okin`, with the same default timing, so they send identical
+bytes; the wire snapshot (`tests/test_wire_snapshot.py`) proves it by capture.
+`leggett_platt` is kept for existing entries and is not offered in the bed-type
+list. Without a variant it picks its controller from GATT at connect, and its
+variant `gen2` stays apart from `leggett_gen2` because only `leggett_gen2` is in
+the bed-type list. Each route keeps its own
+[profile id](../design/profile-id.md#aliases).
 
-| Bed type | Same as | Profile |
-|----------|---------|---------|
-| `okimat` | `okin_uuid` | [Okimat](#okimat) |
-| `dewertokin` | `okin_handle` | [DewertOkin](#dewertokin) |
-| `leggett_platt` with variant `okin` | `leggett_okin` | [Leggett Okin family](#leggett-okin-family) |
-
-`okimat`, `dewertokin` and `leggett_platt` are kept for existing entries and
-are not offered in the bed-type list.
-
-Each route also keeps its own [profile id](../design/profile-id.md#aliases).
-Besides the bed-type list, the device manufacturer differs for `okimat` and
-`dewertokin`, and the app profile review (a Repairs issue) covers `dewertokin`
-only. `leggett_platt` without a variant picks its controller from GATT at
-connect, and `leggett_platt` variant `gen2` stays apart from `leggett_gen2`
-because only `leggett_gen2` is in the bed-type list.
+Entries 4.x saved as `okimat` or `dewertokin` are saved as `okin_uuid` and
+`okin_handle`, the routes they always ran.
 
 Routes that send the same bytes as their default route keep their own id too,
 since only a missing variant and `auto` share one: `okin_64bit` variant `nordic`
@@ -1025,8 +1015,7 @@ builders.
 
 #### Setup
 
-- Bed types `okimat` and `okin_uuid` select this profile; they are aliases with
-  identical frames.
+- Bed type `okin_uuid` selects this profile.
 - Choose **No app: Okimat or OKIN handset code (requires pairing)**, then the handset's remote
   code (see [Home Assistant setup](#home-assistant-setup)). The code is
   printed on the back of the handset. If an exact code is not offered, use a
@@ -1200,8 +1189,7 @@ The handset tables are based on FurniMove 2.2.0.
 
 #### Setup
 
-- Bed types `dewertokin` and `okin_handle` select this profile; they are aliases
-  with identical frames.
+- Bed type `okin_handle` selects this profile.
 - **Detection:** device name contains `dewertokin`, `dewert`, `a h beard`, or
   `hankook`, not a service UUID.
 - Address type: random.

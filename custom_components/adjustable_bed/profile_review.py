@@ -56,7 +56,6 @@ from .const import (
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS,
@@ -67,12 +66,12 @@ from .const import (
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
@@ -114,6 +113,7 @@ from .const import (
     PAIR_SIDES,
     REMACRO_VARIANT_JEROMES,
     REMACRO_VARIANT_THE_BRICK,
+    RETIRED_BED_TYPES,
     RICHMAT_MH_BED_TYPES,
     SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
@@ -250,13 +250,13 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(frozenset({BED_TYPE_COOLBASE}), None, _RESTONIC_APPS),
     # okin-named 62741523 beds were Okimat, refined to Okin CST by GATT.
     _RouteApps(
-        frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST}),
+        frozenset({BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST}),
         None,
         _OKIN_BEDDING_APPS,
     ),
     # v4.0.2 sent Simmons and Glory names, and Tranquil Sleep, to DewertOkin.
     _RouteApps(
-        frozenset({BED_TYPE_DEWERTOKIN}),
+        frozenset({BED_TYPE_OKIN_HANDLE}),
         None,
         (BED_TYPE_SIMMONS, *_OKIN_BEDDING_APPS[1:]),
     ),
@@ -264,7 +264,6 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(
         frozenset(
             {
-                BED_TYPE_OKIMAT,
                 BED_TYPE_OKIN_UUID,
                 BED_TYPE_OKIN_64BIT,
                 BED_TYPE_OKIN_CB35,
@@ -277,7 +276,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     # Resident uses only the custom OKIN service; Nordic UART is not a route.
     # A SmartBed entry is saved as okin_cb24 until schema 5.7 renames it.
     _RouteApps(
-        frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, "okin_cb24", "smartbed", BED_TYPE_OKIN_64BIT}),
+        frozenset({BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_UUID, "okin_cb24", "smartbed", BED_TYPE_OKIN_64BIT}),
         None,
         (BED_TYPE_RESIDENT,),
     ),
@@ -347,12 +346,18 @@ def _is_app_choice(bed_type: str, variant: object) -> bool:
     return isinstance(variant, str) and (bed_type, variant) in APP_VARIANT_CHOICES
 
 
+def _route(bed_type: object) -> object:
+    """Return the route a saved bed type runs: before schema 5.8 it may be a retired one."""
+    return RETIRED_BED_TYPES.get(bed_type, bed_type) if isinstance(bed_type, str) else bed_type
+
+
 def related_app_choices(
     bed_type: object, variant: object, routes: tuple[_RouteApps, ...] = _ROUTE_APPS
 ) -> list[str]:
     """Known app choices for a generic route, not proof of a better match."""
     if not isinstance(bed_type, str) or _is_app_choice(bed_type, variant):
         return []
+    bed_type = _route(bed_type)
     stored_variant = variant if isinstance(variant, str) else VARIANT_AUTO
     return [
         choice
@@ -478,7 +483,7 @@ def profile_review_mark(entry_data: Mapping[str, Any]) -> str | None:
     if any(
         related_app_choices(target.get(CONF_BED_TYPE), target.get(CONF_PROTOCOL_VARIANT))
         or (
-            target.get(CONF_BED_TYPE) in _ADVERTISED_ROUTES
+            _route(target.get(CONF_BED_TYPE)) in _ADVERTISED_ROUTES
             and not _is_app_choice(target[CONF_BED_TYPE], target.get(CONF_PROTOCOL_VARIANT))
         )
         for target in _targets(entry_data)

@@ -217,7 +217,7 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         record = migrated.pop(CONF_PROFILE_MIGRATION)
         # Only a route that gained an app in v5 is asked about it once more.
         assert migrated.pop(CONF_PROFILE_REVIEW_PENDING, None) == v5_profile_review_mark(stored)
-        assert (entry.version, entry.minor_version) == (5, 7)
+        assert (entry.version, entry.minor_version) == (5, 8)
         # Schema 5.5 stores an Octo setup's motor layout as its override.
         octo = data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
         assert migrated.pop(CONF_OCTO_MOTOR_COUNT_OVERRIDE, None) == ("auto" if octo else None)
@@ -313,8 +313,9 @@ async def test_migration_keeps_entry_device_and_entity_identities(hass: HomeAssi
     await async_migrate_entry(hass, entry)
 
     assert (entry.entry_id, entry.unique_id, entry.title) == (entry_id, ADDRESS, "Bedroom")
-    assert entry.data[CONF_BED_TYPE] == "okimat"
-    assert entry.data[CONF_PROFILE_ID] == "okimat"
+    # 4.x saved the brand; the entry keeps everything else and takes its route's id.
+    assert entry.data[CONF_BED_TYPE] == "okin_uuid"
+    assert entry.data[CONF_PROFILE_ID] == "okin_uuid"
     assert entry.data[CONF_PROFILE_MIGRATION]["from_version"] == 1
     assert dr.async_get(hass).async_get(device.id) == device
     assert er.async_get(hass).async_get(entity.entity_id) == entity

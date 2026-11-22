@@ -140,7 +140,7 @@ async def beds(hass, count=2, *, capability=LIVE, topology=None, connected=True)
             data={
                 "address": address,
                 "name": f"Bed {index}",
-                "bed_type": "dewertokin",
+                "bed_type": "okin_handle",
                 "disable_angle_sensing": True,
                 "idle_disconnect_seconds": 0,
                 "disconnect_after_command": False,
