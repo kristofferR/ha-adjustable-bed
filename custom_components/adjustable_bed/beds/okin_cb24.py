@@ -1,3 +1,587 @@
-"""Compatibility import for the SmartBed controller."""
+"""Okin CB24 protocol bed controller implementation.
 
-from .smartbed.controller import OkinCB24Controller as OkinCB24Controller
+Protocol reverse-engineered from SmartBed by Okin app (com.okin.bedding.smartbedwifi).
+Source: disassembly/output/com.okin.bedding.smartbedwifi/ANALYSIS.md
+
+This controller handles beds using the CB24 protocol over Nordic UART service.
+Known brands using this protocol:
+- SmartBed by Okin (Amada, and other OKIN-based beds)
+- CB24, CB24AB, CB27, CB27New, CB1221, Dacheng profiles
+
+Detection: Manufacturer ID 89 (OKIN Automotive)
+
+Legacy commands are 40-bit Okin N-frames (``codec/okin_nframe.py``): the
+32-bit key word from the ``OKIN_CB24`` profile, then the bed selection byte
+(0x00=default, 0xAA=bed A, 0xBB=bed B).
+
+Protocol families detected from the OEM SmartBed app:
+- NEW protocol (CB27New / CBNewProtocol): uses 0x2A/0xAA packet families.
+- OLD protocol (CB24/CB27/CB24AB/CB1221/Dacheng): uses 0x05 0x02 packets.
+
+Preset behavior in this integration:
+- All profiles use one-shot presets. The OEM app repeats legacy preset packets
+  only while the user holds a touchscreen button and treats a 5.2-second hold
+  as a memory-save gesture. A fixed continuous stream can therefore overwrite
+  stored presets instead of recalling them.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from enum import Enum
+from typing import TYPE_CHECKING
+
+from ..codec import okin_nframe as codec
+from ..const import (
+    CB24_BED_SELECTION_A,
+    CB24_BED_SELECTION_B,
+    CB24_BED_SELECTION_DEFAULT,
+    CONF_CB24_BED_SELECTION,
+    MANUFACTURER_ID_OKIN,
+    NORDIC_UART_WRITE_CHAR_UUID,
+    OKIN_CB24_VARIANT_CB24,
+    OKIN_CB24_VARIANT_CB24_AB,
+    OKIN_CB24_VARIANT_CB27,
+    OKIN_CB24_VARIANT_CB27NEW,
+    OKIN_CB24_VARIANT_CB1221,
+    OKIN_CB24_VARIANT_DACHENG,
+    OKIN_CB24_VARIANT_NEW,
+    OKIN_CB24_VARIANT_OLD,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
+)
+from ..profiles.okin_nframe import OKIN_CB24, OkinNFrameProfile
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
+
+if TYPE_CHECKING:
+    from ..coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+# Device profile variants grouped by protocol family.
+_LEGACY_PROTOCOL_VARIANTS = frozenset(
+    {
+        OKIN_CB24_VARIANT_OLD,
+        OKIN_CB24_VARIANT_CB24,
+        OKIN_CB24_VARIANT_CB27,
+        OKIN_CB24_VARIANT_CB24_AB,
+        OKIN_CB24_VARIANT_CB1221,
+        OKIN_CB24_VARIANT_DACHENG,
+    }
+)
+_NEW_PROTOCOL_VARIANTS = frozenset({OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW})
+
+_KEYS = OKIN_CB24.keys
+
+# CBNewProtocol memory command mapping (CB24 key word -> memory index).
+_CBNEW_MEMORY_BY_COMMAND: dict[int, int] = {
+    _KEYS["flat"]: 9,
+    _KEYS["zero_g"]: 1,
+    _KEYS["memory_1"]: 2,  # Lounge
+    _KEYS["memory_2"]: 3,  # TV
+    _KEYS["anti_snore"]: 4,
+    _KEYS["memory_3"]: 5,
+}
+
+
+class MotorDirection(Enum):
+    """Direction for motor movement."""
+
+    UP = "up"
+    DOWN = "down"
+    STOP = "stop"
+
+
+def build_cb24_massage_intensity(zone: int, intensity: int, bed_selection: int = 0x00) -> bytes:
+    """Build the 5-byte exact massage level ``03 03 zone level selector``.
+
+    Zones: 1 timer, 2 head, 3 feet, 4 wave; levels 0-4, 0 is off.
+    """
+    return bytes([0x03, 0x03, zone & 0xFF, intensity & 0xFF, bed_selection])
+
+
+# CBNewProtocol packets (CB27New / cb_new): a separate packet family.
+def build_cbnew_motor_command(command_value: int) -> bytes:
+    """Motion: ``2A 00 00 01 01 04`` and the key word, little-endian."""
+    return bytes.fromhex("2a0000010104") + (command_value & 0xFFFFFFFF).to_bytes(4, "little")
+
+
+def build_cbnew_memory_command(memory_index: int) -> bytes:
+    """Preset recall: ``2A 00 00 01 03 01 index``."""
+    return bytes([0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, memory_index & 0xFF])
+
+
+def build_cbnew_stop_command() -> bytes:
+    """STOP: ``AA 00 00 01 02 00``."""
+    return bytes.fromhex("aa0000010200")
+
+
+def build_cbnew_massage_command(command_code: int) -> bytes:
+    """Massage: ``2A 00 00 02 01 01 code``."""
+    return bytes([0x2A, 0x00, 0x00, 0x02, 0x01, 0x01, command_code & 0xFF])
+
+
+def build_cbnew_light_command(is_on: bool) -> bytes:
+    """Discrete light switch: ``AA 00 00 04 01 05 00 <on> 00 00 00 00``."""
+    return bytes.fromhex("aa0000040105") + bytes([0x00, int(is_on), 0, 0, 0, 0])
+
+
+class OkinCB24Controller(ProfileExecution[OkinNFrameProfile], BedController):
+    """Controller for beds using Okin CB24 protocol over Nordic UART.
+
+    Protocol discovered from SmartBed by Okin app analysis.
+    Uses both legacy CB24 packets and CBNew packets, depending on profile variant.
+    Supports dual-bed configurations via bed selection byte.
+    """
+
+    # The CB24 protocol writes without response.
+    _write_with_response = False
+
+    profile = OKIN_CB24
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        bed_selection: int = 0x00,
+        protocol_variant: str = OKIN_CB24_VARIANT_CB24,
+    ) -> None:
+        """Initialize the Okin CB24 controller.
+
+        Args:
+            coordinator: The AdjustableBedCoordinator instance
+            bed_selection: Bed selection (0x00=default, 0xAA=bed A, 0xBB=bed B)
+            protocol_variant: CB24 profile variant (cb24/cb27/cb24_ab/cb1221/dacheng/cb27new)
+        """
+        super().__init__(coordinator)
+        self._motor_state: dict[str, MotorDirection] = {}
+        self._bed_selection = bed_selection
+        self._protocol_variant = protocol_variant
+        self._is_new_protocol = protocol_variant in _NEW_PROTOCOL_VARIANTS
+        if not self._is_new_protocol and protocol_variant not in _LEGACY_PROTOCOL_VARIANTS:
+            _LOGGER.warning(
+                "Unknown CB24 protocol variant '%s'; defaulting to legacy one-shot handling",
+                protocol_variant,
+            )
+
+        self._lights_on = False
+        self._massage_on = False
+        self._massage_head_level = 0
+        self._massage_foot_level = 0
+        self._massage_mode = 0
+
+        _LOGGER.debug(
+            "OkinCB24Controller initialized (bed_selection=%#x, variant=%s, new_protocol=%s)",
+            bed_selection,
+            protocol_variant,
+            self._is_new_protocol,
+        )
+
+    @property
+    def control_characteristic_uuid(self) -> str:
+        return NORDIC_UART_WRITE_CHAR_UUID
+
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_lights(self) -> bool:
+        return True
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return True for CBNew profiles, False for legacy CB24 profiles."""
+        return self._is_new_protocol
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        return True
+
+    @property
+    def memory_slot_count(self) -> int:
+        return 3
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        return False
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        """Return True - Memory 1 is often Lounge position."""
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        """Return True - Memory 2 is often TV/PC position."""
+        return True
+
+    @property
+    def supports_massage(self) -> bool:
+        return True
+
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        """Legacy CB24 has A/B selectors; CBNew packets do not."""
+        return not self._is_new_protocol
+
+    def _bed_selection_for_side(self, side: str | None = None) -> int:
+        """Resolve the legacy CB24 selector for one logical side."""
+        logical_side = side or self.command_side
+        if logical_side == SIDE_LEFT:
+            return CB24_BED_SELECTION_A
+        if logical_side == SIDE_RIGHT:
+            return CB24_BED_SELECTION_B
+        if logical_side == SIDE_BOTH:
+            return CB24_BED_SELECTION_DEFAULT
+        return self._bed_selection
+
+    def _build_command(self, command_value: int, side: str | None = None) -> bytes:
+        """Build legacy CB24-style integer command packet.
+
+        Args:
+            command_value: 32-bit command value (0 to 0xFFFFFFFF)
+
+        Returns:
+            7-byte command: [0x05, 0x02, <4-byte key big-endian>, bed_selection]
+        """
+        return codec.frame40(command_value, self._bed_selection_for_side(side))
+
+    def _build_motor_command(self, command_value: int) -> bytes:
+        """Build a movement command using the profile's packet family."""
+        if self._is_new_protocol:
+            return build_cbnew_motor_command(command_value)
+        return self._build_command(command_value)
+
+    def _build_stop_command(self) -> bytes:
+        """Build a STOP packet using the profile's packet family."""
+        if self._is_new_protocol:
+            return build_cbnew_stop_command()
+        return self._build_command(0)
+
+    def _build_preset_command(self, command_value: int) -> bytes:
+        """Build a preset packet using the profile's packet family."""
+        if not self._is_new_protocol:
+            return self._build_command(command_value)
+
+        memory_index = _CBNEW_MEMORY_BY_COMMAND.get(command_value)
+        if memory_index is None:
+            _LOGGER.warning(
+                "No CBNew memory mapping for preset %#x; falling back to legacy packet",
+                command_value,
+            )
+            return self._build_command(command_value)
+        return build_cbnew_memory_command(memory_index)
+
+    def _get_move_command(self) -> int:
+        """Calculate the combined motor movement command."""
+        keys = self.profile.keys
+        return sum(
+            keys[f"{motor}_{direction.value}"]
+            for motor, direction in self._motor_state.items()
+            if direction != MotorDirection.STOP
+        )
+
+    async def _move_motor(self, motor: str, direction: MotorDirection) -> None:
+        """Move a motor in a direction or stop it."""
+        if direction == MotorDirection.STOP:
+            self._motor_state.pop(motor, None)
+        else:
+            self._motor_state[motor] = direction
+        command = self._get_move_command()
+
+        async def release() -> None:
+            self._motor_state = {}
+            await self.write_command(self._build_stop_command(), cancel_event=asyncio.Event())
+
+        async with self.releasing(release):
+            if command:
+                pulse_count = self._coordinator.motor_pulse_count
+                pulse_delay = self._coordinator.motor_pulse_delay_ms
+                await self.write_command(
+                    self._build_motor_command(command),
+                    repeat_count=pulse_count,
+                    repeat_delay_ms=pulse_delay,
+                )
+
+    # Motor control methods
+    async def move_head_up(self) -> None:
+        await self._move_motor("head", MotorDirection.UP)
+
+    async def move_head_down(self) -> None:
+        await self._move_motor("head", MotorDirection.DOWN)
+
+    async def move_head_stop(self) -> None:
+        await self._move_motor("head", MotorDirection.STOP)
+
+    async def move_back_up(self) -> None:
+        await self.move_head_up()
+
+    async def move_back_down(self) -> None:
+        await self.move_head_down()
+
+    async def move_back_stop(self) -> None:
+        await self.move_head_stop()
+
+    async def move_legs_up(self) -> None:
+        await self._move_motor("feet", MotorDirection.UP)
+
+    async def move_legs_down(self) -> None:
+        await self._move_motor("feet", MotorDirection.DOWN)
+
+    async def move_legs_stop(self) -> None:
+        await self._move_motor("feet", MotorDirection.STOP)
+
+    async def move_feet_up(self) -> None:
+        await self.move_legs_up()
+
+    async def move_feet_down(self) -> None:
+        await self.move_legs_down()
+
+    async def move_feet_stop(self) -> None:
+        await self.move_legs_stop()
+
+    async def stop_all(self) -> None:
+        self._motor_state = {}
+        await self.write_command(
+            self._build_stop_command(),
+            cancel_event=asyncio.Event(),
+        )
+
+    # Preset methods
+    async def _send_preset(self, command_value: int) -> None:
+        """Send one preset packet without simulating a destructive long press."""
+        preset_command = self._build_preset_command(command_value)
+        await self.write_command(preset_command)
+
+    async def preset_flat(self) -> None:
+        await self._send_preset(_KEYS["flat"])
+
+    async def preset_memory(self, memory_num: int) -> None:
+        commands = {
+            1: _KEYS["memory_1"],
+            2: _KEYS["memory_2"],
+            3: _KEYS["memory_3"],
+        }
+        if command := commands.get(memory_num):
+            await self._send_preset(command)
+        else:
+            raise self.not_supported(f"memory preset {memory_num}")
+
+    async def program_memory(self, memory_num: int) -> None:
+        """Program current position to memory (not supported on CB24)."""
+        raise self.not_supported("saving memory presets")
+
+    async def preset_zero_g(self) -> None:
+        await self._send_preset(_KEYS["zero_g"])
+
+    async def preset_anti_snore(self) -> None:
+        await self._send_preset(_KEYS["anti_snore"])
+
+    async def preset_lounge(self) -> None:
+        """Go to lounge position (Memory 1)."""
+        await self._send_preset(_KEYS["memory_1"])
+
+    async def preset_tv(self) -> None:
+        """Go to TV/PC position (Memory 2)."""
+        await self._send_preset(_KEYS["memory_2"])
+
+    # Light methods
+    async def lights_toggle(self) -> None:
+        if self._is_new_protocol:
+            if self._lights_on:
+                await self.lights_off()
+            else:
+                await self.lights_on()
+            return
+        await self.write_command(self._build_command(_KEYS["light"]))
+
+    async def lights_on(self) -> None:
+        if self._is_new_protocol:
+            await self.write_command(build_cbnew_light_command(True))
+            self._lights_on = True
+            return
+        await self.lights_toggle()
+
+    async def lights_off(self) -> None:
+        if self._is_new_protocol:
+            await self.write_command(build_cbnew_light_command(False))
+            self._lights_on = False
+            return
+        await self.lights_toggle()
+
+    # Massage methods
+    async def massage_head_up(self) -> None:
+        if self._is_new_protocol:
+            level = min(3, self._massage_head_level + 1)
+            await self.write_command(build_cbnew_massage_command(79 + level))
+            self._massage_head_level = level
+            return
+        await self.write_command(self._build_command(_KEYS["massage_head_up"]))
+
+    async def massage_head_down(self) -> None:
+        if self._is_new_protocol:
+            level = max(0, self._massage_head_level - 1)
+            command_code = 83 if level == 0 else 79 + level
+            await self.write_command(build_cbnew_massage_command(command_code))
+            self._massage_head_level = level
+            return
+        await self.write_command(self._build_command(_KEYS["massage_head_down"]))
+
+    async def massage_head_toggle(self) -> None:
+        """Toggle head massage (via intensity up)."""
+        await self.massage_head_up()
+
+    async def massage_foot_up(self) -> None:
+        if self._is_new_protocol:
+            level = min(3, self._massage_foot_level + 1)
+            await self.write_command(build_cbnew_massage_command(83 + level))
+            self._massage_foot_level = level
+            return
+        await self.write_command(self._build_command(_KEYS["massage_foot_up"]))
+
+    async def massage_foot_down(self) -> None:
+        if self._is_new_protocol:
+            level = max(0, self._massage_foot_level - 1)
+            command_code = 87 if level == 0 else 83 + level
+            await self.write_command(build_cbnew_massage_command(command_code))
+            self._massage_foot_level = level
+            return
+        await self.write_command(self._build_command(_KEYS["massage_foot_down"]))
+
+    async def massage_foot_toggle(self) -> None:
+        """Toggle foot massage (via intensity up)."""
+        await self.massage_foot_up()
+
+    async def massage_toggle(self) -> None:
+        if self._is_new_protocol:
+            self._massage_on = not self._massage_on
+            await self.write_command(
+                build_cbnew_massage_command(64 if self._massage_on else 65)
+            )
+            if not self._massage_on:
+                self._massage_head_level = 0
+                self._massage_foot_level = 0
+            return
+        await self.write_command(self._build_command(_KEYS["massage_toggle"]))
+
+    async def massage_intensity_up(self) -> None:
+        await self.write_command(self._build_command(_KEYS["massage_intensity_up"]))
+
+    async def massage_intensity_down(self) -> None:
+        await self.write_command(self._build_command(_KEYS["massage_intensity_down"]))
+
+    async def massage_off(self) -> None:
+        if self._is_new_protocol:
+            self._massage_on = False
+            self._massage_head_level = 0
+            self._massage_foot_level = 0
+            await self.write_command(build_cbnew_massage_command(65))
+            return
+        await self.write_command(self._build_command(_KEYS["massage_off"]))
+
+    async def massage_mode_step(self) -> None:
+        if self._is_new_protocol:
+            self._massage_mode = (self._massage_mode % 4) + 1
+            await self.write_command(build_cbnew_massage_command(65 + self._massage_mode))
+            return
+        await self.write_command(self._build_command(_KEYS["massage_wave_step"]))
+
+    async def massage_set_head_intensity(self, level: int) -> None:
+        """Set head massage to exact intensity level (0-4, 0=off)."""
+        level = max(0, min(4, level))
+        await self.write_command(
+            build_cb24_massage_intensity(2, level, self._bed_selection_for_side())
+        )
+        self._massage_head_level = level
+
+    async def massage_set_foot_intensity(self, level: int) -> None:
+        """Set foot massage to exact intensity level (0-4, 0=off)."""
+        level = max(0, min(4, level))
+        await self.write_command(
+            build_cb24_massage_intensity(3, level, self._bed_selection_for_side())
+        )
+        self._massage_foot_level = level
+
+
+_EXPLICIT_PROFILE_VARIANTS = frozenset(
+    {
+        OKIN_CB24_VARIANT_OLD,
+        OKIN_CB24_VARIANT_NEW,
+        OKIN_CB24_VARIANT_CB24,
+        OKIN_CB24_VARIANT_CB27,
+        OKIN_CB24_VARIANT_CB24_AB,
+        OKIN_CB24_VARIANT_CB1221,
+        OKIN_CB24_VARIANT_DACHENG,
+        OKIN_CB24_VARIANT_CB27NEW,
+    }
+)
+
+
+def _infer_variant_from_okin_payload(payload: bytes) -> str | None:
+    """Infer the CB24 sub-variant from OKIN manufacturer payload bytes.
+
+    The SmartBed APK profile matcher keys off scanRecord marker bytes:
+    - "DOT" + type/subtype bytes for dacheng/cb1221/cb24
+    - "AB" for cb24_ab
+    - "OK" for cb27
+
+    Home Assistant exposes manufacturer payload bytes (without Company ID).
+    The APK places markers at the start of the payload, so every check is
+    anchored to avoid short patterns ("OK" is 2 bytes) matching random data.
+    """
+    if payload.startswith(b"DOT") and len(payload) >= 5:
+        marker_type = payload[3]
+        marker_subtype = payload[4]
+        if marker_type == 0x01:
+            return OKIN_CB24_VARIANT_DACHENG
+        if marker_subtype == 0x01:
+            return OKIN_CB24_VARIANT_CB1221
+        return OKIN_CB24_VARIANT_CB24
+    if payload.startswith(b"AB"):
+        return OKIN_CB24_VARIANT_CB24_AB
+    if payload.startswith(b"OK"):
+        return OKIN_CB24_VARIANT_CB27
+    return None
+
+
+def _auto_detect_profile_variant(
+    device_name: str | None, manufacturer_data: dict[int, bytes] | None
+) -> str:
+    """Auto-detect the SmartBed/CB24 profile variant from advertisement signals."""
+    if manufacturer_data and MANUFACTURER_ID_OKIN in manufacturer_data:
+        inferred = _infer_variant_from_okin_payload(manufacturer_data[MANUFACTURER_ID_OKIN])
+        if inferred:
+            _LOGGER.debug("CB24 profile auto-detected from manufacturer payload: %s", inferred)
+            return inferred
+
+    # OEM app behavior:
+    # - CB27NewDeviceProfile (NEW protocol): startswith("smartbed") and len == 18
+    # - all other CB24-family devices: legacy packets (default to CB24 profile)
+    if device_name:
+        if device_name.lower().startswith("smartbed") and len(device_name) == 18:
+            _LOGGER.debug("CB24 profile auto-detected: cb27new (name len=18)")
+            return OKIN_CB24_VARIANT_CB27NEW
+        _LOGGER.debug("CB24 profile auto-detected: cb24 (name len=%d)", len(device_name))
+    return OKIN_CB24_VARIANT_CB24
+
+
+async def build_controller(ctx: BuildContext) -> OkinCB24Controller:
+    """Build the controller for the configured or advertised profile variant."""
+    if ctx.variant in _EXPLICIT_PROFILE_VARIANTS:
+        profile_variant = ctx.variant
+        _LOGGER.debug("CB24 profile override: %s", profile_variant)
+    else:
+        profile_variant = _auto_detect_profile_variant(ctx.device_name, ctx.manufacturer_data)
+    return OkinCB24Controller(
+        ctx.coordinator,
+        bed_selection=ctx.data.get(CONF_CB24_BED_SELECTION, 0x00),
+        protocol_variant=profile_variant,
+    )

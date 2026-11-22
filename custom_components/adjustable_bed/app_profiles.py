@@ -76,6 +76,7 @@ from .const import (
     BED_TYPE_RIZE,
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_ELITE_APP,
@@ -160,13 +161,15 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
-    "okin_cb24": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
     "ormatek": SideProfile("OrmatekTechnoSmart", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "nerum": SideProfile("Nerum", variant_owned=True),
+    "relax_motion": SideProfile("Relax Motion", variant_owned=True),
+    "smartbed": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
     "cheerssleep": SideProfile("CheersSleep"),
     "enso": SideProfile("Enso Remote", frozenset({CONF_MOTOR_COUNT})),
     "sealy_posturematic": SideProfile("Sealy Posturematic", frozenset({CONF_MOTOR_COUNT})),
     "agingplace": SideProfile("Aging in Place / Dawn House"),
+    "sleep_assistant": SideProfile("Sleep Assist"),
     "onlysnore": SideProfile("Snore Monitor 2.3.8"),
     "smart_sleep": SideProfile("OKIN Smart Sleep", variant_owned=True),
     "bedtech": SideProfile("BedTech model", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
@@ -191,6 +194,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "casper_base": SideProfile("Casper Base product", variant_owned=True),
     "hush_base": SideProfile("Hush Base product", variant_owned=True),
     "luuna": SideProfile("Luuna + product", variant_owned=True),
+    "instant_comfort": SideProfile("Instant Comfort", variant_owned=True),
     "personal_comfort": SideProfile("Personal Comfort", variant_owned=True),
     "mline": SideProfile("M Line protocol and layout", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "suta": SideProfile("SUTA Smart Home name-selected layout"),
@@ -237,6 +241,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_FSM_RELAX: SideProfile("FSM Relax"),
     BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote"),
     BED_TYPE_FURNIMOVE: SideProfile("FurniMove", frozenset({CONF_HAS_MASSAGE})),
+    BED_TYPE_SILVERMOTION: SideProfile("SILVERmotion Android"),
     BED_TYPE_LOGICDATA_APP: SideProfile("Logicdata bed app"),
     # The family step picks the app, so no question asks its key.
     BED_TYPE_JIECANG_APP: SideProfile(

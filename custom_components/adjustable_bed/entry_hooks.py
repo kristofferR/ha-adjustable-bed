@@ -27,7 +27,6 @@ from .beds.smartbed.setup import validate_entry as validate_smartbed_entry
 from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_FURNIMOVE,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
 )
@@ -92,7 +91,7 @@ ENTRY_PREPARE_STEPS: Final[tuple[PrepareEntry, ...]] = (
 )
 
 _ENTRY_HOOKS: Final[Mapping[str, EntryHooks]] = {
-    BED_TYPE_OKIN_CB24: EntryHooks(validate=validate_smartbed_entry),
+    "smartbed": EntryHooks(validate=validate_smartbed_entry),
     BED_TYPE_DIAGNOSTIC: EntryHooks(load_offline=_async_load_offline_diagnostic_entry),
     BED_TYPE_FURNIMOVE: EntryHooks(load_offline=async_load_offline_furnimove_entry),
     BED_TYPE_REVERIE_PAIRLINK: EntryHooks(setup_local=async_setup_pairlink_local_entry),

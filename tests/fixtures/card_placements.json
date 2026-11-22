@@ -107,6 +107,9 @@
  "binary_sensor:ormatek_massage": {
   "card_section": "massage"
  },
+ "binary_sensor:relax_motion_sleep": {
+  "card_section": "hidden"
+ },
  "binary_sensor:reverie_pairlink_low_battery": {
   "card_section": "utility"
  },
@@ -3235,6 +3238,12 @@
   "card_role": "estimate",
   "card_motor": "head"
  },
+ "number:instant_comfort_left_lumbar_firmness": {
+  "card_section": "firmness"
+ },
+ "number:instant_comfort_right_lumbar_firmness": {
+  "card_section": "firmness"
+ },
  "number:jerome_aroma_0": {
   "card_section": "utility"
  },
@@ -3397,6 +3406,12 @@
  "number:personal_comfort_right_firmness": {
   "card_section": "firmness"
  },
+ "number:relax_motion_light_time": {
+  "card_section": "utility"
+ },
+ "number:relax_motion_snore_interval": {
+  "card_section": "utility"
+ },
  "number:reverie_body_tilt": {
   "card_section": "motors",
   "card_motor": "lumbar"
@@ -3453,6 +3468,9 @@
   "card_section": "utility"
  },
  "number:richmat_rise_lamp_seconds": {
+  "card_section": "utility"
+ },
+ "number:sleep_assistant_flat_minutes": {
   "card_section": "utility"
  },
  "number:sleep_number_setting": {
@@ -3739,6 +3757,12 @@
  },
  "select:ruf_richmat_sleep_mode": {
   "card_section": "utility"
+ },
+ "select:sleep_assistant_anti_snore": {
+  "card_section": "utility"
+ },
+ "select:sleep_assistant_palette": {
+  "card_section": "lighting"
  },
  "select:sleeptracker_left_curve": {
   "card_section": "climate"
@@ -4518,6 +4542,24 @@
  "sensor:simmons_alarm_2": {
   "card_section": "hidden"
  },
+ "sensor:sleep_assistant_alarm_1": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_2": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_3": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_4": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_5": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_6": {
+  "card_section": "utility"
+ },
  "sensor:sleeptracker_layout": {
   "card_section": "hidden"
  },
@@ -4929,6 +4971,9 @@
  "switch:paramount_switch_prohibition": {
   "card_section": "utility"
  },
+ "switch:relax_motion_snore": {
+  "card_section": "utility"
+ },
  "switch:remote_control_lock": {
   "card_section": "utility"
  },
@@ -4949,6 +4994,9 @@
  },
  "switch:sealy_massage": {
   "card_section": "massage"
+ },
+ "switch:sleep_assistant_storage": {
+  "card_section": "utility"
  },
  "switch:sleepfunction_switch": {
   "card_section": "utility"

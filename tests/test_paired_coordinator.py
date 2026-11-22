@@ -1183,8 +1183,6 @@ class SingleAddressInner(SchedulerSurface):
     def __init__(self, controller_type):
         self.address = "AA:BB:CC:DD:EE:50"
         self.name = "One-address bed"
-        self.motor_count = 2
-        self.entry = SimpleNamespace(data={})
         self.is_connected = True
         self.controller = controller_type(self)
         self.capability_controller = self.controller
@@ -1200,9 +1198,6 @@ class SingleAddressInner(SchedulerSurface):
         self.seek_results: list[SeekResult] = []
         self.scheduler = DeviceCommandScheduler(self.address)
         self.prepared_scopes: list[frozenset[str]] = []
-
-    def handle_controller_state_updates(self, *updates):
-        pass
 
     def _record_seek_result(self, result: SeekResult) -> None:
         self.seek_results.append(result)

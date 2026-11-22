@@ -322,9 +322,7 @@ class PersonalComfortAir(ProfileExecution[PersonalComfortProfile], PersonalComfo
             if self.status == 0 and was_adjusting and not self._preparing and not self._active:
                 self._schedule_refresh(0.2)
         else:
-            reply = (
-                codec.parse_anm3(packet) if self.profile.key == "anm3" else codec.parse_anm5(packet)
-            )
+            reply = self.parse_reply(packet)
             if reply is None:
                 return
             self._last_reply = reply
@@ -358,6 +356,9 @@ class PersonalComfortAir(ProfileExecution[PersonalComfortProfile], PersonalComfo
                         self._schedule_refresh(0, acknowledge=True)
         self._reply_version += 1
         self._changed.set()
+
+    def parse_reply(self, packet: bytes) -> codec.AirReply | None:
+        return codec.parse_anm3(packet) if self.profile.key == "anm3" else codec.parse_anm5(packet)
 
     async def _wait_change(self, owner: Owner, seconds: float) -> bool:
         self._changed.clear()

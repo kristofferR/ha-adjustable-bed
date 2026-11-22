@@ -127,6 +127,7 @@ from .const import (
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -237,6 +238,11 @@ def require_logicdata_route(client: BleakClient, data: Mapping[str, Any]) -> Non
 
     SimplicityFrame writes its one characteristic; an app needs its own transport.
     """
+    if data[CONF_BED_TYPE] == BED_TYPE_SILVERMOTION:
+        from .beds.silvermotion.controller import require_transport
+
+        require_transport(client)
+        return
     if data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA_APP:
         from .beds.logicdata.app import require_app_transport
 
@@ -341,6 +347,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     ),
     BED_TYPE_JIECANG: _ControllerSpec("jiecang.controller", "JiecangController"),
     BED_TYPE_LIMOSS: _ControllerSpec("limoss.controller", "LimossController"),
+    BED_TYPE_SILVERMOTION: _ControllerSpec("silvermotion.controller", "SilvermotionController"),
     BED_TYPE_LOGICDATA: _ControllerSpec("logicdata.controller", "LogicdataController"),
     BED_TYPE_LOGICDATA_AIR_PUMP: _ControllerSpec(
         "logicdata.air_pump", "LogicdataAirPumpController"
@@ -365,9 +372,11 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_SUPERIOR_SLEEP: _BuilderSpec("superior_sleep.controller"),
     BED_TYPE_RIZE_HOME: _BuilderSpec("rize_home.controller"),
     "nerum": _BuilderSpec("nerum.controller"),
+    "relax_motion": _BuilderSpec("relax_motion.controller"),
     "cheerssleep": _BuilderSpec("cheerssleep.controller"),
     "smart_sleep": _BuilderSpec("smart_sleep.controller"),
     BED_TYPE_SUTA: _BuilderSpec("suta.controller"),
+    "sleep_assistant": _BuilderSpec("sleep_assistant.controller"),
     "onlysnore": _BuilderSpec("onlysnore.controller"),
     BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),
     BED_TYPE_N32_MOTION_BED: _BuilderSpec("n32_motion_bed.controller"),
@@ -417,6 +426,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "hush_base": _BuilderSpec("hush_base.controller"),
     "luuna": _BuilderSpec("luuna.controller"),
     "personal_comfort": _BuilderSpec("personal_comfort.controller"),
+    "instant_comfort": _BuilderSpec("instant_comfort.controller"),
     "mline": _BuilderSpec("mline.controller"),
     BED_TYPE_JENSEN: _BuilderSpec("jensen.controller"),
     BED_TYPE_JIECANG_APP: _BuilderSpec("jiecang.app"),
@@ -438,7 +448,8 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_OCTO: _BuilderSpec("octo.controller"),
     BED_TYPE_OKIMAT: _BuilderSpec("okin_uuid.controller"),
     BED_TYPE_OKIN_64BIT: _BuilderSpec("okin_64bit"),
-    BED_TYPE_OKIN_CB24: _BuilderSpec("smartbed.controller"),
+    BED_TYPE_OKIN_CB24: _BuilderSpec("okin_cb24"),
+    "smartbed": _BuilderSpec("smartbed.controller"),
     BED_TYPE_OKIN_CST: _BuilderSpec("okin_cst"),
     BED_TYPE_OKIN_DOT: _BuilderSpec("okin_dot"),
     BED_TYPE_OKIN_HANDLE: _BuilderSpec("okin_handle"),

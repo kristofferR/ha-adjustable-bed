@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .goodvibe.controller import GoodVibeController as GoodVibeController
     from .hjbed.controller import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
+    from .instant_comfort.controller import InstantComfortBase as InstantComfortBase
     from .isleep import IsleepController as IsleepController
     from .jalon_bed.controller import JalonBedController as JalonBedController
     from .jensen.controller import JensenController as JensenController
@@ -93,6 +94,7 @@ if TYPE_CHECKING:
     from .octo.controller import OctoController as OctoController
     from .okimiki.controller import OkimikiController as OkimikiController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
+    from .okin_cb24 import OkinCB24Controller as OkinCB24Controller
     from .okin_cb35 import OkinCB35Controller as OkinCB35Controller
     from .okin_cst import OkinCstController as OkinCstController
     from .okin_dot import OkinDotController as OkinDotController
@@ -108,6 +110,7 @@ if TYPE_CHECKING:
     from .paramount.controller import ParamountController as ParamountController
     from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir
     from .personal_comfort.controller import PersonalComfortBase as PersonalComfortBase
+    from .relax_motion.controller import RelaxMotionController as RelaxMotionController
     from .remacro.controller import RemacroController as RemacroController
     from .resident.controller import ResidentController as ResidentController
     from .reverie.controller import ReverieController as ReverieController
@@ -131,7 +134,9 @@ if TYPE_CHECKING:
     from .serenity.controller import TranquilController as TranquilController
     from .serenity.controller import ZSeriesController as ZSeriesController
     from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
+    from .silvermotion.controller import SilvermotionController as SilvermotionController
     from .simmons.controller import SimmonsController as SimmonsController
+    from .sleep_assistant.controller import SleepAssistantController as SleepAssistantController
     from .sleep_number.controller import SleepNumberController as SleepNumberController
     from .sleep_number.mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
@@ -140,7 +145,7 @@ if TYPE_CHECKING:
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
     from .smart_comfort.controller import SmartComfortController as SmartComfortController
     from .smart_sleep.controller import SmartSleepController as SmartSleepController
-    from .smartbed.controller import OkinCB24Controller as OkinCB24Controller
+    from .smartbed.controller import SmartBedController as SmartBedController
     from .solace.controller import SolaceController as SolaceController
     from .sonicsleep.controller import SonicSleepController as SonicSleepController
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
@@ -160,6 +165,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "InstantComfortBase": "instant_comfort.controller",
     "SuperiorSleepController": "superior_sleep.controller",
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
@@ -170,6 +176,7 @@ _EXPORT_MODULES = {
     "MlilyRemoteController": "mlily_remote.controller",
     "ResidentController": "resident.controller",
     "NerumController": "nerum.controller",
+    "RelaxMotionController": "relax_motion.controller",
     "CheersSleepController": "cheerssleep.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
@@ -209,6 +216,7 @@ _EXPORT_MODULES = {
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
     "SealyController": ("sealy.controller", "SealyController"),
+    "SleepAssistantController": "sleep_assistant.controller",
     "YamadaController": ("keeson.yamada", "YamadaController"),
     "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
     "GlideawayMotionController": "glideaway_motion.controller",
@@ -257,6 +265,8 @@ _EXPORT_MODULES = {
     "LimossController": "limoss.controller",
     "LimossRemoteController": "limoss.remote",
     "LinakController": "linak.controller",
+    "SilvermotionController": "silvermotion.controller",
+    "SmartBedController": "smartbed.controller",
     "LogicdataController": "logicdata.controller",
     "LogicdataAppController": "logicdata.app",
     "LogicdataAirPumpController": "logicdata.air_pump",
@@ -267,7 +277,7 @@ _EXPORT_MODULES = {
     "OctoController": "octo.controller",
     "OkimikiController": "okimiki.controller",
     "Okin7ByteController": "okin_7byte",
-    "OkinCB24Controller": "smartbed.controller",
+    "OkinCB24Controller": "okin_cb24",
     "OkinCB35Controller": "okin_cb35",
     "OkinCstController": "okin_cst",
     "OkinDotController": "okin_dot",
@@ -306,6 +316,7 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    "InstantComfortBase",
     "DoubleSleepController",
     'TempurCurveController',
     'QPlusAppController',

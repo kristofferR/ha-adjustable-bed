@@ -93,6 +93,8 @@ from .const import (
     KAIDI_VARIANT_SEAT_2,
     LIMOSS_REMOTE_CONFIG_KEYS,
     OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
+    OKIN_CB24_VARIANT_CB27NEW,
+    OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
@@ -124,6 +126,7 @@ from .profiles.saatva import TWO_RECEIVER_PROFILES as SAATVA_TWO_RECEIVER_PROFIL
 # offline. Each bed type contributes its own frozenset, so profiles extend this
 # independently; every member must build its controller without a client.
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
+    "instant_comfort": frozenset({"malouf", "reverie_v1", "reverie_v2"}),
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
     BED_TYPE_SOMOS: frozenset({"a", "b", "c", "d", "e"}),
@@ -221,6 +224,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_SBI,
         BED_TYPE_RONDURE,
         BED_TYPE_OKIN_CB24,
+        "smartbed",
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
         BED_TYPE_ISLEEP,
@@ -303,13 +307,17 @@ def supports_single_address_pairing(
             else protocol_variant
         )
         return effective_variant == KAIDI_VARIANT_SEAT_1_2
-    if bed_type == BED_TYPE_OKIN_CB24:
+    if bed_type == "smartbed":
         from .beds.smartbed.setup import verified_ab
 
+        # Only the CB24AB profile serializes a side of its own.
         return protocol_variant == "cb24_ab" or (
             protocol_variant in (None, VARIANT_AUTO) and verified_ab(capabilities)
         )
-    return True
+    return not (
+        bed_type == BED_TYPE_OKIN_CB24
+        and protocol_variant in {OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW}
+    )
 
 
 def is_paired(entry_data: Mapping[str, Any]) -> bool:
@@ -725,6 +733,8 @@ def build_pair_entry_data(
     pair's setup re-homes that entry's registry rows in place instead of letting
     the platforms recreate them (preserving per-side history/customizations).
     """
+    if any(item.get(CONF_BED_TYPE) == "sleep_assistant" for item in (left_data, right_data)):
+        raise ValueError("Sleep Assist supports standalone entries only")
     if any(item.get(CONF_BED_TYPE) == "personal_comfort" for item in (left_data, right_data)) and any(
         item.get(CONF_BED_TYPE) != "personal_comfort"
         or item.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
@@ -735,6 +745,12 @@ def build_pair_entry_data(
     if any(item.get(CONF_BED_TYPE) == "saatva" and item.get(CONF_PROTOCOL_VARIANT) not in SAATVA_TWO_RECEIVER_PROFILES
            for item in (left_data, right_data)):
         raise invalid("not_supported_by_bed", feature="two-receiver pairing")
+    if any(item.get(CONF_BED_TYPE) == "instant_comfort" for item in (left_data, right_data)) and any(
+        item.get(CONF_BED_TYPE) != "instant_comfort"
+        or item.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
+        for item in (left_data, right_data)
+    ):
+        raise ValueError("Only configured Instant Comfort bases can be combined")
     left_addr = left_data[CONF_ADDRESS]
     right_addr = right_data[CONF_ADDRESS]
     left_entry_id, left_unique_id = left_origin or (None, None)
@@ -840,7 +856,7 @@ def build_single_address_pair_entry_data(
     elif bed_type == BED_TYPE_RONDURE:
         left[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_A
         right[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_B
-    elif bed_type == BED_TYPE_OKIN_CB24:
+    elif bed_type in (BED_TYPE_OKIN_CB24, "smartbed"):
         left[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_A
         right[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_B
     elif bed_type == "ultramatic_smart_bed":

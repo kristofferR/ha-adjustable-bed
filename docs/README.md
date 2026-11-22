@@ -33,7 +33,9 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 
 | Guide | Covers | Shared |
 |-------|--------|--------|
+| [Personal Comfort / Instant Comfort](beds/personal-comfort.md) | ANM and RA air units, Malouf and Reverie bases |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | The BedJet PowerLayer adjustable frame | |
+| [SILVERmotion Android](beds/silvermotion.md) | SILVERmotion Android SimplicityFrame beds | |
 | [Casper Base](beds/casper-base.md) | The Casper Base app, sleep sensors and remote finder | |
 | [CheersSleep](beds/cheerssleep.md) | The CheersSleep app | |
 | [Solace and related apps](beds/ff_frame.md) | Solace remotes and apps, Sophie, Woosa Sleep, BedSense and Motion Bed | Shared |
@@ -59,7 +61,6 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Nectar, Mattress Firm 900 and Sealy (Okin)](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Sealy Posturematic (the CB35 receiver and the Sealy Posturematic app) and DewertOkin ELEVATE | Shared |
 | [Okin and DewertOkin](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, CST and DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, StarCode AdjustableM5X4, Okin 64-Bit, eShine E2000 to E5000, Superior sleep and other Okin apps | Shared |
 | [Okin SoundWave and Symphony](beds/okin-soundwave.md) | Symphony Sleep Sense and the SoundWave pages | Shared |
-| [SmartBed by Okin](beds/smartbed.md) | SmartBed receiver profiles and headboards | |
 | [OKIN Smart Sleep](beds/smart-sleep.md) | The OKIN Smart Sleep app | |
 | [Paramount](beds/paramount.md) | The Paramount bed operation app | |
 | [Personal Comfort](beds/personal-comfort.md) | Personal Comfort air units with their base | |
@@ -68,6 +69,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Reverie Pairlink](beds/reverie-pairlink-sdk.md) | Reverie Pairlink (R510L / Harmoniq) | |
 | [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Super Colchones, SleepEvolution and other Richmat-based apps | Shared |
 | [RUF and related apps](beds/ruf-richmat-apps.md) | RUF Betten, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX | |
+| [Sleep Assist](beds/sleep-assistant.md) | The original Sleep Assist app | |
 | [Sleep Number](beds/sleep_number.md) | Sleep Number Fuzion and BAM/MCR bases ([commands](beds/sleep-number-services.md)) | |
 | [SleepSpa S9000AI](beds/sleepstar.md) | The SleepSpa S9000AI | |
 | [Sleeptracker](beds/sleeptracker.md) | The Tempur Sleeptracker-AI processor | |
@@ -79,6 +81,8 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [SUTA Smart Home](beds/suta.md) | The SUTA Smart Home app | |
 | [Svane Remote](beds/svane.md) | The Svane Remote app | |
 | [TiMOTION AHF](beds/timotion-ahf.md) | TiMOTION AHF | |
+| [Relax Motion](beds/relax-motion.md) | Relax Motion numeric models and app-page routes |
+| [SmartBed app](beds/smartbed.md) | SmartBed receiver profiles and headboards |
 | [Vibradorm](beds/vibradorm.md) | Vibradorm remotes, Caresse, Werkmeister, VMAT and V-MAT Basic | Shared |
 
 ## Design Notes

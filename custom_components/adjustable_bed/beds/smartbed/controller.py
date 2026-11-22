@@ -88,7 +88,7 @@ class _HoldEnded(Exception):
     """A queued refresh outlived the held gesture, so it must not dispatch."""
 
 
-class OkinCB24Controller(BedController):
+class SmartBedController(BedController):
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
@@ -102,7 +102,7 @@ class OkinCB24Controller(BedController):
         snapshot: Mapping[str, object] | None = None,
     ) -> None:
         super().__init__(coordinator)
-        self.profile = app.PROFILES[app.ALIASES.get(protocol_variant, protocol_variant)]
+        self.profile = app.PROFILES[protocol_variant]
         self._bed_selection = {0xAA: 1, 0xBB: 2}.get(bed_selection, bed_selection)
         configured = motors if motors is not None else coordinator.motor_count
         self._motors = configured if type(configured) is int else 2
@@ -1054,7 +1054,7 @@ class OkinCB24Controller(BedController):
                 ControllerButtonSpec(
                     "smartbed_alarm_refresh",
                     "Refresh alarm",
-                    lambda c: cast(OkinCB24Controller, c).query_alarm(),
+                    lambda c: cast(SmartBedController, c).query_alarm(),
                     "mdi:alarm",
                     translation_key="smartbed_alarm_refresh",
                     diagnostic=True,
@@ -1074,7 +1074,7 @@ class OkinCB24Controller(BedController):
                     1,
                     self._wave_max,
                     1,
-                    lambda c, v: cast(OkinCB24Controller, c).set_wave(v),
+                    lambda c, v: cast(SmartBedController, c).set_wave(v),
                     card=CARD_MASSAGE,
                 )
             )
@@ -1088,7 +1088,7 @@ class OkinCB24Controller(BedController):
                         1,
                         3,
                         1,
-                        lambda c, v: cast(OkinCB24Controller, c).set_massage_intensity(
+                        lambda c, v: cast(SmartBedController, c).set_massage_intensity(
                             "head", int(v)
                         ),
                         card=CARD_MASSAGE,
@@ -1100,7 +1100,7 @@ class OkinCB24Controller(BedController):
                         1,
                         3,
                         1,
-                        lambda c, v: cast(OkinCB24Controller, c).set_massage_intensity(
+                        lambda c, v: cast(SmartBedController, c).set_massage_intensity(
                             "foot", int(v)
                         ),
                         card=CARD_MASSAGE,
@@ -1117,7 +1117,7 @@ class OkinCB24Controller(BedController):
                         0,
                         3,
                         1,
-                        lambda c, v: cast(OkinCB24Controller, c).set_sonic_level("head", v),
+                        lambda c, v: cast(SmartBedController, c).set_sonic_level("head", v),
                         card=CARD_MASSAGE,
                     ),
                     ControllerNumberSpec(
@@ -1127,7 +1127,7 @@ class OkinCB24Controller(BedController):
                         0,
                         3,
                         1,
-                        lambda c, v: cast(OkinCB24Controller, c).set_sonic_level("foot", v),
+                        lambda c, v: cast(SmartBedController, c).set_sonic_level("foot", v),
                         card=CARD_MASSAGE,
                     ),
                     ControllerNumberSpec(
@@ -1137,7 +1137,7 @@ class OkinCB24Controller(BedController):
                         0,
                         6,
                         1,
-                        lambda c, v: cast(OkinCB24Controller, c).set_sonic_wave(v),
+                        lambda c, v: cast(SmartBedController, c).set_sonic_wave(v),
                         card=CARD_MASSAGE,
                     ),
 
@@ -1155,7 +1155,7 @@ class OkinCB24Controller(BedController):
                 "smartbed_sonic_mode",
                 SONIC_MODE,
                 ("normal", "acoustic"),
-                lambda c, v: cast(OkinCB24Controller, c).set_sonic_mode(v),
+                lambda c, v: cast(SmartBedController, c).set_sonic_mode(v),
                 card=CARD_MASSAGE,
             ),
             ControllerSelectSpec(
@@ -1163,7 +1163,7 @@ class OkinCB24Controller(BedController):
                 "smartbed_sonic_timer",
                 SONIC_TIMER,
                 ("10", "20", "30"),
-                lambda c, v: cast(OkinCB24Controller, c).set_sonic_timer(v),
+                lambda c, v: cast(SmartBedController, c).set_sonic_timer(v),
                 card=CARD_MASSAGE_TIMER,
             ),
         )
@@ -1176,7 +1176,7 @@ class OkinCB24Controller(BedController):
                 ControllerSwitchSpec(
                     "smartbed_massage",
                     "smartbed_massage",
-                    lambda c, v: cast(OkinCB24Controller, c).set_massage(v),
+                    lambda c, v: cast(SmartBedController, c).set_massage(v),
                     MASSAGE,
                     assumed_state=self.protocol == 5,
                     card=CARD_MASSAGE,
@@ -1188,7 +1188,7 @@ class OkinCB24Controller(BedController):
                     ControllerSwitchSpec(
                         "smartbed_sonic",
                         "smartbed_sonic",
-                        lambda c, v: cast(OkinCB24Controller, c).set_sonic(v),
+                        lambda c, v: cast(SmartBedController, c).set_sonic(v),
                         SONIC,
                         assumed_state=True,
                         card=CARD_MASSAGE,
@@ -1438,49 +1438,49 @@ class OkinCB24Controller(BedController):
 
 def _move(function: F, subfunction: int) -> MotorCommandCallable:
     async def run(controller: BedController) -> None:
-        await cast(OkinCB24Controller, controller)._hold(function, subfunction)
+        await cast(SmartBedController, controller)._hold(function, subfunction)
 
     return run
 
 
 def _save(name: str) -> MotorCommandCallable:
     async def run(controller: BedController) -> None:
-        await cast(OkinCB24Controller, controller).save(name)
+        await cast(SmartBedController, controller).save(name)
 
     return run
 
 
 def _massage_arrow(function: F, increase: bool) -> MotorCommandCallable:
     async def run(controller: BedController) -> None:
-        await cast(OkinCB24Controller, controller)._arrow(function, increase)
+        await cast(SmartBedController, controller)._arrow(function, increase)
 
     return run
 
 
 def _wave_arrow(increase: bool) -> MotorCommandCallable:
     async def run(controller: BedController) -> None:
-        await cast(OkinCB24Controller, controller)._arrow(F.WAVE, increase)
+        await cast(SmartBedController, controller)._arrow(F.WAVE, increase)
 
     return run
 
 
 def _timer_arrow(increase: bool) -> MotorCommandCallable:
     async def run(controller: BedController) -> None:
-        await cast(OkinCB24Controller, controller).change_timer(increase)
+        await cast(SmartBedController, controller).change_timer(increase)
 
     return run
 
 
 
-async def build_controller(ctx: BuildContext) -> OkinCB24Controller:
-    snapshot = ctx.stored_capabilities("okin_cb24")
+async def build_controller(ctx: BuildContext) -> SmartBedController:
+    snapshot = ctx.stored_capabilities("smartbed")
     variant = receiver_variant(ctx.data, ctx.variant)
     selected = select_profile(
         variant or "auto",
         ctx.data.get(CONF_BLE_DEVICE_NAME, ctx.device_name),
         motors=ctx.data.get(CONF_MOTOR_COUNT, ctx.coordinator.motor_count),
     )
-    return OkinCB24Controller(
+    return SmartBedController(
         ctx.coordinator,
         ctx.data.get(CONF_CB24_BED_SELECTION, 0),
         selected.profile,

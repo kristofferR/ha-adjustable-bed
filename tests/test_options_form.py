@@ -35,7 +35,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_CST_VARIANT_NECTAR_MOVE,
     VARIANT_AUTO,
 )
-from tests.form_helpers import finish_new_bed, form_fields
+from tests.form_helpers import finish_new_bed, start_new_bed
 
 
 @pytest.mark.parametrize(
@@ -99,7 +99,7 @@ async def _settings_form(hass: HomeAssistant, data: dict) -> tuple[MockConfigEnt
 def _defaults(form: Any) -> dict:
     return {
         marker.schema: marker.default()
-        for marker in form_fields(form["data_schema"])
+        for marker in form["data_schema"].schema
         if callable(marker.default)
     }
 
@@ -188,7 +188,7 @@ async def test_cb24_side_is_a_declared_question(
     hass: HomeAssistant, enable_custom_integrations
 ) -> None:
     del enable_custom_integrations
-    entry, form = await _settings_form(hass, {CONF_BED_TYPE: BED_TYPE_OKIN_CB24, CONF_PROTOCOL_VARIANT: "cb24_ab"})
+    entry, form = await _settings_form(hass, {CONF_BED_TYPE: BED_TYPE_OKIN_CB24})
     assert _defaults(form)[CONF_CB24_BED_SELECTION] == CB24_BED_SELECTION_DEFAULT
 
     saved = await hass.config_entries.options.async_configure(
@@ -204,9 +204,7 @@ async def test_setup_asks_the_cb24_side_in_the_final_settings(hass: HomeAssistan
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    flow._selected_bed_type = BED_TYPE_OKIN_CB24
-    flow._selected_protocol_variant = "cb24_ab"
-    result = await flow.async_step_manual_entry({"address": "11:22:33:44:55:66"})
+    result = await start_new_bed(flow, "typed", BED_TYPE_OKIN_CB24)
     assert result["step_id"] == "finish_settings"
     assert _defaults(result)[CONF_CB24_BED_SELECTION] == CB24_BED_SELECTION_DEFAULT
 
@@ -267,13 +265,13 @@ async def test_configure_asks_a_profiles_angle_question_as_read_bed_position(
     assert "read_positions" not in entry.data
 
 
-async def test_verified_auto_cb24_ab_pair_can_save_unchanged_settings(hass, enable_custom_integrations):
+async def test_verified_auto_smartbed_ab_pair_can_save_unchanged_settings(hass, enable_custom_integrations):
     from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
 
     del enable_custom_integrations
     data = build_single_address_pair_entry_data({
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:95", CONF_BED_TYPE: BED_TYPE_OKIN_CB24,
-        CONF_PROTOCOL_VARIANT: "auto", "capabilities": {"okin_cb24": {"profile": "cb24_ab"}},
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:95", CONF_BED_TYPE: "smartbed",
+        CONF_PROTOCOL_VARIANT: "auto", "capabilities": {"smartbed": {"profile": "cb24_ab"}},
     }, name="Bed")
     entry, form = await _settings_form(hass, data)
     saved = await hass.config_entries.options.async_configure(form["flow_id"], user_input={})

@@ -219,6 +219,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         OreUltramaticController,
     )
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
+    from custom_components.adjustable_bed.beds.relax_motion.controller import RelaxMotionController
     from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
     from custom_components.adjustable_bed.beds.richmat_classic.jerome import JeromeController
     from custom_components.adjustable_bed.beds.richmat_classic.jerome_controls import (
@@ -246,7 +247,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.smart_comfort.controller import (
         SmartComfortController,
     )
-    from custom_components.adjustable_bed.beds.smartbed.controller import OkinCB24Controller
+    from custom_components.adjustable_bed.beds.smartbed.controller import SmartBedController
     from custom_components.adjustable_bed.beds.starcode.abm5_4 import (
         _POSITIVE_SELECTORS,
         StarcodeAbm5_4Controller,
@@ -255,6 +256,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
     from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
+    from custom_components.adjustable_bed.profiles import relax_motion
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
@@ -268,8 +270,14 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
-        if isinstance(controller, OkinCB24Controller) and controller.protocol == 5:
+        if isinstance(controller, SmartBedController) and controller.protocol == 5:
             yield variant(controller, _sonic=True, _rgb=True, _motors=5)
+        if isinstance(controller, RelaxMotionController):
+            for number in (14, 31, 32, 500, 725):
+                for route in relax_motion.ROUTES:
+                    yield variant(controller, number=number, route=route,
+                                  model=relax_motion.model(number, route),
+                                  profile=relax_motion.PROFILES["p2" if number > 450 and route == "relax" else "p1"])
         if isinstance(controller, DreamSenseController):
             for profile in DREAMSENSE_PROFILES.values():
                 yield variant(controller, profile=profile, _known={"clock", "light", "music"})

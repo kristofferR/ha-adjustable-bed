@@ -2180,7 +2180,8 @@ class TestFEE9UUIDDisambiguation:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_RICHMAT
         assert result.confidence == 0.5
-        assert result.ambiguous_types == [BED_TYPE_BEDTECH, "saatva"]
+        # Instant Comfort runs on this service too, so the chooser offers it.
+        assert result.ambiguous_types == [BED_TYPE_BEDTECH, "instant_comfort", "saatva"]
 
     def test_fee9_with_richmat_remote_name_prefers_richmat(self):
         """Test FEE9 + Richmat remote code name uses high-confidence Richmat."""
@@ -2827,4 +2828,4 @@ class TestDetectionSignals:
 def test_exact_headboard_name_precedes_its_shared_nordic_service(name):
     from custom_components.adjustable_bed.const import NORDIC_UART_SERVICE_UUID
     result = detect_bed_type_detailed(_make_service_info(name=name, service_uuids=[NORDIC_UART_SERVICE_UUID]))
-    assert result.bed_type == BED_TYPE_OKIN_CB24
+    assert result.bed_type == "smartbed"

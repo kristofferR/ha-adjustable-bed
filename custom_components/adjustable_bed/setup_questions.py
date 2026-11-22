@@ -100,6 +100,7 @@ from .const import (
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SERENITY,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -251,6 +252,7 @@ from .import_executor import async_import_modules
 from .profiles import jiecang as jiecang_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
@@ -310,6 +312,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_remote": GENERIC_FIELDS,
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "instant_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
     "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
@@ -387,6 +390,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     # Logicdata pulse count still bounds each held movement.
     BED_TYPE_MALOUF_APP: _FIXED_LAYOUT,
     BED_TYPE_LOGICDATA_APP: _FIXED_LAYOUT,
+    BED_TYPE_SILVERMOTION: _FIXED_LAYOUT | {CONF_DISABLE_ANGLE_SENSING, CONF_PROTOCOL_VARIANT},
 }
 _OWNED_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_COMFORTFURNITURE): frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}),
@@ -722,6 +726,19 @@ def _logicdata_questions(
 
 
 _DECLARED: Final[dict[str, SetupProfile]] = {
+    BED_TYPE_SILVERMOTION: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_MOTOR_PULSE_DELAY_MS: 150,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+        },
+        questions=(
+            Question(CONF_PRODUCT_TYPE, {"queen": "Queen", "king": "King", "twin_xl": "Twin XL"}, "queen"),
+            Question(CONF_HAS_MASSAGE, default=True),
+        ),
+        title=lambda data: "SILVERmotion Android",
+    ),
     **dict.fromkeys(("smart_comfort_synargy", "smart_comfort_synergy"), SetupProfile(owns={
         CONF_MOTOR_COUNT: 3, CONF_HAS_MASSAGE: False,
         CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
@@ -1648,6 +1665,12 @@ def _mline_protocols(_data: Mapping[str, Any]) -> Mapping[str, str]:
     return {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS}
 
 
+def _instant_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.instant_comfort import MODELS
+
+    return MODELS
+
+
 def _personal_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
     from .profiles.personal_comfort import MODELS
 
@@ -2105,6 +2128,20 @@ def _smart_sleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
             if data.get(CONF_PROTOCOL_VARIANT) != "p2" or model == 80}
 
 
+def _sleep_assistant_validate(data: Mapping[str, Any]) -> dict[str, str]:
+    try:
+        sleep_assistant_app.selected(data)
+    except (ValueError, TypeError):
+        return {sleep_assistant_app.CONF_SLEEP_ASSISTANT_PARAMETERS: "sleep_assistant_invalid_settings"}
+    return {}
+
+
+def _sleep_assistant_derive(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    profile = sleep_assistant_app.selected(data)
+    return {CONF_MOTOR_COUNT: 2 + int("m7" in profile.controls) + int("m8" in profile.controls),
+            CONF_HAS_MASSAGE: bool(profile.controls & {"m1", "m2", "m3", "m4", "m5", "m6"})}
+
+
 def _onlysnore_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
     from .profiles.onlysnore import MODELS
 
@@ -2270,6 +2307,59 @@ def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {} if profile is not None and profile.key != "MattressControllerDrawerFragment" else {CONF_BLE_DEVICE_NAME: "suta_name"}
 
 
+def relax_motion_seed_input(data: Mapping[str, Any], answers: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    """Discard only an unchanged detected suggestion when its app page changes."""
+    from .profiles.relax_motion import advertisement, discovery_matches, model_number, route_name
+    result = {**data, **answers}
+    if answers.get(CONF_PRODUCT_TYPE) == "":
+        result.pop(CONF_PRODUCT_TYPE, None)
+    if discovered and discovery_matches(discovered.advertisement.local_name, discovered.service_uuids or (), route=route_name(data.get(CONF_PROTOCOL_VARIANT))) and result.get(CONF_PROTOCOL_VARIANT) != data.get(CONF_PROTOCOL_VARIANT):
+        previous = model_number(data.get(CONF_PRODUCT_TYPE))
+        detected = advertisement(discovered.manufacturer_data or {}, legacy=data.get(CONF_PROTOCOL_VARIANT) == "legacy")
+        if previous is not None and previous == detected and model_number(answers.get(CONF_PRODUCT_TYPE)) == previous:
+            result.pop(CONF_PRODUCT_TYPE, None)
+    return result
+
+
+def _relax_motion_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.relax_motion import advertisement, discovery_matches, route_name
+    result = dict(data)
+    if discovered and CONF_PRODUCT_TYPE not in result and discovery_matches(discovered.advertisement.local_name, discovered.service_uuids or (), route=route_name(result.get(CONF_PROTOCOL_VARIANT))):
+        number = advertisement(discovered.manufacturer_data or {}, legacy=result.get(CONF_PROTOCOL_VARIANT) == "legacy")
+        if number is not None:
+            result[CONF_PRODUCT_TYPE] = str(number)
+    return result
+
+
+def _relax_motion_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.relax_motion import model_number
+    result = {**previous, **answers}
+    number = model_number(result.get(CONF_PRODUCT_TYPE))
+    if number is not None:
+        result[CONF_PRODUCT_TYPE] = str(number)
+    return result
+
+
+def _relax_motion_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.relax_motion import ROUTES, model_number
+    errors = {} if model_number(data.get(CONF_PRODUCT_TYPE)) is not None else {CONF_PRODUCT_TYPE: "relax_motion_model"}
+    if data.get(CONF_PROTOCOL_VARIANT, "relax") not in ROUTES:
+        errors[CONF_PROTOCOL_VARIANT] = "invalid_selection"
+    return errors
+
+
+def _relax_motion_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.relax_motion import axes, model, model_number
+    number = model_number(data.get(CONF_PRODUCT_TYPE))
+    selected = model(number, str(data.get(CONF_PROTOCOL_VARIANT, "relax"))) if number is not None else None
+    return {CONF_MOTOR_COUNT: len(axes(selected)) if selected else 2, CONF_HAS_MASSAGE: False}
+
+
+def _relax_motion_routes(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.relax_motion import ROUTES
+    return ROUTES
+
+
 def _cheerssleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
     from .beds.cheerssleep.catalog import MODELS
 
@@ -2362,10 +2452,29 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda data: {CONF_MOTOR_COUNT: {"nerum": 2, "2": 2, "3": 3, "4": 4}.get(data.get(CONF_PRODUCT_TYPE, "nerum"), 2)},
         imports=("profiles.nerum",),
     ),
+    "relax_motion": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, default="", text=True), Question(CONF_PROTOCOL_VARIANT, _relax_motion_routes, "relax")),
+        seed=_relax_motion_seed, normalize=_relax_motion_normalize, validate=_relax_motion_errors, derive=_relax_motion_settings, imports=("profiles.relax_motion",),
+        title=lambda _data: "Relax Motion",
+    ),
     "cheerssleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
         questions=(Question(CONF_PRODUCT_TYPE, _cheerssleep_models, "45", searchable=True),),
         seed=_cheerssleep_seed, validate=_cheerssleep_errors, derive=_cheerssleep_settings, imports=("beds.cheerssleep.catalog",),
+    ),
+    "sleep_assistant": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto"},
+        questions=(
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_PRESETS, sleep_assistant_app.MODEL_KEYS, [], multiple=True),
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_CONTROLS, sleep_assistant_app.MASSAGE_KEYS, [], multiple=True),
+            Question(CONF_HAS_LIGHT, default=False),
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_LIGHTING, {"none": "Standard", "sleep8": "Sleep8 RGB", "4193": "4193 RGB"}, "none"),
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_IDENTITY, default="", text=True, advanced=True),
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_PARAMETERS, default="", text=True, advanced=True),
+        ),
+        validate=_sleep_assistant_validate, derive=_sleep_assistant_derive,
     ),
     "onlysnore": SetupProfile(
         owns={
@@ -2942,6 +3051,26 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question("mline_child_mode", default=False)),
         derive=_mline_settings, imports=("profiles.mline",),
     ),
+    "instant_comfort": _asking(
+        "instant_comfort",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("instant_comfort")),),
+        derive=_personal_comfort_settings, imports=("profiles.instant_comfort",),
+    ),
+    "instant_comfort:anm5": _asking(
+        "instant_comfort",
+        questions=(Question(CONF_PRODUCT_TYPE, {
+            "two": "Two pressure channels", "four": "Four pressure channels (main and lumbar)"
+        }),),
+        derive=_personal_comfort_settings,
+    ),
+    **{f"instant_comfort:{route}": _asking(
+        "instant_comfort", questions=(), derive=_personal_comfort_settings,
+    ) for route in ("anm3", "ra")},
+    **{f"instant_comfort:{route}": _asking(
+        "instant_comfort",
+        questions=(Question(CONF_PRODUCT_TYPE, _instant_comfort_models),),
+        derive=_personal_comfort_settings, imports=("profiles.instant_comfort",),
+    ) for route in ("malouf", "reverie_v1", "reverie_v2")},
     "personal_comfort": _asking(
         "personal_comfort",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("personal_comfort")),
@@ -3335,9 +3464,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     BED_TYPE_OKIN_CB24: _asking(
         BED_TYPE_OKIN_CB24,
+        questions=(
+            Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT),
+        ),
+    ),
+    "smartbed": _asking(
+        "smartbed",
         owns={CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
         questions=(
-            Question(CONF_MOTOR_COUNT, _motor_counts(BED_TYPE_OKIN_CB24), 2),
+            Question(CONF_MOTOR_COUNT, _motor_counts("smartbed"), 2),
             Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),
             Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT, advanced=True, when={"field": CONF_PROTOCOL_VARIANT, "value": "cb24_ab"}),
         ),

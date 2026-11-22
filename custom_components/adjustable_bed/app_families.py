@@ -68,6 +68,7 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
     BED_TYPE_SERTA_MP_REMOTE,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX15,
@@ -721,12 +722,13 @@ LOGICDATA_FAMILY: Final = AppFamily(
     ),
     answers={
         "silvermotion": Answer(BED_TYPE_LOGICDATA),
+        "silvermotion_android": Answer(BED_TYPE_SILVERMOTION),
         "phone": _logicdata_app("phone"),
         "tablet": _logicdata_app("tablet"),
         "sleep_smart": _logicdata_app("sleep_smart"),
         "sleep_smart_pump": Answer(BED_TYPE_LOGICDATA_AIR_PUMP),
     },
-    routes=frozenset({BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_AIR_PUMP}),
+    routes=frozenset({BED_TYPE_LOGICDATA, BED_TYPE_SILVERMOTION, BED_TYPE_LOGICDATA_AIR_PUMP}),
     picks_route=False,
     offers_keep=keep_unless_row,
     offer=_logicdata_answers,
@@ -739,7 +741,7 @@ LOGICDATA_FAMILY: Final = AppFamily(
     route_keys=_LOGICDATA_ROUTE_KEYS,
     requires_check=_in(lambda: LOGICDATA_FAMILY.managed),
     endpoint_check=_logicdata_route,
-    check_imports=("beds.logicdata.app",),
+    check_imports=("beds.logicdata.app", "beds.silvermotion.controller"),
 )
 
 

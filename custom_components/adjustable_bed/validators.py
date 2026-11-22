@@ -93,6 +93,7 @@ from .const import (
     SIMMONS_VARIANTS,
     SLEEP_NUMBER_VARIANTS,
     SLEEPYS_BOX25_VARIANTS,
+    SMARTBED_VARIANTS,
     SOLACE_VARIANTS,
     STAR_ELEVATE_VARIANTS,
     SVANE_VARIANTS,
@@ -105,6 +106,7 @@ from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
+from .profiles.instant_comfort import ROUTES as INSTANT_COMFORT_ROUTES
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
@@ -112,6 +114,7 @@ from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
+from .profiles.relax_motion import ROUTES as RELAX_MOTION_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
@@ -190,10 +193,12 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "luuna": LUUNA_VARIANTS,
     "super_colchones": SUPER_COLCHONES_VARIANTS,
     "personal_comfort": PERSONAL_COMFORT_ROUTES,
+    "instant_comfort": INSTANT_COMFORT_ROUTES,
     "mlily_remote": MLILY_REMOTE_PROFILES,
     "mline": {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
+    "smartbed": SMARTBED_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,
     BED_TYPE_KEESON: KEESON_VARIANTS,
     BED_TYPE_LEGGETT_PLATT: LEGGETT_VARIANTS,
@@ -212,6 +217,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
+    "relax_motion": RELAX_MOTION_ROUTES,
     BED_TYPE_YAMADA: {"p1": "P1 control box", "p2": "P2 control box"},
     BED_TYPE_BETTERLIVING2: {"p1": "P1 control box", "p2": "P2 control box", "p3": "P3 control box"},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},

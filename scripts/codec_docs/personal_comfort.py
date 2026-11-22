@@ -1,6 +1,7 @@
 """Personal Comfort tables from the shipped route and encoder data."""
 
 from custom_components.adjustable_bed.codec import personal_comfort as codec
+from custom_components.adjustable_bed.codec.instant_comfort import channel_target
 from custom_components.adjustable_bed.profiles.personal_comfort import MODELS, PROFILES, ROUTES
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -97,7 +98,19 @@ def commands() -> str:
     )
 
 
+def instant_channels() -> str:
+    return _block(_table(
+        ("Layout", "Control", "Channel", "Target 5", "Target 50"),
+        ((layout, control, str(channel), _hex(channel_target(channel, 5)), _hex(channel_target(channel, 50)))
+         for layout, controls in (
+             ("Two channels", (("Left", 0), ("Right", 1))),
+             ("Four channels", (("Left main", 0), ("Left lumbar", 1), ("Right main", 2), ("Right lumbar", 3))),
+         ) for control, channel in controls),
+    ))
+
+
 BLOCKS: tuple[Block, ...] = (
+    (GUIDE, "instant-comfort-channels", instant_channels),
     (GUIDE, "personal-comfort-profiles", profiles),
     (GUIDE, "personal-comfort-transports", transports),
     (GUIDE, "personal-comfort-commands", commands),

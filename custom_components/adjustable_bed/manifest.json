@@ -135,6 +135,9 @@
       "manufacturer_id": 944
     },
     {
+      "manufacturer_id": 1351
+    },
+    {
       "manufacturer_id": 1465,
       "manufacturer_data_start": [
         192
@@ -181,6 +184,12 @@
     },
     {
       "local_name": "209A*"
+    },
+    {
+      "local_name": "2618*"
+    },
+    {
+      "local_name": "2816*"
     },
     {
       "local_name": "400I*"
@@ -2212,11 +2221,7 @@
       "local_name": "KRRN*"
     },
     {
-      "local_name": "KSBT01C*",
-      "connectable": true
-    },
-    {
-      "local_name": "KSBT03C*",
+      "local_name": "KSBT*",
       "connectable": true
     },
     {

@@ -551,6 +551,10 @@ def _argument_commands(controller: Any) -> list[Command]:
         out.append(Command(name, _method(method, *args, **kwargs), declared))
 
     if _flag(c, "supports_light_level_control"):
+        if c._coordinator.bed_type == "sleep_assistant":
+            # Brightness carries RGB too. Prepare an explicit color, as the
+            # native light caller does, instead of guessing one after reconnect.
+            add(True, "set_light_color", "light_color_before_brightness", (255, 128, 0))
         low, high = int(_value(c, "light_level_min", 0)), int(_value(c, "light_level_max", 10))
         mid = (low + high) // 2
         levels = (
@@ -1153,6 +1157,7 @@ class Coordinator:
         self.ble_model = None
         self.motor_count = 2
         self.has_massage = True
+        self.is_shutting_down = False
         self.disable_angle_sensing = True
         self.malouf_layout = MALOUF_LAYOUT_AUTO
         self.malouf_memory_slots = MALOUF_MEMORY_SLOTS_AUTO
@@ -1204,6 +1209,9 @@ class Coordinator:
         return None
 
     async def async_write_app_state(self, *_: Any) -> None:
+        return None
+
+    async def async_note_control_access_succeeded(self) -> None:
         return None
 
     @contextlib.contextmanager
@@ -1384,6 +1392,8 @@ def default_scenario(bed_type: str) -> Scenario:
     replies: dict[str, str] = {}
     if bed_type == "sealy_posturematic":
         data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
+    if bed_type == "sleep_assistant":
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="sleep_assistant")
     if bed_type == const.BED_TYPE_LINX:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
@@ -1463,6 +1473,12 @@ def default_scenario(bed_type: str) -> Scenario:
         # The exact name selects the panel: here panel One.
         data[const.CONF_BLE_DEVICE_NAME] = MOTOMOTION_NAMES[0]
         kwargs = {"device_name": MOTOMOTION_NAMES[0]}
+    if bed_type == "relax_motion":
+        data[const.CONF_BED_TYPE] = "relax_motion"
+        data[const.CONF_PRODUCT_TYPE] = "32"
+        variant = "relax"
+    if bed_type == "silvermotion":
+        data.update({const.CONF_PRODUCT_TYPE: "queen", const.CONF_HAS_MASSAGE: True})
     if bed_type == "cheerssleep":
         data[const.CONF_PRODUCT_TYPE] = "45"
     if bed_type == "smart_sleep":
@@ -1492,6 +1508,9 @@ def default_scenario(bed_type: str) -> Scenario:
             "read:0000143d-0000-1000-8000-00805f9b34fb": "0102",
             "read:00001111-0000-1000-8000-00805f9b34fb": "000001020304",
         }
+    if bed_type == "instant_comfort":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="malouf",
+                        entry_data={const.CONF_PRODUCT_TYPE: "pf4"}, layout_id="personal_comfort")
     if bed_type == "personal_comfort":
         data[const.CONF_PRODUCT_TYPE] = "pf4"
         variant = "malouf"
@@ -1534,6 +1553,7 @@ VARIANT_ROUTES: dict[str, str] = {
     "linak": "LINAK_VARIANTS",
     "octo": "OCTO_VARIANTS",
     "okin_cb24": "OKIN_CB24_VARIANTS",
+    "smartbed": "SMARTBED_VARIANTS",
     "okin_cst": "OKIN_CST_VARIANTS",
     "okin_64bit": "OKIN_64BIT_VARIANTS",
     "okin_dot": "OKIN_DOT_VARIANTS",
@@ -2103,6 +2123,9 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             },
         )
     )
+    for route, model in (("relax", 14), ("relax", 31), ("relax", 500), ("relax", 725), ("cheers_zh", 32), ("cheers_en", 32), ("legacy", 500)):
+        routes.append(Scenario(id=f"relax_motion:{route}:{model}", bed_type="relax_motion", protocol_variant=route,
+            entry_data={"bed_type": "relax_motion", "product_type": str(model), "protocol_variant": route}, layout_id="relax_motion"))
     from custom_components.adjustable_bed.profiles.cheerssleep import MODELS as CHEERSSLEEP_MODELS
     routes.extend(Scenario(id=f"cheerssleep:{model}", bed_type="cheerssleep", entry_data={"product_type": str(model)}, layout_id="cheerssleep") for model in CHEERSSLEEP_MODELS)
     # One accepted P1 outcome per numeric model; P2 scan selects only model80.
@@ -2224,11 +2247,20 @@ def build_scenarios() -> list[Scenario]:
                 protocol_variant=route, layout_id="linx",
                 entry_data={"product_type": model, "ble_device_name": "KSWF07D00000000"},
             ))
+    for name, lighting, presets in (
+        ("selected", "4193", ["o1", "o2", "o3", "o4"]),
+        ("palette", "sleep8", ["o2", "o5"]),
+    ):
+        scenarios.append(Scenario(id=f"sleep_assistant:{name}", bed_type="sleep_assistant",
+            layout_id="sleep_assistant", entry_data={"sleep_assistant_presets": presets,
+                "sleep_assistant_controls": ["m1", "m2", "m3", "m4", "m7", "m8"],
+                "sleep_assistant_lighting": lighting, "has_light": True},
+            replies={"*": "dd000000000000000000000000004002000000"}))
     scenarios.extend((
-        Scenario(id="okin_cb24:five_motors", bed_type="okin_cb24", protocol_variant="cb24",
-                 layout_id="okin_cb24:cb24", entry_data={"motor_count": 5}),
-        Scenario(id="okin_cb24:sonic", bed_type="okin_cb24", protocol_variant="cb27new",
-                 layout_id="okin_cb24:cb27new", entry_data={"capabilities": {"okin_cb24": {
+        Scenario(id="smartbed:five_motors", bed_type="smartbed", protocol_variant="cb24",
+                 layout_id="smartbed:cb24", entry_data={"motor_count": 5}),
+        Scenario(id="smartbed:sonic", bed_type="smartbed", protocol_variant="cb27new",
+                 layout_id="smartbed:cb27new", entry_data={"capabilities": {"smartbed": {
                      "profile": "cb27new", "motors": 5, "massage_count": 2, "massage": True,
                      "light": True, "rgb": True, "sonic": True}}},
                  replies={
@@ -2333,6 +2365,8 @@ async def _timed(awaitable: Awaitable[Any], recorder: Recorder, clock: FakeClock
         if recorder.events:
             return {"status": "not_implemented", "writes": _collapse(recorder.events)}
         return {"status": "unsupported"}
+    except asyncio.CancelledError:
+        return {"status": "cancelled", "writes": _collapse(recorder.events)}
     except TimeoutError:
         return {"status": "timeout", "writes": _collapse(recorder.events)}
     except Exception as err:  # noqa: BLE001 - recorded, not hidden
@@ -2362,7 +2396,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_after_connect(session)
             return
-        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep"}:
+        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep", "relax_motion"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
@@ -2372,7 +2406,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

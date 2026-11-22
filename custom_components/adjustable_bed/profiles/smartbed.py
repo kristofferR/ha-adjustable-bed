@@ -97,7 +97,6 @@ STANDARD: Final = tuple(
     f"0000{v}-0000-1000-8000-00805f9b34fb" for v in ("1000", "1001", "1000", "1002")
 )
 CB: Final = tuple(f"0000{v}-0000-1000-8000-00805f9b34fb" for v in ("ffe5", "ffe9", "ffe0", "ffe4"))
-ALIASES: Final = {"cb_old": "cb24", "cb_new": "cb27new"}
 
 
 def byte(value: int) -> int:

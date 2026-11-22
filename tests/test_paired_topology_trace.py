@@ -238,7 +238,6 @@ def _physical(
             "address": address,
             "name": f"Bed {who}",
             CONF_BED_TYPE: bed_type,
-            **({"protocol_variant": "cb24_ab"} if bed_type == BED_TYPE_OKIN_CB24 else {}),
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_CONNECTION_MODE: "idle",
             **entry_data,
@@ -264,7 +263,7 @@ def _physical(
         self._connection_source = "proxy"
         client = TraceClient(who, trace, layout)
         self._client = client  # type: ignore[assignment]
-        self._controller = await create_controller(self, bed_type, "cb24_ab" if bed_type == BED_TYPE_OKIN_CB24 else None, client)  # type: ignore[arg-type]
+        self._controller = await create_controller(self, bed_type, None, client)  # type: ignore[arg-type]
         self._notify_connection_state_change(True)
         if reset_timer:
             self._reset_disconnect_timer()

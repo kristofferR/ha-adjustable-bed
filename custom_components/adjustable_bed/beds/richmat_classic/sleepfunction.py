@@ -47,7 +47,7 @@ from ..entity_specs import (
 )
 from ..richmat.labels import resource_label
 from . import resource_controller as resource_runtime
-from .caller import Selection, selected_operand
+from .caller import Selection, nordic_label, selected_operand
 from .controller import RichmatClassicController
 from .profiles import Control
 from .protocol import (
@@ -551,7 +551,12 @@ class SleepFunctionController(ResourceBedController):
         hold_ms: int | None = None,
         expected_wire: str | None = None,
     ) -> None:
-        if self._session and len(self._model.modes) > 1 and self._session.wire != expected_wire:
+        if (
+            self._session
+            and (len(self._model.modes) > 1 or nordic_label(self._button(node)))
+            and self._session.wire != expected_wire
+        ):
+            # The control was listed for the other connection, where it does something else.
             raise invalid("sleepfunction_control")
         prior_mode, prior_selection = self._mode, self._selection
         self._mode, self._selection = (
@@ -568,8 +573,13 @@ class SleepFunctionController(ResourceBedController):
                 replace(prior_selection, hold=self._selection.hold),
             )
 
+    def _nordic_label(self, button: Control) -> str | None:
+        """The control's own name on a Nordic connection, when it differs."""
+        wire = self._session.wire if self._session else self._wire
+        return nordic_label(button) if wire == "RAW" else None
+
     def _label(self, button: Control) -> str:
-        label = resource_label(button.label)
+        label = self._nordic_label(button) or resource_label(button.label)
         if button.tag == "63":
             labels = {
                 "37": "Increase head massage",
@@ -644,7 +654,10 @@ class SleepFunctionController(ResourceBedController):
                             + suffix
                         )
                     key = f"sleepfunction_{button.node}_{mode}_{flag}" + (
-                        "_raw" if self._wire == "RAW" and len(self._model.modes) > 1 else ""
+                        "_raw"
+                        if self._wire == "RAW"
+                        and (len(self._model.modes) > 1 or nordic_label(button))
+                        else ""
                     )
                     expected_wire = self._wire or "FRAMED"
 
@@ -823,7 +836,12 @@ class SleepFunctionController(ResourceBedController):
     def _light_control(self, *, off: bool = False) -> Control | None:
         ending = "ubl off" if off else "ubl on off"
         return next(
-            (c for c in self._controls if c.label.endswith(ending) and self._usable(c)), None
+            (
+                c
+                for c in self._controls
+                if c.label.endswith(ending) and self._usable(c) and not self._nordic_label(c)
+            ),
+            None,
         )
 
     @property

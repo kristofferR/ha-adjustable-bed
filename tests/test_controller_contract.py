@@ -157,7 +157,7 @@ class _FactoryCoordinator(SimpleNamespace):
 
 def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
     """Return a deterministic protocol variant for factory-completeness tests."""
-    if bed_type == "personal_comfort":
+    if bed_type in {"personal_comfort", "instant_comfort"}:
         return "anm3"
     if bed_type == const.BED_TYPE_ADJUSTABLE_BED:
         return "adjustable_bed_okin"
@@ -213,8 +213,8 @@ async def _create_controller_for_bed_type(
     if bed_type == const.BED_TYPE_ORMATEK:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "new"
         variant = "okin15" if not variant or variant == VARIANT_AUTO else variant
-    if bed_type == "personal_comfort":
-        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "other"
+    if bed_type in {"personal_comfort", "instant_comfort"}:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two" if bed_type == "instant_comfort" and variant == "anm5" else "other"
     if bed_type == const.BED_TYPE_LINX:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: "a00a", const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
         return await create_controller(coordinator, bed_type, variant or "a00a", client)
@@ -230,6 +230,8 @@ async def _create_controller_for_bed_type(
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         coordinator.entry.data.update({const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: variant or "A1"})
         variant = variant or "A1"
+    if bed_type == const.BED_TYPE_SILVERMOTION:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "queen"
     if bed_type == const.BED_TYPE_SONICSLEEP:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type == const.BED_TYPE_JALON:

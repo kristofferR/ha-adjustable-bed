@@ -410,11 +410,11 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Okin receiver (13 and 15 series) | `okin_ffe` | 7 | 150 ms |
 | Okin receiver (older ORE remotes) | `okin_ore` | 1 | 300 ms |
 | Okin receiver (Sealy Posturematic and DewertOkin Star beds) | `okin_cb35` | 3 | 300 ms |
+| Okin receiver (SmartBed by Okin and Amada beds) | `okin_cb24` | 3 | 300 ms |
 | Resident Adjustable Base app | `resident` | 4 | 300 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
-| SmartBed by Okin / Amada | `okin_cb24` | 3 | 300 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
@@ -598,6 +598,8 @@ beds, Reconfigure that bed, then combine them again.
 | BedTech | [The exact model, or **Older BedTech controls, without a model**](beds/richmat.md#bedtech). Existing entries keep the legacy controls until you choose a model. |
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it sets the layout. |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
+| Relax Motion | Numeric advertisement model, preserved across reconnects, and the exact app page / label language. See [setup](beds/relax-motion.md#detection--setup). |
+| SmartBed app | The receiver, the motor count and the bed's Bluetooth name. A CB24AB receiver also asks which side of a split bed the entry controls. See [choosing a profile](beds/smartbed.md#choosing-a-profile). |
 | CheersSleep | See the [setup steps](beds/cheerssleep.md#cheerssleep-profile). |
 | Comfort Enhancement 3 / Comfort Plus3 | See the [setup steps](beds/okin-nframe.md#comfort-enhancement-3). |
 | Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/keeson.md#comfort-enhancements). The layout sets the controls, massage, light and memories. Each bed of a combined pair keeps its own. |
@@ -610,6 +612,7 @@ beds, Reconfigure that bed, then combine them again.
 | Galaxy Bed Control | The product code and remote; V9RM and RNRN also ask base, standard or split head. Each bed of a combined pair keeps its own. See [Galaxy](beds/richmat.md#galaxy-bed-control). |
 | GM Control | [The product, configuration and app side](beds/gmmotor.md#detection--setup). Sleep modules (MM or SXB) are added as their own beds. |
 | Good Vibe Sleep | [The exact product, configuration or remote alias](beds/richmat.md#good-vibe-sleep); sleep sensors (RM- or HJ-) are added as their own beds. Split beds use Left and Right controls on one address; light duration and snore settings are entities on the device. |
+| Instant Comfort | [Choose the air-unit or base route and pressure layout or base model](beds/personal-comfort.md#instant-comfort). |
 | HJBed | [The exact app product](beds/richmat.md#hjbed). |
 | Jensen / Svane | Answer the [Jensen / Svane question](beds/jensen.md#home-assistant-setup) with your app and bed: the Jensen Adjustable Sleep app with a [JMC400](beds/jensen.md) bed (then its PIN) or a [LinOn](beds/jensen.md#linon) bed, or the [Svane Remote](beds/svane.md) app with a Svane Bed or a JMC400 bed. Change an existing bed's app or bed with **Reconfigure**. |
 | Jiecang | [App profiles](beds/jiecang.md#choosing-a-profile): choose the app ([ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask), [Dream Motion](beds/jiecang.md#dream-motion-dreamotion), [Dream Motion HD](beds/jiecang.md#dream-motion-hd) or [Comfort Motion](beds/jiecang.md#comfort-motion-app)), then layout and local light/massage presence, with the transport under **Advanced**. Comfort Motion supports three layouts. The [profile tables](beds/jiecang.md#choosing-a-profile) list each app's layouts and connections. |
@@ -666,6 +669,17 @@ Choose **Super Colchones app (AFEG302, AFEG350) · Richmat**, then **AFEG302** o
 Choose the product printed on your bed; Bluetooth discovery cannot identify it.
 The product determines the available movement and massage controls.
 See [Super Colchones](beds/richmat.md#super-colchones) for controls and save behavior.
+
+### Instant Comfort
+
+Select **Instant Comfort app** and the controller's route. Air units and bases
+are separate devices. Base setup asks for its model; ANM V5 asks for its two-
+or four-channel pressure layout. Setup saves the route and layout with that
+physical device. A pressure reply must match the selected layout before a
+target can be sent. Use Configure to change it.
+
+Combine only two Instant Comfort base entries, each with its own model and
+route. The air unit stays separate. See the [profile guide](beds/personal-comfort.md#instant-comfort).
 
 ### Octo PIN
 
@@ -919,3 +933,20 @@ a dialog are described in the
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to know more about your bed?** Find its guide in the [documentation index](README.md#bed-guides)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+### SILVERmotion Android
+
+Choose the LOGICDATA row, then **SILVERmotion app: SimplicityFrame bed with zero
+gravity and anti-snore presets**. Reconfigure offers the same choice. The other
+SILVERmotion answer, marked pairing required, is a separate choice.
+
+| Field | Values | Default |
+|-------|--------|---------|
+| Product type | Queen, King, Twin XL | Queen |
+| Has massage | Enabled or disabled | Enabled |
+
+All sizes expose back and legs controls. Each physical entry retains its own size
+and massage setting when combined with another bed. No single-address side
+selection is inferred. The massage timer is a Home Assistant countdown, 1–40
+minutes, initially 10; it sends massage off on expiry while connected. It does
+not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md).

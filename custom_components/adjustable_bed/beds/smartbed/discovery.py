@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from ...profiles.smartbed import ALIASES, PROFILES, signed
+from ...profiles.smartbed import PROFILES, signed
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,7 +59,7 @@ def discover(name: str | None, raw: bytes = b"") -> Selection | None:
 def select_profile(
     variant: str, name: str | None, *, motors: int = 2, raw: bytes = b""
 ) -> Selection:
-    key = ALIASES.get(variant, variant)
+    key = variant
     if key in PROFILES:
         return Selection(
             key,

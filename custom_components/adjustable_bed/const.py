@@ -436,8 +436,11 @@ BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_NERUM: Final = "nerum"
+BED_TYPE_RELAX_MOTION: Final = "relax_motion"
+BED_TYPE_SMARTBED: Final = "smartbed"  # SmartBed app profiles, beside the okin_cb24 receiver route
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
+BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
 BED_TYPE_ONLYSNORE: Final = "onlysnore"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
 BED_TYPE_SYMPHONY_SLEEP: Final = "symphony_sleep"
@@ -548,7 +551,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_DREAMSENSE, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_DREAMSENSE, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 ).union({BED_TYPE_BETTERLIVING2})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
@@ -576,6 +579,7 @@ BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
 BED_TYPE_N32_MOTION_BED: Final = "n32_motion_bed"
 # Explicit Richmat MH app profiles: one shared library, five catalogs.
 BED_TYPE_PERSONAL_COMFORT: Final = "personal_comfort"
+BED_TYPE_INSTANT_COMFORT: Final = "instant_comfort"
 BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_MLINE: Final = "mline"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
@@ -715,6 +719,7 @@ BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Fl
 BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 # Sleep Smart Air Mattress pump: a separate BLE device on the shared ffe0 service.
 BED_TYPE_LOGICDATA_AIR_PUMP: Final = "logicdata_air_pump"
+BED_TYPE_SILVERMOTION: Final = "silvermotion"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_BEDSENSE: Final = "bedsense"
 BEDSENSE_VARIANTS: Final = {
@@ -757,9 +762,12 @@ KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_
 
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_NERUM,
+    BED_TYPE_RELAX_MOTION,
+    BED_TYPE_SMARTBED,
     BED_TYPE_CHEERSSLEEP,
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
+    BED_TYPE_SLEEP_ASSISTANT,
     BED_TYPE_ONLYSNORE,
     BED_TYPE_ENSO,
     BED_TYPE_SEALY_POSTUREMATIC,
@@ -800,6 +808,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_LUUNA,
     BED_TYPE_PERSONAL_COMFORT,
+    BED_TYPE_INSTANT_COMFORT,
     BED_TYPE_MLINE,
     BED_TYPE_SLEEP_EVOLUTION,
     BED_TYPE_WSILVER_LEGACY,
@@ -946,6 +955,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RIZE,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_STARCODE_ABM5_4,
@@ -1966,8 +1976,19 @@ OKIN_CB24_VARIANTS: Final = {
     OKIN_CB24_VARIANT_CB1221: "CB1221 control box",
     OKIN_CB24_VARIANT_DACHENG: "Dacheng control box",
     OKIN_CB24_VARIANT_CB27NEW: "CB27New control box",
+}
+
+# The SmartBed app's own receiver profiles.
+SMARTBED_VARIANTS: Final = {
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     "standard": "Standard receiver",
     "cb": "CB receiver",
+    "cb24": "CB24 control box",
+    "cb27": "CB27 control box",
+    "cb24_ab": "CB24AB control box",
+    "cb1221": "CB1221 control box",
+    "dacheng": "Dacheng control box",
+    "cb27new": "CB27New control box",
     "headboard126": "Headboard 126",
     "headboard265": "Headboard 265",
 }
@@ -2863,7 +2884,9 @@ def supports_runtime_authentication_recovery(
     bed_type: str, protocol_variant: str | None = None
 ) -> bool:
     """Return whether an observed GATT auth failure should offer bond repair."""
-    return requires_pairing(bed_type, protocol_variant) or (
+    # SILVERmotion's app requests a bond, but only an observed auth failure
+    # warrants repair here; it does not opt into unconditional setup pairing.
+    return bed_type == BED_TYPE_SILVERMOTION or requires_pairing(bed_type, protocol_variant) or (
         bed_type == BED_TYPE_OKIN_CST and protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
     )
 
@@ -2874,10 +2897,11 @@ def requires_pairing_after_service_discovery(
     """Return True when GATT discovery must precede the BLE bond request.
 
     LP Control and Sleep Number connect and discover services before calling the Android
-    bonding API. BlueZ's usual ``pair=True`` path instead invokes
+    bonding API. SILVERmotion keeps that ordering for an explicit bond repair.
+    BlueZ's usual ``pair=True`` path instead invokes
     ``Device1.Pair`` without first making the ordinary unbonded GATT connection.
     """
-    if bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP):
+    if bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP, BED_TYPE_SILVERMOTION):
         return True
     return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 

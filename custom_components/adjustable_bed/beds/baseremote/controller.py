@@ -56,11 +56,13 @@ from ..richmat_classic.caller import (
     RETAIN,
     Selection,
     effective_status,
+    nordic_label,
     selected_operand,
     short_operand,
     transition,
 )
 from ..richmat_classic.controller import STATUS, RichmatClassicController
+from ..richmat_classic.profiles import Control
 from ..richmat_classic.protocol import (
     ALARM_QUERY,
     AROMA_QUERY,
@@ -112,11 +114,16 @@ class Gesture:
     long: bool = False
     selection: Selection = Selection()
     label: str = ""
+    # Listed for a Nordic connection, where this control does something else.
+    nordic: bool = False
 
     @property
     def key(self) -> str:
         suffix = "_save" if self.long else "_hold" if self.selection.hold else ""
-        return f"baseremote_m{self.mode}_n{self.node}{suffix}_{self.selection.press_flag}"
+        return (
+            f"baseremote_m{self.mode}_n{self.node}{suffix}_{self.selection.press_flag}"
+            + ("_raw" if self.nordic else "")
+        )
 
 
 async def _press(controller: BedController, gesture: Gesture) -> None:
@@ -418,6 +425,11 @@ class BaseRemoteController(SessionController):
             )
         self._publish()
 
+    def _nordic_label(self, button: Control) -> str | None:
+        """The control's own name on a Nordic connection, when it differs."""
+        wire = self._session.wire if self._session else self._wire
+        return nordic_label(button) if wire == "RAW" else None
+
     def _contexts(self) -> tuple[Gesture, ...]:
         if self._group_only:
             return ()
@@ -438,7 +450,8 @@ class BaseRemoteController(SessionController):
                 if button.tag in ("51", "52"):
                     selections = tuple(Selection(press_flag=flag) for flag in ("53", "54", "55"))
                 for selection in selections:
-                    label = resource_label(
+                    legacy = self._nordic_label(button)
+                    label = legacy or resource_label(
                         (
                             button.resource_keys.get("press_short")
                             or button.resource_keys.get("press_short_old")
@@ -464,7 +477,9 @@ class BaseRemoteController(SessionController):
                     if not button.excluded_short and (
                         button.short or button.short_old or button.tag in ("51", "52", "63")
                     ):
-                        gestures.append(Gesture(button.node, mode, False, selection, label))
+                        gestures.append(
+                            Gesture(button.node, mode, False, selection, label, bool(legacy))
+                        )
                     if (
                         button.long
                         and not button.excluded_long
@@ -488,6 +503,7 @@ class BaseRemoteController(SessionController):
                                 False,
                                 replace(selection, hold=True),
                                 "Move to " + label,
+                                bool(legacy),
                             )
                         )
         return tuple(gestures)
@@ -537,9 +553,11 @@ class BaseRemoteController(SessionController):
                 continue
             if (
                 "light" in gesture.label.lower()
+                and not gesture.long
                 and self._light_toggle() == gesture.node
                 and len(self._model.modes) == 1
             ):
+                # The light entity is this toggle; a separate long-press off stays a button.
                 continue
             button = self._button(gesture.node)
             save = gesture.label.startswith("Save ")
@@ -1040,6 +1058,8 @@ class BaseRemoteController(SessionController):
                 if not c.excluded_short
                 and c.resource_keys.get("press_short")
                 in ("@string/k_ubl_on_off", "@string/com_ubl_on_off")
+                # Over Nordic UART a few layouts send another function from this control.
+                and not self._nordic_label(c)
             ),
             None,
         )

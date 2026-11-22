@@ -8,7 +8,7 @@ GUIDE = "docs/beds/smartbed.md"
 
 
 def bed_types() -> dict[str, tuple[str, ...]]:
-    return dict.fromkeys(app.PROFILES, ("okin_cb24",))
+    return dict.fromkeys(app.PROFILES, ("smartbed",))
 
 
 def profiles() -> str:

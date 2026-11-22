@@ -110,6 +110,24 @@ auxiliary and receive formats, so `codec/mline.py` owns those, with typed
 selectors/layouts in `profiles/mline.py`. All 96 accepted packet cases run
 through production encoders. See the [M Line guide](../beds/mline.md).
 
+## Relax Motion
+
+`codec/relax_motion.py` reuses CheersSleep's byte-identical serial/PID encoder
+for P1. Its P2 normal and extra fields are unaddressed and its release is five
+zero bytes, so it owns those thin encoders instead of adopting CheersSleep's
+side and release semantics. `profiles/relax_motion.py` holds the model, app-page
+and locale gates. Both carriers are checked by literal vectors and real native
+controller/entity/service paths. See [Relax Motion](../beds/relax-motion.md).
+
+## SmartBed
+
+The SmartBed app's ten receiver profiles reuse the Okin ORE, Keeson E6, Okin
+N-frame and SoundWave record encoders. The profile in `profiles/smartbed.py`,
+not the transport, selects each builder. Its controller owns the notification
+handlers of one connection, the capability pages and the release and query
+timing. It is a bed type of its own beside the Okin receiver route, whose
+frames are unchanged. See [SmartBed](../beds/smartbed.md).
+
 ## Registering a family
 
 A family keeps its files to itself, so parallel family PRs do not touch a
@@ -408,10 +426,3 @@ ORE controller extension owns route capabilities and session-fenced callbacks,
 with corrected fragment early returns in the Keeson parser. The full 91-vector
 harness and 12 parser observations remain fixtures, with
 explicit bounds-safe/session-lifetime differences for Home Assistant.
-
-SmartBed 2.4.2 adds ten typed receiver profiles after all 2016 frozen builder
-cases match the existing Okin ORE, Keeson E6, Okin N-frame and SoundWave record
-encoders. Its selected controller owns connection-fenced notification handlers,
-capability-page progression and source-specific release/query timing. The
-SmartBed profile, rather than transport resemblance, selects each builder.
-See [SmartBed](../beds/smartbed.md).

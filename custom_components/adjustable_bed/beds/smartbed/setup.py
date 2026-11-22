@@ -10,7 +10,7 @@ def verified_ab(capabilities: object) -> bool:
     """Only the persisted receiver profile proves an automatic AB route."""
     if not isinstance(capabilities, Mapping):
         return False
-    snapshot = capabilities.get("okin_cb24")
+    snapshot = capabilities.get("smartbed")
     return isinstance(snapshot, Mapping) and snapshot.get("profile") == "cb24_ab"
 
 

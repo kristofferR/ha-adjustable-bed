@@ -381,7 +381,10 @@
           "mline_child_mode": "Child mode",
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
-          "read_positions": "Read bed position"
+          "read_positions": "Read bed position",
+          "sleep_assistant_presets": "Presets",
+          "sleep_assistant_controls": "Additional controls",
+          "sleep_assistant_lighting": "Lighting model"
         },
         "data_description": {
           "jiecang_app_layout": "The layout set in the app.",
@@ -435,7 +438,10 @@
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
           "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown when the bed has two sensors. It does not change which side the controls move.",
           "agingplace_selected_side": "The sensor side shown when Selectable side is chosen. This setting belongs to this physical bed.",
-          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working."
+          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
+          "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
+          "sleep_assistant_controls": "Select only the controls shown for this bed.",
+          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist."
         },
         "sections": {
           "advanced": {
@@ -462,6 +468,8 @@
               "serta_mp_memory_4_head": "Memory 4 head angle",
               "serta_mp_memory_4_foot": "Memory 4 foot angle",
               "agingplace_bed_mode": "Sensor display mode",
+              "sleep_assistant_identity": "Device identity",
+              "sleep_assistant_parameters": "Selected model settings",
               "cb24_bed_selection": "Bed side"
             },
             "data_description": {
@@ -486,6 +494,8 @@
               "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
               "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
               "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two.",
+              "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
+              "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data.",
               "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides."
             }
           }
@@ -872,6 +882,8 @@
       "pair_bed_missing": "One of the chosen beds is no longer set up. Choose two beds from the list.",
       "octo_tv_lift_pairing_unsupported": "A one-motor Octo TV or bed lift cannot have Left and Right controls. Keep it as a single bed.",
       "invalid_angle": "Enter an angle greater than 0 and up to 180 degrees.",
+      "relax_motion_model": "Enter the model number the Relax Motion app shows for your bed.",
+      "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
       "invalid_idle_seconds": "Enter a number of seconds from 1 to 300."
     }
@@ -993,7 +1005,12 @@
           "connection_mode": "Bluetooth connection",
           "agingplace_bed_mode": "Sensor display mode",
           "agingplace_bed_side": "Sensor side",
-          "agingplace_selected_side": "Chosen sensor side"
+          "agingplace_selected_side": "Chosen sensor side",
+          "sleep_assistant_presets": "Presets",
+          "sleep_assistant_controls": "Additional controls",
+          "sleep_assistant_lighting": "Lighting model",
+          "sleep_assistant_identity": "Device identity",
+          "sleep_assistant_parameters": "Selected model settings"
         },
         "data_description": {
           "motor_count": "How many motors the bed has. If the app has 2M, 3M and 4M screens, choose the screen you use.",
@@ -1082,7 +1099,12 @@
           "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
-          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
+          "sleep_assistant_controls": "Select only the controls shown for this bed.",
+          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
+          "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
+          "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data."
         }
       },
       "remove_bond": {
@@ -1217,7 +1239,12 @@
           "agingplace_bed_mode": "Sensor display mode",
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
-          "read_positions": "Read bed position"
+          "read_positions": "Read bed position",
+          "sleep_assistant_presets": "Presets",
+          "sleep_assistant_controls": "Additional controls",
+          "sleep_assistant_lighting": "Lighting model",
+          "sleep_assistant_identity": "Device identity",
+          "sleep_assistant_parameters": "Selected model settings"
         },
         "data_description": {
           "sleeptracker_unit_number": "Leave at 0 unless the bed has more than one processor. Then use the number the app shows for this one.",
@@ -1295,7 +1322,12 @@
           "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
-          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
+          "sleep_assistant_controls": "Select only the controls shown for this bed.",
+          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
+          "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
+          "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data."
         }
       },
       "right_settings": {
@@ -1386,7 +1418,12 @@
           "agingplace_bed_mode": "Sensor display mode",
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
-          "read_positions": "Read bed position"
+          "read_positions": "Read bed position",
+          "sleep_assistant_presets": "Presets",
+          "sleep_assistant_controls": "Additional controls",
+          "sleep_assistant_lighting": "Lighting model",
+          "sleep_assistant_identity": "Device identity",
+          "sleep_assistant_parameters": "Selected model settings"
         },
         "data_description": {
           "sleeptracker_unit_number": "Leave at 0 unless the bed has more than one processor. Then use the number the app shows for this one.",
@@ -1464,7 +1501,12 @@
           "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
-          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
+          "sleep_assistant_controls": "Select only the controls shown for this bed.",
+          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
+          "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
+          "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data."
         }
       },
       "estimated_positions": {
@@ -1645,6 +1687,7 @@
       "cheerssleep_model_required": "Choose the bed model the CheersSleep app shows.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
       "invalid_variant_for_bed_type": "This bed model or remote does not fit the chosen app. Choose another one, or Automatic.",
+      "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
       "invalid_idle_seconds": "Enter a number of seconds from 1 to 300."
     },
@@ -3571,21 +3614,6 @@
       "bedsmart_query": {
         "name": "Refresh bed features"
       },
-      "smartbed_left_up": {
-        "name": "Raise left headboard"
-      },
-      "smartbed_left_down": {
-        "name": "Lower left headboard"
-      },
-      "smartbed_right_up": {
-        "name": "Raise right headboard"
-      },
-      "smartbed_right_down": {
-        "name": "Lower right headboard"
-      },
-      "smartbed_alarm_refresh": {
-        "name": "Refresh alarm"
-      },
       "baseremote_m0_motor_1_and_2_down": {
         "name": "{action}"
       },
@@ -3705,6 +3733,21 @@
       },
       "sleepfunction_scoped_preset_lounge": {
         "name": "{action}"
+      },
+      "smartbed_left_up": {
+        "name": "Raise left headboard"
+      },
+      "smartbed_left_down": {
+        "name": "Lower left headboard"
+      },
+      "smartbed_right_up": {
+        "name": "Raise right headboard"
+      },
+      "smartbed_right_down": {
+        "name": "Lower right headboard"
+      },
+      "smartbed_alarm_refresh": {
+        "name": "Refresh alarm"
       }
     },
     "cover": {
@@ -5247,8 +5290,26 @@
       "sealy_massage_foot_level": {
         "name": "Foot massage intensity"
       },
-      "smartbed_alarm_time": {
-        "name": "Alarm time"
+      "sleep_assistant_alarm_3": {
+        "name": "Alarm 3"
+      },
+      "sleep_assistant_alarm_6": {
+        "name": "Alarm 6"
+      },
+      "sleep_assistant_massage_timer": {
+        "name": "Massage timer"
+      },
+      "sleep_assistant_alarm_1": {
+        "name": "Alarm 1"
+      },
+      "sleep_assistant_alarm_4": {
+        "name": "Alarm 4"
+      },
+      "sleep_assistant_alarm_5": {
+        "name": "Alarm 5"
+      },
+      "sleep_assistant_alarm_2": {
+        "name": "Alarm 2"
       },
       "dreamsense_alarm_ack": {
         "name": "Alarm response",
@@ -5277,6 +5338,9 @@
       },
       "super_colchones": {
         "name": "Product"
+      },
+      "smartbed_alarm_time": {
+        "name": "Alarm time"
       }
     },
     "light": {
@@ -5489,11 +5553,11 @@
       "sealy_massage": {
         "name": "Massage"
       },
-      "smartbed_massage": {
-        "name": "Massage"
+      "relax_motion_snore": {
+        "name": "Active snore intervention"
       },
-      "smartbed_sonic": {
-        "name": "Sonic massage"
+      "sleep_assistant_storage": {
+        "name": "Store sleep data locally"
       },
       "baseremote_switch": {
         "name": "{action}"
@@ -5509,6 +5573,12 @@
       },
       "superior_sleep_massage": {
         "name": "Massage"
+      },
+      "smartbed_massage": {
+        "name": "Massage"
+      },
+      "smartbed_sonic": {
+        "name": "Sonic massage"
       }
     },
     "binary_sensor": {
@@ -5731,10 +5801,13 @@
       "body_movement_right": {
         "name": "Right body movement"
       },
-      "smartbed_alarm_on": {
-        "name": "Alarm enabled"
+      "relax_motion_sleep": {
+        "name": "Sleep state"
       },
       "superior_sleep_alarm_enabled": {
+        "name": "Alarm enabled"
+      },
+      "smartbed_alarm_on": {
         "name": "Alarm enabled"
       }
     },
@@ -6048,6 +6121,12 @@
       "suta_2_setpoint": {
         "name": "Right target temperature"
       },
+      "instant_comfort_left_lumbar_firmness": {
+        "name": "Left lumbar firmness"
+      },
+      "instant_comfort_right_lumbar_firmness": {
+        "name": "Right lumbar firmness"
+      },
       "personal_comfort_left_firmness": {
         "name": "Left firmness"
       },
@@ -6114,23 +6193,14 @@
       "jerome_massage_intensity": {
         "name": "Massage intensity"
       },
-      "smartbed_wave": {
-        "name": "Massage wave"
+      "relax_motion_light_time": {
+        "name": "Sensed-light automatic-off time"
       },
-      "smartbed_sonic_head": {
-        "name": "Head sonic massage intensity"
+      "relax_motion_snore_interval": {
+        "name": "Snore intervention interval"
       },
-      "smartbed_sonic_foot": {
-        "name": "Foot sonic massage intensity"
-      },
-      "smartbed_sonic_wave": {
-        "name": "Sonic massage wave"
-      },
-      "smartbed_left_massage": {
-        "name": "Left massage intensity"
-      },
-      "smartbed_right_massage": {
-        "name": "Right massage intensity"
+      "sleep_assistant_flat_minutes": {
+        "name": "Automatic flat timer"
       },
       "baseremote_lamp_timeout": {
         "name": "Light timeout"
@@ -6149,6 +6219,24 @@
       },
       "dreamsense_light_seconds": {
         "name": "Light duration"
+      },
+      "smartbed_wave": {
+        "name": "Massage wave"
+      },
+      "smartbed_sonic_head": {
+        "name": "Head sonic massage intensity"
+      },
+      "smartbed_sonic_foot": {
+        "name": "Foot sonic massage intensity"
+      },
+      "smartbed_sonic_wave": {
+        "name": "Sonic massage wave"
+      },
+      "smartbed_left_massage": {
+        "name": "Left massage intensity"
+      },
+      "smartbed_right_massage": {
+        "name": "Right massage intensity"
       }
     },
     "select": {
@@ -6829,19 +6917,25 @@
           "mode_3": "Mode 3"
         }
       },
-      "smartbed_sonic_mode": {
-        "name": "Sonic massage mode",
+      "sleep_assistant_palette": {
+        "name": "Light color",
         "state": {
-          "normal": "Normal",
-          "acoustic": "Acoustic"
+          "off": "Off",
+          "red": "Red",
+          "orange": "Orange",
+          "yellow": "Yellow",
+          "green": "Green",
+          "blue": "Blue",
+          "purple": "Purple"
         }
       },
-      "smartbed_sonic_timer": {
-        "name": "Sonic massage timer",
+      "sleep_assistant_anti_snore": {
+        "name": "Anti-snore sensitivity",
         "state": {
-          "10": "10 minutes",
-          "20": "20 minutes",
-          "30": "30 minutes"
+          "off": "Off",
+          "high": "High",
+          "mid": "Medium",
+          "low": "Low"
         }
       },
       "bedsmart_side": {
@@ -6856,6 +6950,21 @@
         "state": {
           "left": "Left",
           "right": "Right"
+        }
+      },
+      "smartbed_sonic_mode": {
+        "name": "Sonic massage mode",
+        "state": {
+          "normal": "Normal",
+          "acoustic": "Acoustic"
+        }
+      },
+      "smartbed_sonic_timer": {
+        "name": "Sonic massage timer",
+        "state": {
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
         }
       }
     },
@@ -9859,13 +9968,35 @@
         }
       }
     },
+    "instant_comfort_firmness": {
+      "name": "Instant Comfort: set firmness",
+      "description": "Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. When both change, the lumbar firmness is sent after the main adjustment has finished.",
+      "fields": {
+        "device_id": {
+          "name": "Air unit",
+          "description": "One or more Instant Comfort air units."
+        },
+        "sleeper": {
+          "name": "Sleeper",
+          "description": "The left or the right sleeper of the air unit."
+        },
+        "firmness": {
+          "name": "Main firmness",
+          "description": "Main firmness, a whole number from 5 to 50."
+        },
+        "lumbar_firmness": {
+          "name": "Lumbar firmness",
+          "description": "Lumbar firmness, a whole number from 5 to 50. Only for an ANM V5 air unit set up with four channels."
+        }
+      }
+    },
     "personal_comfort_sequence": {
-      "name": "Personal Comfort: run sequence",
+      "name": "Personal Comfort / Instant Comfort: run sequence",
       "description": "Runs a full body massage, or moves one base of a pair to a preset while the other base lowers its feet for 30 seconds.",
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "A Personal Comfort base, or a combined pair of bases."
+          "description": "A Personal Comfort or Instant Comfort base, or a combined pair of bases."
         },
         "operation": {
           "name": "Sequence",
@@ -10554,7 +10685,7 @@
       "message": "This bed's alarms can only be turned off from Home Assistant. Set them in the bed's app."
     },
     "personal_comfort_sequence": {
-      "message": "This sequence needs supported Personal Comfort bases and current connections. For a peer-foot sequence, choose one side of a combined pair with both bases connected."
+      "message": "This sequence needs supported Personal Comfort or Instant Comfort bases and current connections. For a peer-foot sequence, choose one side of a combined pair with both bases connected."
     },
     "l2motion_control_unavailable": {
       "message": "This control is unavailable. Check the bed model, reported synchronization support and confirmation."
@@ -10802,11 +10933,41 @@
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
     },
-    "smartbed_session_changed": {
-      "message": "The bed reconnected or its controls changed. Try the action again."
+    "relax_motion_model": {
+      "message": "Enter the model number the Relax Motion app shows for your bed."
     },
-    "smartbed_choose_receiver": {
-      "message": "Choose the exact SmartBed receiver in Reconfigure before using saved side controls. Select CB24AB only for a receiver that supports separate Left and Right controls."
+    "relax_motion_session": {
+      "message": "The Relax Motion Bluetooth session or selected model changed. Reconnect the bed and try again."
+    },
+    "relax_motion_gatt": {
+      "message": "The selected Relax Motion Bluetooth service has no usable write and notification characteristics."
+    },
+    "relax_motion_control": {
+      "message": "This control is unavailable for the selected Relax Motion model, app page or current state."
+    },
+    "relax_motion_memory": {
+      "message": "Choose a memory slot supported by the selected Relax Motion model."
+    },
+    "relax_motion_hold": {
+      "message": "Hold this Relax Motion control for more than {minimum} milliseconds so movement can start."
+    },
+    "sleep_assistant_invalid_settings": {
+      "message": "Check the selected bed settings."
+    },
+    "sleep_assistant_session_changed": {
+      "message": "The bed connection or selected side changed. Try again."
+    },
+    "sleep_assistant_gatt_missing": {
+      "message": "This bed needs its control and notification characteristics."
+    },
+    "sleep_assistant_alarm_slot": {
+      "message": "Use alarm 6 for automatic flat and alarms 1–5 for wake alarms."
+    },
+    "sleep_assistant_light_unknown": {
+      "message": "Wait for the bed to report the light state. Choose a color before changing brightness after reconnect."
+    },
+    "sleep_assistant_control_unavailable": {
+      "message": "This control is unavailable for the selected bed settings."
     },
     "baseremote_layout": {
       "message": "Choose a bed layout. Desk, manufacturing and test layouts are excluded."
@@ -10888,6 +11049,12 @@
     },
     "super_colchones_route": {
       "message": "Super Colchones needs a supported writable Bluetooth service and a notification characteristic."
+    },
+    "smartbed_session_changed": {
+      "message": "The bed reconnected or its controls changed. Try the action again."
+    },
+    "smartbed_choose_receiver": {
+      "message": "Choose the exact SmartBed receiver in Reconfigure before using saved side controls. Select CB24AB only for a receiver that supports separate Left and Right controls."
     }
   },
   "issues": {
@@ -11470,6 +11637,7 @@
     "logicdata_family_choice": {
       "options": {
         "silvermotion": "SILVERmotion app: SimplicityFrame bed (pairing required)",
+        "silvermotion_android": "SILVERmotion app: SimplicityFrame bed with zero gravity and anti-snore presets",
         "phone": "MOTIONrelax phone app",
         "tablet": "MOTIONrelax tablet app",
         "sleep_smart": "Sleep Smart Air Mattress app: bed base",
