@@ -11500,8 +11500,8 @@
     },
     "logicdata_family_choice": {
       "options": {
-        "silvermotion": "SILVERmotion app (Flutter): SimplicityFrame bed",
-        "silvermotion_android": "SILVERmotion app (Android): SimplicityFrame bed",
+        "silvermotion": "SILVERmotion app: SimplicityFrame bed (pairing required)",
+        "silvermotion_android": "SILVERmotion app (older version): SimplicityFrame bed",
         "phone": "MOTIONrelax phone app",
         "tablet": "MOTIONrelax tablet app",
         "sleep_smart": "Sleep Smart Air Mattress app: bed base",

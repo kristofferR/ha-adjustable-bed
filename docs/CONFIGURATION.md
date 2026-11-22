@@ -922,8 +922,9 @@ a dialog are described in the
 
 ### SILVERmotion Android
 
-Choose **LOGICDATA**, then **SILVERmotion app (Android)**. Reconfigure offers the
-same choice. This is separate from the Flutter SILVERmotion route.
+Choose the LOGICDATA row, then **SILVERmotion app (older version): SimplicityFrame
+bed**. Reconfigure offers the same choice. The current SILVERmotion app is a
+separate choice.
 
 | Field | Values | Default |
 |-------|--------|---------|

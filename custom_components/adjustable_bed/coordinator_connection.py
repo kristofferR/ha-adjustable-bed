@@ -2308,7 +2308,9 @@ class CoordinatorConnectionMixin:
                         self._notify_connection_state_change(False)
                     released = True
                 else:
-                    released = await self._async_disconnect_locked("absorbed_by_pair")
+                    released = await self._async_disconnect_locked(
+                        "absorbed_by_pair", restore_when_cancelled=False
+                    )
             except asyncio.CancelledError:
                 try:
                     await self._async_restore_cancelled_pairing_release()
@@ -2452,8 +2454,17 @@ class CoordinatorConnectionMixin:
         # whole operation, so nothing may be waiting to undo that.
         self._cancel_auto_reconnect()
 
-    async def _async_disconnect_locked(self: AdjustableBedCoordinator, reason: str = "intentional") -> bool:
+    async def _async_disconnect_locked(
+        self: AdjustableBedCoordinator,
+        reason: str = "intentional",
+        *,
+        restore_when_cancelled: bool = True,
+    ) -> bool:
         """Disconnect from the bed. The caller MUST already hold ``self._lock``.
+
+        A cancellation during the disconnect is raised after the bookkeeping.
+        A link that stayed up is restored first, unless the caller restores it
+        in its own rollback (``restore_when_cancelled=False``).
 
         Used by the bond-verification path, which runs inside
         ``_async_connect_locked`` (lock already held) and would otherwise
@@ -2531,7 +2542,11 @@ class CoordinatorConnectionMixin:
                 if client.is_connected:
                     self._client = client
                     _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
-                    if controller is not None and self._controller is controller:
+                    if (
+                        (cancelled is None or restore_when_cancelled)
+                        and controller is not None
+                        and self._controller is controller
+                    ):
                         await settled(self._async_restore_retained_session())
                     # Restoration awaits the OS. It may have closed the link
                     # meanwhile, with or without delivering its callback.
