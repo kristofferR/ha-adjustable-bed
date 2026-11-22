@@ -6903,3 +6903,16 @@ async def test_octo_probe_authenticates_on_owned_connection_and_disconnects(
     verify.assert_awaited_once_with(client, "1234", OCTO_VARIANT_STANDARD)
     client.disconnect.assert_awaited_once()
     assert tracked == [client, None]
+
+
+async def test_a_discovered_serta_bed_asks_the_serta_mp_remote_questions(
+    hass: HomeAssistant, mock_bluetooth_service_info_serta, enable_custom_integrations
+) -> None:
+    """A Serta name stages the app's bed type, so setup asks the app's own questions."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info_serta
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "profile_questions"
+    assert result["description_placeholders"] == {"profile": "Serta MP Remote"}

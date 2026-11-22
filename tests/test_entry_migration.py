@@ -1755,12 +1755,11 @@ def test_schema_5_10_moves_only_the_serta_side_of_a_pair() -> None:
     from custom_components.adjustable_bed import migrate_v5_10_entry
 
     left, right = "AA:BB:CC:DD:EE:81", "AA:BB:CC:DD:EE:82"
-    data, _options = migrate_v5_10_entry(
+    data, options = migrate_v5_10_entry(
         {
             # The pair's shared layer named the route; the right side chose its own remote.
             CONF_BED_TYPE: BED_TYPE_KEESON,
             CONF_PROTOCOL_VARIANT: _SERTA,
-            CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PAIR_ID: "pair_serta",
             CONF_PAIR_CHILDREN: [
                 {
@@ -1772,7 +1771,8 @@ def test_schema_5_10_moves_only_the_serta_side_of_a_pair() -> None:
                 {CONF_SIDE: "right", CONF_ADDRESS: right, CONF_PROTOCOL_VARIANT: "base"},
             ],
         },
-        {},
+        # A pair's options override both sides.
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_COUNT: 3},
         from_version=5,
         from_minor_version=9,
     )
@@ -1782,12 +1782,14 @@ def test_schema_5_10_moves_only_the_serta_side_of_a_pair() -> None:
         "data.left",
         f"data.left.{KEY_ORIGIN_DATA}",
     ]
-    views = [effective_child_data(data, side) for side in ("left", "right")]
+    # The options no longer decide a route, so the moved side cannot fall back.
+    assert options == {CONF_MOTOR_COUNT: 3}
+    views = [effective_child_data(data, side, options) for side in ("left", "right")]
     assert [(view[CONF_BED_TYPE], view[CONF_PROTOCOL_VARIANT]) for view in views] == [
         ("serta_mp_remote", "auto"),
         (BED_TYPE_KEESON, "base"),
     ]
-    # The moved side reads positions whatever the pair shares; the other side is as it was.
+    # The moved side reads positions; the other side is as it was.
     assert [reads_positions(view) for view in views] == [True, False]
     origin = data[CONF_PAIR_CHILDREN][0]
     assert origin[KEY_ORIGIN_DATA] == {
@@ -1796,6 +1798,59 @@ def test_schema_5_10_moves_only_the_serta_side_of_a_pair() -> None:
         CONF_DISABLE_ANGLE_SENSING: False,
     }
     assert origin[KEY_ORIGIN_OPTIONS] == {CONF_BED_TYPE: "serta_mp_remote"}
+
+
+def test_schema_5_10_leaves_no_serta_remote_behind_the_pairs_options() -> None:
+    from custom_components.adjustable_bed import migrate_v5_10_entry
+
+    stored = {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: _SERTA}
+    data, options = migrate_v5_10_entry(
+        {
+            CONF_PAIR_ID: "pair_masked",
+            CONF_PAIR_CHILDREN: [
+                {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:85", **stored},
+                {CONF_SIDE: "right", CONF_ADDRESS: "AA:BB:CC:DD:EE:86", **stored},
+            ],
+        },
+        # Both sides ran the Base remote, whatever they had stored.
+        {CONF_PROTOCOL_VARIANT: "base"},
+        from_version=5,
+        from_minor_version=9,
+    )
+
+    assert options == {CONF_PROTOCOL_VARIANT: "base"}
+    # Unpairing, or clearing the options, must not bring the removed remote back.
+    assert [child[CONF_PROTOCOL_VARIANT] for child in data[CONF_PAIR_CHILDREN]] == ["base", "base"]
+
+
+@pytest.mark.parametrize(
+    ("pair", "options"),
+    [
+        pytest.param({CONF_BED_TYPE: BED_TYPE_KEESON}, {}, id="sides inherit the bed type"),
+        # One bed on one address reads its own data, so a stale option moves nothing.
+        pytest.param(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, "pair_mode": "single_address"},
+            {CONF_PROTOCOL_VARIANT: _SERTA},
+            id="one address",
+        ),
+    ],
+)
+def test_schema_5_10_leaves_other_pairs_as_saved(pair: dict, options: dict) -> None:
+    from custom_components.adjustable_bed import migrate_v5_10_entry
+
+    data = {
+        **pair,
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:87",
+        CONF_PAIR_ID: "pair_other",
+        CONF_PAIR_CHILDREN: [
+            {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:87"},
+            {CONF_SIDE: "right", CONF_ADDRESS: "AA:BB:CC:DD:EE:88"},
+        ],
+    }
+    assert migrate_v5_10_entry(data, options, from_version=5, from_minor_version=9) == (
+        data,
+        options,
+    )
 
 
 async def test_schema_5_10_keeps_the_controls_the_app_has_under_another_key(

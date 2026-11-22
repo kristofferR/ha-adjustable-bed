@@ -1250,6 +1250,22 @@ def _serta_renamed(shared: Mapping[str, Any]) -> dict[str, Any]:
     return new
 
 
+# What decides a side's route and whether it reads positions. A pair's options
+# override these on every side.
+_SERTA_ROUTE_KEYS: Final = (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT, CONF_DISABLE_ANGLE_SENSING)
+
+
+def _serta_sides(data: Mapping[str, Any], options: Mapping[str, Any]) -> set[str]:
+    """Return the sides of a pair that ran the serta route.
+
+    The sides of a one-address pair are one bed, which reads its own data.
+    """
+    sides = [side for side in PAIR_SIDES if get_child(data, side) is not None]
+    if data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+        return set(sides) if _is_serta(data) else set()
+    return {side for side in sides if _is_serta(effective_child_data(data, side, options))}
+
+
 def migrate_v5_10_entry(
     data: Mapping[str, Any],
     options: Mapping[str, Any],
@@ -1261,10 +1277,12 @@ def migrate_v5_10_entry(
 
     The serta bed type and the Keeson remote of the same name sent that app's
     keys. A bed takes the app's one layout and reads its position, as the app
-    does for its memories. Paired sides and the original entries a pair
-    restores on unpair are written too, and an open or kept app review follows
-    the renamed route. The migration record lists each place under
-    ``serta_mp_remote``. Any other entry is returned unchanged.
+    does for its memories. A paired side stores its own route: the pair's
+    options no longer decide it, and a side on another route stores what it ran
+    with where a shared value changes. The original entries a pair restores on
+    unpair are written too, and an open or kept app review follows the renamed
+    route. The migration record lists each place under ``serta_mp_remote``. Any
+    other entry is returned unchanged.
     """
     from .profile_review import carry_profile_review_to_renamed_route
 
@@ -1279,14 +1297,24 @@ def migrate_v5_10_entry(
         return _as_serta_mp(own)
 
     # A two-address pair's own data is a layer its sides share, not a bed.
-    shared = isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
-    if shared:
+    if isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS:
         new_data = _serta_renamed(data)
         if new_data != dict(data):
             moved.append("data")
     else:
         new_data = bed(data, "data")
+    new_options = dict(options)
     if isinstance(children, list):
+        moves = _serta_sides(data, options)
+        if moves:
+            # The options would decide a moved side's route again.
+            for key in _SERTA_ROUTE_KEYS:
+                new_options.pop(key, None)
+        changed = {
+            key
+            for key in _SERTA_ROUTE_KEYS
+            if new_options.get(key) != options.get(key) or new_data.get(key) != data.get(key)
+        }
         updated: list[Any] = []
         for child in children:
             side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
@@ -1294,14 +1322,19 @@ def migrate_v5_10_entry(
                 updated.append(child)
                 continue
             child = dict(child)
-            view = effective_child_data(data, side, options)
-            if _is_serta(view):
-                # The side stores its own route, whichever layer named it before.
+            if side in moves:
                 child = _as_serta_mp({**child, CONF_PROTOCOL_VARIANT: VARIANT_AUTO})
                 moved.append(f"data.{side}")
-            elif shared and CONF_BED_TYPE in view:
-                # A side on another route keeps it when the shared bed type changes.
-                child.setdefault(CONF_BED_TYPE, view[CONF_BED_TYPE])
+            else:
+                view = effective_child_data(data, side, options)
+                # Only the pair's options kept this side off the serta route.
+                masked = _is_serta(effective_child_data(data, side))
+                for key in _SERTA_ROUTE_KEYS:
+                    # The side stores what it ran with where a shared value changes.
+                    if key in view and (
+                        key in changed or (masked and key != CONF_DISABLE_ANGLE_SENSING)
+                    ):
+                        child[key] = view[key]
             if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
                 restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
                 carry_profile_review_to_renamed_route(origin, restored)
@@ -1319,7 +1352,7 @@ def migrate_v5_10_entry(
         from_minor_version=from_minor_version,
         serta_mp_remote=moved,
     )
-    return new_data, _serta_renamed(options)
+    return new_data, _serta_renamed(new_options)
 
 
 # The serta route's controls the Serta MP Remote app has under another key, with
@@ -1356,12 +1389,12 @@ def _async_migrate_v5_10_entities(hass: HomeAssistant, entry: ConfigEntry) -> No
     same command, and goes when the bed next loads.
     """
     data = entry.data
-    sides = [
-        effective_child_data(data, side, entry.options)
-        for side in PAIR_SIDES
-        if get_child(data, side) is not None
+    moves = _serta_sides(data, entry.options)
+    beds: list[Mapping[str, Any]] = [
+        child for side in moves if (child := get_child(data, side)) is not None
     ]
-    beds = [bed for bed in (data, *sides) if _is_serta(bed)]
+    if not isinstance(data.get(CONF_PAIR_CHILDREN), list) and _is_serta(data):
+        beds.append(data)
     addresses = {
         address.upper() for bed in beds if isinstance(address := bed.get(CONF_ADDRESS), str)
     }
@@ -1371,7 +1404,7 @@ def _async_migrate_v5_10_entities(hass: HomeAssistant, entry: ConfigEntry) -> No
             f"{pair_id}_{old}_both": f"{pair_id}_{new}_both"
             for old, new in _V5_10_PAIR_BUTTON_KEYS.items()
         }
-        if len(sides) == len(PAIR_SIDES) and all(map(_is_serta, sides))
+        if len(moves) == len(PAIR_SIDES)
         else {}
     )
     registry = er.async_get(hass)

@@ -1594,7 +1594,8 @@ need testing by owners.
 
 Eight apps share one controller (`beds/keeson/layout_app.py`) and the profile type
 `AppProfile`. Each app is its own bed type, chosen by hand with the layout its
-app shows; nothing in an advertisement selects one. Each app has
+app shows; nothing in an advertisement selects one, except that a Serta name
+suggests [Serta MP Remote](#serta-mp-remote). Each app has
 its own key table: a repeated mask is a separate package receipt, not an inferred
 equivalence between apps.
 
@@ -1616,7 +1617,8 @@ equivalence between apps.
 #### Setup
 
 - Select the app by name in the bed-type list and use the Bluetooth address of
-  the bed. Shared services, names and manufacturer data never select an app.
+  the bed. Shared services, names and manufacturer data never select an app;
+  only a `serta` or `motion perfect` name suggests one, Serta MP Remote.
 - Choose the layout your app shows in **App product, model or layout** (stored
   as `product_type`). A layout is a UI choice, not proof of motor count or model.
 - Each side of a two-address pair keeps its own app settings. Target the native
