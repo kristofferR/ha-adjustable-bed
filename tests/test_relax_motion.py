@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -993,6 +993,23 @@ async def test_cross_app_selection_drops_previous_apps_model(hass, discovered, e
     assert flow._manual_data.get(CONF_PRODUCT_TYPE) == expected
 
 
+def test_a_configured_remacro_bed_is_not_asked_about_relax_motion(hass):
+    """The shared service makes new setups ask; it raises nothing on a bed already set up."""
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from custom_components.adjustable_bed.profile_review import suggested_apps
+
+    info = real_advertisement("Motion")
+    detected = detect_bed_type_detailed(info)
+    assert detected.bed_type == "remacro" and "relax_motion" in detected.ambiguous_types
+    data = {"bed_type": "remacro", "address": info.address}
+    assert recommend_profile(data, info, {}) is None
+    with patch(
+        "custom_components.adjustable_bed.profile_review._last_service_info", return_value=info
+    ):
+        assert "relax_motion" not in suggested_apps(hass, data)
+
+
 @pytest.mark.parametrize("advertised_name", ["Motion", "SmartBed"])
 async def test_rendered_bluetooth_discovery_offers_relax_motion_explicitly(hass, advertised_name):
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
@@ -1006,6 +1023,7 @@ async def test_rendered_bluetooth_discovery_offers_relax_motion_explicitly(hass,
     options = select_options(result, "bed_type_choice")
     assert options["relax_motion"] == "Relax Motion app"
     assert "remacro" in options and "show_all" in options
+    assert next(iter(options)) == "remacro"
     assert not {"rize_home", "n32_motion_bed", "symphony", "yamada", "nerum"}.intersection(options)
     assert suggested(result, "bed_type_choice") is None
     result = await flow.async_step_bluetooth_disambiguate({"bed_type_choice": "relax_motion"})
