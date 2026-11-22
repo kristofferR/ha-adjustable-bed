@@ -1441,6 +1441,10 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     needs a name, which the non-bed exclusions have checked, and is uncertain.
     A configured bed's route is reviewed with detect_bed_type_detailed().
     """
+    # The SmartBed app's headboards. Only a new setup is offered them, so a bed
+    # already set up on another route is not asked to change.
+    if (service_info.name or "").startswith(("Headboard126", "Headboard265")):
+        return DetectionResult("smartbed", 0.9, ["name:smartbed_headboard"])
     first = first_pass(service_info)
     result = _detect_with_first_pass(service_info, first)
     service_uuids = [str(uuid).lower() for uuid in service_info.service_uuids or ()]
@@ -3279,9 +3283,6 @@ def _detect_bed_type_detailed(
         )
     if smart_sleep_advertisement(service_info.name or "", service_info.manufacturer_data or {}, service_info.address):
         return DetectionResult("smart_sleep", 0.9, ["name:smart_sleep", "manufacturer_id:89"])
-
-    if (service_info.name or "").startswith(("Headboard126", "Headboard265")):
-        return DetectionResult("smartbed", 0.9, [*signals, "name:smartbed_headboard"])
 
     # Check for Richmat Nordic / Keeson KSBT / OKIN 64-bit (same UUID)
     # These share the Nordic UART service UUID

@@ -2825,7 +2825,26 @@ class TestDetectionSignals:
 
 
 @pytest.mark.parametrize("name", ("Headboard126123", "Headboard265456"))
-def test_exact_headboard_name_precedes_its_shared_nordic_service(name):
-    from custom_components.adjustable_bed.const import NORDIC_UART_SERVICE_UUID
-    result = detect_bed_type_detailed(_make_service_info(name=name, service_uuids=[NORDIC_UART_SERVICE_UUID]))
-    assert result.bed_type == "smartbed"
+def test_a_new_headboard_is_offered_smartbed_and_a_configured_bed_is_not_asked(name):
+    from custom_components.adjustable_bed.const import (
+        MANUFACTURER_ID_OKIN,
+        NORDIC_UART_SERVICE_UUID,
+    )
+    from custom_components.adjustable_bed.detection import detect_new_bed
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+
+    info = _make_service_info(
+        name=name,
+        service_uuids=[NORDIC_UART_SERVICE_UUID],
+        manufacturer_data={MANUFACTURER_ID_OKIN: b"\x00\x01"},
+    )
+    assert detect_new_bed(info).bed_type == "smartbed"
+    # A bed already set up is reviewed without the headboard rule, as before.
+    reviewed = detect_bed_type_detailed(info)
+    assert reviewed.bed_type == BED_TYPE_OKIN_CB24
+    recommendation = recommend_profile({"bed_type": BED_TYPE_OKIN_CB24}, info, {})
+    assert recommendation is None or "smartbed" not in (
+        recommendation.suggested,
+        *recommendation.choices,
+    )
+    assert recommend_profile({"bed_type": "smartbed"}, info, {}) is None
