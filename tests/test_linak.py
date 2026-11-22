@@ -52,6 +52,10 @@ ESPHOME_PROXY_PATH = ConnectionPath(
     transport=TransportClass.PROXY,
     source_domain="esphome",
 )
+# Captured from an Advanced controller in the 3 minutes after power-on.
+PAIRING_WINDOW_ADVERTISEMENT = bytes.fromhex(
+    "020105 020a04 11068af715029c00498a24108a330100fa99"
+)
 
 
 def _written_commands(mock_bleak_client: MagicMock) -> list[bytes]:
@@ -1000,6 +1004,43 @@ class TestLinakCorpusProfiles:
             await AdjustableBedCoordinator(hass, mock_config_entry).async_connect()
 
         assert order == ["pair", "mask"]
+
+    async def test_esphome_proxy_pairs_anew_inside_the_pairing_window(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_establish_connection: AsyncMock,
+        mock_bleak_client: MagicMock,
+        mock_bluetooth_service_info: MagicMock,
+    ) -> None:
+        """A stored bond only re-encrypts, so a proxy the bed refuses would stay refused."""
+        calls: list[str] = []
+        mock_bleak_client.unpair = AsyncMock(side_effect=lambda: calls.append("unpair"))
+        mock_bleak_client.pair = AsyncMock(side_effect=lambda: calls.append("pair"))
+        mock_bluetooth_service_info.raw = PAIRING_WINDOW_ADVERTISEMENT
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.async_path_for_source",
+                return_value=ESPHOME_PROXY_PATH,
+            ),
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.bluetooth.async_last_service_info",
+                return_value=mock_bluetooth_service_info,
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            # Removing the bond drops the link, so the first attempt ends there
+            # and the new pairing happens on a second connection.
+            assert await coordinator.async_connect()
+            assert calls == ["unpair", "pair"]
+            assert mock_establish_connection.await_count == 2
+            await coordinator.async_disconnect()
+            # Later connections in the same window keep the new bond.
+            assert await coordinator.async_connect()
+
+        assert calls == ["unpair", "pair", "pair"]
 
     @pytest.mark.parametrize(
         ("path", "pair_calls"),

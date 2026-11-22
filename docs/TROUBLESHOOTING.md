@@ -249,7 +249,7 @@ Configure the PIN in the integration's options.
    - Wait 15 seconds for the controller to initialize
    - Then add the bed in Home Assistant
 2. **After successful setup:** The remote can be used normally again - this procedure is typically only needed for initial setup
-3. **Linak beds:** The bed pairs with a Bluetooth adapter only during the first 3 minutes after it is powered on, and ignores every adapter it has not paired with after that, even at full signal. Unplug the bed for 60 seconds, plug it back in (the light under the bed flashes when it is ready), then add the bed or use it from Home Assistant within 3 minutes. Each adapter or proxy needs this once. The setup check and the error messages say so when the bed is advertising but does not accept the connection. ESPHome proxies need ESPHome 2024.3.0 or newer.
+3. **Linak beds:** The bed accepts a Bluetooth adapter it does not know only during the first 3 minutes after it is powered on, and ignores every adapter it has not paired with after that, even at full signal. Unplug the bed for 60 seconds, plug it back in (the light under the bed flashes when it is ready), then add the bed or use it from Home Assistant within 3 minutes. Each adapter or proxy needs this once. An ESPHome proxy that the bed keeps refusing is paired anew by the same steps: the first command inside the 3 minutes replaces the proxy's stored pairing and takes a few seconds longer. A proxy powered from the same socket as the bed restarts with it and needs about 30 seconds before it can connect. The setup check and the error messages say so when the bed is advertising but does not accept the connection. ESPHome proxies need ESPHome 2024.3.0 or newer.
 
 ### "Device not found"
 
