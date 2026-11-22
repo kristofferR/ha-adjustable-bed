@@ -2338,6 +2338,9 @@ class CoordinatorConnectionMixin:
         client, controller = self._client, self._controller
         if self._shutting_down or client is None or not client.is_connected or controller is None:
             return False
+        if self._link_ready and self._retained_session_client is None:
+            # Nothing was stopped, or an earlier restore already finished.
+            return True
         try:
             with command_frames_not_counted():
                 async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
@@ -2542,17 +2545,22 @@ class CoordinatorConnectionMixin:
                 if client.is_connected:
                     self._client = client
                     _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
-                    if (
-                        (cancelled is None or restore_when_cancelled)
-                        and controller is not None
-                        and self._controller is controller
-                    ):
-                        await settled(self._async_restore_retained_session())
+                    kept = controller is not None and self._controller is controller
+                    # A cancelled pairing transfer restores and re-arms in its own rollback.
+                    if cancelled is not None and not restore_when_cancelled:
+                        kept = False
+                    if kept:
+                        try:
+                            await settled(self._async_restore_retained_session())
+                        except asyncio.CancelledError as err:
+                            # The restore finished; raise once the link is accounted for.
+                            cancelled = cancelled or err
                     # Restoration awaits the OS. It may have closed the link
                     # meanwhile, with or without delivering its callback.
                     if client.is_connected:
-                        if self._link_ready and not self._shutting_down:
-                            # A restored link idles out again; an unusable one arms nothing.
+                        if kept and resumable and not self._shutting_down:
+                            # The link idles out again, so the disconnect is retried
+                            # even when its session could not be restored.
                             self._reset_disconnect_timer()
                         if cancelled is not None:
                             raise cancelled

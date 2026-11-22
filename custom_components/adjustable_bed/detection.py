@@ -27,6 +27,7 @@ from .beds.richmat_app.catalog import ALL_CHOICES as RICHMAT_APP_PRODUCTS
 from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .beds.richmat_classic.discovery import matching_apps as richmat_classic_matching_apps
 from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
+from .beds.silvermotion.discovery import scan_matches as silvermotion_scan_matches
 from .beds.starcode.abm5_4_profiles import TRANSPORTS as STARCODE_ABM5_4_TRANSPORTS
 from .beds.svane.state import is_svane_discovery_name
 from .const import (
@@ -477,9 +478,7 @@ def _check_manufacturer_data(
     # Logicdata: Company ID 1351 (0x0547)
     # Source: at.silvermotion app disassembly
     if MANUFACTURER_ID_LOGICDATA in manufacturer_data:
-        from .beds.silvermotion.discovery import scan_matches
-
-        if scan_matches(manufacturer_data):
+        if silvermotion_scan_matches(manufacturer_data):
             return BED_TYPE_SILVERMOTION, 0.95, MANUFACTURER_ID_LOGICDATA
         return BED_TYPE_LOGICDATA, 0.95, MANUFACTURER_ID_LOGICDATA
 

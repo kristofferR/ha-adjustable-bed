@@ -934,9 +934,9 @@ a dialog are described in the
 
 ### SILVERmotion Android
 
-Choose the LOGICDATA row, then **SILVERmotion app (older version): SimplicityFrame
-bed**. Reconfigure offers the same choice. The current SILVERmotion app is a
-separate choice.
+Choose the LOGICDATA row, then **SILVERmotion app: SimplicityFrame bed with zero
+gravity and anti-snore presets**. Reconfigure offers the same choice. The other
+SILVERmotion answer, marked pairing required, is a separate choice.
 
 | Field | Values | Default |
 |-------|--------|---------|

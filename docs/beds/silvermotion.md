@@ -16,7 +16,7 @@ select a split side, a second receiver or a different motor layout.
 |----------|-----|------------|---------|
 | ✅ | [SILVERmotion](https://play.google.com/store/apps/details?id=net.logicdata.mobile.sfapp) 1.0.0 | `net.logicdata.mobile.sfapp` | [Android](#android) |
 
-The [current SILVERmotion app](logicdata.md) is a separate choice.
+The [other SILVERmotion answer](logicdata.md), marked pairing required, is a separate choice.
 
 ## Features
 
@@ -32,8 +32,8 @@ The [current SILVERmotion app](logicdata.md) is a separate choice.
 
 ## Choosing a profile
 
-Choose the LOGICDATA row, then **SILVERmotion app (older version): SimplicityFrame bed**. Configure and Reconfigure
-use the same app choice. Do not select this profile solely because another
+Choose the LOGICDATA row, then **SILVERmotion app: SimplicityFrame bed with zero
+gravity and anti-snore presets**. Configure and Reconfigure use the same app choice. Do not select this profile solely because another
 LOGICDATA app uses similar command payloads.
 
 <!-- generated:silvermotion-profiles -->

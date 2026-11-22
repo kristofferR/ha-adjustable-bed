@@ -714,6 +714,23 @@ async def test_host_repair_discovers_then_pairs_and_reloaded_controller_accepts_
     assert writes(client) == frame("light_toggle")
 
 
+async def test_control_access_after_a_repair_keeps_the_bond_record(connected_silvermotion):
+    """The repair paired the bed, so Remove Bluetooth bond must still find its record."""
+    co, _client = connected_silvermotion
+    co._ble_bond_established = True
+    co.hass.config_entries.async_update_entry(
+        co.entry, data={**co.entry.data, const.CONF_BLE_BOND_ESTABLISHED: True}
+    )
+    with patch(
+        "custom_components.adjustable_bed.coordinator_bonds.delete_pairing_required_issue",
+        new=AsyncMock(),
+    ) as delete_issue:
+        await co.async_note_control_access_succeeded()
+    delete_issue.assert_awaited_once()
+    assert co._ble_bond_established
+    assert co.entry.data[const.CONF_BLE_BOND_ESTABLISHED] is True
+
+
 async def test_notification_only_reconnect_preserves_write_auth_repair_until_actual_write(
     connected_silvermotion,
 ):
