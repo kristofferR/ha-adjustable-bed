@@ -7,7 +7,6 @@ from functools import partial
 from typing import TYPE_CHECKING, cast
 
 from ...codec import personal_comfort as codec
-from ...command_scheduler import _settled
 from ...const import CONF_PRODUCT_TYPE
 from ...controller_state import StateUpdate
 from ...profiles.personal_comfort import MODELS, PROFILES, PersonalComfortProfile
@@ -15,6 +14,7 @@ from ...profiles.richmat import Button
 from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController, require_controller
 from ..builder import BuildContext
+from ..cancellation import settled as _settled
 from ..catalog_buttons import massage_button
 from ..entity_specs import ControllerButtonSpec, ControllerMotorHoldSpec, MotorControlSpec
 from ..richmat.controller import RichmatProfileController

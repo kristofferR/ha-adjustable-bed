@@ -1,4 +1,4 @@
-# Personal Comfort
+# Personal Comfort and Instant Comfort
 
 **Status:** Not yet tested
 
@@ -6,26 +6,27 @@
 
 ## Known Models
 
-Personal Comfort air units ANM V3, ANM V5 and RA, with a separately configured
-Malouf, Reverie or Reverie V2 base. The base model is an explicit setup choice.
-An air unit is not a second base in a combined pair.
+Personal Comfort and Instant Comfort air units ANM V3, ANM V5 and RA, with a separately configured
+Malouf, Reverie or Reverie V2 base. Pick the base model in setup. The air unit
+and the base are separate entries; do not combine them as a pair.
 
 ## Apps
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
+| ✅ | [Instant Comfort](https://play.google.com/store/apps/details?id=com.americannationalmfg.instantcomfort2) 2.6.1 | `com.americannationalmfg.instantcomfort2` |
 | ✅ | [Personal Comfort](https://play.google.com/store/apps/details?id=com.personalcomfortbed2) | `com.personalcomfortbed2` |
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Firmness | Native left/right values and immediate targets, 5–50 |
+| Firmness | Left and right, 5–50 |
 | Motor Control | Base head/feet; pillow on selected models and routes |
-| Position Feedback | No base positions or angle seeking |
+| Position Feedback | ❌ |
 | Memory Presets | Two on Malouf and V2; none on Reverie V1 or air units |
-| Massage | Model-specific head/foot, pattern and stop operations |
-| Lights | Toggle on Malouf/V1; on/off with initial read on V2 |
+| Massage | Head/foot, pattern and stop, by model |
+| Lights | Toggle on Malouf/V1; on/off with its current state on V2 |
 | Alarm | No |
 
 ## Choosing a profile
@@ -175,10 +176,10 @@ decrement.
 
 ### Responses
 
-V3 reads operation at byte 2 and left/right firmness at bytes 5/4. It waits for
+Personal Comfort V3 reads operation at byte 2 and left/right firmness at bytes 5/4. It waits for
 ready before dispatching a captured target; busy retries are bounded. An
 acknowledgement is answered once, followed by a current-value query after 200 ms.
-V5 requires `RET>SP>` followed by seven hexadecimal pairs. Its second status
+Personal Comfort V5 requires `RET>SP>` followed by seven hexadecimal pairs. Its second status
 determines adjustment completion. Firmness scales back with
 `floor(5 + 45 * clamp(pressure, 0, 66) / 66)`.
 
@@ -201,7 +202,8 @@ Cleanup retains the physical connection and runs with a fresh cancellation event
 ### Vectors
 
 Independent literals and runtime checks live in
-`tests/test_personal_comfort_vectors.py` and `tests/test_personal_comfort.py`.
+`tests/test_personal_comfort_vectors.py`, `tests/test_personal_comfort.py`,
+`tests/test_instant_comfort_vectors.py` and `tests/test_instant_comfort.py`.
 
 ## Profiles
 
@@ -254,8 +256,110 @@ probes, unused lumbar/combined commands or network/account features are exposed.
 All physical effects, GATT properties, firmware variants and release behavior
 still need testing on actual hardware.
 
+### Instant Comfort
+
+**App:** [Instant Comfort](https://play.google.com/store/apps/details?id=com.americannationalmfg.instantcomfort2) 2.6.1, `com.americannationalmfg.instantcomfort2`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **Instant Comfort app**, then the controller route. Add the air unit
+and each base separately. Choose each base's model independently. ANM V5 also
+asks whether the unit has two pressure channels or four (main and lumbar for
+each side). A received channel count that disagrees with setup prevents target
+writes. Change the layout in Configure after checking the unit.
+
+Discovery suggests an app choice for RA's service or an ANM name with a known
+service. RA takes precedence. ANM setup names starting with `2618` or `2816`
+use V5; the app's separate connection test uses `2618B` or `2816`. Choose the
+route explicitly when these differ. Base services can suggest an app but do
+not identify its model. Other brands sharing a service retain their own setup.
+
+#### Controls
+
+The base command and transport tables above apply. Head/feet, supported pillow,
+flat, zero gravity, anti-snore, lighting and model-specific massage use native
+entities. Lumbar base movement is unavailable. The app's V2 decrease head/foot
+massage controls send the same 50 value as Start. Home Assistant uses its
+Start controls for both.
+V2 offers two memory slots; their availability is not a model identity test.
+Use Home Assistant's confirmed save-memory action to store them.
+
+ANM V5 exposes left/right firmness. Four-channel layouts add left/right lumbar
+firmness. Every slider sends its own target immediately; changing main and
+lumbar in sequence waits for the first adjustment before sending the next.
+Phone-local saved firmness choices are not device memory slots.
+Home Assistant requires a matching idle report before sending a new ANM V5
+target. Wait for an active adjustment to finish, or stop the pump before
+retrying. A retry refreshes a cached busy status before deciding whether it can
+proceed. Replies from another channel layout do not replace the readings.
+
+<!-- generated:instant-comfort-channels -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Layout | Control | Channel | Target 5 | Target 50 |
+|---|---|---|---|---|
+| Two channels | Left | 0 | `43 3E 53 45 54 50 3E 30 3E 30 0A` | `43 3E 53 45 54 50 3E 30 3E 36 36 0A` |
+| Two channels | Right | 1 | `43 3E 53 45 54 50 3E 31 3E 30 0A` | `43 3E 53 45 54 50 3E 31 3E 36 36 0A` |
+| Four channels | Left main | 0 | `43 3E 53 45 54 50 3E 30 3E 30 0A` | `43 3E 53 45 54 50 3E 30 3E 36 36 0A` |
+| Four channels | Left lumbar | 1 | `43 3E 53 45 54 50 3E 31 3E 30 0A` | `43 3E 53 45 54 50 3E 31 3E 36 36 0A` |
+| Four channels | Right main | 2 | `43 3E 53 45 54 50 3E 32 3E 30 0A` | `43 3E 53 45 54 50 3E 32 3E 36 36 0A` |
+| Four channels | Right lumbar | 3 | `43 3E 53 45 54 50 3E 33 3E 30 0A` | `43 3E 53 45 54 50 3E 33 3E 36 36 0A` |
+<!-- /generated -->
+
+#### Timing
+
+Malouf refreshes movement every 200 ms until release; it sends no release frame.
+Reverie V1 releases with its global STOP; V2 releases only the captured motor.
+Confirmed memory save buttons never act as held movement controls.
+
+ANM V3 first saves a pending command and sends READY. A READY reply normally
+re-enters that command. BUSY retries after one second can consume the same
+pending command name and send the target without a READY reply. After pending
+clears, another retry prepares again. Three BUSY retries are allowed. Each
+Home Assistant operation owns its own side and target, so replacement and STOP
+cannot reuse another operation's pending target. ACKs received before a target
+write cannot finish that target. Direction follows the latest firmness readback
+when the write begins; a value already at the target needs no write.
+
+ANM V5 starts with two channel-select writes 200 ms apart and a status query.
+After a target, it polls status every 500 ms. Pump-wide STOP is available only
+on ANM V5. ANM V3 and RA provide no usable pump STOP; cancelling a Home
+Assistant command prevents further writes but cannot establish that the pump
+has stopped.
+
+#### Notifications
+
+ANM V5 accepts `RET>SP>` and `RBD>SP>` status notifications. `RBD>SP>` or a
+message at least 29 bytes long selects four channels; shorter `RET>SP>` messages
+select two. Only idle replies replace pressure values. Short, malformed or
+fragmented messages are ignored. Each message is processed independently.
+
+RA uses the same firmware scaling and big-endian status table as the RA route
+above. Values and pending work are discarded when a physical session ends.
+
+#### Services
+
+The shared [`personal_comfort_sequence`](../SERVICES.md#personal_comfort_sequence)
+action also accepts Instant Comfort bases. Combine two base entries for
+full-body massage or a selected-side preset with the peer's feet lowering.
+The pair keeps each side's route and model. Air units cannot become base pairs.
+Memory recall and confirmed programming use the shared memory actions.
+Use [`instant_comfort_firmness`](../SERVICES.md#instant_comfort_firmness) to change
+main and lumbar firmness together; the second target waits for a busy-to-idle
+transition after the first target is sent. Both replies must match the selected
+channel layout.
+
+#### Evidence
+
+Instant Comfort 2.6.1 uses the shared Malouf, air and Reverie frame carriers.
+The two/four-channel parser and command-owned pending transitions belong to
+this profile. Hardware operation has not yet been tested.
+
 ## Notes
 
-### Analysis provenance
+### Evidence
 
-Based on Personal Comfort 2.6.1 (`com.personalcomfortbed2`).
+Based on Personal Comfort 2.6.1 (`com.personalcomfortbed2`) and Instant Comfort 2.6.1
+(`com.americannationalmfg.instantcomfort2`).

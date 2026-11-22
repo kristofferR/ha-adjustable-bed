@@ -112,7 +112,7 @@ _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
         "[Comfort Enhancements](#comfort-enhancements)",
     ),
 }
-# Profiles chosen inside a variant: (variant, rule). tests/test_codec_docs_keeson.py checks them.
+# Profiles chosen inside a variant: (variant, rule).
 KEESON_SUB_ROUTES: dict[str, tuple[str, str]] = {
     "ksbt03c": ("ksbt", "name starts with `KSBT03C`, not `KSBT03CR`"),
     "sleep_harmony_base_i5": ("sleep_harmony", "name starts with `base-i5.`"),

@@ -1,6 +1,7 @@
 """GM Control controller lifecycle, cancellation and source event consumption."""
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -139,7 +140,7 @@ async def test_write_uses_selected_role_no_retry_and_att_limit() -> None:
 async def test_secondary_gates_are_exact_not_legacy_capabilities() -> None:
     ctrl = controller("FTRN")
     assert ctrl.profile.repeat_alarm and ctrl.profile.sleep_kind == "none"
-    with pytest.raises(ValueError, match="BLE sleep"):
+    with pytest.raises(ValueError, match="no sleep sensor"):
         ctrl.validate_gmmotor_request(Request("sleep_name"))
     ctrl.write_command = AsyncMock()
     ctrl.validate_gmmotor_request(Request("light_color"))
@@ -162,14 +163,14 @@ async def test_alarm_and_snore_pages_require_their_actual_admission_paths() -> N
     countdown.validate_gmmotor_request(Request("alarm_at", mode=mode, hour=7))
     repeat = controller("FTRN")
     repeat._accept(Event("clock_capability"))
-    with pytest.raises(ValueError, match="repeat-alarm page"):
+    with pytest.raises(ValueError, match="repeating alarm operation"):
         repeat.validate_gmmotor_request(
             Request("alarm_at", mode=repeat.profile.alarm_choices[0][0])
         )
     snore = controller("HNRN")
     snore.validate_gmmotor_request(Request("snore_query"))
     snore.validate_gmmotor_request(Request("snore_time", value=5))
-    with pytest.raises(ValueError, match="slider range"):
+    with pytest.raises(ValueError, match="anti-snore value"):
         snore.validate_gmmotor_request(Request("snore_count", value=0))
 
 
@@ -277,3 +278,78 @@ async def test_one_address_pair_sides_each_show_their_own_massage_timer() -> Non
         "10 min",
         "20 min",
     )
+
+
+async def test_product_buttons_take_the_catalog_shape_and_send_what_they_sent() -> None:
+    ctrl = controller("6DRM")
+    ctrl._pause = AsyncMock(return_value=True)
+    specs = {s.key: s for s in ctrl.controller_button_specs}
+    zero_g = named(ctrl, "deviceFunctionItemZeroGravity")
+    assert specs[zero_g].translation_key == "preset_zero_g"
+    # Zero gravity's own long operand saves it: a confirmed preset save.
+    save = specs[zero_g + "_long"]
+    assert save.name == "Save Zero gravity" and save.requires_confirmation and save.hold is None
+    assert specs[named(ctrl, "deviceFunctionItemHeadUp")].translation_key == "head_up"
+    reset = specs[named(ctrl, "deviceFunctionItemMotorReset")]
+    assert reset.translation_placeholders == {"action": "Motor reset"}
+    assert not reset.entity_registry_enabled_default
+    for key in (zero_g, zero_g + "_long"):
+        ctrl.write_command = AsyncMock()
+        await specs[key].press_fn(ctrl)
+        assert ctrl.write_command.call_args.args[0][3] == (0x66 if key.endswith("_long") else 0x45)
+
+
+async def test_a_control_without_a_button_sends_what_a_listed_control_sends() -> None:
+    """Every app control without a button of its own writes what a listed button
+    or timer option writes, or, as an empty slot or heading, no command at all.
+
+    A long press waits for its hold before writing; only the writes are compared.
+    """
+    from custom_components.adjustable_bed.beds.gmmotor.profiles import profile_choices
+
+    async def writes(profile: str, press: Callable[[GmmotorController], Awaitable[None]]) -> tuple:
+        ctrl = controller(profile)  # Fresh: a press's frames follow the app's UI state.
+        ctrl._pause = AsyncMock(return_value=True)
+        ctrl.write_command = AsyncMock()
+        await press(ctrl)
+        return tuple(call.args for call in ctrl.write_command.call_args_list)
+
+    removed = slots = 0
+    for profile in profile_choices():
+        ctrl = controller(profile)
+        specs = ctrl.controller_button_specs
+        keys = {spec.key for spec in specs}
+        missing = [
+            (f"gm_{i}{suffix}", action)
+            for i, action in enumerate(ctrl.profile.controls)
+            if not action.phone_only
+            for suffix in ("", "_long")
+            if (not suffix or action.gesture in (3, 4) and "long" in action.phases)
+            and f"gm_{i}{suffix}" not in keys
+        ]
+        if not missing:
+            continue
+        listed = {await writes(profile, spec.press_fn) for spec in specs}
+        listed |= {
+            await writes(profile, lambda c, m=minutes: c.set_massage_timer(m))
+            for minutes in (ctrl.massage_timer_options if ctrl.supports_massage_timer else ())
+        }
+        for key, action in missing:
+            # The duration each button pressed with before.
+            duration = 3000 if key.endswith("_long") or action.gesture == 2 else 0
+            duration = 1000 if action.gesture == 1 else duration
+            control = key.removesuffix("_long")
+            sent = await writes(profile, lambda c, k=control, d=duration: c.hold_control(k, d))
+            if sent not in listed:
+                # An empty slot or heading: a zero command and its STOP, nothing else.
+                assert {frame[0][3] for frame in sent} <= {0x00, 0x6E}, (profile, key, sent)
+                slots += 1
+                continue
+            removed += 1
+    assert removed and slots
+
+
+def test_a_control_the_app_lists_twice_gets_one_button():
+    keys = [spec.key for spec in controller("DWRN").controller_button_specs]
+    assert {"gm_0", "gm_1"} <= set(keys)
+    assert not {"gm_2", "gm_3"} & set(keys)  # The same pillow up and down again.

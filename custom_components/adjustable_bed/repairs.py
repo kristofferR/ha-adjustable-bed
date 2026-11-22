@@ -73,6 +73,7 @@ from .const import (
     PAIR_SIDES,
     RUNTIME_BOND_KEYS,
     grants_one_connection_per_pairing_window,
+    requires_pairing_after_service_discovery,
 )
 from .pairing import (
     effective_child_data,
@@ -1017,7 +1018,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 # async_pair_now() clears the runtime bond marker itself, which
                 # editing entry.data alone would not do.
                 paired = bool(await coordinator.async_pair_now())
-            except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+            except Exception as err:
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
             if not paired and coordinator.pairing_supported is False:
@@ -1070,7 +1071,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         )
         try:
             await self.hass.config_entries.async_reload(self._entry_id)
-        except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+        except Exception as err:
             _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
             return False
         bonded = self._bonded_now()
@@ -1099,9 +1100,8 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
     async def _async_try_pair(self, expected_source: str | None = None) -> bool:
         """Create a bond for beds that pair at connect time, and verify it.
 
-        Beds that must bond after service discovery never reach this path: they
-        are one-connection beds and are handled by _async_pair_via_coordinator,
-        which refuses to open a throwaway client at all.
+        One-connection beds are handled by _async_pair_via_coordinator, which
+        refuses to open a throwaway client. Other beds keep their own ordering.
         """
         via_coordinator = await self._async_pair_via_coordinator(expected_source)
         if via_coordinator is not None:
@@ -1147,6 +1147,11 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             return False
 
         client: BleakClient | None = None
+        bed_type, variant = self._bed_type()
+        pair_after_discovery = (
+            pair and bed_type is not None
+            and requires_pairing_after_service_discovery(bed_type, variant)
+        )
         reload_entry_id: str | None = None
         verified_owner: BondOwner | None = None
         # Hold the address lock for the whole client lifetime. Releasing it after
@@ -1155,7 +1160,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         async with async_get_connect_lock(self.hass, self._address):
             try:
                 connect_kwargs: dict[str, Any] = (
-                    {"pair": True} if pair and expected_source is None else {}
+                    {"pair": True} if pair and expected_source is None and not pair_after_discovery else {}
                 )
                 client = await establish_connection(
                     BleakClient,
@@ -1165,7 +1170,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                     use_services_cache=False,
                     **connect_kwargs,
                 )
-            except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+            except Exception as err:
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
 
@@ -1181,7 +1186,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                     )
                     return False
                 pair_error: Exception | None = None
-                if pair and expected_source:
+                if pair and (expected_source or pair_after_discovery):
                     try:
                         await client.pair()
                     except (NotImplementedError, TypeError) as err:
@@ -1192,7 +1197,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                             err,
                         )
                         return False
-                    except Exception as err:  # noqa: BLE001 - the verifier decides
+                    except Exception as err:
                         pair_error = err
                         _LOGGER.warning(
                             "Repair: pairing %s raised (%s); verifying the bond",
@@ -1245,7 +1250,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                                 err,
                             )
                             bonded = True
-                    except Exception as err:  # noqa: BLE001
+                    except Exception as err:
                         _LOGGER.debug(
                             "Repair: bond verification inconclusive for %s: %s",
                             self._address,
@@ -1270,7 +1275,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 if client is not None:
                     try:
                         await client.disconnect()
-                    except Exception:  # noqa: BLE001
+                    except Exception:
                         pass
 
         if reload_entry_id is not None:

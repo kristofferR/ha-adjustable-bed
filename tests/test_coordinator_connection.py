@@ -1134,10 +1134,12 @@ class TestCoordinatorConnection:
         assert mock_bleak_client.pair.await_count == 2
         assert mock_bleak_client.disconnect.await_count == 2
 
+    @pytest.mark.parametrize("released", [False, True])
     async def test_connect_does_not_report_success_without_a_controller(
         self,
         hass: HomeAssistant,
         mock_config_entry,
+        released,
     ) -> None:
         """A retained link with no controller is not a usable connection.
 
@@ -1151,7 +1153,11 @@ class TestCoordinatorConnection:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         client = MagicMock()
         client.is_connected = True
-        client.disconnect = AsyncMock()
+
+        async def disconnect():
+            client.is_connected = not released
+
+        client.disconnect = AsyncMock(side_effect=disconnect)
         coordinator._client = client
         coordinator._controller = None
 
@@ -1168,7 +1174,7 @@ class TestCoordinatorConnection:
         reset_timer.assert_not_called()
         # The half-initialised link was released, not leaked.
         client.disconnect.assert_awaited_once()
-        assert coordinator._client is None
+        assert coordinator._client is (None if released else client)
 
     @pytest.mark.parametrize(
         ("error", "expected_status", "says_refused"),
@@ -2111,6 +2117,68 @@ class TestCoordinatorDisconnectTimer:
         # Leave the shared fixture clean for teardown.
         mock_bleak_client.is_connected = False
 
+    async def test_a_cancel_during_the_retained_link_restore_still_accounts_for_the_link(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """The restore finishes, the link idles out again, then the cancel is raised."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.is_connected = True
+        mock_bleak_client.disconnect.side_effect = BleakError("link still active")
+        restoring, finish = asyncio.Event(), asyncio.Event()
+
+        async def restore() -> bool:
+            restoring.set()
+            await finish.wait()
+            return True
+
+        with (
+            patch.object(coordinator, "_async_restore_retained_session", side_effect=restore),
+            patch.object(coordinator, "_reset_disconnect_timer") as reset_timer,
+        ):
+            task = asyncio.create_task(coordinator.async_disconnect("idle_timeout"))
+            await restoring.wait()
+            task.cancel()
+            await asyncio.sleep(0)
+            reset_timer.assert_not_called()
+            finish.set()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+            reset_timer.assert_called_once_with()
+        assert coordinator.is_connected and not coordinator._intentional_disconnect
+
+        mock_bleak_client.disconnect.side_effect = None
+        mock_bleak_client.is_connected = False
+
+    async def test_a_retained_link_idles_out_again_when_its_restore_fails(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Without a timer the bed would stay connected until the next command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.is_connected = True
+        mock_bleak_client.disconnect.side_effect = BleakError("link still active")
+
+        with (
+            patch.object(
+                coordinator, "_async_restore_retained_session", AsyncMock(return_value=False)
+            ),
+            patch.object(coordinator, "_reset_disconnect_timer") as reset_timer,
+        ):
+            assert await coordinator.async_disconnect("idle_timeout") is False
+        reset_timer.assert_called_once_with()
+
+        mock_bleak_client.disconnect.side_effect = None
+        mock_bleak_client.is_connected = False
+
     async def test_failed_connection_cleanup_is_intentional(
         self,
         hass: HomeAssistant,
@@ -2335,3 +2403,37 @@ class TestDisconnectCommandSerialization:
 
         coordinator._position_hydration_running = False
         await coordinator.async_disconnect()
+
+
+@pytest.mark.parametrize("entry_point", ["connect", "ensure"])
+async def test_shutdown_during_incomplete_link_release_does_not_reopen(
+    hass, mock_config_entry, entry_point
+):
+    coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+    client = MagicMock()
+    client.is_connected = True
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    async def disconnect():
+        entered.set()
+        await release.wait()
+        client.is_connected = False
+
+    client.disconnect = AsyncMock(side_effect=disconnect)
+    coordinator._client = client
+    with patch(
+        "custom_components.adjustable_bed.coordinator_connection.select_adapter",
+        new_callable=AsyncMock,
+    ) as select_adapter:
+        connect = asyncio.create_task(
+            coordinator.async_connect()
+            if entry_point == "connect"
+            else coordinator.async_ensure_connected()
+        )
+        await entered.wait()
+        shutdown = asyncio.create_task(coordinator.async_shutdown())
+        await asyncio.sleep(0)
+        release.set()
+        assert not await connect
+        await shutdown
+        select_adapter.assert_not_awaited()

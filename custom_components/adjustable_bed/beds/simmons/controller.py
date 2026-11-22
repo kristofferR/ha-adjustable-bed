@@ -156,10 +156,9 @@ PEER_CONFLICT_ERROR: Final = (
 )
 
 
-def _stored_ble_name(coordinator: object) -> object:
+def _stored_ble_name(coordinator: AdjustableBedCoordinator) -> object:
     """Return the raw Bluetooth name saved for this entry, never its display name."""
-    data = getattr(getattr(coordinator, "entry", None), "data", None)
-    return data.get(CONF_BLE_DEVICE_NAME) if isinstance(data, Mapping) else None
+    return coordinator.entry.data.get(CONF_BLE_DEVICE_NAME)
 
 
 def _protocol_name(live: str | None, stored: object) -> str | None:
@@ -309,7 +308,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
 
     @property
     def memory_slot_names(self) -> tuple[str | None, ...]:
-        return ("Custom Mode",)
+        return ("Custom mode",)
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
@@ -372,6 +371,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
                     _ALARM_KEYS[slot].awaiting_reply,
                 ),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             )
             for slot in (1, 2)
         )
@@ -486,7 +486,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+            except Exception:
                 break
         if cancelled:
             # The caller's cancellation wins; still retrieve a STOP failure.
@@ -507,7 +507,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Repeat a control every 300 ms for the hold, then release it."""
         if control not in self.held_control_options:
-            raise ValueError(f"'{control}' is not a control of this SIMMONS bed layout")
+            raise ValueError("This bed model does not offer that control")
         if (
             isinstance(duration_ms, bool)
             or not isinstance(duration_ms, int)
@@ -540,7 +540,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
         """Press and release at once, as an app tap: the button-down write, no
         300 ms refresh (the pressed flag is already clear), then release STOPs."""
         if control not in self.held_control_options:
-            raise ValueError(f"'{control}' is not a control of this SIMMONS bed layout")
+            raise ValueError("This bed model does not offer that control")
         try:
             await self.write_command(control_frame(self._protocol, control))
         finally:
@@ -694,7 +694,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
     ) -> None:
         """Check the app's state-free alarm rules before anything is written."""
         if slot not in (1, 2) or isinstance(slot, bool):
-            raise ValueError("SIMMONS has alarm slots 1 and 2")
+            raise ValueError("Choose alarm 1 or 2")
         if not enabled:
             return
         if mode not in self.alarm_mode_options:

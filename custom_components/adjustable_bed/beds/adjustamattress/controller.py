@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
@@ -343,9 +344,9 @@ class AdjustaMattressController(
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options:
-            raise ValueError(f"This model/layout does not expose {control}")
+            raise ValueError(f"This bed model does not offer {control}")
         if not 1 <= duration_ms <= MAX_HOLD_MS:
-            raise ValueError("Hold duration must be 1 through 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -404,7 +405,7 @@ class AdjustaMattressController(
         elif action == "sleep" and self._snore:
             await self._set_sleeping(None)
         else:
-            raise ValueError(f"This model/layout does not expose {action}")
+            raise ValueError(f"This bed model does not offer {action}")
 
     async def _send_snore(self) -> None:
         strength = self._preferences.strength_index
@@ -865,11 +866,13 @@ class AdjustaMattressController(
                 NS + key,
                 NS + key,
                 _field_key(key),
-                "mdi:information-outline",
-                native_unit_of_measurement="min" if key == "massage_time" else None,
-                # Readbacks of the step buttons, which take no direct value.
-                entity_registry_enabled_default=False,
+                "mdi:vibrate" if key in _MASSAGE_FIELDS else "mdi:information-outline",
+                # Readbacks of the step buttons, which take no direct value. The
+                # timer is the bed's step (P3 and P4 round 600 units up to one);
+                # its duration is unproven, so it has no unit.
+                entity_registry_enabled_default=key in _MASSAGE_FIELDS,
                 card=CARD_MASSAGE if key in _MASSAGE_FIELDS else CARD_UTILITY,
+                entity_category=None if key in _MASSAGE_FIELDS else EntityCategory.DIAGNOSTIC,
             )
             for key in self._sensor_fields
             if key not in _SETTING_FIELDS
@@ -965,7 +968,7 @@ class AdjustaMattressController(
 
     async def preset_memory(self, memory_num: int) -> None:
         if memory_num != 1 or self.layout != 0:
-            raise ValueError("Only the app's L0 M1 recall exists")
+            raise ValueError("This bed model cannot recall that memory position")
         await self.execute_action("m1")
 
     async def program_memory(self, memory_num: int) -> None:

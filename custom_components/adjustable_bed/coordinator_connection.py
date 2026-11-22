@@ -20,7 +20,11 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
-from bleak_retry_connector import close_stale_connections_by_address, establish_connection
+from bleak_retry_connector import (
+    BleakAbortedError,
+    close_stale_connections_by_address,
+    establish_connection,
+)
 from homeassistant.components import bluetooth
 
 from .adapter import (
@@ -34,10 +38,12 @@ from .adapter import (
 )
 from .address_lock import async_get_connect_lock
 from .bed_traits import bed_traits
+from .beds.cancellation import settled
 from .beds.gmmotor.sessions import LIVE_ENABLED as GMMOTOR_LIVE_ENABLED
 from .beds.gmmotor.sessions import sleep_intent
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .bluetooth_diagnostics import connection_reachability
+from .bluetooth_freshness import async_check_advertisement
 from .bluetooth_transport import async_connection_paths, async_path_for_source, client_source
 from .bond_verification import BondVerificationStatus
 from .command_scheduler import ALL_COMMAND_RESOURCES, CommandOutcome, command_frames_not_counted
@@ -88,6 +94,7 @@ from .detection import (
 )
 from .diagnostic_payloads import new_connection_attempt_details
 from .position_estimate import notify_connection_lost as notify_position_estimate_connection_lost
+from .runtime_data import DomainKey, domain_registry
 from .support_proxy_logs import capture_proxy_logs
 from .unsupported import delete_pairing_required_issue
 
@@ -105,6 +112,12 @@ _COMMAND_BURST_GRACE_SECONDS = 1.0
 _PAIRING_RELEASE_RESTORE_TIMEOUT = 5.0
 # Delay before recovering a link the bed or adapter dropped.
 _AUTO_RECONNECT_DELAY_SECONDS = 5.0
+# A bed that asks for recovery is retried half as often after each failure,
+# down to once in this many seconds, until it connects or a command arrives.
+_RECOVERY_RETRY_MAX_SECONDS = 300.0
+# Outages already reported, by entry and bed. Every setup retry builds a new
+# coordinator, so the record lives beside them.
+_REPORTED_OUTAGES: DomainKey[set[tuple[str, str]]] = DomainKey("reported_outages")
 
 
 class ConnectionSettings(TypedDict):
@@ -213,6 +226,11 @@ class CoordinatorConnectionMixin:
         return self._client is not None and self._client.is_connected
 
     @property
+    def is_shutting_down(self: AdjustableBedCoordinator) -> bool:
+        """Whether the runtime has stopped admitting deferred controller work."""
+        return self._shutting_down
+
+    @property
     def is_connecting(self: AdjustableBedCoordinator) -> bool:
         """Return whether we are currently connecting to the bed."""
         return self._connecting
@@ -279,6 +297,27 @@ class CoordinatorConnectionMixin:
     def connection_attempt_details(self: AdjustableBedCoordinator) -> list[dict[str, Any]]:
         """Return detailed recent connection attempts."""
         return list(self._connection_attempt_details)
+
+    @property
+    def refused_outside_pairing_window(self: AdjustableBedCoordinator) -> bool:
+        """Return whether the last connection failure fits a closed pairing window.
+
+        A bed with a pairing window at power-on ignores connection attempts
+        from an adapter it has not paired with: it keeps advertising and the
+        attempt is aborted before a link comes up. A bed that is off times out
+        instead, and a proxy without a free slot reports that. Weak signal
+        aborts the same way, which is why the messages built from this say
+        "usually".
+        """
+        if not bed_traits(self._bed_type, self._protocol_variant).pairing_window_at_power_on:
+            return False
+        attempts = self.connection_attempt_details
+        last = attempts[-1] if attempts else {}
+        return (
+            last.get("result") == "failed"
+            and last.get("error_type") == BleakAbortedError.__name__
+            and async_check_advertisement(self.hass, self._address).is_fresh
+        )
 
     @property
     def connection_settings(self: AdjustableBedCoordinator) -> ConnectionSettings:
@@ -376,7 +415,7 @@ class CoordinatorConnectionMixin:
             yield
         finally:
             self._command_connection_holds -= 1
-            if not self._command_connection_holds and self.is_connected:
+            if not self._command_connection_holds and self.is_connected and not self._intentional_disconnect and not self._shutting_down:
                 self._reset_disconnect_timer()
 
     def _auto_reconnect_enabled(self: AdjustableBedCoordinator) -> bool:
@@ -508,6 +547,8 @@ class CoordinatorConnectionMixin:
         cancelled at the window's end and connected again from scratch.
         """
         self._command_link_generation += 1
+        # Someone wants the bed now: retry a recovery soon again.
+        self._recovery_retry_delay = _AUTO_RECONNECT_DELAY_SECONDS
         window = self._recovery_connect_window
         if window is not None and not window.expired():
             window.reschedule(None)
@@ -595,7 +636,7 @@ class CoordinatorConnectionMixin:
         self: AdjustableBedCoordinator, reset_timer: bool = True
     ) -> bool:
         """Allow automatic auth recovery before asking the user to re-pair."""
-        if self._shutting_down and self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
+        if self._shutting_down:
             return False
         if self._pairing_transfer_active:
             _LOGGER.debug(
@@ -650,6 +691,11 @@ class CoordinatorConnectionMixin:
 
         if self._client is not None and self._client.is_connected:
             if self._controller is not None:
+                if (
+                    self._retained_session_client is self._client
+                    and not await self._async_restore_retained_session()
+                ):
+                    return False
                 _LOGGER.debug("Already connected to %s, reusing connection", self._address)
                 if reset_timer:
                     self._reset_disconnect_timer()
@@ -662,8 +708,9 @@ class CoordinatorConnectionMixin:
                 "Releasing half-initialised connection to %s before reconnecting",
                 self._address,
             )
-            await self._async_cleanup_failed_connection()
-            if self._vmat_unready_link_pending():
+            if not await self._async_disconnect_locked("incomplete_startup"):
+                return False
+            if self._shutting_down:
                 return False
 
         # Routine reconnects after an intentional/idle disconnect are expected for
@@ -1660,14 +1707,18 @@ class CoordinatorConnectionMixin:
                 # instead of staying "unknown" until the user moves it.
                 self._schedule_position_hydration()
 
-                if not bed_requires_pairing and self._has_unresolved_auth_failure():
+                if not bed_requires_pairing and controller.startup_verifies_control_access and self._has_unresolved_auth_failure():
                     # Controller startup ran on this unpaired link, so the GATT
                     # access that failed earlier works and its repair is resolved.
                     self._last_bond_evidence = None
                 await self.async_clear_obsolete_pairing_state()
 
                 # Ready for commands: the next outage warns again.
-                self._connect_failure_logged = False
+                domain_registry(self.hass, _REPORTED_OUTAGES, set).discard(
+                    (self.entry.entry_id, self._address)
+                )
+                self._recovery_retry_delay = _AUTO_RECONNECT_DELAY_SECONDS
+                self._retained_session_client = None
                 self._link_ready = True
                 return True
 
@@ -1677,6 +1728,7 @@ class CoordinatorConnectionMixin:
                 # startup subscriptions/tasks owned by this coordinator.
                 self._connecting = False
                 self._last_disconnect_reason = "connect_cancelled"
+                startup_controller = self._controller
                 try:
                     await self._async_cancel_position_hydration()
                     async with async_get_connect_lock(self.hass, self._address):
@@ -1685,7 +1737,15 @@ class CoordinatorConnectionMixin:
                     _LOGGER.exception(
                         "Cleanup after cancelled connection to %s failed", self._address
                     )
-                self._notify_connection_state_change(self.is_connected)
+                finally:
+                    # Transport failure or another cancellation cannot commit startup.
+                    if self._controller is startup_controller:
+                        self._controller = None
+                        self._link_ready = False
+                        self._retained_session_client = None
+                        if startup_controller is not None:
+                            startup_controller.on_disconnect()
+                    self._notify_connection_state_change(self.is_connected)
                 raise
             except (BleakError, TimeoutError, OSError) as err:
                 if isinstance(err, BleakError) and _is_ble_authentication_error(err):
@@ -1798,7 +1858,7 @@ class CoordinatorConnectionMixin:
                 await self._async_cleanup_failed_connection()
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
-            except Exception as err:  # noqa: BLE001 - preserve retry diagnostics for unexpected connect failures
+            except Exception as err:
                 # Track connection error for diagnostics (issue #168)
                 self._connecting = False
                 self._last_connection_error = str(err)
@@ -1850,20 +1910,33 @@ class CoordinatorConnectionMixin:
         # previously published "idle" would linger until some later event.
         self._last_disconnect_reason = "connect_failed"
         self._notify_connection_state_change(False)
-        # Warn once per outage; repeats while the bed stays unreachable are
-        # expected and go to debug.
+        # Warn once per outage, across setup retries too; repeats while the
+        # bed stays unreachable are expected and go to debug.
+        reported = domain_registry(self.hass, _REPORTED_OUTAGES, set)
+        outage = (self.entry.entry_id, self._address)
+        if self.refused_outside_pairing_window:
+            advice = (
+                "The bed is advertising but did not accept the connection, which usually "
+                "means it has not paired with this Bluetooth adapter. It pairs only "
+                "during the first 3 minutes after power-on: unplug it for 60 seconds, "
+                "plug it back in, then use it within 3 minutes"
+            )
+        else:
+            advice = (
+                "Check that the bed has power, close any phone app connected to it, "
+                "and check that its Bluetooth adapter or proxy is online"
+            )
         _LOGGER.log(
-            logging.DEBUG if self._connect_failure_logged else logging.WARNING,
-            "Could not connect to %s after %d attempts (%.1fs, last error: %s). "
-            "Check that the bed has power, close any phone app connected to it, "
-            "and check that its Bluetooth adapter or proxy is online%s",
+            logging.DEBUG if outage in reported else logging.WARNING,
+            "Could not connect to %s after %d attempts (%.1fs, last error: %s). %s%s",
             self._address,
             attempt,
             total_elapsed,
             self._last_connection_error or "not found",
+            advice,
             f" (Bluetooth reachability: {reason})" if reason else "",
         )
-        self._connect_failure_logged = True
+        reported.add(outage)
         self._schedule_pending_capability_reload()
         return False
 
@@ -1883,6 +1956,7 @@ class CoordinatorConnectionMixin:
         self._connection_creator_task = None
         # Whether the dropped link had finished startup and accepted commands.
         ready, self._link_ready = self._link_ready, False
+        self._retained_session_client = None
 
         if self._furnimove_bond_task is not None:
             if not self._furnimove_bond_task.done() and not self._intentional_disconnect:
@@ -1935,6 +2009,7 @@ class CoordinatorConnectionMixin:
             )
             self._client = None
             self._link_ready = False
+            self._retained_session_client = None
             self._controller = None
             if self._vmat_unready_client is client:
                 self._vmat_unready_client = None
@@ -2100,8 +2175,10 @@ class CoordinatorConnectionMixin:
                 and controller.requests_connection_recovery is True
                 and self._reconnect_timer is None
             ):
+                delay = self._recovery_retry_delay
+                self._recovery_retry_delay = min(delay * 2, _RECOVERY_RETRY_MAX_SECONDS)
                 self._reconnect_timer = self.hass.loop.call_later(
-                    _AUTO_RECONNECT_DELAY_SECONDS, self._schedule_auto_reconnect
+                    delay, self._schedule_auto_reconnect
                 )
 
     async def _async_connect_within_window(
@@ -2231,7 +2308,9 @@ class CoordinatorConnectionMixin:
                         self._notify_connection_state_change(False)
                     released = True
                 else:
-                    released = await self._async_disconnect_locked("absorbed_by_pair")
+                    released = await self._async_disconnect_locked(
+                        "absorbed_by_pair", restore_when_cancelled=False
+                    )
             except asyncio.CancelledError:
                 try:
                     await self._async_restore_cancelled_pairing_release()
@@ -2250,21 +2329,45 @@ class CoordinatorConnectionMixin:
         controller = self._controller
         if not self.is_connected or controller is None:
             return
+        await self._async_restore_retained_session()
+        if self._link_ready:
+            self._reset_disconnect_timer()
+
+    async def _async_restore_retained_session(self: AdjustableBedCoordinator) -> bool:
+        """Admit reuse only after a retained link's controller tasks recover."""
+        client, controller = self._client, self._controller
+        if self._shutting_down or client is None or not client.is_connected or controller is None:
+            return False
+        if self._link_ready and self._retained_session_client is None:
+            # Nothing was stopped, or an earlier restore already finished.
+            return True
         try:
-            async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
-                await self.async_start_notify()
-                await controller.async_resume_session()
-                self._reset_disconnect_timer()
-        except TimeoutError:
-            _LOGGER.warning(
-                "Timed out restoring controller tasks for %s after pairing transfer cancellation",
-                self._address,
-            )
+            with command_frames_not_counted():
+                async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
+                    if controller.restore_notifications_after_cancel:
+                        await self.async_start_notify()
+                    if (
+                        self._shutting_down
+                        or self._client is not client
+                        or self._controller is not controller
+                        or not client.is_connected
+                    ):
+                        return False
+                    await controller.async_resume_session()
+            if (
+                self._shutting_down
+                or self._client is not client
+                or self._controller is not controller
+                or not client.is_connected
+            ):
+                return False
+            self._refresh_diagnostic_polling_schedule()
+            self._link_ready = True
+            self._retained_session_client = None
+            return True
         except Exception:
-            _LOGGER.exception(
-                "Could not restore controller tasks for %s after pairing transfer cancellation",
-                self._address,
-            )
+            _LOGGER.exception("Could not restore the retained controller for %s", self._address)
+            return False
 
     def finish_pairing_transfer(self: AdjustableBedCoordinator) -> None:
         """Allow standalone reconnects after pair setup absorbs or releases us."""
@@ -2354,8 +2457,17 @@ class CoordinatorConnectionMixin:
         # whole operation, so nothing may be waiting to undo that.
         self._cancel_auto_reconnect()
 
-    async def _async_disconnect_locked(self: AdjustableBedCoordinator, reason: str = "intentional") -> bool:
+    async def _async_disconnect_locked(
+        self: AdjustableBedCoordinator,
+        reason: str = "intentional",
+        *,
+        restore_when_cancelled: bool = True,
+    ) -> bool:
         """Disconnect from the bed. The caller MUST already hold ``self._lock``.
+
+        A cancellation during the disconnect is raised after the bookkeeping.
+        A link that stayed up is restored first, unless the caller restores it
+        in its own rollback (``restore_when_cancelled=False``).
 
         Used by the bond-verification path, which runs inside
         ``_async_connect_locked`` (lock already held) and would otherwise
@@ -2385,6 +2497,7 @@ class CoordinatorConnectionMixin:
                 await self._controller_state_refresh_task
             self._controller_state_refresh_task = None
         controller = self._controller
+        cancelled: asyncio.CancelledError | None = None
         if self._client is not None:
             # Intentional disconnects (manual, idle timeout, disconnect-after-command)
             # are routine for non-persistent beds; keep them at DEBUG so normal use
@@ -2395,35 +2508,65 @@ class CoordinatorConnectionMixin:
             # Track disconnect reason for diagnostics (issue #168)
             self._last_disconnect_reason = reason
             client = self._client
+            resumable = self._link_ready or self._retained_session_client is self._client
             try:
-                # Stop keep-alive and notifications before disconnecting
-                if controller is not None:
-                    try:
-                        await controller.stop_keepalive()
-                    except Exception as err:
-                        _LOGGER.debug("Error stopping keep-alive: %s", err)
-                    try:
-                        await controller.stop_notify()
-                    except Exception as err:
-                        _LOGGER.debug("Error stopping notifications: %s", err)
-                connect_lock = async_get_connect_lock(self.hass, self._address)
-                if connect_lock.retained_setup_client is client:
-                    await connect_lock.async_release_setup_client()
-                else:
-                    await client.disconnect()
-                _LOGGER.debug("Successfully disconnected from %s", self._address)
-            except BleakError as err:
-                _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
+                try:
+                    # The physical link stays visible while its session is unusable.
+                    self._link_ready = False
+                    self._retained_session_client = client if resumable else None
+                    # Stop keep-alive and notifications before disconnecting
+                    if controller is not None:
+                        try:
+                            await controller.stop_keepalive()
+                        except Exception as err:
+                            _LOGGER.debug("Error stopping keep-alive: %s", err)
+                        try:
+                            await controller.stop_notify()
+                        except Exception as err:
+                            _LOGGER.debug("Error stopping notifications: %s", err)
+                    connect_lock = async_get_connect_lock(self.hass, self._address)
+                    if connect_lock.retained_setup_client is client:
+                        await connect_lock.async_release_setup_client()
+                    else:
+                        await client.disconnect()
+                    _LOGGER.debug("Successfully disconnected from %s", self._address)
+                except (BleakError, TimeoutError) as err:
+                    _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
+                except asyncio.CancelledError as err:
+                    # Finish the bookkeeping first; the cancellation is raised afterwards.
+                    cancelled = err
+                finally:
+                    # A link that never finished startup does not keep its controller.
+                    if not resumable and controller is not None and self._controller is controller:
+                        self._controller = None
+                        controller.on_disconnect()
+                # Bleak may fail to close the link. Keep the intentional flag
+                # through restoration: a delayed close callback is still ours.
+                if client.is_connected:
+                    self._client = client
+                    _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
+                    kept = controller is not None and self._controller is controller
+                    # A cancelled pairing transfer restores and re-arms in its own rollback.
+                    if cancelled is not None and not restore_when_cancelled:
+                        kept = False
+                    if kept:
+                        try:
+                            await settled(self._async_restore_retained_session())
+                        except asyncio.CancelledError as err:
+                            # The restore finished; raise once the link is accounted for.
+                            cancelled = cancelled or err
+                    # Restoration awaits the OS. It may have closed the link
+                    # meanwhile, with or without delivering its callback.
+                    if client.is_connected:
+                        if kept and resumable and not self._shutting_down:
+                            # The link idles out again, so the disconnect is retried
+                            # even when its session could not be restored.
+                            self._reset_disconnect_timer()
+                        if cancelled is not None:
+                            raise cancelled
+                        return False
             finally:
                 self._intentional_disconnect = False
-            # Bleak can raise or return while the OS link remains active. Keep
-            # the live client/controller instead of reporting a logical
-            # disconnect: the paired sequential guard must know that opening
-            # the other side could create two physical links.
-            if client.is_connected:
-                self._client = client
-                _LOGGER.warning("Disconnect from %s did not release the BLE link", self._address)
-                return False
             # Some Bleak backends do not emit the disconnect callback for an
             # intentional close. Preserve the same physical-session invalidation
             # by notifying the controller when the callback did not already own it.
@@ -2431,6 +2574,7 @@ class CoordinatorConnectionMixin:
                 controller.on_disconnect()
             self._client = None
             self._link_ready = False
+            self._retained_session_client = None
             self._controller = None
             if self._vmat_unready_client is client:
                 self._vmat_unready_client = None
@@ -2439,6 +2583,8 @@ class CoordinatorConnectionMixin:
             self._last_disconnected = datetime.now(UTC)
             self._notify_connection_state_change(False)
         self._schedule_pending_capability_reload()
+        if cancelled is not None:
+            raise cancelled
         return True
 
     def _reset_disconnect_timer(self: AdjustableBedCoordinator) -> None:
@@ -2549,11 +2695,20 @@ class CoordinatorConnectionMixin:
     async def async_ensure_connected(self: AdjustableBedCoordinator, reset_timer: bool = True) -> bool:
         """Ensure we are connected to the bed."""
         async with self._lock:
+            if self._shutting_down:
+                return False
             if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat" and (
                 self._shutting_down or self._vmat_unready_link_pending() or self._controller is None
             ):
                 return await self._async_connect_locked(reset_timer=reset_timer)
             if self._client is not None and self._client.is_connected:
+                if self._controller is None:
+                    return await self._async_connect_locked(reset_timer=reset_timer)
+                if self._shutting_down or (
+                    self._retained_session_client is self._client
+                    and not await self._async_restore_retained_session()
+                ):
+                    return False
                 _LOGGER.debug("Connection check: already connected to %s", self._address)
                 if reset_timer:
                     self._reset_disconnect_timer()

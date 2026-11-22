@@ -38,7 +38,6 @@ from custom_components.adjustable_bed.command_scheduler import CommandKind, Comm
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES
-from tests.error_helpers import raises_key
 from tests.hold_lease_wire import intervals, leased_hold, virtual_clock
 from tests.test_richmat_classic import controller
 
@@ -56,10 +55,10 @@ def _hold(control: str, errors: list[str] | None = None) -> Callable[[Any], Awai
         try:
             # A leased hold_control runs to the stream ceiling, as the service runs it.
             await ctrl.hold_control(control, HOLD_CEILING_MS)
-        except ValueError as err:
+        except ServiceValidationError as err:
             if errors is None:
                 raise
-            errors.append(str(err))
+            errors.append(str(err.translation_key))
 
     return move
 
@@ -173,7 +172,7 @@ async def test_a_framed_session_refuses_a_raw_only_lease_without_writing() -> No
         entry_data={"product_type": "GVRM"},
     )
 
-    assert errors == ["This control does not support renewable holds"]
+    assert errors == ["control_hold_renewal_not_supported"]
     assert wire.held == wire.after == ()
 
 
@@ -220,7 +219,7 @@ async def test_a_selector_change_after_admission_refuses_the_lease_without_writi
         SCENARIO, move, end_after_s=1, end="expire", entry_data={"product_type": "GXRM"}
     )
 
-    assert errors == ["This control does not support renewable holds"]
+    assert errors == ["control_hold_renewal_not_supported"]
     assert wire.held == wire.after == ()
 
 
@@ -317,16 +316,20 @@ async def test_renewals_keep_a_keep_button_refreshing_until_the_lease_lapses(
 
 
 @pytest.mark.parametrize("bed", ["GXRM"], indirect=True)
-async def test_an_armed_action_refuses_a_lease_as_an_undeclared_bed_does(
-    bed: Any, clock: Any
-) -> None:
+async def test_an_armed_action_is_never_leased(bed: Any, clock: Any) -> None:
     hass, coordinator, writes = bed
     ctrl = coordinator._controller
     ctrl._select("program", "armed")
-    with raises_key("hold_renewal_not_supported", ServiceValidationError):
-        await _hold_control(hass, "richmat_classic_4", 1)
-    assert writes == []
-    assert ctrl._selection.armed
+    # A renewal request holds it as a finger does: the armed save runs exactly
+    # as the plain held press runs it.
+    await _hold_control(hass, "richmat_classic_4", 1)
+    renewed = [data for _at, data in writes]
+    assert renewed and not ctrl._selection.armed
+    assert all(r.kind is not CommandKind.HOLD for r in coordinator._command_scheduler.recent_records)
+    writes.clear()
+    ctrl._select("program", "armed")
+    await _hold_control(hass, "richmat_classic_4", None, duration=30)
+    assert [data for _at, data in writes] == renewed
 
 
 @pytest.mark.parametrize("bed", ["YGRM"], indirect=True)

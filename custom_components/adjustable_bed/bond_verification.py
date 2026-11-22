@@ -208,7 +208,7 @@ async def async_verify_native_bond(
 
     try:
         inventory = await async_read_local_bonds(target)
-    except Exception as err:  # noqa: BLE001 - unavailable inventory is not proof
+    except Exception as err:
         return result(BondVerificationStatus.INCONCLUSIVE, str(err))
 
     selection = select_local_bond(
@@ -293,7 +293,7 @@ async def async_verify_authenticated_access(
                 client.read_gatt_char(DEVICE_INFO_CHARS["model_number"]),
                 DEVICE_INFO_READ_TIMEOUT,
             )
-    except Exception as err:  # noqa: BLE001 - the failure mode is the result
+    except Exception as err:
         if is_ble_authentication_error(err):
             return BondEvidence(
                 status=BondVerificationStatus.AUTH_FAILED,

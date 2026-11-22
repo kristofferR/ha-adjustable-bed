@@ -276,10 +276,10 @@ class StarElevateController(ProfileExecution[Okin5AProfile], BedController, Star
         )
 
     async def preset_memory(self, memory_num: int) -> None:
-        _LOGGER.warning("ELEVATE has no memory preset %d", memory_num)
+        raise self.not_supported("memory presets")
 
     async def program_memory(self, memory_num: int) -> None:
-        _LOGGER.warning("ELEVATE has no programmable memory slot %d", memory_num)
+        raise self.not_supported("saving memory presets")
 
 
 async def _move_elevate_both_up(controller: BedController) -> None:

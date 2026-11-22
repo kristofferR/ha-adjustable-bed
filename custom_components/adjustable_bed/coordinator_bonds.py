@@ -324,7 +324,7 @@ class CoordinatorBondsMixin:
             and self._last_bond_evidence.status is BondVerificationStatus.AUTH_FAILED
         )
 
-    async def async_clear_obsolete_pairing_state(self: AdjustableBedCoordinator) -> None:
+    async def async_clear_obsolete_pairing_state(self: AdjustableBedCoordinator, *, control_access_verified: bool = False) -> None:
         """Remove stale pairing state when this protocol no longer requires it."""
         if (
             self._force_pairing_requested
@@ -332,8 +332,27 @@ class CoordinatorBondsMixin:
             and self._protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
         ) or requires_pairing(self._bed_type, self._protocol_variant):
             return
+        controller = self.capability_controller
+        if not control_access_verified and (
+            self._has_unresolved_auth_failure()
+            or controller is not None and not controller.startup_verifies_control_access
+        ):
+            return
         self._discard_bond_tracking()
         await delete_pairing_required_issue(self.hass, self._address)
+
+    async def async_note_control_access_succeeded(self: AdjustableBedCoordinator) -> None:
+        """Resolve a GATT write rejection after control access actually succeeds.
+
+        This proves access on the live link, not the existence of a BLE bond.
+        """
+        if self._has_unresolved_auth_failure():
+            self._last_bond_evidence = None
+        if self._ble_bond_established:
+            # A repair paired this bed. The bond exists, so its record stays removable.
+            await delete_pairing_required_issue(self.hass, self._address)
+            return
+        await self.async_clear_obsolete_pairing_state(control_access_verified=True)
 
     def _log_bond_marker_unreliable(self: AdjustableBedCoordinator) -> None:
         """Log the latch transition. The write itself is batched by the caller."""
@@ -523,7 +542,7 @@ class CoordinatorBondsMixin:
         details["in_place_pairing"] = "attempted"
         try:
             paired = await self._async_pair_on_live_link(details)
-        except Exception as err:  # noqa: BLE001 - recovery continues in the caller
+        except Exception as err:
             details["in_place_pairing"] = "failed"
             details["in_place_pairing_error"] = str(err)
             _LOGGER.warning(

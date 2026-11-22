@@ -15,8 +15,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
 from ...const import KEESON_BASE_WRITE_CHAR_UUID, SLEEPYS_BOX24_WRITE_CHAR_UUID
 from ...profiles import keeson as keeson_profiles
 from ..base import BedController, ProfileExecution
@@ -128,18 +126,14 @@ class SleepysBox15Controller(ProfileExecution[keeson_profiles.KeesonProfile], Be
     async def _move_with_stop(self, motor_cmd: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         command = self._build_motor_command(motor_cmd)
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_motor_command(SleepysBox15Commands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             pulse_count = self._coordinator.motor_pulse_count
             pulse_delay = self._coordinator.motor_pulse_delay_ms
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
-        finally:
-            try:
-                await self.write_command(
-                    self._build_motor_command(SleepysBox15Commands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -226,16 +220,12 @@ class SleepysBox15Controller(ProfileExecution[keeson_profiles.KeesonProfile], Be
             SleepysBox15Commands.FLAT_BYTE4,
             SleepysBox15Commands.FLAT_BYTE6,
         )
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_motor_command(SleepysBox15Commands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             await self.write_command(command)
-        finally:
-            try:
-                await self.write_command(
-                    self._build_motor_command(SleepysBox15Commands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -243,16 +233,12 @@ class SleepysBox15Controller(ProfileExecution[keeson_profiles.KeesonProfile], Be
             SleepysBox15Commands.ZERO_G_BYTE4,
             SleepysBox15Commands.ZERO_G_BYTE6,
         )
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_motor_command(SleepysBox15Commands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             await self.write_command(command)
-        finally:
-            try:
-                await self.write_command(
-                    self._build_motor_command(SleepysBox15Commands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset (not supported)."""
@@ -329,18 +315,14 @@ class SleepysBox24Controller(BedController):
     async def _move_with_stop(self, motor_cmd: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         command = self._build_command(motor_cmd)
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_command(SleepysBox24Commands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             pulse_count = self._coordinator.motor_pulse_count
             pulse_delay = self._coordinator.motor_pulse_delay_ms
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(SleepysBox24Commands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -407,29 +389,21 @@ class SleepysBox24Controller(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_command(SleepysBox24Commands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             await self.write_command(self._build_command(SleepysBox24Commands.FLAT))
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(SleepysBox24Commands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_command(SleepysBox24Commands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             await self.write_command(self._build_command(SleepysBox24Commands.ZERO_G))
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(SleepysBox24Commands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset (not supported)."""

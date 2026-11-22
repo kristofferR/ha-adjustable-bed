@@ -375,7 +375,7 @@ async def test_auxiliary_screens_actual_p1_sequences_no_dead_thirty_minutes(cloc
     assert frames(c)[-1] == "0203031101000000"
     await ctrl.execute_request(bed.Request("yb_massage", 2, duration_ms=900))
     assert frames(c)[-1] == "0301020284030000"
-    with pytest.raises(ValueError, match="300 or900"):
+    with pytest.raises(ValueError, match="300 or 900"):
         ctrl.validate_request(bed.Request("yb_massage", 2, duration_ms=1800))
     await ctrl.execute_request(bed.Request("newten_motion", duration_ms=20, position=4))
     assert frames(c)[-2:] == ["0401090100000000", "0501080100000000"]
@@ -407,7 +407,7 @@ async def test_real_service_all_target_validation_and_capture_before_import(hass
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=(targets, []),
     ):
-        with pytest.raises(Exception, match="sonic"):
+        with pytest.raises(Exception, match="sound level"):
             await hass.services.async_call(
                 DOMAIN,
                 "cheerssleep",
@@ -794,7 +794,7 @@ async def test_conditional_seven_local_sleeper_and_child_conflict(clock):
         bed.Request("seven_motion", duration_ms=10, axis="back", sleeper="right")
     )
     assert frames(c) == ["0201046400000000", "0301036400000000"]
-    with ctrl.side_scope("left"), pytest.raises(ValueError, match="conflicts"):
+    with ctrl.side_scope("left"), pytest.raises(ValueError, match="other side"):
         ctrl.validate_request(bed.Request("seven_motion", sleeper="right"))
 
 
@@ -1348,3 +1348,20 @@ async def test_discovered_bed_starts_with_its_advertised_model(hass):
     result = await flow.async_step_profile_questions({})
     await finish_new_bed(flow, result)
     assert flow._finish_with_verify.await_args.args[0][CONF_PRODUCT_TYPE] == "134"
+
+
+def test_identical_models_show_once_and_a_saved_twin_stays():
+    """Entries that differ only in their key show once; other shared names keep theirs."""
+    from custom_components.adjustable_bed.const import CONF_PRODUCT_TYPE
+    from custom_components.adjustable_bed.setup_questions import (
+        _cheerssleep_errors,
+        _cheerssleep_models,
+    )
+
+    models = _cheerssleep_models({})
+    assert models["14"] == "BS200C/BS200P" and "16" not in models
+    # A shared name on another command format stays a choice of its own.
+    assert {"45", "134"} <= set(models)
+    saved = {CONF_PRODUCT_TYPE: "16"}
+    assert _cheerssleep_models(saved)["16"] == "BS200C/BS200P"
+    assert _cheerssleep_errors(saved) == {}

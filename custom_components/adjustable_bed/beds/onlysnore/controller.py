@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmError
@@ -296,7 +297,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a supported BED hold up to 30 seconds")
+            raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
 
     def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:
         self.validate_hold_control(f"{motor}_{direction}", duration_ms)
@@ -557,7 +558,13 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 card=CARD_MASSAGE,
             ),
             ControllerSwitchSpec(
-                "onlysnore_privacy", "onlysnore_privacy", setting("privacy"), keys.PRIVACY, "on"
+                "onlysnore_privacy",
+                "onlysnore_privacy",
+                setting("privacy"),
+                keys.PRIVACY,
+                "on",
+                "mdi:shield-lock-outline",
+                entity_category=EntityCategory.CONFIG,
             ),
             ControllerSwitchSpec(
                 "onlysnore_detection",
@@ -822,6 +829,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                     keys.ALARM_SOFT[i],
                 ),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             )
             for i in range(self._alarm_count)
         )

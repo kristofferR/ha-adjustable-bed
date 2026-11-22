@@ -216,7 +216,7 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
         if side is None:
             return (0,)
         if not self.supports_single_address_pairing:
-            raise ValueError("This profile has no one-address side selector")
+            raise ValueError("This bed has no sides. Leave out the side")
         return (0, 1) if side == "both" else (1,) if side == "right" else (0,)
 
     async def _send(self, packet: bytes, *, cleanup: bool = False) -> None:
@@ -455,25 +455,25 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
         light_page = self.product[6] and "light_available" in self.events
         if op in ("light_rgb", "light_seconds", "light_off"):
             if not light_page or self.product[7]:
-                raise ValueError("Ordinary light page unavailable")
+                raise ValueError("This light operation is not available on this bed. Use the color light operations if it has a color light")
         elif op.startswith("rgb_"):
             if not light_page or not self.product[7]:
-                raise ValueError("RGB page unavailable")
+                raise ValueError("This bed has no color light")
             if op == "rgb_timer" and request.value not in RGB_TIMERS:
-                raise ValueError("Unsupported RGB timer duration")
+                raise ValueError("Choose a light timer this bed offers")
             if op == "rgb_mode" and request.value not in (2, 3, 5):
-                raise ValueError("Unsupported colour mode")
+                raise ValueError("Choose a color mode this bed offers")
             if op == "rgb_groove" and request.value not in (1, 2, 3, 4):
-                raise ValueError("Unsupported groove mode")
+                raise ValueError("Choose a light effect this bed offers")
         elif op in ("alarm", "alarm_cancel"):
             if not self.product[4] or "clock_available" not in self.events:
-                raise ValueError("Alarm page unavailable")
+                raise ValueError("This bed has no alarm")
         elif op in ("repeat_alarm", "repeat_delete", "repeat_query", "time_sync"):
             if not self.product[10] or "clock_available" not in self.events:
-                raise ValueError("Repeating alarm page unavailable")
+                raise ValueError("This bed has no repeating alarm")
         elif op == "sleep_name":
             if not self.product[9]:
-                raise ValueError("Sensor menu unavailable")
+                raise ValueError("This bed has no sleep sensor settings")
         elif op == "snore_detector":
             if request.enabled and not request.source:
                 raise ValueError("Choose an external detector status entity")
@@ -481,7 +481,7 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
             raise ValueError("Unknown Casper Base operation")
         if op in ("alarm", "repeat_alarm"):
             if not any(self.action_catalog[i][0] == request.mode for i in self.product[4]):
-                raise ValueError("Alarm position not listed for this product")
+                raise ValueError("Choose an alarm position this bed offers")
 
     def alarm_opcode(self, mode: str) -> int:
         return self.actions[mode][0]

@@ -21,7 +21,6 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ...card import CARD_LIGHTING
 from ...codec import keeson as codec
 from ...const import (
     BED_MOTOR_PULSE_DEFAULTS,
@@ -72,17 +71,17 @@ from ...profiles.keeson import (
 from ...profiles.keeson import (
     is_ksbt03c_name as is_ksbt03c_name,
 )
-from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
+from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, massage_intensity
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     POSITION_UNIT_PERCENT,
     ControllerButtonSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
+    massage_timer_sensor_spec,
 )
 
 if TYPE_CHECKING:
@@ -90,8 +89,15 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+_PRESET_NAMES: Final[dict[profiles.Preset, str]] = {
+    "flat": "Flat",
+    "zero_g": "Zero G",
+    "lounge": "Lounge",
+    "tv": "TV",
+    "anti_snore": "Anti-snore",
+}
+
 _ADJUSTABLE_LITE_STATUS_MIN_LENGTH = 13
-STATE_ADJUSTABLE_LITE_LIGHT: Final = StateKey[bool | None]("adjustable_lite_light")
 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER: Final = StateKey[int | None]("adjustable_lite_massage_timer")
 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW: Final = StateKey[int | None](
     "adjustable_lite_massage_timer_raw"
@@ -117,7 +123,7 @@ def parse_adjustable_lite_status(data: bytes, *, massage_timer: bool) -> list[St
     """
     if len(data) < _ADJUSTABLE_LITE_STATUS_MIN_LENGTH:
         return None
-    state = [STATE_ADJUSTABLE_LITE_LIGHT(data[12] == 1)]
+    state = [UNDER_BED_LIGHTS_ON(data[12] == 1)]
     if massage_timer:
         raw = (data[3] << 8) | data[4]
         state += [
@@ -159,7 +165,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         self._variant = variant
         self.profile: KeesonProfile = profiles.resolve(
             variant,
-            device_name or getattr(coordinator, "name", None),
+            device_name or coordinator.name,
             ksbt_service=variant == KEESON_VARIANT_PURPLE and self._has_ksbt_service(),
             betterliving=betterliving_presets,
             cb1322=cb1322_presets,
@@ -275,6 +281,11 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
     @property
     def supports_light_toggle_control(self) -> bool:
         return self.profile.lights is not None
+
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        """Adjustable Lite's status poll reports the bulb."""
+        return self.profile.status_poll_ms is not None and self.profile.lights is not None
 
     @property
     def has_tilt_support(self) -> bool:
@@ -494,9 +505,9 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
     def _json_device_identifier(self) -> str:
         """Return the device identifier used by the JSON/A00A protocol."""
         for candidate in (
-            getattr(self._coordinator, "name", None),
+            self._coordinator.name,
             getattr(self.client, "address", None),
-            getattr(self._coordinator, "address", None),
+            self._coordinator.address,
         ):
             if candidate:
                 return str(candidate)
@@ -571,28 +582,10 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         """Forget reported status when the BLE session ends."""
         if self.profile.status_poll_ms:
             self.forward_controller_state_updates(
-                STATE_ADJUSTABLE_LITE_LIGHT(None),
+                UNDER_BED_LIGHTS_ON(None),
                 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER(None),
                 STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW(None),
             )
-
-    @property
-    def controller_state_binary_sensor_specs(
-        self,
-    ) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        """The app's bulb icon, driven by notification byte 12."""
-        if not self.profile.status_poll_ms:
-            return ()
-        return (
-            ControllerStateBinarySensorSpec(
-                key="adjustable_lite_light",
-                translation_key="adjustable_lite_light",
-                state_key=STATE_ADJUSTABLE_LITE_LIGHT,
-                icon="mdi:lightbulb",
-                entity_registry_enabled_default=True,
-                card=CARD_LIGHTING,
-            ),
-        )
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -600,14 +593,11 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         if not self.profile.status_timer:
             return ()
         return (
-            ControllerStateSensorSpec(
-                key="adjustable_lite_massage_timer",
-                translation_key="adjustable_lite_massage_timer",
-                state_key=STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
-                icon="mdi:timer-outline",
-                native_unit_of_measurement="min",
+            massage_timer_sensor_spec(
+                "adjustable_lite_massage_timer",
+                "adjustable_lite_massage_timer",
+                STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
                 attribute_keys=(STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,),
-                entity_registry_enabled_default=True,
             ),
         )
 
@@ -956,8 +946,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
     async def _preset(self, preset: profiles.Preset) -> None:
         word = self.profile.presets.get(preset)
         if word is None:
-            _LOGGER.warning("%s preset is not available on %s beds", preset, self._variant)
-            return
+            raise self.not_supported(f"the {_PRESET_NAMES[preset]} preset")
         await self._write_single_shot(self._build_command(word))
 
     async def preset_flat(self) -> None:
@@ -982,14 +971,9 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
 
     async def preset_memory(self, memory_num: int) -> None:
         """Recall a memory slot; words differ per profile (see ``profiles/keeson.py``)."""
-        if not self.profile.memory:
-            raise NotImplementedError("This Keeson app has no memory presets")
         word = self.profile.memory.get(memory_num)
         if word is None:
-            _LOGGER.warning(
-                "Memory %d not supported (valid: %s)", memory_num, sorted(self.profile.memory)
-            )
-            return
+            raise self.not_supported(f"memory preset {memory_num}")
         await self._write_single_shot(self._build_command(word))
 
     async def program_memory(self, memory_num: int) -> None:
@@ -997,8 +981,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         save = self.profile.memory_save
         word = save.words.get(memory_num) if save is not None else None
         if save is None or word is None:
-            _LOGGER.warning("Programming memory %d is not supported on this bed", memory_num)
-            return
+            raise self.not_supported(f"saving memory preset {memory_num}")
         command = self._build_command(word)
         if not save.wait_first:
             await self.write_command(
@@ -1026,6 +1009,8 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         self._require_lights()
         if self.profile.lights == "discrete":
             await self._write_light(True)
+        elif self.supports_light_state_feedback:
+            await super().lights_on()
         else:
             await self.lights_toggle()
 
@@ -1033,6 +1018,8 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         self._require_lights()
         if self.profile.lights == "discrete":
             await self._write_light(False)
+        elif self.supports_light_state_feedback:
+            await super().lights_off()
         else:
             await self.lights_toggle()
 
@@ -1083,7 +1070,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
         except KeyError as err:
             raise ValueError(f"Unsupported Restonic BT control: {control}") from err
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= 60000:
-            raise ValueError("Hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
         cancel_event = self._coordinator.cancel_command
         if cancel_event.is_set():
             return

@@ -418,7 +418,7 @@ class TestCoordinatorPositionSeek:
         controller.read_positions = AsyncMock(
             side_effect=lambda _count: coordinator._handle_position_update("legs", 0.0)
         )
-        with pytest.raises(TimeoutError, match="Position seek timed out"):
+        with pytest.raises(TimeoutError, match="did not finish the command in time"):
             await coordinator.async_seek_position(
                 "legs",
                 20.0,

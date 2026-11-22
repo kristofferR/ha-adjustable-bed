@@ -12,10 +12,11 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
-from ...card import CARD_HIDDEN, CARD_LIGHT_STATE, CARD_LIGHTING
+from ...card import CARD_HIDDEN, CARD_LIGHTING
 from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles import nerum as app
+from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..cancellation import settled
@@ -26,6 +27,7 @@ from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..lifecycle import ControllerSession
 from . import state
@@ -199,7 +201,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self._held() or not 1 <= duration_ms <= 60000:
-            raise ValueError("Choose an available Nerum control and a hold of 1 to 60000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -351,17 +353,19 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        specs = [
-            ControllerButtonSpec(
-                "nerum_light",
-                "Toggle light",
-                lambda c: require(c)._press("light"),
-                hold=ControllerHoldSpec("light"),
-                translation_key="nerum_light",
-                # A held button: the card's lighting buttons keep its hold.
-                card=CARD_LIGHTING,
+        specs = []
+        if self.profile.key != "p1":
+            specs.append(
+                ControllerButtonSpec(
+                    "nerum_light",
+                    "Toggle light",
+                    lambda c: require(c)._press("light"),
+                    hold=ControllerHoldSpec("light"),
+                    translation_key="nerum_light",
+                    # A held button: the card's lighting buttons keep its hold.
+                    card=CARD_LIGHTING,
+                )
             )
-        ]
         if self.profile.key != "p1":
             specs.append(
                 ControllerButtonSpec(
@@ -381,12 +385,12 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
 
     async def sync_clock(self) -> None:
         if not self.supports_clock_sync:
-            raise ValueError("Nerum P1 has no clock output")
+            raise ValueError("This bed has no clock")
         await self.write_command(app.clock(self.profile.key, dt_util.now()))
 
     def validate_alarm_bank(self, bank: tuple[app.Alarm, app.Alarm, app.Alarm]) -> None:
         if self.profile.key == "p1" or len(bank) != 3:
-            raise ValueError("Nerum P2/P3 requires exactly three alarm records")
+            raise ValueError("Enter all three alarms")
         # A reported wake type round-trips: P2 stores its byte, P3 its wake code.
         kinds = range(256) if self.profile.key == "p2" else {0, *app.WAKE_CODES}
         if any(
@@ -396,7 +400,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
             or a.kind not in kinds
             for a in bank
         ):
-            raise ValueError("Invalid Nerum alarm fields")
+            raise ValueError("Check the alarm times, weekdays and wake actions, then try again")
 
     async def set_alarms(self, bank: tuple[app.Alarm, app.Alarm, app.Alarm]) -> None:
         self.validate_alarm_bank(bank)
@@ -527,7 +531,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
             if reply.massage is not None:
                 self.forward_controller_state_updates(state.MASSAGE(reply.massage))
             if reply.light is not None:
-                self.forward_controller_state_updates(state.LIGHT(reply.light))
+                self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(reply.light))
         elif reply is not None and not isinstance(reply, state.Operation):
             # P1 operation replies only echo which app control ran; not state.
             for slot, alarm in reply:
@@ -542,12 +546,15 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = (
             [
-                ControllerStateSensorSpec(
+                massage_timer_sensor_spec(str(key), str(key), key)
+                if key is state.MINUTES
+                else ControllerStateSensorSpec(
                     str(key),
                     str(key),
                     key,
-                    "mdi:information-outline",
-                    native_unit_of_measurement="min" if key is state.MINUTES else None,
+                    "mdi:vibrate",
+                    entity_registry_enabled_default=True,
+                    entity_category=None,
                 )
                 for key in (state.HEAD, state.FOOT, state.MINUTES, state.WAVE)
             ]
@@ -563,7 +570,8 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                     "mdi:alarm",
                     attribute_keys=(detail,),
                     # Filled by the alarm refresh or a P3 alarm write.
-                    entity_registry_enabled_default=False,
+                    entity_registry_enabled_default=True,
+                    entity_category=None,
                 )
                 for key, detail in zip(state.ALARM_KEYS, state.ALARM_DETAIL_KEYS, strict=True)
             )
@@ -577,13 +585,11 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                 str(key),
                 key,
                 "mdi:information-outline",
-                # The light state sits beside its toggle in the card, which only
-                # sees enabled entities.
-                card=CARD_LIGHT_STATE if key is state.LIGHT else CARD_HIDDEN,
-                entity_registry_enabled_default=key is state.LIGHT,
+                card=CARD_HIDDEN,
+                entity_registry_enabled_default=False,
             )
-            for key in (state.MASSAGE, state.LIGHT)
-            if self.profile.key == "p1" or self.profile.key == "p2" and key is state.MASSAGE
+            for key in (state.MASSAGE,)
+            if self.profile.key in ("p1", "p2")
         )
 
     async def stop_notify(self) -> None:
@@ -602,6 +608,20 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
         self._notifying = False
         self._replies = state.Replies()
         self._reported = [None, None, None]
+        if self.supports_light_state_feedback:
+            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
+
+    # P1 reports the light; it has only the app's toggle key.
+    @property
+    def supports_light_toggle_control(self) -> bool:
+        return self.profile.key == "p1"
+
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        return self.profile.key == "p1"
+
+    async def lights_toggle(self) -> None:
+        await self._press("light")
 
     async def read_positions(self, motor_count: int = 2) -> None:
         return

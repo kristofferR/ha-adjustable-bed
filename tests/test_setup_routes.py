@@ -171,10 +171,10 @@ async def test_a_discovered_bed_keeps_its_route_in_a_collapsed_section(
     assert result["data"][const.CONF_PROTOCOL_VARIANT] == const.LINAK_VARIANT_PERFORMANCE
 
 
-async def test_a_discovered_alias_shows_a_friendly_row_and_keeps_its_id(
+async def test_a_discovered_compatibility_id_saves_its_current_route(
     hass, mock_bluetooth_service_info_okimat, enable_custom_integrations
 ):
-    """A detected compatibility ID shows its friendly label only, and saves the ID."""
+    """Detection's compatibility ID sets up a new bed under the route it runs."""
     info = mock_bluetooth_service_info_okimat
     info.name, info.service_uuids = "DewertOkin", [const.DEWERTOKIN_SERVICE_UUID]
     result = await hass.config_entries.flow.async_init(
@@ -182,12 +182,41 @@ async def test_a_discovered_alias_shows_a_friendly_row_and_keeps_its_id(
     )
     assert result["step_id"] == "bluetooth_confirm"
     options = select_options(result, const.CONF_BED_TYPE)
-    assert not set(options.values()) & set(const.LEGACY_BED_TYPE_MAPPING)
-    assert suggested(result, const.CONF_BED_TYPE) == const.BED_TYPE_DEWERTOKIN
-    assert options[const.BED_TYPE_DEWERTOKIN] == bed_type_label(const.BED_TYPE_DEWERTOKIN)
+    assert not set(options) & set(const.LEGACY_BED_TYPE_MAPPING)
+    assert suggested(result, const.CONF_BED_TYPE) == const.BED_TYPE_OKIN_HANDLE
+    assert options[const.BED_TYPE_OKIN_HANDLE] == bed_type_label(const.BED_TYPE_OKIN_HANDLE)
+    assert result["description_placeholders"]["family"] == "Okin receiver"
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await complete(hass, result)
-    assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_DEWERTOKIN
+    assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_HANDLE
+
+
+@pytest.mark.parametrize("alias", sorted(const.LEGACY_BED_TYPE_MAPPING))
+async def test_an_entry_saved_under_a_compatibility_id_still_loads(
+    hass, alias, mock_config_entry_data, mock_coordinator_connected, enable_custom_integrations
+):
+    """Entries from 4.x keep their compatibility ID and run their route's controller."""
+    from homeassistant.config_entries import ConfigEntryState
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.runtime_data import loaded_runtime
+
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        data={**mock_config_entry_data, const.CONF_BED_TYPE: alias},
+        unique_id=mock_config_entry_data[CONF_ADDRESS],
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.data[const.CONF_BED_TYPE] == alias
+    runtime = loaded_runtime(hass, entry.entry_id)
+    assert runtime is not None
+    route = await create_controller(
+        runtime, const.LEGACY_BED_TYPE_MAPPING[alias], None, runtime.controller.client
+    )
+    assert type(runtime.controller) is type(route)
 
 
 async def test_a_discovered_okimat_asks_the_okin_question_with_another_app(
@@ -228,7 +257,7 @@ async def test_aliases_show_friendly_labels_and_keep_their_saved_id(hass, alias,
     selector = _bed_type_selector(alias, show_saved_id=True)
     # An alias inside a family's journey names that family too.
     family = " · Okin" if alias == const.BED_TYPE_OKIMAT else ""
-    shown = f"{bed_type_label(alias)}{family} (saved as {alias})"
+    shown = f"{bed_type_label(alias)}{family}"
     assert shown in {option["label"] for option in selector.config["options"]}
     # The shown label maps back to the saved ID, never to the route it runs.
     assert selector(shown) == alias

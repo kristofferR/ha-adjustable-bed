@@ -123,7 +123,7 @@ test("actual card handlers route discovered standalone and Both holds, then capt
     const { template } = row(api, hass, device);
     handler(template, "@pointerdown")(down(1));
     expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "hold_control", data: {
-      device_id: [device], control: "back_up", duration: 60,
+      device_id: [device], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number),
     } });
     delete hass.entities["button." + device + "_stop"];
     page.visibilityState = "visible";
@@ -227,7 +227,7 @@ test("real Python standalone cover metadata reaches the registered bounded card 
   const left = row(api, hass, "left");
   handler(left.template, "@pointerdown")(down(5));
   expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "hold_control", data: {
-    device_id: ["left"], control: "back_up", duration: 60, side: "left",
+    device_id: ["left"], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "left",
   } });
   handler(left.template, "@pointerup")(up(5));
   expect(calls.at(-1)).toEqual({ domain: "cover", service: "stop_cover", data: {

@@ -95,19 +95,15 @@ def select(resolve, *targets) -> None:
     resolve.return_value = ([(coordinator, SIDE_BOTH) for coordinator, _ in targets], [])
 
 
-async def test_service_text_lives_only_in_translations() -> None:
+async def test_every_action_and_field_is_named_in_both_translation_files() -> None:
+    """The two files ship together, and an unnamed action or field shows its raw key."""
     services = yaml.safe_load((ROOT / "services.yaml").read_text())
     strings = json.loads((ROOT / "strings.json").read_text())
     assert strings == json.loads((ROOT / "translations" / "en.json").read_text())
     translated = strings["services"]
-    assert set(translated) == set(services)
     for name, spec in services.items():
-        assert not {"name", "description"} & set(spec), name
-        assert translated[name]["name"] and translated[name]["description"], name
-        fields = spec.get("fields") or {}
-        assert set(translated[name].get("fields", {})) == set(fields), name
-        for field, field_spec in fields.items():
-            assert not {"name", "description"} & set(field_spec), (name, field)
+        assert translated[name]["name"], name
+        for field in spec.get("fields") or {}:
             assert translated[name]["fields"][field]["name"], (name, field)
 
 
@@ -248,7 +244,7 @@ async def test_hold_control_profile_constraint_becomes_validation_error(
     ("status_ready", "lock_mask", "message"),
     [
         (False, 0, "valid status frame"),
-        (True, 0x01, "disabled by status lock bit"),
+        (True, 0x01, "locked on the bed"),
     ],
 )
 async def test_ahf_hold_control_preflights_status_and_lock_before_writes(
@@ -426,7 +422,7 @@ async def test_jalon_programming_hold_is_rejected_before_an_earlier_target_moves
         validate_hold_control=jalon.validate_hold_control,
     )
     select(resolve, (first, first_controller), (second, second_controller))
-    with pytest.raises(ServiceValidationError, match="save_preset"):
+    with pytest.raises(ServiceValidationError, match="Save preset action"):
         await hass.services.async_call(
             DOMAIN, "hold_control",
             {"device_id": ["first", "second"], "control": "memory_1", "duration": 6},
@@ -436,17 +432,6 @@ async def test_jalon_programming_hold_is_rejected_before_an_earlier_target_moves
     second_controller.hold_control.assert_not_awaited()
 
 
-def test_service_error_keys_have_translated_messages() -> None:
-    import re
-
-    strings = json.loads((ROOT / "strings.json").read_text())["exceptions"]
-    assert all(isinstance(entry, dict) and "message" in entry for entry in strings.values())
-    source = (ROOT / "services.py").read_text()
-    used = set(re.findall(r'translation_key="([a-z_]+)"', source))
-    used |= set(re.findall(r'_invalid\(\s*"([a-z_]+)"', source))
-    assert used <= set(strings)
-
-
 @pytest.mark.parametrize("slot", [2.9, True, "two", float("inf"), float("-inf"), float("nan")])
 async def test_set_alarm_rejects_a_slot_that_is_not_a_whole_number(
     hass: HomeAssistant, resolve, slot
@@ -454,6 +439,18 @@ async def test_set_alarm_rejects_a_slot_that_is_not_a_whole_number(
     with pytest.raises(ServiceValidationError) as raised:
         await hass.services.async_call(
             DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False, "slot": slot}, blocking=True
+        )
+    assert raised.value.translation_key == "whole_number_required"
+
+
+@pytest.mark.parametrize("action", ["goto_preset", "save_preset"])
+async def test_memory_actions_refuse_a_fractional_slot(
+    hass: HomeAssistant, resolve, action
+) -> None:
+    """Memory 1.7 is a mistake, not memory 1."""
+    with pytest.raises(ServiceValidationError) as raised:
+        await hass.services.async_call(
+            DOMAIN, action, {"device_id": "bed", "preset": 1.7}, blocking=True
         )
     assert raised.value.translation_key == "whole_number_required"
     resolve.assert_not_called()

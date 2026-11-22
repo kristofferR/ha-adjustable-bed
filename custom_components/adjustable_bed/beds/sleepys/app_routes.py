@@ -1,7 +1,7 @@
 """Canonical v2 Sleepy's Elite selector route data used by production.
 
-Converted outside this repository from the accepted route table, whose SHA-256
-is ``CANONICAL_ROUTE_SHA256``; no generator is checked in, so edits are by hand.
+Data extracted from the Sleepy's Elite app outside this repository; the route
+table's SHA-256 is ``CANONICAL_ROUTE_SHA256``. Not edited by hand.
 
 Payloads come from ``codec/okin_nframe.py``, ``codec/okin_5a.py``,
 ``codec/okin_ore.py`` (BOX1220) and ``codec/keeson.py`` (BOX15's nine-byte E6

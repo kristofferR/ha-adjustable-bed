@@ -210,9 +210,9 @@ class BedTechController(RichmatProfileController):
     def validate_app_action(self, action: str) -> None:
         """Reject missing UI actions and routed model dead ends before any write."""
         if not self.app_model:
-            raise ValueError("Choose an explicit BedTech app model first")
+            raise ValueError("Choose the bed model in Reconfigure first")
         if action == "connectionTest" and self.supports_single_address_pairing and self.command_side == SIDE_RIGHT:
-            raise ValueError("The connection test raises the first head; target Left or the parent")
+            raise ValueError("The connection test raises the left head. Target the left side or the whole bed")
         if action in {"stop", "connectionTest", "memory1", "memory1Save", "memory2", "memory2Save"}:
             return
         if action not in APP_ACTIONS:
@@ -227,18 +227,17 @@ class BedTechController(RichmatProfileController):
             # HA owns connection handoff and cancellation, rather than a JS timer.
             with self.side_scope(SIDE_LEFT):
                 deadline = asyncio.timeout(2)
-                try:
-                    async with deadline:
-                        await self.write_command(
-                            self._build_command(self._code("head_up")),
-                            repeat_count=21,
-                            repeat_delay_ms=100,
-                        )
-                except TimeoutError:
-                    if not deadline.expired():
-                        raise
-                finally:
-                    await self._release()
+                async with self.releasing(self._send_stop):
+                    try:
+                        async with deadline:
+                            await self.write_command(
+                                self._build_command(self._code("head_up")),
+                                repeat_count=21,
+                                repeat_delay_ms=100,
+                            )
+                    except TimeoutError:
+                        if not deadline.expired():
+                            raise
             return
         if action == "massageTimer20":
             await self.set_massage_timer(20)

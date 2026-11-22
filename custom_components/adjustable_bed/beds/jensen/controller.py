@@ -23,8 +23,9 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
+from ...app_state_store import jensen_memory_store_key
 from ...codec import jmc
-from ...const import CONF_JENSEN_PIN, DOMAIN
+from ...const import CONF_JENSEN_PIN
 from ...execution import ExecutionCapabilities
 from ...profiles.jmc import JENSEN, JmcProfile
 from ...state_keys import (
@@ -36,6 +37,7 @@ from ...state_keys import (
 )
 from ..base import BedController
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..entity_specs import POSITION_UNIT_PERCENT, PositionNumberSpec, build_position_number_spec
 from ..lifecycle import CapabilitySnapshotPolicy
 
@@ -70,7 +72,6 @@ _IDLE_MOTION_STATES = frozenset({0x00, 0xFF})
 # keeps the app's favourites as stored positions.
 _DEVICE_MEMORY_BOX_TYPE = 4
 _APP_MEMORY_SLOT_COUNT = 4
-_MEMORY_STORE_KEY = f"{DOMAIN}.jensen_memory"
 _MEMORY_STORE_VERSION = 1
 
 _LEVEL_MAX = 10
@@ -206,6 +207,12 @@ class JensenController(BedController):
     def requires_notification_channel(self) -> bool:
         """Jensen uses notifications for config reads and PIN-gated handshakes."""
         return True
+
+    def _format_command_trace_payload(self, command: bytes) -> dict[str, object] | None:
+        """Redact the PIN frame from logs and support bundles."""
+        if command[:1] == bytes((jmc.PIN,)):
+            return {"hex": "**REDACTED**", "length": len(command), "ascii_preview": None}
+        return super()._format_command_trace_payload(command)
 
     def _build_pin_unlock_command(self) -> bytes:
         """Build the PIN frame, falling back to the default for an invalid PIN."""
@@ -365,9 +372,10 @@ class JensenController(BedController):
 
     def _memory_store(self) -> Store[dict[str, list[int]]]:
         # One file per bed, so the two sides of a pair never overwrite each other.
-        address = self._coordinator.address.replace(":", "_").lower()
         return Store(
-            self._coordinator.hass, _MEMORY_STORE_VERSION, f"{_MEMORY_STORE_KEY}.{address}"
+            self._coordinator.hass,
+            _MEMORY_STORE_VERSION,
+            jensen_memory_store_key(self._coordinator.address),
         )
 
     async def _save_memory_slots(self) -> None:
@@ -568,7 +576,7 @@ class JensenController(BedController):
             _LOGGER.warning("Failed to send READ_POSITION command: %s", err)
             return False
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current positions via the asynchronous report that answers a query."""
         del motor_count  # Jensen always reports both motors
         async with self._position_query_lock:
@@ -638,11 +646,7 @@ class JensenController(BedController):
                 self._coordinator.address,
                 _MOVEMENT_FEEDBACK_TIMEOUT_SECONDS,
             )
-            try:
-                await asyncio.shield(self._send_stop())
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send Jensen STOP after the movement timeout")
-            return
+            await settled(self._send_stop())
 
     async def _read_settled_positions(self, cancel_event: asyncio.Event) -> None:
         """Query positions until two consecutive replies agree.
@@ -682,7 +686,7 @@ class JensenController(BedController):
             await self._monitor_movement()
         except BaseException:
             try:
-                await asyncio.shield(self._send_stop())
+                await settled(self._send_stop())
             except (BleakError, ConnectionError):
                 _LOGGER.debug("Failed to send Jensen STOP after an interrupted move")
             raise
@@ -701,17 +705,12 @@ class JensenController(BedController):
         pulse_count, pulse_delay = self.motor_pulse_settings()
         if duration_ms is not None:
             pulse_count = self.timed_move_repeat_count(duration_ms, pulse_delay)
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             await self.write_command(
                 command,
                 repeat_count=pulse_count,
                 repeat_delay_ms=pulse_delay,
             )
-        finally:
-            try:
-                await self._send_stop()
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

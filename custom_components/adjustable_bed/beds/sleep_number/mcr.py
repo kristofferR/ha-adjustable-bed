@@ -910,7 +910,7 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
         if motor not in ("head", "back", "legs", "feet"):
             raise ValueError("Unknown motor")
         if not 0 <= position <= 100:
-            raise ValueError("Position must be 0..100")
+            raise ValueError("Choose a position from 0 to 100")
         await self._set_position(side, "head" if motor in ("head", "back") else "foot", position)
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:
@@ -1399,31 +1399,31 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
                     raise ValueError(f"{name} must be boolean")
             elif name == "level":
                 if type(value) is not int or not 0 <= value <= 3:
-                    raise ValueError("level must be 0..3")
+                    raise ValueError("Choose a level from 0 to 3")
             elif name in ("head", "foot", "mode"):
                 if type(value) is not int or not 0 <= value <= 3:
-                    raise ValueError(f"{name} must be 0..3")
+                    raise ValueError(f"Choose a {name} from 0 to 3")
             elif name in ("position", "firmness"):
                 if type(value) is not int or not 0 <= value <= 100:
-                    raise ValueError(f"{name} must be 0..100")
+                    raise ValueError(f"Choose a {name} from 0 to 100")
                 if name == "firmness" and (value < 5 or value % 5):
-                    raise ValueError("firmness must be 5..100 in increments of 5")
+                    raise ValueError("Choose a firmness from 5 to 100 in steps of 5")
             elif name in ("duration", "timer"):
                 if type(value) is not int or not 0 <= value <= 32767:
-                    raise ValueError(f"{name} must be 0..32767")
+                    raise ValueError(f"Choose a {name} from 0 to 32767")
             elif name in ("outlet", "device"):
                 if (
                     type(value) is not int
                     or (name == "device" and value != 0)
                     or (name == "outlet" and value not in (1, 2, 3, 4))
                 ):
-                    raise ValueError(f"Invalid {name} selector")
+                    raise ValueError(f"Choose a {name} this bed offers")
             elif name == "intensity":
                 if type(value) is not int or value not in (1, 30, 45, 75, 100):
                     raise ValueError("Unsupported light intensity")
         side = str(parameters.get("side", "right"))
         if self.command_side is not None and "side" in parameters and side != self.command_side:
-            raise ValueError("Command side cannot override the selected bed side")
+            raise ValueError("The side in the command does not match the targeted side. Use the same side")
         if (
             command in ("firmness_favorite", "responsive_air")
             and side not in self.sleep_number_setting_sides
@@ -1451,9 +1451,9 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
         if command in ("kid_outlet", "kid_outlet_status", "head_tilt") and (
             2 not in self._chambers.values() or (command != "head_tilt" and 0x91 not in self._nodes)
         ):
-            raise ValueError("Bed does not have a head-tilt/K2 chamber")
+            raise ValueError("This bed does not offer that feature")
         if command in ("responsive_air", "responsive_air_status") and self._pump_model != "360":
-            raise ValueError("Responsive Air requires a discovered 360 pump")
+            raise ValueError("Responsive Air needs a 360 pump, and the bed has not reported one")
         if (
             command
             in (
@@ -1465,7 +1465,7 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
             )
             and 0x51 not in self._nodes
         ):
-            raise ValueError("Sleep Expert node is absent")
+            raise ValueError("This bed has no Sleep Expert")
         if command in ("outlet", "outlet_status", "light_intensity"):
             if not self._foundation_features:
                 raise ValueError("Foundation unavailable")
@@ -1481,7 +1481,7 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
             elif parameters["outlet"] == 3 and self._foundation_features.light:
                 pass
             elif not self._foundation_features.massage:
-                raise ValueError("Legacy lighting/outlets are not supported")
+                raise ValueError("This bed has no older light or outlet controls")
         if command == "underbed_intensity" and (
             not self.supports_lights or parameters["intensity"] not in (1, 30, 100)
         ):
@@ -1489,9 +1489,9 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
         if command in ("underbed_auto", "underbed_auto_status") and not self.supports_lights:
             raise ValueError("Under-bed lighting unavailable")
         if command == "massage" and not (parameters.keys() & {"head", "foot", "mode", "timer"}):
-            raise ValueError("massage requires at least one setting")
+            raise ValueError("Enter at least one massage setting")
         if command == "kid_outlet" and not (parameters.keys() & {"outlet_on", "light_on"}):
-            raise ValueError("kid_outlet requires an outlet or light setting")
+            raise ValueError("Enter an outlet or light setting")
         if (
             command in ("preset_save", "preset_reset", "preset_timer")
             and parameters["preset"] not in self.foundation_preset_options
@@ -1499,7 +1499,7 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
             raise ValueError("Preset is not supported by the foundation")
         if command == "sense_and_do" or command == "sense_and_do_status":
             if 0x31 not in self._nodes:
-                raise ValueError("Sense-and-do node is absent")
+                raise ValueError("This bed has no Sense and Do module")
 
     async def async_execute_sleep_number_command(
         self, command: str, parameters: Mapping[str, object]

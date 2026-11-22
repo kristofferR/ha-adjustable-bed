@@ -4,18 +4,16 @@
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-The **Adjustable Comfort M1X12 app** is an explicit Home Assistant bed profile
-for the CB25, F23 and kneading layouts. Nordic UART, manufacturer, firmware
-text, the advertised ELEVATE name and group membership do not select this
-profile. Existing AdjustableM5X5 and DewertOkin ELEVATE entries keep their
-current behavior until the user reconfigures them.
+Choose **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed** in the StarCode
+question for the CB25, F23 and kneading layouts; setup never picks it on its own. Existing AdjustableM5X5 and DewertOkin
+ELEVATE entries keep their current behavior until you reconfigure them.
 
 ## Known Models
 
 - StarCode `STAR25*` beds operated with Adjustable Comfort M1X12, in three
   layouts: CB25, F23 and kneading (see [Configuration and groups](#configuration-and-groups))
-- Up to two [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts per main, configured as
-  the **Adjustable Comfort M1X12 ELEVATE** variant
+- Up to two [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts per main, set up as
+  **Adjustable Comfort M1X12 app, Elevate lift**
 
 ## Apps
 
@@ -28,13 +26,13 @@ current behavior until the user reconfigures them.
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ Head (Part 1), foot (Part 2), lumbar (Part 4) and head and foot together; Parts 8 and 16 through `hold_control` only |
-| Position Feedback | ⚠️ Read-only head, foot and lumbar percentages (no degree sliders) |
+| Position Feedback | ⚠️ Head, foot and lumbar shown as percentages; no position sliders |
 | Presets | ✅ Flat, TV, zero gravity, anti-snore, lounge |
-| Memory Presets | ✅ Memory 1/2 recall and save, reset (MemoryType 8 recall through the memory action only) |
+| Memory Presets | ✅ Memory 1/2 recall and save, reset; one more saved position (MemoryType 8) through the memory action only |
 | Massage | ✅ Toggle/off, 10/20/30-minute timer, held wave and head/foot/both intensity |
-| Lights | ✅ On/off/cycle, model-gated light modes 0/1, brightness 1–6 |
-| Alarm, EQ, USB, sonic and kneading state | ⚠️ Read-only |
-| ELEVATE lifts | ✅ Up to two explicitly configured M1X12 ELEVATE entries |
+| Lights | ✅ On/off/cycle, light modes 0/1 on models that have them, brightness 1–6 |
+| Alarm, EQ, USB, sonic and kneading state | ⚠️ Shown, but cannot be changed |
+| ELEVATE lifts | ✅ Up to two, each added as an M1X12 ELEVATE entry |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then STOP) |
 
 ## Protocol Details
@@ -82,7 +80,8 @@ The main profile also requires Device Information Service
 
 ## Configuration and groups
 
-Choose **Adjustable Comfort M1X12 app** from the bed list, enter the original
+Choose **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed** in the StarCode
+question, enter the original
 Bluetooth name and select CB25, F23 or kneading.
 
 | Name prefix, checked first to last | Layout |
@@ -100,8 +99,8 @@ Bluetooth name and select CB25, F23 or kneading.
 
 An M1X12 main entry can link up to two independent ELEVATE entries.
 
-- Each lift must be explicitly reconfigured to the **Adjustable Comfort M1X12
-  ELEVATE** variant first. The group form rejects a generic ELEVATE entry with a
+- Each lift must be explicitly reconfigured to **Adjustable Comfort M1X12 app,
+  Elevate lift** first. The group form rejects a generic ELEVATE entry with a
   request to reconfigure it.
 - Linking leaves the other entry's configuration, controller, device ID and
   associations untouched.
@@ -111,9 +110,9 @@ An M1X12 main entry can link up to two independent ELEVATE entries.
 
 ### Home Assistant setup
 
-Choose the **StarCode apps** row, then **Adjustable Comfort M1X12 app**, then enter the exact Bluetooth name and choose CB25, F23 or kneading. Specific F23 and kneading prefixes take precedence over generic `STAR25`; the app identity is not inferred from Nordic UART, manufacturer, firmware or the name alone. Existing AdjustableM5X5 entries retain their current controller and configuration.
+Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps · StarCode** row, then **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed**, then enter the exact Bluetooth name and choose CB25, F23 or kneading. Specific F23 and kneading prefixes take precedence over generic `STAR25`; the app identity is not inferred from Nordic UART, manufacturer, firmware or the name alone. Existing AdjustableM5X5 entries retain their current controller and configuration.
 
-An M1X12 main can include up to **two separately configured ELEVATE accessories**. Each ELEVATE entry must be explicitly reconfigured to **Adjustable Comfort M1X12 ELEVATE** before it can be linked. Linking never changes that entry. Existing ELEVATE defaults and AdjustableM5X5 groups keep their current behavior. These entries remain independent devices and do not become Left/Right paired beds. The M1X12 profile and accessory list belong to one physical side and cannot be changed from a shared two-address pair form.
+An M1X12 main can include up to **two separately configured ELEVATE accessories**. Each ELEVATE entry must be explicitly reconfigured to **Adjustable Comfort M1X12 app, Elevate lift** before it can be linked. Linking never changes that entry. Existing ELEVATE defaults and AdjustableM5X5 groups keep their current behavior. These entries remain independent devices and do not become Left/Right paired beds. The M1X12 profile and accessory list belong to one physical side and cannot be changed from a shared two-address pair form.
 
 The optional manufacturer read selects its normal command framing only inside the chosen M1X12 profile. The required Device Information 2A28 characteristic supplies the firmware version state; firmware text does not select capabilities.
 
@@ -257,7 +256,7 @@ Part feedback uses the accepted byte mapping and clamps values to 0–100%:
 
 The internal progress-target helper encodes Part selectors 0–4 and a target
 byte. Stopped feedback advances an already populated internal queue; movement,
-STOP and session teardown clear or invalidate it. The accepted app has no UI
+STOP and session teardown clear or invalidate it. The app has no UI
 enqueue/set-position entry point, so this helper is retained as internal
 protocol behavior and is not presented as a Home Assistant control.
 

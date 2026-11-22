@@ -18,7 +18,6 @@ PAIRLINK_LOW_POWER_WRITE_UUID = "0000ffd1-0000-1000-8000-00805f9b34fb"
 PAIRLINK_LOW_POWER_NOTIFY_UUID = "0000ffd2-0000-1000-8000-00805f9b34fb"
 PAIRLINK_EXIT_COMMAND = bytes.fromhex("011555")
 
-PAIRLINK_EVENT_KEY_SUFFIX = b"EVENTKEY"
 PAIRLINK_BROADCAST_ADDRESS = bytes.fromhex("FFFFFFFF")
 PAIRLINK_STATE_QUERY_TYPES = (1, 2, 3, 5, 6, 17, 7, 8, 9, 10, 11, 12, 13, 14)
 
@@ -32,22 +31,6 @@ class GattWriter(Protocol):
         data: bytes,
         response: bool | None = None,
     ) -> None: ...
-
-
-def build_default_event_key(home_id: int, password: bytes) -> bytes:
-    """Build the fixed 16-byte event key input from interleaved fields."""
-    if isinstance(home_id, bool) or not isinstance(home_id, int):
-        raise ValueError("Pairlink home ID must be an integer")
-    if not 0 <= home_id <= 0xFFFFFFFF:
-        raise ValueError("Pairlink home ID must fit four bytes")
-    if len(password) != 4:
-        raise ValueError("Pairlink password must be exactly four bytes")
-    home_bytes = home_id.to_bytes(4, "little")
-    interleaved = b"".join(
-        bytes((home_byte, password_byte))
-        for home_byte, password_byte in zip(home_bytes, password, strict=True)
-    )
-    return interleaved + PAIRLINK_EVENT_KEY_SUFFIX
 
 
 def build_user_frame(

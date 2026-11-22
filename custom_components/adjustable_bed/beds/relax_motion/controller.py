@@ -11,8 +11,9 @@ from typing import TYPE_CHECKING
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 
-from ...card import CARD_LIGHTING, CARD_MASSAGE
+from ...card import CARD_MASSAGE
 from ...codec import relax_motion as codec
 from ...command_scheduler import (
     Delivery,
@@ -665,7 +666,8 @@ class RelaxMotionController(ProfileExecution[app.RelaxMotionProfile], BedControl
                 10,
                 lambda c, v: _bed(c).setting("light_time", v),
                 "s",
-                card=CARD_LIGHTING,
+                entity_category=EntityCategory.CONFIG,
+                entity_registry_enabled_default=False,
             ),
             ControllerNumberSpec(
                 "relax_motion_snore_interval",
@@ -676,6 +678,8 @@ class RelaxMotionController(ProfileExecution[app.RelaxMotionProfile], BedControl
                 1,
                 lambda c, v: _bed(c).setting("interval", v),
                 "min",
+                entity_category=EntityCategory.CONFIG,
+                entity_registry_enabled_default=False,
             ),
         ) + tuple(
             ControllerNumberSpec(

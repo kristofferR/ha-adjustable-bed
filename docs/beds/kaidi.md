@@ -5,26 +5,24 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 > [!NOTE]
-> For **Rize Beds 1.4.2**, choose the explicit [Rize Beds profile](#rize-beds).
-> Existing Kaidi entries retain their legacy route until reconfigured.
-> For **ISleep com.kaidi_test4**, choose the explicit [ISleep profile](#isleep).
-> Its profile corrects movement lifecycle, side routing, massage
-> strengths and memory capacity independently of the legacy Kaidi route.
-> Existing entries do not change automatically. Reconfigure or add the explicit
-> ISleep profile and confirm product, actuator descriptor and room ID.
+> For **Rize Beds 1.4.2**, choose the [Rize Beds profile](#rize-beds). For the
+> **ISleep** app (`com.kaidi_test4`), choose the [ISleep profile](#isleep): it
+> moves the bed, picks sides, sets massage strength and counts memory slots the
+> way the app does, unlike the older Kaidi route. Existing Kaidi entries keep the
+> older route until you reconfigure them; for ISleep, confirm the product,
+> actuator descriptor and room ID when you do.
 
 ## Known Models
 
 - Rize Beds, Floyd Home and ISleep bases (Kaidi OEM)
 - Product names from the OEM apps: Remedy 3, Remedy 4, Contemporary 4,
   Contemporary 5, Tranquility II and the generic single/double layouts (see
-  [APK-backed product IDs](#apk-backed-product-ids))
+  [Product IDs](#product-ids))
 - Common Bluetooth name: `Mouselet`
 - Floyd Home beds advertising Kaidi product 139 (`TRANQUILITY_II`)
 - ISleep bases advertising one of eight products: 129, 130, 131, 132, 133, 134,
-  142 and 143, selected only through the explicit **ISleep app (Kaidi,
-  com.kaidi_test4)** setup profile. A name, MAC prefix or service UUID alone does
-  not select it.
+  142 and 143. Choose **ISleep app** (`com.kaidi_test4`) in setup; setup
+  does not pick it from the name.
 
 ## Apps
 
@@ -39,11 +37,9 @@
 
 - The original Rize/Floyd/ISleep apps use only the Seat command values; the legacy Bed values in the
   shared library are not used by any of them.
-- Rize Beds 1.4.2, Floyd Home and ISleep each have their own profile. Their
-  capabilities and control behavior come from their own accepted artifacts, not
-  from other apps sharing this transport. Rize/Floyd and existing Kaidi entries
-  retain their own route; selecting a shared transport does not identify which
-  app owns a bed.
+- Rize Beds 1.4.2, Floyd Home and ISleep each have their own profile with that
+  app's controls. Existing Rize/Floyd and Kaidi entries keep their route; pick
+  the app you use when you set up a bed.
 
 
 ## Features
@@ -52,32 +48,32 @@
 |---------|---------------|------------|--------|
 | Motor Control | ✅ (head and foot on every variant; back, waist/lumbar per product) | ✅ (head/back and feet; start, timed hold, release) | ✅ (upper/back and feet; head and waist per product; press, timed hold, release) |
 | Combined up/down | ❌ | ⚠️ (`hold_control` only) | ✅ (**All up** / **All down** buttons) |
-| Position Feedback | ❌ (direct targets are commands, not measured feedback) | ❌ (no position sliders or measured angles) | ❌ (no position, light or massage telemetry) |
+| Position Feedback | ❌ | ❌ | ❌ (light and massage state are not reported either) |
 | Direct Position Targets | ✅ (back/legs 0-100%, Seat 1, Seat 2, Seat 1+2) | ❌ | ❌ |
 | Flat / Zero G / Anti-Snore | ✅ (Seat 1, Seat 2, Seat 1+2) | ✅ | ✅ |
-| Book (TV) / Leisure (Lounge) | ⚠️ (product-gated) | ❌ | ❌ |
-| Memory Presets | ✅ (4 recall/save slots) | ✅ (three recall/save slots) | ✅ (three slots, recall and explicit program) |
-| Preset Programming | ❌ | ✅ (Zero gravity and Anti-snore overwrite, confirmed) | ❌ |
-| Massage | ⚠️ (start/stop and 15/30/45-minute timers on Seat 1, Seat 2, Seat 1+2; requires **Has massage**) | ❌ | ✅ (on/off, patterns 1/2/3, strengths 0-100, timer; optimistic state) |
-| Lights | ⚠️ (on/off, product-gated) | ✅ (under-bed, discrete on/off, no measured state feedback) | ✅ (discrete on/off) |
-| Battery Mode | ❌ | ✅ (binary diagnostic) | ❌ |
-| Single-address Left/Right | ✅ (`seat_1_2` only) | ❌ (no normal single-address Left/Right controls) | ⚠️ (products 130 and 143 only, when the actuator descriptor is not 2) |
-| Room enrollment | ❌ (provision in the official app) | ✅ (`assign_room` for an unassigned bed) | ✅ (explicit action for unprovisioned mode09 beds) |
-| Foreign-room reset | ❌ | ❌ (excluded for safety) | ❌ (mode07, excluded for safety) |
+| Book (TV) / Leisure (Lounge) | ⚠️ (some products) | ❌ | ❌ |
+| Memory Presets | ✅ (4 recall/save slots) | ✅ (three recall/save slots) | ✅ (three slots, recall and save) |
+| Preset Programming | ❌ | ✅ (save over Zero gravity and Anti-snore; asks for confirmation) | ❌ |
+| Massage | ⚠️ (start/stop and 15/30/45-minute timers on Seat 1, Seat 2, Seat 1+2; requires **Has massage**) | ❌ | ✅ (on/off, patterns 1/2/3, strengths 0-100, timer; shows the last command sent) |
+| Lights | ⚠️ (on/off, some products) | ✅ (under-bed on/off; state not reported) | ✅ (on/off) |
+| Battery Mode | ❌ | ✅ (diagnostic sensor) | ❌ |
+| Left and right sides on one address | ✅ (`seat_1_2` only) | ❌ | ⚠️ (products 130 and 143 only, when the actuator descriptor is not 2) |
+| Room enrollment | ❌ (set it up in the official app) | ✅ (`assign_room` for a bed with no room yet) | ✅ (an action for mode09 beds with no room yet) |
+| Resetting a bed from another room | ❌ | ❌ (left out for safety) | ❌ (mode07, left out for safety) |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ dual-seat (`seat_1_2`) beds | ❌ | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
 
 | Rize Beds 1.4.2 feature | Supported |
 |---|---|
-| Motor Control | ✅ (product/topology axes, plus app voice controls) |
+| Motor Control | ✅ (the motors your product has, plus the app's voice controls) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (three recall/save slots) |
-| Default Programming | ✅ (confirmed, one physical target) |
+| Default Programming | ✅ (asks for confirmation; one bed at a time) |
 | Massage | ✅ (patterns, head strength, timers; leg strength and mode4 per product) |
-| Lights | ✅ (discrete on/off) |
+| Lights | ✅ (on/off) |
 | Motion Sensor Commands | ✅ (extended products) |
-| Battery Mode | ✅ (extended products, live diagnostic) |
-| Native Sides | ✅ (products130/141, descriptor other than2) |
-| Room Enrollment | ✅ (unprovisioned mode09 only) |
+| Battery Mode | ✅ (extended products, diagnostic sensor) |
+| Left and right sides | ✅ (products 130/141, when the actuator descriptor is not 2) |
+| Room Enrollment | ✅ (mode09 beds with no room yet) |
 
 - Floyd Home: a battery event can arrive unsolicited; unknown battery mode is
   not interpreted as battery power. A reported battery mode blocks raising, but
@@ -87,8 +83,8 @@
 
 Detection suggests the `kaidi` bed type for a Kaidi advertisement (see
 [Seat setup](#seat-profiles)); its `auto` variant picks the profile from the
-advertised product ID. ISleep is never detected: choose **ISleep app (Kaidi,
-com.kaidi_test4)** explicitly. Each profile keeps its own command table and
+advertised product ID. ISleep is never detected: choose **ISleep app**
+(`com.kaidi_test4`) explicitly. Each profile keeps its own command table and
 timing; none reuses a sibling's.
 
 <!-- generated:kaidi-profiles -->
@@ -272,7 +268,7 @@ can see a valid advertisement:
 - advertisement type
 - resolved Kaidi variant and the source used to resolve it
 
-##### APK-backed product IDs
+##### Product IDs
 
 The resolver recognizes these product IDs from Rize 1.3.0, ISleep 1.6.3,
 and Floyd 1.0.7; the [profile summary](#choosing-a-profile) lists the variant
@@ -295,7 +291,7 @@ mapping):
 | 142 | `BED_TYPE_SINGLE5` | ISleep | 5 | Back, waist, lights, Book, Leisure |
 | 143 | `BED_TYPE_DOUBLE_NEW` | ISleep | n/a (basic) | None |
 
-IDs `140` and `141` are not in those app versions and are not inferred from
+IDs `140` and `141` are not in those app versions and are not guessed from
 neighboring values. Other IDs use the narrow fallback below or require an
 explicit variant. Unknown products retain the basic head + foot layout.
 
@@ -422,11 +418,10 @@ The join reply, the own address and a matching ping reply; see
 #### Evidence
 
 The Seat tables are the frames the pre-v5 controller sent, from the Rize 1.3.0,
-ISleep 1.6.3 and Floyd 1.0.7 bundles; the Seat profiles send only their frozen
-payloads. The mappings and capability gates are in
+ISleep 1.6.3 and Floyd 1.0.7 bundles. The mappings and capability gates are in
 [`profiles/kaidi.py`](../../custom_components/adjustable_bed/profiles/kaidi.py),
-with [focused tests](../../tests/test_kaidi.py). This documents the shipped
-implementation, not new physical validation.
+with [focused tests](../../tests/test_kaidi.py). Not newly tested on
+hardware.
 
 ### Floyd Home
 
@@ -436,8 +431,8 @@ implementation, not new physical validation.
 
 #### Setup
 
-- Select **Floyd Home app (Kaidi product 139)** under the Kaidi transport, or
-  leave Kaidi on Auto when the bed advertises product 139. It owns its two-axis
+- Select **Floyd Home app** (Kaidi product 139), or leave the **Rize app (older
+  version)** row on **Automatic (recommended)** when the bed advertises product 139. It owns its two-axis
   layout and disables unsupported massage/position controls.
 - Existing Kaidi discovery rules continue to apply to the Seat profiles.
 - Each physical address keeps its own BLE room and node metadata; do not copy
@@ -450,7 +445,7 @@ implementation, not new physical validation.
 | Product 139 offset, type `02` | 17/25 |
 | Product 139 offset, type `09` | 15 |
 | Type `09` company | `4b44` at offset 11 (little endian) |
-| Actuator fields | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 0xF0 <= 5` (the artifact's checks) |
+| Actuator fields | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 0xF0 <= 5` (the app's checks) |
 | RSSI | at least -92 dBm |
 
 - HA rejects short data rather than reproducing the app's out-of-bounds reads.
@@ -475,7 +470,7 @@ implementation, not new physical validation.
 - HA/Bleak handles the CCCD and chooses a supported write mode from discovered
   properties. Physical GATT properties and actual write mode still need user
   captures.
-- No reachable read, MTU negotiation, Bluetooth bond, PIN exchange or
+- No read, MTU negotiation, Bluetooth bond, PIN exchange or
   encryption protocol is added.
 
 ##### Room assignment
@@ -582,7 +577,7 @@ event replies; see [Responses](#responses).
 
 | Action | Parameters and behavior |
 | --- | --- |
-| `zero_g`, `flat`, `anti_snore`, `memory_1` to `memory_3` | `internal_side: first` is normal UI behavior. `both` and `second` are conditional preset selectors proven reachable through the installed Android alarm receiver, with hardware effects unverified. They do not imply internal-side movement capability. |
+| `zero_g`, `flat`, `anti_snore`, `memory_1` to `memory_3` | `internal_side: first` is normal UI behavior. `both` and `second` are conditional preset selectors the app's alarm receiver can send; their effect on the bed is not yet tested. They do not imply internal-side movement capability. |
 | `save_zero_g`, `save_anti_snore` | Requires `confirm: true`, `internal_side: first`. Overwrites the built-in preset with the current position. |
 | `assign_room` | Requires `confirm: true`, a nonzero 32-bit `room_id`, and exactly one standalone bed with an advertisement proving unassigned membership (type `09` or explicit room zero). Assigns **local BLE room membership**, disconnects, authenticates again, pings that node and sends addition confirmation. |
 | `confirm_add` | Requires `confirm: true`, `internal_side: first`. Retry addition confirmation if assignment succeeded but its reconnect was interrupted. |
@@ -598,9 +593,8 @@ event replies; see [Responses](#responses).
 
 #### Evidence
 
-Floyd Home 1.0.7, product 139; Floyd Home sends only its frozen
-payloads. Its capabilities and commands come from this app's reachable paths;
-only the transport is shared with the Seat profiles.
+Based on Floyd Home 1.0.7, product 139. Its capabilities and commands come from
+this app; only the transport is shared with the Seat profiles.
 
 ### ISleep
 
@@ -610,7 +604,7 @@ only the transport is shared with the Seat profiles.
 
 #### Setup
 
-Choose **ISleep app (Kaidi, com.kaidi_test4)** and confirm its product ID,
+Choose **ISleep app** (`com.kaidi_test4`) and confirm its product ID,
 signed 32-bit room ID and advertised actuator descriptor. The profile form uses
 those fields as defaults when HA has a matching advertisement. The profile owns
 layout, massage, feedback and movement timing. Detection: none.
@@ -621,7 +615,7 @@ layout, massage, feedback and movement timing. Detection: none.
 | Advertisement modes | 01/02/09 |
 | Products | The eight allowed products above |
 | Mode09 company gate | `4B44` |
-| Actuator masks | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 240 <= 5` (the artifact's exact masks) |
+| Actuator masks | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 240 <= 5` (the app's masks) |
 
 - Truncated alternate mode 02 records are rejected safely.
 - Keep the existing numeric room ID to adopt a provisioned bed. Existing rooms
@@ -675,7 +669,7 @@ entities.
 
 - Requires the selected physical MAC's unprovisioned advertisement and matching
   product.
-- Sends the enrollment frame once, waits up to the artifact's eight seconds,
+- Sends the enrollment frame once, waits up to the app's eight seconds,
   and disconnects on either result.
 - Only an accepted reply saves a pending enrollment acknowledgment.
 - The next control authenticates the selected room, obtains a live roster match
@@ -692,7 +686,7 @@ entities.
   room transfer/reset, then select that room in HA.
 - HA config entries replace the phone's random room generator, SQL row
   allocation, role-conflict dialogs and room labels. HA does not reproduce the
-  proven SQL collision or optimistic success bugs.
+  app's SQL collision or optimistic success bugs.
 
 ##### Paired beds
 
@@ -804,7 +798,7 @@ single column.
 
 #### Timing
 
-- Five-second response deadlines are HA failure bounds, not artifact repeat
+- Five-second response deadlines are HA failure bounds, not the app's repeat
   timings.
 - Enrollment waits up to eight seconds.
 - The configured pulse count at 100ms per count bounds the HA gesture; it does
@@ -830,8 +824,7 @@ see [Responses](#responses).
 
 #### Evidence
 
-ISleep 1.6.3 (45); ISleep sends only its frozen
-payloads. HA never resets an existing room.
+Based on ISleep 1.6.3 (45). HA never resets an existing room.
 
 ### Rize Beds
 
@@ -1003,7 +996,7 @@ suppression or reconnect into a new session to send an old release.
 #### Notifications
 
 Join/enrollment replies, own address, roster changes and current-MAC ping
-replies establish authenticated live routing. Advertised or persisted virtual
+replies confirm authenticated live routing. Advertised or persisted virtual
 addresses never authorize a write. A zero address from a live ping is valid.
 
 Only the power flag on channel 20 is decoded as bed feedback. Its query runs
@@ -1027,9 +1020,8 @@ the app's phone alarms introduce no on-bed alarm protocol.
 
 #### Evidence
 
-Rize Beds 1.4.2 (57), with 225 frozen vectors, including the 48
-topology/confirmation branch probes. The codec reproduces these
-literals byte for byte. This profile uses its own product gates and command
+Based on Rize Beds 1.4.2 (57); its 225 test vectors include 48
+topology/confirmation branch probes. This profile uses its own product gates and command
 table. How the bed responds still needs testing by owners.
 
 
@@ -1075,7 +1067,7 @@ handler also reads that record on 129/131 while normal controls stay first.
 GATT discovery locates the write/notify characteristics across all services.
 The Android default write requests a response. Bleak owns CCCD subscription,
 including indications where exposed. No phone-server UUID or bond/PIN route
-is inferred. HA owns scanning, adapter/proxy selection, reconnect and unload.
+is used. HA owns scanning, adapter/proxy selection, reconnect and unload.
 The parser keeps signed room/node addresses and only maps the ping's zero to
 -2; direct helpers serialize -2 as zero. Ordinary touch commands require a
 positive destination or -2; direct memory/lock/query helpers accept other
@@ -1240,8 +1232,8 @@ validation belongs to reports from owners.
 
 **Status:** Not yet tested
 
-Uses the [KomfyD and ComfyDS](#komfyd-and-comfyds) controls with its own frozen
-command table and the following individually established differences.
+Uses the [KomfyD and ComfyDS](#komfyd-and-comfyds) controls with its own
+command table and the following differences.
 
 #### Setup
 
@@ -1256,7 +1248,7 @@ The app calls H/F steps and the timer “massage”. Their physical mapping and
 absolute range remain unknown, so HA keeps neutral step/timer labels. The four
 memory recalls/saves remain first-bank commands regardless of bed side. If a
 ComfyDS record has no saved side, choose a side before using H/F: that precise
-fallback is unestablished for this app. KomfyD explicitly falls back to right.
+fallback is unknown for this app. KomfyD explicitly falls back to right.
 
 #### Timing
 
@@ -1265,7 +1257,7 @@ long-save gesture, reading current command/destination/source on a later tick.
 Short release attempts a write before replacing the callback; queued bytes are
 not retracted by callback destruction. HA preserves the bed command effects
 under one admitted session-owned operation and cancels those unsafe incidentals.
-It does not claim these extra accepted details are proven KomfyD differences.
+These details are not known to differ from KomfyD.
 
 #### Notifications
 

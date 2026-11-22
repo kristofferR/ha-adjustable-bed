@@ -12,7 +12,6 @@ from uuid import uuid4
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
 
 from ...command_scheduler import CommandHandle, PreparedCommandInvalidated
 from ...const import (
@@ -26,6 +25,7 @@ from ...errors import invalid, rejected
 from ...paired_coordinator import BedChild, PairedBedCoordinator, PairedSideError
 from ...services import (
     ATTR_SIDE,
+    DEVICE_IDS,
     SIDE_FIELD,
     BedTarget,
     PreflightedSides,
@@ -639,7 +639,7 @@ def async_register_reverie_services(hass: HomeAssistant) -> None:
         handle_reverie_set_comfort,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required("comfort"): _REVERIE_COMFORT_SCHEMA,
                 **SIDE_FIELD,
             }
@@ -651,7 +651,7 @@ def async_register_reverie_services(hass: HomeAssistant) -> None:
         handle_reverie_pairlink_alarm_comfort,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required("comfort"): _REVERIE_ALARM_COMFORT_SCHEMA,
                 **SIDE_FIELD,
             }
@@ -663,7 +663,7 @@ def async_register_reverie_services(hass: HomeAssistant) -> None:
         handle_reverie_run_routine,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required("steps"): [
                     {
                         vol.Optional("duration_minutes"): _strict_int_range(

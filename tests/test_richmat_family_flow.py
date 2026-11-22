@@ -26,6 +26,7 @@ APPS = [
     "sleep_evolution",
     "wsilver_legacy",
     "sonicsleep",
+    "super_colchones",
     "mlily",
     "majestichome",
     "okimiki",
@@ -50,6 +51,7 @@ APPS = [
     "superior",
     "luunarise2",
     "powercool",
+    "sleepfunction",
     "lp2",
     "bedsmart",
     "jerome2",
@@ -57,6 +59,7 @@ APPS = [
     "acaa",
     "sta2",
     "zerogravity",
+    "baseremote",
     "remote",
 ]
 
@@ -114,12 +117,13 @@ async def test_generic_richmat_switch_requires_a_majestic_product(hass):
 
 def test_every_app_has_a_searchable_row_and_the_family_row_stays_short():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
-    for app in ("RMControl", "SleepFunction", "SVEN & SON", "Richmat remotes"):
+    for app in ("RMControl", "SVEN & SON", "Richmat remotes"):
         assert app in rows[const.BED_TYPE_RICHMAT]
     assert len(rows[const.BED_TYPE_RICHMAT]) < 100
     # Each other app is found by its own name and selects its own route.
     assert rows[const.BED_TYPE_RICHMAT_REVIVE] == "Revive Control app"
     assert rows["richmat_classic_apps:fortywinks"] == "Forty Winks app"
+    assert rows["richmat_classic_apps:sleepfunction"] == "SleepFunction Bed Control app"
     assert rows[const.BED_TYPE_MLILY] == "MLILY Control app"
     assert bed_type_label(const.BED_TYPE_RICHMAT_REVIVE) == "Revive Control app"
 

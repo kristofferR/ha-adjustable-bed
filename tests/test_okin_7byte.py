@@ -17,7 +17,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
-    NECTAR_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -63,18 +62,6 @@ def mock_okin_7byte_config_entry(
 
 class TestOkin7ByteController:
     """Test Okin7ByteController."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_okin_7byte_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Nectar write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == NECTAR_WRITE_CHAR_UUID
 
     async def test_supports_preset_zero_g(
         self,

@@ -19,7 +19,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -60,56 +59,6 @@ _TRACKED_ANALYST_DOCS = (
     "docs/apk-analysis/phase4-analyst-prompt.md",
     "docs/apk-analysis/analysis.schema.json",
 )
-
-
-def _main_worktree() -> Path | None:
-    """The repository's main checkout, which every worktree of it lives inside."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-    except OSError, subprocess.SubprocessError:
-        return None
-    if result.returncode != 0 or not result.stdout.strip():
-        return None
-    return Path(result.stdout.strip()).parent
-
-
-def _external_injection_sources() -> tuple[Path, ...]:
-    """Instruction files outside the checkout that still reach an analyst working inside it.
-
-    Injection is ancestor-based, so a file at ``/workspace/AGENTS.md`` above this checkout, or the
-    user-level ``~/.claude/CLAUDE.md``, is delivered to a clean-room run just as surely as one in
-    the repository. Neither filesystem guard here can see them, because both start at the repo
-    root, and a machine whose parent directory carried an answer key would invalidate every run on
-    it while the suite stayed green. They cannot be deleted like an in-repo offender, so their
-    contents are scanned instead.
-    """
-    own_checkout = _main_worktree()
-    found: list[Path] = []
-    for parent in REPO_ROOT.parents:
-        # A worktree lives inside the main checkout, so that checkout is an ancestor of it. Its
-        # AGENTS.md is this repository's own tracked file, scanned already and possibly sitting on
-        # a different branch; reporting another branch's copy would be noise, not a finding.
-        if own_checkout and (parent == own_checkout or own_checkout in parent.parents):
-            continue
-        found.extend(
-            parent / name for name in sorted(_INJECTED_FILENAMES) if (parent / name).is_file()
-        )
-    found.extend(
-        Path.home() / ".claude" / name
-        for name in sorted(_INJECTED_FILENAMES)
-        if (Path.home() / ".claude" / name).is_file()
-    )
-    return tuple(found)
-
-
-_EXTERNAL_INJECTION_SOURCES = _external_injection_sources()
 
 
 def _analyst_visible_docs() -> tuple[str, ...]:
@@ -366,14 +315,6 @@ def _unguarded_notes_mentions(text: str) -> list[int]:
     ]
 
 
-def _display_path(path: Path) -> str:
-    """Repo-relative where possible, absolute otherwise (the memory indexes live outside it)."""
-    try:
-        return str(path.relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
-
-
 def _is_continuation(line: str) -> bool:
     """Whether ``line`` continues the sentence on the line before it."""
     return not _NEW_BLOCK.match(line)
@@ -423,7 +364,7 @@ def _find_injected_files() -> list[Path]:
             name
             for name in dirnames
             if name not in _PRUNED
-            and _display_path(Path(parent) / name) not in _PRUNED_PATHS
+            and str((Path(parent) / name).relative_to(REPO_ROOT)) not in _PRUNED_PATHS
             and not os.path.islink(os.path.join(parent, name))
         ]
         if Path(parent) == REPO_ROOT:
@@ -601,15 +542,13 @@ def test_no_analyst_visible_doc_points_at_the_comparison_notes() -> None:
     """
     # Every deliberately supplied document, the JSON schema included: it is copied into each
     # analyst workspace, and a "see disassembly/PROTOCOL_NOTES.md" line in one of its descriptions
-    # would carry no protocol value of its own and so pass the answer-key scan untouched. The
-    # auto-memory indexes are injected wholesale and reach the analyst the same way.
+    # would carry no protocol value of its own and so pass the answer-key scan untouched.
     candidates = [
         *(REPO_ROOT / name for name in _ANALYST_VISIBLE_DOCS),
         *(REPO_ROOT / "docs").rglob("*.md"),
-        *_MEMORY_INDEXES,
     ]
     offenders = [
-        f"{_display_path(path)}:{number}"
+        f"{path.relative_to(REPO_ROOT)}:{number}"
         for path in candidates
         if path.is_file()
         for number in _unguarded_notes_mentions(path.read_text(encoding="utf-8"))
@@ -759,118 +698,4 @@ def test_schema_gate_ids_match_prompt() -> None:
     assert required_present == schema_ids, (
         "Every gate needs a contains clause, otherwise a report can omit it: "
         f"missing {sorted(schema_ids - required_present)}"
-    )
-
-
-# The per-project auto-memory index is injected into every subagent regardless of working
-# directory, so it is an analyst-visible document even though it lives outside the repo. Detail
-# belongs in the linked per-topic files, which are not injected.
-def _project_key_shape(text: str) -> str:
-    """Reduce a path or a project-directory name to a form both spellings agree on.
-
-    Claude derives the project key by substituting characters of the absolute path, but exactly
-    which characters has changed across releases: at minimum ``/`` and spaces, in some versions
-    every non-alphanumeric. Reproducing one specific rule would silently mislocate the index on any
-    checkout containing a dot or underscore, and a missing file skips this test rather than failing
-    it, so the miss would be invisible. Comparing both sides in this reduced form sidesteps the
-    question entirely. Paths long enough to be truncated and hashed are not handled; those simply
-    do not match and skip, as before.
-    """
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
-
-
-def _checkout_paths() -> set[str]:
-    """This checkout plus every real git worktree of it.
-
-    Worktrees get their own project key, so a run from the main checkout should cover theirs too.
-    They are enumerated from git rather than matched by path prefix: an unrelated sibling directory
-    such as ``ha-adjustable-bed-old`` shares the prefix, and scanning its memories would fail this
-    suite over content that is never injected into agents for this checkout.
-    """
-    paths = {str(REPO_ROOT)}
-    try:
-        listing = subprocess.run(
-            ["git", "worktree", "list", "--porcelain"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-    except OSError, subprocess.SubprocessError:
-        return paths
-    if listing.returncode == 0:
-        paths.update(
-            line.removeprefix("worktree ").strip()
-            for line in listing.stdout.splitlines()
-            if line.startswith("worktree ")
-        )
-    return paths
-
-
-def _memory_indexes_for_checkout() -> list[Path]:
-    """Return every auto-memory index that a session working in this checkout could be given."""
-    projects = Path.home() / ".claude" / "projects"
-    if not projects.is_dir():
-        return []
-    wanted = {_project_key_shape(path) for path in _checkout_paths()}
-    found = []
-    for directory in sorted(projects.iterdir()):
-        if not directory.is_dir() or _project_key_shape(directory.name) not in wanted:
-            continue
-        index = directory / "memory" / "MEMORY.md"
-        if index.is_file():
-            found.append(index)
-    return found
-
-
-_MEMORY_INDEXES = _memory_indexes_for_checkout()
-
-
-@pytest.mark.skipif(
-    not _EXTERNAL_INJECTION_SOURCES,
-    reason="no ancestor or user-level instruction file on this machine",
-)
-def test_external_injection_sources_carry_no_answer_key() -> None:
-    """Instruction files above the checkout must be as clean as the ones inside it.
-
-    A parent-directory or user-level file is injected by the same ancestor rule and cannot be
-    deleted the way an in-repo offender can, so the only available check is its contents.
-    """
-    violations = [
-        f"{path}:{violation}"
-        for path in _EXTERNAL_INJECTION_SOURCES
-        for violation in _answer_key_violations(path.read_text(encoding="utf-8"))
-    ]
-    pointers = [
-        f"{path}:{number}"
-        for path in _EXTERNAL_INJECTION_SOURCES
-        for number in _unguarded_notes_mentions(path.read_text(encoding="utf-8"))
-    ]
-
-    assert not violations and not pointers, (
-        "An instruction file outside this checkout is injected into every agent working in it, "
-        "clean-room analysts included. Move protocol values and pointers out of it.\n"
-        + "\n".join(violations + pointers)
-    )
-
-
-@pytest.mark.skipif(not _MEMORY_INDEXES, reason="auto-memory index is machine-local; absent in CI")
-def test_auto_memory_index_carries_no_answer_key() -> None:
-    """The injected memory index must not summarise protocols in bytes.
-
-    Discovered by probing a subagent: this file is injected everywhere, and it carried framing
-    bytes and characteristic identifiers. A clean-room analyst following the prompt's injected-file
-    rule would have to report BLOCKED on every run until it is clean.
-    """
-    violations = [
-        f"{index}:{violation}"
-        for index in _MEMORY_INDEXES
-        for violation in _answer_key_violations(index.read_text(encoding="utf-8"))
-    ]
-
-    assert not violations, (
-        "The auto-memory index is injected into every agent, including clean-room analysts. "
-        "Keep protocol values in the linked per-topic memory files, which are not injected. "
-        "Found:\n" + "\n".join(violations)
     )

@@ -3,13 +3,6 @@
 from __future__ import annotations
 
 
-def scan_name_matches(name: str) -> bool:
-    """Source case-sensitive substring filter; service UUID alone is insufficient."""
-    from ...discovery_hints.gmmotor import SCAN
-
-    return SCAN.matches_name(name)
-
-
 def selector_from_name(name: str, *, russian: bool = False) -> str:
     """Resolve the source aliases, with safe handling of short malformed names.
 

@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...codec import sleepiq as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written, note_write_not_counted
@@ -381,11 +382,11 @@ class SleepNumberController(BedController, SleepNumberActions):
             and requested_side is not None
             and requested_side != self.command_side
         ):
-            raise ValueError("Command side does not match the selected physical bed side")
+            raise ValueError("The side in the command does not match the targeted side. Use the same side")
         spec = COMMANDS[command]
         if self._system_config:
             if requested_side is not None and requested_side not in self._feature_sides:
-                raise ValueError("This bed does not expose the requested chamber")
+                raise ValueError("This bed has no air chamber on that side")
             pressure_keys = {"SNCG", "SNFG", "SNFS", "PSNS", "PSNI", "LRAG", "LRAS", "LBPS"}
             articulation_keys = {
                 "ACTG",
@@ -595,6 +596,7 @@ class SleepNumberController(BedController, SleepNumberActions):
                     {"sleepiq_privacy_state": "paused" if enabled else "active"},
                 )(ctrl),
                 PRIVACY,
+                entity_category=EntityCategory.CONFIG,
             )
         ]
         if self.supports_sleep_number_setting:
@@ -902,7 +904,7 @@ class SleepNumberController(BedController, SleepNumberActions):
             and self._system_config.get(f"{side or self._side}_{actuator}_actuator", "yes") == "yes"
         )
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Convert direct-position values to Sleep Number's 0-100 native range."""
         return max(_SLEEP_NUMBER_MIN_POSITION, min(_SLEEP_NUMBER_MAX_POSITION, round(angle)))
 
@@ -1052,7 +1054,7 @@ class SleepNumberController(BedController, SleepNumberActions):
         except BleakError:
             _LOGGER.debug("Failed to stop Sleep Number notifications", exc_info=True)
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read actuator positions, preserving explicit logical-side ownership."""
         await self._read_positions_for_side(self._side)
 

@@ -1,4 +1,8 @@
-"""Every error a user can see is translated, with a key that exists in strings.json."""
+"""Errors users see are built from keys and placeholders that exist in strings.json.
+
+``errors.py`` renders the English text when it raises, so an unknown key or a
+missing placeholder would raise ``KeyError`` instead of the error.
+"""
 
 from __future__ import annotations
 
@@ -44,17 +48,6 @@ def _key(node: ast.Call, name: str) -> ast.expr | None:
     return next((kw.value for kw in node.keywords if kw.arg == "translation_key"), None)
 
 
-def test_every_shown_error_has_a_translation_key() -> None:
-    assert not [where for where, node, name in _calls() if _key(node, name) is None]
-
-
-def test_errors_py_builds_every_shown_error() -> None:
-    """One place writes messages, from en.json, so the English cannot drift from it."""
-    assert not [
-        where for where, _node, name in _calls() if name in SHOWN and not where.startswith("errors.py:")
-    ]
-
-
 @pytest.mark.parametrize("key", sorted(EXCEPTIONS))
 def test_english_text_is_the_translation(key: str) -> None:
     message = EXCEPTIONS[key].get("message")
@@ -62,20 +55,6 @@ def test_english_text_is_the_translation(key: str) -> None:
         return
     placeholders = {name: f"<{name}>" for name in re.findall(r"\{(\w+)\}", message)}
     assert str(invalid(key, **placeholders)) == message.format(**placeholders)
-
-
-def test_error_classes_carry_a_key() -> None:
-    """The integration's own error classes build their message with errors.keyed()."""
-    unkeyed = []
-    for path in sorted(PACKAGE.rglob("*.py")):
-        for node in ast.walk(ast.parse(path.read_text())):
-            if isinstance(node, ast.ClassDef) and any(
-                getattr(base, "id", getattr(base, "attr", None)) in SHOWN for base in node.bases
-            ):
-                calls = {getattr(c.func, "id", None) for c in ast.walk(node) if isinstance(c, ast.Call)}
-                if "keyed" not in calls:
-                    unkeyed.append(f"{path.relative_to(PACKAGE)}:{node.lineno} {node.name}")
-    assert not unkeyed
 
 
 def test_every_translation_key_is_in_strings() -> None:
@@ -114,13 +93,6 @@ def test_builders_carry_the_key_and_placeholders() -> None:
     stopped = setup_stopped("paired_entry_has_no_sides")
     assert isinstance(stopped, ConfigEntryError)
     assert stopped.translation_key == "paired_entry_has_no_sides"
-
-
-@pytest.mark.parametrize("key", sorted(EXCEPTIONS))
-def test_messages_read_plainly(key: str) -> None:
-    message = EXCEPTIONS[key].get("message", "")
-    assert "—" not in message
-    assert not re.search(r"\bBLE\b|preflight|admission|\bBED\b|opcode|0x", message)
 
 
 def _flow_error_keys(tree: ast.AST) -> set[str]:

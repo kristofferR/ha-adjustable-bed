@@ -11,6 +11,8 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING
 
+from homeassistant.components.sensor import SensorDeviceClass
+
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import (
     CARD_HIDDEN,
@@ -295,7 +297,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
     def alarm_capability(self) -> AlarmCapability | None:
         return (
             AlarmCapability(massage_intensities=2, cancel_running=True)
-            if self.is_l2motion and self.profile.alarm
+            if self.profile.alarm
             else None
         )
 
@@ -328,13 +330,21 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         self.validate_alarm(alarm)
+        # Turning the alarm off keeps the time the bed reported, as the app does.
+        keep = not alarm.enabled and self._reported_alarm_time is not None
         await self.configure(
             Request(
                 operation="alarm",
-                time=f"{alarm.hour:02d}:{alarm.minute:02d}",
+                time=None if keep else f"{alarm.hour:02d}:{alarm.minute:02d}",
                 strength=alarm.massage_intensity if alarm.enabled else 0,
             )
         )
+
+    @property
+    def _reported_alarm_time(self) -> tuple[str, str] | None:
+        if self._alarm is None or not all(x.isascii() and x.isdecimal() for x in self._alarm[:2]):
+            return None
+        return self._alarm[0], self._alarm[1]
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -384,7 +394,14 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         if self.is_l2motion:
             return tuple(
-                ControllerStateSensorSpec(str(key), translation, key, icon)
+                ControllerStateSensorSpec(
+                    str(key),
+                    translation,
+                    key,
+                    icon,
+                    entity_registry_enabled_default=key is ALARM,
+                    entity_category=None,
+                )
                 for key, translation, icon in (
                     (ALARM, "bedgear_alarm", "mdi:alarm"),
                     (STRENGTH, "bedgear_alarm_strength", "mdi:vibrate"),
@@ -411,6 +428,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
                     "mdi:timer",
                     "min",
                     entity_registry_enabled_default=True,
+                    device_class=SensorDeviceClass.DURATION,
                 )
             )
         if self.profile.alarm:
@@ -422,13 +440,15 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
                         ALARM,
                         "mdi:alarm",
                         entity_registry_enabled_default=True,
+                        entity_category=None,
                     ),
                     ControllerStateSensorSpec(
                         "bedgear_alarm_strength",
                         "bedgear_alarm_strength",
                         STRENGTH,
                         "mdi:vibrate",
-                        entity_registry_enabled_default=True,
+                        entity_registry_enabled_default=False,
+                        entity_category=None,
                     ),
                 )
             )
@@ -664,7 +684,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Choose an available Bedgear control and 1..60000 ms duration")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     def on_gesture_release(self) -> None:
         self._gesture_up = True
@@ -1044,19 +1064,15 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             if op == "light_timer":
                 frame = codec.ascii_command(319, request.minutes)
             else:
-                hour, minute = (
-                    request.time.split(":")
-                    if request.time is not None
-                    else self._alarm[:2]
-                    if self._alarm
-                    else ("", "")
-                )
-                strength = (
-                    request.strength if request.strength is not None else self._observed_strength
-                )
-                assert strength is not None
+                assert request.strength is not None
+                reported = self._reported_alarm_time
+                if request.time is not None:
+                    hour, minute = request.time.split(":")
+                else:
+                    assert reported is not None
+                    hour, minute = reported
                 frame = codec.decimal_fields(
-                    hour + minute + "00", ("0017", "0118", "0219")[strength]
+                    hour + minute + "00", ("0017", "0118", "0219")[request.strength]
                 )
             await self._send(self._letter("z"), link, cancel)
             if await self._wait(0.05, cancel):
@@ -1085,22 +1101,15 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             "save_memory": 1 <= request.slot <= self.memory_slot_count,
         }
         if op == "save_snore" and request.recall_on_release:
-            raise ValueError("Panel E snore save has no release recall; use the held snore preset")
+            raise ValueError("This bed cannot save the snore position this way. Hold the snore preset instead")
         if op == "rgb" and request.rgb is None:
-            raise ValueError("RGB needs three color channels")
-        if op == "alarm" and request.strength is None and self._observed_strength is None:
-            raise ValueError("Set an alarm strength or receive its current strength first")
+            raise ValueError("Enter a light color as red, green and blue values from 0 to 255")
         if not allowed.get(op, False):
-            raise ValueError("Bedgear control unavailable, unconfirmed, or received state missing")
-        if (
-            op == "alarm"
-            and request.time is None
-            and (
-                self._alarm is None
-                or any(not x.isascii() or not x.isdecimal() for x in self._alarm[:2])
-            )
+            raise ValueError("This control or memory position is not available on this bed, or the bed has not reported its state yet. A clock sync change also needs its confirmation turned on")
+        if op == "alarm" and (
+            request.strength is None or request.time is None and self._reported_alarm_time is None
         ):
-            raise ValueError("Set an alarm time or receive its current time first")
+            raise ValueError("Set an alarm time and strength")
 
 
 @dataclass(frozen=True, kw_only=True)

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, cast
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
+from homeassistant.components.sensor import SensorDeviceClass
 
 from ...app_session import app_session
 from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE_TIMER, CARD_UTILITY
@@ -500,7 +501,8 @@ class AgingPlaceController(KeesonController):
         raw = bytes(data)
         payload = codec.parse_json_indication(raw)
         if payload is None:
-            self.forward_raw_notification(codec.TRANSPORTS["json"].notify_uuid, raw)
+            # A cut-off indication may be part of a Wi-Fi password: keep its size only.
+            self.forward_raw_notification(codec.TRANSPORTS["json"].notify_uuid, bytes(len(raw)))
             return
         if "ssid" in payload and "pswd" in payload:
             # Provisioning remains excluded. Its observed shared link invalidation
@@ -650,6 +652,7 @@ class AgingPlaceController(KeesonController):
                     entity_registry_enabled_default=True,
                     # Time left on a running program: a dashboard timer.
                     entity_category=None,
+                    device_class=SensorDeviceClass.DURATION,
                 )
                 for name in ("circulation", "sleep", "relax_cycle")
             ),

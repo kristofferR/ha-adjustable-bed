@@ -278,7 +278,7 @@ async def _async_preview_labels(
         if runtime.capability_controller is None:
             return None
         labels = await _async_entity_labels(hass, runtime)
-    except Exception:  # noqa: BLE001 - a preview never blocks the change
+    except Exception:
         _LOGGER.debug("Could not list the staged controls for %s", entry.title, exc_info=True)
         return None
     finally:
@@ -302,7 +302,7 @@ async def _async_current_labels(
     if isinstance(runtime, AdjustableBedCoordinator) and runtime.capability_controller is not None:
         try:
             return await _async_entity_labels(hass, runtime)
-        except Exception:  # noqa: BLE001 - fall back to the saved setup
+        except Exception:
             _LOGGER.debug("Could not list the running controls of %s", entry.title, exc_info=True)
     labels = await _async_preview_labels(hass, entry, {**entry.data, **entry.options})
     if labels is not None:

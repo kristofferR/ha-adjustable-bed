@@ -5,6 +5,7 @@ import {
   type BedSide,
   bedEntitiesForDevice,
   bedIsEmpty,
+  hasLightingControls,
   isSingleAddressPairedDevice,
   nameCombinedMotors,
   pairedChildDeviceIds,
@@ -483,8 +484,9 @@ test("Nectar Move Reading and save-response state are discoverable in their own 
 });
 
 test("read-only light state is visible independently of light controls", () => {
+  // Sleeptracker keeps its safety light reading beside its toggle button.
   const hass = hassWith([
-    entry("binary_sensor.bed_light", "under_bed_light_state"),
+    entry("binary_sensor.bed_light", "sleeptracker_light_on"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.lights.state).toBe("binary_sensor.bed_light");
@@ -507,24 +509,14 @@ test("Sleepy's brightness steps appear with its lighting controls", () => {
   expect(bed.utility).toEqual([]);
 });
 
-test("Adjustable Lite light toggle and reported bulb state share the lighting section", () => {
-  const hass = hassWith([
-    entry("button.lite_toggle_light", "toggle_light"),
-    entry("binary_sensor.lite_light", "adjustable_lite_light"),
-  ]);
+test("a lamp whose state the bed reports is one light in the lighting section", () => {
+  // Adjustable Lite, INNOVA and the other reporting beds: no toggle or reading beside it.
+  const hass = hassWith([entry("light.lite_under_bed_lights", "under_bed_lights")]);
   const bed = bedEntitiesForDevice(hass, "dev1");
-  expect(bed.lights.toggle).toBe("button.lite_toggle_light");
-  expect(bed.lights.state).toBe("binary_sensor.lite_light");
-});
-
-test("INNOVA light toggle and reported lamp state share the lighting section", () => {
-  const hass = hassWith([
-    entry("button.innova_toggle_light", "toggle_light"),
-    entry("binary_sensor.innova_light", "innova_light"),
-  ]);
-  const bed = bedEntitiesForDevice(hass, "dev1");
-  expect(bed.lights.toggle).toBe("button.innova_toggle_light");
-  expect(bed.lights.state).toBe("binary_sensor.innova_light");
+  expect(bed.lights.light).toBe("light.lite_under_bed_lights");
+  expect(bed.lights.toggle).toBeUndefined();
+  expect(bed.lights.state).toBeUndefined();
+  expect(hasLightingControls(bed.lights)).toBe(true);
 });
 
 test("INNOVA massage level and memory-page timer buttons join the massage section", () => {
@@ -1109,23 +1101,19 @@ test("AdjustableM5X4 exact bounded controls remain on their physical child", () 
 });
 
 
-test("stateless native floor power buttons stay in the physical child's lighting section", () => {
+test("each physical child's floor light stays in its own lighting section", () => {
+  // StarCode ABM5-4 native on and off frames: one on/off light per child.
   const hass = hassWith([
-    entry("button.left_on", "starcode_abm5_4_light_on", "left"),
-    entry("button.left_off", "starcode_abm5_4_light_off", "left"),
-    entry("button.left_toggle", "toggle_light", "left"),
-    entry("button.right_on", "starcode_abm5_4_light_on", "right"),
-    entry("button.right_off", "starcode_abm5_4_light_off", "right"),
+    entry("light.left_floor", "under_bed_lights", "left"),
+    entry("light.right_floor", "under_bed_lights", "right"),
   ]);
   const left = bedEntitiesForDevice(hass, "left");
-  expect(left.lights.buttons).toEqual(["button.left_on", "button.left_off"]);
-  expect(left.lights.toggle).toBe("button.left_toggle");
-  expect(left.lights.light).toBeUndefined();
-  expect(left.lights.switch).toBeUndefined();
+  expect(left.lights.light).toBe("light.left_floor");
+  expect(left.lights.buttons ?? []).toEqual([]);
+  expect(left.lights.toggle).toBeUndefined();
   expect(left.utility).toEqual([]);
   const right = bedEntitiesForDevice(hass, "right");
-  expect(right.lights.buttons).toEqual(["button.right_on", "button.right_off"]);
-  expect(right.lights.toggle).toBeUndefined();
+  expect(right.lights.light).toBe("light.right_floor");
   expect(right.utility).toEqual([]);
   expect(bedIsEmpty(left)).toBe(false);
 });

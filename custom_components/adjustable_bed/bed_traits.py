@@ -100,6 +100,7 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
     BED_TYPE_SERTA_MP_REMOTE,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -111,6 +112,7 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SUPERIOR_SLEEP,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
@@ -168,6 +170,10 @@ class BedTraits:
     # Reconnecting needs a bond the bed may refuse outside its pairing window,
     # so a new entry keeps the link between commands by default.
     costly_reconnect: bool = False
+    # The bed pairs only for a few minutes after power-on and ignores connection
+    # attempts from other adapters, so a failed connection to an advertising bed
+    # is explained as a closed pairing window.
+    pairing_window_at_power_on: bool = False
     # Startup hooks own Device Information reads, including their timing.
     owns_device_info_reads: bool = False
     # A single-address pair may need separate Left and Right operations.
@@ -220,6 +226,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "relax_motion": _NO_ANGLES_SCOPED,
     "cheerssleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "smart_sleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "sleep_assistant": _NO_ANGLES_SCOPED,
     "onlysnore": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "smart_comfort_synargy": _NO_ANGLES_SCOPED,
     "smart_comfort_synergy": _NO_ANGLES_SCOPED,
@@ -228,6 +235,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
     BED_TYPE_ADJUSTABLE_BED: _NO_ANGLES,
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
+    BED_TYPE_SUPERIOR_SLEEP: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RIZE_HOME: _NO_ANGLES_SCOPED,
     BED_TYPE_OKIN_MOTIONBED: replace(_NO_ANGLES, owns_device_info_reads=True),
     BED_TYPE_COMFORT_ENHANCEMENT3: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
@@ -297,12 +305,15 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_APP_SLEEP: _NO_ANGLES,
     BED_TYPE_HUSH_BASE: _NO_ANGLES,
     "luuna": _NO_ANGLES_SCOPED,
+    "instant_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "personal_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "mline": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "luniosmart": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sleep_evolution": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "wsilver_legacy": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "dreamsense": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "saatva": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "super_colchones": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sonicsleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "hush_remote": _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_MM: _NO_ANGLES,
@@ -328,11 +339,15 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_LIMOSS: BedTraits(position_feedback=True, connection_scoped_state=True),
     BED_TYPE_LIMOSS_REMOTE: _NO_ANGLES,
     BED_TYPE_LINAK: BedTraits(
-        position_feedback=True, angle_sensors=True, passive_position_reconciliation=True
+        position_feedback=True,
+        angle_sensors=True,
+        passive_position_reconciliation=True,
+        pairing_window_at_power_on=True,
     ),
     # Pressure is polled only on a held link, like the app's pump tab.
     BED_TYPE_LOGICDATA_AIR_PUMP: _NO_ANGLES_SCOPED,
     BED_TYPE_LOGICDATA_APP: _NO_ANGLES_SCOPED,
+    BED_TYPE_SILVERMOTION: _NO_ANGLES_SCOPED,
     BED_TYPE_MALOUF_APP: _NO_ANGLES_SCOPED,
     BED_TYPE_MOTION_BED: _NO_ANGLES_SCOPED,
     BED_TYPE_MOTOMOTION: _NO_ANGLES,
@@ -517,14 +532,14 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "hjbed", "hush_base", "hush_remote", "hush_sleep_mm", "hush_sleep_sxb", "jalon",
      "leggett_lp_legacy", "logicdata_air_pump", "luuna", "malouf_app", "mlily",
      "motion_bed", "motomotion", "motosleep", "octo", "okin_motionbed", "okin_rf_eco_bt",
-     "omazz_adjusto_iii", "personal_comfort", "paramount", "qplus_app", "remacro", "resident", "reverie",
+     "omazz_adjusto_iii", "personal_comfort", "instant_comfort", "paramount", "qplus_app", "remacro", "resident", "reverie",
      "reverie_nightstand", "richmat_americanstar", "richmat_app", "richmat_app_sleep",
      "richmat_best_mattress", "richmat_blvd_home", "richmat_classic_apps",
      "richmat_harmony", "richmat_idealbed", "richmat_revive", "richmat_sleep_receiver",
      "richmat_tx", "rize_home", "rize_remedy_ii", "row_control", "ruf_betten",
      "serenity", "serta_mp_remote", "simmons", "sleep_number", "sleepstar",
      "sleeptracker", "sleepys_box15", "sleepys_box24", "smart_comfort_synargy",
-     "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
+     "dreamsense", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
      "wsilver_products", "yamada", "ormatek",

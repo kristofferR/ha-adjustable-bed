@@ -58,7 +58,6 @@ async def handle(call: ServiceCall) -> None:
     preflighted = await _preflight_capability(
         targets,
         MlilyRemoteController,
-        "MLILY Remote",
         None,
         lambda controller: controller.validate_casper_base_request(request),
     )
@@ -99,7 +98,6 @@ async def handle(call: ServiceCall) -> None:
             preflighted,
             _family_command(
                 MlilyRemoteController,
-                "MLILY Remote",
                 lambda controller: controller.async_execute_casper_base_request(request),
             ),
             admissions=admissions,

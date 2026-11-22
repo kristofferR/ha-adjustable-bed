@@ -36,6 +36,7 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from ..lifecycle import ControllerSession
 from ..okin_64bit import CLOCK_QUERY as QUERY_CLOCK
@@ -161,14 +162,11 @@ class ResidentController(Okin64BitController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
                 "resident_massage_timer",
                 "resident_massage_timer",
                 MASSAGE_TIMER,
-                "mdi:timer",
-                native_unit_of_measurement="min",
                 card=CARD_MASSAGE,
-                entity_registry_enabled_default=True,
             ),
         )
 
@@ -370,7 +368,7 @@ class ResidentController(Okin64BitController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - propagated below.
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():
@@ -422,7 +420,7 @@ class ResidentController(Okin64BitController):
             or not isinstance(duration_ms, int)
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Hold duration must be an integer from 1 to 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def move_simultaneously(
         self,

@@ -355,7 +355,7 @@ async def test_paired_products_preflight_every_target_and_side(hass, monkeypatch
     monkeypatch.setattr(services, "_resolve_sided_targets", lambda *_: ([(pair, side)], []))
     await services.async_register_services(hass)
     if side == const.SIDE_BOTH:
-        with pytest.raises(ServiceValidationError, match="unavailable"):
+        with pytest.raises(ServiceValidationError, match="does not offer that action"):
             await hass.services.async_call(
                 const.DOMAIN,
                 "somos_action",

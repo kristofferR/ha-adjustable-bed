@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
 from ...errors import rejected
@@ -41,7 +40,7 @@ def build_request(service: str, data: Mapping[str, object]) -> Request:
             or type(minutes) is not int
             or minutes not in range(5, 106, 5)
         ):
-            raise ValueError("Choose a supported frequency and duration")
+            raise ValueError("Choose a frequency this bed offers and a duration from 5 to 105 minutes in steps of 5")
         return Request("wave", frequency=frequency, minutes=minutes)
     if service == "sleeptracker_massage":
         action = data["action"]
@@ -76,7 +75,6 @@ async def handle_sleeptracker(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         SleeptrackerController,
-        "Sleeptracker processor controls",
         lambda controller: controller.async_execute_sleeptracker_request(request),
         validate=lambda controller: controller.validate_sleeptracker_request(request),
         cancel_running=True,
@@ -98,9 +96,9 @@ def _frequency(value: object) -> int:
 
 
 def async_register_sleeptracker_services(hass: HomeAssistant) -> None:
-    from ...services import CONF_DEVICE_ID, SIDE_FIELD
+    from ...services import CONF_DEVICE_ID, DEVICE_IDS, SIDE_FIELD
 
-    common = {vol.Required(CONF_DEVICE_ID): cv.ensure_list, **SIDE_FIELD}
+    common = {vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD}
     schemas = {
         "sleeptracker_preset": {
             vol.Required("preset"): vol.In(PRESETS),

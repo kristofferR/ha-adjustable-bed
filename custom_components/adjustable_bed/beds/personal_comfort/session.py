@@ -68,6 +68,7 @@ class PersonalComfortSession(BedController):
         repeat_ms: int = 100,
         wall_clock_pacing: bool = False,
         deadline: float | None = None,
+        command_factory: Callable[[], bytes] | None = None,
     ) -> None:
         self.check_owner(owner, cleanup=cleanup)
 
@@ -85,6 +86,7 @@ class PersonalComfortSession(BedController):
             repeat_delay_ms=repeat_ms,
             cancel_event=asyncio.Event() if cleanup else owner.cancel,
             before_write=before_write,
+            command_factory=command_factory,
             wall_clock_pacing=wall_clock_pacing,
         )
 

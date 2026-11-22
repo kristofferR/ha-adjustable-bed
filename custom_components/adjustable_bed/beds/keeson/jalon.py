@@ -165,7 +165,7 @@ class JalonController(KeesonController):
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
         if motor not in app.LAYOUTS[self.layout]:
-            raise ValueError(f"This app layout has no {motor} actuator")
+            raise ValueError(f"This bed has no {motor} motor")
         if direction is None:
             await self.stop_all()
             return
@@ -192,9 +192,9 @@ class JalonController(KeesonController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 100 <= duration_ms <= 30000:
-            raise ValueError("Unknown app control or hold duration outside 100..30000 ms")
+            raise ValueError("Choose a control this bed offers and a duration from 0.1 to 30 seconds")
         if control != "flat" and duration_ms >= app.MEMORY_SAVE_MS:
-            raise ValueError("Use save_preset for memory programming")
+            raise ValueError("To save a memory position, use the Save preset action")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -291,7 +291,7 @@ class JalonController(KeesonController):
             or foot_level
             or any(day not in range(1, 8) for day in weekdays)
         ):
-            raise ValueError("Invalid app alarm mode, weekday or massage level")
+            raise ValueError("Choose a wake action and weekdays this bed offers. This bed's alarm has no massage levels")
         # App bits are Sunday=0 through Saturday=6; bit7 marks recurrence.
         week = (
             0x80 | sum(1 << (day % 7) for day in set(weekdays))
@@ -364,6 +364,7 @@ class JalonController(KeesonController):
                 attribute_keys=(WAVE, HEAD, FOOT),
                 card=CARD_MASSAGE_TIMER,
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
             ControllerStateSensorSpec(
                 "jalon_alarm",
@@ -372,6 +373,7 @@ class JalonController(KeesonController):
                 "mdi:alarm",
                 attribute_keys=(WEEK, WAKE, HOUR, MINUTE, FIRST),
                 entity_registry_enabled_default=True,
+                entity_category=None,
             ),
         )
 

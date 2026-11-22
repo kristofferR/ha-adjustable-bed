@@ -270,7 +270,7 @@ massage controls; the global massage-off fallback remains available. Model 32's 
 turning rhythm off restores normal intensity actions. Intensity numbers show unknown
 until their level is sent, and reset when the rhythm mode or connection changes. Comfort sleep is
 conditional on the alternative model profile; off uses motor STOP, not the
-unused comfort-off constant. The frozen alternative page also has a translator
+unused comfort-off constant. The alternative page also has a translator
 initialization defect, so these conditional branches do not establish that its
 UI works on a real device.
 
@@ -279,6 +279,6 @@ OTA, media and unrelated reporting are outside this integration's bed controls.
 Hardware captures can confirm GATT properties, actuator mapping, security and
 release efficacy without changing those product boundaries.
 
-### Analysis provenance
+### Evidence
 
 Based on Relax Motion 1.5.0 (521), `com.motion.rmtrelax`.

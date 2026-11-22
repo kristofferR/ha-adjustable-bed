@@ -26,6 +26,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import (
+    CARD_CLIMATE,
     CARD_MASSAGE,
     CardPlacement,
     CardRole,
@@ -42,11 +43,11 @@ from ...const import (
 )
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
-from ...labels import display_label
 from ...profiles.richmat import RICHMAT_MH, RichmatProfile
+from ...state_keys import HEAT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button, unique_buttons
+from ..catalog_buttons import Kind, catalog_button, own_label, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -57,7 +58,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..family_actions import YogaPresetActions
-from ..richmat.labels import command_label, screen_label
+from ..richmat.labels import MH_CODES, preset_name, richmat_mh_name, richmat_mh_timer_minutes
 from ..ruf_richmat.models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from . import catalog
 from .models import RICHMAT_MH_MODEL_CHOICES
@@ -192,6 +193,7 @@ def _waist_setting_key(side: str, field: str) -> StateKey[str | None]:
 # Tap kinds the card shows outside its utility section.
 _TAP_KINDS: Final = {
     "richmat_mh_preset": Kind.PRESET,
+    "richmat_mh_memory": Kind.MEMORY,
     "richmat_mh_massage": Kind.MASSAGE,
     "richmat_mh_save": Kind.SAVE,
 }
@@ -322,6 +324,14 @@ def resolve_model(
 
 # Canonical app labels that map a recall code onto a standard capability.
 _MEMORY_SLOTS: Final = {0x2E: 1, 0x2F: 2, 0x30: 3, 0xB2: 4, 0xF4: 5}
+_MEMORY_SAVES: Final = {0x2B: 1, 0x2C: 2, 0x2D: 3, 0xB3: 4, 0xF5: 5}
+# Motor-page moves the app shows as one button, by their code.
+_MOTOR_BUTTONS: Final = {
+    0x29: "Head and foot up",
+    0x3F: "Pillow up",
+    0x5B: "Pillow and lumbar tilt up",
+    0x5C: "Pillow and lumbar tilt down",
+}
 _GENERIC_MEMORY_LABELS: Final = {
     1: {"memory1", "m1", "memory"},
     2: {"memory2", "m2"},
@@ -337,13 +347,18 @@ _PRESETS: Final[dict[int, tuple[str, frozenset[str]]]] = {
     0xF0: ("yoga", frozenset({"yoga", "yoga mode"})),
 }
 FLAT_CODE: Final = 0x31
+# The heat levels a layout's heat page sets.
+_HEAT_LEVELS: Final = {"off": 0x9C, "low": 0x9D, "medium": 0x9E, "high": 0x9F}
+# Massage intensity levels 1, 2 and 3, as every catalog names them.
+_INTENSITY_LEVELS: Final = {1: 0x67, 2: 0xAF, 3: 0x68}
+FACTORY_RESET_CODE: Final = 0x62
 LIGHT_TOGGLE_CODE: Final = 0x3C
 # Motor-page icons carry no text; name them after their app command keys.
 _BUTTON_GROUP_NAMES: Final = {
     "FLAT": "Flat",
     "UBL1": "Light",
     "UBL2": "Light off",
-    "LOCK": "Lock",
+    "LOCK": "Smart set lock on/off",
     "SYNC": "Sync",
     "UBL": "Light",
     "BTN_LED": "Button light off",
@@ -382,49 +397,6 @@ def _clean_label(label: str) -> str:
     return " ".join(label.replace("\\n", " ").replace("\n", " ").split())
 
 
-# Massage-page groups whose button text only makes sense beside its heading.
-_GROUP_CONTEXT: Final = {
-    "HEAT_LEVEL": "Heat",
-    "HEAT_OFF": "Heat",
-    "MUSIC": "Music",
-    "MUSIC_PREVIOUS_NEXT": "Music",
-    "MUSIC_START_PAUSE": "Music",
-    "MODE": "Massage",
-    "MODE2": "Massage",
-    "Mode": "Massage",
-    "WAVE": "Massage wave",
-    "HEAD_FOOT_BOTH_ON": "Massage",
-    "HEAD_INTENSITY_INC3": "Head massage",
-}
-
-
-_BARE_LABELS: Final = frozenset(
-    {"off", "high", "low", "medium", "mode", "next", "previous", "switch", "on/off",
-     "intensity", "volume", "pause", "pause/start", "start stop", "volume up", "volume down"}
-)
-
-
-def _display_label(label: str, group: str | None = None) -> str:
-    """An entity name for an app button label, with its heading where needed."""
-    text = _clean_label(label)
-    text = re.sub(r"(?<=\d)(?=[A-Za-z])|(?<=[a-z])(?=\d)|(?<=[A-Z]{2})(?=\d)", " ", text)
-    text = re.sub(r"\bMins?\b", "min", text).replace("Hours", "hours")
-    # A trailing + or - is a direction; "+/-" names the button itself.
-    text = re.sub(r"(?<!/)\s*\+$", " up", re.sub(r"(?<!/)\s*-$", " down", text))
-    zone = re.fullmatch(r"(Head|Foot|Lumbar) Intensity (up|down)", text, re.IGNORECASE)
-    if zone:
-        # The shared wording of the generic massage buttons.
-        return f"Massage: {zone[1].capitalize()} {zone[2].capitalize()}"
-    if group in ("MIN", "HEAT_MIN") and (minutes := re.fullmatch(r"(\d+) min", text)):
-        heading = "Massage" if group == "MIN" else "Heat"
-        return f"{heading}: Timer {minutes[1]} Minutes"
-    if re.fullmatch(r"\d+ (?:min|hours)", text):
-        text = f"Timer {text}"
-    elif group in _GROUP_CONTEXT and text.lower() in _BARE_LABELS:
-        text = f"{_GROUP_CONTEXT[group]} {text.lower()}"
-    return screen_label(text)
-
-
 @dataclass(frozen=True, slots=True)
 class Axis:
     key: str
@@ -441,6 +413,8 @@ class Tap:
     name: str
     code: int
     translation_key: str
+    # False where the catalogs do not establish what the control does.
+    clear: bool = True
 
 
 LightPage = Literal["led", "btn_led"]
@@ -504,8 +478,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             raise ValueError(f"Unknown Richmat MH app: {app}")
         self._app = app
         self.profile = self._wire_profiles[app]
-        data = getattr(getattr(coordinator, "entry", None), "data", None)
-        data = data if isinstance(data, Mapping) else {}
+        data = coordinator.entry.data
         stored_name = data.get(CONF_BLE_DEVICE_NAME)
         name = device_name if not is_mac_like_name(device_name) else None
         if name is None and isinstance(stored_name, str) and not is_mac_like_name(stored_name):
@@ -741,9 +714,111 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             None,
         )
 
+    @property
+    def _massage_timer_codes(self) -> dict[int, int]:
+        """The layout's fixed massage timer controls, by their minutes.
+
+        They are one timer select; a layout with a single duration keeps its button.
+        """
+        timers: dict[int, int] = {}
+        for c in self._controls():
+            minutes = richmat_mh_timer_minutes(c.code, c.label) if c.area == "massage" else None
+            if minutes is not None:
+                timers.setdefault(minutes, c.code)
+        return timers if len(timers) > 1 else {}
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self._massage_timer_codes)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows the layout's massage timers and intensity levels.
+        return (
+            super().auto_enable_massage
+            or self.supports_massage_timer
+            or self.supports_massage_intensity_control
+        )
+
+    @property
+    def _intensity_level_codes(self) -> dict[int, int]:
+        """The layout's massage intensity 1, 2 and 3 controls, when it has all three.
+
+        They are one intensity number; a layout missing a level keeps its buttons.
+        """
+        codes = {c.code for c in self._controls() if c.area == "massage"}
+        return dict(_INTENSITY_LEVELS) if set(_INTENSITY_LEVELS.values()) <= codes else {}
+
+    @property
+    def _heat_level_codes(self) -> dict[str, int]:
+        """The layout's heat off, low, medium and high controls, when it has all four.
+
+        They are one heat level select; a layout missing a level keeps its buttons.
+        """
+        heat = {
+            c.code
+            for c in self._controls()
+            if c.area == "massage" and richmat_mh_name(c.code, c.label, massage_page=True)[1]
+        }
+        return dict(_HEAT_LEVELS) if set(_HEAT_LEVELS.values()) <= heat else {}
+
+    async def set_heat_level(self, level: str) -> None:
+        code = self._heat_level_codes.get(level)
+        if code is None:
+            raise ValueError("Choose a heat level this layout offers")
+        # The bed reports no heat level.
+        with self.sent_state(HEAT_LEVEL(level)):
+            await self.tap(code)
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        return bool(self._intensity_level_codes)
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        return ["all"] if self._intensity_level_codes else []
+
+    @property
+    def massage_intensity_max(self) -> int:
+        return 3
+
+    def massage_intensity_min(self, zone: str) -> int:
+        # No level control turns the massage off.
+        return 1
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        code = self._intensity_level_codes.get(level) if zone == "all" else None
+        if code is None:
+            raise ValueError("Choose a massage intensity this layout offers")
+        # The bed reports no level.
+        with self.sent_state(massage_intensity(zone)(level)):
+            await self.tap(code)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(self._massage_timer_codes)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # No timer control turns the timer off.
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        code = self._massage_timer_codes.get(minutes)
+        if code is None:
+            raise ValueError("Choose a massage timer this bed model offers")
+        # The bed reports no timer.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.tap(code)
+
     def _taps(self) -> tuple[Tap, ...]:
         """Every remaining app control, one button per opcode."""
-        used: set[int] = set()
+        # The massage timer select and intensity number send these controls.
+        used: set[int] = {
+            *self._massage_timer_codes.values(),
+            *self._intensity_level_codes.values(),
+            *self._heat_level_codes.values(),
+        }
         for recall, save in self._memory_slots().values():
             used.add(recall.code)
             if save is not None:
@@ -761,25 +836,35 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         group_labels: dict[str, str] = {}
         for c in controls:
             if c.area == "memory" and c.kind == "recall":
-                group_labels[c.group] = _display_label(c.label)
+                group_labels[c.group] = preset_name(c.label, slot=_MEMORY_SLOTS.get(c.code))
         for c in controls:
             if c.area == "motor" or c.code in used:
                 continue
             used.add(c.code)
             key = f"richmat_mh_{c.code:02x}"
             if c.area == "memory":
-                base = group_labels.get(c.group, _display_label(c.label))
+                base = group_labels.get(c.group) or preset_name(c.label, slot=_MEMORY_SAVES.get(c.code))
                 if c.kind == "save":
                     taps.append(Tap(key, f"Save {base}", c.code, "richmat_mh_save"))
                 elif c.group in ("FACTORY_RESET", "Factory Reset"):
                     taps.append(Tap(key, base, c.code, "richmat_mh_action"))
+                elif base.startswith("Memory "):
+                    # A memory slot outside the contiguous ones: recall and save share its card slot.
+                    taps.append(Tap(key, base, c.code, "richmat_mh_memory"))
                 else:
                     taps.append(Tap(key, base, c.code, "richmat_mh_preset"))
             elif c.area == "massage":
-                taps.append(Tap(key, _display_label(c.label, c.group), c.code, "richmat_mh_massage"))
+                name, clear = richmat_mh_name(c.code, c.label, massage_page=True)
+                taps.append(Tap(key, name, c.code, "richmat_mh_massage", clear))
+            elif (named := _BUTTON_GROUP_NAMES.get(c.group) or _MOTOR_BUTTONS.get(c.code)) is not None:
+                taps.append(Tap(key, named, c.code, "richmat_mh_action"))
+            elif c.code in MH_CODES:
+                name, clear = richmat_mh_name(c.code, c.label)
+                taps.append(Tap(key, name, c.code, "richmat_mh_action", clear))
+            elif c.kind == "save" or re.search(r"\s(?:set|save)$", c.label, re.IGNORECASE):
+                taps.append(Tap(key, f"Save {preset_name(c.label)}", c.code, "richmat_mh_save"))
             else:
-                name = _BUTTON_GROUP_NAMES.get(c.group) or _display_label(c.label)
-                taps.append(Tap(key, name, c.code, "richmat_mh_action"))
+                taps.append(Tap(key, preset_name(c.label), c.code, "richmat_mh_action"))
         if self._light_page() == "btn_led":
             # Only Revive and Best Mattress have an emitting button-light OFF row; it is
             # dead in HARMONY and has no writer in Blvd Home or Idealbed.
@@ -857,9 +942,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         for slot, (recall, _save) in sorted(self._memory_slots().items()):
             label = _clean_label(recall.label)
             names.append(
-                None
-                if label.lower() in _GENERIC_MEMORY_LABELS[slot]
-                else display_label(command_label(label))
+                None if label.lower() in _GENERIC_MEMORY_LABELS[slot] else preset_name(label)
             )
         return tuple(names)
 
@@ -896,7 +979,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         specs: list[ControllerButtonSpec | None] = []
         for _name, (recall, save) in self._presets().items():
             if save is not None:
-                label = f"Save {_display_label(recall.label)}"
+                label = f"Save {preset_name(recall.label)}"
                 specs.append(
                     catalog_button(
                         f"richmat_mh_{save.code:02x}",
@@ -907,17 +990,18 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     )
                 )
         for tap in self._taps():
-            specs.append(
-                catalog_button(
-                    tap.key,
-                    tap.name,
-                    _tap_action(tap.code),
-                    kind=_TAP_KINDS.get(tap.translation_key),
-                    icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
-                    # A factory reset forgets every saved position.
-                    requires_confirmation=tap.name == "Factory Reset",
-                )
+            spec = catalog_button(
+                tap.key,
+                tap.name,
+                _tap_action(tap.code),
+                kind=_TAP_KINDS.get(tap.translation_key),
+                icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
+                # A factory reset forgets every saved position.
+                requires_confirmation=tap.code == FACTORY_RESET_CODE,
+                enabled=tap.clear,
             )
+            # A control the catalogs do not explain keeps the app's words, never a shared name.
+            specs.append(spec if tap.clear or spec is None else own_label(spec))
         if self._smart_set_lock():
             # One toggle command: a switch could unlock when the state is unknown.
             specs.append(
@@ -943,6 +1027,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                         icon=icon,
                         translation_key=key,
                         cancel_movement=False,
+                        # The bed's self-test is maintenance: there to enable.
+                        diagnostic=True,
                     )
                 )
         return unique_buttons(specs)
@@ -950,6 +1036,17 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         specs: list[ControllerSelectSpec] = []
+        if heat := self._heat_level_codes:
+            specs.append(
+                ControllerSelectSpec(
+                    key=HEAT_LEVEL,
+                    translation_key=HEAT_LEVEL,
+                    state_key=HEAT_LEVEL,
+                    options=tuple(heat),
+                    select_fn=lambda ctrl, option: _invoke(ctrl, "set_heat_level", option),
+                    card=CARD_CLIMATE,
+                )
+            )
         if options := self.motor_mode_options:
             specs.append(
                 ControllerSelectSpec(
@@ -998,10 +1095,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                             select_fn=lambda ctrl, option, s=side, f=field: _invoke(
                                 ctrl, "set_waist_setting", s, f, option
                             ),
+                            # The mode never turns the heat on: these are the waist controls too.
                             card=CARD_MASSAGE,
-                            # The waist mode is the dashboard control; per-side settings are there to enable.
-                            entity_category=EntityCategory.CONFIG,
-                            entity_registry_enabled_default=False,
                         )
                     )
         return tuple(specs)
@@ -1270,12 +1365,12 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if unknown or len(set(massage)) != len(massage):
             raise ValueError("Massage choices must be distinct options from this model's alarm page")
         if position is None and not massage:
-            raise ValueError("Choose a position or a massage, as the app requires")
+            raise ValueError("Choose a position or a massage for the alarm")
         # The app reads the selected massage rows in their page order.
         ordered = tuple(ALARM_OPTION_CODES[m] for m in massages if m in massage)
         action = alarm_action(ALARM_OPTION_CODES[position] if position else None, ordered)
         if action is None:
-            raise ValueError("The app sends nothing for this position and massage combination")
+            raise ValueError("This bed has no alarm for that position and massage combination. Choose another")
         return action
 
     async def richmat_mh_alarm(
@@ -1498,7 +1593,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     await self._send_clock()
         except asyncio.CancelledError:
             raise
-        except Exception:  # noqa: BLE001 - a failed query leaves the stored snapshot
+        except Exception:
             _LOGGER.debug("Richmat MH connection setup failed", exc_info=True)
             return
         finally:
@@ -1533,9 +1628,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if snapshot is None or snapshot == self._stored_snapshot:
             return
         self._stored_snapshot = dict(snapshot)
-        remember = getattr(self._coordinator, "remember_richmat_mh_snapshot", None)
-        if callable(remember):
-            remember(snapshot)
+        self._coordinator.remember_richmat_mh_snapshot(snapshot)
 
     # ------------------------------------------------------------ notifications
 
@@ -1739,7 +1832,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 if delaying:
                     # Skip the remaining delay; never cancel the STOP write itself.
                     task.cancel()
-            except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():

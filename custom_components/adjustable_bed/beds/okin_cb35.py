@@ -70,8 +70,7 @@ class OkinCB35Controller(Okin7ByteController):
         self, command: bytes, repeat_count: int = 100, repeat_delay_ms: int = 300
     ) -> None:
         """Tap the preset key, then release it with STOP x3 to commit the move."""
-        command_failed = False
-        try:
+        async with self.releasing(self._send_stop):
             if self._coordinator.cancel_command.is_set():
                 return
             await self.write_command(
@@ -80,20 +79,10 @@ class OkinCB35Controller(Okin7ByteController):
                 repeat_delay_ms=repeat_delay_ms,
                 on_write=self._record_preset_write,
             )
-        except BaseException:
-            command_failed = True
-            raise
-        finally:
-            try:
-                await self._send_stop()
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send preset release", exc_info=True)
-                if not command_failed:
-                    raise
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Run a motor command and clear any preset it successfully interrupts."""
-        try:
+        async with self.releasing(self._send_stop):
             pulse_count, pulse_delay = self.motor_pulse_settings()
             await self.write_command(
                 command,
@@ -101,11 +90,6 @@ class OkinCB35Controller(Okin7ByteController):
                 repeat_delay_ms=pulse_delay,
                 on_write=self._record_motor_write,
             )
-        finally:
-            try:
-                await self._send_stop()
-            except BleakError, ConnectionError:
-                _LOGGER.debug("Failed to send STOP during cleanup", exc_info=True)
 
     async def stop_all(self) -> None:
         """Stop all movement.
@@ -267,7 +251,7 @@ class OkinCB35Controller(Okin7ByteController):
         if raw[0] == 0xA5 and raw[1] == 0x0B and len(raw) >= 8:
             _LOGGER.debug("CB35 massage status: %s", raw.hex())
 
-    async def start_notify(self, callback=None) -> None:  # noqa: ARG002
+    async def start_notify(self, callback=None) -> None:
         """Start listening for notifications via Nordic UART RX."""
         client = self.client
         if client is None or not client.is_connected:

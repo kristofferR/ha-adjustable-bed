@@ -7,7 +7,6 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.controller_factory import require_logicdata_route
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
@@ -60,7 +59,6 @@ def test_one_row_names_every_app_and_finds_each_by_name():
     assert label.endswith(" · LOGICDATA")
     # SimplicityFrame and the pump are answers of the question, not rows of their own.
     assert not {const.BED_TYPE_LOGICDATA, const.BED_TYPE_LOGICDATA_AIR_PUMP} & set(rows)
-    assert ACTUATOR_GROUPS["logicdata"] == ((const.BED_TYPE_LOGICDATA_APP, None),)
 
 
 def test_a_detected_simplicityframe_is_shown_as_the_family_row():
@@ -72,7 +70,7 @@ def test_a_detected_simplicityframe_is_shown_as_the_family_row():
 
 async def test_the_family_row_asks_the_app_and_has_nothing_to_keep(hass):
     result = await setup_flow(hass, const.BED_TYPE_LOGICDATA_APP).async_step_logicdata_family()
-    assert choices(result) == ["silvermotion", "phone", "tablet", "sleep_smart", "sleep_smart_pump"]
+    assert choices(result) == ["silvermotion", "silvermotion_android", "phone", "tablet", "sleep_smart", "sleep_smart_pump"]
 
 
 async def test_a_detected_simplicityframe_is_kept_and_still_pairs(hass):

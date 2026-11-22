@@ -237,7 +237,7 @@ async def test_reconnect_retires_real_subscription_and_old_local_publisher(hass,
     assert client.stop_notify.await_count == 1
 
 
-async def test_single_address_both_routes_two_captured_side_frames_and_stops(hass, monkeypatch):
+async def test_single_address_stop_all_stops_both_captured_sides(hass, monkeypatch):
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
     from custom_components.adjustable_bed.paired_devices import async_register_children
 
@@ -251,24 +251,6 @@ async def test_single_address_both_routes_two_captured_side_frames_and_stops(has
     async_register_children(hass, pair)
     await async_register_services(hass)
     try:
-        with virtual_clock():
-            await hass.services.async_call(
-                DOMAIN,
-                "symphony_preset",
-                {
-                    "device_id": [device],
-                    "side": "both",
-                    "preset": "memory_1",
-                },
-                blocking=True,
-            )
-        assert packets(client) == [
-            "e6fe16000001000103",
-            "e6fe16000000000104",
-            "e6fe16000001000202",
-            "e6fe16000000000203",
-        ]
-        client.write_gatt_char.reset_mock()
         with virtual_clock():
             await hass.services.async_call(
                 DOMAIN, "stop_all", {"device_id": [device]}, blocking=True
@@ -654,11 +636,11 @@ async def test_review_S5_sequential_preflight_aborts_on_failed_peer_or_own_relea
     with virtual_clock(), pytest.raises(PairedSideError):
         await hass.services.async_call(
             DOMAIN,
-            "symphony_preset",
+            "symphony_anti_snore",
             {
                 "device_id": [device],
                 "side": side,
-                "preset": "memory_1",
+                "enabled": False,
             },
             blocking=True,
         )

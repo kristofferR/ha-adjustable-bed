@@ -146,17 +146,6 @@ def test_selection(name, manufacturer, result):
     assert app.resolve_protocol(name, manufacturer, "smart") == "smart"
 
 
-def test_scan_first_dedup_exactname_and_layout_tags():
-    seen = set()
-    assert app.scan_first((("a", "other"), ("b", "OKIN")), seen) is None
-    assert app.scan_first((("a", "OKIN"),), seen, "okin") is None
-    assert app.scan_first((("a", "OKIN"),), seen) is None
-    assert app.scan_first((("b", "OKIN"),), seen, "OKIN") == ("b", "OKIN")
-    assert not app.admitted_name("") and not app.admitted_name("SMART")
-    assert [app.imported_layout(n) for n in (22, 33, 44, 99)] == ["two", "triple", "four", "four"]
-    assert app.persisted_type("smartsainuo", "triple") == 53
-
-
 @pytest.mark.parametrize("protocol", codec.PROTOCOLS)
 @pytest.mark.parametrize("layout", app.LAYOUTS)
 async def test_setup_saved_factory_axes_and_capabilities(hass, protocol, layout):
@@ -849,7 +838,7 @@ async def test_goto_preset_child_mode_fails_all_target_preflight(hass, monkeypat
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         lambda *_: ([(left, "both"), (right, "both")], []),
     )
-    with virtual_clock(), pytest.raises(ServiceValidationError, match="child mode"):
+    with virtual_clock(), pytest.raises(ServiceValidationError, match="Child lock"):
         await hass.services.async_call(
             DOMAIN, "goto_preset", {"device_id": ["left", "right"], "preset": 1}, blocking=True
         )

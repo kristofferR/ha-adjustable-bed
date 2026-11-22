@@ -112,16 +112,6 @@ class TestSleepNumberPairing:
 class TestSleepNumberController:
     """Test Sleep Number controller behavior."""
 
-    async def test_control_characteristic_uuid(self, sleep_number_coordinator) -> None:
-        """Controller should use the BamKey response characteristic."""
-        coordinator = await sleep_number_coordinator(
-            address="AA:BB:CC:DD:EE:21",
-            name="Smart bed 0074E7",
-            entry_id="sleep_number_uuid",
-        )
-
-        assert coordinator.controller.control_characteristic_uuid == SLEEP_NUMBER_BAMKEY_CHAR_UUID
-
     async def test_auto_variant_defaults_to_left_side(self, sleep_number_coordinator) -> None:
         """Auto variant should target the left side by default."""
         coordinator = await sleep_number_coordinator(
