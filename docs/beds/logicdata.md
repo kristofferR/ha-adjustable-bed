@@ -8,8 +8,9 @@
 > For the MOTIONrelax phone and tablet Android apps, use the separate
 > [LOGICDATA app profiles](jiecang.md#logicdata-app-family).
 
-For the native Android app `net.logicdata.mobile.sfapp`, choose
-[SILVERmotion Android](silvermotion.md). Its native custom-command envelope is a separate route.
+[SILVERmotion Android](silvermotion.md) is a second route from the same app. It
+sends the command envelope the app's screens use, with zero gravity and
+anti-snore presets. This route follows the app's SimplicityFrame library.
 
 ## Known Models
 
@@ -20,7 +21,7 @@ For the native Android app `net.logicdata.mobile.sfapp`, choose
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ✅ | [SILVERmotion](https://play.google.com/store/apps/details?id=at.silvermotion) (Flutter/Dart) | `at.silvermotion` |
+| ✅ | [SILVERmotion](https://apkpure.com/silvermotion/net.logicdata.mobile.sfapp) 1.0.0 (2) | `net.logicdata.mobile.sfapp` |
 
 ## Features
 
@@ -186,11 +187,11 @@ sends the preset three times. Stop is sent once.
 
 ### Analysis provenance
 
-Protocol reverse-engineered from the SILVERmotion APK (`at.silvermotion`), a
-Flutter/Dart application. Key classes from Blutter analysis:
+Protocol reverse-engineered from the native libraries of the SILVERmotion
+Android app (`net.logicdata.mobile.sfapp` 1.0.0), which is no longer on Google
+Play:
 
-- `SF_GetPipelineTx` - TX pipeline filter chain configuration
-- `SF_Controller` - Command method definitions
-- `SF_CryptoXXTEA` - XXTEA implementation
-- `SF_CRC16` - CRC-CCITT implementation
-- `SF_SLIP` - SLIP framing
+- `libsimplicityframelib.so`: the command functions, such as `SF_HeadUp`,
+  `SF_LegUp`, `SF_AnyKeyPressed`, `SF_FlatPosition` and `SF_MemoryPosition1`
+- `libLD.so`: the transmit pipeline (`SF_GetPipelineTx`) with its XXTEA
+  (`xxtea_encrypt`), CRC and SLIP (`LD::SLIP`) stages

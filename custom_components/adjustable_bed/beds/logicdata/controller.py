@@ -1,7 +1,7 @@
 """Logicdata SimplicityFrame bed controller implementation.
 
 Protocol reverse-engineered from:
-- at.silvermotion (SILVERmotion app, Flutter/Dart)
+- net.logicdata.mobile.sfapp (SILVERmotion Android app, its native libraries)
 
 Protocol summary:
 - Service: b9934c43-5c91-462b-80a1-30fccc29d758 (LogicLink)

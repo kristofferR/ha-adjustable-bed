@@ -477,7 +477,7 @@ def _check_manufacturer_data(
         return BED_TYPE_VIBRADORM, 0.95, MANUFACTURER_ID_VIBRADORM
 
     # Logicdata: Company ID 1351 (0x0547)
-    # Source: at.silvermotion app disassembly
+    # Source: SILVERmotion app disassembly
     if MANUFACTURER_ID_LOGICDATA in manufacturer_data:
         if silvermotion_scan_matches(manufacturer_data):
             return BED_TYPE_SILVERMOTION, 0.95, MANUFACTURER_ID_LOGICDATA
