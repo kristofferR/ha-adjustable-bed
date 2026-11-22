@@ -354,7 +354,8 @@ async def test_alarm_uses_selected_layout_and_shared_native_request(clock, monke
     await ctrl.configure_alarm(replace(request, enabled=False))
     assert packets(coord) == ["6e05000073", "6e06000074"]
     assert clock[0] == pytest.approx(1.2)
-    assert ctrl.persisted_app_state == {}
+    # Only the command format is kept; no alarm is.
+    assert ctrl.persisted_app_state == {"wire": "FRAMED"}
 
 
 async def test_startup_order_and_direct_queries_on_both_wires(clock, monkeypatch):
@@ -1415,3 +1416,24 @@ async def test_stop_during_connection_inspection_is_translated_unless_caller_can
         assert not inner._command_connection_holds
         inner._cancel_disconnect_timer()
         client.is_connected = False
+
+
+def test_a_nordic_bed_lists_what_its_light_button_sends():
+    """MMRM's light key sends the head and foot up operand over Nordic UART."""
+    framed, _ = controller("MMRM", "FRAMED")
+    assert framed._actions["toggle_underbed_light"].node == 17
+    nordic, _ = controller("MMRM", "RAW")
+    assert "toggle_underbed_light" not in nordic._actions
+    assert not nordic.supports_light_state_feedback
+    with pytest.raises(ServiceValidationError):
+        nordic.validate_action("toggle_underbed_light")
+    # BERM's off key sends the head massage off operand there, whatever its icon.
+    assert "massage_off" in controller("BERM", "FRAMED")[0]._actions
+    assert {"massage_1_off"} == {
+        key for key in controller("BERM", "RAW")[0]._actions if "off" in key
+    }
+    # A restart names the controls from the stored format before it reconnects.
+    restored, _ = controller("MMRM", "FRAMED")
+    restored._session = restored._wire = None
+    restored.restore_persisted_app_state(nordic.persisted_app_state)
+    assert "toggle_underbed_light" not in restored._actions

@@ -10972,6 +10972,9 @@
     "baseremote_layout": {
       "message": "Choose a bed layout. Desk, manufacturing and test layouts are excluded."
     },
+    "richmat_classic_control": {
+      "message": "This button does something else on this bed's Bluetooth connection, so nothing was sent. The bed's own buttons are listed now."
+    },
     "baseremote_control": {
       "message": "Choose a control available on this bed layout and Bluetooth connection."
     },

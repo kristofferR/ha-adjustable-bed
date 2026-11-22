@@ -2025,6 +2025,15 @@ visibility, current mode and short or long gesture decide what it sends. Local
 mode, head/foot, memory-arm and Hold/Release selectors appear where the layout
 has them.
 
+On a Nordic UART (RAW) bed, eight layouts send a legacy operand that the app
+names differently from the current one for some keys: A3RM, BERM, MMRM, ONRM,
+R2RM, THRM, TWRM and TZRM. MMRM's light key, for example, sends the same byte as
+its head and foot up key. Such a button is listed by what the connection in use
+sends, as its own entity. The bed's connection type is remembered from the first
+connection on. Before it the current names are listed, and a press that finds a
+Nordic bed sends nothing and lists the bed's own buttons. The Nordic names are
+the app's names for the legacy operands and are not confirmed on hardware.
+
 A keep button, including a recall preset or Flat under Hold, accepts a
 [renewable hold](../SERVICES.md#renewable-holds): it repeats its payload every
 worker tick until the lease ends, then releases 50 ms later. Short, long and
@@ -9286,7 +9295,9 @@ characteristics rather than guessed UUIDs. Standalone desk layouts are omitted.
 
 Both profiles use the [Richmat transports](#transports), in W1, W2, Nordic UART,
 W4 order. The first present service wins; incomplete roles do not fall through.
-Raw Nordic/fallback controls send the selected resource bytes. Wrapped controls
+Raw Nordic/fallback controls send the selected resource bytes, and a button
+whose legacy operand has another function is listed by it, as in the
+[classic apps](#classic-richmat-apps). Wrapped controls
 send `6E 01 mode command sum8`. A raw mode choice adds no side bytes. Direct
 structured settings bypass that wrapper on either route. No PIN, authentication
 handshake, MTU negotiation or firmware query is added.
@@ -9908,7 +9919,9 @@ The generated tables below retain every layout's ordinary, raw legacy and
 loaded long operands. Status 1 refreshes a held command. Status 2 sends once.
 Status 3 distinguishes short recall from a long command. A numbered memory
 resource is available only on layouts that actually bind it; controls retain
-their source resource names where icons and resource numbering disagree.
+their source resource names where icons and resource numbering disagree. On a
+Nordic UART bed, a button whose raw legacy operand has another function is
+listed by it, as in the [classic apps](#classic-richmat-apps).
 
 The GVRM Head/Foot choice is local: Head reads the legacy short getter on both
 transports, while Foot has a null getter. It is not a bed-side address. U3RM's
@@ -15195,6 +15208,11 @@ no idempotent off), and the layout's real intensity range where present. Aroma
 times are configuration entities, disabled by default. Save controls use the card’s guarded Set mode or an explicit confirmation,
 and never support renewable holds. The `jerome_bed` action can request a layout
 action, a supported continuous gesture, or its explicit long-press variant.
+
+On a Nordic UART bed, a control whose legacy operand has another function is
+named by it, as in the [classic apps](#classic-richmat-apps). The light key of
+A3RM, BERM, MMRM and R2RM sends a movement or massage operand there, so those
+beds get no under-bed light.
 
 For `U3RM`, named position-adjustment controls capture the corresponding
 selection for that action. Selecting a position never changes the meaning of a

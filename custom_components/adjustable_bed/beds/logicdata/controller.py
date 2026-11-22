@@ -1,7 +1,7 @@
 """Logicdata SimplicityFrame bed controller implementation.
 
 Protocol reverse-engineered from:
-- at.silvermotion (SILVERmotion app, Flutter/Dart)
+- net.logicdata.mobile.sfapp (SILVERmotion Android app, its native libraries)
 
 Protocol summary:
 - Service: b9934c43-5c91-462b-80a1-30fccc29d758 (LogicLink)
@@ -56,7 +56,8 @@ class LogicdataCommands:
     """Logicdata command byte constants.
 
     Command format: [opcode, param1, param2]
-    Extracted from SILVERmotion APK (SF_Controller command methods).
+    Extracted from the SILVERmotion APK (the SF_* command functions of
+    libsimplicityframelib.so).
     """
 
     # Motor movement (hold-style, requires repeated sends)
