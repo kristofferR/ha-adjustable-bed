@@ -443,6 +443,7 @@ class TestPairedSetup:
             CONF_PRODUCT_TYPE: "H",
             CONF_PROTOCOL_VARIANT: QPLUS_VARIANT_BOTH,
             CONF_MOTOR_COUNT: 2,
+            CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PREFERRED_ADAPTER: "auto",
         }
         entry = MockConfigEntry(

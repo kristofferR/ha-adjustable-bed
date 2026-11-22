@@ -1333,9 +1333,10 @@ _SBI = "sbi"
 @pytest.mark.parametrize(
     ("stored", "expected"),
     [
-        pytest.param({}, {CONF_PROTOCOL_VARIANT: "both"}, id="no selection was both"),
+        # Unset and automatic build Both on the app route too, so they stay as stored.
+        pytest.param({}, {}, id="no selection"),
         pytest.param(
-            {CONF_PROTOCOL_VARIANT: "auto"}, {CONF_PROTOCOL_VARIANT: "both"}, id="automatic was both"
+            {CONF_PROTOCOL_VARIANT: "auto"}, {CONF_PROTOCOL_VARIANT: "auto"}, id="automatic"
         ),
         pytest.param(
             {CONF_PROTOCOL_VARIANT: "side_a"}, {CONF_PROTOCOL_VARIANT: "side_a"}, id="side a"
@@ -1344,14 +1345,14 @@ _SBI = "sbi"
             {CONF_PROTOCOL_VARIANT: "side_b"}, {CONF_PROTOCOL_VARIANT: "side_b"}, id="side b"
         ),
         pytest.param(
-            {CONF_MOTOR_COUNT: 4, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: False},
-            {
-                CONF_PROTOCOL_VARIANT: "both",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-            },
+            {CONF_MOTOR_COUNT: 4, CONF_HAS_MASSAGE: True},
+            {CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False},
             id="settings the app layout decides",
+        ),
+        pytest.param(
+            {CONF_DISABLE_ANGLE_SENSING: True},
+            {CONF_DISABLE_ANGLE_SENSING: True},
+            id="positions stay unread",
         ),
     ],
 )
@@ -1403,7 +1404,8 @@ def test_schema_5_9_writes_a_one_address_pair_and_what_it_restores() -> None:
     original = {
         CONF_ADDRESS: address,
         CONF_BED_TYPE: _SBI,
-        CONF_PROFILE_REVIEW_PENDING: "sbi:auto",
+        CONF_PROTOCOL_VARIANT: "side_b",
+        CONF_PROFILE_REVIEW_PENDING: "sbi:side_b",
     }
     data, _options = migrate_v5_9_entry(
         {
@@ -1444,9 +1446,8 @@ def test_schema_5_9_writes_a_one_address_pair_and_what_it_restores() -> None:
     assert left[KEY_ORIGIN_DATA] == {
         **original,
         CONF_BED_TYPE: "qplus_app",
-        CONF_PROTOCOL_VARIANT: "both",
         "product_type": "H",
-        CONF_PROFILE_REVIEW_PENDING: "qplus_app:both",
+        CONF_PROFILE_REVIEW_PENDING: "qplus_app:side_b",
     }
     assert left[KEY_ORIGIN_OPTIONS] == {CONF_MOTOR_COUNT: 4}
     # The open app review follows the renamed route, on the pair and its originals.
@@ -1491,6 +1492,45 @@ def test_schema_5_9_stores_on_each_side_what_it_ran_with() -> None:
     assert (right[CONF_BED_TYPE], right[CONF_PROTOCOL_VARIANT]) == ("rondure", "side_b")
     assert (right[CONF_MOTOR_COUNT], right[CONF_HAS_MASSAGE]) == (4, True)
     assert options == shared
+
+
+def test_schema_5_9_keeps_positions_unread_on_a_bed_the_app_route_never_read() -> None:
+    """The app route reads positions from 5.9 on; a bed set up before keeps them unread."""
+    from custom_components.adjustable_bed import migrate_v5_9_entry
+
+    bed = {CONF_ADDRESS: "AA:BB:CC:DD:EE:74", CONF_BED_TYPE: "qplus_app", "product_type": "M2"}
+    data, _options = migrate_v5_9_entry(bed, {}, from_version=5, from_minor_version=8)
+    assert data.pop(CONF_PROFILE_MIGRATION)["qplus_app_positions_unread"] == ["data"]
+    assert data == {**bed, CONF_DISABLE_ANGLE_SENSING: True}
+
+    # A saved choice is the user's.
+    chosen = {**bed, CONF_DISABLE_ANGLE_SENSING: False}
+    assert migrate_v5_9_entry(chosen, {}, from_version=5, from_minor_version=8) == (chosen, {})
+    # The 5.6 step settles an older entry's choice against the default the route has now.
+    assert migrate_v5_9_entry(bed, {}, from_version=5, from_minor_version=5) == (bed, {})
+
+    # A paired side is judged by what it reads, and its original by its own data.
+    data, _options = migrate_v5_9_entry(
+        {
+            CONF_BED_TYPE: "qplus_app",
+            CONF_PAIR_ID: "pair_app",
+            CONF_PAIR_CHILDREN: [
+                {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:75", KEY_ORIGIN_DATA: dict(bed)},
+                {
+                    CONF_SIDE: "right",
+                    CONF_ADDRESS: "AA:BB:CC:DD:EE:76",
+                    CONF_DISABLE_ANGLE_SENSING: False,
+                },
+            ],
+        },
+        {},
+        from_version=5,
+        from_minor_version=8,
+    )
+    left, right = data[CONF_PAIR_CHILDREN]
+    assert left[CONF_DISABLE_ANGLE_SENSING] is True
+    assert left[KEY_ORIGIN_DATA][CONF_DISABLE_ANGLE_SENSING] is True
+    assert right[CONF_DISABLE_ANGLE_SENSING] is False
 
 
 async def test_schema_5_9_keeps_the_buttons_the_app_has_under_another_key(
@@ -1549,7 +1589,7 @@ async def test_a_5_8_sbi_one_address_pair_loads_as_the_qplus_app_and_keeps_its_s
     mock_coordinator_connected,
     enable_custom_integrations,
 ) -> None:
-    """Left still sends A, right B and the pair Both, and renamed buttons keep their IDs."""
+    """Left still sends A, right B and the pair Both; renamed buttons and sliders keep their IDs."""
     from homeassistant.config_entries import ConfigEntryState
     from homeassistant.helpers import entity_registry as er
 
@@ -1591,12 +1631,15 @@ async def test_a_5_8_sbi_one_address_pair_loads_as_the_qplus_app_and_keeps_its_s
     hass.config_entries.async_update_entry(entry, unique_id=address)
     registry = er.async_get(hass)
     kept = {
-        new: registry.async_get_or_create("button", DOMAIN, f"{address}_{old}", config_entry=entry)
-        for old, new in (
-            ("preset_zero_g_left", "zero_g_left"),
-            ("preset_tv_right", "tv_right"),
-            ("toggle_light_left", "light_left"),
-            ("preset_flat_both", "preset_flat_both"),
+        new: registry.async_get_or_create(domain, DOMAIN, f"{address}_{old}", config_entry=entry)
+        for domain, old, new in (
+            ("button", "preset_zero_g_left", "zero_g_left"),
+            ("button", "preset_tv_right", "tv_right"),
+            ("button", "toggle_light_left", "light_left"),
+            ("button", "preset_flat_both", "preset_flat_both"),
+            # The bed read its positions, and still does.
+            ("number", "back_position_left", "back_position_left"),
+            ("number", "legs_position_right", "legs_position_right"),
         )
     }
     gone = [
@@ -1614,7 +1657,12 @@ async def test_a_5_8_sbi_one_address_pair_loads_as_the_qplus_app_and_keeps_its_s
 
     assert entry.state is ConfigEntryState.LOADED
     assert (entry.version, entry.minor_version) == (5, 9)
-    assert entry.data[CONF_PROFILE_ID] == "qplus_app:both"
+    # The bed stored no selection, which is Both on either route; its sides keep theirs.
+    assert [entry.data[CONF_PROFILE_ID], *(c[CONF_PROFILE_ID] for c in entry.data[CONF_PAIR_CHILDREN])] == [
+        "qplus_app",
+        "qplus_app:side_a",
+        "qplus_app:side_b",
+    ]
     runtime = loaded_runtime(hass, entry.entry_id)
     assert isinstance(runtime, SingleAddressPairedCoordinator)
     assert type(runtime.children["left"].controller) is QPlusAppController
@@ -1630,3 +1678,16 @@ async def test_a_5_8_sbi_one_address_pair_loads_as_the_qplus_app_and_keeps_its_s
         await runtime.async_stop_command(side=side)
         sent.append(mock_bleak_client.write_gatt_char.await_args.args[1].hex())
     assert sent == ["e6fe16000000000104", "e6fe16000000000203", "e5fe160000000006"]
+
+
+@pytest.mark.parametrize("bed_type", [_SBI, "qplus_app"])
+async def test_a_4x_bed_keeps_its_positions_unread_as_a_qplus_app_bed(
+    hass: HomeAssistant, bed_type: str
+) -> None:
+    """4.x read no position unless asked; the app route's default must not turn it on."""
+    entry = _entry(hass, {CONF_ADDRESS: "AA:BB:CC:DD:EE:77", CONF_NAME: "Bed", CONF_BED_TYPE: bed_type})
+
+    await async_migrate_entry(hass, entry)
+
+    assert entry.data[CONF_BED_TYPE] == "qplus_app"
+    assert not reads_positions(entry.data)

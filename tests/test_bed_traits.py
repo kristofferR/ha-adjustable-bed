@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_SERTA_MP_REMOTE,
@@ -46,6 +47,12 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 
 def disconnect_after_command_default_enabled(bed_type: str, variant: str | None = None) -> bool:
     return default_connection_mode(bed_type, variant) == CONNECTION_MODE_RELEASE
+
+
+@pytest.mark.parametrize("variant", [VARIANT_AUTO, "both", "side_a", "side_b"])
+def test_qplus_reports_positions(variant: str) -> None:
+    """The pulse-table feedback enabled in #239 reaches setup and entities."""
+    assert bed_traits(BED_TYPE_QPLUS_APP, variant).position_feedback
 
 
 @pytest.mark.parametrize(
@@ -199,6 +206,7 @@ async def test_starcode_app_connect_timeout_overrides_the_profile(hass: HomeAssi
 @pytest.mark.parametrize(
     ("bed_type", "expected"),
     [
+        (BED_TYPE_QPLUS_APP, {"back": 60.0, "head": 68.0, "legs": 32.0, "feet": 45.0}),
         (BED_TYPE_SERTA_MP_REMOTE, {"back": 60.0, "head": 68.0, "legs": 45.0, "feet": 45.0}),
         (BED_TYPE_REVERIE, {"back": 60.0, "head": 60.0, "legs": 45.0, "feet": 45.0}),
         (BED_TYPE_BEDJET_POWERLAYER, {"back": 73.0, "head": 73.0, "legs": 47.0, "feet": 47.0}),

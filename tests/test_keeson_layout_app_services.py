@@ -141,10 +141,11 @@ def test_findable_app_and_side_owned_options(app, layouts):
         for option in get_bed_type_options()
     )
     assert "product_type" in per_side_profile(app, None).keys
+    # Q-Plus's P1 beds report positions, so reading them is its user's choice.
     assert {
         "motor_count",
         "has_massage",
-        "disable_angle_sensing",
+        *(("disable_angle_sensing",) if app != "qplus_app" else ()),
         "protocol_variant",
         "motor_pulse_delay_ms",
     } <= hidden_generic_fields(app, None)
@@ -156,7 +157,9 @@ def test_findable_app_and_side_owned_options(app, layouts):
         assert profile.validate(data) == {}
         settled = profile.settled(data)
         assert settled["motor_count"] == 2
-        assert settled["disable_angle_sensing"] is (app != "serta_mp_remote")
+        assert settled.get("disable_angle_sensing") is (
+            None if app == "qplus_app" else app != "serta_mp_remote"
+        )
     assert profile.validate({"bed_type": app, "product_type": "Not a layout"}) == {
         "base": "keeson_app_layout"
     }

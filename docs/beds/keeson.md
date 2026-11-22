@@ -1684,9 +1684,10 @@ paired rules. Only Q-Plus has a one-address left and right mapping; the app
 itself gives A and B no physical side.
 
 All eight profiles require both current-session write and notification roles.
-The seven profiles without position feedback keep angle sensing disabled and
-still subscribe for the app's timer state. Serta MP exposes calibrated angle
-feedback and direct pulse targets. Hardware behavior remains unverified.
+The six profiles without position feedback keep angle sensing disabled and
+still subscribe for the app's timer state. Q-Plus reports head and foot angles
+on its P1 layouts, and Serta MP exposes calibrated angle feedback and direct
+pulse targets. Hardware behavior remains unverified.
 
 #### Controls
 
@@ -1900,11 +1901,11 @@ each one to this bed type:
 - The **Head** and **Feet** covers of a three or four motor setup repeated Back
   and Legs, the head and foot massage down buttons repeated the up buttons, and
   the under-bed light entity repeated Toggle light. They are gone.
-- **Position feedback** is gone, with its two position sliders: the app reads
-  the bed's pulse counts but shows no position. `set_position` no longer
-  accepts these beds.
-- On a one-address pair, only Flat, Stop and the movement buttons remain on the
-  pair itself. Each side keeps its own presets, light and massage buttons.
+- **Position feedback** stays, with **Read bed position** as it was saved. The
+  back and legs position sliders keep their entity IDs.
+- On a one-address pair, only Flat, Stop, the movement buttons and the position
+  sliders remain on the pair itself. Each side keeps its own presets, light and
+  massage buttons.
 - New from the app: **Reading**, **Reset**, **Massage level**, the massage
   modes, **Lumbar massage**, **Dismiss wake vibration**, the massage timer
   sensor, rename and the alarm.
@@ -1972,6 +1973,47 @@ needs both its write and its notify characteristic.
   the diagnostic poll hook, with command priority and without renewing the idle
   timeout.
 - The app has no clock writer and no angle-target writer.
+
+#### Position feedback
+
+The P1 layouts (H, M1, M2, M3) report the head and foot positions as pulse
+counts in their status notifications. **Read bed position** is on for a new
+setup and adds the **Back position** (0 to 60°) and **Legs position** (0 to 32°)
+sliders; [`set_position`](../SERVICES.md#movement-and-memory) accepts the same two
+axes and ranges, and the Back and Legs covers travel that far. Tilt and lumbar
+report nothing.
+
+| Field | Bytes | Notes |
+|-------|-------|-------|
+| Head pulse count | 3-4, little-endian | 0 to 20413 for 0 to 60° |
+| Foot pulse count | 5-6, little-endian | 0 to 8718 for 0 to 32° |
+
+- A count of 32768 or more is inverted first: `65535 - count`.
+- A count becomes the first degree whose table entry reaches it. The tables are
+  the app's own, one entry per degree:
+
+  ```text
+  Head: 0, 327, 577, 855, 1148, 1676, 2083, 2401, 2711, 3020, 3402, 3679, 4019,
+        4529, 4864, 5262, 5633, 6024, 6453, 6826, 7239, 7611, 8015, 8423, 8862,
+        9240, 9632, 10029, 10404, 10840, 11245, 11640, 11976, 12351, 12752,
+        13106, 13511, 13819, 14169, 14518, 14901, 15217, 15556, 15856, 16177,
+        16530, 16788, 17118, 17389, 17700, 18000, 18268, 18481, 18767, 19035,
+        19260, 19487, 19757, 19970, 20164, 20413
+  Foot: 0, 570, 784, 968, 1150, 1372, 1653, 1837, 2062, 2283, 2494, 2755, 3015,
+        3290, 3578, 3819, 4039, 4261, 4544, 4895, 5170, 5461, 5723, 6020, 6334,
+        6631, 6922, 7243, 7546, 7810, 8174, 8546, 8718
+  ```
+
+- Frames shorter than seven bytes are ignored, and so is the 16-byte frame that
+  starts `A5 0B 0D`: it carries the massage timer's seconds in bytes 3-4.
+- MX reports no position. It is the app's P2 remote, and its status frames were
+  never read for positions, so it has no sliders and `set_position` refuses it.
+- The app reads these counts but has no reachable screen that shows them, so
+  the angles are untested on a real bed.
+- With Left and Right controls on one address, the frames do not say which half
+  they are from. Each side shows what was reported after its own last command.
+- A Q-Plus app bed set up before this was added keeps positions unread until
+  **Read bed position** is turned on in **Configure**.
 
 #### Services
 

@@ -281,7 +281,7 @@ feedback or change which commands a bed supports.
 A form shows only the settings the bed uses. **Massage controls** is left
 out for beds with no massage commands or that turn massage on themselves; the
 maximum angles are left out where the frame's travel is fixed (for example
-Paramount, Serta MP Remote and BedJet); a motor count with only one
+Paramount, Serta MP Remote, Q-Plus and BedJet); a motor count with only one
 choice is left out; **Movement per tap** is left out for beds that never
 repeat a tap; and **Bluetooth connection** is left out for beds that
 must stay connected (DoubleSleep, GM Sleep, Okin RF Eco BT, Richmat sleep

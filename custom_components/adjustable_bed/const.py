@@ -1746,6 +1746,9 @@ RONDURE_VARIANTS: Final = {
     RONDURE_VARIANT_SIDE_B: "Side B only",
 }
 
+# Q-Plus head and foot travel: the last degree of each pulse lookup table.
+QPLUS_HEAD_MAX_ANGLE: Final = 60.0
+QPLUS_FOOT_MAX_ANGLE: Final = 32.0
 # Serta MP Remote travel limits.
 SERTA_MP_REMOTE_BACK_MAX_ANGLE: Final = 60.0
 SERTA_MP_REMOTE_LEGS_MAX_ANGLE: Final = 45.0

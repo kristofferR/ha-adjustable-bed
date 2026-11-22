@@ -84,6 +84,7 @@ from .const import (
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -134,6 +135,8 @@ from .const import (
     KEESON_VARIANT_ORE_ULTRAMATIC,
     KEESON_VARIANT_SINO,
     ORE_COMFORT_BED_VARIANTS,
+    QPLUS_FOOT_MAX_ANGLE,
+    QPLUS_HEAD_MAX_ANGLE,
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_MH_BED_TYPES,
     SERTA_MP_REMOTE_BACK_MAX_ANGLE,
@@ -226,8 +229,10 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "smart_comfort_synargy": _NO_ANGLES_SCOPED,
     "smart_comfort_synergy": _NO_ANGLES_SCOPED,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _NO_ANGLES),
-    # Serta MP Remote is the one Keeson layout app with position feedback.
-    **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
+    # Q-Plus and Serta MP Remote are the Keeson layout apps with position feedback.
+    **dict.fromkeys(
+        KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES
+    ),
     BED_TYPE_ADJUSTABLE_BED: _NO_ANGLES,
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
     BED_TYPE_SUPERIOR_SLEEP: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
@@ -368,6 +373,11 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
         position_feedback=True, percentage_positions=True, angle_sensors=True
     ),
     "richmat_sleep_receiver": _NO_ANGLES_PERSISTENT,
+    # Head and foot angles come from the app's pulse lookup tables (#239).
+    BED_TYPE_QPLUS_APP: BedTraits(
+        position_feedback=True,
+        max_angles={"back": QPLUS_HEAD_MAX_ANGLE, "legs": QPLUS_FOOT_MAX_ANGLE},
+    ),
     # Saved as sbi until schema 5.9; earlier migration steps read its defaults.
     "sbi": BedTraits(position_feedback=True),
     BED_TYPE_SERENITY: _NO_ANGLES,

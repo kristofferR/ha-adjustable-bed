@@ -184,12 +184,17 @@ so the app's own key names are used.
   app has no Memory 1 key on this layout. Check automations that press them.
 - The **Head** and **Feet** covers, the massage down buttons and the under-bed
   light entity are removed; they repeated other controls.
-- **Position feedback** and its two position sliders are removed. The app
-  shows no position, and `set_position` no longer accepts these beds.
-- On a bed with Left and Right controls, the pair itself keeps Flat, Stop and
-  the movement buttons; presets, light and massage are on each side.
+- **Position feedback** stays: the two position sliders keep their entity IDs,
+  `set_position` works as before and **Read bed position** stays as saved.
+- On a bed with Left and Right controls, the pair itself keeps Flat, Stop, the
+  movement buttons and the position sliders; presets, light and massage are on
+  each side.
 - New controls from the app: **Reading**, **Reset**, **Massage level**, the
   massage modes, **Lumbar massage**, the massage timer, rename and the alarm.
+
+A bed already set up with the Q-Plus app can now read its positions too, on
+every layout but MX: turn on **Read bed position** in **Configure**. It stays
+off until then.
 
 See the [Q-Plus guide](beds/keeson.md#beds-set-up-as-sbiq-plus).
 

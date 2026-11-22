@@ -2062,12 +2062,13 @@ def _app_layout_profile(bed_type: str) -> SetupProfile:
     owns: dict[str, Any] = {
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: False,
-        # Serta MP Remote reads its positions for its local memories.
-        CONF_DISABLE_ANGLE_SENSING: bed_type != "serta_mp_remote",
         CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
     }
     if bed_type != "qplus_app":
+        # Q-Plus asks its own selector, and reading its positions is the user's choice.
         owns[CONF_PROTOCOL_VARIANT] = SET_BY_PROFILE
+        # Serta MP Remote reads its positions for its local memories.
+        owns[CONF_DISABLE_ANGLE_SENSING] = bed_type != "serta_mp_remote"
     return SetupProfile(
         owns=owns,
         questions=questions,

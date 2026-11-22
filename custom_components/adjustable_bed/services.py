@@ -72,6 +72,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_ELITE_APP,
@@ -986,11 +987,11 @@ def _position_config(
     protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
     supports_direct_position_control = controller.supports_direct_position_control
 
-    # Validate bed supports position feedback
+    # Validate bed supports position feedback. Q-Plus's MX layout reports none.
     if (
         not bed_type_has_position_feedback(bed_type, protocol_variant)
-        and not supports_direct_position_control
-    ):
+        or (bed_type == BED_TYPE_QPLUS_APP and not controller.supports_position_feedback)
+    ) and not supports_direct_position_control:
         raise invalid("position_feedback_not_supported", device_name=coordinator.name)
 
     # Validate angle sensing is enabled
@@ -1009,7 +1010,8 @@ def _position_config(
         bool(specs)
         and all(spec.native_unit_of_measurement == POSITION_UNIT_PERCENT for spec in specs)
     )
-    if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE) or (
+    # Q-Plus reports back/legs only, within its pulse tables.
+    if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_QPLUS_APP) or (
         supports_direct_position_control and percentage_targets
     ):
         motor_configs = {

@@ -84,9 +84,6 @@ from .const import (
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
-    QPLUS_VARIANT_BOTH,
-    QPLUS_VARIANT_SIDE_A,
-    QPLUS_VARIANT_SIDE_B,
     RETIRED_BED_TYPES,
     RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
@@ -1018,25 +1015,18 @@ _SBI: Final = "sbi"
 _SBI_LAYOUT: Final = "H"
 
 
-def _qplus_selection(view: Mapping[str, Any]) -> str:
-    """Return the bed selection an sbi route sent: anything but a side was Both."""
-    variant = view.get(CONF_PROTOCOL_VARIANT)
-    return variant if variant in (QPLUS_VARIANT_SIDE_A, QPLUS_VARIANT_SIDE_B) else QPLUS_VARIANT_BOTH
+def _as_qplus(own: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a bed's own sbi settings as the Q-Plus app route stores them.
 
-
-def _as_qplus(own: Mapping[str, Any], selection: str) -> dict[str, Any]:
-    """Return a bed's own sbi settings as the Q-Plus app route stores them."""
-    new = {
-        **own,
-        CONF_BED_TYPE: BED_TYPE_QPLUS_APP,
-        CONF_PROTOCOL_VARIANT: selection,
-        CONF_PRODUCT_TYPE: _SBI_LAYOUT,
-    }
-    # The app's layout decides the controls, and the app shows no position.
+    The bed selection stays as stored: Both, A or B mean the same on both
+    routes, and unset or automatic builds Both on either. The choice to read
+    positions stays too; the app route reads them as the sbi route did.
+    """
+    new = {**own, CONF_BED_TYPE: BED_TYPE_QPLUS_APP, CONF_PRODUCT_TYPE: _SBI_LAYOUT}
+    # The app's layout decides the controls.
     for key, value in (
         (CONF_MOTOR_COUNT, 2),
         (CONF_HAS_MASSAGE, False),
-        (CONF_DISABLE_ANGLE_SENSING, True),
         (CONF_MOTOR_PULSE_USER_SET, False),
     ):
         if key in new:
@@ -1064,28 +1054,46 @@ def migrate_v5_9_entry(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return entry data and options with every sbi route saved as the Q-Plus app.
 
-    A bed keeps the bed selection it sent (Both, A or B) and takes the app's H
-    layout, the one with the keys the sbi route sent. A bed reads its own data,
-    so that decides its selection. A side of a one-address pair keeps the A or B
-    pairing gave it. A two-address side also read the pair's data and options;
-    it now stores the selection it ran with, since the app's settings belong to
-    each side. The original entries a pair restores on unpair are written too,
-    and an open or kept app review follows the renamed route. The migration
-    record lists each place under ``qplus_app``. Any other entry is returned
+    A bed keeps its stored bed selection and its choice to read positions, and
+    takes the app's H layout, the one with the keys the sbi route sent. A
+    two-address side also read the pair's options; it now stores the selection
+    it ran with, since the app's selection belongs to each side. The original
+    entries a pair restores on unpair are written too, and an open or kept app
+    review follows the renamed route. The migration record lists each place
+    under ``qplus_app``.
+
+    The app route reads positions from this schema on. A Q-Plus app bed without
+    a saved choice ran with them unread, and keeps that until the user turns
+    reading on; the record lists those under ``qplus_app_positions_unread``.
+    An entry from before schema 5.6 has its choice settled by that step, which
+    already reads the route's new default. Any other entry is returned
     unchanged.
     """
     from .profile_review import carry_profile_review_to_renamed_route
 
     moved: list[str] = []
+    unread: list[str] = []
     single = data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
     children = data.get(CONF_PAIR_CHILDREN)
 
+    settled_before = (from_version, from_minor_version) >= (5, 6)
+
+    def keeps_unread(view: Mapping[str, Any]) -> bool:
+        return (
+            settled_before
+            and view.get(CONF_BED_TYPE) == BED_TYPE_QPLUS_APP
+            and CONF_DISABLE_ANGLE_SENSING not in view
+        )
+
     def bed(own: Mapping[str, Any], location: str) -> dict[str, Any]:
         """Return a bed's own data: a standalone entry, a one-address pair or an original."""
-        if own.get(CONF_BED_TYPE) != _SBI:
-            return dict(own)
-        moved.append(location)
-        return _as_qplus(own, _qplus_selection(own))
+        if own.get(CONF_BED_TYPE) == _SBI:
+            moved.append(location)
+            return _as_qplus(own)
+        if keeps_unread(own):
+            unread.append(location)
+            return {**own, CONF_DISABLE_ANGLE_SENSING: True}
+        return dict(own)
 
     if isinstance(children, list) and not single:
         new_data = _sbi_renamed(data)
@@ -1103,10 +1111,14 @@ def migrate_v5_9_entry(
             child = dict(child)
             view = effective_child_data(data, side, options)
             if view.get(CONF_BED_TYPE) == _SBI:
-                child = _as_qplus(child, _qplus_selection(child if single else view))
+                if not single and CONF_PROTOCOL_VARIANT in view:
+                    child[CONF_PROTOCOL_VARIANT] = view[CONF_PROTOCOL_VARIANT]
+                child = _as_qplus(child)
                 moved.append(f"data.{side}")
-            origin = child.get(KEY_ORIGIN_DATA)
-            if isinstance(origin, Mapping) and origin.get(CONF_BED_TYPE) == _SBI:
+            elif keeps_unread(view):
+                child[CONF_DISABLE_ANGLE_SENSING] = True
+                unread.append(f"data.{side}")
+            if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
                 restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
                 carry_profile_review_to_renamed_route(origin, restored)
                 child[KEY_ORIGIN_DATA] = restored
@@ -1114,14 +1126,16 @@ def migrate_v5_9_entry(
                     child[KEY_ORIGIN_OPTIONS] = _sbi_renamed(origin_options)
             updated.append(child)
         new_data[CONF_PAIR_CHILDREN] = updated
-    if not moved:
+    if not moved and not unread:
         return new_data, dict(options)
-    carry_profile_review_to_renamed_route(data, new_data)
+    fields: dict[str, Any] = {}
+    if moved:
+        carry_profile_review_to_renamed_route(data, new_data)
+        fields["qplus_app"] = moved
+    if unread:
+        fields["qplus_app_positions_unread"] = unread
     _with_migration_record(
-        new_data,
-        from_version=from_version,
-        from_minor_version=from_minor_version,
-        qplus_app=moved,
+        new_data, from_version=from_version, from_minor_version=from_minor_version, **fields
     )
     return new_data, _sbi_renamed(options)
 
