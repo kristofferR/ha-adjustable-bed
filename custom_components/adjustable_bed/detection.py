@@ -1529,18 +1529,12 @@ def _detect_with_first_pass(
         for signal in result.signals
     ):
         result = DetectionResult("personal_comfort", 0.3, ["personal_comfort:app_candidate", *result.signals])
+    # Instant Comfort runs the same air units and bases, so it is offered beside them.
     if pc_candidate and not any(
         signal.startswith("excluded:") or signal == "name:suta_accessory"
         for signal in result.signals
     ):
-        if result.bed_type is None:
-            result = DetectionResult("instant_comfort", 0.3, ["instant_comfort:app_candidate", *result.signals])
-        elif result.bed_type != "instant_comfort":
-            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "instant_comfort"]))
-    elif result.bed_type == "instant_comfort":
-        result = DetectionResult(None, 0, ["instant_comfort:no_matching_service"])
-    elif result.ambiguous_types:
-        result.ambiguous_types = [key for key in result.ambiguous_types if key != "instant_comfort"]
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "instant_comfort"]))
     # Resident's platform-name filter admits these shared receiver names. Keep
     # existing protocol detection and ask the user to identify the app.
     device_name = getattr(getattr(service_info, "device", None), "name", None)
