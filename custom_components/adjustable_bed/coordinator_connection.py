@@ -2536,7 +2536,8 @@ class CoordinatorConnectionMixin:
                     # Restoration awaits the OS. It may have closed the link
                     # meanwhile, with or without delivering its callback.
                     if client.is_connected:
-                        if not self._shutting_down:
+                        if self._link_ready and not self._shutting_down:
+                            # A restored link idles out again; an unusable one arms nothing.
                             self._reset_disconnect_timer()
                         if cancelled is not None:
                             raise cancelled

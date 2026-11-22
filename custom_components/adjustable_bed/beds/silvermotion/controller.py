@@ -85,7 +85,7 @@ class SilvermotionController(ProfileExecution[app.SilvermotionProfile], BedContr
         self.profile = app.ANDROID
         self.size = str(coordinator.entry.data.get(CONF_PRODUCT_TYPE, "queen"))
         if self.size not in app.SIZES:
-            raise ValueError("Choose Queen, King or Twin XL for SILVERmotion")
+            raise ValueError("Choose the bed size: Queen, King or Twin XL")
         self._massage = bool(coordinator.entry.data.get(CONF_HAS_MASSAGE, True))
         self._owner = app_session(coordinator.hass, coordinator.address, "silvermotion", _Owner)
         self._link: _Link | None = None
@@ -294,7 +294,7 @@ class SilvermotionController(ProfileExecution[app.SilvermotionProfile], BedContr
             or isinstance(duration_ms, bool)
             or not 1 <= duration_ms <= 30000
         ):
-            raise ValueError("Choose a SILVERmotion direction and a hold of 1..30000 milliseconds")
+            raise ValueError("Choose a direction and a hold of up to 30 seconds")
 
     async def _before_motion(self, op: _Operation) -> None:
         deadline = self._owner.deadline
@@ -348,9 +348,9 @@ class SilvermotionController(ProfileExecution[app.SilvermotionProfile], BedContr
 
     async def press(self, action: str) -> None:
         if action not in app.COMMANDS or action in (*app.MOVEMENTS, "release", "any_key"):
-            raise ValueError("Choose an available SILVERmotion app control")
+            raise ValueError("Choose a control this bed offers")
         if action.startswith("massage_") and not self.supports_massage:
-            raise ValueError("Massage is disabled for this SILVERmotion bed")
+            raise ValueError("Massage is turned off in this bed's settings")
         op = self._operation()
         if action in (*app.PRESETS, "memory_1", "memory_2"):
             await self._before_motion(op)
@@ -471,7 +471,7 @@ class SilvermotionController(ProfileExecution[app.SilvermotionProfile], BedContr
 
     async def set_massage_timer(self, minutes: int) -> None:
         if not self.supports_massage or isinstance(minutes, bool) or minutes not in range(1, 41):
-            raise ValueError("SILVERmotion massage timer must be 1..40 minutes")
+            raise ValueError("Choose a massage timer from 1 to 40 minutes")
         link = self._live()
         self._owner.minutes = minutes
         self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(minutes))
@@ -636,12 +636,12 @@ class SilvermotionController(ProfileExecution[app.SilvermotionProfile], BedContr
 
     async def preset_memory(self, memory_num: int) -> None:
         if isinstance(memory_num, bool) or memory_num not in (1, 2):
-            raise ValueError("SILVERmotion has memory slots 1 and 2")
+            raise ValueError("This bed has memory slots 1 and 2")
         await self.press(f"memory_{memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         if isinstance(memory_num, bool) or memory_num not in (1, 2):
-            raise ValueError("SILVERmotion has memory slots 1 and 2")
+            raise ValueError("This bed has memory slots 1 and 2")
         await self.press(f"save_memory_{memory_num}")
 
     async def lights_toggle(self) -> None:

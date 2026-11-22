@@ -121,7 +121,7 @@ IDs do not supply live position, light, massage or capability state to this app.
 ### STOP and release behavior
 
 Normal movement cleanup sends key release with embedded count 3/delay 30. This is
-the app's touch-UP command. Home Assistant also uses that proven release when a
+the app's touch-UP command. Home Assistant also uses that release when a
 held operation is cancelled. An accepted frame finishes all its fragments before
 cleanup, to its original client only. No release is sent to a replacement session.
 The Android app omits release on several cancellation and radio-loss paths, so
@@ -200,6 +200,6 @@ percentages, so they do not create position sliders. No clock or alarm capabilit
 is exposed. Physical motor/preset mapping, encoded device timing and termination
 after radio loss remain unverified.
 
-### Analysis provenance
+### Evidence
 
 Based on SILVERmotion 1.0.0 (`net.logicdata.mobile.sfapp`).
