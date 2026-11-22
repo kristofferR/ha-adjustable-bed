@@ -42,7 +42,7 @@ protocol family from all other supported beds.
 **Manufacturer ID:** `0x0547` (1351)
 **Format:** 3-byte command payload, encrypted, CRC-checked and SLIP-framed
 
-### BLE Connection
+### BLE connection
 
 | Property | Value |
 |----------|-------|
@@ -104,8 +104,10 @@ Detected automatically by:
 
 BLE pairing is required before the encrypted characteristic accepts commands.
 
-Setup shows a detected bed as the **LOGICDATA** row and asks which app runs it;
-**SILVERmotion app: SimplicityFrame bed** or Keep asks the motor count, then
+Setup shows a detected bed as the **SILVERmotion (SimplicityFrame), MOTIONrelax
+phone and tablet, and Sleep Smart Air Mattress apps · LOGICDATA** row and asks
+which app runs it; **SILVERmotion app: SimplicityFrame bed (pairing required)** or
+**Keep the detected or saved controls** asks the motor count, then
 continues to the pairing step.
 A manually added bed is chosen the same way. An entry moves to a LOGICDATA app
 only through **Reconfigure**, which checks the link and lists the controls that

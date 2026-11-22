@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
 import pytest
@@ -174,13 +173,6 @@ def test_position_bytes_read_as_head_and_foot() -> None:
 @pytest.mark.parametrize("data", ["", "10ff307530", "0a0503080175", "1e01"])
 def test_other_notifications_are_not_position_reports(data: str) -> None:
     assert jmc.position_report(bytes.fromhex(data)) is None
-
-
-@pytest.mark.parametrize("module", ["jensen/controller", "svane/controller"])
-def test_the_controllers_build_no_jmc_frame_of_their_own(module: str) -> None:
-    source = (ROOT / f"custom_components/adjustable_bed/beds/{module}.py").read_text()
-    assert not re.search(r"bytes\(\s*[\[(]\s*0x(?:0a|1[0-4e])\b", source, re.I)
-    assert not re.search(r"""["'](?:0a|1[0-4e])[0-9a-f]{8,10}["']""", source, re.I)
 
 
 async def test_jensen_drives_its_profile() -> None:

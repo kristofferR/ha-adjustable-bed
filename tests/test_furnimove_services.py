@@ -79,7 +79,7 @@ async def test_same_row_with_different_actions_rejected_before_any_target_moves(
             hass, SimpleNamespace(data={CONF_PAIR_ID: "furnimove-pair"}),
             {SIDE_LEFT: first, SIDE_RIGHT: second},
         )]
-    with pytest.raises(ServiceValidationError, match="different actions"):
+    with pytest.raises(ServiceValidationError, match="different things"):
         await invoke(hass, targets, "furnimove_action", {"row_index": 1, "duration": .1})
     first.async_execute_controller_command.assert_not_awaited()
     second.async_execute_controller_command.assert_not_awaited()
@@ -98,7 +98,7 @@ async def test_matching_actions_on_different_handsets_can_target_both_devices(ha
 async def test_missing_massage_program_on_later_target_rejected_before_any_write(hass):
     first, controller = await target("12234")
     second, other = await target("90167")
-    with pytest.raises(ServiceValidationError, match="absent"):
+    with pytest.raises(ServiceValidationError, match="no such massage program"):
         await invoke(hass, [first, second], "furnimove_massage_program", {"program": 1})
     first.async_execute_controller_command.assert_not_awaited()
     second.async_execute_controller_command.assert_not_awaited()
@@ -168,7 +168,7 @@ async def test_duplicate_or_current_rename_rejected_before_any_connection(hass):
 
 async def test_unsupported_second_axis_rejected_before_any_wire_write(hass):
     coordinator, controller = await target("00000")
-    with pytest.raises(ServiceValidationError, match="axes"):
+    with pytest.raises(ServiceValidationError, match="two different motors"):
         await invoke(hass, [coordinator], "furnimove_move_simultaneously", {
             "first_motor": "back", "second_motor": "head",
             "first_direction": "up", "second_direction": "down", "duration_ms": 100,

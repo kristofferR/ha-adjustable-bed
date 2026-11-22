@@ -92,7 +92,8 @@ calibration step, including a real OCTO Standard entry. Needs real-bed reports
 on OCTO Standard and Richmat beds: how close a recall lands to the saved
 position, how fast the estimate drifts over many short moves, and whether
 calibrating by tapping is accurate enough. Report the target, what the bed
-actually did and your calibrated times in the v5 beta feedback issue.
+actually did and your calibrated times in
+[a new issue](https://github.com/kristofferR/ha-adjustable-bed/issues/new/choose).
 
 ## States
 
@@ -203,6 +204,15 @@ change anything on the bed.
 On a paired bed, a position saved for both sides stores both sides and needs
 both sides tracking to recall. A position saved for the left or right side
 stores and moves only that side. Each side has its own calibration and estimate.
+
+Calibration, estimates and saved positions belong to each bed, so they stay
+when you combine two beds into a pair or separate a pair. Combining makes each
+bed's saved positions positions of its side, with the same IDs, and their
+buttons keep their entity IDs. If both beds have a position with the same name,
+choose the side or use the position's ID. Separating gives each bed back its
+own part of every position. A position of one side keeps its button, with its
+entity ID and settings; a position of both sides gets a new button on each bed.
+Removing a bed deletes its calibration and saved positions.
 
 ## Actions
 

@@ -33,6 +33,7 @@ from ..entity_specs import (
     ControllerMotorHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 
 if TYPE_CHECKING:
@@ -61,11 +62,22 @@ def name_frame(name: str, *, max_units: int = 15) -> bytes:
     """
     units = len(name.encode("utf-16-le")) // 2
     if not name or units > min(max_units, 15):
-        raise ValueError(f"Use a nonempty device name of at most {min(max_units, 15)} UTF-16 units")
+        raise ValueError(f"Use a name of 1 to {min(max_units, 15)} characters. Emoji count as two")
     return codec.rename(name.encode("utf-8")[:units])
 
 
 APP_TIMER_STATUS: Final = StateKey[int | None]("app_timer_status")
+
+
+def app_timer_minutes(index: int) -> int | None:
+    """The app's massage timer in minutes: off (-1 or 255) is 0, 1-3 are 10-30.
+
+    The apps put 1-600, 601-1200 and 1201-1800 seconds in timers 1, 2 and 3.
+    Any other value has no proven duration.
+    """
+    if index in (-1, 255):
+        return 0
+    return index * 10 if index in (1, 2, 3) else None
 
 
 # What each app key is, in plain words: the profile keeps the app's own labels.
@@ -189,14 +201,14 @@ class AppController(ProfileExecution[AppProfile], BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 1 <= duration_ms <= 60000:
-            raise ValueError("Choose a declared held control and a duration of 1 through 60000 ms")
+            raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     def _action(self, key: str) -> AppAction:
         for action in self.profile.actions:
             if action.key == key:
                 return action
         raise ValueError(
-            f"Control '{key}' is unavailable on {self.profile.app} {self.profile.layout}"
+            f"This bed model has no '{key}' control"
         )
 
     @property
@@ -278,13 +290,8 @@ class AppController(ProfileExecution[AppProfile], BedController):
         if self._zero_g_box:
             return ()
         return (
-            ControllerStateSensorSpec(
-                "app_timer_status",
-                "app_timer_status",
-                APP_TIMER_STATUS,
-                "mdi:timer-outline",
-                card=CARD_MASSAGE_TIMER,
-                entity_registry_enabled_default=True,
+            massage_timer_sensor_spec(
+                "app_timer_status", "app_timer_status", APP_TIMER_STATUS, card=CARD_MASSAGE_TIMER
             ),
         )
 
@@ -573,7 +580,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
 
     def _device_name_frame(self, name: str) -> bytes:
         if not self.profile.rename_units:
-            raise ValueError("This app has no reachable device-name writer")
+            raise ValueError("This bed cannot be renamed")
         # Caller domains are package-owned, not inferred from a shared EF02
         # builder. Java trim removes only code points <= U+0020.
         if self.profile.rename_trimmed:
@@ -589,7 +596,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
 
     async def sync_clock(self) -> None:
         if not self.profile.clock:
-            raise ValueError("This app has no clock writer")
+            raise ValueError("This bed has no clock")
         await self.write_command(codec.clock(dt_util.now()))
         await self._wait(500)
 
@@ -618,7 +625,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         spec = self.alarm_table_schedule_spec
         if spec is None:
-            raise ValueError("This app has no alarm")
+            raise ValueError("This bed has no alarm")
         spec.validate(self._alarm_schedule(alarm))
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
@@ -627,7 +634,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
     async def configure_alarm_table_schedule(self, schedule: AlarmTableSchedule) -> None:
         spec = self.alarm_table_schedule_spec
         if spec is None:
-            raise ValueError("This app has no alarm-table contract")
+            raise ValueError("This bed has no alarm")
         weekly, one_time = spec.encode(schedule)
         frames = (
             (weekly, one_time)
@@ -643,7 +650,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
 
     async def stop_wake_routine(self) -> None:
         if not self.profile.shutdown_count:
-            raise ValueError("This profile has no direct BLE alarm dismissal action")
+            raise ValueError("This bed's alarm cannot be dismissed from Home Assistant")
         for _ in range(self.profile.shutdown_count):
             await self.write_command(codec.ALARM_DISMISS)
             if await self._wait(self.profile.shutdown_delay_ms):
@@ -688,6 +695,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
         if self._zero_g_box:
             return
         status = self._timer_byte(data)
-        if status in (255, 1, 2, 3):
-            self._timer_status = -1 if status == 255 else status
-            self.forward_controller_state_updates(APP_TIMER_STATUS(self._timer_status))
+        minutes = None if status is None else app_timer_minutes(status)
+        if minutes is not None:
+            self._timer_status = minutes
+            self.forward_controller_state_updates(APP_TIMER_STATUS(minutes))

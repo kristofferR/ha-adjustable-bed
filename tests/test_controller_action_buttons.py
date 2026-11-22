@@ -271,7 +271,7 @@ async def test_translated_action_names_come_from_the_translation(
     platform = MockEntityPlatform(hass, domain="button", platform_name=DOMAIN)
     await platform.platform_data.async_load_translations()
     await platform.async_add_entities(buttons)
-    assert [hass.states.get(b.entity_id).name for b in buttons] == ["Motor Reset", "Remote"]
+    assert [hass.states.get(b.entity_id).name for b in buttons] == ["Motor reset", "Remote"]
 
 
 def test_a_button_that_asks_first_publishes_no_held_gesture() -> None:

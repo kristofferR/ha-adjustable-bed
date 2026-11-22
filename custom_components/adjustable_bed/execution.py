@@ -2,9 +2,8 @@
 
 The scheduler, the cover platform and paired intersection read these facts. A
 family profile declares them from its own app's accepted evidence; a
-standalone controller overrides ``BedController.execution``. Every declaration
-needs an evidence row in ``tests/test_execution_capabilities.py``. The design is
-in ``docs/design/protocol-codecs.md``.
+standalone controller overrides ``BedController.execution``. Declare only what
+the app evidence proves. The design is in ``docs/design/protocol-codecs.md``.
 """
 
 from __future__ import annotations

@@ -14,6 +14,7 @@ from custom_components.adjustable_bed.command_scheduler import CommandKind, curr
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.hold_lease_wire import virtual_clock
 from tests.test_starcode_abm5_4 import make_controller
 from tests.test_starcode_abm5_4_public_presets import literal_frame
 
@@ -38,9 +39,16 @@ def cold_child(hass, address, *, modern=False):
     return AdjustableBedCoordinator(hass, entry)
 
 
+@pytest.fixture
+async def virtual_time():
+    """Run the app's delayed reads and timers on the harness clock."""
+    with virtual_clock():
+        yield
+
+
 @pytest.mark.parametrize("side", ["standalone", "left", "right", "both"])
 async def test_first_cold_registered_timed_move_keeps_query_after_native_STOP(
-    hass, mock_coordinator_connected, side
+    hass, mock_coordinator_connected, virtual_time, side
 ):
     await async_register_services(hass)
     children = {
@@ -199,7 +207,7 @@ async def test_spawn_from_active_command_keeps_other_context_and_genuine_nested_
 
 @pytest.mark.parametrize("shutdown_queued", [False, True])
 async def test_native_white_callback_inside_movement_queues_own_ticket_and_drains(
-    hass, shutdown_queued
+    hass, virtual_time, shutdown_queued
 ):
     co = cold_child(hass, "AA:BB:CC:DD:EE:04", modern=True)
     co._client = make_controller(device="BOX1220").client
@@ -285,7 +293,7 @@ async def test_native_white_callback_inside_movement_queues_own_ticket_and_drain
 
 @pytest.mark.parametrize("terminal", ["stop", "shutdown"])
 async def test_cold_command_terminal_invalidates_queued_query_without_leaking_tasks(
-    hass, mock_coordinator_connected, terminal
+    hass, mock_coordinator_connected, virtual_time, terminal
 ):
     await async_register_services(hass)
     co = cold_child(hass, "AA:BB:CC:DD:EE:05")

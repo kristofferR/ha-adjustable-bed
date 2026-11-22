@@ -20,6 +20,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
+# Imported first: it stops on a Home Assistant too old for the imports below.
+from . import minimum_home_assistant  # noqa: F401
 from .bed_traits import bed_type_has_position_feedback, default_connection_mode
 from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
 from .beds.remacro.discovery import (
@@ -36,7 +38,7 @@ from .beds.reverie.pairlink_local_setup import (
     release_pairlink_local_profile_lease,
     release_pairlink_local_reservations,
 )
-from .beta_feedback import async_setup_beta_feedback
+from .beta_feedback import async_setup_beta_feedback, async_setup_upgrade_notice
 from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -121,6 +123,12 @@ from .profile_review import (
     async_refresh_profile_review_issue,
     profile_review_mark,
     v5_profile_review_mark,
+)
+from .removed_actions import async_report_removed_calls
+from .removed_entities import (
+    async_forget_removed_entities,
+    async_report_removed_entities,
+    async_setup_removed_entities,
 )
 from .repairs import (
     async_refresh_combine_beds_issue,
@@ -245,6 +253,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     await async_register_services(hass)
     await async_setup_beta_feedback(hass)
+    await async_setup_upgrade_notice(hass)
+    async_report_removed_calls(hass)
+    await async_setup_removed_entities(hass)
     return True
 
 
@@ -280,6 +291,51 @@ def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:
             for child in children
         ]
     return migrated
+
+
+# What 4.x ran with when an entry had not saved the setting. v5 falls back to
+# each bed type's own default instead, so a 4.x entry saves 4.x's value first.
+_V4_RUNTIME_DEFAULTS: Final[dict[str, bool]] = {
+    "disconnect_after_command": False,
+    CONF_DISABLE_ANGLE_SENSING: True,
+}
+
+
+def migrate_v4_runtime_defaults(data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return 4.x entry data with the values 4.x ran with saved where it had none.
+
+    4.x read both from the data of the bed that ran: a standalone entry, a
+    one-address pair, or a two-address side over its pair's data (options that
+    reached the side still win). A two-address pair's own data held neither,
+    so only its sides are filled. An original entry a pair restores on unpair is
+    filled on its own. Diagnostic entries from 1.4.6 to 2.5.3, for example,
+    saved no handoff.
+    """
+    migrated = dict(data)
+    children = migrated.get(CONF_PAIR_CHILDREN)
+    separate = isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+    if not separate:
+        for key, value in _V4_RUNTIME_DEFAULTS.items():
+            migrated.setdefault(key, value)
+    if isinstance(children, list):
+        migrated[CONF_PAIR_CHILDREN] = [
+            _v4_side_defaults(child, data, fill=separate) if isinstance(child, Mapping) else child
+            for child in children
+        ]
+    return migrated
+
+
+def _v4_side_defaults(
+    child: Mapping[str, Any], pair: Mapping[str, Any], *, fill: bool
+) -> dict[str, Any]:
+    side = dict(child)
+    if fill:
+        for key, value in _V4_RUNTIME_DEFAULTS.items():
+            if key not in pair:
+                side.setdefault(key, value)
+    if isinstance(origin := side.get(KEY_ORIGIN_DATA), Mapping):
+        side[KEY_ORIGIN_DATA] = migrate_v4_runtime_defaults(origin)
+    return side
 
 
 def _with_migration_record(
@@ -871,10 +927,11 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if entry.version == 4:
         # v4 -> v5.1: store the profile id each entry and paired side runs, and a
         # record of where it came from. The saved bed type, variant and app keys
-        # are not touched. Schema 5 entries cannot load on 4.x; restoring a Home
+        # are not touched; a connection or position setting 4.x ran with by
+        # default is saved. Schema 5 entries cannot load on 4.x; restoring a Home
         # Assistant backup is the only way back.
         data = migrate_v5_data(
-            entry.data,
+            migrate_v4_runtime_defaults(entry.data),
             entry.options,
             from_version=original_version[0],
             from_minor_version=original_version[1],
@@ -1015,11 +1072,6 @@ async def _async_finish_entry_setup(
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
 
 
-def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
-    """Parent-level config inherited by every child (each descriptor overrides)."""
-    return inheritable_child_fields(parent_data)
-
-
 def _make_child_persist_cb(
     hass: HomeAssistant, entry: ConfigEntry, side: str
 ) -> Callable[[dict[str, Any]], None]:
@@ -1145,7 +1197,7 @@ async def _async_release_absorbed_singles(
                 raise not_ready("pair_side_busy", name=original.title) from err
             except ConfigEntryNotReady:
                 raise
-            except Exception as err:  # noqa: BLE001 - retain both working originals
+            except Exception as err:
                 raise not_ready("pair_side_busy", name=original.title) from err
     except (Exception, asyncio.CancelledError):
         for coordinator in transferring:
@@ -1278,6 +1330,8 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 await _pairing_repairs_for_unconnected()
                 await _shutdown_failed_pair()
                 release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                if any(child.refused_outside_pairing_window for child in children.values()):
+                    raise not_ready("setup_pairing_window_closed", name=entry.title) from None
                 raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint="") from None
             except (Exception, asyncio.CancelledError):
                 await _shutdown_failed_pair()
@@ -1292,6 +1346,8 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 # single bed.
                 await _shutdown_failed_pair()
                 release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                if any(child.refused_outside_pairing_window for child in children.values()):
+                    raise not_ready("setup_pairing_window_closed", name=entry.title)
                 raise not_ready("pair_sides_unavailable", name=entry.title)
 
             # Some sides cannot recreate their extra controls without discovery. A
@@ -1318,7 +1374,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                             async with asyncio.timeout(SETUP_TIMEOUT):
                                 if await child.async_connect():
                                     child.cache_capability_controller()
-                        except Exception:  # noqa: BLE001 - validation below reports the retry
+                        except Exception:
                             _LOGGER.debug(
                                 "Pre-absorb capability reconnect of %s failed",
                                 child.address,
@@ -1389,7 +1445,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                     # forwarding indefinitely. A timeout just falls back to offline-prime.
                     async with asyncio.timeout(SETUP_TIMEOUT):
                         await child.async_connect()
-                except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
+                except Exception:
                     _LOGGER.debug("Post-absorb reconnect of %s side failed; priming offline", side)
         # Prime a client-free capability controller for any side that did NOT connect,
         # so its per-side entities are still created up-front (with byte-identical
@@ -1475,7 +1531,7 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
         raise not_ready("setup_connect_failed", name=entry.title, hint="")
 
     controller = inner.controller
-    if controller is not None and not getattr(controller, "supports_single_address_pairing", True):
+    if controller is not None and not controller.supports_single_address_pairing:
         await coordinator.async_shutdown()
         raise setup_stopped("single_address_pair_unsupported")
 
@@ -1588,6 +1644,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     async_track_combine_beds_issue(hass, entry)
     async_refresh_furnimove_layout_issues(hass, entry)
     async_refresh_profile_review_issue(hass, entry)
+    async_report_removed_entities(hass, entry)
     await async_register_services(hass)
 
     # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
@@ -1703,6 +1760,8 @@ async def _async_setup_standalone_entry(
                 hass, entry, coordinator, schedule_initial_position_read=False
             )
             return
+        if coordinator.refused_outside_pairing_window:
+            raise not_ready("setup_pairing_window_closed", name=entry.title) from None
         if initial_connection_timed_out:
             raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint=_connection_failure_hint(coordinator)) from None
         if _bond_gated_unbonded(coordinator):
@@ -1761,9 +1820,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     Home Assistant removes the entry's Repairs issues itself: each one is linked
     to the entry that raised it.
     """
-    await async_remove_position_estimates(hass, entry.entry_id)
+    async_forget_removed_entities(hass, entry.entry_id)
     # Unpair and combine restore other entries for the same beds first, so only
-    # addresses nobody else owns lose their app state.
+    # addresses nobody else owns lose their app state and estimates.
     owned = {
         owned_address
         for other in hass.config_entries.async_entries(DOMAIN)
@@ -1772,17 +1831,23 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     }
     addresses = set(_entry_addresses(entry))
     unowned = addresses - owned
+    await async_remove_position_estimates(hass, entry.entry_id, entry.data, unowned)
     # A combine that never absorbed its beds still raised their Remacro warnings
     # as its own. Give each back to the entry that still runs the bed before
     # Home Assistant removes the issues linked to this one.
     for other in hass.config_entries.async_entries(DOMAIN):
         if other.entry_id != entry.entry_id and addresses.intersection(_entry_addresses(other)):
             async_refresh_remacro_issues(hass, other)
-    from .app_state_store import async_remove_app_states
+    from homeassistant.helpers.storage import Store
+
+    from .app_state_store import async_remove_app_states, pairlink_sdk_store_key
 
     # Re-adding a bed must not restore the removed entry's app state or session.
     try:
         await async_remove_app_states(hass, unowned)
+        # Pairlink keys its metadata by entry, so no other entry ever reads it.
+        for address in (None, *addresses):
+            await Store(hass, 1, pairlink_sdk_store_key(entry.entry_id, address)).async_remove()
     except OSError:
         _LOGGER.warning("Could not delete stored app preferences for %s", sorted(unowned), exc_info=True)
     hass.loop.call_soon(async_refresh_combine_beds_issue, hass)

@@ -134,7 +134,10 @@ async def test_entities_follow_the_app_surface(
         "preset_memory_1",
         "program_memory_1",
     }
-    assert {"factory_reset", "logicdata_app_query_massage", "toggle_light"} <= buttons
+    assert {"factory_reset", "logicdata_app_query_massage"} <= buttons
+    # The bed reports its light, so one light replaces the toggle button.
+    assert ("light", "under_bed_lights") in keys
+    assert "toggle_light" not in buttons
     assert ("sensor", "logicdata_app_massage_mode") in keys
     assert ("sensor", "logicdata_app_family_match") not in keys
 

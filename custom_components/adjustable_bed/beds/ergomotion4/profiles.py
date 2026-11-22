@@ -1,6 +1,6 @@
 """Ergomotion 4.0 3.7 product and control tables.
 
-Generated outside this repository from the app; no generator is checked in, so edits are by hand.
+Data extracted from the Ergomotion 4.0 app outside this repository; not edited by hand.
 """
 
 from dataclasses import dataclass

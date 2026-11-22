@@ -145,7 +145,7 @@ async def _run_to_completion(cleanup: Coroutine[Any, Any, None]) -> None:
             await asyncio.shield(task)
         except asyncio.CancelledError:
             cancelled = True
-        except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+        except Exception:
             break
     if cancelled:
         if not task.cancelled():
@@ -357,7 +357,7 @@ class OkinAppKeesonController(KeesonController):
         """Hold one app control for ``duration_ms``, then release it like a touch-up."""
         key = self._held_key(control)
         if isinstance(duration_ms, bool) or not HOLD_MIN_MS <= duration_ms <= HOLD_MAX_MS:
-            raise ValueError("Hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
         context = current_command_context()
         if self._is_simon and control in _SIMON_MEMORY and context and context.lease:
             # Holding a Simon Li memory key past SIMON_MEMORY_SAVE_HOLD_MS saves it.
@@ -433,7 +433,7 @@ class OkinAppKeesonController(KeesonController):
                 if delaying:
                     # Skip the remaining delay; never cancel the zero-key write.
                     task.cancel()
-            except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():
@@ -455,7 +455,7 @@ class OkinAppKeesonController(KeesonController):
         errors: list[BaseException] = []
         try:
             await self.release_now()
-        except BaseException as err:  # noqa: BLE001 - re-raised after preset STOP
+        except BaseException as err:
             errors.append(err)
         if self._is_heal and self._session.selected_preset is not None:
 
@@ -467,7 +467,7 @@ class OkinAppKeesonController(KeesonController):
 
             try:
                 await _run_to_completion(preset_stop())
-            except BaseException as err:  # noqa: BLE001 - the first error wins
+            except BaseException as err:
                 errors.append(err)
         if errors:
             raise errors[0]
@@ -898,7 +898,7 @@ class OkinAppKeesonController(KeesonController):
             await self.massage_off()
             return
         if minutes not in HEAL_TIMER_OPTIONS:
-            raise ValueError("The app offers 10, 20 or 30 minutes")
+            raise ValueError("Choose 10, 20 or 30 minutes")
         session = self._session
         # Zero levels become one, then timer1, the wave, head and foot follow.
         wave, head, foot = session.wave or 1, session.head or 1, session.foot or 1
@@ -926,7 +926,7 @@ class OkinAppKeesonController(KeesonController):
                     await asyncio.sleep(HEAL_MASSAGE_STEP_DELAY_S)
                 try:
                     written += await self._write_key(key, cancel_event=asyncio.Event())
-                except Exception as err:  # noqa: BLE001 - raised after the other zone
+                except Exception as err:
                     errors.append(err)
             if written == 2:
                 self._session.massage_enabled = False

@@ -98,6 +98,25 @@ async def test_unsupported_bed_is_rejected_before_execution(hass):
     scheduler.assert_not_awaited()
 
 
+@pytest.mark.parametrize("command", ["reset_articulation_presets", "preset_reset"])
+async def test_resetting_saved_positions_is_not_offered(hass, command):
+    """Only the button that asks first resets saved positions."""
+    bed = controller()
+    bed.sleep_number_command_names = (command,)
+    target = SimpleNamespace(name="Bed")
+    with (
+        patch.object(services, "_resolve_sided_targets", return_value=([(target, "both")], [])),
+        patch.object(services, "_command_targets", return_value=[target]),
+        patch.object(services, "_validation_controller", return_value=bed),
+        patch.object(services, "_execute_sided") as scheduler,
+        raises_key("sleep_number_command_not_supported", ServiceValidationError),
+    ):
+        await services.handle_sleep_number_command(
+            call(hass, command=command, parameters={"side": "left", "preset": "all"})
+        )
+    scheduler.assert_not_awaited()
+
+
 @pytest.mark.parametrize(
     "data",
     [
@@ -179,7 +198,7 @@ async def test_two_address_pair_rejects_cross_side_parameters_before_writes(hass
         patch.object(services, "_resolve_sided_targets", return_value=([(parent, selected_side)], [])),
         patch.object(services, "_validation_controller", side_effect=[controllers[s] for s in selected]),
         patch.object(services, "_execute_sided") as scheduler,
-        pytest.raises(ServiceValidationError, match="physical bed side"),
+        pytest.raises(ServiceValidationError, match="targeted side"),
     ):
         await services.handle_sleep_number_command(call(
             hass, command="get_sleep_number_controls", parameters={"side": "left"}

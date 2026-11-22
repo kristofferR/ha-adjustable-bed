@@ -23,6 +23,7 @@ from homeassistant.helpers.selector import (
     NumberSelectorConfig,
     NumberSelectorMode,
 )
+from homeassistant.helpers.translation import async_get_translations
 
 from .const import DOMAIN, SIDE_LEFT, SIDE_RIGHT
 from .position_estimate import (
@@ -216,13 +217,22 @@ class EstimatedPositionsFlowMixin:
                 bed.invalidate(EstimateReason.NOT_REFERENCED, self._est_queue)
                 self._est_steps = 2 + 3 * len(self._est_queue)
                 return await self._async_estimate_next_motor()
-        not_offered = not_offered_motors(controller)
+        not_offered = ", ".join(_label(key) for key in not_offered_motors(controller))
+        if not_offered:
+            translations = await async_get_translations(
+                self.hass, self.hass.config.language, "options", {DOMAIN}
+            )
+            template = translations.get(
+                f"component.{DOMAIN}.options.step.estimated_positions.data_description.not_offered",
+                "These motors cannot be estimated on this bed: {motors}.",
+            )
+            not_offered = " " + template.replace("{motors}", not_offered)
         return self.async_show_form(
             step_id=step_id,
             data_schema=vol.Schema(schema),
             errors=errors,
             description_placeholders={
-                "not_offered": ", ".join(_label(key) for key in not_offered) or "-",
+                "not_offered": not_offered,
                 "max_s": str(int(MAX_TRAVEL_S)),
             },
         )
@@ -277,7 +287,7 @@ class EstimatedPositionsFlowMixin:
         elapsed = None if running is None else running[1]
         try:
             await async_stop_bed(self.hass, manager, bed)
-        except Exception:  # noqa: BLE001 - the measurement fails, the flow reports it
+        except Exception:
             _LOGGER.warning("STOP after a calibration move failed", exc_info=True)
             elapsed = None
         try:
@@ -287,7 +297,7 @@ class EstimatedPositionsFlowMixin:
             current = asyncio.current_task()
             if current is not None and current.cancelling():
                 raise
-        except Exception:  # noqa: BLE001 - a failed move is not a measurement
+        except Exception:
             _LOGGER.debug("Calibration move ended with an error", exc_info=True)
             elapsed = None
         if running is not None and bed.move_failed(running[0]):

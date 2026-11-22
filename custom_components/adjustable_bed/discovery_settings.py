@@ -2,8 +2,9 @@
 
 Home Assistant has no built-in per-integration "stop discovering" switch, so this
 module stores one small global flag (``disable_discovery``) in its own Store. The
-flag is edited via the options flow of any configured bed and read by
-``config_flow.async_step_bluetooth`` to suppress automatic discovery cards.
+flag is set from the "Add Integration" menu (``async_step_discovery_settings``)
+and read by ``config_flow.async_step_bluetooth`` to suppress automatic discovery
+cards.
 
 It is intentionally global (a single source of truth shared by all beds) rather
 than per-entry, so a user with several beds does not have to toggle it on each

@@ -303,9 +303,6 @@ async def test_every_source_short_command_and_branch_through_admitted_controls(r
         ),
         ("light_timer", {"minutes": 10}, [b"$z", b"$#003190001000010R\r"]),
         ("light_timer", {"minutes": 0}, [b"$z", b"$#003190000000011R\r"]),
-        ("alarm", {"time": "07:30", "strength": 0}, [b"$z", b"$#073000001700002R\r"]),
-        ("alarm", {"time": "08:30", "strength": 1}, [b"$z", b"$#083000011800003R\r"]),
-        ("alarm", {"time": "08:30", "strength": 2}, [b"$z", b"$#083000021900001R\r"]),
         ("sync_mode", {"wired": False, "confirm": True}, [b"$#330490000000013R\r"]),
         ("sync_mode", {"wired": True, "confirm": True}, [b"$#330490000100012R\r"]),
     ],
@@ -318,6 +315,40 @@ async def test_auxiliary_registered_service_and_serialized_wire(
     await call(hass, operation, **fields)
     assert writes(co) == expected
     assert co._command_scheduler.recent_records[-1].outcome is CommandOutcome.COMPLETED
+
+
+@pytest.mark.parametrize(
+    "fields,expected",
+    [
+        ({"time": "07:30", "enabled": False}, b"$#073000001700002R\r"),
+        ({"time": "08:30", "massage_intensity": 1}, b"$#083000011800003R\r"),
+        ({"time": "08:30", "massage_intensity": 2}, b"$#083000021900001R\r"),
+    ],
+)
+async def test_alarm_through_the_shared_action(runtime, clock, fields, expected):
+    hass, co = runtime
+    await install(co, name(mode="E"))
+    await hass.services.async_call(
+        const.DOMAIN,
+        "set_alarm",
+        {"device_id": ["bed"], "enabled": True, **fields},
+        blocking=True,
+    )
+    assert writes(co) == [b"$z", expected]
+
+
+async def test_alarm_off_keeps_the_reported_time(runtime, clock):
+    hass, co = runtime
+    bed = await install(co, name(mode="E"))
+    tokens = ["00000"] * 75
+    tokens[11:13], tokens[14] = ["00007", "00030"], "2"
+    notification(bed, tokens)
+    await hass.services.async_call(
+        const.DOMAIN, "set_alarm", {"device_id": ["bed"], "enabled": False}, blocking=True
+    )
+    from custom_components.adjustable_bed.codec.motomotion import decimal_fields
+
+    assert writes(co) == [b"$z", decimal_fields("000070003000", "0017")]
 
 
 async def test_m_wrapping_and_suppressed_query_through_real_service(runtime, clock):
@@ -449,16 +480,9 @@ async def test_observed_only_projection_and_bind_controls(runtime, clock):
     assert bed._rgb is None and bed._bind is None
 
 
-async def test_alarm_preserves_received_digit_widths_and_save_release_is_explicit(runtime, clock):
+async def test_save_snore_release_is_explicit(runtime, clock):
     hass, co = runtime
-    bed = await install(co, name("E1", mode="E"))
-    tokens = ["00000"] * 75
-    tokens[11:13], tokens[14] = ["00007", "00030"], "1"
-    notification(bed, tokens)
-    await call(hass, "alarm", strength=2)
-    from custom_components.adjustable_bed.codec.motomotion import decimal_fields
-
-    assert writes(co)[-1] == decimal_fields("000070003000", "0219")
+    await install(co, name("E1", mode="E"))
     await call(hass, "save_snore")
     assert writes(co)[-1] == b"$W"
 
@@ -605,19 +629,6 @@ async def test_release_offsets_absorb_ble_write_latency(runtime, clock):
     assert recorded == [(0, b"$Q"), (20, b"$Q"), (120, b"$Q"), (220, b"$Q")]
 
 
-async def test_alarm_partial_changes_preserve_the_other_observed_field(runtime, clock):
-    hass, co = runtime
-    bed = await install(co, name(mode="E"))
-    with pytest.raises(ServiceValidationError, match="strength"):
-        await call(hass, "alarm", time="08:30")
-    tokens = ["00000"] * 75
-    tokens[11], tokens[12], tokens[14] = "07", "45", "00001"
-    notification(bed, tokens)
-    await call(hass, "alarm", time="08:30")
-    assert writes(co)[-1] == b"$#083000011800003R\r"
-    assert bed._alarm == ("07", "45", "00001")
-
-
 async def test_reported_rgb_reaches_the_real_sensor_platform(runtime, clock):
     from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 
@@ -758,7 +769,7 @@ async def test_expired_finite_hold_in_ble_lane_sends_only_captured_stop(runtime,
 async def test_panel_e_save_has_no_release_recall_and_snore_remains_held(runtime, clock):
     hass, co = runtime
     await install(co, name("E1"))
-    with pytest.raises(ServiceValidationError, match="release recall"):
+    with pytest.raises(ServiceValidationError, match="Hold the snore preset"):
         await call(hass, "save_snore", recall_on_release=True)
     assert writes(co) == []
     await call(hass, "save_snore")

@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant
 
 from .bed_traits import bed_traits
 from .beds.entity_specs import ControllerMotorHoldSpec
-from .beds.octo.runtime import octo_controller
+from .beds.octo.runtime import octo_controller, octo_controls_locked
 from .card import motor_card
 from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
@@ -249,6 +249,32 @@ def _cover_entities_for(
     ]
 
 
+_COVER_TEMPLATES: dict[str, AdjustableBedCoverEntityDescription] = {
+    description.key: description for description in COVER_DESCRIPTIONS
+}
+# Beds name the feet motor "Foot" as often as "Feet".
+_COVER_TEMPLATES["foot"] = _COVER_TEMPLATES["feet"]
+
+
+def _cover_template(spec: MotorControlSpec) -> AdjustableBedCoverEntityDescription | None:
+    """The template whose icon matches the motor the user sees.
+
+    The translation key names what the user sees ("keeson_back" is "Back"), so it
+    decides first, also by a trailing motor name ("foot_end_tilt" is a tilt)
+    unless another motor name comes right before it ("back_legs" is two motors
+    and gets the generic icon). The internal key decides only when the
+    translation key names no known motor.
+    """
+    parts = spec.translation_key.split("_")
+    for start in range(len(parts)):
+        template = _COVER_TEMPLATES.get("_".join(parts[start:]))
+        if template is not None:
+            if start and parts[start - 1] in _COVER_TEMPLATES:
+                break
+            return template
+    return _COVER_TEMPLATES.get(spec.key)
+
+
 def _build_cover_description(
     spec: MotorControlSpec,
 ) -> AdjustableBedCoverEntityDescription:
@@ -257,8 +283,7 @@ def _build_cover_description(
     Travel limits come from the spec, so per-frame limits belong on the
     controller's motor_max_angles rather than as a bed-type check here.
     """
-    templates_by_key = {description.key: description for description in COVER_DESCRIPTIONS}
-    template = templates_by_key.get(spec.key)
+    template = _cover_template(spec)
 
     return AdjustableBedCoverEntityDescription(
         key=spec.key,
@@ -313,9 +338,9 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     @property
     def available(self) -> bool:
         """Hide Octo motor controls while the live PIN gate is locked."""
-        controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
-        return super().available and (octo is None or octo.normal_controls_available)
+        return super().available and not octo_controls_locked(
+            self._coordinator.capability_controller
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -491,12 +516,6 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
                 direction,
             )
-        except Exception:
-            _LOGGER.exception(
-                "Failed to move cover %s",
-                self.entity_description.key,
-            )
-            raise
         finally:
             # Only clear state if no newer movement has started
             if self._movement_generation == current_generation:
@@ -528,9 +547,6 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self._motor_resource if motor_scoped else "motor:*",
                 stream_member=motor_scoped,
             )
-        except Exception:
-            _LOGGER.exception("Failed to stop cover %s", self.entity_description.key)
-            raise
         finally:
             # Only clear state if no newer movement has started since stop was called
             if self._movement_generation == stop_generation:

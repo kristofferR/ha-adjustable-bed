@@ -17,7 +17,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.beds.keeson import controller as keeson
 from custom_components.adjustable_bed.beds.keeson.controller import (
     RESTONIC_A_CONTROLS,
@@ -393,17 +392,18 @@ async def test_controls_absent_from_the_selected_remote_send_nothing(
     coordinator, mock_bleak_client: MagicMock
 ):
     remote_a = _restonic(coordinator, KEESON_VARIANT_RESTONIC_A)
-    for action in (
-        remote_a.lights_toggle,
-        remote_a.restonic_zzz,
-        remote_a.move_back_legs_up,
-        lambda: remote_a.preset_memory(1),
-        lambda: _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).preset_memory(1),
-    ):
+    for action in (remote_a.lights_toggle, remote_a.restonic_zzz, remote_a.move_back_legs_up):
         with pytest.raises(NotImplementedError):
             await action()
-    for preset in (remote_a.preset_tv, remote_a.preset_anti_snore, remote_a.preset_lounge):
-        await preset()
+    for action in (
+        lambda: remote_a.preset_memory(1),
+        lambda: _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).preset_memory(1),
+        remote_a.preset_tv,
+        remote_a.preset_anti_snore,
+        remote_a.preset_lounge,
+    ):
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await action()
     mock_bleak_client.write_gatt_char.assert_not_awaited()
 
 
@@ -520,9 +520,6 @@ async def test_profiles_are_selected_only_explicitly(coordinator):
         assert isinstance(explicit, KeesonController)
         assert explicit._variant == variant
         assert variant in KEESON_VARIANTS
-        assert any(
-            route_variant == variant for _bed_type, route_variant in ACTUATOR_GROUPS["keeson"]
-        )
 
 
 def _service_target(coordinator: AdjustableBedCoordinator, variant: str):

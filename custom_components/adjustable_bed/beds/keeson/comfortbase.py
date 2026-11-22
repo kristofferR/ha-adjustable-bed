@@ -30,6 +30,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from .controller import KeesonController
 
@@ -210,11 +211,8 @@ class ComfortBaseController(KeesonController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         if not self.supports_massage:
             return ()
-        return (ControllerStateSensorSpec(
-            key="massage_timer", translation_key="massage_timer",
-            state_key=MASSAGE_TIMER_MINUTES, icon="mdi:timer-outline",
-            native_unit_of_measurement="min", card=CARD_MASSAGE_TIMER,
-            entity_registry_enabled_default=True,
+        return (massage_timer_sensor_spec(
+            "massage_timer", "massage_timer", MASSAGE_TIMER_MINUTES, card=CARD_MASSAGE_TIMER
         ),)
 
     @property

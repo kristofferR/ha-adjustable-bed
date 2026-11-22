@@ -23,8 +23,9 @@ from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
-from ..keeson.layout_app import APP_TIMER_STATUS, AppController
+from ..keeson.layout_app import APP_TIMER_STATUS, AppController, app_timer_minutes
 from .profiles import ACTIONS, PRODUCTS, Action, Product, Step
 
 if TYPE_CHECKING:
@@ -300,6 +301,8 @@ class Ergomotion4Controller(AppController):
                 hold=ControllerHoldSpec(a.key, 0, 0) if a.held else None,
             )
             for a in self._actions()
+            # Where the light reports its state, the light entity switches it.
+            if not (self.supports_light_state_feedback and a is self._light_action())
         ]
         # Shared alarm dismissal is not gated by a selected product.
         specs.append(
@@ -334,7 +337,7 @@ class Ergomotion4Controller(AppController):
     def _frame(self, mask: int) -> bytes:
         if self.product.protocol == "P2":
             if self.command_side in ("left", "right"):
-                raise ValueError("Ergomotion 4.0 P2 has no side selector")
+                raise ValueError("This bed has no sides. Leave out the side")
             return p2_frame(mask)
         if self.command_side in ("left", "right"):
             return codec.side_frame(mask & 0xFFFFFFFF, cast(codec.Side, self.command_side))
@@ -452,13 +455,13 @@ class Ergomotion4Controller(AppController):
         name = name.strip("".join(chr(value) for value in range(33)))
         units = len(name.encode("utf-16-le")) // 2
         if not name or units > 16:
-            raise ValueError("Use a nonempty name of at most 16 UTF-16 units")
+            raise ValueError("Use a name of 1 to 16 characters. Emoji count as two")
         return codec.rename(name.encode("utf-8")[: min(units, 15)])
 
     async def _run_action(self, key: str) -> None:
         if key in ("meditation_start", "meditation_stop"):
             if not self._meditation_allowed:
-                raise ValueError("The selected product and Bluetooth name do not admit meditation")
+                raise ValueError("This bed model has no meditation mode")
             code = (
                 0x48000000
                 if self.product.style == "M14"
@@ -544,9 +547,18 @@ class Ergomotion4Controller(AppController):
         return self.product.rgb
 
     @property
+    def _toggle_light_reports(self) -> bool:
+        """A non-RGB light toggle on a style whose status frames carry the light."""
+        return (
+            not self.product.rgb
+            and (self.product.style in ("M16", "M19") or self._dynamic)
+            and self._light_action() is not None
+        )
+
+    @property
     def supports_light_toggle_control(self) -> bool:
-        # Exact product-labelled toggles are already in controller_button_specs.
-        return False
+        # Other products keep their product-labelled toggle button.
+        return self._toggle_light_reports
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -555,14 +567,14 @@ class Ergomotion4Controller(AppController):
 
     @property
     def supports_light_state_feedback(self) -> bool:
-        return self.product.rgb
+        return self.product.rgb or self._toggle_light_reports
 
     @property
     def supports_explicit_light_on_control(self) -> bool:
         return self.product.rgb
 
-    async def lights_toggle(self) -> None:
-        action = next(
+    def _light_action(self) -> Action | None:
+        return next(
             (
                 a
                 for a in self._actions()
@@ -570,6 +582,9 @@ class Ergomotion4Controller(AppController):
             ),
             None,
         )
+
+    async def lights_toggle(self) -> None:
+        action = self._light_action()
         if action is None:
             raise ValueError("The selected product has no light toggle")
         await self._run_action(action.key)
@@ -639,18 +654,18 @@ class Ergomotion4Controller(AppController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
+            massage_timer_sensor_spec(
                 "app_timer_status",
                 "app_timer_status",
                 _side_key(APP_TIMER_STATUS, self.command_side),
-                "mdi:timer-outline",
-                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE_TIMER,
             ),
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        if self.supports_light_state_feedback:
+            return ()  # The light shows it.
         return (
             ControllerStateBinarySensorSpec(
                 "ergomotion4_light",
@@ -667,8 +682,8 @@ class Ergomotion4Controller(AppController):
         updates: list[StateUpdate] = []
         for side in ("both", "left", "right"):
             parsed = parse_status(data, self.product.style, dynamic=self._dynamic, side=side)
-            if "timer" in parsed:
-                updates.append(_side_key(APP_TIMER_STATUS, side)(parsed["timer"]))
+            if "timer" in parsed and (minutes := app_timer_minutes(parsed["timer"])) is not None:
+                updates.append(_side_key(APP_TIMER_STATUS, side)(minutes))
             if "light" in parsed:
                 updates.append(_side_key(LIGHT, side)(parsed["light"]))
                 updates.append(_side_key(UNDER_BED_LIGHTS_ON, side)(parsed["light"]))

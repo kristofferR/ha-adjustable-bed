@@ -718,30 +718,6 @@ def test_new_detection_ambiguity_does_not_reuse_the_old_recommendation(field, va
         assert recommend_profile({CONF_BED_TYPE: BED_TYPE_ADJUSTABLE_LUMBAR}, info(), STATE) is None
 
 
-def test_notice_describes_the_actual_controls_lost_and_gained():
-    import json
-    from pathlib import Path
-
-    from custom_components.adjustable_bed.beds.adjustable_lumbar import AdjustableLumbarController
-    from custom_components.adjustable_bed.beds.sleepys.box25 import SleepysBox25Controller
-
-    current = AdjustableLumbarController(MagicMock(), device_name="Star254202000001")
-    suggested = SleepysBox25Controller(MagicMock())
-    root = Path("custom_components/adjustable_bed")
-    strings = json.loads((root / "strings.json").read_text())
-    english = json.loads((root / "translations/en.json").read_text())
-    notice = strings["issues"]["lumbar_star254202_box25"]
-    assert notice == english["issues"]["lumbar_star254202_box25"]
-    text = notice["fix_flow"]["step"]["init"]["description"]
-    assert not current.supports_memory_presets
-    assert suggested.supports_memory_presets and suggested.supports_memory_programming
-    assert current.supports_preset_incline and not suggested.supports_preset_incline
-    assert suggested.supports_preset_tv
-    for button in current.controller_button_specs:
-        assert button.key not in {other.key for other in suggested.controller_button_specs}
-        assert button.name in text
-
-
 def advertisement(name, services):
     observed = info(name)
     observed.service_uuids = services

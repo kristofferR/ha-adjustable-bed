@@ -235,7 +235,7 @@ def test_text_fragment_behavior_and_alarm_fields():
 async def test_adaptive_stiffness_requires_observed_mode_but_fixed_soft_is_usable(clock):
     controller, c = make("SUTA-MOON")
     await controller.start_notify()
-    with pytest.raises(ValueError, match="current MOON"):
+    with pytest.raises(ValueError, match="adaptive mode"):
         await controller.execute_request(bed.Request("adaptive_4_stiff", logical_side=1))
     await controller.execute_request(bed.Request("adaptive_4_soft", logical_side=1))
     sender, callback = c.client.start_notify.call_args.args

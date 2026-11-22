@@ -7,8 +7,8 @@
 ## Known Models
 
 - TiMOTION AHF devices advertising names starting with `AHF`
-- Adjustable bed/recliner controllers with up to five app control channels
-  (Control 1–5). The Android artifact does not identify physical actuator axes.
+- Adjustable bed and recliner controllers with up to five controls, named
+  Control 1–5 as in the app. Which motor each control moves depends on the bed.
 
 ## Apps
 
@@ -16,22 +16,18 @@
 |----------|-----|------------|
 | ✅ | [AHF Remote](https://play.google.com/store/apps/details?id=com.timotion.ahf), fixed P1 route | `com.timotion.ahf` |
 
-The Android artifact establishes thirteen app-labelled controls and a status
-frame. It does not identify physical actuator axes or the physical meaning of the
-lamp codes.
-
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (app Controls 1–5; covers keep legacy axis names) |
-| Night / Chair | ✅ (app-labelled actions; no verified posture meaning) |
+| Motor Control | ✅ (Controls 1–5 from the app; the covers keep their earlier motor names) |
+| Night / Chair | ✅ (buttons named as in the app; the position they move to depends on the bed) |
 | Position Feedback | ❌ |
 | Memory Presets | ❌ |
 | Factory Presets | ❌ (no flat or Zero-G commands) |
-| Under-bed Lights | ✅ (toggle semantics; no discrete on/off packets) |
-| Massage | ❌ (setup does not offer massage for this route) |
-| Status diagnostics | ✅ (readiness, raw lock mask, lamp display code) |
+| Under-bed Lights | ✅ (toggle only; no separate on and off) |
+| Massage | ❌ |
+| Status diagnostics | ✅ (ready state, lock state, lamp display code) |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then three neutral frames) |
 
 ## Protocol Details
@@ -67,11 +63,11 @@ lamp codes.
 
 - The status channel is required even when angle sensing is disabled.
 - On each BLE session, the integration subscribes and reads the status
-  characteristic. A valid frame from either source establishes AHF status
-  readiness. A successful BLE connection or notification subscription alone does
+  characteristic. A valid frame from either source marks the AHF status as
+  ready. A successful BLE connection or notification subscription alone does
   not.
 - Subscription, the initial read, and waiting for status share one eight-second
-  session deadline. A valid notification can establish readiness while the
+  session deadline. A valid notification can mark readiness while the
   initial read is still pending.
 - If no valid frame arrives by the deadline, AHF action buttons and held actions
   stay unavailable and report an actionable status error. The generic STOP action
@@ -92,7 +88,7 @@ lamp codes.
 
 The app's setup guidance says to hold handset buttons **1 and 3 for 5 seconds**
 to broadcast, then move the phone close to **TRF2 / the Bluetooth device by the
-bed**. This is app-reported setup guidance only. It does not establish another
+bed**. This is app setup guidance only. It does not add another
 authentication step, a model selector, a motor map, or a named posture.
 
 ## Commands
@@ -168,14 +164,13 @@ The integration publishes three diagnostic sensors:
 - **AHF raw lock mask:** the unmodified byte 2 value.
 - **AHF lamp display code:** the unmodified byte 3 value, including unknown codes.
 
-The app uses lamp code 0 for its default icon. This does not establish that the
-physical lamp is off. A changed valid lamp display code queues a preempting,
+The app uses lamp code 0 for its default icon. This does not mean the physical
+lamp is off. A changed valid lamp display code queues a preempting,
 serialized neutral STOP; duplicate codes and lock-mask-only changes do not.
 
 > [!NOTE]
 > Earlier versions of this document read byte 3 as light state (`0=off`,
-> `1=white`, `2=green`, `3=red`). The accepted analysis does not establish those
-> meanings, so the integration publishes the raw code only.
+> `1=white`, `2=green`, `3=red`). The app does not confirm those meanings, so the integration publishes the raw code only.
 
 ## Command Timing
 

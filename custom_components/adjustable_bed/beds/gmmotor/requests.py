@@ -75,7 +75,7 @@ class Request:
         if len(self.rgb) != 3 or type(self.enabled) is not bool:
             raise ValueError("Invalid GM Control color or enable flag")
         if self.operation in ("snore_count", "snore_time") and self.value > 255:
-            raise ValueError("Anti-snore quantity exceeds one byte")
+            raise ValueError("Choose a snore count from 1 to 30 or a snore time from 5 to 30")
         if type(self.part) is not int or self.part not in (1, 2):
             raise ValueError("Select the left or right report part")
         if type(self.report_type) is not int or self.report_type not in (1, 2):

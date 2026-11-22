@@ -74,8 +74,7 @@ def _name(key: str) -> str:
 def bed_types() -> dict[str, tuple[str, ...]]:
     """Bed types per profile: the legacy route from the factory registry.
 
-    App profiles are chosen inside the ``jiecang_app`` factory branch;
-    ``tests/test_codec_docs.py`` checks both against ``create_controller``.
+    App profiles are chosen inside the ``jiecang_app`` factory branch.
     """
     legacy = tuple(
         bed_type

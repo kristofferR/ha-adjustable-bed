@@ -18,7 +18,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
-from ...card import CARD_LIGHTING, CARD_MASSAGE
+from ...card import CARD_MASSAGE
 from ...codec import jiecang as codec
 from ...const import (
     BED_TYPE_LOGICDATA_APP,
@@ -48,7 +48,6 @@ from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
@@ -214,6 +213,13 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
         return self.supports_lights
 
     @property
+    def supports_light_state_feedback(self) -> bool:
+        return self.supports_lights
+
+    def on_disconnect(self) -> None:
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
+
+    @property
     def supports_device_rename(self) -> bool:
         return self._rename_transport is not None
 
@@ -278,22 +284,6 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
         )
 
     @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        if not self.supports_lights:
-            return ()
-        return (
-            ControllerStateBinarySensorSpec(
-                key="under_bed_lights",
-                # The light the bed reports, beside the opt-in assumed light entity.
-                translation_key="under_bed_light_state",
-                state_key=UNDER_BED_LIGHTS_ON,
-                icon="mdi:lightbulb",
-                entity_registry_enabled_default=True,
-                card=CARD_LIGHTING,
-            ),
-        )
-
-    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = []
         if self.profile.family_reply:
@@ -325,6 +315,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
                     icon="mdi:alarm",
                     attribute_keys=(ALARM_CONFIG,),
                     entity_registry_enabled_default=True,
+                    entity_category=None,
                 )
             )
         return tuple(specs)
@@ -600,7 +591,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
     async def rename_device(self, name: str) -> None:
         rename_transport = self._rename_transport
         if rename_transport is None:
-            raise NotImplementedError("The selected transport has no rename characteristic")
+            raise NotImplementedError("This bed cannot be renamed")
         await self._schedule(
             profiles.rename_schedule(self.profile, rename_transport, name),
             uuid=TRANSPORTS[rename_transport].name_uuid,
@@ -632,7 +623,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
         if any(isinstance(day, bool) or day not in range(7) for day in weekdays):
             raise ValueError("Alarm weekdays must use Monday=0 through Sunday=6")
         if preset not in ("flat", "zero_g", "anti_snore", "memory_1", "memory_2"):
-            raise ValueError("Alarm preset is unsupported")
+            raise ValueError("Choose a wake action this bed offers")
         packet = codec.alarm(
             enabled,
             tuple(day in weekdays for day in range(7)),
@@ -899,7 +890,7 @@ def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
         has_massage=False,
     )
     try:
-        controller._select_transport(client)  # noqa: SLF001 - the controller's own selection
+        controller._select_transport(client)
     except ValueError as err:
         raise ConnectionError(str(err)) from err
 

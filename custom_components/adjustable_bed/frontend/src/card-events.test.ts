@@ -400,7 +400,7 @@ for (const scenario of [
         {
           domain: "adjustable_bed",
           service: "hold_control",
-          data: { device_id: ["right-bed"], control: "memory_1", duration: 60 },
+          data: { device_id: ["right-bed"], control: "memory_1", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number) },
         },
         { domain: "button", service: "press", data: { entity_id: scenario.stop } },
       ]);
@@ -535,7 +535,7 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
           data: {
             device_id: [rightDevice],
             control: "back_up",
-            duration: 60,
+            duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number),
             side: "right",
           },
         },
@@ -586,7 +586,7 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
           data: {
             device_id: [rightDevice],
             control: "back_up",
-            duration: 60,
+            duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number),
             side: "right",
           },
         },
@@ -655,7 +655,7 @@ for (const stopSide of ["left", "right"] as const) {
           data: {
             device_id: [`${activeSide}`],
             control: "back_up",
-            duration: 60,
+            duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number),
             side: activeSide,
           },
         });
@@ -745,7 +745,7 @@ for (const parentRelation of ["parent_device_id", "via_device_id"] as const) {
           expect(calls[0]).toEqual({
             domain: "adjustable_bed",
             service: "hold_control",
-            data: { device_id: ["parent"], control: "back_up", duration: 60 },
+            data: { device_id: ["parent"], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number) },
           });
           if (phase === "pending-release") {
             invoke(eventHandler(bothUp, "keyup"), fixture.card, [keydown]);
@@ -836,7 +836,7 @@ for (const parentRelation of ["parent_device_id", "via_device_id"] as const) {
           expect(calls[0]).toEqual({
             domain: "adjustable_bed",
             service: "hold_control",
-            data: { device_id: ["parent"], control: "back_up", duration: 60 },
+            data: { device_id: ["parent"], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number) },
           });
 
           if (phase === "pending-release") {
@@ -920,7 +920,7 @@ for (const phase of ["active", "pending-release"] as const) {
         expect(calls[0]).toEqual({
           domain: "adjustable_bed",
           service: "hold_control",
-          data: { device_id: ["bed"], control: "back_up", duration: 60, side: "both" },
+          data: { device_id: ["bed"], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "both" },
         });
         if (phase === "pending-release") {
           invoke(eventHandler(bothUp, "keyup"), fixture.card, [keydown]);
@@ -1346,7 +1346,7 @@ for (const key of ["Enter", " "] as const) {
       scheduled.timers.find((timer) => timer.delay === 100 && !timer.cancelled)?.callback();
       await Promise.resolve();
       expect(calls[0]).toEqual({ domain: "adjustable_bed", service: "hold_control",
-        data: { device_id: ["parent"], control: "back_up", duration: 60 } });
+        data: { device_id: ["parent"], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number) } });
       invoke(eventHandler(current.tile, "keyup"), fixture.card, [new TestKeyboardEvent(key)]);
       [...scheduled.timers].reverse().find((timer) => timer.delay === 100 && !timer.cancelled)?.callback();
       expect(calls.at(-1)).toEqual({ domain: "button", service: "press", data: { entity_id: "button.parent_stop_both" } });
@@ -1380,3 +1380,41 @@ for (const key of ["Enter", " "] as const) {
     }
   });
 }
+
+test("an arrow with no cover, Stop or release is disabled, and a hidden Stop still counts", () => {
+  const card = new AdjustableBedCard();
+  const hass: HomeAssistant = placed({
+    states: {},
+    entities: {},
+    devices: { bed: { id: "bed" } },
+    locale: { language: "en" },
+    language: "en",
+    themes: {}, formatEntityName: (s: { entity_id: string }) => s.entity_id,
+    callService: () => Promise.resolve(),
+  });
+  for (const [id, key] of [["button.back_up", "back_up"], ["button.back_down", "back_down"]]) {
+    hass.entities[id] = { entity_id: id, device_id: "bed", platform: "adjustable_bed", translation_key: key };
+  }
+  card.hass = hass;
+  const createDirection: unknown = Reflect.get(AdjustableBedCard.prototype, "_motorDirection");
+  if (typeof createDirection !== "function") throw new Error("Missing production arrow");
+  const disabled = (bed: BedEntities): unknown => {
+    const motor = bed.motors.find((m) => m.key === "back");
+    if (!motor) throw new Error("Missing discovered back motor");
+    const arrow: unknown = Reflect.apply(createDirection, card, [motor, "up", bed.stop]);
+    if (!isTemplateResult(arrow)) throw new Error("Missing arrow template");
+    return arrow.values[arrow.strings.findIndex((part) => part.includes("?disabled="))];
+  };
+  for (const layout of ["full", "compact"] as const) {
+    card.setConfig({ type: "custom:adjustable-bed-card", device_id: "bed", layout });
+    // A disabled Stop is absent from the registry: releasing would send nothing.
+    expect(disabled(bedEntitiesForDevice(hass, "bed"))).toBe(true);
+  }
+  hass.entities["button.stop"] = {
+    entity_id: "button.stop", device_id: "bed", platform: "adjustable_bed", translation_key: "stop", hidden: true,
+  };
+  const bed = bedEntitiesForDevice(hass, "bed");
+  expect(bed.stop).toBe("button.stop");
+  card.setConfig({ type: "custom:adjustable-bed-card", device_id: "bed" });
+  expect(disabled(bed)).toBe(false);
+});

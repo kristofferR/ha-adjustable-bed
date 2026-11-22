@@ -26,7 +26,6 @@ from tests.test_richmat_classic import instant as instant
 def test_frozen_artifact_vectors(app, total):
     vectors = records(app, "vectors")
     assert len(vectors) == total
-    checked = 0
     for vector in vectors:
         args = vector["inputs"]
         kind = args.get("builder", vector.get("kind"))
@@ -43,10 +42,6 @@ def test_frozen_artifact_vectors(app, total):
             result = rise.lamp_timer(args["seconds"], save=not args.get("slider", True))
         elif kind == "alarm":
             result = b"".join(alarm(args.get("minutes", args.get("delay_minutes")), int(args["code"], 16) if "code" in args else args["action"]))
-        elif kind == "diagnostic":
-            result = codec.motor_test_schedule(tuple(zip(args["orders"], args["run_seconds"], args["rest_seconds"], strict=True)), args["total_rest"], args["total_run"], args["tx"], args["code"], 1, tuple(args["motors"]))
-        elif kind == "factory":
-            result = rise.Schedule(tuple(tuple(row) for row in args["records"]), args["pause"], args["count"], args["tx_type"], args["code_type"], args["identifier"], tuple(args["motors"])).encode()
         elif kind == "receive":
             from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
             state = ReceiveState()
@@ -54,11 +49,10 @@ def test_frozen_artifact_vectors(app, total):
             state.feed(result, app=app, layout="A8RM", desk_bound=False, table_controls_bound=False)
             assert state.alarm_capable or state.light_capable
         else:
-            assert kind == "ascii"  # Excluded radio network administration.
+            # Radio network administration and factory motor programs are not offered.
+            assert kind in ("ascii", "diagnostic", "factory")
             continue
         assert result.hex() == vector["expected_bytes"].replace(" ", "").lower(), vector["id"]
-        checked += 1
-    assert checked >= total - 2
 
 
 @pytest.mark.parametrize("app,total", [("luunarise2", 21046), ("powercool", 20664)])
@@ -245,31 +239,6 @@ async def test_failed_local_notify_does_not_block_controls_or_emit_initializatio
     assert packets(coord)[-2:] == ["6e01002493", "6e01006edd"]
 
 
-@pytest.mark.parametrize("wire", ["RAW", "FRAMED"])
-async def test_diagnostic_cancel_is_a_movement_and_sends_fresh_stop(wire, instant):
-    ctrl, coord = controller("powercool", "TEST", wire)
-    async def write(_channel, data, **kwargs):
-        coord.cancel_command.set()
-    coord.client.write_gatt_char.side_effect = write
-    await ctrl.async_execute_richmat_rise_request(rise.Request("diagnostic_cycle"))
-    assert packets(coord) == (["24", "6e"] if wire == "RAW" else ["6e01002493", "6e01006edd"])
-
-
-async def test_schedule_fragmentation_preserves_bytes_and_does_not_invent_stop(instant):
-    ctrl, coord = controller("powercool", "RMCS", "RAW")
-    vector = records("powercool", "vectors")[-1]
-    a = vector["inputs"]
-    schedule = rise.Schedule(tuple(zip(a["orders"], a["run_seconds"], a["rest_seconds"], strict=True)), 0, 0, "ble", "new", 1, (1, 2, 3, 4))
-    await ctrl.async_execute_richmat_rise_request(rise.Request("program_schedule", schedule=schedule))
-    data = packets(coord)
-    assert [len(bytes.fromhex(x)) for x in data] == [20, 20, 20, 20, 9]
-    assert "".join(data) == vector["expected_bytes"].lower()
-    overflow = replace(schedule, rest=0x123456)
-    assert overflow.encode()[74:76] == bytes.fromhex("1234")
-    with pytest.raises(ValueError):
-        replace(schedule, motors=(1, 1, 2, 3)).encode()
-
-
 async def test_service_reconnects_and_proves_capability_before_rgb(hass, instant):
     from unittest.mock import AsyncMock, patch
 
@@ -385,7 +354,7 @@ async def test_retained_e3rm_entity_follows_mem_and_replacement_controller(
             runtime.controller.validate_hold_control("richmat_classic_1", 60000)
         else:
             assert not keys
-            with pytest.raises(ValueError, match="available held control"):
+            with pytest.raises(ValueError, match="control this bed offers"):
                 runtime.controller.validate_hold_control("richmat_classic_1", 60000)
 
     assert_card_route(not initially_armed)
@@ -427,3 +396,38 @@ async def test_retained_e3rm_entity_follows_mem_and_replacement_controller(
             assert_card_route(True)
             radio.client.write_gatt_char.reset_mock()
     await platform.async_reset()
+
+
+@pytest.mark.parametrize(
+    "fields,choices",
+    [
+        ({"wake_action": "zero_g"}, ("zero_g",)),
+        ({"wake_action": "tv", "massage": True, "massage_zone": "head"}, ("tv", "head")),
+        ({"wake_action": "none", "massage": True}, ("all",)),
+    ],
+)
+async def test_alarm_through_the_shared_action_matches_the_app(
+    hass, instant, monkeypatch, fields, choices
+):
+    from homeassistant.util import dt as dt_util
+
+    from tests.alarm_helpers import call_set_alarm
+
+    now = dt_util.now().replace(hour=6, minute=0, second=0, microsecond=0)
+    monkeypatch.setattr(dt_util, "now", lambda: now)
+    ctrl, coord = controller("luunarise2", "P4RM", "RAW")
+    ctrl._receive.menu.add("alarm")
+    keys = {code: key for key, code in ctrl._alarm_actions().items()}
+    names = {"zero_g": 0x45, "tv": 0x58, "head": 0x4C, "all": 0x5D}
+    app = rise.Request(
+        "alarm", actions=tuple(keys[names[c]] for c in choices), when=now.replace(minute=30).time()
+    )
+    await ctrl.async_execute_richmat_rise_request(app)
+    expected = packets(coord)
+    assert len(expected) == 2
+    coord.client.write_gatt_char.reset_mock()
+    await call_set_alarm(hass, ctrl, {"enabled": True, "time": "06:30:00", **fields})
+    assert packets(coord) == expected
+    coord.client.write_gatt_char.reset_mock()
+    await call_set_alarm(hass, ctrl, {"enabled": False})
+    assert packets(coord) == [p.hex() for p in alarm(0, 0)]

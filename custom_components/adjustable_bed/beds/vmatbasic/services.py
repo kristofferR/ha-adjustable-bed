@@ -30,7 +30,6 @@ async def _hold_vmatbasic_floor(
     await _preflight_and_execute(
         targets,
         VMatBasicController,
-        "V-MAT Basic floor refresh",
         lambda controller: controller.hold_control(control, duration_ms),
         supported=lambda controller: controller.supports_held_control,
         validate=validate,
@@ -48,7 +47,7 @@ async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> 
     try:
         packet = rename(name)
         if len(packet) > 20:
-            raise ValueError("Encoded name exceeds the safe twenty-byte write payload")
+            raise ValueError("This name is too long. Use a shorter name")
     except (ValueError, UnicodeError) as error:
         raise rejected(error) from error
     _single_receiver(targets)
@@ -64,7 +63,6 @@ async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> 
     await _preflight_and_execute(
         targets,
         VMatBasicController,
-        "V-MAT Basic rename",
         rename_and_remember,
         supported=lambda controller: controller.supports_device_rename,
         cancel_running=True,

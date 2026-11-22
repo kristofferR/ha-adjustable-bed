@@ -12,6 +12,10 @@ import re
 from typing import Final
 
 _ACRONYMS: Final = frozenset({"TV", "USB", "RGB", "LED", "BLE", "AI", "MAC", "PIN", "ID"})
+# Names that keep their capital in the middle of a label.
+_PROPER: Final = frozenset({"Bluetooth", "Hz", "Pilates"})
+# A capitalized word or word part: "Up", the "Off" of "On/Off".
+_CAPITALIZED: Final = re.compile(r"(?<![A-Za-z])[A-Z][a-z]+(?![A-Za-z])")
 # Notes about where a label came from, not what the control does.
 _NOTES: Final = re.compile(
     r"\s*\((?:app gesture|unlabeled touch area)\)|\s+(?:preset icon|pictogram|preset)$"
@@ -24,12 +28,15 @@ _PHRASES: Final[tuple[tuple[re.Pattern[str], str], ...]] = (
     (re.compile(r"\bwhole-bed\b", re.IGNORECASE), "whole bed"),
     (re.compile(r"-and-"), " and "),
     (re.compile(r"\bhead foot both\b", re.IGNORECASE), "head and foot"),
+    (re.compile(r"\bunder ?bed\b", re.IGNORECASE), "under-bed"),
+    # The 4.x "Massage: Mode" style: one name style, "Massage mode".
+    (re.compile(r"^(massage|fan): ", re.IGNORECASE), r"\1 "),
 )
 # Whole labels whose literal reading would mislead.
 _NAMES: Final[dict[str, str]] = {"ANTI": "Anti-snore"}
 
 
-def _word(word: str) -> str:
+def _word(word: str, *, first: bool) -> str:
     if word.upper() in _ACRONYMS:
         return word.upper()
     if word.isalpha() and word.isupper() and len(word) > 1 and not re.fullmatch(r"[IVX]+", word):
@@ -37,13 +44,22 @@ def _word(word: str) -> str:
     # str.title() turns a roman numeral such as III into Iii.
     if re.fullmatch(r"I[ivx]+", word):
         return word.upper()
-    return word
+    # Sentence case: "Head Up" is "Head up", "On/Off" is "on/off".
+    return _CAPITALIZED.sub(
+        lambda match: (
+            match[0] if match[0] in _PROPER or first and match.start() == 0 else match[0].lower()
+        ),
+        word,
+    )
 
 
-def display_label(label: str) -> str:
-    """Return the entity name for an artifact action label."""
-    if named := _NAMES.get(label):
-        return named
+def display_label(label: str, *, mid_sentence: bool = False) -> str:
+    """Return the entity name for an artifact action label.
+
+    ``mid_sentence`` is for a label set inside a longer name ("Save {preset}"):
+    its first word is lowercased like the rest.
+    """
+    label = _NAMES.get(label, label)
     text = _NOTES.sub("", label.replace("_", " ")).strip()
     # A number run into a word: "Mode1" is "Mode 1".
     text = re.sub(r"(?<=[a-z]{2})(?=\d)", " ", text)
@@ -53,5 +69,8 @@ def display_label(label: str) -> str:
     heading, _, rest = text.partition(": ")
     if rest == heading:
         text = heading
-    text = " ".join(_word(word) for word in text.split(" "))
-    return text[:1].upper() + text[1:]
+    words = text.split(" ")
+    text = " ".join(
+        _word(word, first=index == 0 and not mid_sentence) for index, word in enumerate(words)
+    )
+    return text if mid_sentence else text[:1].upper() + text[1:]

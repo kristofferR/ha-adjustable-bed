@@ -5,7 +5,7 @@ Home Assistant exposes a company-to-payload mapping, which cannot reconstruct
 that ordering, duplicate company records, or the raw advertising Flags field.
 """
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
@@ -65,15 +65,6 @@ class PublicFilterVerdict:
 
     status: Literal["accepted", "rejected", "unavailable"]
     reasons: tuple[str, ...]
-
-
-def sdk_first_manufacturer(records: Sequence[ManufacturerRecord]) -> ManufacturerRecord:
-    """Select the first supplied SDK list record without sorting company IDs.
-
-    With no records the SDK returns company -1 and an empty payload, which is
-    distinct from the app parser's null-payload sentinel.
-    """
-    return records[0] if records else ManufacturerRecord(-1, b"")
 
 
 def parse_manufacturer_record(record: ManufacturerRecord) -> ManufacturerFields:

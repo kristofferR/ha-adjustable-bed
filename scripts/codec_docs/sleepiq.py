@@ -54,7 +54,7 @@ def mcr_commands() -> str:
                     name,
                     ", ".join(f"`{field}`" for field in sorted(required)) or "None",
                     ", ".join(f"`{field}`" for field in sorted(optional)) or "None",
-                    "Diagnostics" if name in INTERNAL_COMMANDS else "Action",
+                    "Not offered" if name in INTERNAL_COMMANDS else "Action",
                 )
                 for name, (required, optional) in _COMMAND_FIELDS.items()
             ),

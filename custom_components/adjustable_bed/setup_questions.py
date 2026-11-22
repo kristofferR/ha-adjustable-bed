@@ -113,6 +113,7 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SUPERIOR_SLEEP,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
     BED_TYPE_SYMPHONY_SLEEP,
@@ -144,7 +145,6 @@ from .const import (
     CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_SOFA_ACU_NO,
-    CONF_LIMOSS_REMOTE_THEME,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
@@ -249,7 +249,6 @@ from .const import (
 )
 from .import_executor import async_import_modules
 from .profiles import jiecang as jiecang_profiles
-from .profiles import limoss as limoss_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
 from .profiles import sleep_assistant as sleep_assistant_app
@@ -257,6 +256,8 @@ from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
+from .profiles.dreamsense import CHOICES as DREAMSENSE_CHOICES
+from .profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
@@ -264,6 +265,7 @@ from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
+from .validators import MLINE_PROTOCOL_LABELS, SMART_SLEEP_CONTROLS
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -314,6 +316,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "sleep_evolution": GENERIC_FIELDS,
     "wsilver_legacy": GENERIC_FIELDS,
+    "super_colchones": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "agingplace": GENERIC_FIELDS,
@@ -329,6 +332,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MLILY: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY_REMOTE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -1008,7 +1012,7 @@ _FLOOR_PRODUCTS: Final[FieldCondition] = {
 }
 
 
-# Diagnostic layouts, and the ZRS6 screen that only picks another layout.
+# Factory-test layouts, and the ZRS6 screen that only picks another layout.
 _CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
 
 
@@ -1022,18 +1026,20 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MODEL_CHOICES.get(app, ()),
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
-    } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
+    } - _CLASSIC_EXCLUDED
     if app == "bedsmart":
         from .profiles.bedsmart import ALIASES, EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
         unavailable = EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
         codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
-        codes.add("TEST")
     if app == "lp2":
         codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
-        codes.update(("RMCS", "TEST"))
-    if app in ("luunarise2", "powercool"):
+    if app in ("luunarise2", "powercool", "sleepfunction", "baseremote"):
         codes -= {"WFRM", "FWRM"}
+    if app == "sleepfunction":
+        from .profiles.sleepfunction import PICKER_LAYOUTS
+
+        codes -= PICKER_LAYOUTS
     if app in APPS:
         codes -= APPS[app].excluded_layouts
     if app == "jerome2":
@@ -1063,17 +1069,21 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
-    excluded = _CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if data.get(CONF_PROTOCOL_VARIANT) == "powercool" else set())
-    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool"):
+    excluded = _CLASSIC_EXCLUDED
+    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool", "sleepfunction", "baseremote"):
         excluded = excluded | {"WFRM", "FWRM"}
+    if data.get(CONF_PROTOCOL_VARIANT) == "sleepfunction":
+        from .profiles.sleepfunction import PICKER_LAYOUTS
+
+        excluded = excluded | PICKER_LAYOUTS
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
         excluded = excluded | profile.excluded_layouts
     if data.get(CONF_PROTOCOL_VARIANT) == "bedsmart":
         from .profiles.bedsmart import EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
-        excluded = (excluded - {"TEST"}) | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+        excluded = excluded | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
     if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
-        excluded = (excluded - {"RMCS", "TEST"}) | {"209A05", "6HRM", "QRRM", "ZRS3"}
+        excluded = excluded | {"209A05", "6HRM", "QRRM", "ZRS3"}
     if data.get(CONF_PROTOCOL_VARIANT) == "jerome2":
         from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
 
@@ -1618,10 +1628,6 @@ def _richmat_mh_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {CONF_PROTOCOL_VARIANT: f"richmat_mh_{problem}"} if problem else {}
 
 
-def _limoss_remote_themes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    return {theme: theme for theme in limoss_profiles.REMOTE_THEMES}
-
-
 def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .config_flow import _limoss_remote_errors as errors
 
@@ -1640,9 +1646,7 @@ def _mline_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
 
 
 def _mline_protocols(_data: Mapping[str, Any]) -> Mapping[str, str]:
-    return {"auto": "Use Bluetooth name and manufacturer data", "sleep": "Sleep",
-            "smart": "Smart", "smartsainuo": "Smart Sainuo", "okin": "Okin",
-            "unknown": "Unmatched-name fallback"}
+    return {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS}
 
 
 def _personal_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
@@ -1666,6 +1670,15 @@ def _mlily_remote_settings(data: Mapping[str, Any]) -> dict[str, Any]:
         CONF_HAS_MASSAGE: profile is not None and bool(profile.row[2]) and not profile.cooling,
         CONF_DISABLE_ANGLE_SENSING: True,
         CONF_MOTOR_PULSE_COUNT: 10,
+        CONF_MOTOR_PULSE_DELAY_MS: 100,
+    }
+
+
+def _super_colchones_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        CONF_MOTOR_COUNT: 3 if data.get(CONF_PROTOCOL_VARIANT) == "afeg350" else 2,
+        CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: True,
         CONF_MOTOR_PULSE_DELAY_MS: 100,
     }
 
@@ -1945,13 +1958,38 @@ def _app_layout_title(data: Mapping[str, Any]) -> str:
     return APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")
 
 
+# What each of the app's feature keys adds to an Other product, read from the
+# controls ``custom_product`` gives it. The fifth preset key adds no control.
+_ERGOMOTION4_FEATURES: Final = {
+    "k1": "Simple remote: head up and down",
+    "k2": "Simple remote: foot up and down",
+    "k3": "Simple remote: flat",
+    "o1": "Anti-snore preset",
+    "o2": "Memory preset",
+    "o3": "Relax preset",
+    "o4": "TV preset",
+    "o5": "Fifth preset (adds no control)",
+    "m1": "Massage timer",
+    "m2": "Massage stop, with the massage timer",
+    "m3": "Head massage levels, with foot massage levels",
+    "m4": "Foot massage levels, with head massage levels",
+    "m5": "Head massage",
+    "m6": "Foot massage",
+    "m7": "Head tilt, on a bed with a waist motor",
+    "m8": "Waist motor",
+    "m9": "Foot tilt, on a bed with a waist motor",
+    "m10": "Two head and two foot motors",
+}
+
+
 def _ergomotion4_keys(kind: Literal["model", "massage"]) -> Choices:
-    """The catalog's model or massage feature keys, for an Other product."""
+    """The catalog's model or massage feature keys, for an Other product, by what they add."""
 
     def choices(_data: Mapping[str, Any]) -> Mapping[Any, str]:
         from .beds.ergomotion4.controller import MASSAGE_KEYS, MODEL_KEYS
 
-        return {key: key for key in (MODEL_KEYS if kind == "model" else MASSAGE_KEYS)}
+        keys = MODEL_KEYS if kind == "model" else MASSAGE_KEYS
+        return {key: _ERGOMOTION4_FEATURES.get(key, key) for key in keys}
 
     return choices
 
@@ -2238,10 +2276,22 @@ def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {} if profile is not None and profile.key != "MattressControllerDrawerFragment" else {CONF_BLE_DEVICE_NAME: "suta_name"}
 
 
-def _cheerssleep_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+def _cheerssleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
     from .beds.cheerssleep.catalog import MODELS
-    # Several app screens share a model name; the key tells them apart.
-    return {str(key): f"{model.label} ({key})" for key, model in MODELS.items()}
+
+    # App entries that differ only in their key show once; a saved entry keeps
+    # its own. Entries that share a name but not their commands keep the key.
+    saved = str(data.get(CONF_PRODUCT_TYPE, ""))
+    by_model: dict[Any, str] = {}
+    for key, model in MODELS.items():
+        same = replace(model, key=0)
+        if same not in by_model or str(key) == saved:
+            by_model[same] = str(key)
+    names = [model.label for model in by_model]
+    return {
+        key: model.label if names.count(model.label) == 1 else f"{model.label} ({key})"
+        for model, key in by_model.items()
+    }
 
 
 def _cheerssleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
@@ -2350,7 +2400,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
         questions=(
-            Question(CONF_PROTOCOL_VARIANT, {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"}, "p1"),
+            Question(CONF_PROTOCOL_VARIANT, SMART_SLEEP_CONTROLS, "p1"),
             Question(CONF_PRODUCT_TYPE, _smart_sleep_models, "0", searchable=True),
         ),
         normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,
@@ -2757,8 +2807,9 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_SLEEP_NUMBER_MCR: _asking(
         BED_TYPE_SLEEP_NUMBER_MCR, questions=_angle_sensing(BED_TYPE_SLEEP_NUMBER_MCR)
     ),
-    # The Limoss Remote app's bed or chair, its local light and massage choices,
-    # reversals and artwork theme. The connected device supplies the key layout.
+    # The Limoss Remote app's bed or chair, its local light and massage choices
+    # and reversals. The connected device supplies the key layout. The app's
+    # artwork theme changes no control, so it is not asked; a saved one stays.
     BED_TYPE_LIMOSS_REMOTE: _asking(
         BED_TYPE_LIMOSS_REMOTE,
         owns={
@@ -2774,7 +2825,6 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_HAS_LIGHT, default=HAS_LIGHT_DEFAULTS[BED_TYPE_LIMOSS_REMOTE]),
             Question(CONF_HAS_MASSAGE, default=False),
             *(Question(key, default=False) for key in CONF_REVERSE_MOTORS),
-            Question(CONF_LIMOSS_REMOTE_THEME, _limoss_remote_themes, OPTIONAL),
         ),
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
@@ -2809,6 +2859,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
     ),
     # The app's product sets every control, so its one row asks it.
+    "dreamsense": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, DREAMSENSE_CHOICES, searchable=True),),
+        derive=lambda data: {
+            CONF_PRODUCT_TYPE: str(data[CONF_PROTOCOL_VARIANT]),
+            CONF_HAS_MASSAGE: any(a.action.startswith("Massage") for a in DREAMSENSE_PROFILES[str(data[CONF_PROTOCOL_VARIANT])].controls),
+        },
+        title=lambda _data: "Dream Sense Bed",
+    ),
     "saatva": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
@@ -2908,6 +2968,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                             when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN,
                                   "value": ["malouf", "reverie_v1", "reverie_v2"]})),
         derive=_personal_comfort_settings,
+    ),
+    "super_colchones": _asking(
+        "super_colchones",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("super_colchones")),),
+        derive=_super_colchones_settings,
     ),
     "luuna": _asking(
         "luuna",
@@ -3071,8 +3136,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_SLEEPTRACKER_UNIT, default=0, validator=_INT32, advanced=True),
             Question(
                 CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+                {0: "Left side", 1: "Right side", 2: "Whole bed", 3: "Other"},
                 default=0,
-                validator=vol.All(int, vol.Range(min=0, max=3)),
                 advanced=True,
             ),
             Question(CONF_SLEEPTRACKER_RESTRICTED, default=False, advanced=True),
@@ -3105,6 +3170,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    BED_TYPE_SUPERIOR_SLEEP: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, {"ss350": "SS350", "ss650": "SS650"}, "ss350"),
+            Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),
+        ),
+        title=lambda _data: "Superior sleep",
     ),
     BED_TYPE_RIZE_HOME: SetupProfile(
         owns={

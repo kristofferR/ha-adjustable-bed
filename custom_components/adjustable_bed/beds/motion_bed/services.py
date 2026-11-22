@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from enum import IntEnum
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -63,13 +64,20 @@ def _integers(data: Mapping[str, object], key: str) -> tuple[int, ...]:
     return tuple(value)
 
 
+def _choice[E: IntEnum](data: Mapping[str, object], key: str, choices: type[E]) -> E:
+    value = _integer(data, key)
+    if value not in choices:
+        raise ValueError(f"{key.replace('_', ' ').capitalize()} must be one of {', '.join(str(int(c)) for c in choices)}")
+    return choices(value)
+
+
 
 
 def build_motion_bed_request(service: str, data: Mapping[str, object]) -> MotionBedWrite:
     """Construct only one of the published domain-specific writes."""
     confirm = _boolean(data, "confirmed")
     if service == "motion_bed_sleep_angles":
-        frame = build_sleep_angles(SleepPage(_integer(data, "page")), _integers(data, "flat"), _integers(data, "side_positions"))
+        frame = build_sleep_angles(_choice(data, "page", SleepPage), _integers(data, "flat"), _integers(data, "side_positions"))
         return MotionBedWrite("sleep_angles", (frame,), "sleep_adjust", confirmed=confirm, persistent=True)
     if service == "motion_bed_calibration":
         frame = build_sleep_calibration(_integer(data, "flat"), _integer(data, "side_position"))
@@ -88,17 +96,17 @@ def build_motion_bed_request(service: str, data: Mapping[str, object]) -> Motion
         if operation == "query":
             frame = build_module_query()
         elif operation == "bind":
-            frame = build_module_bind(ModuleType(_integer(data, "module_type")), _text(data, "address"))
+            frame = build_module_bind(_choice(data, "module_type", ModuleType), _text(data, "address"))
         elif operation == "delete":
-            frame = build_module_delete(ModuleType(_integer(data, "module_type")))
+            frame = build_module_delete(_choice(data, "module_type", ModuleType))
         else:
             raise ValueError("Module operation must be query, bind, or delete")
         return MotionBedWrite("module", (frame,), "module_binding" if operation == "bind" else "module_change", confirmed=confirm, persistent=operation != "query")
     if service == "motion_bed_air_setting":
-        mode = AirMode(_integer(data, "mode"))
+        mode = _choice(data, "mode", AirMode)
         if _boolean(data, "query"):
             return MotionBedWrite("air_setting", (build_air_query(mode),), "air_settings")
-        timer = AirTimer(_integer(data, "timer")) if "timer" in data else None
+        timer = _choice(data, "timer", AirTimer) if "timer" in data else None
         return MotionBedWrite("air_setting", (build_air_save(mode, _integer(data, "gear"), timer),), "air_settings", confirmed=confirm, persistent=True)
     if service == "motion_bed_pressure":
         if _text(data, "operation") == "save":
@@ -109,7 +117,7 @@ def build_motion_bed_request(service: str, data: Mapping[str, object]) -> Motion
         # Source checks every 500ms and requires elapsed strictly greater than 2s.
         return MotionBedWrite("pressure", (frame,), "pressure_settings", initial_delay_ms=2500)
     if service == "motion_bed_thermal_schedule":
-        frame = build_thermal_schedule(_integer(data, "hour"), _integer(data, "minute"), ThermalMode(_integer(data, "mode")), _integer(data, "gear"))
+        frame = build_thermal_schedule(_integer(data, "hour"), _integer(data, "minute"), _choice(data, "mode", ThermalMode), _integer(data, "gear"))
         return MotionBedWrite("thermal_schedule", (frame,), "thermal_schedule", confirmed=confirm, persistent=True)
     if service == "motion_bed_audio":
         if _text(data, "operation") == "volume":
@@ -145,7 +153,6 @@ async def _execute(call: ServiceCall, request: MotionBedWrite | None = None) -> 
     await _preflight_and_execute(
         _call_targets(call),
         MotionBedController,
-        "Motion Bed app controls",
         execute,
         validate=validate,
         cancel_running=True,
@@ -166,8 +173,8 @@ async def handle_motion_bed_configuration(call: ServiceCall) -> None:
 
 
 def async_register_motion_bed_services(hass: HomeAssistant) -> None:
-    from ...services import CONF_DEVICE_ID, SIDE_FIELD
-    common = {vol.Required(CONF_DEVICE_ID): cv.ensure_list, **SIDE_FIELD,
+    from ...services import CONF_DEVICE_ID, DEVICE_IDS, SIDE_FIELD
+    common = {vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD,
               vol.Optional("confirmed", default=False): bool}
     required = vol.Required
     optional = vol.Optional

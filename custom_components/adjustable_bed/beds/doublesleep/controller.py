@@ -45,6 +45,20 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# Vital signs, presence and sleep reports stay out of diagnostics and support
+# bundles, which users post publicly. Their entities show them instead.
+_SLEEP_DATA_KEYS: Final = frozenset(
+    {"last_json", "last_notification", "live_legacy_raw", "legacy_report"}
+)
+_SIDE_SLEEP_DATA: Final = frozenset(
+    {"heart_rate", "breath_rate", "status", "flag1", "flag2", "history", "raw", "report"}
+)
+
+
+def _is_sleep_data(key: str) -> bool:
+    side, _, field = key.partition("_")
+    return key in _SLEEP_DATA_KEYS or (side in ("left", "right") and field in _SIDE_SLEEP_DATA)
+
 
 @dataclass
 class Session:
@@ -247,7 +261,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             "child_lock": self.session.child_lock,
             "sonic_ui": self.ui.sonic_ui,
             "slow_anti_snore": self.ui.slow,
-            "state": self.parser.state,
+            "state": {
+                key: value for key, value in self.parser.state.items() if not _is_sleep_data(key)
+            },
         }
 
     def _publish(self) -> None:
@@ -599,27 +615,27 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             and self.model in p.P3_MODELS
             and request.values[0] != -1
         ):
-            raise ValueError("P3 reports its sensor sides but has no reachable side-setting action")
+            raise ValueError("This bed model cannot change its sensor sides")
         if request.action == "save_preset" and not self.supports_memory_programming:
-            raise ValueError("This SleepEase profile cannot program presets")
+            raise ValueError("This bed model cannot save presets")
         if request.action in ("alarm", "save_preset") and not self.supports_motor_control:
-            raise ValueError("This SleepEase app profile has no bed control page")
+            raise ValueError("This device has no bed controls")
         if (
             request.action in ("anti_snore", "anti_snore_demo")
             and not self.ui.slow
             and any(v >= 0 for v in request.values[2:])
         ):
-            raise ValueError("Slow anti-snore settings require the MFP capability")
+            raise ValueError("This bed model has no slow anti-snore settings")
         if request.action == "report" and self.model not in p.P2_MODELS | p.P3_MODELS:
-            raise ValueError("Use Download legacy history for this saved app model")
+            raise ValueError("Use the Download sleep history action for this bed model")
         if (
             request.action == "report"
             and self.protocol == "p2"
             and not 2000 <= request.values[2] <= 2255
         ):
-            raise ValueError("The binary report year must fit its 2000-based byte")
+            raise ValueError("Choose a report date from 2000 to 2255")
         if request.action == "report" and self._report_future is not None:
-            raise ValueError("A SleepEase report request is already active")
+            raise ValueError("A report is already being downloaded. Wait for it to finish")
 
     async def request(self, request: Request) -> None:
         self.validate_request(request)
@@ -632,7 +648,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             operation, strength, pwm, timer = request.values
             cache = self.ui
             if not cache.slow and (pwm >= 0 or timer >= 0):
-                raise ValueError("Slow anti-snore settings require the MFP capability")
+                raise ValueError("This bed model has no slow anti-snore settings")
             values = (
                 (
                     operation,
@@ -743,7 +759,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             or type(duration_ms) is not int
             or not 100 <= duration_ms <= 60000
         ):
-            raise ValueError("Choose a SleepEase held control and duration from 100 to 60000 ms")
+            raise ValueError("Choose a control this bed offers and a duration from 0.1 to 60 seconds")
         self.validate(int(control.removeprefix("doublesleep_")))
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
@@ -777,9 +793,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
         if self.session.child_lock and index in p.CHILD_BLOCKED:
             raise ValueError("SleepEase child lock blocks this action")
         if index == 66 and self.model in p.P2_MODELS | p.P3_MODELS:
-            raise ValueError("Legacy history requires a saved legacy app model")
+            raise ValueError("This bed model does not offer that history download")
         if index == 66 and (self._legacy_active or self._legacy_finishing):
-            raise ValueError("A SleepEase legacy download is already active")
+            raise ValueError("A sleep history download is already running. Wait for it to finish")
 
     @property
     def supports_clock_sync(self) -> bool:
@@ -970,7 +986,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         if not self.supports_memory_programming or memory_num not in (1, 2):
-            raise ValueError("SleepEase memory programming is unavailable")
+            raise ValueError("This bed cannot save that memory position")
         await self._save(19 + memory_num)
 
     async def _save(self, index: int) -> None:
@@ -1148,7 +1164,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
         def local(on: bool) -> None:
             current = self._coordinator.capability_controller
             if current is None or selected(current).session is not self.session:
-                raise ValueError("The SleepEase app profile changed")
+                raise ValueError("The bed's settings changed while the action was starting. Try again")
             self.session.child_lock = on
             self.forward_controller_state_updates(CHILD_LOCK("on" if on else "off"))
 
@@ -1193,9 +1209,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 "on",
                 "mdi:lock",
                 local_set_fn=local,
-                # Settings, not dashboard controls: there to enable.
+                # A setting, shown with the bed's other settings.
                 entity_category=EntityCategory.CONFIG,
-                entity_registry_enabled_default=False,
+                entity_registry_enabled_default=True,
             ),
             ControllerSwitchSpec(
                 "doublesleep_privacy",
@@ -1206,7 +1222,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 "on",
                 "mdi:shield-lock-outline",
                 entity_category=EntityCategory.CONFIG,
-                entity_registry_enabled_default=False,
+                entity_registry_enabled_default=True,
             ),
         )
 
@@ -1286,8 +1302,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     _field_key("alarm_enabled"),
                     "mdi:alarm",
                     attribute_keys=(_field_key("alarm"),),
-                    entity_registry_enabled_default=False,
+                    entity_registry_enabled_default=True,
                     card=CARD_UTILITY,
+                    entity_category=None,
                 ),
                 ControllerStateSensorSpec(
                     "doublesleep_light",
@@ -1307,8 +1324,8 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             if self.protocol == "p2"
             else ("massage",)
         ):
-            # The switch shows "running"; the rest mirror the step buttons
-            # (the bed takes no direct level), so they start hidden.
+            # The switch shows "running"; the levels and timer step the bed
+            # reports are massage state (the bed takes no direct level).
             for key in ("mode", "strength", "head", "foot", "time", "source"):
                 if domain == "massage" and key == "source":
                     continue
@@ -1319,8 +1336,11 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                         name,
                         _field_key(f"{domain}_{key}"),
                         "mdi:vibrate",
-                        entity_registry_enabled_default=False,
+                        entity_registry_enabled_default=key not in ("mode", "source"),
                         card=CARD_MASSAGE,
+                        entity_category=None
+                        if key not in ("mode", "source")
+                        else EntityCategory.DIAGNOSTIC,
                     )
                 )
         return tuple(specs)

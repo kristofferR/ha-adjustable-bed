@@ -27,7 +27,6 @@ async def handle_action(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         SomosController,
-        "Somos buttons",
         lambda controller: controller.perform_action(action),
         validate=lambda controller: controller.validate_action(action),
         resource=None,

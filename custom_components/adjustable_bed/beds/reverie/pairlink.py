@@ -19,9 +19,11 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.storage import Store
 
+from ...app_state_store import pairlink_sdk_store_key
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_SIDE
@@ -254,11 +256,11 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             runtime._sdk_state = PairlinkSdkState(
                 lambda: Store(
                     coordinator.hass, 1,
-                    f"adjustable_bed.pairlink_sdk.{coordinator.entry.entry_id}"
-                    + (
-                        f".{normalize_mac(coordinator.address)}"
+                    pairlink_sdk_store_key(
+                        coordinator.entry.entry_id,
+                        coordinator.address
                         if coordinator.entry.data.get(CONF_SIDE) in ("left", "right")
-                        else ""
+                        else None,
                     ),
                 ),
                 self._async_sdk_metadata_effect,
@@ -295,10 +297,6 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         self._routine_generation = 0
         self._routine_owner: tuple[int, PairlinkPeerIdentity] | None = None
         self._routine_connection_release: Callable[[], None] | None = None
-        self._diagnostic_timer: asyncio.TimerHandle | None = None
-        self._diagnostic_generation = 0
-        self._diagnostic_snapshot: PairlinkSendSnapshot | None = None
-        self._diagnostic_connection_release: Callable[[], None] | None = None
         self._status_sync_timer: asyncio.TimerHandle | None = None
         self._status_sync_generation = 0
         self._backup_check_timer: asyncio.TimerHandle | None = None
@@ -537,9 +535,10 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 key="reverie_pairlink_low_battery",
                 translation_key="reverie_pairlink_low_battery",
                 state_key=LOW_BATTERY,
-                icon="mdi:battery-low",
+                icon=None,
                 entity_registry_enabled_default=True,
                 card=CARD_UTILITY,
+                device_class=BinarySensorDeviceClass.BATTERY,
             ),
         )
 
@@ -2286,7 +2285,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         if isinstance(duration_ms, bool) or not isinstance(duration_ms, int):
             raise ValueError("Pairlink hold duration must be an integer number of milliseconds")
         if not 100 <= duration_ms <= 60_000:
-            raise ValueError("Pairlink hold duration must be between 100 and 60000 ms")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -2443,12 +2442,12 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         if isinstance(memory_num, bool) or not isinstance(memory_num, int):
             raise ValueError("Pairlink memory slot must be an integer")
         if not 1 <= memory_num <= 4 or not self._has_supported_model:
-            raise ValueError("Pairlink memory recall supports slots 1 through 4")
+            raise ValueError("Choose memory position 1 to 4")
         await self._move(40 + memory_num, 0)
 
     async def program_memory(self, memory_num: int) -> None:
         del memory_num
-        raise ValueError("Pairlink memory save is not a reachable app action")
+        raise ValueError("This bed cannot save memory positions")
 
     async def lights_on(self) -> None:
         await self._move(92, 0)
@@ -2564,7 +2563,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
 
     def validate_comfort_request(self, request: ReverieComfortRequest) -> None:
         if not self._has_supported_model:
-            raise ValueError("Pairlink comfort is unavailable for the selected model")
+            raise ValueError("This bed model has no comfort settings")
         validate_comfort_request(
             request,
             supported_fields=frozenset(self._comfort_field_names),
@@ -2584,7 +2583,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 getattr(request, name) for name in self._comfort_field_names
             )
         ):
-            raise ValueError("Forced Pairlink comfort requires every supported value")
+            raise ValueError("To force the settings, enter a value for every comfort setting")
 
     def comfort_runtime_identity(self) -> PairlinkRuntime:
         """Return the entry-owned runtime key for preflight plan routing."""
@@ -2701,16 +2700,16 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         self, steps: RoutineSteps
     ) -> None:
         if not self._has_supported_model:
-            raise ValueError("Pairlink routines are unavailable for the selected model")
+            raise ValueError("This bed model has no routines")
         for request, duration_minutes in steps:
             if duration_minutes is not None and (
                 isinstance(duration_minutes, bool) or not isinstance(duration_minutes, int)
             ):
-                raise ValueError("Pairlink routine duration must be an integer number of minutes")
+                raise ValueError("Enter the routine duration in whole minutes")
             if request is None:
                 continue
             if request.force:
-                raise ValueError("Pairlink routine steps use ordinary comfort dispatch")
+                raise ValueError("This bed model runs routine steps as comfort settings. Use the comfort settings action instead")
             self.validate_comfort_request(request)
 
     async def async_start_routine(
@@ -2819,99 +2818,12 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         self._routine_index = 0
         self._release_routine_connection()
 
-    async def async_start_diagnostic(self) -> None:
-        """Run the accepted two-second selected-mesh test and exact stop pair."""
-        if not self._has_supported_model:
-            raise ValueError("Pairlink diagnostic is unavailable for the selected model")
-        captured = self._capture_current_send_snapshot()
-        self._cancel_diagnostic()
-        generation = self._diagnostic_generation
-        self._diagnostic_snapshot = captured
-        context = self._coordinator.hold_command_connection()
-        context.__enter__()
-
-        def release() -> None:
-            context.__exit__(None, None, None)
-
-        self._diagnostic_connection_release = release
-        self._diagnostic_timer = self._coordinator.hass.loop.call_later(
-            2, self._enqueue_diagnostic_stop, captured, generation
-        )
-        failures: list[Exception] = []
-        for payload in (dashboard_payload(79, 20), dashboard_payload(92, 0)):
-            try:
-                await self.async_send_payload(
-                    payload, prepared_snapshot=captured, refresh_telemetry=True
-                )
-            except Exception as err:
-                failures.append(err)
-        if failures:
-            raise ExceptionGroup("Pairlink diagnostic start writes failed", failures)
-
-    def _enqueue_diagnostic_stop(
-        self, captured: PairlinkSendSnapshot, generation: int
-    ) -> None:
-        if generation != self._diagnostic_generation:
-            return
-        self._diagnostic_timer = None
-        self._coordinator.hass.async_create_task(
-            self._stop_diagnostic(captured, generation),
-            "adjustable_bed.reverie_pairlink_diagnostic_stop",
-        )
-
-    async def _stop_diagnostic(
-        self, captured: PairlinkSendSnapshot, generation: int
-    ) -> None:
-        failures: list[Exception] = []
-
-        async def write_stops(controller: BedController) -> None:
-            if (
-                not isinstance(controller, ReveriePairlinkController)
-                or controller._runtime is not self._runtime
-                or generation != self._diagnostic_generation
-            ):
-                return
-            for payload in (dashboard_payload(72, 0), dashboard_payload(93, 0)):
-                try:
-                    await controller._async_release_to_captured_target(payload, captured)
-                except Exception as err:
-                    failures.append(err)
-
-        try:
-            await self._coordinator.async_execute_controller_command(
-                write_stops,
-                cancel_running=False,
-                resource="reverie:pairlink:diagnostic",
-                read_positions_after_operation=False,
-            )
-        finally:
-            if generation == self._diagnostic_generation:
-                self._cancel_diagnostic()
-        if failures:
-            raise ExceptionGroup("Pairlink diagnostic stop writes failed", failures)
-
-    def validate_diagnostic(self) -> None:
-        if not self._has_supported_model:
-            raise ValueError("Pairlink diagnostic is unavailable for the selected model")
-
-    def _cancel_diagnostic(self) -> None:
-        self._diagnostic_generation += 1
-        self._diagnostic_snapshot = None
-        if self._diagnostic_timer is not None:
-            self._diagnostic_timer.cancel()
-            self._diagnostic_timer = None
-        release = self._diagnostic_connection_release
-        self._diagnostic_connection_release = None
-        if release is not None:
-            release()
-
     def _cancel_runtime_owned_activity(self) -> None:
         """Invalidate controller timers when the entry-owned runtime closes."""
         self._set_active_control_session(False)
         self._cancel_clock_sync()
         self._cancel_backup_check()
         self._cancel_routine()
-        self._cancel_diagnostic()
 
     def on_disconnect(self) -> None:
         self._cancel_runtime_owned_activity()

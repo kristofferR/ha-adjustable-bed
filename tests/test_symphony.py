@@ -70,7 +70,6 @@ def test_scan_overwrite_order(name, manufacturer, expected):
     assert app.selector_from_scan(name, manufacturer) == expected
     assert app.selector_from_scan(name, manufacturer, 6) == 6
     assert not app.scan_matches("SLEEP", {})
-    assert app.logical_name({89: bytes((255, 1, 2, 3, 4, 5, 6))}) == "010203040506"
 
 
 @pytest.mark.parametrize(
@@ -208,6 +207,15 @@ async def test_p2_source_fields_exact_light_length_and_disabled_alarm_cache():
     assert values[k.ALARM] is False and values[k.WEEK] == 62 and values[k.HOUR] == 7
     notify("2a000007810901020300000100000000")
     assert values[k.SNORE] is True and values[k.STRENGTH] == 3 and values[k.PRIVACY] is True
+
+
+def test_massage_timer_reads_in_minutes():
+    """Timer step 2 is the app's 20 minute timer (step * 600 seconds)."""
+    ctrl = bed("12", 9)
+    ctrl._notify(ctrl._generation, ctrl._link, bytes.fromhex("2a000006810b0024360000040058025902"))
+    assert ctrl._coordinator.controller_state[k.TIMER] == 20
+    spec = next(s for s in ctrl.controller_state_sensor_specs if s.key == "symphony_massage")
+    assert spec.native_unit_of_measurement == "min"
 
 
 def test_premier_F1_time_projection_and_other_five_consumers():

@@ -952,7 +952,7 @@ class CstProduct:
 
 
 _MEMORY_ZERO_G = CstMemorySlot(
-    "Zero Gravity", CstRemoteCommands.ZERO_G, CstRemoteCommands.SAVE_ZERO_G
+    "Zero gravity", CstRemoteCommands.ZERO_G, CstRemoteCommands.SAVE_ZERO_G
 )
 _MEMORY_INCLINE = CstMemorySlot(
     "Incline", CstRemoteCommands.INCLINE, CstRemoteCommands.SAVE_INCLINE
@@ -1359,7 +1359,7 @@ RIZE_REMEDY_II_ACTIONS: Final = {
 RIZE_REMEDY_II: Final = _cst(
     CstProduct(
         key="rize_remedy_ii", memory_slots=(
-            CstMemorySlot("Zero Gravity", 0x1000, 0x08001000),
+            CstMemorySlot("Zero gravity", 0x1000, 0x08001000),
             CstMemorySlot("Incline", 0x4000, 0x08004000),
             CstMemorySlot("Leisure", 0x2000, 0x08002000),
         ), massage_style="global", motors=("head", "feet", "lumbar"),

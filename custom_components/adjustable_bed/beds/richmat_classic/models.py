@@ -1,8 +1,10 @@
 """Exact package-local selectable layouts; no hardware compatibility claim.
 
-Generated outside this repository with ``beds/richmat_classic/data``; no generator is checked in, so edits are by hand.
+Data extracted outside this repository from the apps' catalogs in
+``beds/richmat_classic/data``; not edited by hand.
 """
 
+from ...profiles import baseremote
 from ...profiles.bedsmart import ALIASES as BEDSMART_ALIASES
 from ...profiles.bedsmart import LAYOUTS as BEDSMART_LAYOUTS
 from ...profiles.bedsmart import NAVIGATION_LAYOUTS as BEDSMART_NAVIGATION
@@ -12,6 +14,8 @@ from ...profiles.jerome2 import LAYOUTS as JEROME_LAYOUTS
 from ...profiles.lp2 import ALIASES as LP2_ALIASES
 from ...profiles.lp2 import LAYOUTS as LP2_LAYOUTS
 from ...profiles.richmat_resource_apps import ALIASES, APPS, LAYOUTS
+from ...profiles.sleepfunction import ALIASES as SLEEPFUNCTION_ALIASES
+from ...profiles.sleepfunction import LAYOUTS as SLEEPFUNCTION_LAYOUTS
 
 # These source screens select another layout and have no ordinary bed controls.
 LAYOUT_PICKER_CHOICES: dict[str, dict[str, str]] = {
@@ -395,9 +399,16 @@ MODEL_CHOICES['powercool'] = (
 MANUAL_ALIASES['powercool'] = {'B6RU': 'B6RM', 'ZR90': 'S9RM', '200I': 'A8RM', '400I': 'A0RM', '800I': 'A1RM', 'COOL': 'QRRM'}
 
 # The four resource apps share one identical layout/alias domain.
+MODEL_CHOICES["baseremote"] = baseremote.LAYOUTS
+MANUAL_ALIASES["baseremote"] = {key: value for key, value in baseremote.ALIASES.items() if len(key) == 4}
+
 for _app in APPS:
     MODEL_CHOICES[_app] = LAYOUTS
     MANUAL_ALIASES[_app] = {key: value for key, value in ALIASES.items() if len(key) == 4}
+
+
+MODEL_CHOICES["sleepfunction"] = SLEEPFUNCTION_LAYOUTS
+MANUAL_ALIASES["sleepfunction"] = {key: value for key, value in SLEEPFUNCTION_ALIASES.items() if len(key) == 4}
 
 MODEL_CHOICES["lp2"] = LP2_LAYOUTS
 MANUAL_ALIASES["lp2"] = {key: value for key, value in LP2_ALIASES.items() if len(key) == 4}

@@ -19,6 +19,7 @@ from homeassistant.core import callback
 from .bed_traits import bed_type_has_position_feedback
 from .command_scheduler import CommandKind, current_command_context
 from .const import POSITION_FEEDBACK_TIMEOUT
+from .errors import BedNotConnectedError, bluetooth_errors_translated
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,
@@ -42,14 +43,6 @@ _INITIAL_POSITION_READ_TOTAL_TIMEOUT = 40.0
 _INITIAL_POSITION_READ_RETRY_DELAY = 3.0
 _INITIAL_POSITION_READ_MAX_ATTEMPTS = 6
 _PASSIVE_POSITION_RECONCILIATION_IDLE_MARGIN = 15.0
-
-
-class NotConnectedError(Exception):
-    """Raised when bed is not connected."""
-
-
-class NoControllerError(Exception):
-    """Raised when no controller is available."""
 
 
 class CoordinatorPositionsMixin:
@@ -601,13 +594,14 @@ class CoordinatorPositionsMixin:
         """Schedule one position target with axis-scoped replacement."""
 
         async def operation() -> None:
-            await self._async_seek_position_serial(
-                position_key,
-                target_angle,
-                move_up_fn,
-                move_down_fn,
-                move_stop_fn,
-            )
+            with bluetooth_errors_translated():
+                await self._async_seek_position_serial(
+                    position_key,
+                    target_angle,
+                    move_up_fn,
+                    move_down_fn,
+                    move_stop_fn,
+                )
 
         await self._async_schedule_command_operation(
             operation,
@@ -680,11 +674,12 @@ class CoordinatorPositionsMixin:
                     controller = await self._async_prepare_controller_operation("position seek")
                 else:
                     if not await self.async_ensure_connected(reset_timer=False):
-                        _LOGGER.error("Cannot seek position: not connected to bed")
-                        raise NotConnectedError("Not connected to bed")
+                        _LOGGER.debug("Cannot seek position: not connected to bed")
+                        raise BedNotConnectedError
                     if self._controller is None:
-                        _LOGGER.error("Cannot seek position: no controller available")
-                        raise NoControllerError("No controller available")
+                        # The link dropped again right after connecting.
+                        _LOGGER.debug("Cannot seek position: no controller available")
+                        raise BedNotConnectedError
                     controller = self._controller
                     await self._async_refresh_controller_auth()
 
@@ -790,11 +785,6 @@ class CoordinatorPositionsMixin:
 
                 # Only direct-position controllers may reach this point without a
                 # current reading, and they returned above.
-                if current_angle is None:
-                    raise NotConnectedError(
-                        f"Cannot seek {position_key}: no position data available"
-                    )
-
                 feedback_after = time.monotonic()
 
                 async def issue_seek_step(direction_up: bool) -> None:

@@ -31,7 +31,7 @@ class _LoopImportRecorder(importlib.abc.MetaPathFinder):
         self.loop_thread = threading.get_ident()
         self.imports: dict[str, str] = {}
 
-    def find_spec(self, fullname, path=None, target=None):  # noqa: ANN001, ANN201
+    def find_spec(self, fullname, path=None, target=None):
         if fullname.startswith(_PACKAGE) and threading.get_ident() == self.loop_thread:
             importer = next(
                 (

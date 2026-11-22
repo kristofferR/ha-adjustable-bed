@@ -9,7 +9,6 @@ from typing import Literal
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...const import DOMAIN
@@ -57,18 +56,18 @@ def build_request(data: Mapping[str, object]) -> Request:
     if not isinstance(action, str) or action not in fields:
         raise ValueError("Unknown SleepEase action")
     if set(data) - fields[action] - {"action", "device_id", "side"}:
-        raise ValueError("A supplied field does not belong to this SleepEase action")
+        raise ValueError("A field you entered does not apply to this action. Remove it and try again")
     if action == "alarm":
         preset = data.get("alarm_preset")
         if not isinstance(preset, str) or preset not in ALARM_PRESETS:
-            raise ValueError("Choose an app alarm preset")
+            raise ValueError("Choose an alarm preset")
         weekdays = data.get("weekdays", [])
         if not isinstance(weekdays, list) or any(not isinstance(day, str) for day in weekdays):
-            raise ValueError("Alarm weekdays must be a list")
+            raise ValueError("Enter the alarm weekdays as a list")
         hour, minute = integer(data, "hour", 0, 23), integer(data, "minute", 0, 59)
         vibration = data.get("alarm_massage", False)
         if type(vibration) is not bool:
-            raise ValueError("Alarm massage must be a boolean")
+            raise ValueError("Set alarm massage to true or false")
         return Request(
             "alarm",
             (
@@ -115,7 +114,7 @@ def build_request(data: Mapping[str, object]) -> Request:
     if action == "save_preset":
         preset = data.get("preset")
         if not isinstance(preset, str) or preset not in PRESETS or PRESETS[preset] not in SAVE:
-            raise ValueError("Choose a programmable SleepEase preset")
+            raise ValueError("Choose a preset that can be saved")
         return Request("save_preset", (SAVE[PRESETS[preset]],))
     if action == "capabilities":
         return Request("capabilities", (integer(data, "capability_page", 0, 255, 0),))
@@ -134,7 +133,6 @@ async def handle_doublesleep(call: ServiceCall) -> None:
     await _preflight_and_execute(
         _call_targets(call),
         DoubleSleepController,
-        "OKIN SleepEase controls",
         lambda controller: controller.request(request),
         validate=lambda controller: controller.validate_request(request),
         cancel_running=True,
@@ -143,7 +141,7 @@ async def handle_doublesleep(call: ServiceCall) -> None:
 
 
 def async_register_doublesleep_services(hass: HomeAssistant) -> None:
-    from ...services import CONF_DEVICE_ID, SIDE_FIELD
+    from ...services import CONF_DEVICE_ID, DEVICE_IDS, SIDE_FIELD
 
     fields = (
         "hour",
@@ -164,7 +162,7 @@ def async_register_doublesleep_services(hass: HomeAssistant) -> None:
         "capability_page",
     )
     schema = {
-        vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         **SIDE_FIELD,
         vol.Required("action"): vol.In(
             (

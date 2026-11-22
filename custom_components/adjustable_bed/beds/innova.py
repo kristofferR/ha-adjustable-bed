@@ -26,7 +26,7 @@ from typing import Any, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..card import CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER
+from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER
 from ..codec import keeson as codec
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
@@ -34,12 +34,13 @@ from ..const import (
     KEESON_VARIANT_INNOVA,
 )
 from ..controller_state import StateKey, StateUpdate
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .entity_specs import (
     ControllerButtonSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
 from .keeson.controller import KeesonCommands, KeesonController
 
@@ -51,7 +52,6 @@ MASSAGE_LEVEL: Final = 0x00000100
 MASSAGE_TIMER: Final = 0x00000200
 RENAME_MAX_UNITS: Final = 14
 
-STATE_LIGHT: Final = StateKey[bool | None]("innova_light")
 STATE_MASSAGE_TIMER: Final = StateKey[int | None]("innova_massage_timer")
 _TIMER_MINUTES: Final = {-1: 0, 1: 10, 2: 20, 3: 30}
 
@@ -104,10 +104,10 @@ def _utf16_units(text: str) -> int:
 def validate_innova_name(name: str) -> str:
     """Apply the Options editor: maxLength 14 UTF-16 units, then trim, non-empty."""
     if _utf16_units(name) > RENAME_MAX_UNITS:
-        raise ValueError("The INNOVA app limits names to 14 characters")
+        raise ValueError("Use a name of at most 14 characters. Emoji count as two")
     trimmed = _java_trim(name)
     if not trimmed:
-        raise ValueError("The INNOVA app requires a non-empty name")
+        raise ValueError("Enter a name")
     return trimmed
 
 
@@ -139,7 +139,7 @@ def parse_innova_status(data: bytes) -> list[StateUpdate] | None:
         return None
     if (flags >> 5) & 1:
         return None
-    state = [STATE_LIGHT(bool((flags >> 6) & 1))]
+    state = [UNDER_BED_LIGHTS_ON(bool((flags >> 6) & 1))]
     signed = timer - 256 if timer > 127 else timer
     if signed in _TIMER_MINUTES:
         state.append(STATE_MASSAGE_TIMER(_TIMER_MINUTES[signed]))
@@ -333,7 +333,7 @@ class InnovaController(KeesonController):
         if control not in controls:
             raise ValueError(f"The INNOVA {self._layout}M screen has no held control {control}")
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= 60000:
-            raise ValueError("Hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
         if self._coordinator.cancel_command.is_set():
             return
         await self._hold(controls[control], repeat_count=-(-duration_ms // self._hold_interval_ms))
@@ -372,11 +372,10 @@ class InnovaController(KeesonController):
     def supports_discrete_light_control(self) -> bool:
         return False
 
-    async def lights_on(self) -> None:
-        raise NotImplementedError("The INNOVA app has only a light toggle")
-
-    async def lights_off(self) -> None:
-        raise NotImplementedError("The INNOVA app has only a light toggle")
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        """Every status notification reports the light; the app has only a toggle."""
+        return True
 
     async def lights_toggle(self) -> None:
         await self._send_singles(KeesonCommands.TOGGLE_LIGHTS)
@@ -541,32 +540,16 @@ class InnovaController(KeesonController):
             self.forward_controller_state_updates(*state)
 
     def invalidate_diagnostics(self) -> None:
-        self.forward_controller_state_updates(STATE_LIGHT(None), STATE_MASSAGE_TIMER(None))
-
-    @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return (
-            ControllerStateBinarySensorSpec(
-                key="innova_light",
-                translation_key="innova_light",
-                state_key=STATE_LIGHT,
-                icon="mdi:lightbulb",
-                card=CARD_LIGHTING,
-                entity_registry_enabled_default=True,
-            ),
-        )
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None), STATE_MASSAGE_TIMER(None))
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
-                key="innova_massage_timer",
-                translation_key="innova_massage_timer",
-                state_key=STATE_MASSAGE_TIMER,
-                icon="mdi:timer-outline",
-                native_unit_of_measurement="min",
+            massage_timer_sensor_spec(
+                "innova_massage_timer",
+                "innova_massage_timer",
+                STATE_MASSAGE_TIMER,
                 card=CARD_MASSAGE_TIMER,
-                entity_registry_enabled_default=True,
             ),
         )
 

@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import (
     SVANE_CHAR_DOWN_UUID,
     SVANE_CHAR_MEMORY_UUID,
@@ -142,45 +141,14 @@ class JensenLinonController(BedController):
             )
             raise ConnectionError(f"Characteristic {char_uuid} not found in service {service_uuid}")
 
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        _LOGGER.debug(
-            "Writing %s to service %s char %s (repeat: %d, delay: %dms, response=True)",
-            command.hex(),
-            service_uuid[:8],
-            char_uuid[:8],
-            repeat_count,
-            repeat_delay_ms,
-        )
-        self._record_command_trace(
+        await self._write_gatt_with_retry(
             char_uuid,
             command,
-            response=True,
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
             characteristic=char,
         )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                note_frame_skipped()
-                return
-
-            try:
-                async with self._ble_lock:
-                    await self.client.write_gatt_char(char, command, response=True)
-                    note_frame_written(effective_cancel)
-            except BleakError:
-                _LOGGER.exception(
-                    "Failed to write to service %s char %s",
-                    service_uuid[:8],
-                    char_uuid[:8],
-                )
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
 
     async def write_command(
         self,

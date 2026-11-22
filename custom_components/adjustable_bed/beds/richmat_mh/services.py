@@ -66,7 +66,6 @@ async def handle_richmat_mh_aroma(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         await _controller_class(call),
-        "Richmat MH aroma timing",
         program,
         supported=lambda controller: controller.supports_richmat_mh_aroma,
         admit=True,
@@ -86,7 +85,6 @@ async def handle_richmat_mh_light_color(call: ServiceCall) -> None:
     await _preflight_and_execute(
         targets,
         await _controller_class(call),
-        "Richmat MH light colour",
         program,
         supported=lambda controller: controller.supports_richmat_mh_light_color,
         admit=True,

@@ -14,9 +14,11 @@ from time import monotonic
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
+from homeassistant.components import bluetooth
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
+from ...bluetooth_transport import async_path_for_source, client_source, is_esphome_proxy_path
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -40,6 +42,7 @@ from ...const import (
 from ...controller_state import AnyStateKey, StateKey
 from ...execution import ExecutionCapabilities
 from ...position_seek import PositionSeekPolicy, SeekSample
+from ...runtime_data import DomainKey, domain_registry
 from ...state_keys import LINAK_AUTOMATIC_DRIVE, LINAK_MODEL_VARIANT
 from ..base import BedController
 from ..builder import BuildContext
@@ -61,6 +64,7 @@ from .protocol import (
     LinakModelVariant,
     LinakProfile,
     LinakReferenceState,
+    advertises_pairing_window,
     build_automatic_drive,
     build_simultaneous_command,
     build_timer_event,
@@ -142,6 +146,15 @@ class _AxisKeys:
 # Live proxy connections can need more than six seconds before accepting writes.
 LINAK_CONTROL_READY_TIMEOUT_S = 15.0
 LINAK_CONTROL_READY_RETRY_DELAY_S = 0.75
+# A proxy that holds the bond encrypts in 0.2 to 0.3 seconds. A slower or failed
+# request falls back to the readiness retry.
+LINAK_LINK_ENCRYPTION_TIMEOUT_S = 5.0
+# Measured on two Advanced controllers: pairing mode lasts 180 seconds from power-on.
+LINAK_PAIRING_WINDOW_S = 180.0
+# When each ESPHome proxy last had its stored bond with a bed removed: (bed, proxy).
+_RENEWED_PROXY_BONDS: DomainKey[dict[tuple[str, str], float]] = DomainKey(
+    "linak_renewed_proxy_bonds"
+)
 LINAK_PROTOCOL_READ_TIMEOUT_S = 0.75
 # Some controllers never answer the mask read over a proxy (issue #714). Without
 # a bound, the proxy's own 30 s read timeout stalls every connect.
@@ -381,6 +394,7 @@ class LinakController(BedController):
         self._resolved_two_motor_secondary_spec: LinakPositionSpec | None = None
         self._session_ready = False
         self._session_started_monotonic = monotonic()
+        self._link_encryption_requested = False
         self._protocol_notification_uuids: set[str] = set()
         self._deferred_protocol_notifications: set[str] = set()
         self._capability_discovery_deferred = False
@@ -566,7 +580,7 @@ class LinakController(BedController):
 
     def validate_device_rename(self, name: str) -> None:
         if not name or len(name.encode()) > 17:
-            raise ValueError("Linak device names must contain 1 to 17 UTF-8 bytes")
+            raise ValueError("Use a name of 1 to 17 characters. Accented letters and symbols count as two or more")
 
     @property
     def supports_simultaneous_movement(self) -> bool:
@@ -737,8 +751,82 @@ class LinakController(BedController):
             ", ".join(self._capabilities.position_axes) or "none",
         )
 
+    async def _async_encrypt_proxy_link(self) -> None:
+        """Have an ESPHome proxy encrypt the link instead of waiting for the bed.
+
+        The controller refuses every read, write and subscription until the
+        link is encrypted. An ESP32 proxy holding the bond encrypts only when
+        the controller asks. Measured on two Advanced controllers, it asks about
+        two seconds after a connect, about ten seconds after a disconnect when
+        the reconnect is quick, and not at all while its under-bed light is on.
+        Asked directly, the proxy encrypts in 0.2 to 0.3 seconds in every case.
+        Other adapters keep the readiness retry.
+
+        With a stored bond the proxy only re-encrypts. A controller that no
+        longer lists the proxy then keeps refusing it once its pairing window
+        closes, however often the bed is power-cycled. So the first connection
+        inside a window removes the stored bond, which makes the proxy drop the
+        link, and the retry pairs anew. The controller accepts a new pairing
+        from any adapter that can connect.
+        """
+        client = self.client
+        if self._link_encryption_requested or client is None or not client.is_connected:
+            return
+        path = async_path_for_source(self._coordinator.hass, client_source(client))
+        if not is_esphome_proxy_path(path):
+            return
+        self._link_encryption_requested = True
+        started = monotonic()
+        if self._proxy_bond_needs_renewal(path.source):
+            try:
+                async with asyncio.timeout(LINAK_LINK_ENCRYPTION_TIMEOUT_S):
+                    await client.unpair()
+            except (BleakError, TimeoutError, NotImplementedError, TypeError):
+                # Nothing was stored, so the request below pairs anew.
+                pass
+            else:
+                raise BleakError(
+                    f"Removed the proxy's stored bond with {self._coordinator.address} "
+                    "inside its pairing window; reconnecting to pair anew"
+                )
+        try:
+            async with asyncio.timeout(LINAK_LINK_ENCRYPTION_TIMEOUT_S):
+                await client.pair()
+        except (BleakError, TimeoutError, NotImplementedError, TypeError) as err:
+            # The controller may still ask for encryption itself, which the
+            # readiness retry waits for.
+            _LOGGER.debug(
+                "Proxy did not encrypt the link to %s after %.2fs: %s",
+                self._coordinator.address,
+                monotonic() - started,
+                str(err) or type(err).__name__,
+            )
+            return
+        _LOGGER.debug(
+            "Proxy encrypted the link to %s in %.2fs",
+            self._coordinator.address,
+            monotonic() - started,
+        )
+
+    def _proxy_bond_needs_renewal(self, source: str) -> bool:
+        """Return whether this proxy should pair anew: once per pairing window."""
+        hass = self._coordinator.hass
+        address = self._coordinator.address
+        info = bluetooth.async_last_service_info(hass, address, connectable=True)
+        if info is None or not advertises_pairing_window(info.raw):
+            return False
+        renewed = domain_registry(hass, _RENEWED_PROXY_BONDS, dict)
+        now = monotonic()
+        last = renewed.get((address, source))
+        if last is not None and now - last < LINAK_PAIRING_WINDOW_S:
+            return False
+        renewed[(address, source)] = now
+        return True
+
     async def async_discover_capabilities(self) -> None:
         """Resolve Standard, TD3, and Advanced from services and mask byte 0."""
+        # The controller refuses the mask read below on an unencrypted link.
+        await self._async_encrypt_proxy_link()
         if self._profile is LinakProfile.PERFORMANCE:
             self._capability_discovery_deferred = False
             self._publish_capability_state()
@@ -2075,7 +2163,7 @@ class LinakController(BedController):
             raise NotImplementedError("Rename is not exposed by this Linak profile")
         encoded = name.encode()
         if not name or len(name) > 17 or len(encoded) > 17:
-            raise ValueError("Linak device names must contain 1 to 17 bytes")
+            raise ValueError("Use a name of 1 to 17 characters. Accented letters and symbols count as two or more")
         await self._write_protected_characteristic(LINAK_DEVICE_NAME_UUID, encoded)
 
     @property
@@ -2167,12 +2255,23 @@ class LinakController(BedController):
             return
         _, pulse_delay_ms = self.motor_pulse_settings()
         repeat_count = max(2, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1)
+        await self._await_control_ready()
+        # Counting repeats alone adds every write acknowledgement to the
+        # movement: 2 seconds ran for about 6 through a proxy. The writer is
+        # used directly so that no further setup runs inside the duration.
+        hold_timeout = asyncio.timeout(duration_ms / 1000)
         try:
-            await self.write_command(
-                command,
-                repeat_count=repeat_count,
-                repeat_delay_ms=pulse_delay_ms,
-            )
+            try:
+                async with hold_timeout:
+                    await self._write_gatt_with_retry(
+                        self.control_characteristic_uuid,
+                        command,
+                        repeat_count=repeat_count,
+                        repeat_delay_ms=pulse_delay_ms,
+                    )
+            except TimeoutError:
+                if not hold_timeout.expired():
+                    raise
         finally:
             await self._send_stop()
 

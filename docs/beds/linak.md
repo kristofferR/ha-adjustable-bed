@@ -15,9 +15,9 @@
 - Svane
 - Many OEM adjustable beds with Linak motors
 
-The analyzed apps contain no product-name or remote-code catalog. The integration
-therefore selects behavior from the live GATT services and actuator mask, not from
-a retail brand or guessed model name.
+The apps have no list of products or remotes. The integration learns which
+motors and features your bed has when it connects, not from the brand or model
+name.
 
 ## Apps
 
@@ -31,19 +31,19 @@ a retail brand or guessed model name.
 
 | Feature | Bed Control | Performance Series |
 |---------|-------------|--------------------|
-| Motor control and explicit release | ✅ (mask-selected Back, Legs, Head, Feet, Base) | ✅ |
-| Native two-section movement opcodes | ✅, all 40 combinations | ❌ |
+| Motor control | ✅ (Back, Legs, Head, Feet, Base, as the bed reports them) | ✅ |
+| Moving two sections together | ✅ (any two sections your bed has) | ❌ |
 | Flat | ✅ | ✅ |
 | All up | ✅ | ❌ |
 | Four memory recalls and stores | TD3/Advanced only | ✅ |
 | Position, reported speed and four status flags | Advanced only | ❌ |
-| All 104 protocol error codes | ✅ | ❌, notification payload is opaque |
+| Error messages | ✅ (all 104 error codes) | ❌ |
 | Massage | Off, modes, zones and intensity | Toggle, wave/frequency, intensity and impulse |
 | AUX/under-bed light | On/off light entity | Toggle button |
 | Automatic drive configuration | ✅ | ❌ |
 | BLE device rename | ✅ | ❌ |
-| Alarm event, recurrence and commit | Alarm model only | ❌ |
-| Reset defaults (`4E 00`) | ✅ | ✅ |
+| Alarms (time and repeat) | Alarm model only | ❌ |
+| Reset defaults (`4E 00`) | ✅, disabled by default | ✅ |
 | Configuration factory reset (`7F 3E 80`) | ✅, disabled by default | ❌ |
 | Wake command | ✅ | ❌ |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 100 ms refresh, then the release) | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, then the release) |
@@ -71,11 +71,54 @@ a retail brand or guessed model name.
 
 ### Bonding and authentication
 
-- All three analyzed BLE applications proactively request Android/OS bonding.
-- Physical testing with two Advanced controllers proves that their GATT control
-  works without a bond, so the integration does not force pairing.
-- A short post-connect readiness retry handles the controllers' transient
-  `Insufficient authentication` window instead.
+- All three analyzed BLE applications bond with the controller through
+  Android/OS pairing before they use it. Bed Control's help text has the user
+  unplug the bed for 60 seconds to make it ready to connect.
+- Physical testing with two Advanced controllers shows that every read, write
+  and subscription is refused with `Insufficient authentication` until the link
+  is encrypted.
+- The controller accepts an adapter it does not know only during the first 3
+  minutes after power-on. In that window it advertises its control service,
+  the limited-discoverable flag and a transmit power of +4 dBm, and any
+  adapter can connect and pair. A session that sends commands ends the window
+  early.
+- Outside the window it advertises only its name, at -8 dBm, and ignores
+  connection attempts from an adapter it has not paired with. An ESPHome proxy
+  then reports `ESP_GATT_ERROR while connecting` (disconnect reason `0x3e`) and
+  BlueZ reports `le-connection-abort-by-local`. An adapter that paired inside a
+  window connects at any time afterwards. Every adapter and proxy needs its own
+  pairing, and each of the two controllers accepted five at once. An adapter
+  that can connect may also pair anew at any time.
+- Through an ESPHome Bluetooth proxy the integration asks the proxy to encrypt
+  the link right after connecting, which takes 0.2 to 0.3 seconds with the bond
+  the proxy holds. Without a bond the same request starts a new pairing
+  (ESP-IDF `esp_ble_set_encryption`), which takes about 0.5 seconds. A proxy
+  that is not asked encrypts only when the controller
+  requests it: about two seconds after a connect, about ten seconds after a
+  disconnect when the reconnect is quick, and never while the under-bed light
+  is on. That last case left the bed refusing all control until it was
+  power-cycled.
+- A BlueZ adapter encrypts the link by itself on the first refused read, also
+  while the under-bed light is on, so the integration does not request pairing
+  there. A post-connect readiness retry waits until the link is encrypted.
+- When the bed is advertising but no connection comes up, the setup check, the
+  integration's start-up message and the command error explain the pairing
+  window instead of range: unplug the bed for 60 seconds, plug it back in and
+  use it from Home Assistant within 3 minutes.
+- A proxy that holds a stored bond only re-encrypts and never pairs again. One
+  proxy stayed refused by one controller for that reason: its stored key still
+  encrypted a session inside the window, but the controller no longer listed
+  the proxy and refused it as soon as the window closed, after every power
+  cycle. Removing the proxy's stored bond and pairing anew made the controller
+  accept it.
+- So the first connection through an ESPHome proxy inside a pairing window
+  removes the proxy's stored bond. The proxy drops the link when it does, and
+  the retry pairs anew. That command takes about 5 seconds longer, once per
+  window. Outside the window a stored bond is left alone.
+- Home Assistant ranks the paths by signal, earlier failures and free slots. In
+  the tested setup it fell back from a refusing proxy to another one after two
+  failed attempts and kept using it until Home Assistant or the proxy
+  restarted.
 - There is no application PIN, passkey, challenge, token or protocol encryption.
 
 ## Detection
@@ -87,8 +130,10 @@ a retail brand or guessed model name.
 
 ## Profiles and model variants
 
-Choose **Auto (Bed Control or Bed Connect app)** unless the bed was controlled by the old Linak
-Performance Series app. Auto and explicit Bed Control use the modern profile and
+Leave **Automatic (recommended)**, or choose **Bed Control or Bed Connect app**, unless
+the bed was controlled by the old Linak Performance Series app; then choose
+**Performance Series app (older bases)** under **Advanced: bed model or remote**.
+Auto and explicit Bed Control use the modern profile and
 discover its model after connection. Performance Series must be selected
 explicitly because its advertisement does not identify it safely.
 
@@ -238,7 +283,7 @@ Reference notifications are exactly four little-endian bytes:
 - Extension is converted to the configured angle range for the position entities;
   the read-only angle sensors are omitted because they would duplicate those same
   values.
-- The artifact does not prove a physical unit for extension or speed.
+- The app does not give a physical unit for extension or speed.
 
 ### Position seeking
 
@@ -266,11 +311,11 @@ Reference notifications are exactly four little-endian bytes:
   leg position during startup, while the other side returned `FE FF 00 00`. The
   earlier -2 cutoff discarded the right leg sample and left its number and cover
   entities `unknown`. This hardware observation extends the existing near-zero
-  handling by one count. It supplements the frozen Bed Control 6.0.9
-  reference-parser evidence; it does not change the packet parser, status flags,
+  handling by one count. It adds to the Bed Control 6.0.9 reference parser; it
+  does not change the packet parser, status flags,
   command timing or connection policy.
 - Upper endpoints retain the normal tolerance. No upper-endpoint exception is
-  enabled without supporting evidence.
+  enabled without a hardware report.
 
 ## Command Timing
 
@@ -305,9 +350,10 @@ Reference notifications are exactly four little-endian bytes:
 
 ### Connection readiness and retries
 
-- A fresh connection can take around 12 seconds to accept control writes through
-  a Bluetooth proxy. The integration retries the safe STOP probe for up to 15
-  seconds per readiness request, including after interrupted startup.
+- Through an ESPHome proxy the link is encrypted on connect and accepts control
+  on the first probe. Inside the pairing window the proxy pairs anew first. When the proxy cannot encrypt it, and on other adapters,
+  the integration retries the safe STOP probe for up to 15 seconds per readiness
+  request, including after interrupted startup.
 - Cancellation does not mark the session ready unless a write was acknowledged,
   and deferred subscriptions resume on the next command.
 - Queued commands remain serialized and STOP invalidates older pending movement.
@@ -354,17 +400,17 @@ characteristic; no movement or configuration commands were sent:
   characteristics were sampled before and after writes.
 - No usable light-state feedback was observed: the error read stayed empty,
   configuration stayed `FE`, and subsequent readable values were identical across
-  ON/OFF. Initial reference notifications were position values, not evidence of
-  light state.
+  ON/OFF. Initial reference notifications were position values, not the light
+  state.
 - This does not prove that every firmware lacks another feedback mechanism. The
   issue reporter's TD5 (Standard profile) has not been physically tested in this
   session.
-- This hardware evidence supplements the unchanged frozen app reports: absence of
-  an app caller did not establish that the peripheral rejects those constants. It
+- This hardware report adds to what the app shows: the app not using those
+  constants did not mean the bed rejects them. It
   does not enable other dead library commands (such as memories 5/6).
 - The modern-profile ON/OFF commands also restore the pre-v4 integration behavior
   reported working in #615. They are not gated on the position-feedback service
-  that distinguishes Standard from Advanced; the frozen modern AUX command enum
+  that distinguishes Standard from Advanced; the app's modern AUX command enum
   does not define a separate packet format for those models.
 
 ### Bed Connect exclusion
@@ -378,19 +424,19 @@ provisioning, cloud control or module firmware updates.
 
 ### App features
 
-Every reachable app feature, grouped by builder, lifecycle and control; the
+Every app feature, grouped by builder, lifecycle and control; the
 byte-level command tables above remain exhaustive.
 
 | Feature | Home Assistant |
 |---------|----------------|
-| Bed Control discovery, optional app bonding and GATT session | Unbonded-compatible coordinator connection with readiness retry |
+| Bed Control discovery, app bonding and GATT session | Coordinator connection; an ESPHome proxy encrypts the link on connect, other adapters use the readiness retry; a refused connection is explained as a closed pairing window |
 | STANDARD/TD3/ADVANCED/alarm capability selection | Live service/mask discovery with persisted snapshot |
 | Individual, all-section and all 40 two-section movements | Covers, preset buttons and simultaneous-move service |
 | STOP/release and 100 ms held-command lifecycle | Guaranteed cleanup on completion, failure and cancellation |
 | Four favorite recalls and stores with model gating | Buttons and generic preset services |
 | Massage zones, modes and all intensity actions | Capability-gated buttons |
 | AUX/light toggle | Native controller action; legacy toggle button, modern on/off entity |
-| Defaults reset and configuration factory reset | Separate buttons; factory reset disabled by default |
+| Defaults reset and configuration factory reset | Separate buttons, both disabled by default |
 | Automatic drive configuration | Assumed-state switch, disabled by default |
 | Device rename | `rename` action plus advertising refresh disconnect |
 | Alarm event, commit and notification states | `set_alarm` action and diagnostic sensor |
