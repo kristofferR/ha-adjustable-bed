@@ -644,7 +644,6 @@ LIMOSS_REMOTE_CONFIG_KEYS: Final = frozenset(
         *CONF_REVERSE_MOTORS,
     }
 )
-BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzion bamkey BLE
@@ -885,8 +884,6 @@ SUPPORTED_BED_TYPES: Final = [
     # Limoss / Stawett
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
-    # Serta Motion Perfect
-    BED_TYPE_SERTA,
     # BedTech
     BED_TYPE_BEDTECH,
     # Jensen
@@ -999,7 +996,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_JIECANG,
         BED_TYPE_COMFORT_MOTION,
         BED_TYPE_ERGOMOTION,
-        BED_TYPE_SERTA,
         BED_TYPE_OKIN_FFE,
         BED_TYPE_BEDTECH,
         BED_TYPE_SLEEPYS_BOX15,
@@ -1505,11 +1501,6 @@ DEWERTOKIN_NAME_PATTERNS: Final = (
 # Note: Generic "okin" pattern should match OKIN devices that don't match OKIMAT patterns
 OKIN_FFE_NAME_PATTERNS: Final = ("okin", "cb-", "cb.")
 
-# Serta/Ergomotion name patterns (big-endian variant of Keeson protocol)
-# Uses same FFE5 service UUID as Keeson but with big-endian byte order
-# Covers: Serta MP Remote, Ergomotion 4.0, and related OEM beds
-SERTA_NAME_PATTERNS: Final = ("serta", "motion perfect", "ergomotion", "hump")
-
 # Linak name patterns for devices that don't advertise service UUIDs
 # Some Linak beds only advertise "Bed XXXX" (4 digits) without service UUIDs
 LINAK_NAME_PATTERNS: Final = ("bed ",)
@@ -1963,7 +1954,6 @@ KEESON_VARIANT_KSBT: Final = "ksbt"
 KEESON_VARIANT_KSBT_CR: Final = "ksbt_cr"
 KEESON_VARIANT_ERGOMOTION: Final = "ergomotion"
 KEESON_VARIANT_OKIN: Final = "okin"
-KEESON_VARIANT_SERTA: Final = "serta"
 KEESON_VARIANT_SINO: Final = "sino"
 KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
@@ -2037,7 +2027,6 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_RESTONIC_B: "Restonic BT app, remote B (10 buttons)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion base (reports positions)",
     KEESON_VARIANT_OKIN: "OKIN 13 or 15 series control box",
-    KEESON_VARIANT_SERTA: "Serta base (Serta MP Remote)",
     KEESON_VARIANT_SINO: "BetterLiving base (Sino)",
     KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
@@ -2975,9 +2964,6 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Ergomotion: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
     BED_TYPE_ERGOMOTION: (10, 100),
-    # Serta: 100ms delay → 10 repeats = 1.0s total
-    # Source: com.ore.serta330 ANALYSIS.md
-    BED_TYPE_SERTA: (10, 100),
     # Malouf Legacy OKIN: 150ms delay → 7 repeats = 1.05s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_LEGACY_OKIN: (7, 150),

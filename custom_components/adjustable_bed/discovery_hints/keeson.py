@@ -6,7 +6,7 @@ from ..const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JALON,
     BED_TYPE_KEESON,
-    BED_TYPE_SERTA,
+    BED_TYPE_SERTA_MP_REMOTE,
     KEESON_BASE_SERVICE_UUID,
     KEESON_EXTENDED_NORDIC_SERVICE_UUID,
     KEESON_JSON_SERVICE_UUID,
@@ -21,7 +21,7 @@ HINTS: tuple[Hint, ...] = (
     names(*SMARTBED, bed_types={BED_TYPE_JALON}, connectable=True),
     *services(
         KEESON_BASE_SERVICE_UUID,
-        bed_types={BED_TYPE_KEESON, BED_TYPE_ERGOMOTION, BED_TYPE_SERTA},
+        bed_types={BED_TYPE_KEESON, BED_TYPE_ERGOMOTION, BED_TYPE_SERTA_MP_REMOTE},
     ),
     *services(
         KEESON_JSON_SERVICE_UUID,

@@ -96,7 +96,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
-    BED_TYPE_SERTA,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
     BED_TYPE_SUTA,
@@ -1393,12 +1393,12 @@ class TestDetectBedType:
         assert bed_type == BED_TYPE_OKIN_HANDLE
 
     def test_detect_serta_bed(self, mock_bluetooth_service_info_serta):
-        """Test detection of Serta bed by name - now returns BED_TYPE_SERTA."""
+        """A Serta name is the Serta MP Remote app's bed."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_serta)
-        assert bed_type == BED_TYPE_SERTA
+        assert bed_type == BED_TYPE_SERTA_MP_REMOTE
 
     def test_detect_serta_motion_perfect_name(self):
-        """Test Serta detection with 'motion perfect' in name - returns BED_TYPE_SERTA."""
+        """A Motion Perfect name is the Serta MP Remote app's bed."""
         service_info = MagicMock()
         service_info.name = "Motion Perfect III"
         service_info.address = "AA:BB:CC:DD:EE:FF"
@@ -1406,7 +1406,7 @@ class TestDetectBedType:
         service_info.manufacturer_data = {}
 
         bed_type = detect_bed_type(service_info)
-        assert bed_type == BED_TYPE_SERTA
+        assert bed_type == BED_TYPE_SERTA_MP_REMOTE
 
     def test_detect_octo_bed(self, mock_bluetooth_service_info_octo):
         """Test detection of Octo bed by name containing 'octo'."""

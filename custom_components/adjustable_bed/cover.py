@@ -422,7 +422,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         if position is None:
             return None
 
-        # Check if bed type reports percentage directly (e.g., Keeson/Ergomotion/Serta)
+        # Check if bed type reports percentage directly (e.g., Keeson/Ergomotion)
         # Use bed_type constant check instead of controller to handle disconnected state
         if bed_traits(self._coordinator.bed_type).percentage_positions:
             # Position is already 0-100 percentage

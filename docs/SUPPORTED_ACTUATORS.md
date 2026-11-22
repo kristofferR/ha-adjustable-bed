@@ -149,7 +149,7 @@ diagnostics, often points to its family:
 - `KSBT03*` or `KSBT04*` → Keeson KSBT (includes some Ergomotion Sync beds such as Rio 6.0)
 - `Jiecang*`, `JC-*`, or `Glide*` → Jiecang
 - `Dewert*`, `A H Beard*`, `Hankook*` → DewertOkin
-- `Serta*` or `Motion Perfect*` → Serta
+- `Serta*` or `Motion Perfect*` → Serta MP Remote
 - `Octo*` → Octo (Standard variant)
 - `iFlex*` → Mattress Firm 900
 - `OKIN-*` → Okin, often [Okin CST](beds/okin-nframe.md#okin-cst) or the [RF ECO BT stair lift](beds/okin-nframe.md#rf-eco-bt-stair-lift); setup asks which

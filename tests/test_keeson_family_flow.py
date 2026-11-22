@@ -216,7 +216,7 @@ async def test_a_route_change_takes_configures_route_defaults(hass, enable_custo
 async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_custom_integrations):
     entry = entry_for(
         hass,
-        {const.CONF_BED_TYPE: const.BED_TYPE_SERTA},
+        {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_FFE},
     )
     before = dict(entry.data)
     result = await reconfigure(hass, entry)

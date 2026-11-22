@@ -5,8 +5,8 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [alanbixby](https://github.com/alanbixby), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [MangoScango](https://github.com/MangoScango)
 
 One wire codec (the K1 `E5/E6 FE 16` frame and the other carriers of the Keeson
-32-bit key word) serves every `keeson` protocol variant, the `ergomotion`,
-`serta` and `okin_ffe` bed types, the Keeson, Okin and ORE app
+32-bit key word) serves every `keeson` protocol variant, the `ergomotion` and
+`okin_ffe` bed types, the Keeson, Okin and ORE app
 profiles, and the Keeson layout app bed types. This guide covers the codec first, then one section per profile. See
 [Protocol codecs and app profiles](../design/protocol-codecs.md) for the
 architecture.
@@ -75,7 +75,7 @@ Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 | ✅ | [Tempur Zero G Bed Base](https://play.google.com/store/apps/details?id=com.sfd.row) (ROW Control) | `com.sfd.row` | [ROW Control](#row-control); also [Ergomotion](#ergomotion) |
 | ✅ | Tempur Curve | `com.ore.tempur` | [Tempur Curve](#tempur-curve); also [Base](#base-basei4i5) |
 | ✅ | [Member's Mark Base Remote](https://play.google.com/store/apps/details?id=com.sfd.mm) | `com.sfd.mm` | [Base](#base-basei4i5) |
-| ✅ | [Serta MP Remote](https://play.google.com/store/apps/details?id=com.ore.serta330) | `com.ore.serta330` | [Serta MP Remote](#serta-mp-remote); also [Serta](#serta) |
+| ✅ | [Serta MP Remote](https://play.google.com/store/apps/details?id=com.ore.serta330) | `com.ore.serta330` | [Serta MP Remote](#serta-mp-remote) |
 | ✅ | [Sleep Harmony](https://play.google.com/store/apps/details?id=com.keeson.ssbaudio) | `com.keeson.ssbaudio` | [Sleep Harmony](#sleep-harmony-variant) |
 | ✅ | Ergomotion Sync | `cn.com.mancini` | [KSBT03C](#ksbt-family) |
 | ✅ | Linx | `com.keeson.connectedbed` | [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health) |
@@ -121,18 +121,18 @@ layouts; the "also" routes are the generic Keeson variants that drive the same b
 
 ## Features
 
-| Feature | BaseI4/I5 | JSON/A00A | KSBT | Ergomotion | Okin | Serta | Sino | Purple (Premium) | Purple (Premium Plus) |
-|---------|-----------|------------|------|------------|------|-------|------|------------------|-----------------------|
-| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Hold Until Release | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Memory Presets | ⚠️ 4 shown; the app uses slot 3 | ✅ (depends on the remote) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 shown; not yet tested on hardware | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
-| TV Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Anti-Snore Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Lounge Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Feature | BaseI4/I5 | JSON/A00A | KSBT | Ergomotion | Okin | Sino | Purple (Premium) | Purple (Premium Plus) |
+|---------|-----------|------------|------|------------|------|------|------------------|-----------------------|
+| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Hold Until Release | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Memory Presets | ⚠️ 4 shown; the app uses slot 3 | ✅ (depends on the remote) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 shown; not yet tested on hardware | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
+| TV Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Anti-Snore Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| Lounge Preset | ❌ | ✅ (depends on the remote) | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 The Sino column's anti-snore comes from the BetterLiving app. The app profiles list
 their controls in their sections.
@@ -145,17 +145,17 @@ in steps instead.
 
 ## Choosing a profile
 
-Detection suggests the Base, Ergomotion, Serta, OKIN FFE, JSON/A00A, KSBT and
-KSBT03CR routes, and Cool Base for `base-i5` names; every app profile is an
-explicit choice. The Keeson layout apps are bed types of their own, listed in the
+Detection suggests the Base, Ergomotion, OKIN FFE, JSON/A00A, KSBT and
+KSBT03CR routes, Cool Base for `base-i5` names and Serta MP Remote for Serta
+names; every other app profile is an explicit choice. The Keeson layout apps are bed types of their own, listed in the
 [Keeson layout app family](#keeson-layout-app-family). The tables below are generated
 from the profile data.
 
 ### Home Assistant setup
 
 Choosing **Member's Mark, Purple, Sleep Harmony and Juna Sleep apps, some
-Ergomotion Sync beds · Keeson**, **Ergomotion remote · Keeson**, **Serta Motion
-Perfect · Keeson** or **Cool Base app · Keeson**, an Okin 13 or 15 series
+Ergomotion Sync beds · Keeson**, **Ergomotion remote · Keeson** or **Cool Base
+app · Keeson**, an Okin 13 or 15 series
 receiver, or a bed detected as one of them, asks which app or remote you use. Shared names and Bluetooth services never decide it.
 
 | Answer | Then | Route |
@@ -196,7 +196,6 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | OkinComfortBed II P3 | bed type `jalon` | P2 7-byte (`05`) | app controller | app controller | app controller | renewable lease |
 | Base (BaseI4/I5) | `keeson` `base` (Auto default) | K1 `E5`, little-endian | BASE | toggle | step | no |
 | Ergomotion | `keeson` `ergomotion`; bed type `ergomotion` | K1 `E5`, little-endian | BASE | toggle | step | renewable lease |
-| Serta | `keeson` `serta`; bed type `serta` | K1 `E5`, little-endian | BASE | toggle | step | renewable lease |
 | OKIN FFE | `keeson` `okin`; bed type `okin_ffe` | K1 `E6`, little-endian | BASE | toggle | step | no |
 | BetterLiving CB1322 | `keeson` `okin`: Auto: as BetterLiving, with a `BLE-4.0 Module` or `DewertOKIN` manufacturer | K1 `E6`, little-endian | BASE | toggle | step | no |
 | Sino | `keeson` `sino` | K1 `E5`, big-endian | BASE | discrete | absolute | no |
@@ -262,7 +261,6 @@ release refreshes at its app interval until the lease ends or STOP arrives, up t
 |---|---|---|---|---|---|---|
 | Base (BaseI4/I5) | 3 × 400 ms | same | +0 ms `E5 FE 16 00 00 00 00 06` | `E5 FE 16 00 00 00 00 06` | no | none |
 | Ergomotion | 10 × 100 ms | same | +0 ms `E5 FE 16 00 00 00 00 06` | `E5 FE 16 00 00 00 00 06` | no | none |
-| Serta | 10 × 100 ms | same | +0 ms `E5 FE 16 00 00 00 00 06` | `E5 FE 16 00 00 00 00 06` | no | none |
 | OKIN FFE | 10 × 100 ms | 5 × 200 ms | +0 ms `E6 FE 16 00 00 00 00 05` | `E6 FE 16 00 00 00 00 05` | no | none |
 | BetterLiving CB1322 | 10 × 100 ms | 5 × 200 ms | +0 ms `E6 FE 16 00 00 00 00 05` | `E6 FE 16 00 00 00 00 05` | no | none |
 | Sino | 10 × 100 ms | 5 × 200 ms | +0 ms `E5 FE 16 00 00 00 00 06` | `E5 FE 16 00 00 00 00 06` | no | none |
@@ -308,7 +306,6 @@ with their app controllers; see their sections.
 |---|---|---|---|---|---|---|---|
 | Base (BaseI4/I5) | `0x08000000` | `0x00001000` | no | no | no | 1: `0x00002000`<br>2: `0x00004000`<br>3: `0x00008000`<br>4: `0x00010000` | none |
 | Ergomotion | `0x08000000` | `0x00001000` | `0x00002000` | `0x00004000` | `0x00008000` | 1: `0x00002000`<br>2: `0x00004000`<br>3: `0x00008000`<br>4: `0x00010000` | none |
-| Serta | `0x08000000` | `0x00001000` | no | `0x00004000` (not listed) | no | 1: `0x00002000`<br>2: `0x00004000`<br>3: `0x00008000`<br>4: `0x00010000` | none |
 | OKIN FFE | `0x08000000` | `0x00001000` | no | `0x00004000` (not listed) | no | 1: `0x00002000`<br>2: `0x00004000`<br>3: `0x00008000`<br>4: `0x00010000` | none |
 | BetterLiving CB1322 | `0x08000000` | `0x00001000` | no | `0x00004000` (not listed) | no | 1: `0x00010000`<br>2: `0x00040000` | 1: `0x00010000`<br>2: `0x00040000`<br>30 × 100 ms |
 | Sino | `0x08000000` | `0x00001000` | no | `0x00004000` (not listed) | no | 1: `0x00002000`<br>2: `0x00004000`<br>3: `0x00008000`<br>4: `0x00010000` | none |
@@ -334,7 +331,7 @@ with their app controllers; see their sections.
 |--------|-----------------|
 | `0000a00a-0000-1000-8000-00805f9b34fb` service | JSON/A00A |
 | Name contains `ergomotion`, `ergo` or `serta-i` | bed type `ergomotion` |
-| Name contains `serta` or `motion perfect`; or FFE5 with `serta`, `motion perfect`, `ergomotion` or `hump` | bed type `serta` |
+| Name contains `serta` or `motion perfect` | bed type `serta_mp_remote` ([Serta MP Remote](#serta-mp-remote)) |
 | FFE5 with a name containing `okin`, `cb-` or `cb.` | bed type `okin_ffe` |
 | Both FFF0 and FFB0 services, or an `OKIN-BLE` name with one of them | BetterLiving, or CB1322 by manufacturer |
 | Other FFE5 devices | `keeson` Base |
@@ -370,15 +367,14 @@ wire snapshot (`tests/test_wire_snapshot.py`) proves the equality by capture.
 | Bed type or route | Same as | Notes |
 |-------------------|---------|-------|
 | `ergomotion` | `keeson` variant `ergomotion` | See [Ergomotion](#ergomotion) |
-| `serta` | `keeson` variant `serta` | See [Serta](#serta) |
 | `keeson` variants `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una`, `okin_comfort_bed` | `keeson` variant `americanstar` | Identical profiles under each app's own key; see [ORE comfort-bed profiles](#ore-comfort-bed-profiles) |
 
 `okin_ffe` and the `keeson` variant `okin` share the [OKIN FFE](#okin-ffe)
 profile but not its timing: `okin_ffe` defaults to 7 pulses 150 ms apart and
 the variant to 10 pulses 100 ms apart, so they are not aliases.
 
-Each keeps its own [profile id](../design/profile-id.md#aliases). `ergomotion` and `serta` create their
-entities before the first connection and the `keeson` variants do not, and the
+Each keeps its own [profile id](../design/profile-id.md#aliases). `ergomotion` creates its
+entities before the first connection and the `keeson` variant does not, and the
 device manufacturer differs. Among the ORE apps, Avanti Bases hides more generic
 setup fields, and each app has its own setup label. Every ORE and INNOVA app
 keeps its motor count (the app's 2M, 3M or 4M screen) per side of a pair.
@@ -396,7 +392,7 @@ query, the `EF 02` rename frame and the Ergomotion status parser.
 
 | Transport | Service | Write | Notify | Fallbacks (service / write) | Profiles |
 |---|---|---|---|---|---|
-| BASE | `0000ffe5-0000-1000-8000-00805f9b34fb` | `0000ffe9-0000-1000-8000-00805f9b34fb` | `0000ffe4-0000-1000-8000-00805f9b34fb` | `0000fff0-0000-1000-8000-00805f9b34fb` / `0000fff2-0000-1000-8000-00805f9b34fb`<br>`0000ffb0-0000-1000-8000-00805f9b34fb` / `0000ffb2-0000-1000-8000-00805f9b34fb` | Base (BaseI4/I5), Ergomotion, Serta, OKIN FFE, BetterLiving CB1322, Sino, BetterLiving, Sleep Harmony (base-i5), Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una |
+| BASE | `0000ffe5-0000-1000-8000-00805f9b34fb` | `0000ffe9-0000-1000-8000-00805f9b34fb` | `0000ffe4-0000-1000-8000-00805f9b34fb` | `0000fff0-0000-1000-8000-00805f9b34fb` / `0000fff2-0000-1000-8000-00805f9b34fb`<br>`0000ffb0-0000-1000-8000-00805f9b34fb` / `0000ffb2-0000-1000-8000-00805f9b34fb` | Base (BaseI4/I5), Ergomotion, OKIN FFE, BetterLiving CB1322, Sino, BetterLiving, Sleep Harmony (base-i5), Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una |
 | KSBT | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | `6e400020-b5a3-f393-e0a9-e50e24dcca9e` / `6e400021-b5a3-f393-e0a9-e50e24dcca9e`<br>`0000ffe5-0000-1000-8000-00805f9b34fb` / `0000ffe9-0000-1000-8000-00805f9b34fb`<br>`0000ffe0-0000-1000-8000-00805f9b34fb` / `0000ffe1-0000-1000-8000-00805f9b34fb` | KSBT, KSBT03C, KSBT03CR, KSBT04C, Sleep Harmony (KSBT04C), Purple Premium Plus, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | JSON | `0000a00a-0000-1000-8000-00805f9b34fb` | `0000b002-0000-1000-8000-00805f9b34fb` | `0000b004-0000-1000-8000-00805f9b34fb` | none | JSON/A00A |
 
@@ -427,7 +423,7 @@ family's codec exists.
 |---|---|---|---|
 | K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | OkinComfortBed II P1, OkinComfortBed II P2, Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1, ComfortBaseForBluetooth, OkinComfortBed Ⅱ (Jalon), アシステック P1, BetterLiving2 P2, 2 motors, BetterLiving2 P2, 3 motors |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3, アシステック P2 |
-| K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, Rondure, Cool Base |
+| K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
 | K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, ComfortFurniture, ORE Ultramatic, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements, BetterLiving2 P1, 2 motors, BetterLiving2 P1, 3 motors |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
@@ -662,34 +658,11 @@ Subscribes to FFE4 and reports head and foot positions as percentage sliders
 (the firmware's `back` and `legs` axes) and the massage state, from the
 [Ergomotion status](#responses). Positions ignore the angle calibration.
 
-### Serta
-
-**Status:** Not yet tested
-
-Behaves as [Base](#base-basei4i5), except as below.
-
-#### Setup
-
-Bed type `serta`, or `keeson` with the `serta` variant. Detection: a name
-containing `serta` or `motion perfect`, or FFE5 with a Serta name pattern.
-The Serta MP Remote app also supports classic Bluetooth (SPP UUID
-`00001101-0000-1000-8000-00805F9B34FB`); this profile uses BLE only.
-
-#### Controls
-
-No wave or intensity keys. The TV action sends `0x4000` but is not listed as an
-entity.
-
-#### Timing
-
-The Serta MP Remote app repeats held keys from a handler loop; see
-[Hold and release timing](#hold-and-release-timing).
-
 ### OKIN FFE
 
 **Status:** Not yet tested
 
-Behaves as [Serta](#serta), except as below.
+Behaves as [Base](#base-basei4i5), except as below.
 
 #### Setup
 
@@ -699,7 +672,8 @@ bed type stores its own default cadence, which is kept as configured.
 
 #### Controls
 
-`E6` frames; the three-motor screen uses its own cadence.
+`E6` frames. No wave or intensity keys. The TV action sends `0x4000` but is
+not listed as an entity. The three-motor screen uses its own cadence.
 
 ### Sino and BetterLiving
 
@@ -2031,6 +2005,42 @@ alarm scheduling stays outside the integration.
 Bed type `serta_mp_remote`, one layout. `SertaMPRemoteController` adds
 calibrated position feedback, pulse targets and four local memories to the
 shared controller. The app has no clock writer and no alarm tables.
+
+#### Setup
+
+Detection suggests this bed type for a name containing `serta` or `motion
+perfect`. A name starting `serta-i` is an [Ergomotion](#ergomotion) bed. The app
+also supports classic Bluetooth (SPP UUID
+`00001101-0000-1000-8000-00805F9B34FB`); this profile uses BLE only, and needs
+the app's write and notification characteristics (FFE9 and FFE4).
+
+#### Beds set up as Serta Motion Perfect
+
+Earlier versions saved these beds as the Serta Motion Perfect bed type, or as
+a Keeson bed with the Serta remote. Upgrading moves each one to this bed type:
+
+- **Back** and **Legs** replace the Head and Feet covers, with the same keys
+  and entity IDs. **Flat** and **Stop all** are unchanged.
+- **Zero gravity**, **Massage level** (was Massage toggle), **Massage timer**
+  and the head and foot massage up and down buttons send the same key and keep
+  their entity IDs.
+- **Memory 1** to **Memory 4** keep their entity IDs and now recall the app's
+  own memories: a head and a foot angle each, set in **Configure** if you
+  changed them in the app. Before, Memory 1, 2 and 3 sent the keys of the
+  app's **Lounge**, **TV** and **M4** buttons, which are buttons of their own
+  now. Memory 4 sent a key the app does not have.
+- **Tilt** and **Lumbar** were covers on a three or four motor setup and are
+  now up and down buttons, with the same keys.
+- **Toggle light** and the under-bed light entity are gone: the app has no
+  light key. The head and foot massage toggle buttons repeated the up buttons,
+  and **Massage intensity up** and **down** sent a head and a foot key each;
+  they are gone too.
+- **Position feedback** is new: the bed reports its back and legs angles, and
+  has position sliders. The app's session needs the bed's notification
+  characteristic, so a bed without it no longer connects. Such a bed is not a
+  Serta MP Remote bed: pick its remote under **Keeson** in **Reconfigure**.
+- New from the app: **Lounge**, **TV**, **M4**, the **Step head** and **Step
+  foot** buttons, **Reset**, the massage timer sensor and rename.
 
 #### Controls
 
@@ -4690,13 +4700,12 @@ values. The values are in [Hold and release timing](#hold-and-release-timing).
 | INNOVA | INNOVA refresh with a delayed zero key |
 | Restonic BT | Restonic BT Remote `Timer.schedule` with a delayed zero frame |
 | Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G handler loop |
-| Serta | Serta MP Remote handler loop |
 | Sino / BetterLiving / OKIN | BetterLiving two-motor and three-motor screens |
 | Purple | Purple Smart Base fixed-delay scheduler |
 
 For existing Keeson entries, the integration translates only the stored generic
 default cadence to the matching profile. Any pulse count or delay that a user
-customized remains authoritative. Dedicated Ergomotion, Serta, and OKIN FFE bed
+customized remains authoritative. Dedicated Ergomotion and OKIN FFE bed
 types store their own defaults and are left unchanged.
 
 ### Analysis provenance

@@ -3,7 +3,7 @@
 App profiles list every single-frame literal in the test vectors of their
 accepted APK Protocol Audit report. The other routes have no accepted report;
 their vectors are every frame the pre-v5 controller could send (bed type
-``keeson`` and the ``ergomotion``, ``serta`` and ``okin_ffe`` aliases), including
+``keeson`` and the ``ergomotion`` and ``okin_ffe`` aliases), including
 the Base and Ergomotion Left/Right side frames.
 JSON/A00A frames use the device identifier ``Bed``.
 
@@ -225,33 +225,6 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e6fe164000000002c3",
             "e6fe16800000000184",
             "e6fe16800000000283",
-        }
-    ),
-    # pre-v5 KeesonController
-    "serta": frozenset(
-        {
-            "e5fe160000000006",
-            "e5fe160000000105",
-            "e5fe1600000008fe",
-            "e5fe160000010005",
-            "e5fe160000020004",
-            "e5fe160000800086",
-            "e5fe160001000005",
-            "e5fe160002000004",
-            "e5fe160004000002",
-            "e5fe1600080000fe",
-            "e5fe1600100000f6",
-            "e5fe1600200000e6",
-            "e5fe1600400000c6",
-            "e5fe160080000086",
-            "e5fe160100000005",
-            "e5fe160200000004",
-            "e5fe160400000002",
-            "e5fe1608000000fe",
-            "e5fe1610000000f6",
-            "e5fe1620000000e6",
-            "e5fe1640000000c6",
-            "e5fe168000000086",
         }
     ),
     # pre-v5 KeesonController

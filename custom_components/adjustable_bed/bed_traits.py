@@ -96,7 +96,6 @@ from .const import (
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SERENITY,
-    BED_TYPE_SERTA,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
@@ -326,7 +325,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_JIECANG: _SCOPED,
     BED_TYPE_JIECANG_APP: _NO_ANGLES_SCOPED,
     BED_TYPE_KAIDI: _SCOPED,
-    # Keeson, Serta and OKIN FFE share KeesonController, which reports
+    # Keeson and OKIN FFE share KeesonController, which reports
     # percentages. Only the Ergomotion variant reports positions.
     BED_TYPE_KEESON: BedTraits(percentage_positions=True, connection_scoped_state=True),
     # LP Comfort Connect needs its bond on every reconnect (#385, #709), so it
@@ -381,7 +380,8 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     # Saved as sbi until schema 5.9; earlier migration steps read its defaults.
     "sbi": BedTraits(position_feedback=True),
     BED_TYPE_SERENITY: _NO_ANGLES,
-    BED_TYPE_SERTA: BedTraits(percentage_positions=True),
+    # Saved as serta until schema 5.10; earlier migration steps read its defaults.
+    "serta": BedTraits(percentage_positions=True),
     BED_TYPE_SERTA_MP_REMOTE: BedTraits(
         position_feedback=True,
         max_angles={

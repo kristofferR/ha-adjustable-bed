@@ -948,7 +948,7 @@ def test_keeson_json_signature_takes_precedence_over_ksbt_name():
 
 @pytest.mark.parametrize(
     "variant",
-    ["base", "ksbt", "ksbt_cr", "ksbt04c", "sino", "sleep_harmony", "ergomotion", "okin", "serta", "purple"],
+    ["base", "ksbt", "ksbt_cr", "ksbt04c", "sino", "sleep_harmony", "ergomotion", "okin", "purple"],
 )
 @pytest.mark.parametrize("name", ["", "KSBT03CR123456789"])
 def test_keeson_json_reviews_conflicting_explicit_transport(variant, name):
@@ -1017,7 +1017,7 @@ def test_keeson_ksbt_name_does_not_replace_explicit_app_selection():
     )
 
 
-@pytest.mark.parametrize("variant", ["sleep_harmony", "purple", "ergomotion", "okin", "serta"])
+@pytest.mark.parametrize("variant", ["sleep_harmony", "purple", "ergomotion", "okin"])
 @pytest.mark.parametrize("name", ["KSBT04C123456789", "smart_dfu"])
 def test_keeson_shared_ksbt_name_keeps_explicit_protocol_app(variant, name):
     assert (

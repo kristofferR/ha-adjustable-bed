@@ -176,7 +176,7 @@ non-wire difference per group:
 | Group | Kept separate because |
 |-------|-----------------------|
 | `comfort_motion`, `jiecang` | Repairs: the app profile review lists the LOGICDATA app for `comfort_motion` only. Device manufacturer: "Comfort Motion" against "Jiecang". |
-| `ergomotion`, `keeson:ergomotion`; `serta`, `keeson:serta` | Capabilities: only the bed types mint their controller and entities before the first connection. Device manufacturer: "Ergomotion" and "Serta" against "Keeson". |
+| `ergomotion`, `keeson:ergomotion` | Capabilities: only the bed type mints its controller and entities before the first connection. Device manufacturer: "Ergomotion" against "Keeson". |
 | `leggett_okin`, `leggett_platt`, `leggett_platt:okin` | Setup offers only `leggett_okin`. `leggett_platt` without a variant chooses its controller from GATT at connect. |
 | `leggett_gen2`, `leggett_platt:gen2` | Setup offers only `leggett_gen2`. |
 | `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | Setup fields: Avanti Bases hides more generic fields. Each app has its own setup label. |
@@ -187,6 +187,8 @@ The four brand ids 4.x saved (`okimat`, `dewertokin`, `nectar`, `mattressfirm`)
 are merged: schema 5.8 saves them as `okin_uuid`, `okin_handle`, `okin_7byte`
 and `okin_nordic`. Their device manufacturer now reads "Okin", and the app
 review that listed apps for `dewertokin` follows the entry to `okin_handle`.
+Schema 5.10 saves `serta` and `keeson:serta` as `serta_mp_remote`, the app
+whose keys that route sent.
 
 Merging a group later means: remove each difference or prove it immaterial with a
 test, map the alias to the canonical id in `resolve_profile_id`, bump

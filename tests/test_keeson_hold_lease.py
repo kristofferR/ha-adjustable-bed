@@ -27,7 +27,6 @@ WRITE_MS = 7
 CASES: dict[str, tuple[int, tuple[str, ...]]] = {
     "keeson:ergomotion": (100, (ZERO,)),
     "ergomotion": (100, (ZERO,)),
-    "serta": (100, (ZERO,)),
     "keeson:restonic_a": (100, (ZERO,)),
     "keeson:restonic_b": (100, (ZERO,)),
     "keeson:innova": (100, (ZERO,)),

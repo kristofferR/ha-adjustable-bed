@@ -82,7 +82,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
     assert entry.data[CONF_PROFILE_ID] == "keeson:sino"
 
@@ -139,7 +139,7 @@ async def test_other_entries_keep_their_settings(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == BED_TYPE_LINAK
     assert migrated.pop(CONF_PROFILE_MIGRATION)["fields"] == {
@@ -280,7 +280,7 @@ async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssista
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert "pair_schema_version" not in entry.data
     assert dict(entry.options) == {"later_key": 3}
     migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
@@ -318,7 +318,7 @@ async def test_a_5_1_entry_without_obsolete_keys_only_moves_to_the_current_schem
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert dict(entry.data) == data
     assert dict(entry.options) == {"later_key": 2}
 
@@ -382,7 +382,7 @@ async def test_schema_5_3_turns_massage_off_without_a_massage_page(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert entry.data[CONF_HAS_MASSAGE] is False
     assert entry.data[CONF_PROFILE_MIGRATION] == {
         "from_version": 5,
@@ -406,7 +406,7 @@ async def test_schema_5_3_leaves_a_layout_with_massage_alone(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert dict(entry.data) == data
 
 
@@ -515,7 +515,7 @@ async def test_a_4x_entry_turns_massage_off_on_its_way_to_5_3(hass: HomeAssistan
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert entry.data[CONF_HAS_MASSAGE] is False
     record = entry.data[CONF_PROFILE_MIGRATION]
     assert (record["from_version"], record["from_minor_version"]) == (4, 1)
@@ -623,7 +623,7 @@ async def test_schema_5_5_stores_an_octo_layout_as_its_override(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == expected
     assert entry.data[CONF_PROFILE_MIGRATION]["octo_motor_count_override"] == ["data"]
 
@@ -869,7 +869,7 @@ async def test_a_5_5_entry_moves_to_5_6(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert entry.data[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
     assert "connection_profile" not in entry.data
     assert entry.data[CONF_PROFILE_MIGRATION]["settings_5_6"]["data"] == [
@@ -1232,7 +1232,7 @@ async def test_a_5_6_okin_cb24_bed_loads_as_smartbed_with_its_entity_ids(
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.LOADED
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     assert entry.data[CONF_BED_TYPE] == "smartbed"
     runtime = loaded_runtime(hass, entry.entry_id)
     assert runtime is not None and type(runtime.controller) is SmartBedController
@@ -1657,7 +1657,7 @@ async def test_a_5_8_sbi_one_address_pair_loads_as_the_qplus_app_and_keeps_its_s
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.LOADED
-    assert (entry.version, entry.minor_version) == (5, 9)
+    assert (entry.version, entry.minor_version) == (5, 10)
     # The bed stored no selection, which is Both on either route; its sides keep theirs.
     assert [entry.data[CONF_PROFILE_ID], *(c[CONF_PROFILE_ID] for c in entry.data[CONF_PAIR_CHILDREN])] == [
         "qplus_app",
@@ -1692,3 +1692,231 @@ async def test_a_4x_bed_keeps_its_positions_unread_as_a_qplus_app_bed(
 
     assert entry.data[CONF_BED_TYPE] == "qplus_app"
     assert not reads_positions(entry.data)
+
+
+_SERTA = "serta"
+_SERTA_MP = {CONF_BED_TYPE: "serta_mp_remote", "product_type": "standard"}
+
+
+@pytest.mark.parametrize(
+    ("stored", "expected"),
+    [
+        pytest.param({CONF_BED_TYPE: _SERTA}, {}, id="bed type"),
+        pytest.param(
+            {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: _SERTA},
+            {CONF_PROTOCOL_VARIANT: "auto"},
+            id="keeson remote",
+        ),
+        pytest.param(
+            {CONF_BED_TYPE: _SERTA, CONF_MOTOR_COUNT: 4, CONF_HAS_MASSAGE: True},
+            {CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False},
+            id="settings the app layout decides",
+        ),
+        # 4.x saved positions unread; the app always reads them.
+        pytest.param({CONF_BED_TYPE: _SERTA, CONF_DISABLE_ANGLE_SENSING: True}, {}, id="unread"),
+    ],
+)
+def test_schema_5_10_saves_a_serta_bed_as_the_serta_mp_remote_app(
+    stored: dict, expected: dict
+) -> None:
+    from custom_components.adjustable_bed import migrate_v5_10_entry
+
+    base = {CONF_ADDRESS: "AA:BB:CC:DD:EE:80", CONF_NAME: "Bed"}
+    data, options = migrate_v5_10_entry(
+        {**base, **stored}, {}, from_version=5, from_minor_version=9
+    )
+
+    assert data.pop(CONF_PROFILE_MIGRATION)["serta_mp_remote"] == ["data"]
+    assert data == {**base, **_SERTA_MP, CONF_DISABLE_ANGLE_SENSING: False, **expected}
+    assert reads_positions(data)
+    assert options == {}
+
+
+@pytest.mark.parametrize(
+    "other",
+    [
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "base"},
+        {CONF_BED_TYPE: "ergomotion"},
+        # A standalone bed never read its options, so they do not pick its route.
+        {CONF_BED_TYPE: BED_TYPE_KEESON},
+    ],
+)
+def test_schema_5_10_leaves_every_other_route(other: dict) -> None:
+    from custom_components.adjustable_bed import migrate_v5_10_entry
+
+    options = {CONF_PROTOCOL_VARIANT: _SERTA}
+    assert migrate_v5_10_entry(other, options, from_version=5, from_minor_version=9) == (
+        other,
+        options,
+    )
+
+
+def test_schema_5_10_moves_only_the_serta_side_of_a_pair() -> None:
+    from custom_components.adjustable_bed import migrate_v5_10_entry
+
+    left, right = "AA:BB:CC:DD:EE:81", "AA:BB:CC:DD:EE:82"
+    data, _options = migrate_v5_10_entry(
+        {
+            # The pair's shared layer named the route; the right side chose its own remote.
+            CONF_BED_TYPE: BED_TYPE_KEESON,
+            CONF_PROTOCOL_VARIANT: _SERTA,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PAIR_ID: "pair_serta",
+            CONF_PAIR_CHILDREN: [
+                {
+                    CONF_SIDE: "left",
+                    CONF_ADDRESS: left,
+                    KEY_ORIGIN_DATA: {CONF_ADDRESS: left, CONF_BED_TYPE: _SERTA},
+                    KEY_ORIGIN_OPTIONS: {CONF_BED_TYPE: _SERTA},
+                },
+                {CONF_SIDE: "right", CONF_ADDRESS: right, CONF_PROTOCOL_VARIANT: "base"},
+            ],
+        },
+        {},
+        from_version=5,
+        from_minor_version=9,
+    )
+
+    assert data[CONF_PROFILE_MIGRATION]["serta_mp_remote"] == [
+        "data",
+        "data.left",
+        f"data.left.{KEY_ORIGIN_DATA}",
+    ]
+    views = [effective_child_data(data, side) for side in ("left", "right")]
+    assert [(view[CONF_BED_TYPE], view[CONF_PROTOCOL_VARIANT]) for view in views] == [
+        ("serta_mp_remote", "auto"),
+        (BED_TYPE_KEESON, "base"),
+    ]
+    # The moved side reads positions whatever the pair shares; the other side is as it was.
+    assert [reads_positions(view) for view in views] == [True, False]
+    origin = data[CONF_PAIR_CHILDREN][0]
+    assert origin[KEY_ORIGIN_DATA] == {
+        CONF_ADDRESS: left,
+        **_SERTA_MP,
+        CONF_DISABLE_ANGLE_SENSING: False,
+    }
+    assert origin[KEY_ORIGIN_OPTIONS] == {CONF_BED_TYPE: "serta_mp_remote"}
+
+
+async def test_schema_5_10_keeps_the_controls_the_app_has_under_another_key(
+    hass: HomeAssistant,
+) -> None:
+    """Covers, zero gravity and the massage keys keep their entity IDs; so do a pair's own buttons."""
+    from homeassistant.helpers import entity_registry as er
+
+    left, right = "AA:BB:CC:DD:EE:83", "AA:BB:CC:DD:EE:84"
+    entry = _entry(
+        hass,
+        {
+            CONF_BED_TYPE: _SERTA,
+            CONF_PAIR_ID: "pair_serta",
+            CONF_PAIR_CHILDREN: [
+                {CONF_SIDE: "left", CONF_ADDRESS: left},
+                {CONF_SIDE: "right", CONF_ADDRESS: right},
+            ],
+        },
+        version=5,
+        minor_version=9,
+    )
+    registry = er.async_get(hass)
+
+    def row(domain: str, unique_id: str):
+        return registry.async_get_or_create(domain, DOMAIN, unique_id, config_entry=entry)
+
+    renamed = {
+        new: row(domain, old)
+        for domain, old, new in (
+            ("cover", f"{left}_head", f"{left}_back"),
+            ("cover", f"{right}_feet", f"{right}_legs"),
+            ("button", f"{left}_preset_zero_g", f"{left}_zg"),
+            ("button", f"{left}_massage_all_toggle", f"{left}_level"),
+            ("button", f"{left}_massage_mode_step", f"{left}_timer"),
+            ("button", f"{right}_massage_head_up", f"{right}_masheadadd"),
+            ("button", f"{right}_massage_foot_down", f"{right}_masfootmin"),
+            ("button", "pair_serta_head_up_both", "pair_serta_back_up_both"),
+            ("button", "pair_serta_feet_down_both", "pair_serta_legs_down_both"),
+        )
+    }
+    # Memory 1 recalls the app's own memory from now on; the rest has no app key.
+    kept = [
+        row("button", f"{left}_preset_memory_1"),
+        row("cover", f"{left}_tilt"),
+        row("button", f"{left}_toggle_light"),
+    ]
+
+    await async_migrate_entry(hass, entry)
+
+    for unique_id, old in renamed.items():
+        assert registry.async_get(old.entity_id).unique_id == unique_id
+    for old in kept:
+        assert registry.async_get(old.entity_id).unique_id == old.unique_id
+
+
+async def test_a_5_9_serta_bed_loads_as_the_serta_mp_remote_app(
+    hass: HomeAssistant,
+    mock_bleak_client,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+) -> None:
+    """The bed runs the app's controller; renamed controls keep their IDs and the rest goes."""
+    from homeassistant.config_entries import ConfigEntryState
+    from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.beds.keeson.layout_app import FFE4, FFE9
+    from custom_components.adjustable_bed.beds.serta_mp_remote import SertaMPRemoteController
+    from custom_components.adjustable_bed.runtime_data import loaded_runtime
+
+    class Gatt:
+        def __init__(self, **fields) -> None:
+            self.__dict__.update(fields)
+
+    write = Gatt(uuid=FFE9, properties=("write",), handle=1, descriptors=[])
+    notify = Gatt(uuid=FFE4, properties=("notify",), handle=2, descriptors=[])
+    mock_bleak_client.services = [Gatt(uuid="ffe5", characteristics=[write, notify])]
+
+    address = "AA:BB:CC:DD:EE:FF"
+    entry = _entry(
+        hass,
+        {
+            CONF_ADDRESS: address,
+            CONF_NAME: "Bed",
+            CONF_BED_TYPE: _SERTA,
+            CONF_MOTOR_COUNT: 3,
+            CONF_HAS_MASSAGE: True,
+        },
+        version=5,
+        minor_version=9,
+    )
+    hass.config_entries.async_update_entry(entry, unique_id=address)
+    registry = er.async_get(hass)
+    kept = {
+        new: registry.async_get_or_create(domain, DOMAIN, f"{address}_{old}", config_entry=entry)
+        for domain, old, new in (
+            ("cover", "head", "back"),
+            ("cover", "feet", "legs"),
+            ("button", "preset_zero_g", "zg"),
+            ("button", "massage_mode_step", "timer"),
+            ("button", "preset_flat", "preset_flat"),
+            ("button", "preset_memory_1", "preset_memory_1"),
+        )
+    }
+    gone = [
+        registry.async_get_or_create(domain, DOMAIN, f"{address}_{key}", config_entry=entry)
+        for domain, key in (
+            ("cover", "tilt"),
+            ("button", "toggle_light"),
+            ("button", "massage_head_toggle"),
+        )
+    ]
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert (entry.version, entry.minor_version) == (5, 10)
+    assert entry.data[CONF_PROFILE_ID] == "serta_mp_remote"
+    assert type(loaded_runtime(hass, entry.entry_id).controller) is SertaMPRemoteController
+    for key, row in kept.items():
+        assert registry.async_get(row.entity_id).unique_id == f"{address}_{key}"
+        assert hass.states.get(row.entity_id) is not None
+    assert [registry.async_get(row.entity_id) for row in gone] == [None] * len(gone)
