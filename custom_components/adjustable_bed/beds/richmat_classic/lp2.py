@@ -158,18 +158,6 @@ class Lp2Controller(RichmatClassicController):
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
         self._restore_wire(state)
 
-    def _restore_wire(self, state: Mapping[str, object]) -> None:
-        wire = state.get("wire")
-        if wire not in (None, "RAW", "FRAMED"):
-            raise ValueError("Invalid stored command format")
-        if wire is not None:
-            self._wire = wire
-
-    @property
-    def _resolved_wire(self) -> Wire | None:
-        """The command format of this session, else of the last one."""
-        return self._session.wire if self._session else self._wire
-
     @property
     def has_dynamic_controller_entities(self) -> bool:
         return True

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from ..richmat.labels import resource_label
-from .caller import Selection, selected_operand, transition
+from .caller import Selection, nordic_label, selected_operand, transition
 from .profiles import Control, load_catalog
 
 
@@ -28,7 +28,8 @@ def excluded(button: Control) -> bool:
     )
 
 
-def label(button: Control, *, long: bool = False) -> str:
+def label(button: Control, *, long: bool = False, raw: bool = False) -> str:
+    """Name a control; ``raw`` names what its short press sends over Nordic UART."""
     background = button.resource_keys.get("android:background", "")
     if not long:
         if button.tag == "63":
@@ -68,6 +69,8 @@ def label(button: Control, *, long: bool = False) -> str:
     if key is None:
         return ""
     name = resource_label(key.removeprefix("@string/"))
+    if raw and not long:
+        name = nordic_label(button) or name
     names = {
         "Motor 1 up": "Head up",
         "Motor 1 down": "Head down",
@@ -102,8 +105,11 @@ def slug(name: str) -> str:
 
 
 @lru_cache(maxsize=532)
-def actions(layout: str) -> dict[str, Action]:
+def actions(layout: str, raw: bool = False) -> dict[str, Action]:
     """Keep every live gesture; deduplicate equal user labels on one layout.
+
+    ``raw`` names the controls of a Nordic UART bed, where a few layouts send
+    another function than the framed one.
 
     Long gestures are explicit, so saving never joins a renewable hold.
     Hidden dedicated save widgets offer the same named save without UI arming.
@@ -120,7 +126,7 @@ def actions(layout: str) -> dict[str, Action]:
         for save in (False, True):
             if save and (button.status != 3 or button.long is None):
                 continue
-            name = label(button, long=save)
+            name = label(button, long=save, raw=raw)
             if not name:
                 continue
             # A long-only control has no meaningful short action.
@@ -162,8 +168,8 @@ def actions(layout: str) -> dict[str, Action]:
     return result
 
 
-def inverse_pairs(layout: str) -> dict[str, tuple[str, str]]:
-    available = actions(layout)
+def inverse_pairs(layout: str, raw: bool = False) -> dict[str, tuple[str, str]]:
+    available = actions(layout, raw)
     return {
         slug(name): (on, off)
         for name, on, off in (

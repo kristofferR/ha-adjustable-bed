@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.richmat_classic import controller as bed
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
@@ -584,3 +585,31 @@ async def test_changed_control_rejects_renewable_hold_with_translated_key(monkey
     with raises_key("control_hold_renewal_not_supported"):
         await ctrl.execute_action(node)
     assert packets(coord) == []
+
+
+async def test_a_nordic_bed_lists_what_its_buttons_send(instant):
+    """MMRM's light key sends the head and foot up operand over Nordic UART."""
+
+    def names(ctrl):
+        return {spec.key: spec.name for spec in ctrl.controller_button_specs}
+
+    framed, _ = controller("coastersleep", "MMRM")
+    assert names(framed)["richmat_classic_17"] == "Underbed light on/off"
+    nordic, coord = controller("coastersleep", "MMRM", "RAW")
+    listed = names(nordic)
+    assert listed["richmat_classic_17_raw"] == "Motor 1+2 up"
+    assert "richmat_classic_17" not in listed
+    assert nordic.controller_button_available("richmat_classic_17_raw")
+    assert not nordic.controller_button_available("richmat_classic_17")
+    # The button listed before the connection was known is refused, not sent.
+    with pytest.raises(ServiceValidationError):
+        await bed._press(nordic, node=17)
+    assert packets(coord) == []
+    await bed._press(nordic, node=17, raw=True)
+    assert packets(coord)[0] == "36"
+    # A restart names the controls from the stored format before it reconnects.
+    restored, _ = controller("coastersleep", "MMRM")
+    restored._session = None
+    assert "richmat_classic_17" in names(restored)
+    restored.restore_persisted_app_state({"wire": "RAW"})
+    assert "richmat_classic_17_raw" in names(restored)
