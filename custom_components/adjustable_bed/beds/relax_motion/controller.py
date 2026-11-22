@@ -847,9 +847,6 @@ class RelaxMotionController(ProfileExecution[app.RelaxMotionProfile], BedControl
             for _char in self._notifying:
                 await self._send(self._live(), self._p1(0x1201, pid=2), epoch)
 
-    async def read_positions(self, motor_count: int = 2) -> None:
-        return
-
     def on_disconnect(self) -> None:
         self._epoch += 1
         self._link = None
