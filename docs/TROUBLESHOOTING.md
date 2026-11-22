@@ -249,6 +249,7 @@ Configure the PIN in the integration's options.
    - Wait 15 seconds for the controller to initialize
    - Then add the bed in Home Assistant
 2. **After successful setup:** The remote can be used normally again - this procedure is typically only needed for initial setup
+3. **Linak beds:** The bed pairs with a Bluetooth adapter only during the first 3 minutes after it is powered on, and ignores every adapter it has not paired with after that, even at full signal. Unplug the bed for 60 seconds, plug it back in (the light under the bed flashes when it is ready), then add the bed or use it from Home Assistant within 3 minutes. Each adapter or proxy needs this once. The setup check and the error messages say so when the bed is advertising but does not accept the connection. ESPHome proxies need ESPHome 2024.3.0 or newer.
 
 ### "Device not found"
 
@@ -305,7 +306,7 @@ Configure the PIN in the integration's options.
 1. **Improve signal:** Move Bluetooth adapter/proxy closer to the bed
 2. **Compare connected and cold commands:** A cold connection may need authentication and several proxy attempts. With **Bluetooth connection** set to "Release right after each command", commands within the one-second handoff window reuse the link.
 3. **Use Stop all when movement must end:** STOP invalidates queued movement and interrupts active movement and position reads. A replacement movement for the same motor supersedes the older request; independent motor commands are serialized.
-4. **Inspect connection diagnostics:** Repeated failures on the strongest proxy can delay access to a working alternative. Multiple paths receive a bounded extra retry budget; this cannot repair an unusable proxy or an unreachable bed.
+4. **Inspect connection diagnostics:** Repeated failures on the strongest proxy can delay access to a working alternative. Multiple paths receive a bounded extra retry budget; this cannot repair an unusable proxy or an unreachable bed. A Linak bed refuses a proxy it has not paired with: the first command after Home Assistant or the proxy restarts can then spend a few attempts on it (two in the tested setup) before another proxy is used. See [Bed is discovered but won't connect](#bed-is-discovered-but-wont-connect).
 
 Timed Move uses the requested elapsed movement limit. Connection preparation and
 STOP cleanup can add to the service's total duration, but slow writes no longer

@@ -169,6 +169,10 @@ class BedTraits:
     # Reconnecting needs a bond the bed may refuse outside its pairing window,
     # so a new entry keeps the link between commands by default.
     costly_reconnect: bool = False
+    # The bed pairs only for a few minutes after power-on and ignores connection
+    # attempts from other adapters, so a failed connection to an advertising bed
+    # is explained as a closed pairing window.
+    pairing_window_at_power_on: bool = False
     # Startup hooks own Device Information reads, including their timing.
     owns_device_info_reads: bool = False
     # A single-address pair may need separate Left and Right operations.
@@ -331,7 +335,10 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_LIMOSS: BedTraits(position_feedback=True, connection_scoped_state=True),
     BED_TYPE_LIMOSS_REMOTE: _NO_ANGLES,
     BED_TYPE_LINAK: BedTraits(
-        position_feedback=True, angle_sensors=True, passive_position_reconciliation=True
+        position_feedback=True,
+        angle_sensors=True,
+        passive_position_reconciliation=True,
+        pairing_window_at_power_on=True,
     ),
     # Pressure is polled only on a held link, like the app's pump tab.
     BED_TYPE_LOGICDATA_AIR_PUMP: _NO_ANGLES_SCOPED,

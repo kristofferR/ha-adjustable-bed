@@ -10,11 +10,16 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from bleak.exc import BleakError
+from bleak_retry_connector import BleakAbortedError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bluetooth_freshness import (
+    AdvertisementEvidence,
+    FreshnessStatus,
+)
 from custom_components.adjustable_bed.command_scheduler import (
     CommandKind,
     CommandOutcome,
@@ -962,27 +967,45 @@ class TestCoordinatorWriteCommand:
         # The controller should have written the command
         mock_bleak_client.write_gatt_char.assert_called()
 
+    @pytest.mark.parametrize(
+        "bed_type,error,expected",
+        [
+            # A Linak keeps advertising but aborts an adapter it has not paired with.
+            (BED_TYPE_LINAK, BleakAbortedError("aborted"), "bed_pairing_window_closed"),
+            (BED_TYPE_LINAK, BleakError("Connection failed"), "bed_not_connected"),
+            (BED_TYPE_KEESON, BleakAbortedError("aborted"), "bed_not_connected"),
+        ],
+    )
     async def test_write_command_not_connected(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
         mock_bluetooth_api,
+        bed_type,
+        error,
+        expected,
     ):
-        """A command for a bed that cannot be reached fails with the translated error."""
-        # Make connection fail
-        with patch(
-            "custom_components.adjustable_bed.coordinator_connection.establish_connection",
-            new_callable=AsyncMock,
-            side_effect=BleakError("Connection failed"),
+        """A command for an advertising bed that refuses the connection says why."""
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.establish_connection",
+                new_callable=AsyncMock,
+                side_effect=error,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.async_check_advertisement",
+                return_value=AdvertisementEvidence(FreshnessStatus.FRESH),
+            ),
         ):
             coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            coordinator._bed_type = bed_type
 
             with pytest.raises(BedNotConnectedError) as raised:
                 await coordinator.async_execute_controller_command(
                     lambda controller: controller.write_command(bytes([0x01, 0x00]))
                 )
-        assert raised.value.translation_key == "bed_not_connected"
+        assert raised.value.translation_key == expected
 
     async def test_unreachable_bed_warns_once_across_setup_retries(
         self,

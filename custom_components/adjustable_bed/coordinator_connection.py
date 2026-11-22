@@ -20,7 +20,11 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
-from bleak_retry_connector import close_stale_connections_by_address, establish_connection
+from bleak_retry_connector import (
+    BleakAbortedError,
+    close_stale_connections_by_address,
+    establish_connection,
+)
 from homeassistant.components import bluetooth
 
 from .adapter import (
@@ -38,6 +42,7 @@ from .beds.gmmotor.sessions import LIVE_ENABLED as GMMOTOR_LIVE_ENABLED
 from .beds.gmmotor.sessions import sleep_intent
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .bluetooth_diagnostics import connection_reachability
+from .bluetooth_freshness import async_check_advertisement
 from .bluetooth_transport import async_connection_paths, async_path_for_source, client_source
 from .bond_verification import BondVerificationStatus
 from .command_scheduler import ALL_COMMAND_RESOURCES, CommandOutcome, command_frames_not_counted
@@ -286,6 +291,27 @@ class CoordinatorConnectionMixin:
     def connection_attempt_details(self: AdjustableBedCoordinator) -> list[dict[str, Any]]:
         """Return detailed recent connection attempts."""
         return list(self._connection_attempt_details)
+
+    @property
+    def refused_outside_pairing_window(self: AdjustableBedCoordinator) -> bool:
+        """Return whether the last connection failure fits a closed pairing window.
+
+        A bed with a pairing window at power-on ignores connection attempts
+        from an adapter it has not paired with: it keeps advertising and the
+        attempt is aborted before a link comes up. A bed that is off times out
+        instead, and a proxy without a free slot reports that. Weak signal
+        aborts the same way, which is why the messages built from this say
+        "usually".
+        """
+        if not bed_traits(self._bed_type, self._protocol_variant).pairing_window_at_power_on:
+            return False
+        attempts = self.connection_attempt_details
+        last = attempts[-1] if attempts else {}
+        return (
+            last.get("result") == "failed"
+            and last.get("error_type") == BleakAbortedError.__name__
+            and async_check_advertisement(self.hass, self._address).is_fresh
+        )
 
     @property
     def connection_settings(self: AdjustableBedCoordinator) -> ConnectionSettings:
@@ -1866,15 +1892,26 @@ class CoordinatorConnectionMixin:
         # bed stays unreachable are expected and go to debug.
         reported = domain_registry(self.hass, _REPORTED_OUTAGES, set)
         outage = (self.entry.entry_id, self._address)
+        if self.refused_outside_pairing_window:
+            advice = (
+                "The bed is advertising but did not accept the connection, which usually "
+                "means it has not paired with this Bluetooth adapter. It pairs only "
+                "during the first 3 minutes after power-on: unplug it for 60 seconds, "
+                "plug it back in, then use it within 3 minutes"
+            )
+        else:
+            advice = (
+                "Check that the bed has power, close any phone app connected to it, "
+                "and check that its Bluetooth adapter or proxy is online"
+            )
         _LOGGER.log(
             logging.DEBUG if outage in reported else logging.WARNING,
-            "Could not connect to %s after %d attempts (%.1fs, last error: %s). "
-            "Check that the bed has power, close any phone app connected to it, "
-            "and check that its Bluetooth adapter or proxy is online%s",
+            "Could not connect to %s after %d attempts (%.1fs, last error: %s). %s%s",
             self._address,
             attempt,
             total_elapsed,
             self._last_connection_error or "not found",
+            advice,
             f" (Bluetooth reachability: {reason})" if reason else "",
         )
         reported.add(outage)
