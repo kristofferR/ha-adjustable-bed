@@ -596,7 +596,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             and self._attr_is_on
         )
         if not brightness_only:
-            if ctrl.supports_explicit_light_on_control or ctrl.supports_light_state_feedback:
+            if ctrl.supports_explicit_light_on_control:
                 await ctrl.lights_on()
             elif target_rgb is None:
                 if ctrl.supports_light_toggle_control:
