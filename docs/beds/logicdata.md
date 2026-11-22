@@ -10,7 +10,8 @@
 
 [SILVERmotion Android](silvermotion.md) is a second route from the same app. It
 sends the command envelope the app's screens use, with zero gravity and
-anti-snore presets. This route follows the app's SimplicityFrame library.
+anti-snore presets. The pairing-required route on this page sends the
+SimplicityFrame library's bare three-byte command payloads.
 
 ## Known Models
 
@@ -188,8 +189,7 @@ sends the preset three times. Stop is sent once.
 ### Analysis provenance
 
 Protocol reverse-engineered from the native libraries of the SILVERmotion
-Android app (`net.logicdata.mobile.sfapp` 1.0.0), which is no longer on Google
-Play:
+Android app (`net.logicdata.mobile.sfapp` 1.0.0):
 
 - `libsimplicityframelib.so`: the command functions, such as `SF_HeadUp`,
   `SF_LegUp`, `SF_AnyKeyPressed`, `SF_FlatPosition` and `SF_MemoryPosition1`

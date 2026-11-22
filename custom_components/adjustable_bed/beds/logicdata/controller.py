@@ -56,7 +56,8 @@ class LogicdataCommands:
     """Logicdata command byte constants.
 
     Command format: [opcode, param1, param2]
-    Extracted from SILVERmotion APK (SF_Controller command methods).
+    Extracted from the SILVERmotion APK (the SF_* command functions of
+    libsimplicityframelib.so).
     """
 
     # Motor movement (hold-style, requires repeated sends)
