@@ -2210,14 +2210,6 @@
       "connectable": true
     },
     {
-      "local_name": "KSBT01C*",
-      "connectable": true
-    },
-    {
-      "local_name": "KSBT03C*",
-      "connectable": true
-    },
-    {
       "local_name": "KSRM*"
     },
     {
