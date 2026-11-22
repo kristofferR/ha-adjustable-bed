@@ -348,6 +348,10 @@ class CoordinatorBondsMixin:
         """
         if self._has_unresolved_auth_failure():
             self._last_bond_evidence = None
+        if self._ble_bond_established:
+            # A repair paired this bed. The bond exists, so its record stays removable.
+            await delete_pairing_required_issue(self.hass, self._address)
+            return
         await self.async_clear_obsolete_pairing_state(control_access_verified=True)
 
     def _log_bond_marker_unreliable(self: AdjustableBedCoordinator) -> None:
