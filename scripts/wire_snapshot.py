@@ -1553,6 +1553,7 @@ VARIANT_ROUTES: dict[str, str] = {
     "linak": "LINAK_VARIANTS",
     "octo": "OCTO_VARIANTS",
     "okin_cb24": "OKIN_CB24_VARIANTS",
+    "smartbed": "SMARTBED_VARIANTS",
     "okin_cst": "OKIN_CST_VARIANTS",
     "okin_64bit": "OKIN_64BIT_VARIANTS",
     "okin_dot": "OKIN_DOT_VARIANTS",
@@ -2255,6 +2256,18 @@ def build_scenarios() -> list[Scenario]:
                 "sleep_assistant_controls": ["m1", "m2", "m3", "m4", "m7", "m8"],
                 "sleep_assistant_lighting": lighting, "has_light": True},
             replies={"*": "dd000000000000000000000000004002000000"}))
+    scenarios.extend((
+        Scenario(id="smartbed:five_motors", bed_type="smartbed", protocol_variant="cb24",
+                 layout_id="smartbed:cb24", entry_data={"motor_count": 5}),
+        Scenario(id="smartbed:sonic", bed_type="smartbed", protocol_variant="cb27new",
+                 layout_id="smartbed:cb27new", entry_data={"capabilities": {"smartbed": {
+                     "profile": "cb27new", "motors": 5, "massage_count": 2, "massage": True,
+                     "light": True, "rgb": True, "sonic": True}}},
+                 replies={
+                     "write:2a000005810901ffff00002225124b": "2a000005810003011f000002020000000000000000",
+                     "write:2a000005810902ffff00002225124b": "2a00000581000000010700000000000000000000",
+                 }),
+    ))
     scenarios.extend(ultramatic_scenarios())
     scenarios.extend(mh_app_scenarios())
     # Bedgear A12: each selected layout, dynamic zone array and independent M gate.

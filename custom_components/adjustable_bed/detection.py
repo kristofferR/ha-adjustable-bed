@@ -703,6 +703,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_7BYTE: "Okin receiver (Nectar beds)",
     BED_TYPE_OKIN_NORDIC: "Okin receiver (Mattress Firm 900 and iFlex beds)",
     BED_TYPE_OKIN_CB24: "Okin receiver (SmartBed by Okin and Amada beds)",
+    "smartbed": "SmartBed app",
     BED_TYPE_OKIN_DOT: "Okin DOT remotes (RF1058, RF34 and RF6707)",
     BED_TYPE_OKIN_FFE: "Okin receiver (13 and 15 series)",
     BED_TYPE_OKIN_ORE: "Okin receiver (older ORE remotes)",
@@ -1440,6 +1441,10 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     needs a name, which the non-bed exclusions have checked, and is uncertain.
     A configured bed's route is reviewed with detect_bed_type_detailed().
     """
+    # The SmartBed app's headboards. Only a new setup is offered them, so a bed
+    # already set up on another route is not asked to change.
+    if (service_info.name or "").startswith(("Headboard126", "Headboard265")):
+        return DetectionResult("smartbed", 0.9, ["name:smartbed_headboard"])
     first = first_pass(service_info)
     result = _detect_with_first_pass(service_info, first)
     service_uuids = [str(uuid).lower() for uuid in service_info.service_uuids or ()]

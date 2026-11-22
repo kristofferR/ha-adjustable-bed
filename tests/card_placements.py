@@ -247,6 +247,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.smart_comfort.controller import (
         SmartComfortController,
     )
+    from custom_components.adjustable_bed.beds.smartbed.controller import SmartBedController
     from custom_components.adjustable_bed.beds.starcode.abm5_4 import (
         _POSITIVE_SELECTORS,
         StarcodeAbm5_4Controller,
@@ -269,6 +270,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
+        if isinstance(controller, SmartBedController) and controller.protocol == 5:
+            yield variant(controller, _sonic=True, _rgb=True, _motors=5)
         if isinstance(controller, RelaxMotionController):
             for number in (14, 31, 32, 500, 725):
                 for route in relax_motion.ROUTES:

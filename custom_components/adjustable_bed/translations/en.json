@@ -469,7 +469,8 @@
               "serta_mp_memory_4_foot": "Memory 4 foot angle",
               "agingplace_bed_mode": "Sensor display mode",
               "sleep_assistant_identity": "Device identity",
-              "sleep_assistant_parameters": "Selected model settings"
+              "sleep_assistant_parameters": "Selected model settings",
+              "cb24_bed_selection": "Bed side"
             },
             "data_description": {
               "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
@@ -494,7 +495,8 @@
               "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
               "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two.",
               "sleep_assistant_identity": "Eight decimal digits from the selected bed identity. Leave empty if unknown.",
-              "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data."
+              "sleep_assistant_parameters": "Optional local JSON with calibration, gain, out_of_bed, anti_snore and anti_snore_levels values from your selected model. Leave empty if unknown. No account or login data.",
+              "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides."
             }
           }
         }
@@ -3731,6 +3733,21 @@
       },
       "sleepfunction_scoped_preset_lounge": {
         "name": "{action}"
+      },
+      "smartbed_left_up": {
+        "name": "Raise left headboard"
+      },
+      "smartbed_left_down": {
+        "name": "Lower left headboard"
+      },
+      "smartbed_right_up": {
+        "name": "Raise right headboard"
+      },
+      "smartbed_right_down": {
+        "name": "Lower right headboard"
+      },
+      "smartbed_alarm_refresh": {
+        "name": "Refresh alarm"
       }
     },
     "cover": {
@@ -4105,6 +4122,15 @@
       },
       "betterliving2_all_sections": {
         "name": "All sections"
+      },
+      "smartbed_left": {
+        "name": "Left headboard"
+      },
+      "smartbed_right": {
+        "name": "Right headboard"
+      },
+      "head_tilt": {
+        "name": "Head tilt"
       }
     },
     "sensor": {
@@ -5312,6 +5338,9 @@
       },
       "super_colchones": {
         "name": "Product"
+      },
+      "smartbed_alarm_time": {
+        "name": "Alarm time"
       }
     },
     "light": {
@@ -5544,6 +5573,12 @@
       },
       "superior_sleep_massage": {
         "name": "Massage"
+      },
+      "smartbed_massage": {
+        "name": "Massage"
+      },
+      "smartbed_sonic": {
+        "name": "Sonic massage"
       }
     },
     "binary_sensor": {
@@ -5770,6 +5805,9 @@
         "name": "Sleep state"
       },
       "superior_sleep_alarm_enabled": {
+        "name": "Alarm enabled"
+      },
+      "smartbed_alarm_on": {
         "name": "Alarm enabled"
       }
     },
@@ -6181,6 +6219,24 @@
       },
       "dreamsense_light_seconds": {
         "name": "Light duration"
+      },
+      "smartbed_wave": {
+        "name": "Massage wave"
+      },
+      "smartbed_sonic_head": {
+        "name": "Head sonic massage intensity"
+      },
+      "smartbed_sonic_foot": {
+        "name": "Foot sonic massage intensity"
+      },
+      "smartbed_sonic_wave": {
+        "name": "Sonic massage wave"
+      },
+      "smartbed_left_massage": {
+        "name": "Left massage intensity"
+      },
+      "smartbed_right_massage": {
+        "name": "Right massage intensity"
       }
     },
     "select": {
@@ -6894,6 +6950,21 @@
         "state": {
           "left": "Left",
           "right": "Right"
+        }
+      },
+      "smartbed_sonic_mode": {
+        "name": "Sonic massage mode",
+        "state": {
+          "normal": "Normal",
+          "acoustic": "Acoustic"
+        }
+      },
+      "smartbed_sonic_timer": {
+        "name": "Sonic massage timer",
+        "state": {
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
         }
       }
     },
@@ -10978,6 +11049,12 @@
     },
     "super_colchones_route": {
       "message": "Super Colchones needs a supported writable Bluetooth service and a notification characteristic."
+    },
+    "smartbed_session_changed": {
+      "message": "The bed reconnected or its controls changed. Try the action again."
+    },
+    "smartbed_choose_receiver": {
+      "message": "Choose the exact SmartBed receiver in Reconfigure before using saved side controls. Select CB24AB only for a receiver that supports separate Left and Right controls."
     }
   },
   "issues": {

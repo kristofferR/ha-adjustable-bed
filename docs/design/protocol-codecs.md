@@ -119,6 +119,15 @@ side and release semantics. `profiles/relax_motion.py` holds the model, app-page
 and locale gates. Both carriers are checked by literal vectors and real native
 controller/entity/service paths. See [Relax Motion](../beds/relax-motion.md).
 
+## SmartBed
+
+The SmartBed app's ten receiver profiles reuse the Okin ORE, Keeson E6, Okin
+N-frame and SoundWave record encoders. The profile in `profiles/smartbed.py`,
+not the transport, selects each builder. Its controller owns the notification
+handlers of one connection, the capability pages and the release and query
+timing. It is a bed type of its own beside the Okin receiver route, whose
+frames are unchanged. See [SmartBed](../beds/smartbed.md).
+
 ## Registering a family
 
 A family keeps its files to itself, so parallel family PRs do not touch a

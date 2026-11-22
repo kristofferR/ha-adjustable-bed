@@ -338,3 +338,33 @@ async def test_a_ceiling_never_lengthens_a_shorter_lease(clock: Any) -> None:
         scheduler.execute(hold_intent(bounded, lease(duration_s=0.05))), 1
     )
     assert clock.now - began == pytest.approx(0.05)
+
+
+@pytest.mark.parametrize("expiry_first", (False, True))
+@pytest.mark.parametrize("outcome", (CommandOutcome.STOPPED, CommandOutcome.REPLACED, CommandOutcome.SHUTDOWN))
+async def test_lease_expiry_cannot_overwrite_explicit_cancellation(expiry_first, outcome):
+    scheduler = DeviceCommandScheduler("expiry-cancellation-order")
+    entered, finish = asyncio.Event(), asyncio.Event()
+
+    async def held(_context):
+        entered.set()
+        await finish.wait()
+
+    handle = await scheduler.enqueue(hold_intent(held, lease()))
+    await entered.wait()
+    record = handle.lease_record
+    assert record is not None
+    if expiry_first:
+        scheduler._expire_record(record, CommandOutcome.EXPIRED)
+    scheduler.request_cancel(BACK, outcome=outcome)
+    generation = handle.context.cancel_generation
+    if not expiry_first:
+        # The lease callback runs before the coordinator gets to process STOP.
+        scheduler._expire_record(record, CommandOutcome.EXPIRED)
+    assert record.ended
+    assert handle.context.cancel_reason is outcome
+    assert handle.context.cancel_generation == generation
+    finish.set()
+    await handle.future
+    assert handle.outcome is outcome
+    await scheduler.async_shutdown()

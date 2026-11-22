@@ -2084,6 +2084,37 @@ def _app_layout_profile(bed_type: str) -> SetupProfile:
     )
 
 
+def _smartbed_receivers(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .const import SMARTBED_VARIANTS
+
+    return SMARTBED_VARIANTS
+
+
+def _smartbed_motor_counts(data: Mapping[str, Any]) -> list[int]:
+    from .config_flow import _motor_count_options
+
+    variant = data.get(CONF_PROTOCOL_VARIANT)
+    return _motor_count_options("smartbed", variant if isinstance(variant, str) else "auto")
+
+
+def _smartbed_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    data = {**previous, **answers}
+    # Only CB24AB serializes a native side. A deliberate receiver change must
+    # not carry the old side into a profile whose normal commands force zero.
+    if data.get(CONF_PROTOCOL_VARIANT, "auto") not in ("auto", "cb24_ab"):
+        data[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_DEFAULT
+    # A receiver with one layout sets its own motor count.
+    if len(counts := _smartbed_motor_counts(data)) == 1:
+        data[CONF_MOTOR_COUNT] = counts[0]
+    return data
+
+
+def _smartbed_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    if data.get(CONF_MOTOR_COUNT, 2) in _smartbed_motor_counts(data):
+        return {}
+    return {CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"}
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -3458,6 +3489,22 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(
             Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT),
         ),
+    ),
+    "smartbed": _asking(
+        "smartbed",
+        owns={CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
+        # The receiver is asked with the answers that depend on it: the motor
+        # counts it takes, and the side only a CB24AB receiver has.
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, _smartbed_receivers, VARIANT_AUTO),
+            Question(CONF_MOTOR_COUNT, {2: "2", 3: "3", 4: "4", 5: "5"}, 2),
+            Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),
+            Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT, when={"field": CONF_PROTOCOL_VARIANT, "value": "cb24_ab"}),
+        ),
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        title=lambda _data: "SmartBed",
+        normalize=_smartbed_normalize,
+        validate=_smartbed_errors,
     ),
     # The exact Bluetooth name selects MotoMotion's panel and its independent
     # feature flags; the app's own controls replace massage and angle sensing.

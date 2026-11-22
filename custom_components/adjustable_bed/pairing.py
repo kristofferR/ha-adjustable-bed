@@ -224,6 +224,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_SBI,
         BED_TYPE_RONDURE,
         BED_TYPE_OKIN_CB24,
+        "smartbed",
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
         BED_TYPE_ISLEEP,
@@ -244,6 +245,7 @@ def supports_single_address_pairing(
     protocol_variant: str | None = None,
     *,
     resolved_variant: str | None = None,
+    capabilities: object = None,
     product_type: str | None = None,
     ble_device_name: str | None = None,
 ) -> bool:
@@ -305,6 +307,13 @@ def supports_single_address_pairing(
             else protocol_variant
         )
         return effective_variant == KAIDI_VARIANT_SEAT_1_2
+    if bed_type == "smartbed":
+        from .beds.smartbed.setup import verified_ab
+
+        # Only the CB24AB profile serializes a side of its own.
+        return protocol_variant == "cb24_ab" or (
+            protocol_variant in (None, VARIANT_AUTO) and verified_ab(capabilities)
+        )
     return not (
         bed_type == BED_TYPE_OKIN_CB24
         and protocol_variant in {OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW}
@@ -810,6 +819,7 @@ def build_single_address_pair_entry_data(
         bed_type,
         protocol_variant,
         resolved_variant=resolved_variant,
+        capabilities=single_data.get("capabilities"),
         product_type=single_data.get(CONF_PRODUCT_TYPE),
         ble_device_name=single_data.get(CONF_BLE_DEVICE_NAME),
     ):
@@ -846,7 +856,7 @@ def build_single_address_pair_entry_data(
     elif bed_type == BED_TYPE_RONDURE:
         left[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_A
         right[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_B
-    elif bed_type == BED_TYPE_OKIN_CB24:
+    elif bed_type in (BED_TYPE_OKIN_CB24, "smartbed"):
         left[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_A
         right[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_B
     elif bed_type == "ultramatic_smart_bed":

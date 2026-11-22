@@ -437,6 +437,7 @@ BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartB
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"
+BED_TYPE_SMARTBED: Final = "smartbed"  # SmartBed app profiles, beside the okin_cb24 receiver route
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
 BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
@@ -762,6 +763,7 @@ KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_NERUM,
     BED_TYPE_RELAX_MOTION,
+    BED_TYPE_SMARTBED,
     BED_TYPE_CHEERSSLEEP,
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
@@ -1974,6 +1976,21 @@ OKIN_CB24_VARIANTS: Final = {
     OKIN_CB24_VARIANT_CB1221: "CB1221 control box",
     OKIN_CB24_VARIANT_DACHENG: "Dacheng control box",
     OKIN_CB24_VARIANT_CB27NEW: "CB27New control box",
+}
+
+# The SmartBed app's own receiver profiles.
+SMARTBED_VARIANTS: Final = {
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    "standard": "Standard receiver",
+    "cb": "CB receiver",
+    "cb24": "CB24 control box",
+    "cb27": "CB27 control box",
+    "cb24_ab": "CB24AB control box",
+    "cb1221": "CB1221 control box",
+    "dacheng": "Dacheng control box",
+    "cb27new": "CB27New control box",
+    "headboard126": "Headboard 126",
+    "headboard265": "Headboard 265",
 }
 
 # Keeson variants

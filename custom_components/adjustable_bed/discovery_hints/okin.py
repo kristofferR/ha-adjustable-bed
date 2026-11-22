@@ -30,4 +30,5 @@ HINTS: tuple[Hint, ...] = (
     ),
     # Nordic's company ID; detection requires an OKIN or SmartBed name with it.
     manufacturer(MANUFACTURER_ID_OKIN, bed_types={BED_TYPE_OKIN_CB24}),
+    names("Headboard126", "Headboard265", bed_types={"smartbed"}),
 )

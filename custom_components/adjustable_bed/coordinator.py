@@ -346,6 +346,11 @@ class AdjustableBedCoordinator(
     ) -> Self:
         """Build the coordinator once its tables are imported."""
         await cls.async_import_tables(hass, entry.data)
+        from .entry_hooks import entry_hooks
+
+        validate = entry_hooks(profile_route(entry_profile_id(entry.data)).bed_type).validate
+        if validate is not None:
+            validate(entry.data)
         return cls(hass, entry)
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry | ChildEntryView) -> None:

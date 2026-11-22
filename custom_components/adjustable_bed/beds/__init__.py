@@ -145,6 +145,7 @@ if TYPE_CHECKING:
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
     from .smart_comfort.controller import SmartComfortController as SmartComfortController
     from .smart_sleep.controller import SmartSleepController as SmartSleepController
+    from .smartbed.controller import SmartBedController as SmartBedController
     from .solace.controller import SolaceController as SolaceController
     from .sonicsleep.controller import SonicSleepController as SonicSleepController
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
@@ -265,6 +266,7 @@ _EXPORT_MODULES = {
     "LimossRemoteController": "limoss.remote",
     "LinakController": "linak.controller",
     "SilvermotionController": "silvermotion.controller",
+    "SmartBedController": "smartbed.controller",
     "LogicdataController": "logicdata.controller",
     "LogicdataAppController": "logicdata.app",
     "LogicdataAirPumpController": "logicdata.air_pump",

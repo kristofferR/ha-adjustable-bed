@@ -1,4 +1,4 @@
-"""Bed-family steps of standalone config-entry setup.
+"""Bed-family validation and standalone config-entry setup steps.
 
 ``async_setup_entry`` stays bed-agnostic: it runs every prepare step, then
 looks up the hooks registered for the entry's bed type. Each step and hook is
@@ -23,6 +23,7 @@ from .beds.remacro.discovery import async_prepare_remacro_entry
 from .beds.reverie.pairlink_local_setup import async_setup_pairlink_local_entry
 from .beds.richmat.qrrm_reclassification import async_reclassify_bedtech_qrrm_entry
 from .beds.richmat_classic.removed_layouts import async_load_removed_layout_entry
+from .beds.smartbed.setup import validate_entry as validate_smartbed_entry
 from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_FURNIMOVE,
@@ -69,8 +70,10 @@ async def _async_load_offline_diagnostic_entry(
 
 @dataclass(frozen=True, slots=True)
 class EntryHooks:
-    """Setup steps one bed type adds to a standalone entry."""
+    """Physical-entry validation and standalone setup steps for one bed type."""
 
+    # Reject invalid saved routes before connection retries can hide their error.
+    validate: Callable[[Mapping[str, object]], None] | None = None
     # Prepares a load without the first connection; False keeps the setup retry.
     load_offline: LoadOffline | None = None
     # Replaces the central connection; False when the entry does not select it.
@@ -88,6 +91,7 @@ ENTRY_PREPARE_STEPS: Final[tuple[PrepareEntry, ...]] = (
 )
 
 _ENTRY_HOOKS: Final[Mapping[str, EntryHooks]] = {
+    "smartbed": EntryHooks(validate=validate_smartbed_entry),
     BED_TYPE_DIAGNOSTIC: EntryHooks(load_offline=_async_load_offline_diagnostic_entry),
     BED_TYPE_FURNIMOVE: EntryHooks(load_offline=async_load_offline_furnimove_entry),
     BED_TYPE_REVERIE_PAIRLINK: EntryHooks(setup_local=async_setup_pairlink_local_entry),

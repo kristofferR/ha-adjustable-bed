@@ -263,3 +263,17 @@ async def test_configure_asks_a_profiles_angle_question_as_read_bed_position(
     assert saved["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
     assert "read_positions" not in entry.data
+
+
+async def test_verified_auto_smartbed_ab_pair_can_save_unchanged_settings(hass, enable_custom_integrations):
+    from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
+
+    del enable_custom_integrations
+    data = build_single_address_pair_entry_data({
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:95", CONF_BED_TYPE: "smartbed",
+        CONF_PROTOCOL_VARIANT: "auto", "capabilities": {"smartbed": {"profile": "cb24_ab"}},
+    }, name="Bed")
+    entry, form = await _settings_form(hass, data)
+    saved = await hass.config_entries.options.async_configure(form["flow_id"], user_input={})
+    assert saved["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_PROTOCOL_VARIANT] == "auto"
