@@ -127,6 +127,7 @@ class RecordingChild(SchedulerSurface):
     controller_side = None
     pairlink_peripheral = False
     bed_type = "linak"
+    refused_outside_pairing_window = False
 
     def __init__(
         self,
@@ -2838,6 +2839,15 @@ class TestSequentialCycle:
             (SIDE_RIGHT, "connect"),
         ]
         assert set(exc.value.side_errors) == {SIDE_RIGHT}
+
+    async def test_side_refused_outside_its_pairing_window_says_so(self):
+        log: list = []
+        coord, _, right = self._seq(log, right={"connect_result": False})
+        right.refused_outside_pairing_window = True
+        with pytest.raises(PairedSideError) as exc:
+            await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        error = exc.value.side_errors[SIDE_RIGHT]
+        assert error.translation_key == "side_pairing_window_closed"
 
     async def test_stop_only_targets_a_still_connected_side(self):
         log: list = []

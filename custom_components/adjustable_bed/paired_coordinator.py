@@ -794,6 +794,10 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         return self._single_inner.connection_attempt_details
 
     @property
+    def refused_outside_pairing_window(self) -> bool:
+        return self._single_inner.refused_outside_pairing_window
+
+    @property
     def connection_attempt_count(self) -> int:
         return self._single_inner.connection_attempt_count
 

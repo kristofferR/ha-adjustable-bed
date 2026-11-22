@@ -1289,7 +1289,12 @@ class SequentialTwoLinkTopology(PairTopology):
                 errors[side] = err
                 break
             if not connected:
-                errors[side] = failed("side_not_connected", side=side)
+                errors[side] = failed(
+                    "side_pairing_window_closed"
+                    if child.refused_outside_pairing_window
+                    else "side_not_connected",
+                    side=side,
+                )
                 break
 
             # A STOP (or newer command) may have landed WHILE we were connecting —

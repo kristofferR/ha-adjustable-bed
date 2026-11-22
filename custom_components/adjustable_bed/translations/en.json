@@ -10397,6 +10397,9 @@
     "side_not_connected": {
       "message": "The {side} side of the combined bed could not be connected. Check that it is powered on and in range, then try again."
     },
+    "side_pairing_window_closed": {
+      "message": "The {side} side of the combined bed is advertising but did not accept the connection, which usually means it has not paired with this Bluetooth adapter. It pairs only during the first 3 minutes after power-on: unplug the bed for 60 seconds, plug it back in, then try again within 3 minutes."
+    },
     "side_not_released": {
       "message": "The {side} side of the combined bed did not disconnect, so nothing more was sent. It may still be connected; try again."
     },
