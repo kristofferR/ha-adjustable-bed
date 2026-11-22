@@ -3801,7 +3801,7 @@ sleepfunction_settings:
     side:
       selector:
         select:
-          translation_key: paired_side
+          translation_key: side
           options:
             - left
             - right
