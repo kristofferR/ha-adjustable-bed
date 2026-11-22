@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bleak.exc import BleakError
+from bleak_retry_connector import BleakAbortedError
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.config_entries import (
     SOURCE_BLUETOOTH,
@@ -1987,6 +1988,40 @@ class TestBluetoothDiscoveryFlow:
         assert result["data"][CONF_MOTOR_PULSE_USER_SET] is True
         # Reading the position is a Linak's default, so nothing is stored.
         assert CONF_DISABLE_ANGLE_SENSING not in result["data"]
+
+    async def test_linak_refused_check_explains_the_pairing_window(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """An advertising Linak that refuses the check offers the power-cycle and a recheck."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+        with (
+            patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=True),
+            _patch_gate("hci0", -72),
+            patch(
+                "bleak_retry_connector.establish_connection",
+                AsyncMock(side_effect=BleakAbortedError("ESP_GATT_ERROR while connecting")),
+            ),
+        ):
+            result = await _settings(hass, result, {CONF_PREFERRED_ADAPTER: "auto"})
+            result = await _advance_progress(hass, result)
+
+            assert result["step_id"] == "verify_connection"
+            capabilities = result["description_placeholders"]["capabilities"]
+            assert "pairs only during the first 3 minutes after power-on" in capabilities
+            assert "action" in result["data_schema"].schema
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {"action": "retry"}
+            )
+            result = await _advance_progress(hass, result)
+            assert result["step_id"] == "verify_connection"
 
     async def test_bluetooth_confirm_bed_type_dropdown_uses_display_names(
         self,

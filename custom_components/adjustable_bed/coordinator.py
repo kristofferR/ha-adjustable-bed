@@ -1978,6 +1978,12 @@ class AdjustableBedCoordinator(
                 _LOGGER.exception("STOP failed after its caller was cancelled")
             raise
 
+    def _not_connected_error(self) -> BedNotConnectedError:
+        """Return why the bed could not be reached, naming a closed pairing window."""
+        if self.refused_outside_pairing_window:
+            return BedNotConnectedError("bed_pairing_window_closed")
+        return BedNotConnectedError()
+
     async def _async_send_stop_command(self) -> None:
         """Send STOP while owning the legacy wire and connection lifecycle lane."""
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
@@ -1998,7 +2004,7 @@ class AdjustableBedCoordinator(
                 else:
                     if not await self.async_ensure_connected(reset_timer=False):
                         _LOGGER.debug("Cannot send stop: not connected to bed")
-                        raise BedNotConnectedError
+                        raise self._not_connected_error()
 
                     # Connecting can rebuild the controller from the selected
                     # path. STOP must use that live instance, not the offline
@@ -2060,7 +2066,7 @@ class AdjustableBedCoordinator(
 
         if not await self.async_ensure_connected(reset_timer=False):
             _LOGGER.debug("Cannot execute %s: not connected to bed", operation_name)
-            raise BedNotConnectedError
+            raise self._not_connected_error()
 
         # async_ensure_connected may resolve a different usable path and
         # replace the offline controller. Return only the controller bound to

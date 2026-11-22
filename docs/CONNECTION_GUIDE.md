@@ -58,6 +58,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 | Leggett & Platt MlRM | ❌ No |
 | Nectar (DewertOkin protocol) | ❌ No |
 | DewertOkin | ❌ No |
+| Linak | ❌ No pairing step: the bed pairs by itself, but only during the first 3 minutes after power-on ([details](beds/linak.md#bonding-and-authentication)) |
 | Most other beds | ❌ No |
 
 *Note: the two Sleep Number entries are separate bed types, not variants of the same one: Sleep Number Fuzion always requires pairing, and Sleep Number BAM/MCR never does. Leggett & Platt requires pairing on its Okin and Gen2 routes, not on MlRM.*

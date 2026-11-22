@@ -77,15 +77,37 @@ name.
 - Physical testing with two Advanced controllers shows that every read, write
   and subscription is refused with `Insufficient authentication` until the link
   is encrypted.
+- The controller pairs only during the first 3 minutes after power-on. In that
+  window it advertises its control service, the limited-discoverable flag and a
+  transmit power of +4 dBm, and any adapter can connect and pair. A session
+  that sends commands ends the window early.
+- Outside the window it advertises only its name, at -8 dBm, and ignores
+  connection attempts from an adapter it has not paired with. An ESPHome proxy
+  then reports `ESP_GATT_ERROR while connecting` (disconnect reason `0x3e`) and
+  BlueZ reports `le-connection-abort-by-local`. An adapter that paired inside a
+  window connects at any time afterwards. Every adapter and proxy needs its own
+  pairing, and each of the two controllers accepted at least two.
 - Through an ESPHome Bluetooth proxy the integration asks the proxy to encrypt
   the link right after connecting, which takes 0.2 to 0.3 seconds with the bond
-  the proxy holds. A proxy that is not asked encrypts only when the controller
+  the proxy holds. Without a bond the same request starts a new pairing
+  (ESP-IDF `esp_ble_set_encryption`), which the controller accepts only inside
+  its window. A proxy that is not asked encrypts only when the controller
   requests it: about two seconds after a connect, about ten seconds after a
   disconnect when the reconnect is quick, and never while the under-bed light
   is on. That last case left the bed refusing all control until it was
   power-cycled.
-- On other adapters the integration does not request pairing. A post-connect
-  readiness retry waits until the link is encrypted.
+- A BlueZ adapter encrypts the link by itself on the first refused read, also
+  while the under-bed light is on, so the integration does not request pairing
+  there. A post-connect readiness retry waits until the link is encrypted.
+- When the bed is advertising but no connection comes up, the setup check, the
+  integration's start-up message and the command error explain the pairing
+  window instead of range: unplug the bed for 60 seconds, plug it back in and
+  use it from Home Assistant within 3 minutes.
+- One proxy stayed refused by one controller although a session through it
+  inside the window was encrypted. The cause is unknown. Home Assistant ranks
+  the paths by signal, earlier failures and free slots: in that setup it fell
+  back to another proxy after two failed attempts and kept using it until
+  Home Assistant or the proxy restarted.
 - There is no application PIN, passkey, challenge, token or protocol encryption.
 
 ## Detection
@@ -396,7 +418,7 @@ byte-level command tables above remain exhaustive.
 
 | Feature | Home Assistant |
 |---------|----------------|
-| Bed Control discovery, app bonding and GATT session | Coordinator connection; an ESPHome proxy encrypts the link on connect, other adapters use the readiness retry |
+| Bed Control discovery, app bonding and GATT session | Coordinator connection; an ESPHome proxy encrypts the link on connect, other adapters use the readiness retry; a refused connection is explained as a closed pairing window |
 | STANDARD/TD3/ADVANCED/alarm capability selection | Live service/mask discovery with persisted snapshot |
 | Individual, all-section and all 40 two-section movements | Covers, preset buttons and simultaneous-move service |
 | STOP/release and 100 ms held-command lifecycle | Guaranteed cleanup on completion, failure and cancellation |

@@ -1330,6 +1330,8 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 await _pairing_repairs_for_unconnected()
                 await _shutdown_failed_pair()
                 release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                if any(child.refused_outside_pairing_window for child in children.values()):
+                    raise not_ready("setup_pairing_window_closed", name=entry.title) from None
                 raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint="") from None
             except (Exception, asyncio.CancelledError):
                 await _shutdown_failed_pair()
@@ -1344,6 +1346,8 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 # single bed.
                 await _shutdown_failed_pair()
                 release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                if any(child.refused_outside_pairing_window for child in children.values()):
+                    raise not_ready("setup_pairing_window_closed", name=entry.title)
                 raise not_ready("pair_sides_unavailable", name=entry.title)
 
             # Some sides cannot recreate their extra controls without discovery. A
@@ -1756,6 +1760,8 @@ async def _async_setup_standalone_entry(
                 hass, entry, coordinator, schedule_initial_position_read=False
             )
             return
+        if coordinator.refused_outside_pairing_window:
+            raise not_ready("setup_pairing_window_closed", name=entry.title) from None
         if initial_connection_timed_out:
             raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint=_connection_failure_hint(coordinator)) from None
         if _bond_gated_unbonded(coordinator):

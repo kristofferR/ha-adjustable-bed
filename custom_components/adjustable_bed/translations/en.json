@@ -181,6 +181,7 @@
           "check_not_found": "Check: not found",
           "check_found": "Check: found",
           "check_not_connected": "Check: not connected",
+          "check_pairing_window": "Check: not paired",
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
@@ -197,6 +198,7 @@
           "check_not_found": "❌ The bed wasn't found. It may be out of range or asleep. You can still finish setup; the integration keeps trying to connect.",
           "check_found": "✅ Bed found over Bluetooth",
           "check_not_connected": "❌ Couldn't connect. Beds allow one connection at a time, so close the bed's app and put the remote down, or move the bed closer. You can still finish setup and try again later.",
+          "check_pairing_window": "❌ The bed is advertising but did not accept the connection, which usually means it has not paired with this Bluetooth adapter. It pairs only during the first 3 minutes after power-on: unplug the bed for 60 seconds, plug it back in, then select **Check again** and finish setup within 3 minutes.",
           "check_connected": "✅ Connected",
           "check_connected_via": "✅ Connected through {source}",
           "check_no_commands": "⚠️ The device connected but accepts no commands. It may not be your bed's controller. Check that you chose the right device.",
@@ -10377,6 +10379,9 @@
     "bed_not_connected": {
       "message": "The bed is not connected. Check that it is powered on and in range, then try again."
     },
+    "bed_pairing_window_closed": {
+      "message": "The bed is advertising but did not accept the connection, which usually means it has not paired with this Bluetooth adapter. It pairs only during the first 3 minutes after power-on: unplug the bed for 60 seconds, plug it back in, then try again within 3 minutes."
+    },
     "bluetooth_command_failed": {
       "message": "Bluetooth could not send the command to the bed ({error}). Check that it is powered on and in range, then try again."
     },
@@ -10400,6 +10405,9 @@
     },
     "setup_connect_failed": {
       "message": "Could not connect to {name}. Check that it is powered on and in range of a Bluetooth adapter or proxy.{hint}"
+    },
+    "setup_pairing_window_closed": {
+      "message": "{name} is advertising but did not accept the connection, which usually means it has not paired with this Bluetooth adapter. It pairs only during the first 3 minutes after power-on: unplug the bed for 60 seconds, plug it back in, then reload this integration within 3 minutes."
     },
     "setup_timed_out": {
       "message": "Connecting to {name} timed out after {seconds} seconds.{hint}"

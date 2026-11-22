@@ -31,6 +31,10 @@ from custom_components.adjustable_bed import (
 from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS
 from custom_components.adjustable_bed.beds.solace.services import SERVICE_SOLACE_AUDIO
+from custom_components.adjustable_bed.bluetooth_freshness import (
+    AdvertisementEvidence,
+    FreshnessStatus,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
@@ -266,6 +270,11 @@ class TestIntegrationSetup:
                 "powered on and in range",
             ),
             ([{"result": "device_not_found"}], "powered on and in range"),
+            # The default bed is a Linak: advertising, attempted, no link came up.
+            (
+                [{"result": "failed", "error_type": "BleakAbortedError"}],
+                "pairs only during the first 3 minutes after power-on",
+            ),
         ],
     )
     async def test_setup_retry_reason_distinguishes_startup_from_reachability(
@@ -288,6 +297,10 @@ class TestIntegrationSetup:
                 "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.connection_attempt_details",
                 new_callable=PropertyMock,
                 return_value=attempts,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.async_check_advertisement",
+                return_value=AdvertisementEvidence(FreshnessStatus.FRESH),
             ),
         ):
             await hass.config_entries.async_setup(mock_config_entry.entry_id)

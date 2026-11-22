@@ -520,6 +520,12 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
         "and put the remote down, or move the bed closer. You can still finish setup and "
         "try again later."
     ),
+    "check_pairing_window": (
+        "❌ The bed is advertising but did not accept the connection, which usually means "
+        "it has not paired with this Bluetooth adapter. It pairs only during the first 3 "
+        "minutes after power-on: unplug the bed for 60 seconds, plug it back in, then "
+        "select **Check again** and finish setup within 3 minutes."
+    ),
     "check_connected": "✅ Connected",
     "check_connected_via": "✅ Connected through {source}",
     "check_connected_via_proxy": "✅ Connected through Bluetooth proxy {source}",
@@ -2350,6 +2356,9 @@ class CapabilityReport:
     model: str | None = None
     position_feedback: bool = False
     error: str | None = None
+    # The connect was aborted before a link came up, as a bed outside its
+    # pairing window does to an adapter it has not paired with.
+    connection_aborted: bool = False
     octo_pin_status: OctoPinStatus | None = None
     starcode_transport_valid: bool | None = None
     starcode_transport_selector: str | None = None
@@ -6767,7 +6776,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         interrupted, and a link left open holds the bed's only connection.
         """
         from bleak import BleakClient
-        from bleak_retry_connector import establish_connection
+        from bleak_retry_connector import BleakAbortedError, establish_connection
 
         def _report(action: SetupAction) -> None:
             if reporter is not None:
@@ -6925,9 +6934,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if migration_check is not None:
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
+            report.connection_aborted = isinstance(err, BleakAbortedError)
             _LOGGER.debug("Capability probe for %s failed: %s", address, err)
 
         return report
+
+    def _pending_pairing_window_closed(self, report: CapabilityReport) -> bool:
+        """Return whether a bed that pairs only after power-on advertised but refused the check."""
+        assert self._pending_entry is not None
+        return (
+            report.freshness in (None, FreshnessStatus.FRESH)
+            and report.device_found
+            and not report.connected
+            and report.connection_aborted
+            and bed_traits(
+                self._pending_entry.get(CONF_BED_TYPE),
+                self._pending_entry.get(CONF_PROTOCOL_VARIANT),
+            ).pairing_window_at_power_on
+        )
 
     async def _format_capabilities(self, report: CapabilityReport) -> str:
         """Build the ✅/❌/⚠️/ℹ️ checklist shown in verify_connection."""
@@ -6950,7 +6974,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         lines = [await line("check_found")]
         if not report.connected:
-            lines.append(await line("check_not_connected"))
+            lines.append(
+                await line(
+                    "check_pairing_window"
+                    if self._pending_pairing_window_closed(report)
+                    else "check_not_connected"
+                )
+            )
             return "\n".join(lines)
 
         if report.actual_path is not None:
@@ -7069,10 +7099,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
 
         schema: dict[vol.Marker, Any] = {}
-        if report.freshness is not None and report.freshness is not FreshnessStatus.FRESH:
+        if (
+            report.freshness is not None and report.freshness is not FreshnessStatus.FRESH
+        ) or self._pending_pairing_window_closed(report):
             # "Finish" stays the default so Submit keeps meaning what it always
             # meant here: setup is never blocked by a failed check. Retry is one
-            # click away for the common case of "let me go wake the bed first".
+            # click away for the common case of "let me go wake the bed first",
+            # or power-cycle a bed that pairs only after power-on.
             schema[vol.Required("action", default="finish")] = SelectSelector(
                 SelectSelectorConfig(
                     options=["finish", "retry"],
