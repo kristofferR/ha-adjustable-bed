@@ -931,6 +931,22 @@ _V5_7_ENTITY_KEYS: Final = {
 
 
 @callback
+def _free_unique_id(
+    registry: er.EntityRegistry, entry: ConfigEntry, domain: str, unique_id: str
+) -> bool:
+    """Make room for a renamed entity; False when another entry owns the id."""
+    taken = registry.async_get_entity_id(domain, DOMAIN, unique_id)
+    if taken is None:
+        return True
+    row = registry.async_get(taken)
+    if row is None or row.config_entry_id != entry.entry_id:
+        return False
+    # The duplicate this entry holds gives way, so the renamed control keeps its ID.
+    registry.async_remove(taken)
+    return True
+
+
+@callback
 def _async_migrate_v5_7_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Keep the entity IDs of the controls the SmartBed route names differently.
 
@@ -945,10 +961,8 @@ def _async_migrate_v5_7_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
                 if not entity.unique_id.endswith(f"_{old}{suffix}"):
                     continue
                 unique_id = f"{entity.unique_id.removesuffix(f'{old}{suffix}')}{new}{suffix}"
-                duplicate = registry.async_get_entity_id(entity.domain, DOMAIN, unique_id)
-                if duplicate is not None:
-                    registry.async_remove(duplicate)
-                registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
+                if _free_unique_id(registry, entry, entity.domain, unique_id):
+                    registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
 
 
 def migrate_v5_8_entry(
@@ -1065,9 +1079,7 @@ def migrate_v5_9_entry(
     The app route reads positions from this schema on. A Q-Plus app bed without
     a saved choice ran with them unread, and keeps that until the user turns
     reading on; the record lists those under ``qplus_app_positions_unread``.
-    An entry from before schema 5.6 has its choice settled by that step, which
-    already reads the route's new default. Any other entry is returned
-    unchanged.
+    Any other entry is returned unchanged.
     """
     from .profile_review import carry_profile_review_to_renamed_route
 
@@ -1076,12 +1088,9 @@ def migrate_v5_9_entry(
     single = data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
     children = data.get(CONF_PAIR_CHILDREN)
 
-    settled_before = (from_version, from_minor_version) >= (5, 6)
-
     def keeps_unread(view: Mapping[str, Any]) -> bool:
         return (
-            settled_before
-            and view.get(CONF_BED_TYPE) == BED_TYPE_QPLUS_APP
+            view.get(CONF_BED_TYPE) == BED_TYPE_QPLUS_APP
             and CONF_DISABLE_ANGLE_SENSING not in view
         )
 
@@ -1182,10 +1191,8 @@ def _async_migrate_v5_9_entities(hass: HomeAssistant, entry: ConfigEntry) -> Non
         if entity.domain != "button" or address not in addresses or key not in keys:
             continue
         unique_id = f"{address}_{keys[key]}"
-        duplicate = registry.async_get_entity_id("button", DOMAIN, unique_id)
-        if duplicate is not None:
-            registry.async_remove(duplicate)
-        registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
+        if _free_unique_id(registry, entry, "button", unique_id):
+            registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
 
 
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:

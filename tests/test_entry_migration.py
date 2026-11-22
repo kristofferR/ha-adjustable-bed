@@ -1506,8 +1506,9 @@ def test_schema_5_9_keeps_positions_unread_on_a_bed_the_app_route_never_read() -
     # A saved choice is the user's.
     chosen = {**bed, CONF_DISABLE_ANGLE_SENSING: False}
     assert migrate_v5_9_entry(chosen, {}, from_version=5, from_minor_version=8) == (chosen, {})
-    # The 5.6 step settles an older entry's choice against the default the route has now.
-    assert migrate_v5_9_entry(bed, {}, from_version=5, from_minor_version=5) == (bed, {})
+    # An entry from before 5.6 without a saved choice ran unread too.
+    older, _options = migrate_v5_9_entry(bed, {}, from_version=5, from_minor_version=5)
+    assert older[CONF_DISABLE_ANGLE_SENSING] is True
 
     # A paired side is judged by what it reads, and its original by its own data.
     data, _options = migrate_v5_9_entry(

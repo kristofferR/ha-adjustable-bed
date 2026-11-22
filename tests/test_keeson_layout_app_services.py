@@ -157,9 +157,12 @@ def test_findable_app_and_side_owned_options(app, layouts):
         assert profile.validate(data) == {}
         settled = profile.settled(data)
         assert settled["motor_count"] == 2
-        assert settled.get("disable_angle_sensing") is (
-            None if app == "qplus_app" else app != "serta_mp_remote"
-        )
+        if app == "qplus_app":
+            # Only the MX remote reports no position, so only it is saved unread.
+            expected = True if layout == "MX" else None
+        else:
+            expected = app != "serta_mp_remote"
+        assert settled.get("disable_angle_sensing") is expected
     assert profile.validate({"bed_type": app, "product_type": "Not a layout"}) == {
         "base": "keeson_app_layout"
     }

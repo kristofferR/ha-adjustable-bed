@@ -184,3 +184,41 @@ async def test_set_position_rejects_axes_and_angles_it_cannot_report(
             {"device_id": [device.id], "motor": motor, "position": position},
             blocking=True,
         )
+
+
+def test_the_mx_remote_is_saved_with_position_reading_off():
+    """MX reports no position, so a new setup does not try to read one."""
+    from custom_components.adjustable_bed.const import (
+        CONF_DISABLE_ANGLE_SENSING,
+        CONF_PRODUCT_TYPE,
+    )
+    from custom_components.adjustable_bed.setup_questions import setup_profile
+
+    profile = setup_profile("qplus_app")
+    assert profile is not None
+    assert profile.derive is not None
+    assert profile.derive({CONF_PRODUCT_TYPE: "MX"})[CONF_DISABLE_ANGLE_SENSING] is True
+    assert CONF_DISABLE_ANGLE_SENSING not in profile.derive({CONF_PRODUCT_TYPE: "H"})
+
+
+async def test_a_renamed_button_never_takes_another_entrys_row(hass):
+    """A unique id held by another config entry is left alone."""
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed import _free_unique_id
+    from custom_components.adjustable_bed.const import DOMAIN
+
+    mine = MockConfigEntry(domain=DOMAIN, data={})
+    other = MockConfigEntry(domain=DOMAIN, data={})
+    mine.add_to_hass(hass)
+    other.add_to_hass(hass)
+    registry = er.async_get(hass)
+    theirs = registry.async_get_or_create("button", DOMAIN, "AA_zero_g", config_entry=other)
+    own = registry.async_get_or_create("button", DOMAIN, "AA_tv", config_entry=mine)
+
+    assert _free_unique_id(registry, mine, "button", "AA_zero_g") is False
+    assert registry.async_get(theirs.entity_id) is not None
+    assert _free_unique_id(registry, mine, "button", "AA_tv") is True
+    assert registry.async_get(own.entity_id) is None
+    assert _free_unique_id(registry, mine, "button", "AA_free") is True

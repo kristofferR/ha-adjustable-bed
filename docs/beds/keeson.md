@@ -2008,6 +2008,7 @@ report nothing.
   starts `A5 0B 0D`: it carries the massage timer's seconds in bytes 3-4.
 - MX reports no position. It is the app's P2 remote, and its status frames were
   never read for positions, so it has no sliders and `set_position` refuses it.
+  Choosing MX saves **Read bed position** off.
 - The app reads these counts but has no reachable screen that shows them, so
   the angles are untested on a real bed.
 - With Left and Right controls on one address, the frames do not say which half

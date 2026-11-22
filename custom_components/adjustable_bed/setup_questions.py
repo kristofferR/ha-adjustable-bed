@@ -2073,7 +2073,7 @@ def _app_layout_profile(bed_type: str) -> SetupProfile:
         owns=owns,
         questions=questions,
         validate=_app_layout_errors,
-        derive=lambda _data: _NO_PULSE_CHOICE,
+        derive=_qplus_derive if bed_type == "qplus_app" else lambda _data: _NO_PULSE_CHOICE,
         title=_app_layout_title,
         imports=(
             ("profiles.keeson", "beds.ergomotion4.controller")
@@ -2081,6 +2081,13 @@ def _app_layout_profile(bed_type: str) -> SetupProfile:
             else ("profiles.keeson",)
         ),
     )
+
+
+def _qplus_derive(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    """The MX remote reports no position, so reading stays off for it."""
+    if data.get(CONF_PRODUCT_TYPE) == "MX":
+        return {**_NO_PULSE_CHOICE, CONF_DISABLE_ANGLE_SENSING: True}
+    return _NO_PULSE_CHOICE
 
 
 def _smartbed_receivers(_data: Mapping[str, Any]) -> Mapping[Any, str]:
