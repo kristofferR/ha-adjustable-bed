@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
@@ -44,6 +45,7 @@ from ..entity_specs import (
     ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
     sleep_flag_binary_sensor_spec,
     sleep_rate_sensor_spec,
 )
@@ -865,6 +867,8 @@ class SleepAssistantController(ProfileExecution[app.SleepAssistantProfile], BedC
                 "sleep_assistant_storage",
                 lambda c, value: require_controller(c, SleepAssistantController).set_storage(value),
                 keys.STORAGE,
+                # A privacy setting, not a dashboard control.
+                entity_category=EntityCategory.CONFIG,
             ),
         )
 
@@ -1029,14 +1033,10 @@ class SleepAssistantController(ProfileExecution[app.SleepAssistantProfile], BedC
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         timer = (
             (
-                ControllerStateSensorSpec(
+                massage_timer_sensor_spec(
                     "sleep_assistant_massage_timer",
                     "sleep_assistant_massage_timer",
                     MASSAGE_TIMER_MINUTES,
-                    "mdi:timer",
-                    native_unit_of_measurement="min",
-                    entity_registry_enabled_default=True,
-                    entity_category=None,
                     card=CARD_MASSAGE_TIMER,
                 ),
             )

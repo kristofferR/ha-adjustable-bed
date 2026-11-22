@@ -231,7 +231,7 @@ actions use this profile's exact encoders.
 #### Position feedback / Notifications
 
 There are no position sliders. Live physiological state is kept per sensor side,
-and measurements clear on reconnect. Previously proven preset buttons remain
+and measurements clear on reconnect. Preset buttons the bed reported before remain
 callable offline, while commands recheck current firmware before movement.
 Raw calibration/version fields stay in
 diagnostics rather than becoming dashboard entities.
@@ -256,6 +256,6 @@ failures use bounded native retries.
 Cloud/accounts, Wi-Fi setup, network administration, OTA, audio, historical sleep
 report transfer and phone SDK infrastructure are outside this integration.
 
-### Analysis provenance
+### Evidence
 
 Based on Sleep Assist 2.5.5 (`com.keeson.sleepassistant`).

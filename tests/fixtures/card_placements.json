@@ -4502,10 +4502,6 @@
  "sensor:sleep_assistant_alarm_6": {
   "card_section": "utility"
  },
- "sensor:sleep_assistant_massage_timer": {
-  "card_section": "massage",
-  "card_role": "timer"
- },
  "sensor:sleeptracker_layout": {
   "card_section": "hidden"
  },
