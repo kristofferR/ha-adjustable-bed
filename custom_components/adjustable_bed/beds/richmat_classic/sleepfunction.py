@@ -22,6 +22,7 @@ from ...command_scheduler import (
     current_command_context,
     delivered,
     note_frame_skipped,
+    note_frame_written,
 )
 from ...controller_state import StateKey, StateUpdate
 from ...errors import failed, invalid
@@ -211,10 +212,28 @@ class SleepFunctionController(ResourceBedController):
         session = self._captured_session()
         if session is None or not self._owned(session):
             raise failed("sleepfunction_session")
-        if cancel is not None and cancel.is_set():
-            note_frame_skipped()
-            return
-        await super()._send(packet, cancel)
+
+        async def write() -> None:
+            async with self._ble_lock:
+                # Another GATT operation may have held the lock meanwhile: a STOP
+                # or a new owner that arrived while waiting still applies.
+                if not self._owned(session):
+                    raise failed("sleepfunction_session")
+                if cancel is not None and cancel.is_set():
+                    note_frame_skipped()
+                    return
+                self._record_command_trace(
+                    session.write.uuid,
+                    packet,
+                    response=session.response,
+                    characteristic=session.write,
+                )
+                await session.client.write_gatt_char(
+                    session.write, packet, response=session.response
+                )
+            note_frame_written(cancel)
+
+        await settled(write())
 
     def _notification(
         self, session: Transport, sender: BleakGATTCharacteristic, data: bytearray

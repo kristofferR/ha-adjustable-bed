@@ -23,6 +23,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import services
@@ -54,10 +55,10 @@ def _hold(control: str, errors: list[str] | None = None) -> Callable[[Any], Awai
         try:
             # A leased hold_control runs to the stream ceiling, as the service runs it.
             await ctrl.hold_control(control, HOLD_CEILING_MS)
-        except ValueError as err:
+        except ServiceValidationError as err:
             if errors is None:
                 raise
-            errors.append(str(err))
+            errors.append(str(err.translation_key))
 
     return move
 
@@ -171,7 +172,7 @@ async def test_a_framed_session_refuses_a_raw_only_lease_without_writing() -> No
         entry_data={"product_type": "GVRM"},
     )
 
-    assert errors == ["This control does not support renewable holds"]
+    assert errors == ["control_hold_renewal_not_supported"]
     assert wire.held == wire.after == ()
 
 
@@ -218,7 +219,7 @@ async def test_a_selector_change_after_admission_refuses_the_lease_without_writi
         SCENARIO, move, end_after_s=1, end="expire", entry_data={"product_type": "GXRM"}
     )
 
-    assert errors == ["This control does not support renewable holds"]
+    assert errors == ["control_hold_renewal_not_supported"]
     assert wire.held == wire.after == ()
 
 

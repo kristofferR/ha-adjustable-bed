@@ -200,6 +200,17 @@ async def test_captured_mode_applies_to_command_and_cleanup_when_other_choices_c
     assert packets(coordinator)[-1] == "6e01016ede"
 
 
+async def test_a_frame_waiting_for_another_gatt_operation_obeys_a_later_stop():
+    ctrl, coordinator = controller("D1RM")
+    cancel = asyncio.Event()
+    async with ctrl.ble_lock:
+        send = asyncio.create_task(ctrl._send(b"\x01", cancel))
+        await asyncio.sleep(0)
+        cancel.set()
+    await send
+    assert packets(coordinator) == []
+
+
 def test_every_layout_has_only_real_bed_controls_and_saves_never_hold():
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.profiles.baseremote import EXCLUDED_LAYOUTS
