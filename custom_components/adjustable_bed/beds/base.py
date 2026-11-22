@@ -1061,6 +1061,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def startup_verifies_control_access(self) -> bool:
+        """Whether successful startup resolves a prior control-authentication error."""
+        return True
+
+    @property
     def protocol_diagnostics(self) -> dict[str, Any]:
         """Return protocol state worth reporting in diagnostics/support bundles.
 

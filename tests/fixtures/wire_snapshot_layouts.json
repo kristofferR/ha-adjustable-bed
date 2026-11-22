@@ -3082,6 +3082,14 @@
       ]
     }
   },
+  "silvermotion": {
+    "services": {
+      "b9934c43-5c91-462b-80a1-30fccc29d758": [
+        "b9934c44-5c91-462b-80a1-30fccc29d758"
+      ]
+    },
+    "properties": {"*": ["write-without-response", "notify"]}
+  },
   "logicdata": {
     "services": {
       "0000ffff-0000-1000-8000-00805f9b34fb": [

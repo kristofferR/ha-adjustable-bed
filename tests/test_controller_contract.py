@@ -230,6 +230,8 @@ async def _create_controller_for_bed_type(
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         coordinator.entry.data.update({const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: variant or "A1"})
         variant = variant or "A1"
+    if bed_type == const.BED_TYPE_SILVERMOTION:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "queen"
     if bed_type == const.BED_TYPE_SONICSLEEP:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type == const.BED_TYPE_JALON:

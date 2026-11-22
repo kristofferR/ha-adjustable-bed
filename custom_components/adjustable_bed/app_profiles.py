@@ -76,6 +76,7 @@ from .const import (
     BED_TYPE_RIZE,
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_ELITE_APP,
@@ -237,6 +238,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_FSM_RELAX: SideProfile("FSM Relax"),
     BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote"),
     BED_TYPE_FURNIMOVE: SideProfile("FurniMove", frozenset({CONF_HAS_MASSAGE})),
+    BED_TYPE_SILVERMOTION: SideProfile("SILVERmotion Android"),
     BED_TYPE_LOGICDATA_APP: SideProfile("Logicdata bed app"),
     # The family step picks the app, so no question asks its key.
     BED_TYPE_JIECANG_APP: SideProfile(

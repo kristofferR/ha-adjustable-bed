@@ -132,6 +132,7 @@ if TYPE_CHECKING:
     from .serenity.controller import TranquilController as TranquilController
     from .serenity.controller import ZSeriesController as ZSeriesController
     from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
+    from .silvermotion.controller import SilvermotionController as SilvermotionController
     from .simmons.controller import SimmonsController as SimmonsController
     from .sleep_assistant.controller import SleepAssistantController as SleepAssistantController
     from .sleep_number.controller import SleepNumberController as SleepNumberController
@@ -259,6 +260,7 @@ _EXPORT_MODULES = {
     "LimossController": "limoss.controller",
     "LimossRemoteController": "limoss.remote",
     "LinakController": "linak.controller",
+    "SilvermotionController": "silvermotion.controller",
     "LogicdataController": "logicdata.controller",
     "LogicdataAppController": "logicdata.app",
     "LogicdataAirPumpController": "logicdata.air_pump",

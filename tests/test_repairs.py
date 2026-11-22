@@ -2531,7 +2531,8 @@ async def test_repair_verifies_without_pairing_after_clearing_a_stale_proxy_cach
         gatt_cache_cleared=cleared,
     )
     verified = replace(failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False)
-    connect = AsyncMock(return_value=MagicMock(disconnect=AsyncMock()))
+    paired_client = MagicMock(disconnect=AsyncMock(), pair=AsyncMock())
+    connect = AsyncMock(return_value=paired_client)
     find_device = MagicMock(return_value=MagicMock())
     with (
         patch.object(flow, "_async_pair_via_coordinator", new=AsyncMock(return_value=None)),
@@ -2549,10 +2550,10 @@ async def test_repair_verifies_without_pairing_after_clearing_a_stale_proxy_cach
     ):
         assert await flow._async_try_pair() is repaired
 
-    # The final pair reuses the live link (pinned source), so it pairs via client.pair().
-    assert ["pair" in c.kwargs for c in connect.await_args_list] == [True] + [False] * (
-        len(pairs) - 1
-    )
+    # This forced generic Sleep Number route still discovers before pairing.
+    # Clearing stale handles must verify without an intervening pair request.
+    assert ["pair" in c.kwargs for c in connect.await_args_list] == [False] * len(pairs)
+    assert paired_client.pair.await_count == sum(pairs)
     assert [c.args[0] for c in find_device.call_args_list] == [None] + ["proxy"] * (
         len(pairs) - 1
     )

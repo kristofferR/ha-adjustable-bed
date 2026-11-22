@@ -919,3 +919,20 @@ a dialog are described in the
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to know more about your bed?** Find its guide in the [documentation index](README.md#bed-guides)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+### SILVERmotion Android
+
+Choose the LOGICDATA row, then **SILVERmotion app: SimplicityFrame bed with zero
+gravity and anti-snore presets**. Reconfigure offers the same choice. The other
+SILVERmotion answer, marked pairing required, is a separate choice.
+
+| Field | Values | Default |
+|-------|--------|---------|
+| Product type | Queen, King, Twin XL | Queen |
+| Has massage | Enabled or disabled | Enabled |
+
+All sizes expose back and legs controls. Each physical entry retains its own size
+and massage setting when combined with another bed. No single-address side
+selection is inferred. The massage timer is a Home Assistant countdown, 1–40
+minutes, initially 10; it sends massage off on expiry while connected. It does
+not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md).
