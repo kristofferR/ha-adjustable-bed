@@ -3008,7 +3008,7 @@ async def test_bundle_shows_the_schema_5_migration_record(
 
     assert report["profile"] == {
         "schema_version": 5,
-        "schema_minor_version": 6,
+        "schema_minor_version": 7,
         "profile_id": "keeson:sino",
         "migration": {
             "from_version": 4,

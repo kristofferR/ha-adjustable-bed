@@ -3377,69 +3377,6 @@
       ]
     }
   },
-  "okin_cb24": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
-  "okin_cb24:cb1221": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
-  "okin_cb24:cb24": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
-  "okin_cb24:cb24_ab": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
-  "okin_cb24:cb27": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
-  "okin_cb24:cb27new": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
-  "okin_cb24:cb_new": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
-  "okin_cb24:cb_old": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
-  "okin_cb24:dacheng": {
-    "services": {
-      "0000ffff-0000-1000-8000-00805f9b34fb": [
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-      ]
-    }
-  },
   "okin_cb35": {
     "services": {
       "0000ffff-0000-1000-8000-00805f9b34fb": [

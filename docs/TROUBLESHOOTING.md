@@ -93,7 +93,7 @@ Beds set up before 4.1.0 that have not answered it yet are offered these apps:
 | DewertOkin | SIMMONS, Jordan's Tranquil, Customatic Z-Series (Z-230, Z-280) |
 | Okin 64-Bit | Adjustable bed (Lumbar) |
 | Okin CB35, Sleepy's BOX25 | Adjustable bed (Lumbar); with a `Star` name also AdjustableM5X4, and with a `STAR25` name AdjustableM5X5 |
-| Okin FFE, Okin CB24 | SIMMONS |
+| Okin FFE, SmartBed app | SIMMONS |
 | Richmat | Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, SIMMONS |
 | Limoss | Limoss Remote, FSM Relax |
 | Vibradorm | Caresse / Werkmeister / VMAT apps, V-MAT Basic |

@@ -127,6 +127,36 @@ their status sensor are renamed from `cluster018_...` to `richmat_classic_...`,
 for example `richmat_classic_layout`. Update templates that read them.
 `hold_control` still accepts the old `cluster018_<node>` control names.
 
+### SmartBed app beds
+
+A bed on the Okin CB24 route ("Okin receiver (SmartBed by Okin and Amada
+beds)", for example a Lucid L600 or an Amada bed) becomes a **SmartBed app**
+bed. The app's own profiles replace that route, so one bed type covers these
+beds and new ones.
+
+- **Receiver.** The bed keeps the frames it got before: the older and Dacheng
+  control box choices become CB24, the newer control box becomes CB27New, and a
+  bed with a side or shown as left and right on one address becomes CB24AB.
+- **Motor count** becomes two. That route moved head and feet whatever count
+  was saved; raise it in **Reconfigure** if the bed has more motors.
+- **Back** and **Legs** are now **Head** and **Feet**, and **Massage mode** is
+  **Wave up**, with the same commands and entity IDs. A count of three or four
+  had added Head and Feet covers that repeated Back and Legs; those two are
+  removed.
+- **Memory 1** and **Memory 2** now send the app's memory commands. They used
+  to repeat **Lounge** and **TV**, which keep their own buttons. **Memory 3** is
+  removed: its command is now Memory 1. Check automations that press a memory
+  button.
+- **Head massage toggle** and **Foot massage toggle** are removed; they
+  repeated head up and foot up. On CB27New, **Massage toggle** is the
+  **Massage** switch, and **Massage off** and the overall intensity buttons
+  are removed.
+- New controls from the app's profile: a **Both** cover, save buttons, wave and
+  timer buttons, head and foot massage levels, a massage timer and the alarm.
+
+Presets, the light and massage keys are sent as before on these beds. See the
+[SmartBed guide](beds/smartbed.md#beds-set-up-as-okin-cb24).
+
 Every other saved setting, bed type and ID loads unchanged.
 
 ### Setup, Configure and Reconfigure

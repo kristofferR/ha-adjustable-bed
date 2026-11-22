@@ -13,12 +13,14 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER
+from ...codec import okin_nframe
 from ...command_scheduler import CommandOutcome, Delivery, current_command_context, delivered
 from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
     CONF_MOTOR_COUNT,
     CONF_PAIR_MODE,
+    MANUFACTURER_ID_OKIN,
     PAIR_MODE_SINGLE_ADDRESS,
 )
 from ...controller_state import AnyStateKey, StateKey, StateUpdate, sided
@@ -45,7 +47,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..lifecycle import CapabilitySnapshotPolicy, ControllerSession
-from .discovery import select_profile
+from .discovery import legacy_marker, select_profile
 from .receive import Parser
 from .setup import receiver_variant
 from .state_keys import (
@@ -82,6 +84,9 @@ def _range(value: float, minimum: int, maximum: int) -> int:
     if not minimum <= value <= maximum or int(value) != value:
         raise invalid("value_out_of_range", min=minimum, max=maximum, step=1)
     return int(value)
+
+
+_MASSAGE_OFF = 0x2000000
 
 
 class _HoldEnded(Exception):
@@ -197,10 +202,15 @@ class SmartBedController(BedController):
             or "notify" not in notify.properties
         ):
             raise failed("bed_missing_service")
-        # The APK leaves write type untouched. Resolve from this exact live
-        # characteristic, preferring acknowledged writes when both are offered.
+        # The APK leaves the write type untouched, so Android picks it from this
+        # exact characteristic: unacknowledged whenever it offers that.
         self._link = Link(
-            client, write, notify, "write" in write.properties, self.profile, self.protocol
+            client,
+            write,
+            notify,
+            "write-without-response" not in write.properties,
+            self.profile,
+            self.protocol,
         )
         return self._link
 
@@ -407,9 +417,30 @@ class SmartBedController(BedController):
             )
             await self._write(link, self._frame(query, 5), preparation=True)
 
+    async def _tap(self, function: F, subfunction: int = 0) -> float | None:
+        """Press an older receiver's key once and return when the press ended.
+
+        The app follows a tap with its release frame. The CB24 family gets the
+        key alone: on Lucid L600 beds a preset runs to its position from one
+        frame, and a frame after it stopped the bed on the way (#185).
+        """
+        if self.protocol not in (3, 4):
+            return await self._hold(function, subfunction, duration_ms=1)
+        link = self._capture_link()
+        pressed: float | None = None
+
+        def dispatched() -> None:
+            nonlocal pressed
+            pressed = asyncio.get_running_loop().time()
+
+        sent = await self._write(
+            link, self._frame(function, subfunction), before_dispatch=dispatched
+        )
+        return pressed if sent else None
+
     async def _old_control(self, function: F, subfunction: int = 0) -> None:
         link = self._capture_link()
-        released_at = await self._hold(function, subfunction, duration_ms=1)
+        released_at = await self._tap(function, subfunction)
         if function in (F.HEAD_MASSAGE, F.FOOT_MASSAGE, F.WAVE, F.MASSAGE, F.TIMER, F.INTENSITY):
             await self._massage_readback(link, released_at)
 
@@ -612,7 +643,7 @@ class SmartBedController(BedController):
             await self._one(function)
         else:
             # A tap never crosses the app's destructive long-hold threshold.
-            await self._hold(function, duration_ms=1)
+            await self._tap(function)
 
     async def preset_flat(self) -> None:
         await self.recall("flat")
@@ -719,7 +750,8 @@ class SmartBedController(BedController):
 
     @property
     def supports_massage_off_control(self) -> bool:
-        return False  # Discrete on/off belongs to the massage switch.
+        # Elsewhere discrete on/off belongs to the massage switch.
+        return self.supports_massage and self.protocol in (3, 4)
 
     @property
     def supports_massage_intensity_control(self) -> bool:
@@ -806,7 +838,8 @@ class SmartBedController(BedController):
 
     @property
     def supports_massage_intensity_step_control(self) -> bool:
-        return self.supports_massage and self.protocol in (1, 2)
+        # The receivers that take the overall intensity keys, as held or tapped.
+        return "massage_all_up" in self._held_actions()
 
     async def massage_toggle(self) -> None:
         if not self.supports_massage_toggle_control:
@@ -824,7 +857,16 @@ class SmartBedController(BedController):
             await self._old_control(F.MASSAGE, 3 if enabled else 4)
 
     async def massage_off(self) -> None:
-        await self.set_massage(False)
+        if self.protocol not in (3, 4):
+            await self.set_massage(False)
+            return
+        if not self.supports_massage:
+            raise invalid("option_unavailable")
+        # Not a key of this app: the CB24 family's massage off, which the
+        # earlier route sent and Lucid L600 and Amada owners confirmed (#185).
+        link = self._capture_link()
+        side = self._frame(F.STOP)[-1]
+        await self._write(link, okin_nframe.frame40(_MASSAGE_OFF, side))
 
     @property
     def supports_massage_timer(self) -> bool:
@@ -1479,6 +1521,9 @@ async def build_controller(ctx: BuildContext) -> SmartBedController:
         variant or "auto",
         ctx.data.get(CONF_BLE_DEVICE_NAME) or ctx.device_name,
         motors=ctx.data.get(CONF_MOTOR_COUNT, ctx.coordinator.motor_count),
+        older_receiver=legacy_marker(
+            (ctx.manufacturer_data or {}).get(MANUFACTURER_ID_OKIN, b"")
+        ),
     )
     return SmartBedController(
         ctx.coordinator,

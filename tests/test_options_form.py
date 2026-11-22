@@ -1,7 +1,6 @@
 """Options forms must offer values the selected profile can save."""
 
 from typing import Any
-from unittest.mock import AsyncMock
 
 import pytest
 import voluptuous as vol
@@ -12,12 +11,9 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bed_traits import default_connection_mode
-from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
-    CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
     CONF_BACK_MAX_ANGLE,
@@ -35,7 +31,6 @@ from custom_components.adjustable_bed.const import (
     OKIN_CST_VARIANT_NECTAR_MOVE,
     VARIANT_AUTO,
 )
-from tests.form_helpers import finish_new_bed, start_new_bed
 
 
 @pytest.mark.parametrize(
@@ -184,11 +179,13 @@ async def test_configure_hides_settings_the_bed_ignores(
     assert hidden not in {marker.schema for marker in form["data_schema"].schema}
 
 
-async def test_cb24_side_is_a_declared_question(
+async def test_cb24ab_side_is_a_declared_question(
     hass: HomeAssistant, enable_custom_integrations
 ) -> None:
     del enable_custom_integrations
-    entry, form = await _settings_form(hass, {CONF_BED_TYPE: BED_TYPE_OKIN_CB24})
+    entry, form = await _settings_form(
+        hass, {CONF_BED_TYPE: "smartbed", CONF_PROTOCOL_VARIANT: "cb24_ab"}
+    )
     assert _defaults(form)[CONF_CB24_BED_SELECTION] == CB24_BED_SELECTION_DEFAULT
 
     saved = await hass.config_entries.options.async_configure(
@@ -197,22 +194,6 @@ async def test_cb24_side_is_a_declared_question(
 
     assert saved["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_CB24_BED_SELECTION] == CB24_BED_SELECTION_B
-
-
-async def test_setup_asks_the_cb24_side_in_the_final_settings(hass: HomeAssistant) -> None:
-    """A route without an app step asks its declared questions with its final settings."""
-    flow = AdjustableBedConfigFlow()
-    flow.hass, flow.context = hass, {}
-    flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    result = await start_new_bed(flow, "typed", BED_TYPE_OKIN_CB24)
-    assert result["step_id"] == "finish_settings"
-    assert _defaults(result)[CONF_CB24_BED_SELECTION] == CB24_BED_SELECTION_DEFAULT
-
-    await finish_new_bed(flow, result, {CONF_CB24_BED_SELECTION: str(CB24_BED_SELECTION_A)})
-
-    assert flow._finish_with_verify.await_args.args[0][CONF_CB24_BED_SELECTION] == (
-        CB24_BED_SELECTION_A
-    )
 
 
 async def test_configure_never_changes_the_route(

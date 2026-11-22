@@ -20,7 +20,6 @@ import pytest
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from custom_components.adjustable_bed import paired_topology
-from custom_components.adjustable_bed.beds.okin_cb24 import OkinCB24Controller
 from custom_components.adjustable_bed.beds.sbi import SBIController
 from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
 from custom_components.adjustable_bed.command_scheduler import (
@@ -37,7 +36,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -1972,32 +1970,6 @@ class TestSingleAddressCoordinator:
         assert coordinator.device_info["identifiers"] == {
             (DOMAIN, "AA:BB:CC:DD:EE:50")
         }
-
-    def test_shared_cb24_position_updates_relay_to_each_side(self):
-        coordinator = self._coordinator(BED_TYPE_OKIN_CB24, OkinCB24Controller)
-        left = coordinator.children[SIDE_LEFT]
-        right = coordinator.children[SIDE_RIGHT]
-        left_updates = []
-        right_updates = []
-        left.register_position_callback(left_updates.append)
-        right.register_position_callback(right_updates.append)
-
-        coordinator._single_inner.update_positions({"back": 42.0})
-
-        assert left.position_data == {"back": 42.0}
-        assert right.position_data == {"back": 42.0}
-        assert left_updates == [{"back": 42.0}]
-        assert right_updates == [{"back": 42.0}]
-
-    async def test_cb24_shutdown_unregisters_shared_position_relays(self):
-        coordinator = self._coordinator(BED_TYPE_OKIN_CB24, OkinCB24Controller)
-        inner = coordinator._single_inner
-
-        assert len(inner._position_callbacks) == 3
-
-        await coordinator.async_shutdown()
-
-        assert inner._position_callbacks == set()
 
     async def test_sbi_position_updates_remain_side_scoped(self):
         coordinator = self._coordinator(BED_TYPE_SBI, SBIController)

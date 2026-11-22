@@ -79,7 +79,6 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_MOTIONBED,
@@ -353,7 +352,8 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_MOTOMOTION: _NO_ANGLES,
     BED_TYPE_OCTO: _SCOPED,
     BED_TYPE_OKIMAT: _ANGLE_FEEDBACK_SCOPED,
-    BED_TYPE_OKIN_CB24: _SCOPED,
+    # Saved as okin_cb24 until schema 5.7; earlier migration steps read its defaults.
+    "okin_cb24": _SCOPED,
     "smartbed": replace(_SCOPED, no_angle_feedback=True),
     BED_TYPE_OKIN_CST: _NO_ANGLES_SCOPED,
     BED_TYPE_OKIN_FFE: BedTraits(percentage_positions=True),

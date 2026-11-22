@@ -7,10 +7,10 @@ from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SMARTBED,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
@@ -26,7 +26,6 @@ from custom_components.adjustable_bed.const import (
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
-    OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SINGLE_ADDRESS,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
@@ -322,7 +321,8 @@ class TestSplitRetention:
         original = {
             "address": LEFT_ADDR,
             "name": "Bed",
-            "bed_type": "okin_cb24",
+            "bed_type": "smartbed",
+            "protocol_variant": "cb24_ab",
             "preferred_adapter": "auto",
             "idle_disconnect_seconds": 40,
         }
@@ -336,7 +336,7 @@ class TestSplitRetention:
         )
         assert restored["preferred_adapter"] == "hci2"
         assert restored["idle_disconnect_seconds"] == 0
-        assert restored["bed_type"] == "okin_cb24"
+        assert restored["bed_type"] == "smartbed"
         assert options == {"back_max_angle": 50.0}
 
 
@@ -357,7 +357,7 @@ class TestBuildSingleAddressPairEntryData:
                 RONDURE_VARIANT_SIDE_B,
             ),
             (
-                BED_TYPE_OKIN_CB24,
+                BED_TYPE_SMARTBED,
                 CONF_CB24_BED_SELECTION,
                 CB24_BED_SELECTION_A,
                 CB24_BED_SELECTION_B,
@@ -378,6 +378,9 @@ class TestBuildSingleAddressPairEntryData:
             CONF_BED_TYPE: bed_type,
             "name": "One physical bed",
         }
+        if bed_type == BED_TYPE_SMARTBED:
+            # Only the app's CB24AB receiver sends a side.
+            original[CONF_PROTOCOL_VARIANT] = "cb24_ab"
         data = build_single_address_pair_entry_data(
             original, name="Master", origin_options={"motor_count": 2}
         )
@@ -391,15 +394,13 @@ class TestBuildSingleAddressPairEntryData:
         assert single_data_from_child(get_child(data, SIDE_LEFT)) == original
 
     def test_cbnew_is_refused(self):
-        assert not supports_single_address_pairing(
-            BED_TYPE_OKIN_CB24, OKIN_CB24_VARIANT_NEW
-        )
+        assert not supports_single_address_pairing(BED_TYPE_SMARTBED, "cb27new")
         with pytest.raises(ValueError, match="does not support"):
             build_single_address_pair_entry_data(
                 {
                     CONF_ADDRESS: LEFT_ADDR,
-                    CONF_BED_TYPE: BED_TYPE_OKIN_CB24,
-                    CONF_PROTOCOL_VARIANT: OKIN_CB24_VARIANT_NEW,
+                    CONF_BED_TYPE: BED_TYPE_SMARTBED,
+                    CONF_PROTOCOL_VARIANT: "cb27new",
                 },
                 name="Unsupported",
             )

@@ -127,7 +127,7 @@ async def test_set_alarm_rejects_unconfirmed_or_unavailable_modes(hass, variant,
 
 async def test_set_alarm_requires_a_simmons_target(hass):
     await async_register_services(hass)
-    coordinator, controller = target("okin_cb24")
+    coordinator, controller = target("smartbed")
     coordinator.capability_controller = MagicMock(spec=BedController, alarm_capability=None)
     with _targets(coordinator), pytest.raises(ServiceValidationError, match="has no alarm"):
         await hass.services.async_call(

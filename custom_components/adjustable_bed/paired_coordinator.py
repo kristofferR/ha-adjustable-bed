@@ -47,7 +47,6 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_PAIR_ID,
@@ -705,8 +704,8 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         self.hold_windows = HoldWindows()
         self._single_position_callbacks: set[Callable[[dict[str, float]], None]] = set()
         self._single_unregister_position_callback: Callable[[], None] | None = None
-        # CB24 shares axes; Sleep Number reports explicitly side-owned axes.
-        if inner.bed_type in {BED_TYPE_OKIN_CB24, BED_TYPE_SLEEP_NUMBER}:
+        # Sleep Number reports explicitly side-owned axes.
+        if inner.bed_type == BED_TYPE_SLEEP_NUMBER:
             self._single_unregister_position_callback = inner.register_position_callback(
                 lambda _positions: self._sync_position_state()
             )

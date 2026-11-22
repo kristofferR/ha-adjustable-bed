@@ -111,7 +111,6 @@ from .const import (
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
     # Protocol-based bed types (new)
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -399,10 +398,10 @@ OKIMAT_COMPATIBLE_PROFILES: frozenset[str] = frozenset(
 NORA_CONTROLLER_NORMALIZED_NAMES: frozenset[str] = frozenset({"noracon"})
 
 # Manufacturer ID 89 is Nordic Semiconductor's company ID (0x0059), shared by many
-# non-bed devices. The bare-manufacturer-data CB24 fallback only applies when the
+# non-bed devices. The bare-manufacturer-data SmartBed fallback only applies when the
 # device also advertises a recognizable OKIN/SmartBed name, so a random Nordic
 # gadget (e.g. "ABXM2", #366) is not misidentified as a bed.
-OKIN_CB24_MANUFACTURER_NAME_HINTS: frozenset[str] = frozenset({"okin", "smartbed"})
+SMARTBED_MANUFACTURER_NAME_HINTS: frozenset[str] = frozenset({"okin", "smartbed"})
 
 # Malouf S755 / DewertOkin CB.24.42.28 bases have been observed advertising only
 # Nordic UART plus OKIN's company ID, without the usual Malouf 01000001 family
@@ -702,8 +701,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_UUID: "Okin receiver (Okimat and Lucid remotes)",
     BED_TYPE_OKIN_7BYTE: "Okin receiver (Nectar beds)",
     BED_TYPE_OKIN_NORDIC: "Okin receiver (Mattress Firm 900 and iFlex beds)",
-    BED_TYPE_OKIN_CB24: "Okin receiver (SmartBed by Okin and Amada beds)",
-    "smartbed": "SmartBed app",
+    "smartbed": "SmartBed app (Okin receivers, Amada beds)",
     BED_TYPE_OKIN_DOT: "Okin DOT remotes (RF1058, RF34 and RF6707)",
     BED_TYPE_OKIN_FFE: "Okin receiver (13 and 15 series)",
     BED_TYPE_OKIN_ORE: "Okin receiver (older ORE remotes)",
@@ -971,7 +969,6 @@ PROTOCOL_ROUTES: Final = frozenset(
     {
         BED_TYPE_OKIN_64BIT,
         BED_TYPE_OKIN_7BYTE,
-        BED_TYPE_OKIN_CB24,
         BED_TYPE_OKIN_CB35,
         BED_TYPE_OKIN_FFE,
         BED_TYPE_OKIN_HANDLE,
@@ -3289,8 +3286,8 @@ def _detect_bed_type_detailed(
     if RICHMAT_NORDIC_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:nordic_uart")
 
-        # If OKIN manufacturer ID is also present, this is likely a CB24 device
-        # (e.g., SmartBed by Okin / Lucid L600) that also advertises Nordic UART.
+        # If OKIN manufacturer ID is also present, this is likely a SmartBed app
+        # receiver (for example a Lucid L600) that also advertises Nordic UART.
         # Nordic-only Malouf Smartbed428 variants are handled before this branch.
         if (
             service_info.manufacturer_data
@@ -3298,12 +3295,12 @@ def _detect_bed_type_detailed(
         ):
             signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
             _LOGGER.info(
-                "Detected Okin CB24 bed at %s (name: %s) - Nordic UART + OKIN manufacturer ID",
+                "Detected SmartBed bed at %s (name: %s) - Nordic UART + OKIN manufacturer ID",
                 service_info.address,
                 service_info.name,
             )
             return DetectionResult(
-                bed_type=BED_TYPE_OKIN_CB24,
+                bed_type="smartbed",
                 confidence=0.7,
                 signals=signals,
                 ambiguous_types=[
@@ -3329,29 +3326,29 @@ def _detect_bed_type_detailed(
             requires_characteristic_check=True,
         )
 
-    # Fallback: Check for manufacturer ID 89 (CB24 protocol)
+    # Fallback: Check for manufacturer ID 89 (SmartBed app receivers)
     # This catches OKIN SmartBed devices that advertise only manufacturer data
     # (no service UUIDs); devices with Nordic UART + mfr ID 89 are handled above.
     #
     # Manufacturer ID 89 is Nordic Semiconductor's Bluetooth SIG company ID
     # (0x0059), used by countless unrelated devices built on Nordic SoCs, so it is
-    # far too weak on its own to claim a CB24 bed. Require the device to also
+    # far too weak on its own to claim a SmartBed bed. Require the device to also
     # advertise an OKIN/SmartBed name; otherwise a bare mfr-89 advertisement from a
     # random Nordic gadget gets misidentified as a bed (e.g. "ABXM2" in #366).
     if (
         service_info.manufacturer_data
         and MANUFACTURER_ID_OKIN in service_info.manufacturer_data
-        and any(hint in device_name for hint in OKIN_CB24_MANUFACTURER_NAME_HINTS)
+        and any(hint in device_name for hint in SMARTBED_MANUFACTURER_NAME_HINTS)
     ):
         signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
         _LOGGER.info(
-            "Detected Okin CB24 bed at %s (name: %s) by manufacturer ID %s (fallback)",
+            "Detected SmartBed bed at %s (name: %s) by manufacturer ID %s (fallback)",
             service_info.address,
             service_info.name,
             MANUFACTURER_ID_OKIN,
         )
         return DetectionResult(
-            bed_type=BED_TYPE_OKIN_CB24,
+            bed_type="smartbed",
             confidence=0.7,  # Lower confidence as fallback
             signals=signals,
             manufacturer_id=MANUFACTURER_ID_OKIN,
@@ -3373,7 +3370,7 @@ def _detect_bed_type_detailed(
         return DetectionResult(
             bed_type=BED_TYPE_JALON, confidence=0.3,
             signals=[*signals, "name:jalon_app_candidate"],
-            ambiguous_types=[BED_TYPE_KEESON, BED_TYPE_OKIN_CB24],
+            ambiguous_types=[BED_TYPE_KEESON, "smartbed"],
         )
 
     _LOGGER.debug("Device %s does not match any known bed types", service_info.address)

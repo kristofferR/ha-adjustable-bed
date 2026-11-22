@@ -32,7 +32,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
@@ -51,6 +50,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SMARTBED,
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -380,7 +380,8 @@ class TestDetectBedTypeByServiceUUID:
         )
 
         assert detect_bed_type(legacy) == BED_TYPE_MALOUF_LEGACY_OKIN
-        assert detect_bed_type(cb24) == BED_TYPE_OKIN_CB24
+        # The SmartBed app's CB24 profile keeps this framing.
+        assert detect_bed_type(cb24) == BED_TYPE_SMARTBED
 
     def test_detect_leggett_gen2_by_uuid(self):
         """Test Leggett Gen2 detection by unique service UUID."""
@@ -737,7 +738,7 @@ class TestDetectBedTypeByNamePattern:
         )
         result = detect_bed_type_detailed(service_info)
 
-        assert result.bed_type == BED_TYPE_OKIN_CB24
+        assert result.bed_type == BED_TYPE_SMARTBED
         assert result.confidence == 0.7
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
         assert f"manufacturer_id:{MANUFACTURER_ID_OKIN}" in result.signals
@@ -948,7 +949,7 @@ class TestDetectBedTypeByManufacturerData:
         assert result.confidence == 0.95
         assert result.manufacturer_id == MANUFACTURER_ID_VIBRADORM
 
-    def test_detect_okin_cb24_by_manufacturer_id(self):
+    def test_detect_smartbed_by_manufacturer_id(self):
         """Test OKIN CB24 detection by Company ID 89 (SmartBed by Okin).
 
         GitHub issue #185: Amada bed with SmartBed by Okin app advertises
@@ -963,7 +964,7 @@ class TestDetectBedTypeByManufacturerData:
             manufacturer_data={MANUFACTURER_ID_OKIN: b"\x01\x02\x03"},
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_OKIN_CB24
+        assert result.bed_type == BED_TYPE_SMARTBED
         assert result.confidence == 0.7  # Lower confidence as fallback
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
 
@@ -972,7 +973,7 @@ class TestDetectBedTypeByManufacturerData:
 
         Regression test for #366: the "ABXM2" device advertises only manufacturer
         ID 89 (Nordic Semiconductor's generic company ID 0x0059) with no service
-        UUIDs and a non-OKIN name, and was wrongly auto-detected as okin_cb24.
+        UUIDs and a non-OKIN name, and was wrongly auto-detected as a SmartBed bed.
         """
         service_info = _make_service_info(
             name="ABXM2",
@@ -981,7 +982,7 @@ class TestDetectBedTypeByManufacturerData:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type is None
 
-    def test_detect_okin_cb24_nordic_uart_plus_manufacturer_id(self):
+    def test_detect_smartbed_nordic_uart_plus_manufacturer_id(self):
         """Test CB24 detection when device has both Nordic UART UUID and OKIN mfr ID.
 
         GitHub issue #309: Lucid L600 ("Smartbed237004683") advertises Nordic
@@ -994,7 +995,7 @@ class TestDetectBedTypeByManufacturerData:
             manufacturer_data={MANUFACTURER_ID_OKIN: b"DOT\x00\x02"},
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_OKIN_CB24
+        assert result.bed_type == BED_TYPE_SMARTBED
         assert result.confidence == 0.7
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
         assert BED_TYPE_RICHMAT in result.ambiguous_types
@@ -1027,7 +1028,7 @@ class TestDetectBedTypeByManufacturerData:
             manufacturer_data={MANUFACTURER_ID_OKIN: b"AB\x08\x01\x02"},
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_OKIN_CB24
+        assert result.bed_type == BED_TYPE_SMARTBED
         assert result.confidence == 0.7
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
         assert BED_TYPE_RICHMAT in result.ambiguous_types
@@ -2826,25 +2827,20 @@ class TestDetectionSignals:
 
 @pytest.mark.parametrize("name", ("Headboard126123", "Headboard265456"))
 def test_a_new_headboard_is_offered_smartbed_and_a_configured_bed_is_not_asked(name):
-    from custom_components.adjustable_bed.const import (
-        MANUFACTURER_ID_OKIN,
-        NORDIC_UART_SERVICE_UUID,
-    )
+    from custom_components.adjustable_bed.const import NORDIC_UART_SERVICE_UUID
     from custom_components.adjustable_bed.detection import detect_new_bed
     from custom_components.adjustable_bed.profile_recommendations import recommend_profile
 
-    info = _make_service_info(
-        name=name,
-        service_uuids=[NORDIC_UART_SERVICE_UUID],
-        manufacturer_data={MANUFACTURER_ID_OKIN: b"\x00\x01"},
-    )
-    assert detect_new_bed(info).bed_type == "smartbed"
-    # A bed already set up is reviewed without the headboard rule, as before.
-    reviewed = detect_bed_type_detailed(info)
-    assert reviewed.bed_type == BED_TYPE_OKIN_CB24
-    recommendation = recommend_profile({"bed_type": BED_TYPE_OKIN_CB24}, info, {})
-    assert recommendation is None or "smartbed" not in (
+    info = _make_service_info(name=name, service_uuids=[NORDIC_UART_SERVICE_UUID])
+    assert detect_new_bed(info).bed_type == BED_TYPE_SMARTBED
+    # A bed already set up is reviewed without the headboard rule.
+    assert detect_bed_type_detailed(info).bed_type != BED_TYPE_SMARTBED
+    recommendation = recommend_profile({"bed_type": "richmat"}, info, {})
+    assert recommendation is None or BED_TYPE_SMARTBED not in (
         recommendation.suggested,
         *recommendation.choices,
     )
-    assert recommend_profile({"bed_type": "smartbed"}, info, {}) is None
+    assert (
+        recommend_profile({"bed_type": BED_TYPE_SMARTBED, "protocol_variant": name[:12].lower()}, info, {})
+        is None
+    )

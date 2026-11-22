@@ -410,7 +410,6 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Okin receiver (13 and 15 series) | `okin_ffe` | 7 | 150 ms |
 | Okin receiver (older ORE remotes) | `okin_ore` | 1 | 300 ms |
 | Okin receiver (Sealy Posturematic and DewertOkin Star beds) | `okin_cb35` | 3 | 300 ms |
-| Okin receiver (SmartBed by Okin and Amada beds) | `okin_cb24` | 3 | 300 ms |
 | Resident Adjustable Base app | `resident` | 4 | 300 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
@@ -452,7 +451,7 @@ own. **Automatic (recommended)** is right for most beds. The model or remote of
 an existing bed changes only in
 [Reconfigure](#changing-the-bed-type-app-or-layout-of-an-existing-bed).
 
-The older Okin controllers (Okin Handle, 7-Byte, Nordic, CB24, CB35, FFE,
+The older Okin controllers (Okin Handle, 7-Byte, Nordic, CB35, FFE,
 64-Bit and ORE) are not rows of the app list: a discovered bed shows its
 detected controller, the brand list under **My app isn't listed, or I don't know** lists them,
 and Reconfigure's bed-type list keeps them by name.
@@ -465,7 +464,6 @@ and Reconfigure's bed-type list keeps them by name.
 | [Okin CST](beds/okin-nframe.md#okin-cst) | The Rize and Support products, asked by app name in the Okin question |
 | [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Automatic, StarCode or Legacy CB25, under **Advanced** after the Sleepy's question |
 | [SBI](beds/keeson.md#protocol-variants) / [Rondure](beds/keeson.md#side-selection-split-king) | Both, Side A, Side B |
-| [OKIN CB24](beds/okin-nframe.md#cb24-preset-safety) | Older and newer SmartBed control boxes |
 | [Okin DOT](beds/okin-nframe.md#okin-dot) / [Okin 64-bit](beds/okin-nframe.md#okin-64-bit) | The handset or connection type |
 
 ### Keeson Models
@@ -621,7 +619,6 @@ beds, Reconfigure that bed, then combine them again.
 | Keeson app family | [Tempur Curve, Q-Plus Adjustable Remote, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and TEMPUR AU](beds/keeson.md#keeson-layout-app-family): the exact app and the layout it shows; Q-Plus also has a Both/Side A/Side B selector. |
 | KomfyD / ComfyDS | See the [setup steps](beds/kaidi.md#komfyd-and-comfyds). |
 | L2 Motion | See the [setup steps](beds/motomotion.md#l2-motion). |
-| Legacy OKIN CB24 | [Single-address controls](#single-address-left--right-controls): both sides, Side A / Left, or Side B / Right. |
 | Leggett & Platt | Answer the [L&P question](beds/leggett-platt.md#home-assistant-setup) with your app: [Prodigy CE, Prodigy 2, Prodigy 2L or U Series](beds/okin-nframe.md#leggett-okin-family) sets the layout; LP Control and the L&P Adjustable Base app also name the receiver or remote. [L&P legacy](beds/richmat.md#lp-legacy-app): model, connection mode and characteristic IDs. |
 | Limoss | [One question](beds/limoss.md#home-assistant-setup) for the Limoss Remote or FSM Relax app, or the older controls. [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. Change an existing bed's app with **Reconfigure**. |
 | Linx | See the [setup steps](beds/linx.md#setup). |
@@ -795,7 +792,7 @@ Increase **Movement per tap**. Start with +10 and test.
 ## Single-Address Left / Right Controls
 
 Some split beds reach both sides through one Bluetooth address, for example
-SBI, Rondure, older CB24 control boxes, Sleep Number Fuzion and some Keeson,
+SBI, Rondure, SmartBed CB24AB receivers, Sleep Number Fuzion and some Keeson,
 Ergomotion 4.0, Kaidi, CheersSleep, Symphony and Ultramatic beds. If the bed's
 **Configure** menu offers **Add Left, Right and Both controls**, choose it to
 get the same Left, Right and Both controls as two combined beds.
@@ -811,8 +808,8 @@ Existing entries do not change by themselves.
   feedback is off while Left and Right controls are on. The bed guide says so.
 - Sleep Number BAM/MCR beds already have controls for each side and do not
   offer this.
-- Beds whose commands have no side, such as newer CB24 control boxes, do not
-  offer it.
+- Beds whose commands have no side, such as the SmartBed receivers other than
+  CB24AB, do not offer it.
 
 ## Split-King / Controller sync
 

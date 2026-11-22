@@ -433,11 +433,10 @@ BED_TYPE_OKIN_HANDLE: Final = "okin_handle"  # Okin 6-byte via BLE handle
 BED_TYPE_OKIN_UUID: Final = "okin_uuid"  # Okin 6-byte via UUID (requires pairing)
 BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
-BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"
-BED_TYPE_SMARTBED: Final = "smartbed"  # SmartBed app profiles, beside the okin_cb24 receiver route
+BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
 BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
@@ -822,7 +821,6 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_UUID,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_NORDIC,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_CST,
@@ -1436,8 +1434,8 @@ OCTO_VARIANT_STAR2: Final = "star2"
 MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_WRITE_CHAR_UUID: Final = MATTRESSFIRM_CHAR_UUID  # Alias for protocol clarity
 
-# Okin CB24 bed selection values
-# Used by SmartBed by Okin for split-king/dual bed configurations
+# CB24AB bed selection values
+# Used by the SmartBed app for split-king/dual bed configurations
 # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
 CB24_BED_SELECTION_DEFAULT: Final = 0x00  # Default/single bed
 CB24_BED_SELECTION_A: Final = 0xAA  # Bed A (left side)
@@ -1956,29 +1954,8 @@ KAIDI_VARIANTS: Final = {
     KAIDI_VARIANT_SEAT_1_2: "Seat 1+2 (split/dual base)",
 }
 
-# OKIN CB24 profile variants (SmartBed app device profiles)
+# The SmartBed app's receiver profiles.
 # Source: com.okin.bedding.smartbedwifi model/device/*
-OKIN_CB24_VARIANT_OLD: Final = "cb_old"
-OKIN_CB24_VARIANT_NEW: Final = "cb_new"
-OKIN_CB24_VARIANT_CB24: Final = "cb24"
-OKIN_CB24_VARIANT_CB27: Final = "cb27"
-OKIN_CB24_VARIANT_CB24_AB: Final = "cb24_ab"
-OKIN_CB24_VARIANT_CB1221: Final = "cb1221"
-OKIN_CB24_VARIANT_DACHENG: Final = "dacheng"
-OKIN_CB24_VARIANT_CB27NEW: Final = "cb27new"
-OKIN_CB24_VARIANTS: Final = {
-    VARIANT_AUTO: AUTOMATIC_LABEL,
-    OKIN_CB24_VARIANT_OLD: "Older control box",
-    OKIN_CB24_VARIANT_NEW: "Newer control box",
-    OKIN_CB24_VARIANT_CB24: "CB24 control box",
-    OKIN_CB24_VARIANT_CB27: "CB27 control box",
-    OKIN_CB24_VARIANT_CB24_AB: "CB24AB control box",
-    OKIN_CB24_VARIANT_CB1221: "CB1221 control box",
-    OKIN_CB24_VARIANT_DACHENG: "Dacheng control box",
-    OKIN_CB24_VARIANT_CB27NEW: "CB27New control box",
-}
-
-# The SmartBed app's own receiver profiles.
 SMARTBED_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     "standard": "Standard receiver",
@@ -3062,9 +3039,6 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN Nordic: 100ms delay → 10 repeats = 1.0s total
     # Source: com.lucid.bedbase ANALYSIS.md
     BED_TYPE_OKIN_NORDIC: (10, 100),
-    # OKIN CB24: 300ms delay → 3 repeats = 0.9s total
-    # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
-    BED_TYPE_OKIN_CB24: (3, 300),
     # OKIN DOT: FurniMove resends the held keycode ~every 100ms
     # (BluetoothLeService.onCharacteristicWrite Thread.sleep(100) loop)
     BED_TYPE_OKIN_DOT: (10, 100),

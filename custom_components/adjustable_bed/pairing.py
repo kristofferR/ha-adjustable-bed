@@ -51,7 +51,6 @@ from .const import (
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIMIKI,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_RICHMAT_APP,
     BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RIZE,
@@ -93,8 +92,6 @@ from .const import (
     KAIDI_VARIANT_SEAT_2,
     LIMOSS_REMOTE_CONFIG_KEYS,
     OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
-    OKIN_CB24_VARIANT_CB27NEW,
-    OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
@@ -223,7 +220,6 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_KEESON,
         BED_TYPE_SBI,
         BED_TYPE_RONDURE,
-        BED_TYPE_OKIN_CB24,
         "smartbed",
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
@@ -314,10 +310,7 @@ def supports_single_address_pairing(
         return protocol_variant == "cb24_ab" or (
             protocol_variant in (None, VARIANT_AUTO) and verified_ab(capabilities)
         )
-    return not (
-        bed_type == BED_TYPE_OKIN_CB24
-        and protocol_variant in {OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW}
-    )
+    return True
 
 
 def is_paired(entry_data: Mapping[str, Any]) -> bool:
@@ -856,7 +849,7 @@ def build_single_address_pair_entry_data(
     elif bed_type == BED_TYPE_RONDURE:
         left[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_A
         right[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_B
-    elif bed_type in (BED_TYPE_OKIN_CB24, "smartbed"):
+    elif bed_type == "smartbed":
         left[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_A
         right[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_B
     elif bed_type == "ultramatic_smart_bed":

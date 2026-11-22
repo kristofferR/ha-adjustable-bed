@@ -92,23 +92,23 @@ async def test_the_final_settings_have_no_global_variant_field(hass, enable_cust
 
 
 async def test_a_generic_route_offers_only_its_own_routes(hass, enable_custom_integrations):
-    # CB24's routes are the final settings' collapsed Advanced section.
-    result = await _typed(hass, const.BED_TYPE_OKIN_CB24)
+    # Okin 64-bit's routes are the final settings' collapsed Advanced section.
+    result = await _typed(hass, const.BED_TYPE_OKIN_64BIT)
     assert result["step_id"] == "finish_settings"
     section = result["data_schema"].schema[
         next(marker for marker in result["data_schema"].schema if marker == "advanced")
     ]
     assert section.options == {"collapsed": True}
     options = section.schema.schema[const.CONF_PROTOCOL_VARIANT].config["options"]
-    assert [option["value"] for option in options] == list(_setup_routes(const.BED_TYPE_OKIN_CB24))
+    assert [option["value"] for option in options] == list(_setup_routes(const.BED_TYPE_OKIN_64BIT))
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await complete(
             hass,
             result,
-            {"finish_settings": {CONF_NAME: "Bed", "advanced": {const.CONF_PROTOCOL_VARIANT: "cb27"}}},
+            {"finish_settings": {CONF_NAME: "Bed", "advanced": {const.CONF_PROTOCOL_VARIANT: "nordic"}}},
         )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"][const.CONF_PROTOCOL_VARIANT] == "cb27"
+    assert result["data"][const.CONF_PROTOCOL_VARIANT] == "nordic"
 
 
 def test_a_choice_without_an_automatic_route_is_shown_open():
@@ -121,7 +121,7 @@ def test_a_choice_without_an_automatic_route_is_shown_open():
         assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "").options == {
             "collapsed": False
         }
-    assert _route_section(const.BED_TYPE_OKIN_CB24, "").options == {"collapsed": True}
+    assert _route_section(const.BED_TYPE_OKIN_64BIT, "").options == {"collapsed": True}
     assert _route_section(const.BED_TYPE_SOLACE, "") is None
     assert _route_section(const.BED_TYPE_COMFORT_ENHANCEMENTS, "") is None
 
@@ -189,6 +189,23 @@ async def test_a_discovered_compatibility_id_saves_its_current_route(
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await complete(hass, result)
     assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_HANDLE
+
+
+async def test_a_discovered_smartbed_is_set_up_as_the_smartbed_app(
+    hass, mock_bluetooth_service_info_okimat, enable_custom_integrations
+):
+    """A SmartBed advertisement sets up the SmartBed app's receivers."""
+    info = mock_bluetooth_service_info_okimat
+    info.name, info.service_uuids = "Smartbed237004683", [const.NORDIC_UART_SERVICE_UUID]
+    info.manufacturer_data = {const.MANUFACTURER_ID_OKIN: b"DOT\x00\x02"}
+    result = await hass.config_entries.flow.async_init(
+        const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+    assert suggested(result, const.CONF_BED_TYPE) == const.BED_TYPE_SMARTBED
+    with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+        result = await complete(hass, result)
+    assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_SMARTBED
 
 
 @pytest.mark.parametrize("alias", sorted(const.LEGACY_BED_TYPE_MAPPING))
