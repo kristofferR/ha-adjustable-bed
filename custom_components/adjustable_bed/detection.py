@@ -595,6 +595,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "cheerssleep": "CheersSleep app",
     "agingplace": "Aging in Place / Dawn House app",
     "smart_sleep": "OKIN Smart Sleep app",
+    "sleep_assistant": "Sleep Assist",
     "onlysnore": "Snore Monitor app",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY app",
     "smart_comfort_synergy": "Smart Comfort app",
@@ -1419,7 +1420,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in ("super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in ("sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1453,6 +1454,13 @@ def _detect_with_first_pass(
 ) -> DetectionResult:
     """Offer Good Vibe Sleep without changing an existing receiver/app choice."""
     result = _detect_bed_type_with_app_candidates(service_info, first)
+    from .profiles.sleep_assistant import discovered as sleep_assistant_discovered
+    if sleep_assistant_discovered(service_info.name or ""):
+        if result.bed_type is None:
+            result = DetectionResult("sleep_assistant", 0.3, ["name:sleep_assistant_candidate"])
+        elif result.bed_type != "sleep_assistant":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "sleep_assistant"]))
+            result.signals.append("name:sleep_assistant_candidate")
     # The current Linx scan filter is a case-sensitive substring, not a model
     # or service selector. Preserve existing receiver detection as an alternative.
     if isinstance(service_info.name, str) and "KSWF07D" in service_info.name:

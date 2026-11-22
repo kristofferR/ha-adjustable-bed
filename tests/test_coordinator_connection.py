@@ -1134,10 +1134,12 @@ class TestCoordinatorConnection:
         assert mock_bleak_client.pair.await_count == 2
         assert mock_bleak_client.disconnect.await_count == 2
 
+    @pytest.mark.parametrize("released", [False, True])
     async def test_connect_does_not_report_success_without_a_controller(
         self,
         hass: HomeAssistant,
         mock_config_entry,
+        released,
     ) -> None:
         """A retained link with no controller is not a usable connection.
 
@@ -1151,7 +1153,11 @@ class TestCoordinatorConnection:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         client = MagicMock()
         client.is_connected = True
-        client.disconnect = AsyncMock()
+
+        async def disconnect():
+            client.is_connected = not released
+
+        client.disconnect = AsyncMock(side_effect=disconnect)
         coordinator._client = client
         coordinator._controller = None
 
@@ -1168,7 +1174,7 @@ class TestCoordinatorConnection:
         reset_timer.assert_not_called()
         # The half-initialised link was released, not leaked.
         client.disconnect.assert_awaited_once()
-        assert coordinator._client is None
+        assert coordinator._client is (None if released else client)
 
     @pytest.mark.parametrize(
         ("error", "expected_status", "says_refused"),
@@ -2335,3 +2341,37 @@ class TestDisconnectCommandSerialization:
 
         coordinator._position_hydration_running = False
         await coordinator.async_disconnect()
+
+
+@pytest.mark.parametrize("entry_point", ["connect", "ensure"])
+async def test_shutdown_during_incomplete_link_release_does_not_reopen(
+    hass, mock_config_entry, entry_point
+):
+    coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+    client = MagicMock()
+    client.is_connected = True
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    async def disconnect():
+        entered.set()
+        await release.wait()
+        client.is_connected = False
+
+    client.disconnect = AsyncMock(side_effect=disconnect)
+    coordinator._client = client
+    with patch(
+        "custom_components.adjustable_bed.coordinator_connection.select_adapter",
+        new_callable=AsyncMock,
+    ) as select_adapter:
+        connect = asyncio.create_task(
+            coordinator.async_connect()
+            if entry_point == "connect"
+            else coordinator.async_ensure_connected()
+        )
+        await entered.wait()
+        shutdown = asyncio.create_task(coordinator.async_shutdown())
+        await asyncio.sleep(0)
+        release.set()
+        assert not await connect
+        await shutdown
+        select_adapter.assert_not_awaited()

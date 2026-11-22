@@ -67,6 +67,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Reverie Pairlink](beds/reverie-pairlink-sdk.md) | Reverie Pairlink (R510L / Harmoniq) | |
 | [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Super Colchones, SleepEvolution and other Richmat-based apps | Shared |
 | [RUF and related apps](beds/ruf-richmat-apps.md) | RUF Betten, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX | |
+| [Sleep Assist](beds/sleep-assistant.md) | The original Sleep Assist app | |
 | [Sleep Number](beds/sleep_number.md) | Sleep Number Fuzion and BAM/MCR bases ([commands](beds/sleep-number-services.md)) | |
 | [SleepSpa S9000AI](beds/sleepstar.md) | The SleepSpa S9000AI | |
 | [Sleeptracker](beds/sleeptracker.md) | The Tempur Sleeptracker-AI processor | |

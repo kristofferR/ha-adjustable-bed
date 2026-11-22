@@ -3437,6 +3437,9 @@
  "number:richmat_rise_lamp_seconds": {
   "card_section": "utility"
  },
+ "number:sleep_assistant_flat_minutes": {
+  "card_section": "utility"
+ },
  "number:sleep_number_setting": {
   "card_section": "firmness"
  },
@@ -3703,6 +3706,12 @@
  },
  "select:ruf_richmat_sleep_mode": {
   "card_section": "utility"
+ },
+ "select:sleep_assistant_anti_snore": {
+  "card_section": "utility"
+ },
+ "select:sleep_assistant_palette": {
+  "card_section": "lighting"
  },
  "select:sleeptracker_left_curve": {
   "card_section": "climate"
@@ -4475,6 +4484,24 @@
  "sensor:simmons_alarm_2": {
   "card_section": "hidden"
  },
+ "sensor:sleep_assistant_alarm_1": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_2": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_3": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_4": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_5": {
+  "card_section": "utility"
+ },
+ "sensor:sleep_assistant_alarm_6": {
+  "card_section": "utility"
+ },
  "sensor:sleeptracker_layout": {
   "card_section": "hidden"
  },
@@ -4903,6 +4930,9 @@
  },
  "switch:sealy_massage": {
   "card_section": "massage"
+ },
+ "switch:sleep_assistant_storage": {
+  "card_section": "utility"
  },
  "switch:sleepfunction_switch": {
   "card_section": "utility"

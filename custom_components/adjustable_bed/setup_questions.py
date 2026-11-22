@@ -251,6 +251,7 @@ from .import_executor import async_import_modules
 from .profiles import jiecang as jiecang_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
@@ -2096,6 +2097,20 @@ def _smart_sleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
             if data.get(CONF_PROTOCOL_VARIANT) != "p2" or model == 80}
 
 
+def _sleep_assistant_validate(data: Mapping[str, Any]) -> dict[str, str]:
+    try:
+        sleep_assistant_app.selected(data)
+    except (ValueError, TypeError):
+        return {sleep_assistant_app.CONF_SLEEP_ASSISTANT_PARAMETERS: "sleep_assistant_invalid_settings"}
+    return {}
+
+
+def _sleep_assistant_derive(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    profile = sleep_assistant_app.selected(data)
+    return {CONF_MOTOR_COUNT: 2 + int("m7" in profile.controls) + int("m8" in profile.controls),
+            CONF_HAS_MASSAGE: bool(profile.controls & {"m1", "m2", "m3", "m4", "m5", "m6"})}
+
+
 def _onlysnore_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
     from .profiles.onlysnore import MODELS
 
@@ -2357,6 +2372,19 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
         questions=(Question(CONF_PRODUCT_TYPE, _cheerssleep_models, "45", searchable=True),),
         seed=_cheerssleep_seed, validate=_cheerssleep_errors, derive=_cheerssleep_settings, imports=("beds.cheerssleep.catalog",),
+    ),
+    "sleep_assistant": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto"},
+        questions=(
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_PRESETS, sleep_assistant_app.MODEL_KEYS, [], multiple=True),
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_CONTROLS, sleep_assistant_app.MASSAGE_KEYS, [], multiple=True),
+            Question(CONF_HAS_LIGHT, default=False),
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_LIGHTING, {"none": "Standard", "sleep8": "Sleep8 RGB", "4193": "4193 RGB"}, "none"),
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_IDENTITY, default="", text=True, advanced=True),
+            Question(sleep_assistant_app.CONF_SLEEP_ASSISTANT_PARAMETERS, default="", text=True, advanced=True),
+        ),
+        validate=_sleep_assistant_validate, derive=_sleep_assistant_derive,
     ),
     "onlysnore": SetupProfile(
         owns={
