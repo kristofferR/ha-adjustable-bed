@@ -62,22 +62,24 @@ class SessionController(RichmatClassicController):
         response = "write" in destination.properties
 
         async def write() -> None:
-            if (
-                self._session is not session
-                or self.client is not session.client
-                or not session.client.is_connected
-            ):
-                raise ConnectionError("The captured bed session has ended")
-            if cancel is not None and cancel.is_set():
-                note_frame_skipped()
-                return
-            if before_write is not None and not before_write():
-                note_frame_skipped()
-                return
-            self._record_command_trace(
-                destination.uuid, packet, response=response, characteristic=destination
-            )
+            # The checks run under the GATT lock: a STOP or a new session that
+            # arrived while another GATT operation held it still applies.
             async with self._ble_lock:
+                if (
+                    self._session is not session
+                    or self.client is not session.client
+                    or not session.client.is_connected
+                ):
+                    raise ConnectionError("The captured bed session has ended")
+                if cancel is not None and cancel.is_set():
+                    note_frame_skipped()
+                    return
+                if before_write is not None and not before_write():
+                    note_frame_skipped()
+                    return
+                self._record_command_trace(
+                    destination.uuid, packet, response=response, characteristic=destination
+                )
                 await session.client.write_gatt_char(destination, packet, response=response)
             note_frame_written(cancel)
 
