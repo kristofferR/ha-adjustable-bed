@@ -1800,7 +1800,17 @@ def test_schema_5_10_moves_only_the_serta_side_of_a_pair() -> None:
     assert origin[KEY_ORIGIN_OPTIONS] == {CONF_BED_TYPE: "serta_mp_remote"}
 
 
-def test_schema_5_10_leaves_no_serta_remote_behind_the_pairs_options() -> None:
+@pytest.mark.parametrize(
+    ("masking", "ran"),
+    [
+        # Both sides ran the Base remote, whatever they had stored.
+        ({CONF_PROTOCOL_VARIANT: "base"}, (BED_TYPE_KEESON, "base")),
+        ({CONF_BED_TYPE: BED_TYPE_LINAK}, (BED_TYPE_LINAK, "auto")),
+    ],
+)
+def test_schema_5_10_leaves_no_serta_remote_behind_the_pairs_options(
+    masking: dict, ran: tuple[str, str]
+) -> None:
     from custom_components.adjustable_bed import migrate_v5_10_entry
 
     stored = {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: _SERTA}
@@ -1812,15 +1822,16 @@ def test_schema_5_10_leaves_no_serta_remote_behind_the_pairs_options() -> None:
                 {CONF_SIDE: "right", CONF_ADDRESS: "AA:BB:CC:DD:EE:86", **stored},
             ],
         },
-        # Both sides ran the Base remote, whatever they had stored.
-        {CONF_PROTOCOL_VARIANT: "base"},
+        masking,
         from_version=5,
         from_minor_version=9,
     )
 
-    assert options == {CONF_PROTOCOL_VARIANT: "base"}
+    assert options == masking
     # Unpairing, or clearing the options, must not bring the removed remote back.
-    assert [child[CONF_PROTOCOL_VARIANT] for child in data[CONF_PAIR_CHILDREN]] == ["base", "base"]
+    assert [
+        (child[CONF_BED_TYPE], child[CONF_PROTOCOL_VARIANT]) for child in data[CONF_PAIR_CHILDREN]
+    ] == [ran, ran]
 
 
 @pytest.mark.parametrize(

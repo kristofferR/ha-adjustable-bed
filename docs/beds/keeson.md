@@ -1618,7 +1618,7 @@ equivalence between apps.
 
 - Select the app by name in the bed-type list and use the Bluetooth address of
   the bed. Shared services, names and manufacturer data never select an app;
-  only a `serta` or `motion perfect` name suggests one, Serta MP Remote.
+  only a Serta name suggests one (see [Serta MP Remote](#serta-mp-remote)).
 - Choose the layout your app shows in **App product, model or layout** (stored
   as `product_type`). A layout is a UI choice, not proof of motor count or model.
 - Each side of a two-address pair keeps its own app settings. Target the native

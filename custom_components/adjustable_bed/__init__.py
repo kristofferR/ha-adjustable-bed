@@ -1335,6 +1335,9 @@ def migrate_v5_10_entry(
                         key in changed or (masked and key != CONF_DISABLE_ANGLE_SENSING)
                     ):
                         child[key] = view[key]
+                if masked and child.get(CONF_PROTOCOL_VARIANT) == _SERTA:
+                    # The removed remote's name means nothing on the bed type it ran.
+                    child[CONF_PROTOCOL_VARIANT] = VARIANT_AUTO
             if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
                 restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
                 carry_profile_review_to_renamed_route(origin, restored)
