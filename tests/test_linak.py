@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.beds.linak.protocol import (
     LinakCapabilitySnapshot,
     LinakModelVariant,
     LinakProfile,
+    build_simultaneous_command,
 )
 from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.const import (
@@ -1422,6 +1423,35 @@ class TestLinakCorpusProfiles:
 
 class TestLinakMovement:
     """Test Linak movement commands."""
+
+    async def test_simultaneous_duration_ends_on_the_clock_through_a_slow_proxy(
+        self, hass, mock_config_entry, mock_coordinator_connected, mock_bleak_client,
+    ):
+        """Neither a slow acknowledgement nor later setup may eat or stretch the duration."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        _mark_session_ready(coordinator)
+        command = build_simultaneous_command("back", True, "legs", True)
+        readiness_calls = 0
+
+        async def readiness(*_args, **_kwargs):
+            nonlocal readiness_calls
+            readiness_calls += 1
+            if readiness_calls > 1:
+                # Setup that was deferred at connect, repeated on a later request.
+                await asyncio.sleep(.05)
+
+        async def write(_uuid, sent, **_kwargs):
+            if sent == command:
+                await asyncio.Event().wait()
+
+        mock_bleak_client.write_gatt_char.side_effect = write
+        with patch.object(controller, "_await_control_ready", side_effect=readiness):
+            async with asyncio.timeout(.5):
+                await controller.move_simultaneously("back", True, "legs", True, 20)
+
+        assert _written_commands(mock_bleak_client) == [command, LinakCommands.MOVE_STOP]
 
     async def test_disables_polling_during_commands(
         self,
