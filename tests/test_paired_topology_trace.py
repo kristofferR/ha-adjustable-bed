@@ -41,9 +41,9 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ERGOMOTION,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SMARTBED,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -240,6 +240,8 @@ def _physical(
             CONF_BED_TYPE: bed_type,
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_CONNECTION_MODE: "idle",
+            # Only the SmartBed app's CB24AB receiver sends a side.
+            **({"protocol_variant": "cb24_ab"} if bed_type == BED_TYPE_SMARTBED else {}),
             **entry_data,
         },
     )
@@ -263,7 +265,8 @@ def _physical(
         self._connection_source = "proxy"
         client = TraceClient(who, trace, layout)
         self._client = client  # type: ignore[assignment]
-        self._controller = await create_controller(self, bed_type, None, client)  # type: ignore[arg-type]
+        variant = "cb24_ab" if bed_type == BED_TYPE_SMARTBED else None
+        self._controller = await create_controller(self, bed_type, variant, client)  # type: ignore[arg-type]
         self._notify_connection_state_change(True)
         if reset_timer:
             self._reset_disconnect_timer()
@@ -295,14 +298,14 @@ def _two_link(mode: str) -> Callable[[HomeAssistant, Trace, frozenset[str]], Pai
 
 def _single_link(native_both: bool) -> Callable[[HomeAssistant, Trace, frozenset[str]], PairedBedCoordinator]:
     def build(hass: HomeAssistant, trace: Trace, failing: frozenset[str]) -> PairedBedCoordinator:
-        inner = _physical(hass, trace, "link", SINGLE_ADDRESS, BED_TYPE_OKIN_CB24, failing)
+        inner = _physical(hass, trace, "link", SINGLE_ADDRESS, BED_TYPE_SMARTBED, failing)
         # Non-native Both: a profile with left/right frames but no shared one.
         # The parent runs both side frames on the one link (the Sleep Number rule).
         entry = MockConfigEntry(
             domain=DOMAIN,
             data={
                 CONF_PAIR_ID: "pair-single",
-                CONF_BED_TYPE: BED_TYPE_OKIN_CB24 if native_both else BED_TYPE_SLEEP_NUMBER,
+                CONF_BED_TYPE: BED_TYPE_SMARTBED if native_both else BED_TYPE_SLEEP_NUMBER,
             },
         )
         entry.add_to_hass(hass)

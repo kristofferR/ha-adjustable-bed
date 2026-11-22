@@ -41,7 +41,7 @@ def test_rc2_wrong_profile_suggests_octo(selected):
             "okin_nordic",
             "auto",
             observed("Smartbed209008942", manufacturer={89: b""}),
-            "okin_cb24",
+            "smartbed",
             id="issue185",
         ),
         pytest.param(
@@ -65,7 +65,7 @@ def test_rc2_wrong_profile_suggests_octo(selected):
             id="issue180",
         ),
         pytest.param(
-            "okin_cb24",
+            "smartbed",
             "auto",
             observed(
                 "Smartbed428000193", [NORDIC_UART_SERVICE_UUID], {89: bytes.fromhex("4142010204")}

@@ -24,7 +24,7 @@ protocol.** Confirmed L600 devices include:
 
 | What the bed advertises | Integration protocol | Packet format |
 |---------------------------|----------------------|---------------|
-| `Smartbed237...`, Nordic UART, OKIN manufacturer ID 89 / `DOT` payload | OKIN CB24 | 7 bytes |
+| `Smartbed237...`, Nordic UART, OKIN manufacturer ID 89 / `DOT` payload | [SmartBed app](smartbed.md), CB24 | 7 bytes |
 | `OKIN-BLE...`, `BTCB` payload, connected FFE5/FFE9 | Malouf Legacy OKIN | 9 bytes |
 
 The integration uses those BLE signals and connected services. It does not map

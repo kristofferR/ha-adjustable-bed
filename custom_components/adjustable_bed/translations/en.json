@@ -13074,7 +13074,6 @@
       "options": {
         "okin_64bit": "Receiver named NORA_CON or NORACON",
         "okin_7byte": "Nectar bed",
-        "okin_cb24": "SmartBed by Okin or Amada bed",
         "okin_cb35": "Sealy Posturematic or DewertOkin Star bed",
         "okin_ffe": "Okin 13 or 15 series receiver",
         "okin_handle": "DewertOkin or A H Beard bed",

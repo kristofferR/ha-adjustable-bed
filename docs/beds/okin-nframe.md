@@ -1,13 +1,13 @@
 # Okin and DewertOkin
 
-**Status:** Partly tested: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
+**Status:** Partly tested: Okimat, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), david_nagy, corne, PT, MarcusW and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
 This guide covers every bed that sends Okin N-frame command words. The 32-bit
 profiles are Okimat handset tables, DewertOkin, the OKIN Smart Remote stair lift,
 the Customatic apps and the Leggett & Platt Okin apps. The 40-bit profiles are
-OKIN SmartBed CB24, Okin DOT, SIMMONS, OKIN SleepEase, the Sleepy's Elite legacy
+Okin DOT, SIMMONS, OKIN SleepEase, the Sleepy's Elite legacy
 CB25 dialect, the AdjustableM5X4 key selectors and the eShine app's products. The 96-bit profiles are the
 Okin CST (CSTProtocol) products and the OKIN Bedding apps: Jordan's Serenity,
 Jordan's Tranquil and Customatic Z-Series. The 64-bit profiles are Okin 64-Bit
@@ -26,7 +26,6 @@ their setup choices, controls and alarms.
 | [RF ECO BT stair lift](#rf-eco-bt-stair-lift) | Elda BTH / RF ECO BT / MEGAMAT staircase from [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344); Device Information model `MEGAMAT MBZ`, advertising as `OKIN-050226` |
 | [Customatic](#customatic-family) | Customatic Clarity, Jerome's C and Remedy bases |
 | [Leggett Okin](#leggett-okin-family) | Leggett & Platt Prodigy Comfort Elite and similar control boxes, marked `LP BED CONTROL`; tested on a DewertOkin CU170 control box |
-| [OKIN SmartBed CB24](#okin-smartbed-cb24) | SmartBed by Okin receivers (Amada and other OKIN beds) with the CB24, CB24AB, CB27, CB27New, CB1221 or Dacheng profile |
 | [Okin DOT](#okin-dot) | DewertOkin "DOT PROTOCOL" receivers for the RF1058, RF34 and RF6707 handsets |
 | [SIMMONS](#simmons) | Beds controlled with the SIMMONS app, regular and inclined |
 | [OKIN SleepEase](#okin-sleepease) | OKIN SleepEase / DoubleSleep / XiaoBao app models |
@@ -58,7 +57,7 @@ Customatic app profiles.
 | ✅ | OKIN Motion Bed 1.0 (2), not yet tested on hardware | `com.okin.motionbed` | [OKIN Motion Bed](#okin-motion-bed), chosen in setup |
 | ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), not fully checked |
 | ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), not yet tested on hardware | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), a Keeson profile |
-| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) not fully checked |
+| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [SmartBed app](smartbed.md) |
 | ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), not fully checked |
 | ✅ | [Comfort Enhancement 3 / Comfort Plus3](https://play.google.com/store/apps/details?id=com.okin.apex) 1.4.0 (5) | `com.okin.apex` | [Comfort Enhancement 3](#comfort-enhancement-3) |
 | ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) 1.0.1 | `com.okin.bedding.rizeResident` | [Okin CST](#okin-cst) (Rize Resident) |
@@ -123,18 +122,18 @@ Beds controlled with FurniMove handset IDs normally use the
 
 The 40-bit profiles:
 
-| Feature | CB24 | DOT | SIMMONS | SleepEase | Sleepy's legacy CB25 | AdjustableM5X4 | eShine |
-|---|---|---|---|---|---|---|---|
-| Motor control | ✅ Head, feet | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, both together | ✅ Head, foot; E5000 adds Head Tilt |
-| Position feedback | ❌ | ❌ | ❌ | ❌ | ✅ 0-100 % | ❌ | ❌ |
-| Presets | ✅ Flat, Zero-G, Lounge, TV, Anti-snore | ✅ Flat; Zero-G, Quiet Sleep, Anti-snore on RF1058 | ✅ Flat; Zero-G, TV/PC, Anti-snore on a regular bed | ✅ Held (P1) or one-shot (P2) recalls | ✅ Flat, TV, Zero-G, Anti-snore, Lounge | ✅ Flat, TV, Lounge, Zero-G, Anti-snore | ✅ Held Flat, Zero-G, Anti-snore, Reading, TV, Flat + Zero-G |
-| Memory presets | ✅ 3 slots, no save | ✅ RF1058 and RF34 codes, tap to recall | ✅ Custom Mode, saved by a 5.5 s hold | ✅ Two recalls | ✅ 2 slots with save | ✅ Memory A, named saves and reset | ❌ |
-| Massage | ✅ | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Intensity, wave and timer once massage is on | ✅ E3000/E3100, E5000 |
-| Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ By selector | ✅ E3000/E3100, E5000: hold-to-use toggle that shows its state |
-| Alarms and clock | ❌ | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ | ✅ Next-occurrence alarm, clock sync |
-| Left and right on one address | ✅ Older CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Hold until release | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
-| BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Feature | DOT | SIMMONS | SleepEase | Sleepy's legacy CB25 | AdjustableM5X4 | eShine |
+|---|---|---|---|---|---|---|
+| Motor control | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, both together | ✅ Head, foot; E5000 adds Head Tilt |
+| Position feedback | ❌ | ❌ | ❌ | ✅ 0-100 % | ❌ | ❌ |
+| Presets | ✅ Flat; Zero-G, Quiet Sleep, Anti-snore on RF1058 | ✅ Flat; Zero-G, TV/PC, Anti-snore on a regular bed | ✅ Held (P1) or one-shot (P2) recalls | ✅ Flat, TV, Zero-G, Anti-snore, Lounge | ✅ Flat, TV, Lounge, Zero-G, Anti-snore | ✅ Held Flat, Zero-G, Anti-snore, Reading, TV, Flat + Zero-G |
+| Memory presets | ✅ RF1058 and RF34 codes, tap to recall | ✅ Custom Mode, saved by a 5.5 s hold | ✅ Two recalls | ✅ 2 slots with save | ✅ Memory A, named saves and reset | ❌ |
+| Massage | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Intensity, wave and timer once massage is on | ✅ E3000/E3100, E5000 |
+| Under-bed lights | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ By selector | ✅ E3000/E3100, E5000: hold-to-use toggle that shows its state |
+| Alarms and clock | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ | ✅ Next-occurrence alarm, clock sync |
+| Left and right on one address | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hold until release | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 The 96-bit profiles:
 
@@ -166,8 +165,8 @@ The 64-bit profiles:
 Detection suggests Okimat for the Okin service, DewertOkin by device name and
 Leggett Okin by Leggett names; each profile's Setup lists its rules. The stair
 lift and the Customatic apps are explicit choices, and Leggett Okin entries
-choose their app. CB24 is detected from the OKIN manufacturer ID, DOT from the
-Nordic UART write characteristic on an Okin handset entry; SIMMONS, SleepEase,
+choose their app. DOT is detected from the Nordic UART write characteristic on
+an Okin handset entry; SIMMONS, SleepEase,
 Sleepy's Elite, AdjustableM5X4 and eShine are explicit app choices.
 
 ### Home Assistant setup
@@ -244,7 +243,6 @@ are unchanged.
 | Prodigy 2 | `prodigy2` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 4 |
 | Prodigy CE | `prodigy4` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow, lumbar | 4 |
 | U Series | `useries` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 2 |
-| OKIN SmartBed CB24 | `okin_cb24` | `okin_cb24` | 40-bit | plain frame | without response | head, feet | 3 |
 | DewertOkin DOT handset table | `okin_dot` | `okin_dot` | 40-bit | plain frame | without response | handset table | handset table |
 | SIMMONS SmartBed names | `simmons_smartbed` | `simmons` | 40-bit | plain frame | without response | back, legs | 1 |
 | SIMMONS OKIN names | `simmons_okin` | `simmons` | 40-bit | Keeson E6 frame; inclined keys plain | with response | back, legs | 1 |
@@ -311,7 +309,6 @@ are unchanged.
 | Prodigy 2 | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
 | Prodigy CE | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
 | U Series | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
-| OKIN SmartBed CB24 | entry pulse delay | entry pulse count | 1 STOP |
 | DewertOkin DOT handset table | entry pulse delay | entry pulse count | 1 STOP |
 | SIMMONS SmartBed names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
 | SIMMONS OKIN names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
@@ -380,7 +377,6 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Prodigy 2 | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
 | Prodigy CE | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
 | U Series | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | n/a |
-| OKIN SmartBed CB24 | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | DewertOkin DOT handset table | 100 × 300 ms, 1 STOP | once, 1 STOP | 10 × 200 ms, no STOP (or the handset's hold) | 60 × 100 ms, 1 STOP | once, no STOP | n/a |
 | SIMMONS SmartBed names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | SIMMONS OKIN names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
@@ -501,8 +497,9 @@ The 32-bit profiles use `N = 4`, giving six bytes. The 96-bit CST profiles use
 zero bits, fourteen bytes in all (`codec.frame96()`). The app chooses the field
 per action, so a key's word records its field. The 40-bit profiles use
 `N = 5`: the 32-bit key word, then one selector byte, seven bytes in all
-(`codec.frame40()`). The selector picks a legacy CB24 bed side (`AA` for A,
-`BB` for B) and is `00` everywhere else. The 64-bit profiles use `N = 8`, ten bytes,
+(`codec.frame40()`). The selector picks a side on the
+[SmartBed app](smartbed.md)'s CB24AB receiver (`AA` for A, `BB` for B) and is
+`00` everywhere else. The 64-bit profiles use `N = 8`, ten bytes,
 and Sleepy's legacy CB25 and AdjustableM5X4 send a few 64-bit `08 02` frames
 too. The codec also builds the 48-bit width, which [AdjustaMattress](keeson.md#adjustamattress)
 P4 sends. There is no checksum, sequence number or authentication payload.
@@ -621,35 +618,6 @@ The stair profile has no STOP: release ends the refresh.
 | Alarm cancel / stop | `0xFD200000` | Prodigy 2L, Prodigy 2, Prodigy CE | `04 02 FD 20 00 00` | `E5 FE 16 FD 20 00 00 E9` |
 | CU170 stop (DUMMY) | `0x00040000` | Prodigy CE | `04 02 00 04 00 00` | `E5 FE 16 00 04 00 00 02` |
 | STOP / release | `0x00000000` | all | `04 02 00 00 00 00` | `E5 FE 16 00 00 00 00 06` |
-
-#### CB24 keys
-
-| Command | Word | Frame |
-|---|---|---|
-| Head up | `0x0000000001` | `05 02 00 00 00 01 00` |
-| Head down | `0x0000000002` | `05 02 00 00 00 02 00` |
-| Feet up | `0x0000000004` | `05 02 00 00 00 04 00` |
-| Feet down | `0x0000000008` | `05 02 00 00 00 08 00` |
-| Flat | `0x0008000000` | `05 02 08 00 00 00 00` |
-| Zero-G | `0x0000001000` | `05 02 00 00 10 00 00` |
-| Memory 1 | `0x0000002000` | `05 02 00 00 20 00 00` |
-| Memory 2 | `0x0000004000` | `05 02 00 00 40 00 00` |
-| Anti-snore / Snore | `0x0000008000` | `05 02 00 00 80 00 00` |
-| Memory 3 | `0x0000010000` | `05 02 00 01 00 00 00` |
-| Under-bed light toggle | `0x0000020000` | `05 02 00 02 00 00 00` |
-| Head massage up | `0x0000000800` | `05 02 00 00 08 00 00` |
-| Head massage down | `0x0000800000` | `05 02 00 80 00 00 00` |
-| Foot massage up | `0x0000000400` | `05 02 00 00 04 00 00` |
-| Foot massage down | `0x0001000000` | `05 02 01 00 00 00 00` |
-| Massage toggle | `0x0000000100` | `05 02 00 00 01 00 00` |
-| Massage off | `0x0002000000` | `05 02 02 00 00 00 00` |
-| Massage wave mode step | `0x0010000000` | `05 02 10 00 00 00 00` |
-| Massage intensity up | `0x0000000C00` | `05 02 00 00 0C 00 00` |
-| Massage intensity down | `0x0001800000` | `05 02 01 80 00 00 00` |
-| STOP / release | `0x00000000` | `05 02 00 00 00 00 00` |
-
-Legacy CB24 replaces the last byte with `AA` (Side A) or `BB` (Side B) for one
-side; held motors send the sum of their words.
 
 #### SIMMONS keys
 
@@ -1026,8 +994,8 @@ Okimat angles are `raw / max_raw × max_angle`, clamped:
 - The RF ECO BT stair lift has no STOP: release ends the refresh.
 - CST products and the OKIN Bedding apps release with two STOPs, 100 and 200 ms
   after the release.
-- CB24, DOT and Sleepy's legacy CB25 release with one STOP; a CB24 or Sleepy's
-  preset STOP commits the recall. SIMMONS sends two STOPs 100 and 400 ms after
+- DOT and Sleepy's legacy CB25 release with one STOP; a Sleepy's preset STOP
+  commits the recall. SIMMONS sends two STOPs 100 and 400 ms after
   every release. SleepEase P1 sends its index 1 STOP after every hold. eShine
   sends one STOP 200 ms after the last held write.
 - Every cleanup runs with a fresh cancel event, so a stop request cannot
@@ -1041,7 +1009,7 @@ and intervals.
 `tests/okin_nframe_vectors.py` lists each profile's frozen frames: app profiles
 take every N-frame literal from their app (SIMMONS also its Keeson
 E6 frames, SleepEase its pinned P1 vectors), and the Okimat, DewertOkin, RF ECO
-BT, CB24, DOT, Sleepy's legacy CB25 and AdjustableM5X4 routes take the frames
+BT, DOT, Sleepy's legacy CB25 and AdjustableM5X4 routes take the frames
 the pre-v5 controllers sent, including the RF-Gateway envelopes. `tests/test_okin_nframe_vectors.py` checks that every
 literal round-trips through the codec and that every fixed frame a profile can
 send is frozen. eShine's requests, clock and alarm frames are frozen in
@@ -1900,51 +1868,6 @@ Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 - Its alarm-stop key differs from the Prodigy profiles; see
   [Services](#services-1).
 
-### OKIN SmartBed CB24
-
-**App:** [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi), `com.okin.bedding.smartbedwifi`
-
-**Status:** Tested (Lucid L600 beds in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309); presets on the Amada bed in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) were not confirmed after the last fix)
-
-#### Setup
-
-- Detection: the OKIN manufacturer ID (89) on a Nordic UART receiver. The
-  SmartBed app's product profile picks the variant: CB24, CB24AB, CB27, CB1221
-  and Dacheng (and the `cb_old` alias) send the legacy 40-bit frames; CB27New
-  (and `cb_new`) send CBNew packets.
-- Transport: the Nordic UART write characteristic, written without response.
-- Legacy CB24 has one-address side selectors: both sides `00`, Side A / Left
-  `AA`, Side B / Right `BB` (see
-  [single-address side controls](../CONFIGURATION.md#single-address-left--right-controls)).
-  CBNew packets have no selector.
-
-#### Controls
-
-Legacy variants send the [CB24 keys](#cb24-keys) with the selector byte last.
-Held motors combine in one word. The CBNew variants send their own packets for
-motion, presets, lights and massage: `2A 00 00 01 01 04 <word, little-endian>`
-for motion, `2A 00 00 01 03 01 <index>` for presets, `AA 00 00 01 02 00` for
-STOP, `2A 00 00 02 01 01 <code>` for massage and a discrete
-`AA 00 00 04 01 05 00 <on> 00 00 00 00` light switch. Both families set an exact
-massage level with `03 03 <zone> <level> <selector>`.
-
-> [!WARNING]
-> On the CBNew variants, overall massage intensity up and down still send the
-> legacy [CB24 keys](#cb24-keys), and the exact massage level sends the legacy
-> `03 03` frame. Every other CBNew control uses CBNew packets. The SmartBed 2.4.2
-> analysis is incomplete, so whether CBNew
-> receivers accept these frames is not known.
-
-#### Timing
-
-Motors refresh at the entry's pulse settings, then one STOP. Presets and memory
-recalls are one packet; see [CB.24 Preset Safety](#cb24-preset-safety).
-
-#### Evidence
-
-Frames are the pre-v5 controller's, kept in `tests/okin_nframe_vectors.py`;
-`tests/test_okin_cb24.py` covers both packet families.
-
 ### Okin DOT
 
 **App:** [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) (earlier analysis; accepted 2.2.0 audit), `com.okin.okinsmartcomfort`
@@ -2005,7 +1928,7 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
 
 - Bytes 2–5: 32-bit keycode, big-endian
 - No checksum
-- Identical to the [Okin CB24](#okin-smartbed-cb24) frame with bed
+- Identical to the [SmartBed app](smartbed.md)'s CB24 frame with bed
   selection byte `0x00`
 
 ###### Handshake
@@ -5882,15 +5805,6 @@ The OKIN ComfortBed II-N app picks a protocol by device name:
 
 Extra motors in those apps: neck `0x00000010`/`0x00000020`, lumbar
 `0x00000040`/`0x00000080`, hips (CB.24) `0x40000000`/`0x80000000`.
-
-#### CB.24 Preset Safety
-
-CB.24 preset recalls are sent as a single frame. The SmartBed app repeats the
-same frame every 300 ms only while a touchscreen button remains held, and a
-5.2-second hold is the controller's memory-save gesture. Fixed-duration or
-automatically learned repeat streams can therefore overwrite the remote's stored
-presets. All CB.24 profile variants, including the legacy `cb_old` alias, use
-safe one-shot preset recall.
 
 Other Okin formats, which share roots but not frames: [Nectar](okin-5a.md#nectar)
 (7 bytes), [Mattress Firm 900](okin-5a.md#mattress-firm-900--iflex) (7 bytes over Nordic UART),

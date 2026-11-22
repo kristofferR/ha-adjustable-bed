@@ -1483,9 +1483,9 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
 
 async def test_single_address_settings_records_review_decision(hass, enable_custom_integrations):
     """Saving the pair's settings from the review answers it; the route stays."""
-    variant = "auto"
+    variant = "cb24_ab"
     from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_CB24,
+        BED_TYPE_SMARTBED,
         LINAK_CONTROL_SERVICE_UUID,
         PAIR_MODE_SINGLE_ADDRESS,
     )
@@ -1493,7 +1493,8 @@ async def test_single_address_settings_records_review_decision(hass, enable_cust
     config_entry = entry(
         hass,
         **{
-            CONF_BED_TYPE: BED_TYPE_OKIN_CB24,
+            CONF_BED_TYPE: BED_TYPE_SMARTBED,
+            CONF_PROTOCOL_VARIANT: variant,
             CONF_MOTOR_COUNT: 2,
             CONF_PAIR_ID: "single",
             CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
@@ -1523,7 +1524,7 @@ async def test_single_address_settings_records_review_decision(hass, enable_cust
     record = decisions["history"][0]
     assert record["rule"] == original.rule and record["source"] == "configure"
     assert record["decision"] == "dismissed"
-    assert record["previous_profile"][CONF_PROTOCOL_VARIANT] == "auto"
+    assert record["previous_profile"][CONF_PROTOCOL_VARIANT] == variant
     assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == variant
     assert target.recommendation is not None
     assert set(record["confirmed_rules"]) == {original.rule, target.recommendation.rule}

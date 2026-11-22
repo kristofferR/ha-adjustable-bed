@@ -193,7 +193,6 @@ from .const import (
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -1059,7 +1058,6 @@ OKIN_RECEIVER_ROUTES: Final = (
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB35,
-    BED_TYPE_OKIN_CB24,
 )
 _FAMILY_NOT_SURE: Final = "not_sure"
 # A discovered bed's app question searches every app with this answer.
@@ -2397,7 +2395,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # whose profile has no massage; minor version 5 stores each Octo setup's
     # motor layout as its override.
     VERSION = 5
-    MINOR_VERSION = 6
+    MINOR_VERSION = 7
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:

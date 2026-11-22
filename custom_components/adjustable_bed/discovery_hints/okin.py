@@ -4,7 +4,6 @@ from ..const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_NECTAR,
     BED_TYPE_OKIMAT,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RESIDENT,
     BED_TYPE_RIZE_REMEDY_II,
@@ -29,6 +28,6 @@ HINTS: tuple[Hint, ...] = (
         bed_types={BED_TYPE_OKIN_UUID},
     ),
     # Nordic's company ID; detection requires an OKIN or SmartBed name with it.
-    manufacturer(MANUFACTURER_ID_OKIN, bed_types={BED_TYPE_OKIN_CB24}),
+    manufacturer(MANUFACTURER_ID_OKIN, bed_types={"smartbed"}),
     names("Headboard126", "Headboard265", bed_types={"smartbed"}),
 )

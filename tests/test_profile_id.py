@@ -217,7 +217,7 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         record = migrated.pop(CONF_PROFILE_MIGRATION)
         # Only a route that gained an app in v5 is asked about it once more.
         assert migrated.pop(CONF_PROFILE_REVIEW_PENDING, None) == v5_profile_review_mark(stored)
-        assert (entry.version, entry.minor_version) == (5, 6)
+        assert (entry.version, entry.minor_version) == (5, 7)
         # Schema 5.5 stores an Octo setup's motor layout as its override.
         octo = data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
         assert migrated.pop(CONF_OCTO_MOTOR_COUNT_OVERRIDE, None) == ("auto" if octo else None)

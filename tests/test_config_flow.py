@@ -1799,7 +1799,6 @@ class TestBluetoothDiscoveryFlow:
             BED_TYPE_LIMOSS,
             BED_TYPE_LINAK,
             BED_TYPE_OCTO,
-            BED_TYPE_OKIN_CB24,
             BED_TYPE_OKIN_CST,
             BED_TYPE_OKIN_ORE,
             BED_TYPE_OKIN_UUID,
@@ -1809,6 +1808,7 @@ class TestBluetoothDiscoveryFlow:
             BED_TYPE_SLEEP_NUMBER_MCR,
             BED_TYPE_SLEEPSTAR,
             BED_TYPE_SLEEPYS_BOX25,
+            BED_TYPE_SMARTBED,
             BED_TYPE_SUTA,
             BED_TYPE_SVANE,
             BED_TYPE_VIBRADORM,
@@ -1835,7 +1835,7 @@ class TestBluetoothDiscoveryFlow:
         )
         assert (default_connection_mode(BED_TYPE_LIMOSS, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_OCTO, None) == "release") is False
-        assert (default_connection_mode(BED_TYPE_OKIN_CB24, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_SMARTBED, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_OKIN_CST, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_OKIMAT, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_OKIN_ORE, None) == "release") is False

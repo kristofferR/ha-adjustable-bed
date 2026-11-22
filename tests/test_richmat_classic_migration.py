@@ -93,7 +93,7 @@ async def test_a_standalone_entry_moves_its_key_entities_and_app_state(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 6)
+    assert (entry.version, entry.minor_version) == (5, 7)
     assert dict(entry.data) == {
         CONF_ADDRESS: LEFT,
         CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS,

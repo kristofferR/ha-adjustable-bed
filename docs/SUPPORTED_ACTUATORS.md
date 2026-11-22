@@ -15,7 +15,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 |-------|------------|
 | A H Beard | [Okin](beds/okin-nframe.md) |
 | ActiveBreeze | [Tempur Sleeptracker-AI](beds/sleeptracker.md) |
-| Amada | [Okin](beds/okin-nframe.md) |
+| Amada | [SmartBed app](beds/smartbed.md) |
 | Avocado | [Richmat](beds/richmat.md) |
 | Beautyrest | [Keeson](beds/keeson.md) |
 | Bedgear | [Bedgear](beds/motomotion.md#bedgear) |
@@ -105,7 +105,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Sleepy's | [Sleepy's Elite](beds/sleepys.md) |
 | Slumberland | [Remacro](beds/remacro.md) |
 | Smart Comfort | [Smart Comfort seats](beds/smart-comfort.md) |
-| Smartbed | [Okin](beds/okin-nframe.md) |
+| Smartbed | [SmartBed app](beds/smartbed.md) |
 | Solace | [Solace](beds/ff_frame.md) |
 | Star International | [Galaxy Bed Control](beds/richmat.md#galaxy-bed-control) |
 | StarCode | [StarCode](beds/okin-nframe.md#adjustablem5x4) |

@@ -84,7 +84,6 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_MOTIONBED,
@@ -3483,12 +3482,6 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         normalize=_octo_normalize,
         validate=_octo_errors,
-    ),
-    BED_TYPE_OKIN_CB24: _asking(
-        BED_TYPE_OKIN_CB24,
-        questions=(
-            Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT),
-        ),
     ),
     "smartbed": _asking(
         "smartbed",

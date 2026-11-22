@@ -56,8 +56,23 @@ def discover(name: str | None, raw: bytes = b"") -> Selection | None:
     return Selection("cb", 0)
 
 
+def legacy_marker(payload: bytes) -> bool:
+    """Whether OKIN's manufacturer data starts with an older receiver's marker.
+
+    The app reads these markers from the raw scan record before it tries the
+    CB27New name rule. Home Assistant has only the manufacturer payload, which
+    is enough to know that rule must not apply, not to pick the receiver.
+    """
+    return (payload.startswith(b"DOT") and len(payload) >= 5) or payload.startswith((b"AB", b"OK"))
+
+
 def select_profile(
-    variant: str, name: str | None, *, motors: int = 2, raw: bytes = b""
+    variant: str,
+    name: str | None,
+    *,
+    motors: int = 2,
+    raw: bytes = b"",
+    older_receiver: bool = False,
 ) -> Selection:
     key = variant
     if key in PROFILES:
@@ -70,6 +85,10 @@ def select_profile(
     # Raw scan records are normally unavailable in HA. For ambiguous old
     # receivers, retain the established CB24 route until the user chooses one.
     detected = discover(name, raw)
-    if detected is not None and detected.profile != "cb":
+    if (
+        detected is not None
+        and detected.profile != "cb"
+        and not (older_receiver and detected.profile == "cb27new")
+    ):
         return detected
     return Selection("cb24", motors)

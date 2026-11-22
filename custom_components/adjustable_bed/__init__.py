@@ -47,9 +47,14 @@ from .const import (
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_SMARTBED,
     BED_TYPE_VIBRADORM,
+    CB24_BED_SELECTION_A,
+    CB24_BED_SELECTION_B,
+    CB24_BED_SELECTION_DEFAULT,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
@@ -57,6 +62,7 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
+    CONF_MOTOR_PULSE_USER_SET,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
@@ -77,6 +83,7 @@ from .const import (
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
     RUNTIME_BOND_KEYS,
+    VARIANT_AUTO,
     connection_gated_by_bond,
     requires_pairing,
     supports_runtime_authentication_recovery,
@@ -785,6 +792,162 @@ def migrate_v5_6_entry(
     return new_data, new_options
 
 
+# The bed type SmartBed app beds were saved under before schema 5.7.
+_OKIN_CB24: Final = "okin_cb24"
+# That route sent the CB24 frames whichever legacy receiver was chosen, so each
+# maps to the SmartBed receiver that still sends them.
+_OKIN_CB24_VARIANTS: Final = {"cb_old": "cb24", "dacheng": "cb24", "cb_new": "cb27new"}
+
+
+def _smartbed_variant(view: Mapping[str, Any], *, single_address: bool = False) -> str:
+    """Return the SmartBed receiver that sends what this okin_cb24 route sent."""
+    variant = view.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO
+    variant = _OKIN_CB24_VARIANTS.get(variant, variant)
+    sided = single_address or view.get(CONF_CB24_BED_SELECTION) in (
+        CB24_BED_SELECTION_A,
+        CB24_BED_SELECTION_B,
+    )
+    # Every legacy variant sent its side; among the app's receivers only CB24AB does.
+    return "cb24_ab" if sided and variant != "cb27new" else variant
+
+
+def _as_smartbed(settings: Mapping[str, Any], variant: str | None = None) -> dict[str, Any]:
+    """Return one stored mapping of an okin_cb24 route as the SmartBed route stores it.
+
+    ``variant`` is the receiver to store. Without one, a stored legacy name is
+    only translated.
+    """
+    new = dict(settings)
+    if new.get(CONF_BED_TYPE) == _OKIN_CB24:
+        new[CONF_BED_TYPE] = BED_TYPE_SMARTBED
+    stored = new.get(CONF_PROTOCOL_VARIANT)
+    if variant is not None:
+        new[CONF_PROTOCOL_VARIANT] = variant
+    elif isinstance(stored, str):
+        new[CONF_PROTOCOL_VARIANT] = _OKIN_CB24_VARIANTS.get(stored, stored)
+    if new.get(CONF_PROTOCOL_VARIANT) != "cb24_ab" and CONF_CB24_BED_SELECTION in new:
+        new[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_DEFAULT
+    # The route drove head and feet whatever count was saved, and the app's
+    # profile decides the rest.
+    for key, value in (
+        (CONF_MOTOR_COUNT, 2),
+        (CONF_HAS_MASSAGE, False),
+        (CONF_DISABLE_ANGLE_SENSING, True),
+        (CONF_MOTOR_PULSE_USER_SET, False),
+    ):
+        if key in new:
+            new[key] = value
+    return new
+
+
+def migrate_v5_7_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with every okin_cb24 route saved as SmartBed.
+
+    The receiver is the one that sends the frames the bed got before: a bed with
+    a side becomes CB24AB, the only receiver of the app that sends one. A bed
+    reads its own data, so that decides its receiver. A paired side also read
+    the pair's options; it now stores what it ran with, since SmartBed's
+    settings belong to each side. The original entries a pair restores on
+    unpair are written too, and an open or kept app review follows the renamed
+    route. The migration record lists each place under ``smartbed``. Any other
+    entry is returned unchanged.
+    """
+    from .pairing import side_owned_profile_fields
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    moved: list[str] = []
+    single = data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
+
+    def bed(own: Mapping[str, Any], location: str, *, one_address: bool = False) -> dict[str, Any]:
+        """Return a bed's own data: a standalone entry, a pair's parent or an original."""
+        if own.get(CONF_BED_TYPE) != _OKIN_CB24:
+            return dict(own)
+        variant = _smartbed_variant(own, single_address=one_address)
+        moved.append(location)
+        stores = variant != VARIANT_AUTO or CONF_PROTOCOL_VARIANT in own
+        return _as_smartbed(own, variant if stores else None)
+
+    new_data = bed(data, "data", one_address=single)
+    if isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            view = effective_child_data(data, side, options)
+            if view.get(CONF_BED_TYPE) == _OKIN_CB24:
+                variant = _smartbed_variant(view, single_address=single)
+                owned = side_owned_profile_fields(
+                    {CONF_BED_TYPE: BED_TYPE_SMARTBED, CONF_PROTOCOL_VARIANT: variant}
+                )
+                ran_with = {key: view[key] for key in owned if key in view}
+                child = _as_smartbed({**child, **ran_with, CONF_BED_TYPE: _OKIN_CB24}, variant)
+                moved.append(f"data.{side}")
+            origin = child.get(KEY_ORIGIN_DATA)
+            if isinstance(origin, Mapping) and origin.get(CONF_BED_TYPE) == _OKIN_CB24:
+                restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+                if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                    child[KEY_ORIGIN_OPTIONS] = _as_smartbed(origin_options)
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if not moved:
+        return new_data, dict(options)
+    carry_profile_review_to_renamed_route(data, new_data)
+    _with_migration_record(
+        new_data,
+        from_version=from_version,
+        from_minor_version=from_minor_version,
+        smartbed=moved,
+    )
+    return new_data, _as_smartbed(options)
+
+
+# What each control of the okin_cb24 route is on the SmartBed route. Unique ids
+# are ``<address or pair id>_<key>[_<side>]``; a pair's own movement buttons end
+# in ``_both``.
+_V5_7_ENTITY_KEYS: Final = {
+    "cover": {"back": "head", "legs": "feet"},
+    "button": {
+        "massage_mode_step": "smartbed_wave_up",
+        "back_up_both": "head_up_both",
+        "back_down_both": "head_down_both",
+        "legs_up_both": "feet_up_both",
+        "legs_down_both": "feet_down_both",
+    },
+}
+
+
+@callback
+def _async_migrate_v5_7_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Keep the entity IDs of the controls the SmartBed route names differently.
+
+    A saved motor count of three or four added Head and Feet covers that sent
+    the Back and Legs commands. Back and Legs keep their entity IDs; the
+    duplicates go.
+    """
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        for old, new in _V5_7_ENTITY_KEYS.get(entity.domain, {}).items():
+            for suffix in ("", *(f"_{side}" for side in PAIR_SIDES)):
+                if not entity.unique_id.endswith(f"_{old}{suffix}"):
+                    continue
+                unique_id = f"{entity.unique_id.removesuffix(f'{old}{suffix}')}{new}{suffix}"
+                duplicate = registry.async_get_entity_id(entity.domain, DOMAIN, unique_id)
+                if duplicate is not None:
+                    registry.async_remove(duplicate)
+                registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -1009,6 +1172,22 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         )
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=6
+        )
+
+    if entry.version == 5 and entry.minor_version < 7:
+        # v5.6 -> v5.7: a bed on the okin_cb24 route becomes a SmartBed app bed,
+        # the one bed type for that app, on the receiver that sends what it got
+        # before. Controls the app names differently keep their entity IDs.
+        data, options = migrate_v5_7_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        if data != dict(entry.data):
+            _async_migrate_v5_7_entities(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=7
         )
 
     _LOGGER.debug(

@@ -70,7 +70,6 @@ from .const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_64BIT,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
@@ -276,14 +275,15 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         (BED_TYPE_ADJUSTABLE_LUMBAR,),
     ),
     # Resident uses only the custom OKIN service; Nordic UART is not a route.
+    # A SmartBed entry is saved as okin_cb24 until schema 5.7 renames it.
     _RouteApps(
-        frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CB24, BED_TYPE_OKIN_64BIT}),
+        frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, "okin_cb24", "smartbed", BED_TYPE_OKIN_64BIT}),
         None,
         (BED_TYPE_RESIDENT,),
     ),
     # Shared OKIN FFE, CB24, Keeson and Richmat routes.
     _RouteApps(
-        frozenset({BED_TYPE_OKIN_FFE, BED_TYPE_OKIN_CB24, BED_TYPE_RICHMAT}),
+        frozenset({BED_TYPE_OKIN_FFE, "okin_cb24", "smartbed", BED_TYPE_RICHMAT}),
         None,
         (BED_TYPE_SIMMONS,),
     ),
@@ -510,6 +510,18 @@ def v5_profile_review_mark(entry_data: Mapping[str, Any]) -> str | None:
 def _pending(entry_data: Mapping[str, Any]) -> bool:
     mark = entry_data.get(CONF_PROFILE_REVIEW_PENDING)
     return bool(mark) and mark == _route_signature(entry_data)
+
+
+def carry_profile_review_to_renamed_route(
+    source: Mapping[str, Any], target: dict[str, Any]
+) -> None:
+    """Keep an open or kept review on an entry whose route a migration renamed."""
+    old, new = _route_signature(source), _route_signature(target)
+    if target.get(CONF_PROFILE_REVIEW_PENDING) == old:
+        target[CONF_PROFILE_REVIEW_PENDING] = new
+    kept = target.get(CONF_PROFILE_REVIEW_KEPT)
+    if isinstance(kept, Mapping) and kept.get("route") == old:
+        target[CONF_PROFILE_REVIEW_KEPT] = {**kept, "route": new}
 
 
 def _kept_apps(entry_data: Mapping[str, Any]) -> frozenset[str] | None:

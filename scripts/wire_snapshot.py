@@ -1552,7 +1552,6 @@ VARIANT_ROUTES: dict[str, str] = {
     "leggett_platt": "LEGGETT_VARIANTS",
     "linak": "LINAK_VARIANTS",
     "octo": "OCTO_VARIANTS",
-    "okin_cb24": "OKIN_CB24_VARIANTS",
     "smartbed": "SMARTBED_VARIANTS",
     "okin_cst": "OKIN_CST_VARIANTS",
     "okin_64bit": "OKIN_64BIT_VARIANTS",

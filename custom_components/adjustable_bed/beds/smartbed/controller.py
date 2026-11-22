@@ -19,6 +19,7 @@ from ...const import (
     CONF_CB24_BED_SELECTION,
     CONF_MOTOR_COUNT,
     CONF_PAIR_MODE,
+    MANUFACTURER_ID_OKIN,
     PAIR_MODE_SINGLE_ADDRESS,
 )
 from ...controller_state import AnyStateKey, StateKey, StateUpdate, sided
@@ -45,7 +46,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..lifecycle import CapabilitySnapshotPolicy, ControllerSession
-from .discovery import select_profile
+from .discovery import legacy_marker, select_profile
 from .receive import Parser
 from .setup import receiver_variant
 from .state_keys import (
@@ -197,10 +198,15 @@ class SmartBedController(BedController):
             or "notify" not in notify.properties
         ):
             raise failed("bed_missing_service")
-        # The APK leaves write type untouched. Resolve from this exact live
-        # characteristic, preferring acknowledged writes when both are offered.
+        # The APK leaves the write type untouched, so Android picks it from this
+        # exact characteristic: unacknowledged whenever it offers that.
         self._link = Link(
-            client, write, notify, "write" in write.properties, self.profile, self.protocol
+            client,
+            write,
+            notify,
+            "write-without-response" not in write.properties,
+            self.profile,
+            self.protocol,
         )
         return self._link
 
@@ -806,7 +812,8 @@ class SmartBedController(BedController):
 
     @property
     def supports_massage_intensity_step_control(self) -> bool:
-        return self.supports_massage and self.protocol in (1, 2)
+        # The receivers that take the overall intensity keys, as held or tapped.
+        return "massage_all_up" in self._held_actions()
 
     async def massage_toggle(self) -> None:
         if not self.supports_massage_toggle_control:
@@ -1479,6 +1486,9 @@ async def build_controller(ctx: BuildContext) -> SmartBedController:
         variant or "auto",
         ctx.data.get(CONF_BLE_DEVICE_NAME) or ctx.device_name,
         motors=ctx.data.get(CONF_MOTOR_COUNT, ctx.coordinator.motor_count),
+        older_receiver=legacy_marker(
+            (ctx.manufacturer_data or {}).get(MANUFACTURER_ID_OKIN, b"")
+        ),
     )
     return SmartBedController(
         ctx.coordinator,

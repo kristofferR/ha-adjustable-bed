@@ -243,8 +243,8 @@ def recommend_profile(
     if not isinstance(bed_type, str) or bed_type not in SUPPORTED_BED_TYPES:
         return None
     current = bed_type_choice(bed_type, variant if isinstance(variant, str) else None)
-    if bed_type == "smartbed":
-        # Chosen by hand: no advertisement tells its receivers from the Okin routes.
+    if bed_type == "smartbed" and variant in ("standard", "cb", "headboard126", "headboard265"):
+        # Chosen by hand: no advertisement tells these receivers from the Okin routes.
         return None
     detected = detect_bed_type_detailed(info)
     if bed_type in _APP_HINTS and bed_type in (detected.ambiguous_types or ()):

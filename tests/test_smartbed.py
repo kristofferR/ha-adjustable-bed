@@ -195,7 +195,8 @@ async def test_p5_recall_and_save_are_distinct_and_memory_slots_are_real(make):
     [
         (("write",), True),
         (("write-without-response",), False),
-        (("write", "write-without-response"), True),
+        # Android picks unacknowledged writes whenever the characteristic offers them.
+        (("write", "write-without-response"), False),
     ],
 )
 async def test_live_gatt_properties_determine_write_type(make, properties, response):
@@ -283,6 +284,30 @@ async def test_every_profile_is_factory_reachable_and_exposure_has_no_empty_slot
     assert c.memory_slot_count in (0, 1, 2)
     assert len({spec.key for spec in c.controller_button_specs}) == len(c.controller_button_specs)
     assert all(not spec.hold for spec in c.controller_button_specs if spec.requires_confirmation)
+
+
+@pytest.mark.parametrize(
+    ("payload", "profile"),
+    [
+        (b"", "cb27new"),
+        (b"\x01\x02\x03", "cb27new"),
+        # An older receiver's marker outranks the CB27New name rule, as in the app.
+        (b"AB\x08\x01\x02", "cb24"),
+        (b"DOT\x00\x02", "cb24"),
+        (b"OK\x02", "cb24"),
+    ],
+)
+async def test_automatic_receiver_reads_the_marker_before_the_cb27new_name(payload, profile):
+    coordinator = _FactoryCoordinator()
+    coordinator.entry.data = {"ble_device_name": "smartbed1234567890"}
+    c = await create_controller(
+        cast(AdjustableBedCoordinator, coordinator),
+        BED_TYPE_SMARTBED,
+        None,
+        None,
+        manufacturer_data={89: payload},
+    )
+    assert c.profile.key == profile
 
 
 async def test_sonic_massage_controls_use_real_ranges(make):
@@ -878,6 +903,7 @@ async def test_a_cleared_bluetooth_name_falls_back_to_the_advertised_one(make):
         data={CONF_BLE_DEVICE_NAME: ""},
         variant="auto",
         device_name="Headboard126123",
+        manufacturer_data=None,
         stored_capabilities=lambda _key: None,
     )
     built = await build_controller(cast(BuildContext, ctx))
