@@ -46,7 +46,7 @@ def _setup(data: dict) -> dict:
     return {**staged, **PROFILE.settled(staged)}
 
 
-def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
+def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
     # Each app is an answer of the Richmat question and has its own searchable row.
     rows = {o['value']: o['label'] for o in get_bed_type_options()}
     for app, name in APP_NAMES.items():
@@ -55,7 +55,7 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
         assert rows['richmat_classic_apps:' + app] == f'{name} app{suffix}'
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
-        'luunarise2': 604, 'powercool': 586, 'lp2': 559,
+        'luunarise2': 604, 'powercool': 586, 'sleepfunction': 558, 'lp2': 559,
         'bedsmart': 558,
         'jerome2': 532,
         **dict.fromkeys(RESOURCE_APPS, 243),

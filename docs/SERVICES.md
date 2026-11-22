@@ -26,6 +26,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`hold_control`](#hold_control) | Hold control | Holds one of the bed's controls for a set time, then releases it as the remote does. Every bed is checked before any moves; a control the bed does not have is refused with the list of controls it has. |
 | [`l2motion`](#l2motion) | L2 Motion: settings | Sets the light color of an L2 Motion bed, or switches its two bases between wired and wireless sync. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Runs a full body massage, or moves one base of a pair to a preset while the other base lowers its feet for 30 seconds. |
+| [`sleepfunction_settings`](#sleepfunction_settings) | SleepFunction: set fan and aroma | Sets the head fan, foot fan or aroma of a SleepFunction bed. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Sets the clock of each selected bed to Home Assistant's local time. Every bed is checked before any clock changes. |
 | [`rename`](#rename) | Rename Bluetooth name | Gives each selected bed a new Bluetooth name, on beds that support it. Every bed checks the name against its own rules before any name changes. This does not rename the device in Home Assistant. |
@@ -2064,6 +2065,24 @@ Renewable holds work only for movement, not for saving, timers or massage.
 A bed whose two sides share one receiver cannot be controlled by side, and a
 combined bed that connects to one side at a time cannot hold both sides at
 once. Not yet confirmed on a real bed.
+
+## SleepFunction
+
+<a id="sleepfunction_settings"></a>
+**`sleepfunction_settings`**: Sets the head fan, foot fan or aroma of a SleepFunction bed. The app sends no foot fan time, so the bed keeps its own.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `operation` | Setting | What to set. One of `head_fan`, `foot_fan` or `aroma`. |
+| `hours` | Fan duration | Required for Head fan and Foot fan: hours, 0 to 6. |
+| `speed` | Fan speed | Required for Head fan and Foot fan: speed in percent, 0 to 100 in steps of 20. |
+| `mode_2_minutes` | Aroma mode 2 duration | Required for Aroma: minutes, 1 to 60. |
+| `mode_3_minutes` | Aroma mode 3 duration | Required for Aroma: minutes, 1 to 60. |
+| `pause_hours` | Aroma pause | Required for Aroma: hours, 1 to 12. |
+
+Aroma needs the bed to report it on the current connection. The foot fan speed
+is sent twice, as the app does. See the
+[SleepFunction guide](beds/richmat.md#sleepfunction-bed-control).
 
 ## Sleeptracker
 

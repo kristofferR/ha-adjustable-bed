@@ -3568,6 +3568,57 @@
       },
       "bedsmart_query": {
         "name": "Refresh bed features"
+      },
+      "sleepfunction_scoped_head_feet_down": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_feet_up": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_memory_1": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_catalog_light": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_zero_g": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_head_down": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_head_feet_up": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_feet_down": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_anti_snore": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_catalog_action": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_massage_mode_step": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_flat": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_memory_2": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_head_up": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_tv": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_catalog_massage": {
+        "name": "{action}"
+      },
+      "sleepfunction_scoped_preset_lounge": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5340,6 +5391,9 @@
       "sealy_massage": {
         "name": "Massage"
       },
+      "sleepfunction_switch": {
+        "name": "{action}"
+      },
       "dreamsense_split": {
         "name": "Split control"
       },
@@ -5949,6 +6003,9 @@
       },
       "jerome_massage_intensity": {
         "name": "Massage intensity"
+      },
+      "sleepfunction_lamp_timeout": {
+        "name": "Light timeout"
       },
       "dreamsense_light_seconds": {
         "name": "Light duration"
@@ -6630,6 +6687,17 @@
           "mode_1": "Mode 1",
           "mode_2": "Mode 2",
           "mode_3": "Mode 3"
+        }
+      },
+      "sleepfunction_massage_timer": {
+        "name": "Massage timer",
+        "state": {
+          "off": "Off",
+          "ten_minutes": "10 minutes",
+          "twenty_minutes": "20 minutes",
+          "thirty_minutes": "30 minutes",
+          "fifteen_minutes": "15 minutes",
+          "forty_five_minutes": "45 minutes"
         }
       },
       "bedsmart_side": {
@@ -9939,6 +10007,44 @@
         }
       }
     },
+    "sleepfunction_settings": {
+      "name": "SleepFunction: set fan and aroma",
+      "description": "Sets the head fan, foot fan or aroma of a SleepFunction bed. The app sends no foot fan time, so the bed keeps its own.",
+      "fields": {
+        "operation": {
+          "name": "Setting",
+          "description": "What to set."
+        },
+        "hours": {
+          "name": "Fan duration",
+          "description": "Required for Head fan and Foot fan: hours, 0 to 6."
+        },
+        "speed": {
+          "name": "Fan speed",
+          "description": "Required for Head fan and Foot fan: speed in percent, 0 to 100 in steps of 20."
+        },
+        "mode_2_minutes": {
+          "name": "Aroma mode 2 duration",
+          "description": "Required for Aroma: minutes, 1 to 60."
+        },
+        "mode_3_minutes": {
+          "name": "Aroma mode 3 duration",
+          "description": "Required for Aroma: minutes, 1 to 60."
+        },
+        "pause_hours": {
+          "name": "Aroma pause",
+          "description": "Required for Aroma: hours, 1 to 12."
+        },
+        "device_id": {
+          "name": "Bed",
+          "description": "One or more beds to control."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed to use. Leave unset for the whole bed, or the side of the device you selected."
+        }
+      }
+    },
     "dreamsense_light": {
       "name": "Dream Sense: lighting",
       "description": "Set the bed light color or duration after the bed reports lighting support.",
@@ -10525,6 +10631,15 @@
     },
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "sleepfunction_control": {
+      "message": "Choose a control available for the current bed layout and connection."
+    },
+    "sleepfunction_layout": {
+      "message": "Choose a bed layout. Desk and manufacturing layouts are outside this integration."
+    },
+    "sleepfunction_session": {
+      "message": "The bed connection or selected layout changed. Try the action again."
     },
     "dreamsense_product": {
       "message": "Choose the product saved in Dream Sense Bed."
@@ -11268,7 +11383,7 @@
         "fortywinks": "Forty Winks app",
         "milemont": "Milemont app",
         "superior": "Superior app",
-        "remote": "SleepFunction or SVEN & SON app, or a Richmat remote",
+        "remote": "SVEN & SON app, or a Richmat remote",
         "another": "Another app or remote: search every app",
         "luuna": "Luuna + app",
         "richmat_420": "Richmat app",
@@ -11292,6 +11407,7 @@
         "bedsmart": "BedSmart / X-Series app",
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",
+        "sleepfunction": "SleepFunction Bed Control",
         "super_colchones": "Super Colchones app"
       }
     },
@@ -12659,6 +12775,13 @@
         "memory_three": "Memory 3",
         "flat": "Flat",
         "voice_stop_request": "Stop"
+      }
+    },
+    "sleepfunction_setting": {
+      "options": {
+        "head_fan": "Head fan",
+        "foot_fan": "Foot fan",
+        "aroma": "Aroma"
       }
     },
     "superior_sleep_speech_action": {

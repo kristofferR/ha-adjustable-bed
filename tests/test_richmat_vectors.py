@@ -398,6 +398,14 @@ def _census(key: str) -> set[str]:
             *(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in range(6)),
         }
         return {frame.hex() for frame in frames}
+    if key == "richmat_classic_sleepfunction":
+        return {frame.hex() for frame in (
+            classic.release("RAW"), *(classic.release("FRAMED", mode) for mode in (0, 1, 2)), classic.INITIALIZE,
+            classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY,
+            *classic.alarm(0, 0),
+            *(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP),
+            *(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in (0,2,3,5)),
+        )}
     if key in ("richmat_classic_lp2", "richmat_classic_bedsmart"):
         return {classic.release("RAW").hex(), classic.release("FRAMED").hex(), classic.INITIALIZE.hex(), classic.ALARM_QUERY.hex(), classic.LAMP_QUERY.hex(), classic.AROMA_QUERY.hex()}
     if key.startswith("richmat_classic_"):

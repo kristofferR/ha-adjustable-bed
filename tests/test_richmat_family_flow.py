@@ -51,6 +51,7 @@ APPS = [
     "superior",
     "luunarise2",
     "powercool",
+    "sleepfunction",
     "lp2",
     "bedsmart",
     "jerome2",

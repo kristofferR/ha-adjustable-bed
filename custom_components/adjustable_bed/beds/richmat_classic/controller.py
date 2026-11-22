@@ -27,6 +27,7 @@ from ...const import (
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
 )
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import RICHMAT_CLASSIC
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
@@ -519,7 +520,7 @@ class RichmatClassicController(BedController):
         context = current_command_context()
         if context is not None and context.lease is not None and not self._keeps(button, selection):
             # Admission checks the scope too; a selector may change after it.
-            raise ValueError("This control does not support renewable holds")
+            raise invalid("control_hold_renewal_not_supported")
         status = effective_status(button, self.layout, selection)
         programmed = button.mem_special and selection.armed or button.select_special and selection.armed
         up_applied = False
@@ -959,6 +960,11 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
         )
     from ...profiles.richmat_resource_apps import APPS
 
+    if ctx.variant == "sleepfunction":
+        await ctx.preload("richmat_classic.sleepfunction")
+        from .sleepfunction import SleepFunctionController
+
+        return SleepFunctionController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
     if ctx.variant == "bedsmart":
         await ctx.preload("richmat_classic.bedsmart")
         from .bedsmart import BedSmartController

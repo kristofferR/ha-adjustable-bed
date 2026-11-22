@@ -1856,6 +1856,57 @@
  "button:simmons_refresh_alarms": {
   "card_section": "utility"
  },
+ "button:sleepfunction_scoped_catalog_action": {
+  "card_section": "utility"
+ },
+ "button:sleepfunction_scoped_catalog_light": {
+  "card_section": "lighting"
+ },
+ "button:sleepfunction_scoped_catalog_massage": {
+  "card_section": "massage"
+ },
+ "button:sleepfunction_scoped_feet_down": {
+  "card_section": "utility"
+ },
+ "button:sleepfunction_scoped_feet_up": {
+  "card_section": "utility"
+ },
+ "button:sleepfunction_scoped_head_down": {
+  "card_section": "utility"
+ },
+ "button:sleepfunction_scoped_head_feet_down": {
+  "card_section": "utility"
+ },
+ "button:sleepfunction_scoped_head_feet_up": {
+  "card_section": "utility"
+ },
+ "button:sleepfunction_scoped_head_up": {
+  "card_section": "utility"
+ },
+ "button:sleepfunction_scoped_massage_mode_step": {
+  "card_section": "massage"
+ },
+ "button:sleepfunction_scoped_preset_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:sleepfunction_scoped_preset_flat": {
+  "card_section": "presets"
+ },
+ "button:sleepfunction_scoped_preset_lounge": {
+  "card_section": "presets"
+ },
+ "button:sleepfunction_scoped_preset_memory_1": {
+  "card_section": "presets"
+ },
+ "button:sleepfunction_scoped_preset_memory_2": {
+  "card_section": "presets"
+ },
+ "button:sleepfunction_scoped_preset_tv": {
+  "card_section": "presets"
+ },
+ "button:sleepfunction_scoped_preset_zero_g": {
+  "card_section": "presets"
+ },
  "button:sleeptracker_identify": {
   "card_section": "utility"
  },
@@ -3373,6 +3424,9 @@
  "number:sleep_number_setting_right": {
   "card_section": "firmness"
  },
+ "number:sleepfunction_lamp_timeout": {
+  "card_section": "utility"
+ },
  "number:sleeptracker_left_level": {
   "card_section": "climate"
  },
@@ -3626,6 +3680,9 @@
   "card_section": "massage"
  },
  "select:ruf_richmat_sleep_mode": {
+  "card_section": "utility"
+ },
+ "select:sleepfunction_massage_timer": {
   "card_section": "utility"
  },
  "select:sleeptracker_left_curve": {
@@ -4824,6 +4881,9 @@
  },
  "switch:sealy_massage": {
   "card_section": "massage"
+ },
+ "switch:sleepfunction_switch": {
+  "card_section": "utility"
  },
  "switch:sleepiq_auto_kids_light": {
   "card_section": "utility"

@@ -3790,6 +3790,67 @@ mlily_remote:
           options: [both, left, right]
           translation_key: side
 
+sleepfunction_settings:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          translation_key: side
+          options:
+            - left
+            - right
+            - both
+    operation:
+      required: true
+      selector:
+        select:
+          translation_key: sleepfunction_setting
+          options:
+            - head_fan
+            - foot_fan
+            - aroma
+    hours:
+      selector:
+        number:
+          min: 0
+          max: 6
+          step: 1
+          unit_of_measurement: h
+    speed:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 20
+          unit_of_measurement: '%'
+    mode_2_minutes:
+      selector:
+        number:
+          min: 1
+          max: 60
+          step: 1
+          unit_of_measurement: min
+    mode_3_minutes:
+      selector:
+        number:
+          min: 1
+          max: 60
+          step: 1
+          unit_of_measurement: min
+    pause_hours:
+      selector:
+        number:
+          min: 1
+          max: 12
+          step: 1
+          unit_of_measurement: h
+
 lp2:
   fields:
     device_id:
