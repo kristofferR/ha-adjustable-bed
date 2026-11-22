@@ -166,8 +166,18 @@ async def test_cancellation_cannot_suppress_release_or_send_to_reconnected_clien
 async def test_old_preset_tap_does_not_save_but_explicit_save_holds_5200ms(make):
     c, _, _, events, _ = make()
     await c.preset_memory(1)
-    assert [e[2].hex() for e in events] == ["05020001000000", "05020000000000"]
+    # The CB24 family gets the key alone: a frame after it stopped a Lucid L600
+    # preset on its way (#185).
+    assert [e[2].hex() for e in events] == ["05020001000000"]
     events.clear()
+    await c.lights_toggle()
+    await c.massage_off()
+    assert [e[2].hex() for e in events] == ["05020002000000", "05020200000000"]
+    events.clear()
+    # The other older receivers follow a tap with the app's release.
+    dacheng, _, _, dacheng_events, _ = make("dacheng")
+    await dacheng.preset_zero_g()
+    assert len(dacheng_events) == 2
     await c.save("zero_g")
     assert len(events) == 19  # immediate + 17 refreshes, then STOP
     assert round((events[-1][0] - events[0][0]) * 1000) == 5300
@@ -417,17 +427,21 @@ async def test_first_dispatched_write_cancelled_before_ack_still_releases_captur
 async def test_short_tap_release_and_alarm_deadlines_exclude_ack_latency(make):
     from datetime import datetime
 
-    c, _, client, events, _ = make()
-    original = client.write_gatt_char.side_effect
+    def slowed(profile):
+        controller, _, client, events, _ = make(profile)
+        original = client.write_gatt_char.side_effect
 
-    async def slow(char, frame, *, response):
-        await original(char, frame, response=response)
-        await asyncio.sleep(0.007)
+        async def slow(char, frame, *, response):
+            await original(char, frame, response=response)
+            await asyncio.sleep(0.007)
 
-    client.write_gatt_char.side_effect = slow
-    await c.preset_memory(1)
+        client.write_gatt_char.side_effect = slow
+        return controller, events
+
+    tapped, events = slowed("dacheng")
+    await tapped.preset_memory(1)
     assert [round(e[0] * 1000) for e in events] == [0, 101]
-    events.clear()
+    c, events = slowed("cb24")
     await c.configure_alarm(
         AlarmRequest(
             enabled=True,
@@ -574,7 +588,9 @@ def test_reconfigure_receiver_change_clears_unsupported_saved_native_side():
 async def test_queued_writes_start_ui_deadlines_at_dispatch(make, operation):
     from datetime import datetime
 
-    c, _, _, events, clock = make("cb27new" if operation == "query" else "cb24")
+    c, _, _, events, clock = make(
+        {"query": "cb27new", "tap": "dacheng", "alarm": "cb24"}[operation]
+    )
     await c._ble_lock.acquire()
     if operation == "tap":
         pending = asyncio.create_task(c.preset_memory(1))

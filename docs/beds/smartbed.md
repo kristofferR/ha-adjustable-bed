@@ -62,11 +62,10 @@ one to this bed type, on the receiver that sends the frames it got before:
 - Memory 1 and Memory 2 now send the app's own memory commands. They used to
   repeat Lounge and TV, which keep their own buttons. Memory 3 is gone: its
   command is now Memory 1.
-- All massage off and the head and foot massage toggles are gone. The app has
-  no such commands: the toggles repeated head up and foot up, which keep their
-  buttons, and massage is turned off with its toggle or switch.
-- On CB27New, massage on and off is a switch and the overall massage up and
-  down buttons are gone; that receiver has no such keys.
+- The head and foot massage toggles are gone: they repeated head up and foot
+  up, which keep their buttons. All massage off stays on the CB24 family.
+- On CB27New, massage on and off is a switch, and the all massage off and
+  overall massage up and down buttons are gone; that receiver has no such keys.
 - On a one-address pair, the pair's own Massage mode button is gone; each side
   keeps Wave up.
 
@@ -493,18 +492,27 @@ Raw configuration bytes, parser state and capability metadata stay in diagnostic
 
 #### Timing
 
-Old recall taps send the recall once and then the release, as a tap in the app
-does. They are never repeated: a 5.2 s hold is the receiver's save gesture, so a
-repeated recall would overwrite the stored position. Explicit save controls
-repeat the old recall gesture for the profile's save duration; firmware
-interpretation remains unverified. P5 recalls and explicit saves each
-send one distinct frame. Save buttons cannot be held in the dashboard card.
+Old recall taps send the recall once and are never repeated: a 5.2 s hold is
+the receiver's save gesture, so a repeated recall would overwrite the stored
+position. On P1 and P2 the release follows, as after a tap in the app. P3 and P4
+(the CB24 family) get the key alone, for presets, memories, the light and the
+massage keys: on Lucid L600 beds a preset runs to its position from one frame,
+and a frame sent after it stopped the bed on the way
+([#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185)).
+
+Explicit save controls repeat the old recall gesture for the profile's save
+duration; firmware interpretation remains unverified. P5 recalls and explicit
+saves each send one distinct frame. Save buttons cannot be held in the
+dashboard card.
+
+All massage off on P3 and P4 sends key `0x02000000`. It is not a key of this
+app: the earlier controller sent it, and owners confirmed it in the same report.
 
 P5's head, foot and wave arrows read the live receive cache and send absolute
 setters, followed by a status query after 200 ms. They do not update that cache
 optimistically. Light changes query after 100 ms; sonic changes query after
-200 ms. Old massage controls release with STOP and query after 500 ms. Alarm
-activation sends the local clock first, then the alarm 300 ms later.
+200 ms. Old massage controls query after 500 ms, after their release on P1 and
+P2. Alarm activation sends the local clock first, then the alarm 300 ms later.
 
 #### Notifications
 
@@ -534,9 +542,9 @@ are outside this integration's direct BLE controls.
 The Lucid L600 reports in
 [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and
 [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309) used an
-earlier controller that sent the CB24 words on this page without the release
-that follows a preset here. That release, the app's memory commands and the
-other receivers are not confirmed by those reports.
+earlier controller that sent the CB24 words on this page as single frames. The
+CB24 family keeps that here. The app's memory commands, its status queries and
+the other receivers are not confirmed by those reports.
 
 ### Evidence
 
