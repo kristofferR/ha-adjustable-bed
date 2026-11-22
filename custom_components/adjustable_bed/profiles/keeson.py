@@ -504,9 +504,8 @@ ADJUSTAMATTRESS: Final = replace(_E6, key="adjustamattress", execution=STREAM_HO
 ADJUSTAMATTRESS_P2: Final = KeesonProfile(
     key="adjustamattress_p2", execution=STREAM_HOLD, order="big", hold=None
 )
-# Split-bed A/B selection of the SBI/Q-Plus and Rondure apps: Both is the E5 frame.
+# Split-bed A/B selection of the Rondure app: Both is the E5 frame.
 _AB_SIDES: Final[Mapping[str, int]] = MappingProxyType({"side_a": 0x01, "side_b": 0x02})
-SBI: Final = KeesonProfile(key="sbi", execution=STREAM_HOLD, hold=None, split_sides=_AB_SIDES)
 RONDURE: Final = KeesonProfile(key="rondure", hold=None, split_sides=_AB_SIDES)
 # com.keeson.coolbase 1.0.0
 COOLBASE: Final = KeesonProfile(key="coolbase", execution=STREAM_HOLD, hold=None)
@@ -637,7 +636,6 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         SCOTT_LIVING,
         ADJUSTAMATTRESS,
         ADJUSTAMATTRESS_P2,
-        SBI,
         RONDURE,
         COOLBASE,
         BF,

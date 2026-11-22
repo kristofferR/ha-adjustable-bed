@@ -96,7 +96,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
-    BED_TYPE_SBI,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
@@ -152,7 +151,6 @@ from custom_components.adjustable_bed.const import (
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     RONDURE_VARIANT_SIDE_A,
-    SBI_VARIANT_SIDE_B,
     SIDE_LEFT,
     SIDE_RIGHT,
     SUTA_SERVICE_UUID,
@@ -3631,7 +3629,6 @@ class TestOptionsFlow:
         ("bed_type", "variant"),
         [
             (BED_TYPE_RONDURE, RONDURE_VARIANT_SIDE_A),
-            (BED_TYPE_SBI, SBI_VARIANT_SIDE_B),
         ],
     )
     async def test_options_flow_preserves_split_bed_side_variant(

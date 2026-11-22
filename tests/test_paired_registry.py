@@ -263,7 +263,7 @@ async def test_single_address_unpair_restores_config_and_preserves_original_erro
 
     from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
 
-    original = {"address": LEFT_ADDR, "bed_type": "sbi", "protocol_variant": "both"}
+    original = {"address": LEFT_ADDR, "bed_type": "qplus_app", "protocol_variant": "both"}
     data = build_single_address_pair_entry_data(
         original,
         name="Paired",

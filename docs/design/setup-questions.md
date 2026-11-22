@@ -180,7 +180,7 @@ per-bed Bluetooth connection default.
 reports positions, and starts off (positions are read): every such route's own
 default. Turning it on is therefore always the user's change. A route without
 position reports saves its own default. The controllers of some of those routes
-can read positions, such as Octo, SBI and the Reverie models without position
+can read positions, such as Octo and the Reverie models without position
 reports, but the integration does not read them there, so an untouched setup
 leaves them unread.
 
@@ -291,7 +291,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `starcode_m5x5`, `starcode_m1x12` | The exact Bluetooth name, the bedding class it selects and the lifts this main drives, which are other config entries. |
 | `star_elevate` | The lifts an ELEVATE main drives. |
 | `fsm_relax` | Bed or chair, light, massage, the four reversals and the eight memory names. |
-| `tempur_curve`, `qplus_app`, `serta_mp_remote`, `omazz_adjusto_iii`, `ergomotion_app`, `row_control`, `ergo_slim`, `tempur_au`, `ergomotion_4` | The layout the app shows. Q-Plus also asks its A, B or Both addressing, Serta MP Remote its four local memories' head and foot angles, and Ergomotion 4.0's Other product its model keys, massage keys, name, light and RGB. The app's labelled controls own every generic field. |
+| `tempur_curve`, `qplus_app`, `serta_mp_remote`, `omazz_adjusto_iii`, `ergomotion_app`, `row_control`, `ergo_slim`, `tempur_au`, `ergomotion_4` | The layout the app shows. Q-Plus also asks its A, B or Both addressing, Serta MP Remote its four local memories' head and foot angles, and Ergomotion 4.0's Other product its model keys, massage keys, name, light and RGB. The app's labelled controls own every generic field, except that Q-Plus leaves reading positions to the user. |
 | `octo` | The PIN (free text; empty when the bed has none) and the motor layout: the advertised count or an explicit 1 to 4. Octo has no app step, so setup asks them in the final settings. Owns the motor count. |
 | `smartbed` | The receiver, the motor count it takes, the Bluetooth name and, on CB24AB only, the native side: both, A or B. |
 | `limoss_remote` | Bed or chair, light, massage, the four reversals and the optional artwork theme; the connected device supplies its key layout. |

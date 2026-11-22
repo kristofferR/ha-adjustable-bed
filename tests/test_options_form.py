@@ -162,7 +162,7 @@ async def test_configure_saves_movement_per_tap_within_its_range(
         ("sleepys_box24", "has_massage"),
         # Fixed travel replaces both maximum angles.
         ("serta_mp_remote", CONF_BACK_MAX_ANGLE),
-        ("sbi", CONF_BACK_MAX_ANGLE),
+        ("qplus_app", CONF_BACK_MAX_ANGLE),
         # Taps that never repeat the command by that count.
         ("paramount", CONF_MOTOR_PULSE_COUNT),
         ("reverie", CONF_MOTOR_PULSE_COUNT),

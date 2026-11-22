@@ -141,10 +141,11 @@ def test_findable_app_and_side_owned_options(app, layouts):
         for option in get_bed_type_options()
     )
     assert "product_type" in per_side_profile(app, None).keys
+    # Q-Plus's P1 beds report positions, so reading them is its user's choice.
     assert {
         "motor_count",
         "has_massage",
-        "disable_angle_sensing",
+        *(("disable_angle_sensing",) if app != "qplus_app" else ()),
         "protocol_variant",
         "motor_pulse_delay_ms",
     } <= hidden_generic_fields(app, None)
@@ -156,7 +157,12 @@ def test_findable_app_and_side_owned_options(app, layouts):
         assert profile.validate(data) == {}
         settled = profile.settled(data)
         assert settled["motor_count"] == 2
-        assert settled["disable_angle_sensing"] is (app != "serta_mp_remote")
+        if app == "qplus_app":
+            # Only the MX remote reports no position, so only it is saved unread.
+            expected = True if layout == "MX" else None
+        else:
+            expected = app != "serta_mp_remote"
+        assert settled.get("disable_angle_sensing") is expected
     assert profile.validate({"bed_type": app, "product_type": "Not a layout"}) == {
         "base": "keeson_app_layout"
     }
@@ -173,7 +179,8 @@ async def test_factory_builds_exact_app_profile_lazily(hass, app, layout):
     assert ctrl.profile.app == APP_NAMES[app]
     assert ctrl.profile.layout == layout
     assert ctrl.requires_notification_channel
-    assert not ctrl.supports_single_address_pairing
+    # Only Q-Plus P1 frames carry a selector for the two halves of one receiver.
+    assert ctrl.supports_single_address_pairing is (app == "qplus_app" and layout != "MX")
     assert ctrl.supports_memory_presets is (app == "serta_mp_remote")
 
 

@@ -15,8 +15,8 @@ table without spelling the frame, the frame the pre-v5 controller sent is added.
 The E6 controllers (Glideaway Motion, AdjustaMattress) do the same
 with their reports; Malouf legacy OKIN, Sleepy's BOX15 and Scott Living have no
 report and keep their pre-v5 frames. So do Cool Base, BF, Cherish and Comfort
-Enhancements; their pre-v5 frames are those of the wire snapshot. SBI and Rondure
-have no report.
+Enhancements; their pre-v5 frames are those of the wire snapshot. Rondure has no
+report.
 """
 
 import json
@@ -1561,77 +1561,6 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e5fe1611000011e4",
             "e5fe1611000012e3",
             "e5fe1611000013e2",
-        }
-    ),
-    # pre-v5 SBIController (generic SBI route; the Q-Plus app is qplus_app)
-    "sbi": frozenset(
-        {
-            "e5fe160000000006",
-            "e5fe1600000008fe",
-            "e5fe160000010005",
-            "e5fe160000020004",
-            "e5fe1600000800fe",
-            "e5fe1600001000f6",
-            "e5fe1600002000e6",
-            "e5fe1600004000c6",
-            "e5fe160001000005",
-            "e5fe160004000002",
-            "e5fe1600080000fe",
-            "e5fe1600100000f6",
-            "e5fe1600400000c6",
-            "e5fe160080000086",
-            "e5fe160100000005",
-            "e5fe160200000004",
-            "e5fe160400000002",
-            "e5fe1608000000fe",
-            "e5fe1610000000f6",
-            "e5fe1620000000e6",
-            "e5fe1640000000c6",
-            "e5fe168000000086",
-            "e6fe16000000000104",
-            "e6fe16000000000203",
-            "e6fe160000000801fc",
-            "e6fe160000000802fb",
-            "e6fe16000001000103",
-            "e6fe16000001000202",
-            "e6fe16000002000102",
-            "e6fe16000002000201",
-            "e6fe160000080001fc",
-            "e6fe160000080002fb",
-            "e6fe160000100001f4",
-            "e6fe160000100002f3",
-            "e6fe160000200001e4",
-            "e6fe160000200002e3",
-            "e6fe160000400001c4",
-            "e6fe160000400002c3",
-            "e6fe16000100000103",
-            "e6fe16000100000202",
-            "e6fe16000400000100",
-            "e6fe160004000002ff",
-            "e6fe160008000001fc",
-            "e6fe160008000002fb",
-            "e6fe160010000001f4",
-            "e6fe160010000002f3",
-            "e6fe160040000001c4",
-            "e6fe160040000002c3",
-            "e6fe16008000000184",
-            "e6fe16008000000283",
-            "e6fe16010000000103",
-            "e6fe16010000000202",
-            "e6fe16020000000102",
-            "e6fe16020000000201",
-            "e6fe16040000000100",
-            "e6fe160400000002ff",
-            "e6fe160800000001fc",
-            "e6fe160800000002fb",
-            "e6fe161000000001f4",
-            "e6fe161000000002f3",
-            "e6fe162000000001e4",
-            "e6fe162000000002e3",
-            "e6fe164000000001c4",
-            "e6fe164000000002c3",
-            "e6fe16800000000184",
-            "e6fe16800000000283",
         }
     ),
     # pre-v5 RondureController

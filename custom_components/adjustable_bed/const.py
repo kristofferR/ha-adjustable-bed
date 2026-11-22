@@ -700,7 +700,6 @@ BED_TYPE_REMACRO: Final = (
 )
 BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
 BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
-BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_PARAMOUNT: Final = "paramount"
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
@@ -929,8 +928,6 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_COOLBASE,
     # Scott Living (9-byte Keeson variant)
     BED_TYPE_SCOTT_LIVING,
-    # SBI/Q-Plus (Costco, with position feedback)
-    BED_TYPE_SBI,
     # SUTA Smart Home AT protocol
     BED_TYPE_SUTA,
     # TiMOTION AHF protocol
@@ -1011,7 +1008,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SVANE,
         BED_TYPE_RONDURE,
         BED_TYPE_SCOTT_LIVING,
-        BED_TYPE_SBI,
         BED_TYPE_SUTA,
         BED_TYPE_TIMOTION_AHF,
         # One fixed frame layout; the GATT name is cosmetic and grants no controls.
@@ -1750,21 +1746,21 @@ RONDURE_VARIANTS: Final = {
     RONDURE_VARIANT_SIDE_B: "Side B only",
 }
 
-# SBI head and foot travel: the last degree of each pulse lookup table.
-SBI_HEAD_MAX_ANGLE: Final = 60.0
-SBI_FOOT_MAX_ANGLE: Final = 32.0
+# Q-Plus head and foot travel: the last degree of each pulse lookup table.
+QPLUS_HEAD_MAX_ANGLE: Final = 60.0
+QPLUS_FOOT_MAX_ANGLE: Final = 32.0
 # Serta MP Remote travel limits.
 SERTA_MP_REMOTE_BACK_MAX_ANGLE: Final = 60.0
 SERTA_MP_REMOTE_LEGS_MAX_ANGLE: Final = 45.0
 
-# SBI/Q-Plus side selection variants
-SBI_VARIANT_BOTH: Final = "both"  # Control both sides (8-byte, 0xE5 header)
-SBI_VARIANT_SIDE_A: Final = "side_a"  # Control side A only (9-byte, 0xE6 header)
-SBI_VARIANT_SIDE_B: Final = "side_b"  # Control side B only (9-byte, 0xE6 header)
-SBI_VARIANTS: Final = {
-    SBI_VARIANT_BOTH: "Both sides (dual bed)",
-    SBI_VARIANT_SIDE_A: "Side A only",
-    SBI_VARIANT_SIDE_B: "Side B only",
+# The Q-Plus app's bed selection (com.sbi.costco): Both, A or B.
+QPLUS_VARIANT_BOTH: Final = "both"  # Both sides (8-byte, 0xE5 header)
+QPLUS_VARIANT_SIDE_A: Final = "side_a"  # Side A only (9-byte, 0xE6 header)
+QPLUS_VARIANT_SIDE_B: Final = "side_b"  # Side B only (9-byte, 0xE6 header)
+QPLUS_VARIANTS: Final = {
+    QPLUS_VARIANT_BOTH: "Both sides (dual bed)",
+    QPLUS_VARIANT_SIDE_A: "Side A only",
+    QPLUS_VARIANT_SIDE_B: "Side B only",
 }
 
 # Remacro (SynData) UUIDs, shared by the Slumberland, The Brick and Jerome's
@@ -3096,9 +3092,6 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Scott Living: 100ms delay → 10 repeats = 1.0s total
     # Source: com.keeson.scottlivingrelease ANALYSIS.md
     BED_TYPE_SCOTT_LIVING: (10, 100),
-    # SBI/Q-Plus: 100ms delay → 10 repeats = 1.0s total
-    # Source: com.sbi.costco ANALYSIS.md
-    BED_TYPE_SBI: (10, 100),
     # SUTA: 150ms delay → 7 repeats = 1.05s total
     # Source: com.shuta.smart_home ANALYSIS.md
     BED_TYPE_SUTA: (7, 150),

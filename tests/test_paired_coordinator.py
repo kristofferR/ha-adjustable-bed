@@ -20,7 +20,7 @@ import pytest
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from custom_components.adjustable_bed import paired_topology
-from custom_components.adjustable_bed.beds.sbi import SBIController
+from custom_components.adjustable_bed.beds.qplus_app import QPlusAppController
 from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
 from custom_components.adjustable_bed.command_scheduler import (
     CommandContext,
@@ -36,7 +36,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
-    BED_TYPE_SBI,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_PAIR_ID,
@@ -1451,12 +1451,12 @@ class TestSingleAddressCoordinator:
         inner.bed_type = bed_type
         return SingleAddressPairedCoordinator(None, entry, inner), inner
 
-    async def test_sbi_uses_native_side_and_both_packets(self):
-        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+    async def test_qplus_uses_native_side_and_both_packets(self):
+        coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)
         packets = []
 
         async def record(controller):
-            packets.append(controller._build_command(0))
+            packets.append(controller._frame(0))
 
         await coordinator.async_execute_controller_command(record, side=SIDE_LEFT)
         await coordinator.async_execute_controller_command(record, side=SIDE_RIGHT)
@@ -1660,7 +1660,7 @@ class TestSingleAddressCoordinator:
     @pytest.mark.parametrize(
         ("bed_type", "controller_type"),
         [
-            (BED_TYPE_SBI, SBIController),
+            (BED_TYPE_QPLUS_APP, QPlusAppController),
             (BED_TYPE_SLEEP_NUMBER, SleepNumberController),
         ],
     )
@@ -1940,7 +1940,7 @@ class TestSingleAddressCoordinator:
         stopped at the wrapper would guard nothing, and the removal would fail
         on a missing attribute instead.
         """
-        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+        coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)
         inner = coordinator._single_inner
         entered: list[str] = []
         applied: list[bool] = []
@@ -1960,7 +1960,7 @@ class TestSingleAddressCoordinator:
         assert applied == [True]
 
     def test_side_and_combined_ids_share_the_mac_device(self):
-        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+        coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)
         left = coordinator.children[SIDE_LEFT]
 
         assert left.entity_unique_id("back") == "AA:BB:CC:DD:EE:50_back_left"
@@ -1971,8 +1971,8 @@ class TestSingleAddressCoordinator:
             (DOMAIN, "AA:BB:CC:DD:EE:50")
         }
 
-    async def test_sbi_position_updates_remain_side_scoped(self):
-        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+    async def test_position_updates_remain_side_scoped(self):
+        coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)
         left = coordinator.children[SIDE_LEFT]
         right = coordinator.children[SIDE_RIGHT]
         left_updates = []

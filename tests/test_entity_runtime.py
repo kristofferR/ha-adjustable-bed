@@ -15,7 +15,7 @@ from custom_components.adjustable_bed import (
     _build_paired_children,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_SBI,
+    BED_TYPE_QPLUS_APP,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
     CONF_PAIR_ID,
@@ -69,7 +69,7 @@ async def test_every_platform_uses_typed_runtime_without_identity_changes(
             domain=DOMAIN,
             data={
                 "address": LEFT_ADDR,
-                CONF_BED_TYPE: BED_TYPE_SBI,
+                CONF_BED_TYPE: BED_TYPE_QPLUS_APP,
                 CONF_MOTOR_COUNT: 2,
                 CONF_PROTOCOL_VARIANT: "both",
                 CONF_PAIR_ID: "pair_test",
@@ -170,7 +170,7 @@ async def test_single_address_support_capture_keeps_both_hydration_owners_paused
         domain=DOMAIN,
         data={
             "address": LEFT_ADDR,
-            CONF_BED_TYPE: BED_TYPE_SBI,
+            CONF_BED_TYPE: BED_TYPE_QPLUS_APP,
             CONF_PROTOCOL_VARIANT: "both",
             CONF_PAIR_ID: "test_pair",
         },

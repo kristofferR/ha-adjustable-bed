@@ -109,6 +109,7 @@ if TYPE_CHECKING:
     from .paramount.controller import ParamountController as ParamountController
     from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir
     from .personal_comfort.controller import PersonalComfortBase as PersonalComfortBase
+    from .qplus_app import QPlusAppController as QPlusAppController
     from .relax_motion.controller import RelaxMotionController as RelaxMotionController
     from .remacro.controller import RemacroController as RemacroController
     from .resident.controller import ResidentController as ResidentController
@@ -125,8 +126,6 @@ if TYPE_CHECKING:
     from .ruf_richmat.controller import RufRichmatController as RufRichmatController
     from .ruf_richmat.sleep import RufRichmatSleepController as RufRichmatSleepController
     from .saatva import SaatvaController as SaatvaController
-    from .sbi import QPlusAppController as QPlusAppController
-    from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
     from .sealy.controller import SealyController as SealyController
     from .serenity.controller import SerenityController as SerenityController
@@ -191,7 +190,7 @@ _EXPORT_MODULES = {
     "GmmotorDeskController": "gmmotor.desk",
     "GmmotorSleepController": "gmmotor.sleep",
     'TempurCurveController': 'tempur_curve',
-    'QPlusAppController': "sbi",
+    'QPlusAppController': 'qplus_app',
     'SertaMPRemoteController': 'serta_mp_remote',
     'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
     'ErgomotionAppController': 'ergomotion_app',
@@ -293,7 +292,6 @@ _EXPORT_MODULES = {
     "ReverieNightstandController": "reverie.nightstand",
     "RichmatController": "richmat.controller",
     "RondureController": "rondure",
-    "SBIController": "sbi",
     "ScottLivingController": "scott_living",
     "SleepNumberController": "sleep_number.controller",
     "SleepNumberMcrController": "sleep_number.mcr",
@@ -380,7 +378,6 @@ __all__ = [
     "ReverieNightstandController",
     "RichmatController",
     "RondureController",
-    "SBIController",
     "ScottLivingController",
     "SleepNumberController",
     "SleepNumberMcrController",

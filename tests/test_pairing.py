@@ -7,8 +7,8 @@ from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_RONDURE,
-    BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SMARTBED,
     CB24_BED_SELECTION_A,
@@ -27,10 +27,10 @@ from custom_components.adjustable_bed.const import (
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
     PAIR_MODE_SINGLE_ADDRESS,
+    QPLUS_VARIANT_SIDE_A,
+    QPLUS_VARIANT_SIDE_B,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
-    SBI_VARIANT_SIDE_A,
-    SBI_VARIANT_SIDE_B,
     SIDE_LEFT,
     SIDE_RIGHT,
     SLEEP_NUMBER_VARIANT_LEFT,
@@ -345,10 +345,10 @@ class TestBuildSingleAddressPairEntryData:
         ("bed_type", "left_key", "left_value", "right_value"),
         [
             (
-                BED_TYPE_SBI,
+                BED_TYPE_QPLUS_APP,
                 CONF_PROTOCOL_VARIANT,
-                SBI_VARIANT_SIDE_A,
-                SBI_VARIANT_SIDE_B,
+                QPLUS_VARIANT_SIDE_A,
+                QPLUS_VARIANT_SIDE_B,
             ),
             (
                 BED_TYPE_RONDURE,
@@ -392,6 +392,11 @@ class TestBuildSingleAddressPairEntryData:
         assert get_child(data, SIDE_LEFT)[left_key] == left_value
         assert get_child(data, SIDE_RIGHT)[left_key] == right_value
         assert single_data_from_child(get_child(data, SIDE_LEFT)) == original
+
+    def test_qplus_mx_is_refused(self):
+        """MX sends P2 frames, which carry no A/B selector."""
+        assert supports_single_address_pairing(BED_TYPE_QPLUS_APP, "both", product_type="H")
+        assert not supports_single_address_pairing(BED_TYPE_QPLUS_APP, "both", product_type="MX")
 
     def test_cbnew_is_refused(self):
         assert not supports_single_address_pairing(BED_TYPE_SMARTBED, "cb27new")

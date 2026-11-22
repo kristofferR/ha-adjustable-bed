@@ -15,7 +15,6 @@ from custom_components.adjustable_bed.beds import (
     innova,
     ore_comfort_bed,
     rondure,
-    sbi,
     scott_living,
 )
 from custom_components.adjustable_bed.beds.adjustamattress import protocol as adjustamattress
@@ -47,7 +46,6 @@ E6_CONTROLLERS = frozenset(
         "scott_living",
         "adjustamattress",
         "adjustamattress_p2",
-        "sbi",
         "rondure",
         "coolbase",
         "bf",
@@ -253,10 +251,8 @@ def _e6_census(key: str) -> set[bytes]:
         words |= {b15.ZERO_G_BYTE4 << 8 | b15.ZERO_G_BYTE6 << 24}
     elif key == "scott_living":
         words |= _words_named(scott_living.ScottLivingController, scott_living.ScottLivingCommands)
-    elif key in ("sbi", "rondure"):
-        controller = sbi.SBIController if key == "sbi" else rondure.RondureController
-        table = sbi.SBICommands if key == "sbi" else rondure.RondureCommands
-        words |= _words_named(controller, table)
+    elif key == "rondure":
+        words |= _words_named(rondure.RondureController, rondure.RondureCommands)
         sides = {
             codec.frame(word, header=0xE6, side=selector)
             for word in words
