@@ -26,7 +26,8 @@ ELEVATE entries keep their current behavior until you reconfigure them.
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ Head (Part 1), foot (Part 2), lumbar (Part 4) and head and foot together; Parts 8 and 16 through `hold_control` only |
-| Position Feedback | ⚠️ Head, foot and lumbar shown as percentages; no position sliders |
+| Position Feedback | ✅ Head, foot and lumbar as percentages (0-100%), on each cover and as a position sensor |
+| Direct Position Control | ❌ The app has no way to set a position, so there are no position sliders |
 | Presets | ✅ Flat, TV, zero gravity, anti-snore, lounge |
 | Memory Presets | ✅ Memory 1/2 recall and save, reset; one more saved position (MemoryType 8) through the memory action only |
 | Massage | ✅ Toggle/off, 10/20/30-minute timer, held wave and head/foot/both intensity |
@@ -245,12 +246,28 @@ Part feedback uses the accepted byte mapping and clamps values to 0–100%:
 | 1, 2, 4, 8 | 4, 6, 8, 10 |
 | 16, 32 | 5, 7 |
 
-- Parts 1, 2 and 4 appear as head, foot and lumbar position sensors, the app
-  Home screen's labels. Parts 8, 16 and 32 have no physical label, so their
-  feedback stays in diagnostics.
+- Parts 1, 2 and 4 are the head, foot and lumbar of the app's Home screen.
+  Their percentages are the bed's head, feet and lumbar positions: each cover
+  shows its position, and the head, foot and lumbar position sensors show the
+  same readings. Parts 8, 16 and 32 have no physical label, so their feedback
+  stays in diagnostics.
 - The notification's motor-stopped flag is byte 17 equal to zero.
-- No generic degree-position sliders or invented physical axes are exposed.
-  Part state is not mapped to standard angle sensors.
+- The readings are read-only. The app has no way to set a position, so there
+  are no position sliders and `set_position` is refused. They are percentages,
+  not degrees, so there are no angle sensors.
+- **Read bed position** is on. A bed set up before positions were read keeps its
+  entities and reads them from the next start.
+- A new bed still hands the connection back after each command (connection mode
+  `release`). The covers keep the last reported position while disconnected; the
+  position sensors show a value only while connected.
+
+The bed reports its positions by itself while it moves. The app's only query is
+the one its Home page sends for the light state; nothing in the app asks the bed
+for positions, so Home Assistant only listens too. After a preset or memory recall, which the bed
+finishes on its own after the STOP frame, the command stays running until the
+reported positions have been unchanged for 2 seconds, so the connection is not
+handed back while the bed is still moving. Stop, a newer command or a lost link
+end it at once. Held movement, saves, lights and massage are not followed.
 
 ### Internal progress targets
 
@@ -274,8 +291,9 @@ The main profile exposes:
   three accepted model IDs are `252201`, `254202` and `352201`; other or empty
   models keep their distinct behavior. F23 and kneading use their accepted S
   lighting overrides.
-- Read-only head, foot and lumbar percentages, massage state, light color and
-  sonic state. Raw timer counts, motor-stopped and demo flags stay in
+- Read-only head, foot and lumbar percentages (see
+  [Position Feedback / State](#position-feedback--state)), massage state, light
+  color and sonic state. Raw timer counts, motor-stopped and demo flags stay in
   diagnostics, and the status query is a diagnostic button. CB25 exposes its basic alarm state. F23 and kneading expose the
   advanced alarm, EQ and USB state; kneading additionally exposes kneading
   on/demo/mode/time state. These notifications do not imply setters that the

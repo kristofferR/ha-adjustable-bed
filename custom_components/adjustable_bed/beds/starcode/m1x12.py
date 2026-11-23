@@ -94,11 +94,12 @@ MAX_HOLD_MS = 60_000
 
 # The accepted app selects independent parts. Its Home screen labels Parts 1,
 # 2 and 4 head, foot and lumbar; Parts 8 and 16 have no physical label, so
-# they stay held controls for the hold action rather than entities.
+# they stay held controls for the hold action rather than entities. The last
+# name is the axis each labelled Part reports its position under.
 _PARTS: Final = (
-    (1, "starcode_m1x12_part_1", "part_1_up", "part_1_down"),
-    (2, "starcode_m1x12_part_2", "part_2_up", "part_2_down"),
-    (4, "starcode_m1x12_part_4", "part_4_up", "part_4_down"),
+    (1, "starcode_m1x12_part_1", "part_1_up", "part_1_down", "head"),
+    (2, "starcode_m1x12_part_2", "part_2_up", "part_2_down", "feet"),
+    (4, "starcode_m1x12_part_4", "part_4_up", "part_4_down", "lumbar"),
 )
 _UNLABELLED_PARTS: Final = (8, 16)
 _KEYS: Final[dict[str, tuple[int, int]]] = {
@@ -407,6 +408,11 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
         return self._ready
 
     @property
+    def position_number_specs(self) -> tuple[()]:
+        # The app has no way to set a position, so the positions are readings only.
+        return ()
+
+    @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         return tuple(
             MotorControlSpec(
@@ -415,6 +421,9 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 open_fn=_action(up),
                 close_fn=_action(down),
                 stop_fn=lambda controller: controller.stop_all(),
+                position_key=axis,
+                # The command lane each cover had before it showed its position.
+                scheduler_resource=f"motor:{key}",
                 hold=ControllerMotorHoldSpec(
                     up_control=up,
                     down_control=down,
@@ -425,7 +434,7 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                     stop_scope="side",
                 ),
             )
-            for part, translation_key, up, down in _PARTS
+            for part, translation_key, up, down, axis in _PARTS
             for key in (f"m1x12_part_{part}",)
         )
 
@@ -694,6 +703,11 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
         self._state.update(updates)
         if updates:
             self.forward_controller_state_updates(*state_updates(updates))
+        if self._notify_callback is not None:
+            for part, *_, axis in _PARTS:
+                value = updates.get(f"part_{part}_position")
+                if isinstance(value, (int, float)):
+                    self._notify_callback(axis, float(value))
         if updates.get("motor_stopped") is True and self._progress_queue:
             axis, target = self._progress_queue.pop(0)
             asyncio.create_task(
@@ -879,6 +893,8 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
             await self._interrupt_group()
             self._clear_progress_queue()
             await self._sequence(action, 3)
+            # The recall runs on after its STOP; the bed's reports say when it ends.
+            await self.follow_autonomous_move()
             return
         if action in {
             "part_1_up",

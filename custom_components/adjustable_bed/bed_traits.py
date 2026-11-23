@@ -397,9 +397,9 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     ),
     BED_TYPE_SLEEPSTAR: _PERCENT_FEEDBACK_SCOPED,
     BED_TYPE_SLEEPTRACKER: _NO_ANGLES,
-    # The app reports three axes, but the accepted parser evidence does not map
-    # them to this integration's named motor positions.
-    BED_TYPE_SLEEPYS_ELITE_APP: _NONE,
+    # Only the BOX25 control boxes report head, foot and lumbar; the controller
+    # narrows the others.
+    BED_TYPE_SLEEPYS_ELITE_APP: BedTraits(position_feedback=True, percentage_positions=True),
     BED_TYPE_SLEEPYS_BOX25: _PERCENT_FEEDBACK_SCOPED,
     # The app gives up on a connect attempt after its own timeout.
     BED_TYPE_STARCODE_ABM5_4: BedTraits(
@@ -407,8 +407,8 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
         connection_scoped_state=True,
         connection_timeout=STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     ),
-    # M1X12 feedback reports opaque Part percentages, not named degree axes.
-    BED_TYPE_STARCODE_M1X12: _NO_ANGLES,
+    # Head, foot and lumbar percentages, read only: the app has no way to set one.
+    BED_TYPE_STARCODE_M1X12: BedTraits(position_feedback=True, percentage_positions=True),
     BED_TYPE_STARCODE_M5X5: BedTraits(position_feedback=True, percentage_positions=True),
     BED_TYPE_SUTA: _SCOPED,
     BED_TYPE_SVANE: _SCOPED,

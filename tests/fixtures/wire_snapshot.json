@@ -43165,7 +43165,7 @@
 "cover:neck_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000004000",1,0]]},
 "cover:neck_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000008000",1,0]]},
 "cover:neck_stop": {"status":"ok","writes":[[0,"6e400002",false,"05020000000000",1,0]]},
-"read_positions": {"status":"ok","writes":[[0,"6e400002",false,"00d0",1,0]]},
+"read_positions": {"status":"no_writes"},
 "hold_headUp": {"status":"ok","writes":[[0,"6e400002",false,"05020000000100",10,107],[1000,"6e400002",false,"05020000000000",1,0]]},
 "hold_headDown": {"status":"ok","writes":[[0,"6e400002",false,"05020000000200",10,107],[1000,"6e400002",false,"05020000000000",1,0]]},
 "hold_footUp": {"status":"ok","writes":[[0,"6e400002",false,"05020000000400",10,107],[1000,"6e400002",false,"05020000000000",1,0]]},
