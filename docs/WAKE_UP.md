@@ -12,7 +12,8 @@ Importing the blueprint does not move the bed.
 2. Leave **Side(s)** at **Use selected device** for a standalone bed or a paired
    child. A paired parent defaults to both sides; choose **Left** or **Right**
    to narrow it. Conflicting child-side selections are rejected.
-3. Choose **Timed raise** or **Recall hardware memory**, using the requirements below.
+3. Choose **Timed raise**, **Recall hardware memory** or **Recall saved position**,
+   using the requirements below.
 4. Optionally select **Under-bed lights** light or switch entities for the intended
    side(s). The picker also shows other bed switches; select only lighting, not
    massage, synchronization or automatic-drive controls. Light selection is independent
@@ -24,10 +25,12 @@ Importing the blueprint does not move the bed.
 |--------|----------------------------------|
 | Timed raise | A supported `back` or `head` axis and timed movement. Back is usually the main upper-body section; Head is a separate head/neck axis where available. Raises once for a ceiling of 100–30000 ms, default 1000 ms. Unsupported axes/durations are rejected by the integration before movement. |
 | Recall hardware memory | A previously saved, tested slot supported by every selected side. Recalls memory 1–8 where available using the controller's finite recall action. It may move several sections. Raise duration does not apply, and accepting a slot number does not create memory support. |
+| Recall saved position | [Estimated positions](ESTIMATED_POSITIONS.md) with a position saved under the name you enter, for the selected bed or side. Moves each estimated motor to it. The recall needs a confirmed estimate: after Home Assistant restarts, confirm the bed has not moved or mark it flat first, otherwise the run ends with an error and the bed does not move. |
 | Under-bed lights | Adjustable Bed **Under-bed lights** entities, exposed as `light` entities or `switch` entities with explicit on/off control. Only entities whose HA state is `off` receive their corresponding `light.turn_on` or `switch.turn_on` action, after the movement action finishes. Already-on, missing, unknown and unavailable lights are skipped. Toggle-only lighting buttons are not offered. |
 
-The automation uses existing [`timed_move` and `goto_preset` actions](SERVICES.md#movement-and-memory).
-It does not require position feedback, estimated percentages or software presets.
+The automation uses existing [`timed_move` and `goto_preset` actions](SERVICES.md#movement-and-memory),
+and [`estimate_recall_position`](ESTIMATED_POSITIONS.md#actions) for a saved position.
+Timed raise and hardware memory need no position feedback or estimated positions.
 The timed movement ceiling begins after connection/preparation; connection and
 release cleanup can make the action take longer. Some controllers stop earlier.
 A recall action finishing is not proof that the bed reached its stored position.

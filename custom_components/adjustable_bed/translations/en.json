@@ -7420,6 +7420,20 @@
         }
       }
     },
+    "estimate_match_side": {
+      "name": "Match the other side",
+      "description": "Moves one side of a combined bed to the other side's estimated position. The other side does not move. Both sides need a known estimate.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "The bed to control."
+        },
+        "side": {
+          "name": "Side",
+          "description": "The side that moves. Leave unset when you target the device of one side."
+        }
+      }
+    },
     "generate_support_bundle": {
       "name": "Create support bundle",
       "description": "Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. Bluetooth addresses keep only their manufacturer prefix, and PINs, typed names, health readings and other nearby devices are left out.",
@@ -10503,6 +10517,9 @@
     },
     "saved_position_other_side": {
       "message": "\"{position}\" also covers the other side. Select the whole bed to use it."
+    },
+    "match_side_needs_one_side": {
+      "message": "Choose the left or right side of a combined bed. Both sides need estimated positions."
     },
     "position_estimate_moving": {
       "message": "The bed is moving. Stop it, then try again."

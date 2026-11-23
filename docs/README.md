@@ -14,7 +14,7 @@ These guides describe version 5 of the integration. It requires **Home Assistant
 | [Configuration](CONFIGURATION.md) | Settings, choosing your app or remote, and combined beds |
 | [Actions and automations](SERVICES.md) | Memory, movement, side targeting and specialized actions |
 | [Estimated positions](ESTIMATED_POSITIONS.md) | Calibrated travel-time estimates and saved positions for beds without position feedback |
-| [Wake-up automation](WAKE_UP.md) | Importable scheduled raise or memory recall, with optional lighting |
+| [Wake-up automation](WAKE_UP.md) | Importable scheduled raise, memory recall or saved position, with optional lighting |
 | [Apple Home and Siri](HOMEKIT.md) | Importable control blueprint, HomeKit scenes and Siri Shortcuts |
 | [Troubleshooting](TROUBLESHOOTING.md) | Card loading, connections, position feedback and upgrade problems |
 | [v5 breaking changes](V5_BREAKING_CHANGES.md) | What the 4.x to v5 upgrade migrates, adds and moves, and why a backup is the only rollback |

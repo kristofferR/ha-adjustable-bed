@@ -49,7 +49,7 @@
 | **[Configuration](docs/CONFIGURATION.md)** | Settings, choosing your remote, combining and splitting beds |
 | **[Dashboard Card](docs/DASHBOARD_CARD.md)** | Adding the card, compact room cards, editor and YAML options |
 | **[Actions and Automations](docs/SERVICES.md)** | Movement, memory, side targeting, and bed-specific actions |
-| **[Wake-up automation](docs/WAKE_UP.md)** | Import a scheduled bed raise or memory recall with optional lighting |
+| **[Wake-up automation](docs/WAKE_UP.md)** | Import a scheduled bed raise, memory recall or saved position with optional lighting |
 | **[Apple Home and Siri](docs/HOMEKIT.md)** | Raise, lower, and stop commands through HomeKit scenes or Siri Shortcuts |
 | **[Brand lookup](docs/SUPPORTED_ACTUATORS.md)** | Which bed family a brand uses |
 

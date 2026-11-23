@@ -41,6 +41,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`estimate_set_reference`](#estimated-positions) | Mark estimated position flat | Confirm the selected motors are flat now. Their estimates start again at 0%. |
 | [`estimate_confirm_unchanged`](#estimated-positions) | Confirm estimated position | Trust the estimate restored after a restart because the bed has not moved since. |
 | [`estimate_mark_unknown`](#estimated-positions) | Forget estimated position | Report a movement the integration could not see, such as the remote or the bed's app. |
+| [`estimate_match_side`](#estimated-positions) | Match the other side | Moves one side of a combined bed to the other side's estimated position. The other side does not move. Both sides need a known estimate. |
 | [`generate_support_bundle`](#support-bundle) | Create support bundle | Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. Bluetooth addresses keep only their manufacturer prefix, and PINs, typed names, health readings and other nearby devices are left out. |
 | [`agingplace_action`](#agingplace_action) | Aging in Place: run control | Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control. |
 | [`agingplace_set_setting`](#agingplace_set_setting) | Aging in Place: settings | Set light brightness, massage duration or motion light duration. |

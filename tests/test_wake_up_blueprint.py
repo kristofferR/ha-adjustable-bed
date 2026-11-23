@@ -21,7 +21,7 @@ from pytest_homeassistant.common import (
     async_mock_service,
 )
 
-from custom_components.adjustable_bed import services
+from custom_components.adjustable_bed import position_estimate_services, services
 
 BLUEPRINT_PATH = "adjustable_bed/wake_up.yaml"
 BLUEPRINT_SOURCE = Path(__file__).resolve().parents[1] / "blueprints/automation" / BLUEPRINT_PATH
@@ -50,6 +50,10 @@ async def bed_actions(hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch) -> d
     handlers = {"timed_move": AsyncMock(), "goto_preset": AsyncMock()}
     for name, handler in handlers.items():
         monkeypatch.setattr(services, f"handle_{name}", handler)
+    handlers["recall_position"] = AsyncMock()
+    monkeypatch.setattr(
+        position_estimate_services, "handle_recall_position", handlers["recall_position"]
+    )
     await services.async_register_services(hass)
     return handlers
 
@@ -151,6 +155,20 @@ async def test_memory_recall_does_not_apply_raise_duration(
     assert call.data == {"device_id": ["selected_bed"], "side": "right", "preset": 2}
     bed_actions["goto_preset"].assert_awaited_once()
     bed_actions["timed_move"].assert_not_awaited()
+
+
+async def test_saved_position_recall_names_the_position_and_side(
+    hass: HomeAssistant, installed_blueprint: None, bed_actions: dict[str, AsyncMock]
+) -> None:
+    await setup_wake_up(
+        hass, wake_action="saved_position", saved_position="Reading", bed_side="left"
+    )
+    await run_actions(hass)
+    call: ServiceCall = bed_actions["recall_position"].await_args.args[0]
+    assert call.data == {"device_id": ["selected_bed"], "side": "left", "position": "Reading"}
+    bed_actions["recall_position"].assert_awaited_once()
+    bed_actions["timed_move"].assert_not_awaited()
+    bed_actions["goto_preset"].assert_not_awaited()
 
 
 async def test_only_known_off_light_and_switch_lighting_runs_after_movement(
