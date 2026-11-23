@@ -98,6 +98,7 @@ from .protocol import (
     SMART_SET_LOCK_CODE,
     STOP_DELAY_S,
     TX_ALARM_CANCEL,
+    TX_MOTOR_ANGLES,
     TX_START_DETECTION,
     TX_STOP_DETECTION,
     TX_VERSION,
@@ -505,6 +506,9 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         # Slider progress the app keeps between writes; RangeEntity starts at 0.
         self._intensity: dict[str, int] = {"head": 0, "foot": 0}
         self._detection_results: dict[str, str] = {}
+        # What the bed last reported: each motor's angle and how many recalls arrived.
+        self._measured_angles: dict[int, str] = {}
+        self._arrivals = 0
 
     # ------------------------------------------------------------------ profile
 
@@ -1756,6 +1760,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     def _apply_angle(self, bits: int, value: str) -> None:
         """``onChangeAngle``: clamp the reported angle into the slider's range."""
+        self._measured_angles[bits] = value
         for motor, name, low, high, _offset in self._angles():
             if motor == bits:
                 try:
@@ -1801,11 +1806,42 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         """MemoryCallFrag announces "has reached the <name> position"."""
         if self.route != "C":
             return
+        self._arrivals += 1
         for members in self._memory_groups():
             recall = members[0]
             if recall.kind == "recall" and f"{recall.code:02x}" == code.lower():
                 self.forward_controller_state_update(MEMORY_ARRIVAL_KEY, _clean_label(recall.label))
                 return
+
+    # ------------------------------------------------------------ move feedback
+
+    def _follows_moves(self) -> bool:
+        """The VER1 pages show measured angles and a recall's arrival."""
+        return bool(self._angles()) or (self.route == "C" and bool(self._memory_groups()))
+
+    def _move_feedback(self) -> object:
+        return dict(self._measured_angles), self._arrivals
+
+    def _angle_queries(self) -> tuple[tuple[bytes, ...], float]:
+        """The angle queries of connection setup and the sleep after each."""
+        return TX_MOTOR_ANGLES, INIT_TASK_SLEEP_S
+
+    async def _ask_move_feedback(self) -> None:
+        """Ask for the motor angles as connection setup does; replies are notifications."""
+        frames, sleep_s = self._angle_queries()
+        for frame in frames:
+            await self._write_query(frame)
+            await asyncio.sleep(sleep_s)
+
+    async def follow_recall(self, code: int) -> None:
+        """Keep the link while the bed finishes a recall or Flat it got as one frame."""
+        if code != FACTORY_RESET_CODE and any(
+            c.code == code
+            and not c.keep_ms
+            and (c.area == "memory" and c.kind == "recall" or c.area == "motor_btn" and code == FLAT_CODE)
+            for c in self._controls()
+        ):
+            await self.follow_autonomous_move()
 
     # --------------------------------------------------------------- controls
 
@@ -1904,6 +1940,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         await asyncio.sleep(ANGLE_SEND_DELAY_S)
         await self.write_command(angle_frame(bits, angle), cancel_event=asyncio.Event())
         self.forward_controller_state_update(ANGLE_KEYS[spec[1].lower()], angle)
+        await self.follow_autonomous_move()
 
     async def write_massage_intensity(self, zone: str, value: int) -> None:
         """MassageCallFrag sends both sliders' progress in one frame."""
@@ -1998,12 +2035,14 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if flat is None:
             raise NotImplementedError("The selected model has no Flat button")
         await self.tap(flat.code)
+        await self.follow_recall(flat.code)
 
     async def _preset(self, name: str) -> None:
         preset = self._presets().get(name)
         if preset is None:
             raise NotImplementedError(f"The selected model has no {name} preset")
         await self.tap(preset[0].code)
+        await self.follow_recall(preset[0].code)
 
     async def preset_zero_g(self) -> None:
         await self._preset("zero_g")
@@ -2025,6 +2064,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if slot is None:
             raise NotImplementedError(f"The selected model has no memory {memory_num}")
         await self.tap(slot[0].code)
+        await self.follow_recall(slot[0].code)
 
     async def program_memory(self, memory_num: int) -> None:
         slot = self._memory_slots().get(memory_num)
@@ -2064,7 +2104,9 @@ def _invoke(controller: BedController, method: str, *args: Any) -> Any:
 
 def _tap_action(code: int) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
-        await richmat_mh_target(controller).tap(code)
+        target = richmat_mh_target(controller)
+        await target.tap(code)
+        await target.follow_recall(code)
 
     return invoke
 

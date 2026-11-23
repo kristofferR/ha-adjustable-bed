@@ -133,6 +133,7 @@ async def handle_control(call: ServiceCall) -> None:
                 await controller.remote_long(code)
             else:
                 await controller.tap(code)
+                await controller.follow_recall(code)
 
     await _preflight_and_execute(
         targets, RichmatMHAppController, execute,

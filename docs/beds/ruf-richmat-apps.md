@@ -35,7 +35,7 @@
 | Memory Presets | No | Model-specific recall and separate save buttons |
 | Massage | No | The model's buttons; intensity sliders once the bed reports them |
 | Lights | No | The model's buttons; color and timeout controls once the bed reports them |
-| Position Feedback | No | Angle sliders on models that report angles |
+| Position Feedback | No | Angle sliders on models that report angles, measured again after a preset, memory or angle target |
 | Diagnostics | Once the bed answers | Once the bed answers |
 | Waist Mattress | Appears once the powered mattress reports in | Appears once the powered mattress reports in |
 | Normal Mattress | No | W.Silver, AMERICANSTAR and TX only: choose it in setup; appears once the powered mattress reports in |
@@ -225,6 +225,12 @@ month/day/hour/minute/second. The app format loses DST/fractional-hour precision
   shadowed by massage in the app; no independent lock state is invented.
 - `6e20` carries extended motor, range, massage, mode and calendar records.
   RUF's extended angle offset differs and does not expose a generic slider.
+- After an angle target, or a preset, memory recall or Flat sent as one frame,
+  the command stays open while the bed moves, so the link is kept in every
+  connection mode. Angle and arrival frames the bed sends are only listened to.
+  Once they are quiet for 2 s the angle queries of connection setup are sent
+  again until the answers agree. Stop, a newer command or a lost link ends it at
+  once, and it gives up after 90 s. RUF shows no angle and is not followed.
 - Exactly 28-byte powered/checksummed `5e1a` initialization enables an explicitly
   selected normal mattress; exactly 31-byte powered/checksummed `5e1b` enables
   waist controls. `5e01/02` and `5e03` update the respective state families.
@@ -272,6 +278,7 @@ completion is separate. No Wi-Fi or firmware administration action is exposed.
 | W.Silver / AMERICANSTAR CERM/ELRM structured Flat | Model catalog preserves 3000 ms KEEP interval |
 | Legacy initialization | RUF/Bailey/AMERICANSTAR start at 100 ms; W.Silver/TX at 300 ms; another 300 ms before queries |
 | Query spacing | Legacy/VER2 300 ms; VER1 400 ms |
+| Angle queries after a one-frame move | VER1: the four motor queries, 400 ms apart; VER2: motor 1 and the extended angle record, 300 ms apart |
 | Separate sleep receiver | Subscribe after 1 second; heartbeat immediately after subscription, then every 5 seconds; 300 ms setting pacing |
 
 W.Silver legacy initialization sends only Exit One Minute and Diagnostics.

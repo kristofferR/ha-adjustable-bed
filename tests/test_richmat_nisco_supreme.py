@@ -462,3 +462,28 @@ def test_snore_page_without_preset_rows_has_no_select() -> None:
     controller = make("nisco", "virm")
     controller._dev = {"snore": True}
     assert not [s for s in controller.controller_select_specs if s.key == "richmat_mh_snore"]
+
+
+async def test_a_stalled_angle_query_is_given_up_for_stop(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every other write is seen through; a follow's query must not hold back Stop."""
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.base._FOLLOW_STEP_SECONDS", 0.01)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.base._FOLLOW_QUIET_SECONDS", 0.05)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.base._FOLLOW_BOUND_SECONDS", 5.0)
+    controller = make("nisco", "cerm")
+    controller._version, controller._call_page = "0001", True
+    controller._coordinator.command_scheduler.has_pending = False
+    controller._coordinator.is_connected = True
+    stalled = asyncio.Event()
+
+    async def never_returns(*_args: object, **_kwargs: object) -> None:
+        stalled.set()
+        await asyncio.Event().wait()
+
+    controller.client.write_gatt_char = AsyncMock(side_effect=never_returns)
+    follow = asyncio.create_task(controller.follow_autonomous_move())
+    await stalled.wait()
+    assert frames(controller) == ["6e9a300139"]
+
+    controller._coordinator.cancel_command.set()
+    async with asyncio.timeout(2):
+        await follow

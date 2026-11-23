@@ -157,6 +157,20 @@ class RichmatMHAppController(RufRichmatController):
     def _intensities(self) -> tuple[tuple[str, str | None, int, int], ...]:
         return RichmatMhController._intensities(self)
 
+    def _angle_queries(self) -> tuple[tuple[bytes, ...], float]:
+        return RichmatMhController._angle_queries(self)
+
+    def _follows_moves(self) -> bool:
+        # Bed Tech Classic has its own setup spacing and angle write; it is not followed.
+        return self._app != "bedtech_classic" and super()._follows_moves()
+
+    async def _ask_move_feedback(self) -> None:
+        frames, sleep_s = self._angle_queries()
+        for frame in frames:
+            # A query that stalls is given up for Stop; every other write is seen through.
+            await self._dispatch(frame, cancel_event=asyncio.Event(), abandon=True)
+            await asyncio.sleep(sleep_s)
+
     @property
     def motor_mode_options(self) -> tuple[str, ...]:
         if self.route != "C" or self._group_type is None:
@@ -217,7 +231,7 @@ class RichmatMHAppController(RufRichmatController):
     async def _dispatch(
         self, frame: bytes, *, cancel_event: asyncio.Event | None = None,
         factory: Callable[[], bytes] | None = None, deadline: float | None = None,
-        cleanup: bool = False,
+        cleanup: bool = False, abandon: bool = False,
     ) -> None:
         self._require_owner()
         if self._write_char is None:
@@ -246,7 +260,9 @@ class RichmatMHAppController(RufRichmatController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-                if cancel_event is None:
+                if abandon:
+                    task.cancel()
+                elif cancel_event is None:
                     self._coordinator.cancel_command.set()
         task.result()
         self._require_owner()

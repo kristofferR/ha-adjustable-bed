@@ -65,12 +65,13 @@ if TYPE_CHECKING:
 
 VER2 = "0002"
 MUSIC_QUERY = codec.function(1, action="deviceFunctionItemCheckMusic")
+EXTENDED_ANGLE_QUERY = codec.record_20_len(1, 3, 0, (0,))
 INIT_VER2 = (
     TX_MOTOR_MODE,
     TX_MOTOR_ANGLES[0],
     TX_QUERY_MASSAGE,
     TX_ALARM,
-    codec.record_20_len(1, 3, 0, (0,)),
+    EXTENDED_ANGLE_QUERY,
     codec.record_20_len(1, 5, 0, (0,)),
     codec.record_20_len(0x0B, 2, 0, (0,)),
     codec.record_20_len(2, 1, 0, (0,)),
@@ -501,6 +502,12 @@ class RufRichmatController(RichmatMhController):
         self._dev, self._waist, self._detection = pending.dev, pending.waist, pending.detection
         self._persist_snapshot()
 
+    def _angle_queries(self) -> tuple[tuple[bytes, ...], float]:
+        # The same list and spacing as this firmware's connection setup.
+        if self._version == VER2:
+            return (TX_MOTOR_ANGLES[0], EXTENDED_ANGLE_QUERY), 0.3
+        return TX_MOTOR_ANGLES, 0.4
+
     def _apply(self, event: Event) -> None:
         if self._pending is None and event.kind in (
             "version",
@@ -622,6 +629,7 @@ class RufRichmatController(RichmatMhController):
             else angle_frame(bits, angle)
         )
         await self.write_command(frame)
+        await self.follow_autonomous_move()
 
     async def set_motor_mode(self, option: str) -> None:
         if option not in self.motor_mode_options:
