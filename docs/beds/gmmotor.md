@@ -46,10 +46,12 @@
 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` |
 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` |
 
-The last accepted service in discovery order selects the mode. Selection then
-uses the first matching characteristic with WRITE and the first global NOTIFY
-characteristic. A declared notification UUID does not replace this property
-selection. WRITE_NO_RESPONSE alone does not satisfy WRITE admission.
+Only the services above are searched. Each one is matched against its own write
+UUID, and the first match with WRITE is kept. Notifications use the first NOTIFY
+characteristic in those services; a declared notification UUID does not replace
+this property selection. The last accepted service in discovery order selects
+the mode, even when the write characteristic came from an earlier service.
+WRITE_NO_RESPONSE alone does not satisfy WRITE admission.
 
 ### Packet Format
 

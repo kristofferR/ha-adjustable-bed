@@ -24,19 +24,40 @@ def service(uuid: str, *chars: MagicMock) -> MagicMock:
     return MagicMock(uuid=uuid, characteristics=list(chars))
 
 
-def test_p1_last_service_first_write_and_global_notify() -> None:
-    notify = char("unrelated-global-notify", "notify")
+def test_p1_first_write_and_notify_in_accepted_services_last_sets_mode() -> None:
+    unrelated = char("unrelated-notify", "notify")
+    notify = char("accepted-notify", "notify")
     nordic = char(P1_SERVICES[NORDIC], "write")
     first = char(P1_SERVICES[E0FF], "write", "write-without-response")
     second = char(P1_SERVICES[E0FF], "write")
     chosen = select_p1(
-        [service("unrelated", notify), service(NORDIC, nordic), service(E0FF, first, second)]
+        [service("unrelated", unrelated), service(E0FF, first, second, notify), service(NORDIC)]
     )
     assert chosen.write is first
     assert chosen.notifications == (notify,)
+    assert not chosen.response and chosen.single
+    chosen = select_p1([service(NORDIC, nordic), service(E0FF, first, notify)])
+    assert chosen.write is nordic and chosen.notifications == (notify,)
+    assert chosen.response and not chosen.single
+
+
+def test_p1_writer_comes_from_an_earlier_service_than_the_mode() -> None:
+    """#1157: the last accepted service has no usable writer of its own."""
+    fee9 = "0000fee9-0000-1000-8000-00805f9b34fb"
+    ffe0 = "0000ffe0-0000-1000-8000-00805f9b34fb"
+    write = char(P1_SERVICES[fee9], "write", "write-without-response")
+    notify = char("fee9-notify", "notify")
+    chosen = select_p1(
+        [
+            service(fee9, write, notify),
+            service(ffe0, char("0000ffe1-0000-1000-8000-00805f9b34fb", "write", "notify")),
+        ]
+    )
+    assert chosen.write is write and chosen.notifications == (notify,)
     assert not chosen.response and not chosen.single
-    chosen = select_p1([service(E0FF, first, notify), service(NORDIC, nordic)])
-    assert chosen.write is nordic and chosen.single and chosen.response
+    # A writer UUID only counts inside its own service.
+    with pytest.raises(ValueError):
+        select_p1([service(ffe0, char(P1_SERVICES[fee9], "write"), notify)])
 
 
 def test_p1_does_not_admit_no_response_only_or_indicate_only() -> None:
