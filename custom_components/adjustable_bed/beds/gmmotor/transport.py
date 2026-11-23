@@ -51,25 +51,27 @@ class Transport:
 
 
 def select_p1(services: Iterable[BleakGATTService]) -> Transport:
-    """Last accepted service mode, first exact WRITE and first global NOTIFY."""
-    discovered = tuple(services)
-    selected = next(
-        (s.uuid.lower() for s in reversed(discovered) if s.uuid.lower() in P1_SERVICES), None
-    )
+    """First exact WRITE and first NOTIFY in accepted services; the last sets the mode.
+
+    Each accepted service is matched against its own write UUID, so the writer
+    may come from an earlier service than the one that sets the mode.
+    """
+    write = notify = selected = None
+    for service in services:
+        expected = P1_SERVICES.get(service.uuid.lower())
+        if expected is None:
+            continue
+        selected = service.uuid.lower()
+        for characteristic in service.characteristics:
+            props = characteristic.properties
+            if write is None and characteristic.uuid.lower() == expected and "write" in props:
+                write = characteristic
+            if notify is None and "notify" in props:
+                notify = characteristic
     if selected is None:
         raise ValueError("GM Control has no accepted P1 service")
-    characteristics = [c for s in discovered for c in s.characteristics]
-    write = next(
-        (
-            c
-            for c in characteristics
-            if c.uuid.lower() == P1_SERVICES[selected] and "write" in c.properties
-        ),
-        None,
-    )
-    notify = next((c for c in characteristics if "notify" in c.properties), None)
     if write is None or notify is None:
-        raise ValueError("GM Control lacks its selected WRITE or global NOTIFY role")
+        raise ValueError("GM Control lacks a WRITE or NOTIFY role in its accepted services")
     return Transport(
         write, (notify,), "write-without-response" not in write.properties, selected == NORDIC
     )
