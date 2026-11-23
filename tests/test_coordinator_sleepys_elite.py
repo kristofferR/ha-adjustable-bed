@@ -15,6 +15,7 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 # The hold action imports this on demand in the executor; loading it up front
@@ -49,18 +50,27 @@ from custom_components.adjustable_bed.number import (
     AdjustableBedControllerNumber,
     AdjustableBedLevelNumber,
     AdjustableBedMassageNumber,
+    AdjustableBedPositionNumber,
+    _build_position_description,
+    _number_entities_for,
 )
 from custom_components.adjustable_bed.select import (
     MASSAGE_TIMER_DESCRIPTION,
     AdjustableBedMassageTimerSelect,
 )
-from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.sensor import _sensor_entities_for
+from custom_components.adjustable_bed.services import _position_config, async_register_services
 from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+from tests.error_helpers import raises_key
 from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 from .conftest import TEST_ADDRESS, TEST_NAME
 
 _MODULE = "custom_components.adjustable_bed.coordinator"
+_APP = "custom_components.adjustable_bed.beds.sleepys.app"
+_BASE = "custom_components.adjustable_bed.beds.base"
+# The position report of #372: head 22 at byte 4, with lumbar 40 added at byte 8.
+_POSITION_REPORT = bytes.fromhex("A5 0D 11 01 16 00 00 00 28 00 00 00 00 00 00 00 00 00 00 00")
 
 _CONNECTION = "custom_components.adjustable_bed.coordinator_connection"
 _BONDS = "custom_components.adjustable_bed.coordinator_bonds"
@@ -622,11 +632,11 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         await clock.run_until(asyncio.create_task(massage.async_set_native_value(7)))
 
         position_spec = next(
-            spec
-            for spec in controller.controller_number_specs
-            if spec.key == "sleepys_app_target_axis_1"
+            spec for spec in controller.position_number_specs if spec.position_key == "feet"
         )
-        position = AdjustableBedControllerNumber(coordinator, position_spec)
+        position = AdjustableBedPositionNumber(
+            coordinator, _build_position_description(position_spec)
+        )
         await clock.run_until(asyncio.create_task(position.async_set_native_value(100)))
         await clock.run_until(asyncio.create_task(position.async_set_native_value(0)))
 
@@ -639,16 +649,21 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
     intensity = controller._value_route("massage_intensity_all", 7).payload
     position_target = controller._value_route("position_axis_1", 100).payload
     voice_position = controller._value_route("position_axis_1", 0).payload
+    query = controller._route("queryPosition").payload
     assert [payload for _, payload in trace[:4]] == [memory, memory, memory, stop]
     assert sum(payload == stop for _, payload in trace) == 2
-    assert len(trace) == 15
     assert trace[8][1] == palette
     assert trace[9][1] == timer
     assert trace[10][1] == light_off
     assert trace[11][1] == light_level
     assert trace[12][1] == intensity
-    assert trace[13][1] == position_target
-    assert trace[14][1] == voice_position
+    # The slider asks where the bed is, then sends its one target frame.
+    assert [payload for _, payload in trace[13:]] == [
+        query,
+        position_target,
+        query,
+        voice_position,
+    ]
     assert sum(payload == palette for _, payload in trace) == 1
     assert sum(payload == timer for _, payload in trace) == 1
     assert sum(payload == light_level for _, payload in trace) == 1
@@ -1164,4 +1179,164 @@ async def test_remote_timer_notifications_update_the_declared_select(
     with _ready_command_lane(coordinator):
         await select.async_select_option("20 min")
     client.write_gatt_char.assert_not_awaited()
+    await coordinator.async_shutdown()
+
+
+def _target_unique_ids(coordinator: AdjustableBedCoordinator) -> set[str]:
+    """The unique IDs the head, foot and lumbar target numbers have always had."""
+    return {
+        f"{coordinator.address}_controller_number_sleepys_app_target_axis_{axis}"
+        for axis in range(3)
+    }
+
+
+async def test_box25_reports_reach_the_position_system_and_its_sliders(
+    sleepys_runtime: SleepysRuntime,
+) -> None:
+    hass, coordinator, controller, client = sleepys_runtime
+    coordinator._disable_angle_sensing = False
+    client.start_notify = AsyncMock()
+    await coordinator.async_start_notify()
+    characteristic = controller._notify_characteristic
+    assert characteristic is not None
+
+    controller._handle_notification(characteristic, bytearray(_POSITION_REPORT))
+
+    assert coordinator.position_data == {"head": 22.0, "feet": 0.0, "lumbar": 40.0}
+    numbers = _number_entities_for(hass, coordinator)
+    sliders = [entity for entity in numbers if isinstance(entity, AdjustableBedPositionNumber)]
+    # Each slider is the target number's own registry row, now showing the report.
+    assert {slider.unique_id for slider in sliders} == _target_unique_ids(coordinator)
+    assert [slider.native_value for slider in sliders] == [22.0, 0.0, 40.0]
+    assert [slider.translation_key for slider in sliders] == [
+        "head_position",
+        "feet_position",
+        "lumbar_position",
+    ]
+    assert len({entity.unique_id for entity in numbers}) == len(numbers)
+    # The same value is not shown a second time as a sensor.
+    assert not any(
+        "position" in str(entity.unique_id) for entity in _sensor_entities_for(hass, coordinator)
+    )
+    head = next(spec for spec in controller.motor_control_specs if spec.key == "head")
+    cover = AdjustableBedCover(coordinator, _build_cover_description(head))
+    assert cover.current_cover_position == 22
+    await coordinator.async_shutdown()
+
+
+async def test_a_control_box_without_reports_keeps_its_target_numbers(
+    hass: HomeAssistant,
+) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=TEST_ADDRESS,
+        data={
+            CONF_ADDRESS: TEST_ADDRESS,
+            CONF_NAME: TEST_NAME,
+            CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
+            CONF_SLEEPYS_ELITE_SELECTOR: "BOX2442",
+        },
+    )
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    controller = SleepysEliteAppController(coordinator, "BOX2442")
+    coordinator._controller = controller
+    controller.follow_autonomous_move = AsyncMock()  # type: ignore[method-assign]
+    controller._write_route = AsyncMock()  # type: ignore[method-assign]
+
+    numbers = _number_entities_for(hass, coordinator)
+    assert {
+        entity.unique_id for entity in numbers if isinstance(entity, AdjustableBedControllerNumber)
+    } == _target_unique_ids(coordinator)
+    assert not any(isinstance(entity, AdjustableBedPositionNumber) for entity in numbers)
+    with raises_key("position_feedback_not_supported", ServiceValidationError):
+        _position_config(coordinator, controller, "back", 30)
+
+    # Nothing asks this control box for a position or waits on one after a target.
+    await controller.read_positions()
+    controller._write_route.assert_not_awaited()
+    await controller.set_position_target(2, 100)
+    controller.follow_autonomous_move.assert_not_awaited()
+    assert not controller.supports_position_feedback
+
+
+async def test_box25_target_and_recall_follow_and_other_actions_do_not(
+    sleepys_runtime: SleepysRuntime,
+) -> None:
+    _hass, coordinator, controller, client = sleepys_runtime
+    clock = _VirtualClock()
+    follow = AsyncMock()
+    controller.follow_autonomous_move = follow  # type: ignore[method-assign]
+    with (
+        patch.object(controller, "_monotonic", clock.monotonic),
+        patch.object(controller, "_sleep", clock.sleep),
+    ):
+        await controller.set_motor_position("feet", 100)
+        assert [call.args[1] for call in client.write_gatt_char.await_args_list] == [
+            bytes.fromhex("03 F0 01 64 00")
+        ]
+        assert follow.await_count == 1
+        for key, builder in (
+            ("sleepys_app_memory_1", "m1"),
+            ("sleepys_app_preset_flat", "flatPosition"),
+        ):
+            await clock.run_until(asyncio.create_task(controller._press_app_action(key, builder)))
+        assert follow.await_count == 3
+        for key, builder in (
+            ("sleepys_app_save_tv", "saveTv"),
+            ("sleepys_app_light_mode", "underbedLighting"),
+        ):
+            await clock.run_until(asyncio.create_task(controller._press_app_action(key, builder)))
+        await clock.run_until(asyncio.create_task(controller.hold_control("headUp", 300)))
+        await controller.lights_on()
+
+    assert follow.await_count == 3
+    await coordinator.async_shutdown()
+
+
+@pytest.mark.parametrize("stop_during", ["follow", "release"])
+async def test_stop_after_a_recall_started_still_reaches_the_bed(
+    sleepys_runtime: SleepysRuntime, monkeypatch: pytest.MonkeyPatch, stop_during: str
+) -> None:
+    """The recall's own release frame starts the move, so it stops nothing."""
+    _hass, coordinator, controller, client = sleepys_runtime
+    coordinator._disable_angle_sensing = False
+    monkeypatch.setattr(f"{_BASE}._FOLLOW_BOUND_SECONDS", 30.0)
+    monkeypatch.setattr(f"{_BASE}._FOLLOW_STEP_SECONDS", 0.01)
+    monkeypatch.setattr(f"{_APP}.SLEEPYS_ELITE_NATIVE_ACTION_MS", 1)
+    stop = controller._route("stop").payload
+    writes: list[bytes] = []
+    release_started = asyncio.Event()
+    release_may_finish = asyncio.Event()
+
+    async def write(_characteristic: object, payload: bytes, *, response: bool = True) -> None:
+        if bytes(payload) == stop and not release_started.is_set():
+            release_started.set()
+            if stop_during == "release":
+                await release_may_finish.wait()
+        writes.append(bytes(payload))
+
+    client.write_gatt_char.side_effect = write
+    button = ControllerActionButton(
+        coordinator,
+        next(
+            spec
+            for spec in controller.controller_button_specs
+            if spec.key == "sleepys_app_memory_1"
+        ),
+    )
+    with _ready_command_lane(coordinator):
+        press = asyncio.create_task(button.async_press())
+        async with asyncio.timeout(2):
+            await release_started.wait()
+        if stop_during == "follow":
+            await asyncio.sleep(0.05)
+            assert stop in writes and not press.done()
+
+        stopping = asyncio.create_task(coordinator.async_stop_command())
+        await asyncio.sleep(0.05)
+        release_may_finish.set()
+        await asyncio.gather(press, stopping, return_exceptions=True)
+
+    assert writes.count(stop) == 2
     await coordinator.async_shutdown()

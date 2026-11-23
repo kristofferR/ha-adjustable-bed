@@ -17,6 +17,7 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.app_profiles import per_side_profile
+from custom_components.adjustable_bed.bed_traits import reads_positions, store_read_positions
 from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
 from custom_components.adjustable_bed.beds.sleepys.app_routes import (
     CANONICAL_ROUTE_SHA256,
@@ -34,6 +35,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from custom_components.adjustable_bed.setup_questions import setup_profile
 from tests.state_helpers import published
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -45,9 +47,9 @@ _EXPECTED_SHA256 = "d5cc166ef68ca07d81b9112f16f4143d0851409ed2fe5086ff2fe10b0a7d
 _POSITION_SLIDER_SELECTORS = ("none", "BOX15", "BOX24", "BOX1220", "BOX1221", "BOX2422", "BOX2442")
 _VOICE_SELECTORS = ("BOX25", "BOX25_STAR")
 _POSITION_KEY_TO_AXIS = {
-    "0x2b": "axis_0",
-    "0x33": "axis_1",
-    "0x3b": "axis_2",
+    "0x2b": "head",
+    "0x33": "feet",
+    "0x3b": "lumbar",
 }
 _T = TypeVar("_T")
 
@@ -104,6 +106,8 @@ def _controller(selector: str, *, connected: bool = False) -> SleepysEliteAppCon
         client=client,
         record_command_trace=MagicMock(),
         handle_controller_state_updates=MagicMock(),
+        # These tests drive frames only; nothing follows a move.
+        disable_angle_sensing=True,
     )
     controller = SleepysEliteAppController(coordinator, selector)
     # Only notifications matter here, not the massage level published at construction.
@@ -315,6 +319,25 @@ async def test_manual_app_profile_is_findable_and_persists_selector_capabilities
     assert saved[CONF_MOTOR_PULSE_USER_SET] is False
 
 
+@pytest.mark.parametrize(
+    ("selector", "reads"),
+    [("none", False), ("BOX2442", False), ("BOX25", True), ("BOX25_STAR", True)],
+)
+def test_a_new_setup_reads_positions_only_where_the_control_box_reports(
+    selector: str, reads: bool
+) -> None:
+    data: dict[str, object] = {
+        CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
+        CONF_SLEEPYS_ELITE_SELECTOR: selector,
+    }
+    profile = setup_profile(BED_TYPE_SLEEPYS_ELITE_APP)
+    assert profile is not None
+    data.update(profile.settled(data))
+    store_read_positions(data)
+
+    assert reads_positions(data) is reads
+
+
 def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
     for selector in SLEEPYS_ELITE_SELECTORS:
         controller = _controller(selector)
@@ -336,19 +359,22 @@ def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
         assert not {"sleepys_app_massage_on", "sleepys_app_massage_off"} & button_keys
         assert ("sleepys_app_massage" in switch_keys) is (selector in _VOICE_SELECTORS)
 
-        if selector in (*_POSITION_SLIDER_SELECTORS, *_VOICE_SELECTORS):
-            assert {f"sleepys_app_target_axis_{axis}" for axis in range(3)} <= number_keys
-        else:
-            assert not any(key.startswith("sleepys_app_target_axis_") for key in number_keys)
-
-        # Voice shortcuts repeat the target numbers and light controls.
-        assert not any(key.startswith("sleepys_app_voice_") for key in button_keys)
-        # Unlabelled app fields stay in diagnostics; BOX25 reports head, foot and lumbar.
-        assert state_keys == (
-            {f"sleepys_app_position_axis_{axis}" for axis in range(3)}
-            if selector in _VOICE_SELECTORS
-            else set()
+        # A control box without position reports shows its last target; BOX25
+        # reports head, foot and lumbar, so its targets are position sliders.
+        targets = {f"sleepys_app_target_axis_{axis}" for axis in range(3)}
+        assert targets & number_keys == (
+            targets if selector in _POSITION_SLIDER_SELECTORS else set()
         )
+        assert [spec.position_key for spec in controller.position_number_specs] == (
+            ["head", "feet", "lumbar"] if selector in _VOICE_SELECTORS else []
+        )
+        assert controller.supports_position_feedback is (selector in _VOICE_SELECTORS)
+        assert controller.supports_direct_position_control is (selector in _VOICE_SELECTORS)
+
+        # Voice shortcuts repeat the position sliders and light controls.
+        assert not any(key.startswith("sleepys_app_voice_") for key in button_keys)
+        # Unlabelled app fields stay in diagnostics.
+        assert state_keys == set()
 
 
 async def test_dynamic_vectors_retain_frozen_provenance_and_current_route_counts() -> None:

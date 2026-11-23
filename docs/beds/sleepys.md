@@ -61,7 +61,7 @@ Other Sleepy's profiles keep their existing generic `2A29`/`2A24` behavior.
 | `BOX15` | `FFE9` in `FFE5` | `FFE4` in `FFE0` | Position target sliders and raw app state where the app uses them |
 | `BOX1220` | `1001` in `1000` | `1002` in `1000` | Position target sliders and raw app state where the app uses them |
 | `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the common app controls; the position slider the app shows only after a screen race is left out |
-| `BOX25`, `BOX25_STAR` | Nordic UART `6E400002` | Nordic UART `6E400003` | App light, massage, timer-code, and voice actions |
+| `BOX25`, `BOX25_STAR` | Nordic UART `6E400002` | Nordic UART `6E400003` | Position sliders that show the reported position, and the app's light, massage, timer-code, and voice actions |
 
 Each selector's frames come from the [Okin N-frame](okin-nframe.md#wire-codec),
 [Okin 5A](okin-5a.md#starcode-frames) or [Keeson](keeson.md#controller-profiles)
@@ -74,8 +74,12 @@ continues until the lease runs out, then the selector STOP follows.
 The profile exposes head, feet, lumbar, and selector-supported neck
 movement, the app's preset and memory actions, position refresh, and eligible
 light/massage actions. The app's position axes `0`, `1` and `2` belong to its
-head, foot and lumbar controllers, so they appear as head, foot and lumbar
-target numbers over the logical `0..100` range on nine of the app's selectors.
+head, foot and lumbar controllers, over the logical `0..100` range on nine of
+the app's selectors. `BOX25` and `BOX25_STAR` report those positions, so there
+they are head, feet and lumbar [position sliders](#app-position-feedback) that
+show the reported percentage. The seven other selectors report no position, so
+there they are head, foot and lumbar target numbers that show the last target
+sent.
 Unlabelled app state fields stay in diagnostics. The app's voice shortcuts
 (STOP, one-step brightness and position targets `0` and `100`) repeat existing
 controls and are not separate entities. Stable BOX3633
@@ -98,7 +102,35 @@ are source facts; the final duplicate target event is ignored. Event
 consumption reads the manager's then-current selector.
 HA commits do not create that private gesture queue; they run as finite
 per-controller commands through the integration's command lane using the
-physical side's explicit selector. No physical axis meaning is inferred.
+physical side's explicit selector.
+
+#### App position feedback
+
+| | `BOX25`, `BOX25_STAR` | Other control boxes |
+|---|---|---|
+| Position reports | Head, foot and lumbar, 0-100% | None |
+| Entities | Head, feet and lumbar position sliders; each cover shows its position | Head, foot and lumbar target numbers |
+| `set_position` action | Head, feet and lumbar | Refused |
+| Position request | The app's `queryPosition` frame | Never sent, except by the refresh button |
+| After a target | One frame, then the move is followed | Target, STOP, then the midpoint value |
+
+- The reports are the `A5 0D` frames of [Notification Parsing](#notification-parsing):
+  bytes 4, 6 and 8, each limited to 100. The app's head, foot and lumbar
+  controllers compare their targets with exactly these three values.
+- The request is `00 D0` on `BOX25` and `5A B0 00 A5` on `BOX25_STAR`. It is
+  sent after connecting, before a slider commit and once a followed move has
+  gone quiet, not while reports keep arriving.
+- A slider is the target number's own entity: it keeps its entity ID and
+  settings, and now shows the reported position instead of the last target. The
+  separate head, foot and lumbar position sensors are gone, because the sliders
+  show the same value.
+- A slider commit and the preset and memory buttons are followed: the command
+  stays running until the reported positions have been unchanged for 2 seconds;
+  it then asks once, and an answer that changes nothing ends the move. Stop, a
+  newer command or a lost link end it at once, and a Stop sends the STOP frame.
+  Held gestures, saves, lights and massage are not followed.
+- A new bed still hands the connection back after each command (connection mode
+  `release`); the sliders and covers keep the last reported position.
 
 On `BOX25` and `BOX25_STAR`, lights and massage follow the app's actual callers.
 The brightness number spans `0..6`: positive values send one brightness
@@ -189,6 +221,10 @@ box keeps working.
 | Massage | ❌ | ❌ | ✅ (toggle/off, 3 wave modes, timer) |
 | Massage Intensity | ❌ | ❌ | ✅ (head/foot steps and combined level 0-7) |
 | Hold until release | ❌ | ❌ | ✅ (both dialects; renewable `timed_move`) |
+
+The [Sleepy's Elite app profile](#app-position-feedback) has the BOX25 column's
+position feedback and direct position control on its `BOX25` and `BOX25_STAR`
+control boxes. Its other control boxes report no position.
 
 ## Protocol Details
 

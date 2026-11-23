@@ -48,13 +48,15 @@ from ..base import BedController
 from ..builder import BuildContext
 from ..catalog_buttons import as_save, on_off_switch
 from ..entity_specs import (
+    POSITION_UNIT_PERCENT,
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
-    ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
+    PositionNumberSpec,
+    build_position_number_spec,
 )
 from .app_routes import CANONICAL_ROUTE_SHA256, ROUTES, SleepysAppRoute
 
@@ -74,6 +76,8 @@ _POSITION_SLIDER_SELECTORS = frozenset(
     {"none", "BOX15", "BOX24", "BOX1220", "BOX1221", "BOX2422", "BOX2442"}
 )
 _POSITION_UI_SELECTORS = _POSITION_SLIDER_SELECTORS | _BOX25_SELECTORS
+# The app's position axes 0, 1 and 2 belong to its head, foot and lumbar controllers.
+_POSITION_AXES: Final = ("head", "feet", "lumbar")
 _APP_REFRESH_MS = 100
 _APP_HOLD_MIN_MS = 100
 _APP_HOLD_MAX_MS = 60_000
@@ -264,7 +268,7 @@ class SleepysEliteAppController(BedController):
             "app_profile": "sleepys_elite_app",
             "selector": self.selector,
             "canonical_route_sha256": CANONICAL_ROUTE_SHA256,
-            # Parsed app state fields; only positions and the timer are entities.
+            # Parsed app state fields; of these only the timer is an entity.
             "app_fields": dict(self._app_fields),
         }
 
@@ -567,7 +571,7 @@ class SleepysEliteAppController(BedController):
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Set up the chosen route, then subscribe to its response characteristic."""
-        del callback  # Response axes remain raw until a physical mapping is proven.
+        self._notify_callback = callback
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("Not connected to bed")
@@ -636,9 +640,10 @@ class SleepysEliteAppController(BedController):
 
         positions = cast(dict[str, float] | None, updates.pop("_positions", None))
         if positions is not None:
-            for axis, value in positions.items():
-                self._position_data[axis] = value
-                updates[f"position_{axis}"] = value
+            self._position_data.update(positions)
+            if self._notify_callback is not None:
+                for axis, value in positions.items():
+                    self._notify_callback(axis, value)
         if updates:
             state_updates: list[StateUpdate] = []
             for key, value in updates.items():
@@ -720,9 +725,8 @@ class SleepysEliteAppController(BedController):
                     return None
                 return {
                     "_positions": {
-                        "axis_0": float(min(100, raw[4])),
-                        "axis_1": float(min(100, raw[6])),
-                        "axis_2": float(min(100, raw[8])),
+                        axis: float(min(100, raw[offset]))
+                        for axis, offset in zip(_POSITION_AXES, (4, 6, 8), strict=True)
                     },
                     "field_0x5f": raw[17] == 0,
                 }
@@ -892,6 +896,34 @@ class SleepysEliteAppController(BedController):
         return True
 
     @property
+    def supports_position_feedback(self) -> bool:
+        """Only the BOX25 control boxes report head, foot and lumbar positions."""
+        return self.selector in _BOX25_SELECTORS
+
+    @property
+    def supports_direct_position_control(self) -> bool:
+        """The BOX25 target is one frame the bed carries out and reports on."""
+        return self.selector in _BOX25_SELECTORS
+
+    @property
+    def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
+        """Head, foot and lumbar sliders that show the position the bed reports.
+
+        Each keeps the unique ID of the target number it replaces, so the user's
+        entity carries over. The other control boxes report no position and keep
+        their target numbers.
+        """
+        if self.selector not in _BOX25_SELECTORS:
+            return ()
+        return tuple(
+            replace(
+                build_position_number_spec(axis, max_value=100.0, unit=POSITION_UNIT_PERCENT),
+                key=f"controller_number_sleepys_app_target_axis_{index}",
+            )
+            for index, axis in enumerate(_POSITION_AXES)
+        )
+
+    @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         return tuple(
             MotorControlSpec(
@@ -927,7 +959,8 @@ class SleepysEliteAppController(BedController):
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         specs: list[ControllerNumberSpec] = []
-        if self.selector in _POSITION_UI_SELECTORS:
+        # A control box that reports no position shows the last target it was sent.
+        if self.selector in _POSITION_SLIDER_SELECTORS:
             for axis in range(3):
                 key = f"sleepys_app_target_axis_{axis}"
                 specs.append(
@@ -1106,8 +1139,8 @@ class SleepysEliteAppController(BedController):
             )
 
         # The app's voice shortcuts (STOP, one-step brightness, position
-        # targets 0 and 100) repeat the light, brightness buttons and target
-        # numbers, so they stay available through those entities only.
+        # targets 0 and 100) repeat the light, brightness buttons and position
+        # sliders, so they stay available through those entities only.
         return tuple(specs)
 
     @property
@@ -1150,33 +1183,24 @@ class SleepysEliteAppController(BedController):
         )
 
     async def _press_app_action(self, key: str, builder: str) -> None:
-        if key in _REPEATABLE_BUTTONS:
-            await self._run_refresh_window(
-                self._route(builder), SLEEPYS_ELITE_NATIVE_ACTION_MS, release=True
-            )
-        else:
-            await self.send(builder)
-
-    @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        # The app's state fields carry no proven meaning beyond the timer and
-        # light level the select and number show; they stay in diagnostics.
-        specs: list[ControllerStateSensorSpec] = []
-        if self.selector in _BOX25_SELECTORS:
-            specs.extend(
-                ControllerStateSensorSpec(
-                    key=f"sleepys_app_position_axis_{axis}",
-                    translation_key=f"sleepys_app_position_axis_{axis}",
-                    state_key=_field_key(f"position_axis_{axis}"),
-                    icon="mdi:bed-outline",
-                    native_unit_of_measurement="%",
-                    entity_registry_enabled_default=True,
-                    suggested_display_precision=0,
-                    card=CARD_UTILITY,
+        # A BOX25 bed carries out a recall after its release frame.
+        recall = self.selector in _BOX25_SELECTORS and key.startswith(
+            ("sleepys_app_preset_", "sleepys_app_memory_")
+        )
+        context = current_command_context()
+        try:
+            if key in _REPEATABLE_BUTTONS:
+                await self._run_refresh_window(
+                    self._route(builder), SLEEPYS_ELITE_NATIVE_ACTION_MS, release=True
                 )
-                for axis in range(3)
-            )
-        return tuple(specs)
+            else:
+                await self.send(builder)
+        finally:
+            if recall and context is not None:
+                # That release frame starts the move, so a Stop still has to stop it.
+                context.cleanup_stop_sent = False
+        if recall:
+            await self.follow_autonomous_move()
 
     async def set_position_target(self, axis: int, target: int) -> None:
         if self.selector not in _POSITION_UI_SELECTORS:
@@ -1187,8 +1211,9 @@ class SleepysEliteAppController(BedController):
             raise ValueError("Sleepy's position target must be between 0 and 100")
 
         if self.selector not in _POSITION_SLIDER_SELECTORS:
-            # BOX25 voice and UI value calls are one-shot.
+            # BOX25 voice and UI value calls are one-shot; the app then only listens.
             await self._send_position_value(axis, target)
+            await self.follow_autonomous_move()
             return
 
         context = current_command_context()
@@ -1383,8 +1408,15 @@ class SleepysEliteAppController(BedController):
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("Sleepy's Elite app routes do not save memory slots")
 
+    async def set_motor_position(self, motor: str, position: int) -> None:
+        """Send a head, foot or lumbar target as the app's position slider does."""
+        if motor not in _POSITION_AXES:
+            raise ValueError(f"Unknown motor: {motor}")
+        await self.set_position_target(_POSITION_AXES.index(motor), position)
+
     async def read_positions(self, motor_count: int = 2) -> None:
-        if ("queryPosition", self.selector) in ROUTES:
+        """Ask as the app does; only the BOX25 control boxes answer with positions."""
+        if self.selector in _BOX25_SELECTORS:
             await self.send("queryPosition")
 
 

@@ -4693,15 +4693,6 @@
       "app_timer_status": {
         "name": "Current massage timer"
       },
-      "sleepys_app_position_axis_0": {
-        "name": "Head position"
-      },
-      "sleepys_app_position_axis_1": {
-        "name": "Foot position"
-      },
-      "sleepys_app_position_axis_2": {
-        "name": "Lumbar position"
-      },
       "eshine_capabilities": {
         "name": "Capability reports"
       },
