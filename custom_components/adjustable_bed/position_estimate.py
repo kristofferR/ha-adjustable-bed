@@ -50,6 +50,7 @@ from .runtime_data import DomainKey, domain_registry, domain_value, loaded_runti
 
 if TYPE_CHECKING:
     from .beds.base import BedController
+    from .beds.entity_specs import ControllerMotorHoldSpec
 
 type MotorCommand = Callable[[BedController], Coroutine[Any, Any, None]]
 
@@ -965,17 +966,30 @@ def _parent(hass: HomeAssistant, manager: PositionEstimates) -> Any:
     return parent
 
 
-def _stop_epoch(parent: Any, bed: BedEstimate) -> int | None:
+def _physical_bed(parent: Any, bed: BedEstimate) -> Any:
+    """The coordinator of the bed itself: the pair's child for a side."""
     from .paired_coordinator import PairedBedCoordinator
 
-    owner = (
-        parent.child_for_side(bed.side)
-        if isinstance(parent, PairedBedCoordinator) and bed.side is not None
-        else parent
-    )
-    scheduler = getattr(owner, "command_scheduler", None)
+    if isinstance(parent, PairedBedCoordinator) and bed.side is not None:
+        return parent.child_for_side(bed.side)
+    return parent
+
+
+def _stop_epoch(parent: Any, bed: BedEstimate) -> int | None:
+    """A number that changes with every STOP of the bed.
+
+    A pair also counts the STOPs it recorded for the side, the only trace of
+    one sent while a sequential side had no link.
+    """
+    from .paired_coordinator import PairedBedCoordinator
+
+    scheduler = getattr(_physical_bed(parent, bed), "command_scheduler", None)
     epoch = getattr(scheduler, "stop_epoch", None)
-    return epoch if isinstance(epoch, int) else None
+    if not isinstance(epoch, int):
+        return None
+    if isinstance(parent, PairedBedCoordinator) and bed.side is not None:
+        epoch += parent.stop_count(bed.side)
+    return epoch
 
 
 async def _async_timed_move(
@@ -984,6 +998,71 @@ async def _async_timed_move(
     from .services import _async_timed_move as timed_move
 
     await timed_move([(parent, bed.target_side)], motor, direction, round(seconds * 1000))
+
+
+def _combined_steps(
+    parent: Any, bed: BedEstimate
+) -> list[tuple[tuple[str, ...], ControllerMotorHoldSpec]]:
+    """The bed's own steps that move several estimated motors at once, and their hold."""
+    controller = getattr(_physical_bed(parent, bed), "capability_controller", None)
+    if controller is None:
+        return []
+    groups: Mapping[str, tuple[str, ...]] = controller.estimated_position_motor_groups
+    return [
+        (groups[spec.key], spec.hold)
+        for spec in controller.motor_control_specs
+        if spec.hold is not None and len(groups.get(spec.key, ())) > 1
+    ]
+
+
+async def _async_move_together(
+    parent: Any, bed: BedEstimate, targets: Mapping[str, float], epoch: int | None
+) -> set[str] | None:
+    """Run a combined step for the time its motors share on the way to ``targets``.
+
+    Motors heading the same way then move at once instead of one after the
+    other. The motor with further to go finishes alone afterwards, planned from
+    the estimate this leaves. Returns the motors this brought to their target,
+    or None when a step did not run its time.
+    """
+    settled: set[str] = set()
+    for group, hold in _combined_steps(parent, bed):
+        if any(motor not in targets or motor not in bed.motors for motor in group):
+            continue
+        plans = {motor: bed.motors[motor].plan(targets[motor]) for motor in group}
+        directions = {plan[0] for plan in plans.values() if plan is not None}
+        if None in plans.values() or len(directions) != 1:
+            continue
+        first, shared = min(
+            ((motor, plan[1]) for motor, plan in plans.items() if plan is not None),
+            key=lambda item: item[1],
+        )
+        if shared * 1000 < MIN_MOVE_MS:
+            continue
+        if _stop_epoch(parent, bed) != epoch:
+            return None
+        from .services import _hold_targets
+
+        (direction,) = directions
+        control = hold.up_control if direction == "up" else hold.down_control
+        await _hold_targets([(parent, bed.target_side)], control, round(shared * 1000))
+        if not bed.tracking(group):
+            raise failed("position_estimate_move_failed")
+        # A hold that ran its time leaves this motor at or just past its target.
+        # One still short was stopped or replaced, which ends the request.
+        reached = {motor for motor in group if _reached(bed, motor, targets[motor], direction)}
+        if first not in reached or not all(
+            _arrived(bed, motor, targets[motor]) for motor in reached
+        ):
+            return None
+        settled |= reached
+    return settled
+
+
+def _reached(bed: BedEstimate, motor: str, target: float, direction: str) -> bool:
+    """At or past ``target`` going ``direction``, or closer than the shortest move."""
+    rest = bed.motors[motor].plan(target)
+    return rest is None or rest[0] != direction or rest[1] * 1000 < MIN_MOVE_MS
 
 
 async def async_stop_bed(hass: HomeAssistant, manager: PositionEstimates, bed: BedEstimate) -> None:
@@ -1020,11 +1099,13 @@ async def async_move_bed(
     epoch: int | None = None,
     owned: bool = False,
 ) -> bool:
-    """Move tracking motors to estimated targets one at a time.
+    """Move tracking motors to estimated targets.
 
-    Returns False when STOP left a motor short of its target, and raises when a
-    movement left an estimate unknown. Movements are ordinary timed moves
-    through the coordinator, so each protocol keeps its cadence and STOP.
+    Motors the bed can move with one combined step share it while they head
+    the same way; the rest of each move runs one motor at a time. Returns False
+    when STOP left a motor short of its target, and raises when a movement left
+    an estimate unknown. Movements are ordinary timed moves and holds through
+    the coordinator, so each protocol keeps its cadence and STOP.
     """
     motors = [motor for motor in targets if motor in bed.motors]
     if not owned:
@@ -1032,7 +1113,16 @@ async def async_move_bed(
         _require_idle([bed])
         epoch = _epochs(hass, manager, [bed])[bed.address]
     parent = _parent(hass, manager)
+    settled: set[str] | None = set()
+    if len(motors) > 1:
+        wanted = {motor: targets[motor] for motor in motors}
+        settled = await _async_move_together(parent, bed, wanted, epoch)
+        if settled is None:
+            return False
     for motor in motors:
+        if motor in settled:
+            # Timing overhead may have carried it a little past; never nudge it back.
+            continue
         if _stop_epoch(parent, bed) != epoch:
             return False
         estimate = bed.motors[motor]
@@ -1106,6 +1196,23 @@ async def async_recall_position(
         await asyncio.gather(*tasks, return_exceptions=True)
     if not all(task.result() for task in tasks):
         raise failed("saved_position_not_reached", position=position.name)
+
+
+async def async_match_side(
+    hass: HomeAssistant, manager: PositionEstimates, bed: BedEstimate, other: BedEstimate
+) -> None:
+    """Move one side of a pair to the other side's estimate; the other side stays still.
+
+    Covers the motors calibrated on both sides, like a saved position would.
+    """
+    motors = [motor for motor in other.calibrated_motors if motor in bed.calibrated_motors]
+    if not motors:
+        raise invalid("position_estimate_not_enabled")
+    _require_tracking(other, motors)
+    _require_idle([other])
+    targets = {motor: other.motors[motor].percent or 0.0 for motor in motors}
+    if not await async_move_bed(hass, manager, bed, targets):
+        raise failed("estimated_position_not_reached")
 
 
 def lower_to_flat_seconds(estimate: MotorEstimate) -> float:

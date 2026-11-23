@@ -192,11 +192,13 @@ For the whole bed:
 ## Saved Positions
 
 A saved position stores the current estimate of every calibrated motor. Saving
-requires every included motor to be tracking. Recalling one moves each motor,
-one after the other, for the calculated time. It needs every motor it covers to
-be tracking and the bed to be still, and it reports an error when STOP or a
-failure left a motor short of its target. On a paired bed, a failure on one
-side stops the other side too.
+requires every included motor to be tracking. Recalling one moves each motor
+for the calculated time. Where the bed has a combined step, such as OCTO's back
+and legs together, motors heading the same way share it and the one with
+further to go finishes alone; other motors move one after the other. It needs
+every motor it covers to be tracking and the bed to be still, and it reports an
+error when STOP or a failure left a motor short of its target. On a paired bed,
+a failure on one side stops the other side too.
 
 Saved positions are not the bed's hardware memory, and saving one does not
 change anything on the bed.
@@ -204,6 +206,11 @@ change anything on the bed.
 On a paired bed, a position saved for both sides stores both sides and needs
 both sides tracking to recall. A position saved for the left or right side
 stores and moves only that side. Each side has its own calibration and estimate.
+
+To bring one side level with the other without saving anything, use
+`estimate_match_side`. It moves the side you select to the other side's
+estimate, and the other side stays still. Both sides need to be tracking, and
+the result is as approximate as the two estimates.
 
 Calibration, estimates and saved positions belong to each bed, so they stay
 when you combine two beds into a pair or separate a pair. Combining makes each
@@ -230,6 +237,7 @@ Every action takes `device_id`, and `side` where it applies to a paired bed. See
 | `estimate_confirm_unchanged` | None | Trust a restored estimate |
 | `estimate_mark_unknown` | None | Same as **I used the remote** |
 | `lower_to_flat` | optional `motors` | Lower past full travel; confirm flat afterwards |
+| `estimate_match_side` | `side`, or the device of one side | Move that side of a paired bed to the other side's estimate |
 
 `position` accepts a saved position's name or its ID. Selecting one side of a
 paired bed limits the position actions to positions saved for that side.

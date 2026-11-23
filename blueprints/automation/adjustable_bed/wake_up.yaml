@@ -2,9 +2,10 @@ blueprint:
   name: Adjustable Bed wake-up
   description: >-
     At a chosen time on selected days, raise one bed section for a bounded
-    duration or recall a supported hardware memory. Optionally turn on selected
-    under-bed lights after the movement action finishes. Stop with the bed's
-    existing Stop control. No estimated positions or movement retry loop.
+    duration, recall a supported hardware memory, or recall a saved estimated
+    position. Optionally turn on selected under-bed lights after the movement
+    action finishes. Stop with the bed's existing Stop control. No movement
+    retry loop.
   domain: automation
   source_url: https://github.com/kristofferR/ha-adjustable-bed/blob/main/blueprints/automation/adjustable_bed/wake_up.yaml
   homeassistant:
@@ -60,6 +61,7 @@ blueprint:
           options:
             - {label: Timed raise, value: raise}
             - {label: Recall hardware memory, value: memory}
+            - {label: Recall saved position, value: saved_position}
     raise_motor:
       name: Section to raise
       description: >-
@@ -98,6 +100,17 @@ blueprint:
           max: 8
           step: 1
           mode: box
+    saved_position:
+      name: Saved position
+      description: >-
+        Used only for Recall saved position. The name of a position saved with
+        estimated positions for the selected bed or side. The recall needs a
+        confirmed estimate. After Home Assistant restarts, confirm the bed has
+        not moved or mark it flat first, otherwise the run ends with an error
+        and the bed does not move.
+      default: ""
+      selector:
+        text:
     bed_lights:
       name: Under-bed lights (optional)
       description: >-
@@ -130,6 +143,7 @@ variables:
   raise_motor: !input raise_motor
   raise_duration_ms: !input raise_duration_ms
   memory_slot: !input memory_slot
+  saved_position: !input saved_position
   bed_target: >-
     {{ {'device_id': bed_device} if bed_side == 'auto'
        else {'device_id': bed_device, 'side': bed_side} }}
@@ -146,6 +160,10 @@ actions:
         sequence:
           - action: adjustable_bed.goto_preset
             data: "{{ bed_target | combine({'preset': memory_slot}) }}"
+      - conditions: "{{ wake_action == 'saved_position' }}"
+        sequence:
+          - action: adjustable_bed.estimate_recall_position
+            data: "{{ bed_target | combine({'position': saved_position}) }}"
   - repeat:
       for_each: !input bed_lights
       sequence:

@@ -551,6 +551,55 @@ async def test_recall_reports_a_stopped_move_and_skips_the_rest(
     assert bed.motors["back"].state is EstimateState.TRACKING
 
 
+@pytest.mark.parametrize(
+    ("legs_and_back", "tracked_s", "reached", "solo_moves"),
+    [
+        # Stopped or replaced just before its time was up: nothing finishes alone.
+        ({"back": 50.0, "legs": 40.0}, 3.85, False, []),
+        # Ran its time plus overhead: the back finishes, the legs are not nudged back.
+        ({"back": 50.0, "legs": 40.0}, 4.15, True, [("back", "up", 5850)]),
+        # Both needed the same time: neither is nudged back.
+        ({"back": 20.0, "legs": 40.0}, 4.15, True, []),
+        # Carried further past than a recall tolerates: reported, not corrected.
+        ({"back": 20.0, "legs": 40.0}, 4.25, False, []),
+    ],
+)
+async def test_a_combined_step_must_run_its_time_before_a_motor_finishes_alone(
+    hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
+    legs_and_back: dict[str, float],
+    tracked_s: float,
+    reached: bool,
+    solo_moves: list[tuple[str, str, int]],
+) -> None:
+    manager = await calibrated(hass)
+    bed = manager.beds[LEFT]
+    together = ControllerMotorHoldSpec(up_control="back_legs_up", down_control="back_legs_down")
+    hass.data[DOMAIN]["entry"] = SimpleNamespace(
+        capability_controller=SimpleNamespace(
+            estimated_position_motor_groups={"back_legs": ("back", "legs")},
+            motor_control_specs=(SimpleNamespace(key="back_legs", hold=together),),
+        )
+    )
+    moves: list[tuple[str, str, int]] = []
+
+    async def hold(_targets, control, duration_ms) -> None:
+        assert (control, duration_ms) == ("back_legs_up", 4000)
+        for motor in ("back", "legs"):
+            bed.motors[motor].travel("up", tracked_s)
+
+    async def timed_move(_targets, motor, direction, duration_ms) -> None:
+        moves.append((motor, direction, duration_ms))
+        bed.motors[motor].travel(direction, duration_ms / 1000)
+
+    monkeypatch.setattr("custom_components.adjustable_bed.services._hold_targets", hold)
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+
+    assert await pe.async_move_bed(hass, manager, bed, legs_and_back) is reached
+    assert moves == solo_moves
+    assert bed.tracking(["back", "legs"])
+
+
 async def test_both_sides_recall_is_blocked_while_one_side_is_unknown(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -571,6 +620,34 @@ async def test_both_sides_recall_is_blocked_while_one_side_is_unknown(
     # A left-only position still works; it is already there, so nothing moves.
     await pe.async_recall_position(hass, manager, left_only)
     timed_move.assert_not_awaited()
+
+
+async def test_match_side_moves_one_side_to_the_other_sides_estimate(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manager = await calibrated(hass, ((LEFT, "left"), (RIGHT, "right")))
+    left, right = manager.beds[LEFT], manager.beds[RIGHT]
+    right.motors["back"].percent = 40.0
+    right.motors["legs"].percent = 20.0
+    hass.data[DOMAIN]["entry"] = parent = object()
+    moves: list[tuple[str, str, int]] = []
+
+    async def timed_move(targets, motor, direction, duration_ms) -> None:
+        assert targets == [(parent, "left")]
+        moves.append((motor, direction, duration_ms))
+        left.motors[motor].travel(direction, duration_ms / 1000)
+
+    monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
+    await pe.async_match_side(hass, manager, left, right)
+    assert moves == [("back", "up", 8000), ("legs", "up", 2000)]
+    assert left.motors["back"].percent == pytest.approx(40.0)
+    assert right.motors["back"].percent == 40.0
+
+    # An unknown side cannot be copied.
+    right.invalidate(EstimateReason.REMOTE)
+    with pytest.raises(ServiceValidationError) as err:
+        await pe.async_match_side(hass, manager, left, right)
+    assert err.value.translation_key == "position_estimate_not_tracking"
 
 
 async def test_lower_to_flat_runs_past_full_travel_and_keeps_unknown(

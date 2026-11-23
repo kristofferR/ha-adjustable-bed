@@ -503,6 +503,20 @@ estimate_mark_unknown:
           options: [both, left, right]
           translation_key: side
 
+estimate_match_side:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      required: false
+      selector:
+        select:
+          options: [left, right]
+          translation_key: side
+
 generate_support_bundle:
   fields:
     device_id:

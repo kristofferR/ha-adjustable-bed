@@ -19,6 +19,7 @@ from .position_estimate import (
     PositionEstimates,
     SavedPosition,
     async_lower_to_flat,
+    async_match_side,
     async_recall_position,
     position_estimates,
 )
@@ -33,6 +34,7 @@ SERVICE_SET_POSITION_REFERENCE = "estimate_set_reference"
 SERVICE_CONFIRM_POSITION_UNCHANGED = "estimate_confirm_unchanged"
 SERVICE_MARK_POSITION_UNKNOWN = "estimate_mark_unknown"
 SERVICE_LOWER_TO_FLAT = "lower_to_flat"
+SERVICE_MATCH_SIDE = "estimate_match_side"
 
 ATTR_NAME = "name"
 ATTR_POSITION = "position"
@@ -156,6 +158,14 @@ async def handle_lower_to_flat(call: ServiceCall) -> None:
     await async_lower_to_flat(call.hass, manager, beds, call.data.get(ATTR_MOTORS))
 
 
+async def handle_match_side(call: ServiceCall) -> None:
+    manager, beds = _selection(call)
+    others = [bed for bed in manager.beds.values() if bed.motors and bed not in beds]
+    if len(beds) != 1 or len(others) != 1:
+        raise invalid("match_side_needs_one_side")
+    await async_match_side(call.hass, manager, beds[0], others[0])
+
+
 def async_register_position_estimate_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN,
@@ -173,6 +183,7 @@ def async_register_position_estimate_services(hass: HomeAssistant) -> None:
         (SERVICE_CONFIRM_POSITION_UNCHANGED, handle_confirm_position_unchanged, BED_SCHEMA),
         (SERVICE_MARK_POSITION_UNKNOWN, handle_mark_position_unknown, BED_SCHEMA),
         (SERVICE_LOWER_TO_FLAT, handle_lower_to_flat, MOTORS_SCHEMA),
+        (SERVICE_MATCH_SIDE, handle_match_side, BED_SCHEMA),
     )
     for name, handler, schema in handlers:
         hass.services.async_register(DOMAIN, name, handler, schema=schema)

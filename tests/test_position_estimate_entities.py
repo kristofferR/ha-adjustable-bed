@@ -219,6 +219,59 @@ async def test_tv_lift_estimate_slider_saved_position_and_reference(
     assert hass.states.get(lift_id).state == "0"
 
 
+async def test_recall_moves_motors_together_while_they_head_the_same_way(
+    hass: HomeAssistant, octo_bed: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Back and legs share the bed's combined step, then the further one finishes alone."""
+    clock = [0.0]
+    monkeypatch.setattr(pe, "_clock", lambda: clock[0])
+    moves: list[tuple[str, int]] = []
+
+    async def hold(_self: OctoController, control: str, duration_ms: int) -> None:
+        moves.append((control, duration_ms))
+        clock[0] += duration_ms / 1000
+
+    async def delay(_seconds: float) -> None:
+        return
+
+    back = entity_id(hass, "number", "back_position_estimated")
+    legs = entity_id(hass, "number", "legs_position_estimated")
+
+    async def move_to(entity: str, value: int) -> None:
+        await hass.services.async_call(
+            "number", "set_value", {"entity_id": entity, "value": value}, blocking=True
+        )
+
+    await call(hass, "estimate_set_reference", motors=["back", "legs"])
+    with (
+        patch.object(OctoController, "hold_control", hold),
+        patch("custom_components.adjustable_bed.services.asyncio.sleep", delay),
+    ):
+        await move_to(back, 50)
+        await move_to(legs, 40)
+        await call(hass, "estimate_save_position", name="Reading")
+        await move_to(back, 0)
+        await move_to(legs, 0)
+        moves.clear()
+
+        # Both rise: 4 s together, then the back's remaining 6 s.
+        await call(hass, "estimate_recall_position", position="Reading")
+        assert moves == [("back_legs_up", 4000), ("back_up", 6000)]
+        assert (hass.states.get(back).state, hass.states.get(legs).state) == ("50", "40")
+
+        # Opposite ways cannot share a step.
+        await move_to(back, 0)
+        moves.clear()
+        await call(hass, "estimate_recall_position", position="Reading")
+        assert moves == [("back_up", 10000)]
+
+        await move_to(back, 0)
+        await move_to(legs, 80)
+        moves.clear()
+        await call(hass, "estimate_recall_position", position="Reading")
+        assert moves == [("back_up", 10000), ("legs_down", 3200)]
+
+
 async def test_saved_position_gets_an_optional_button(
     hass: HomeAssistant, octo_bed: MockConfigEntry
 ) -> None:
@@ -353,6 +406,24 @@ async def test_paired_sides_save_and_block_independently(hass: HomeAssistant) ->
     with pytest.raises(ServiceValidationError) as err:
         await call_pair("estimate_delete_position", side="left", position="Reading")
     assert err.value.translation_key == "saved_position_other_side"
+
+    # Matching moves the selected side to the other one, so it needs one side.
+    with pytest.raises(ServiceValidationError) as err:
+        await call_pair("estimate_match_side")
+    assert err.value.translation_key == "match_side_needs_one_side"
+    with patch(
+        "custom_components.adjustable_bed.position_estimate_services.async_match_side"
+    ) as match:
+        await call_pair("estimate_match_side", side="left")
+    match.assert_awaited_once_with(hass, manager, manager.beds[left], manager.beds[right])
+
+    # A STOP the pair recorded for a side ends that side's request, even one
+    # its own scheduler never saw because the side had no link.
+    right_epoch = pe._stop_epoch(coordinator, manager.beds[right])
+    left_epoch = pe._stop_epoch(coordinator, manager.beds[left])
+    coordinator._admission.note_stop("left", ())
+    assert pe._stop_epoch(coordinator, manager.beds[left]) != left_epoch
+    assert pe._stop_epoch(coordinator, manager.beds[right]) == right_epoch
 
     # With one side no longer estimated, the whole bed still manages its positions.
     manager.beds[right].configure({})
