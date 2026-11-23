@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
@@ -37,6 +37,9 @@ from .state_keys import (
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
+
+# The position axes of the head, reclining and lumbar covers, in counter order.
+_POSITION_AXES: Final = ("head", "back", "lumbar")
 
 
 @dataclass
@@ -140,8 +143,8 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
         self._system.clear()
         if self.profile.notify_delay_ms is not None:
             await asyncio.sleep(self.profile.notify_delay_ms / 1000)
-        # Notifications carry capabilities/accessory state even with angles disabled.
-        await self.start_notify()
+        # Subscribes with the position callback already in place when positions are read.
+        await session.async_start_notify()
         await self.write_command(codec.command("query_system"))
         async with asyncio.timeout(self.profile.system_timeout_ms / 1000):
             await self._system.wait()
@@ -149,6 +152,11 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
             raise ValueError("Unrecognized Smart Comfort model, no seat controls enabled")
         self._ready = True
         await self.write_command(codec.command("query_device", self.session.seat))
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        # The system and accessory replies arrive there even with positions unread.
+        return True
 
     @property
     def reads_light_state_on_connect(self) -> bool:
@@ -195,13 +203,19 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
                 UNDER_BED_LIGHTS_RGB(state.rgb),
             )
         elif isinstance(state, codec.RippleState):
-            # Unknown-meaning feedback counters stay in diagnostics only.
             self._counters = state.counters
+            if self._notify_callback is not None:
+                # The frame names no seat; like the apps, it counts for the selected one.
+                for axis, percent in zip(_POSITION_AXES, state.percentages, strict=True):
+                    self._notify_callback(axis, percent)
 
     async def select_seat(self, option: str) -> None:
         address = int(option)
         if address not in self.selectable_seats:
             raise ValueError("Seat is not selectable for this Smart Comfort model")
+        if address != self.session.seat:
+            # The positions shown were the previous seat's.
+            self._coordinator.clear_position_feedback(_POSITION_AXES)
         self.session.seat = address
         self.forward_controller_state_updates(SEAT(option))
         await self.write_command(codec.command("query_device", address))
@@ -221,6 +235,11 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
                 ),
             ),
         )
+
+    @property
+    def position_number_specs(self) -> tuple[()]:
+        # The apps only show positions; they have no command that sets one.
+        return ()
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
@@ -358,6 +377,8 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
 
     async def preset_memory(self, memory_num: int) -> None:
         await self._memory(memory_num, False)
+        # The apps send the recall once and the seat travels there by itself.
+        await self.follow_autonomous_move()
 
     async def program_memory(self, memory_num: int) -> None:
         await self._memory(memory_num, True)

@@ -1018,7 +1018,7 @@ def _position_config(
     )
     # Q-Plus reports back/legs only, within its pulse tables.
     if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_QPLUS_APP) or (
-        supports_direct_position_control and percentage_targets
+        percentage_targets and (supports_direct_position_control or not specs)
     ):
         motor_configs = {
             spec.position_key: {
