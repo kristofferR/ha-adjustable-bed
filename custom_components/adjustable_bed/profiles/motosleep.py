@@ -167,19 +167,15 @@ def _power_bob_profile(profile_id: str) -> MotoSleepProfile:
         explicit_stop=explicit_stop,
         # Settings always routes to PanelRGB. Character 10 selects its Mood or
         # Night configuration independently of the root motor panel. This proves
-        # app reachability; user-confirmed hardware exceptions are narrowed below.
-        rgb_light=True,
+        # app reachability only. Users reported single-colour lights that ignore
+        # the PanelRGB controls on PanelEight (issue #470) and PanelSeven (issue
+        # #973), so those two use their root $A toggle instead.
+        rgb_light=profile_id not in {"seven", "eight"},
     )
     if profile_id == "eight":
         # MotoSleep's PanelEight sends $O for Home, and issue #468 confirms it
         # on a short-name HHC bed that otherwise follows Power Bob routing.
-        # The same hardware uses PanelEight's $A light toggle; issue #470
-        # confirms that the separate generic PanelRGB controls do not apply.
-        profile = replace(
-            profile,
-            presets=_frozen({**profile.presets, "flat": "O"}),
-            rgb_light=False,
-        )
+        profile = replace(profile, presets=_frozen({**profile.presets, "flat": "O"}))
     return profile
 
 

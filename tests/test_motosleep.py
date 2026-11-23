@@ -71,11 +71,18 @@ async def test_issue_468_short_panel_eight_keeps_home_preset() -> None:
     client.write_gatt_char.assert_awaited_once_with(MOTOSLEEP_CHAR_UUID, b"$O", response=False)
 
 
-async def test_issue_470_short_panel_eight_keeps_toggle_only_light() -> None:
-    """The reported PanelEight bed uses its root light toggle, not generic RGB."""
-    controller, client = _controller("HHC0120182CDEH")
+@pytest.mark.parametrize(
+    ("name", "profile_id"),
+    [
+        pytest.param("HHC0120182CDEH", "power_bob_eight", id="issue_470_panel_eight"),
+        pytest.param("HHC0005772CDEF", "power_bob_seven", id="issue_973_panel_seven"),
+    ],
+)
+async def test_reported_short_panels_keep_toggle_only_light(name: str, profile_id: str) -> None:
+    """The reported beds use their root light toggle, not generic RGB."""
+    controller, client = _controller(name)
 
-    assert controller.profile.profile_id == "power_bob_eight"
+    assert controller.profile.profile_id == profile_id
     assert controller.profile.light_toggle == "A"
     assert controller.profile.rgb_light is False
     assert controller.supports_lights is True
